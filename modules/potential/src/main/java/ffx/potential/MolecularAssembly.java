@@ -69,7 +69,6 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import static java.lang.String.format;
 
 import com.sun.j3d.utils.picking.PickTool;
@@ -104,6 +103,7 @@ import static ffx.potential.extended.ExtUtils.prop;
  * Ions and Water
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class MolecularAssembly extends MSGroup {
 
@@ -119,6 +119,9 @@ public class MolecularAssembly extends MSGroup {
     public static final double KCAL_TO_KJ = 4.184;
     private static double[] a = new double[3];
 
+    /**
+     * Constant <code>atomIndexing</code>
+     */
     public static final Indexing atomIndexing = prop(Indexing.class, "sys.atomIndexing", Indexing.XYZ);
     /**
      * Persistent index parallel to xyzIndex.
@@ -162,7 +165,9 @@ public class MolecularAssembly extends MSGroup {
     private boolean visible = false;
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
 
-    public enum FractionalMode {OFF, MOLECULE, ATOM};
+    public enum FractionalMode {OFF, MOLECULE, ATOM}
+
+    ;
     private FractionalMode fractionalMode = FractionalMode.MOLECULE;
     private double fractionalCoordinates[][];
 
@@ -191,15 +196,32 @@ public class MolecularAssembly extends MSGroup {
         super(name, Polymers);
     }
 
+    /**
+     * <p>Constructor for MolecularAssembly.</p>
+     *
+     * @param name       a {@link java.lang.String} object.
+     * @param Polymers   a {@link ffx.potential.bonded.MSNode} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public MolecularAssembly(String name, MSNode Polymers, CompositeConfiguration properties) {
         this(name, Polymers);
         this.properties = properties;
     }
 
+    /**
+     * <p>Setter for the field <code>fractionalMode</code>.</p>
+     *
+     * @param mode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     */
     public void setFractionalMode(FractionalMode mode) {
         fractionalMode = mode;
     }
 
+    /**
+     * <p>Getter for the field <code>fractionalMode</code>.</p>
+     *
+     * @return a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     */
     public FractionalMode getFractionalMode() {
         return fractionalMode;
     }
@@ -554,6 +576,9 @@ public class MolecularAssembly extends MSGroup {
         this.forceField = forceField;
     }
 
+    /**
+     * <p>setPropertiesFromForceField.</p>
+     */
     public void setPropertiesFromForceField() {
         this.properties = forceField.getProperties();
     }
@@ -578,6 +603,11 @@ public class MolecularAssembly extends MSGroup {
         return potentialEnergy;
     }
 
+    /**
+     * <p>getParallelTeam.</p>
+     *
+     * @return a {@link edu.rit.pj.ParallelTeam} object.
+     */
     public ParallelTeam getParallelTeam() {
         if (potentialEnergy != null) {
             return potentialEnergy.getParallelTeam();
@@ -586,6 +616,12 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>getResiduePosition.</p>
+     *
+     * @param residueNumber a int.
+     * @return a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
+     */
     public ResiduePosition getResiduePosition(int residueNumber) {
         ResiduePosition position;
         int numberOfResidues = 0;
@@ -1392,6 +1428,11 @@ public class MolecularAssembly extends MSGroup {
         return originToRot;
     }
 
+    /**
+     * <p>Getter for the field <code>properties</code>.</p>
+     *
+     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public CompositeConfiguration getProperties() {
         return properties == null ? forceField.getProperties() : properties;
     }
@@ -1462,7 +1503,9 @@ public class MolecularAssembly extends MSGroup {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<MSNode> getMolecules() { return molecules.getChildList(); }
+    public ArrayList<MSNode> getMolecules() {
+        return molecules.getChildList();
+    }
 
     /**
      * <p>
@@ -1507,6 +1550,11 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>getMass.</p>
+     *
+     * @return a double.
+     */
     public double getMass() {
         Atom atoms[] = this.getAtomArray();
         int nAtoms = atoms.length;

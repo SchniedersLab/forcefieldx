@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
@@ -355,6 +354,12 @@ public class NeighborList extends ParallelRegion {
         initNeighborList(true);
     }
 
+    /**
+     * <p>Setter for the field <code>intermolecular</code>.</p>
+     *
+     * @param intermolecular a boolean.
+     * @param molecules      an array of {@link int} objects.
+     */
     public void setIntermolecular(boolean intermolecular, int molecules[]) {
         this.intermolecular = intermolecular;
         this.molecules = molecules;
@@ -1177,6 +1182,11 @@ public class NeighborList extends ParallelRegion {
         }
     }
 
+    /**
+     * <p>destroy.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     public void destroy() throws Exception {
         parallelTeam.shutdown();
     }

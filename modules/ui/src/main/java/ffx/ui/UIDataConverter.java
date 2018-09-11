@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -53,13 +53,11 @@ import ffx.potential.parsers.BiojavaFilter;
 import ffx.potential.parsers.ConversionFilter;
 import ffx.potential.parsers.FileOpener;
 
-//import ffx.potential.parsers.SystemFilter;
-
 /**
- * The UIDataConverter class converts a data structure into a Force Field X data 
- * structure using a filter from the ffx.potentials.parsers package. To avoid 
+ * The UIDataConverter class converts a data structure into a Force Field X data
+ * structure using a filter from the ffx.potentials.parsers package. To avoid
  * freezing the FFX GUI, it implements the FileOpener interface, which extends Runnable.
- * 
+ * <p>
  * Still need to finalize everything save the constructor.
  *
  * @author Jacob M. Litman
@@ -70,27 +68,26 @@ public class UIDataConverter implements FileOpener {
 
     private static final Logger logger = Logger.getLogger(UIDataConverter.class.getName());
     private static final long KB = 1024;
-    private static final long MB = KB * KB;
-    ConversionFilter conversionFilter = null;
-    MainPanel mainPanel = null;
+    ConversionFilter conversionFilter;
+    MainPanel mainPanel;
     private boolean timer = false;
     private boolean gc = false;
     private long occupiedMemory;
     private long time;
-
     private final File file;
     private final Object dataStructure;
-    
+
     /**
-     * Constructs an object to convert a data structure to FFX MolecularAssembly; 
-     * if data structure type is not recognized, an exception will be thrown when
-     * run.
-     * @param data 
-     * @param file 
-     * @param conversionFilter 
-     * @param mainPanel 
+     * Constructs an object to convert a data structure to FFX MolecularAssembly.
+     * <p>
+     * If the data structure type is not recognized, an exception will be thrown when run.
+     *
+     * @param data             Data structure to load from.
+     * @param file             Source file.
+     * @param conversionFilter The conversionFilter.
+     * @param mainPanel        The MainPanel instance.
      */
-    public UIDataConverter (Object data, File file, ConversionFilter conversionFilter, MainPanel mainPanel) {
+    public UIDataConverter(Object data, File file, ConversionFilter conversionFilter, MainPanel mainPanel) {
         if (conversionFilter instanceof BiojavaFilter) {
             this.dataStructure = data;
         } else {
@@ -198,7 +195,7 @@ public class UIDataConverter implements FileOpener {
      *
      * @return All MolecularAssembly objects stored by the hierarchy.
      * @throws NullPointerException If hierarchy has a null or empty list of
-     * assemblies.
+     *                              assemblies.
      */
     @Override
     public MolecularAssembly[] getAllAssemblies() throws NullPointerException {
@@ -247,7 +244,7 @@ public class UIDataConverter implements FileOpener {
             convert();
         }
     }
-    
+
     /**
      * Rather verbose output for timed File Operations makes it easy to grep log
      * files for specific information.

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -71,6 +71,11 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         this.forceConstant = forceConstant;
     }
 
+    /**
+     * <p>setScaleFactor.</p>
+     *
+     * @param scale a double.
+     */
     public void setScaleFactor(double scale) {
         forceConstant *= scale;
     }
@@ -92,7 +97,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
-     * @return
+     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
      */
     public PiTorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
@@ -156,14 +161,13 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return String.format("pitors  %5d  %5d  %4.2f", atomClasses[0],
                 atomClasses[1], forceConstant);
     }
+
     /**
      * Convert Pi-Torsion energy to kcal/mole.
      */
     public static double units = 1.0;
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
         String keys1[] = s1.split(" ");
@@ -181,9 +185,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -201,9 +203,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 5;
@@ -215,13 +215,13 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
      * Average two PiTorsionType instances. The atom classes that define the new
      * type must be supplied.
      *
-     * @param piTorsionType1
-     * @param piTorsionType2
-     * @param atomClasses
-     * @return
+     * @param piTorsionType1 a {@link ffx.potential.parameters.PiTorsionType} object.
+     * @param piTorsionType2 a {@link ffx.potential.parameters.PiTorsionType} object.
+     * @param atomClasses an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
      */
     public static PiTorsionType average(PiTorsionType piTorsionType1,
-            PiTorsionType piTorsionType2, int atomClasses[]) {
+                                        PiTorsionType piTorsionType2, int atomClasses[]) {
         if (piTorsionType1 == null || piTorsionType2 == null || atomClasses == null) {
             return null;
         }

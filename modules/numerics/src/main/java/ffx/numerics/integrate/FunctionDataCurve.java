@@ -38,8 +38,9 @@
 package ffx.numerics.integrate;
 
 /**
- * A FunctionDataCurve represents a set of points along a 1-dimensional, 
+ * A FunctionDataCurve represents a set of points along a 1-dimensional,
  * analytically integrable function.
+ *
  * @author Jacob M. Litman
  */
 public abstract class FunctionDataCurve implements DataSet {
@@ -49,21 +50,25 @@ public abstract class FunctionDataCurve implements DataSet {
     protected boolean halfWidthEnd;
     protected double[] x;
     
+    /** {@inheritDoc} */
     @Override
     public double lowerBound() {
         return lb;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double upperBound() {
         return ub;
     }
     
+    /** {@inheritDoc} */
     @Override
     public int numPoints() {
         return points.length;
     }
     
+    /** {@inheritDoc} */
     @Override
     public double binWidth() {
         double divisor = halfWidthEnds() ? (double) (points.length - 2) : (double) (points.length - 1);
@@ -72,6 +77,7 @@ public abstract class FunctionDataCurve implements DataSet {
     
     /**
      * Evaluates the functions analytical integral over the entire range of points.
+     *
      * @return Exact finite integral
      */
     public double analyticalIntegral() {
@@ -80,6 +86,7 @@ public abstract class FunctionDataCurve implements DataSet {
     
     /**
      * Evaluates the function's analytical integral over a range.
+     *
      * @param lb Lower integration bound
      * @param ub Upper integration bound
      * @return Exact finite integral of range
@@ -90,6 +97,7 @@ public abstract class FunctionDataCurve implements DataSet {
     
     /**
      * Analytical integral at a point.
+     *
      * @param x Point
      * @return Exact finite integral of 0 to this point
      */
@@ -97,16 +105,19 @@ public abstract class FunctionDataCurve implements DataSet {
     
     /**
      * Evaluates the function at x.
+     *
      * @param x x
      * @return f(x)
      */
     public abstract double fX(double x);
     
+    /** {@inheritDoc} */
     @Override
     public double getFxPoint(int index) {
         return points[index];
     }
     
+    /** {@inheritDoc} */
     @Override
     public double[] getAllFxPoints() {
         int npoints = points.length;
@@ -118,7 +129,8 @@ public abstract class FunctionDataCurve implements DataSet {
     /**
      * Used to check that the passed-in x array is composed of equally-spaced
      * points from lb to ub.
-     * @param x 
+     *
+     * @param x an array of {@link double} objects.
      */
     protected final void assertXIntegrity(double[] x) {
         assert ub > lb;
@@ -146,9 +158,10 @@ public abstract class FunctionDataCurve implements DataSet {
     
     /**
      * Checks for equality to +/- 10 ulp.
-     * @param x1
-     * @param x2
-     * @return 
+     *
+     * @param x1 a double.
+     * @param x2 a double.
+     * @return a boolean.
      */
     public static boolean approxEquals(double x1, double x2) {
         return (approxEquals(x1, x2, 10.0));
@@ -156,10 +169,11 @@ public abstract class FunctionDataCurve implements DataSet {
     
     /**
      * Compare two doubles to machine precision.
-     * @param x1
-     * @param x2
-     * @param ulpMult
-     * @return 
+     *
+     * @param x1 a double.
+     * @param x2 a double.
+     * @param ulpMult a double.
+     * @return a boolean.
      */
     public static boolean approxEquals(double x1, double x2, double ulpMult) {
         double diff = Math.abs(x1 - x2);
@@ -168,6 +182,7 @@ public abstract class FunctionDataCurve implements DataSet {
         return (diff < (ulp * ulpMult));
     }
     
+    /** {@inheritDoc} */
     @Override
     public double[] getX() {
         double[] copyX = new double[x.length];
@@ -175,11 +190,13 @@ public abstract class FunctionDataCurve implements DataSet {
         return copyX;
     }
     
+    /** {@inheritDoc} */
     @Override
     public boolean halfWidthEnds() {
         return halfWidthEnd;
     }
     
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(String.format("Function f(x) curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));

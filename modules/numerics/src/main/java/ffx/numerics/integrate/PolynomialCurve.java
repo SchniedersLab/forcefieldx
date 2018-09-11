@@ -39,6 +39,7 @@ package ffx.numerics.integrate;
 
 /**
  * A PolynomialCurve describes points along a polynomial function.
+ *
  * @author Jacob M. Litman
  */
 public class PolynomialCurve extends FunctionDataCurve {
@@ -48,7 +49,8 @@ public class PolynomialCurve extends FunctionDataCurve {
     /**
      * Default constructor, assumes constant-width bins. Functional form will
      * be a0 + a1x + a2x^2 + a3x^3 + ... + anx^n.
-     * @param x
+     *
+     * @param x an array of {@link double} objects.
      * @param coefficients Lowest-order coefficients first
      */
     public PolynomialCurve(double[] x, double[] coefficients) {
@@ -59,7 +61,8 @@ public class PolynomialCurve extends FunctionDataCurve {
     /**
      * Default constructor, assumes constant-width bins. Functional form will
      * be a0 + a1x + a2x^2 + a3x^3 + ... + anx^n.
-     * @param x
+     *
+     * @param x an array of {@link double} objects.
      * @param halfWidthEnds Specifies that first and last bins are half-width.l
      * @param coefficients Lowest-order coefficients first
      */
@@ -80,6 +83,7 @@ public class PolynomialCurve extends FunctionDataCurve {
         System.arraycopy(x, 0, this.x, 0, x.length);
     }
     
+    /** {@inheritDoc} */
     @Override
     public double integralAt(double x) {
         //double total = x * coeff[0];
@@ -95,6 +99,7 @@ public class PolynomialCurve extends FunctionDataCurve {
         return total;
     }
     
+    /** {@inheritDoc} */
     @Override
     public double fX(double x) {
         return polynomialAt(x);
@@ -113,6 +118,7 @@ public class PolynomialCurve extends FunctionDataCurve {
         return total;
     }
     
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Polynomial curve of degree ");

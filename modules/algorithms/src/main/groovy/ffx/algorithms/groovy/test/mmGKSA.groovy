@@ -63,19 +63,19 @@ for (String arg : args) {
 }
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc mmGKSA [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.l(longOpt:'ligand', args:1, argName:'0', 'Ligand atoms');
-cli.i(longOpt:'ignore', args:1, argName:'0', 'Atoms to ignore (not in ligand or protein)');
-cli.f(longOpt:'frequency', args:1, argName:'1', 'Evaluate every nth frame');
-cli.m(longOpt:'maxFrames', args:1, argName:'-1', 'Evaluate at most this many frames (-1 to evaluate to end of file)');
-cli.e(longOpt:'electrostaticWeight', args:1, argName:'1.0', 'Weight to electrostatic interactions.');
-cli.s(longOpt:'solvationWeight', args:1, argName:'1.0', 'Weight to solvation interactions.');
-cli.v(longOpt:'vanDerWaalsWeight', args:1, argName:'1.0', 'Weight to van der Waals interactions');
-cli.d(longOpt:'decompose', args:1, argName:'false', 'Decompose electrostatics and solvation to components.');
+def cli = new CliBuilder(usage: ' ffxc mmGKSA [options] <filename>');
+cli.h(longOpt: 'help', 'Print this help message.');
+cli.l(longOpt: 'ligand', args: 1, argName: '0', 'Ligand atoms');
+cli.i(longOpt: 'ignore', args: 1, argName: '0', 'Atoms to ignore (not in ligand or protein)');
+cli.f(longOpt: 'frequency', args: 1, argName: '1', 'Evaluate every nth frame');
+cli.m(longOpt: 'maxFrames', args: 1, argName: '-1', 'Evaluate at most this many frames (-1 to evaluate to end of file)');
+cli.e(longOpt: 'electrostaticWeight', args: 1, argName: '1.0', 'Weight to electrostatic interactions.');
+cli.s(longOpt: 'solvationWeight', args: 1, argName: '1.0', 'Weight to solvation interactions.');
+cli.v(longOpt: 'vanDerWaalsWeight', args: 1, argName: '1.0', 'Weight to van der Waals interactions');
+cli.d(longOpt: 'decompose', args: 1, argName: 'false', 'Decompose electrostatics and solvation to components.');
 
-def options = cli.parse(args); 
-    
+def options = cli.parse(args);
+
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
@@ -187,92 +187,54 @@ mmGKSA.setDecompose(decompose);
 mmGKSA.runMMgksa(freq, maxFrames);
 
 /**List<Double> totalEnergies = new ArrayList<>();
-double meanEnergy = 0;
-int nSnapshots = 1;
+ double meanEnergy = 0;
+ int nSnapshots = 1;
 
-if (useLigand) {
-    List<Double> ligandEnergies = new ArrayList<>();
-    List<Double> proteinEnergies = new ArrayList<>();
-    
-    ForceFieldEnergy energy = functs.energy(mola);
-    double totE = energy.getNonbondedEnergy();
-    
-    for (Atom atom : protAtoms) {
-        atom.setUse(false);
-    }
-    
-    functs.energy(mola);
-    double ligE = energy.getNonbondedEnergy();
-    for (Atom atom : protAtoms) {
-        atom.setUse(true);
-    }
-    for (Atom atom : ligAtoms) {
-        atom.setUse(false);
-    }
-    
-    functs.energy(mola);
-    double protE = energy.getNonbondedEnergy();
-    for (Atom atom : ligAtoms) {
-        atom.setUse(true);
-    }
-    
-    logger.info(String.format(" Protein: %10.4f Ligand:  %10.4f Total:   %10.4f", protE, ligE, totE));
-    totalEnergies.add(totE);
-    ligandEnergies.add(ligE);
-    proteinEnergies.add(protE);
-    meanEnergy += (totE - ligE - protE);
-    logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
-    
-    // Can replace with do-while when Groovy implements do-while.
-    while (filter.readNext()) {
-        functs.energy(mola);
-        totE = energy.getNonbondedEnergy();
-        
-        for (Atom atom : protAtoms) {
-            atom.setUse(false);
-        }
-        functs.energy(mola);
-        ligE = energy.getNonbondedEnergy();
-        
-        for (Atom atom : protAtoms) {
-            atom.setUse(true);
-        }
-        for (Atom atom : ligAtoms) {
-            atom.setUse(false);
-        }
-        functs.energy(mola);
-        protE = energy.getNonbondedEnergy();
-        for (Atom atom : ligAtoms) {
-            atom.setUse(true);
-        }
-        
-        logger.info(String.format(" Protein: %10.4f Ligand:  %10.4f Total:   %10.4f", protE, ligE, totE));
-        totalEnergies.add(totE);
-        ligandEnergies.add(ligE);
-        proteinEnergies.add(protE);
-        ++nSnapshots;
-        meanEnergy += (totE - ligE - protE);
-        logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
-    }
-} else {
-    double totE = functs.returnEnergy(mola);
-    
-    logger.info(String.format(" Total:   %10.4f", totE));
-    totalEnergies.add(totE);
-    meanEnergy += totE;
-    logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
-    
-    // Can replace with do-while when Groovy implements do-while.
-    while (filter.readNext()) {
-        totE = functs.returnEnergy(mola);
-        
-        logger.info(String.format(" Total:   %10.4f", totE));
-        totalEnergies.add(totE);
-        ++nSnapshots;
-        meanEnergy += totE;
-        logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
-    }
-}
+ if (useLigand) {List<Double> ligandEnergies = new ArrayList<>();
+ List<Double> proteinEnergies = new ArrayList<>();
 
-meanEnergy /= ((double) nSnapshots);
-logger.info(String.format(" Mean energy: %12.6f", meanEnergy));*/
+ ForceFieldEnergy energy = functs.energy(mola);
+ double totE = energy.getNonbondedEnergy();
+
+ for (Atom atom : protAtoms) {atom.setUse(false);}functs.energy(mola);
+ double ligE = energy.getNonbondedEnergy();
+ for (Atom atom : protAtoms) {atom.setUse(true);}for (Atom atom : ligAtoms) {atom.setUse(false);}functs.energy(mola);
+ double protE = energy.getNonbondedEnergy();
+ for (Atom atom : ligAtoms) {atom.setUse(true);}logger.info(String.format(" Protein: %10.4f Ligand:  %10.4f Total:   %10.4f", protE, ligE, totE));
+ totalEnergies.add(totE);
+ ligandEnergies.add(ligE);
+ proteinEnergies.add(protE);
+ meanEnergy += (totE - ligE - protE);
+ logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
+
+ // Can replace with do-while when Groovy implements do-while.
+ while (filter.readNext()) {functs.energy(mola);
+ totE = energy.getNonbondedEnergy();
+
+ for (Atom atom : protAtoms) {atom.setUse(false);}functs.energy(mola);
+ ligE = energy.getNonbondedEnergy();
+
+ for (Atom atom : protAtoms) {atom.setUse(true);}for (Atom atom : ligAtoms) {atom.setUse(false);}functs.energy(mola);
+ protE = energy.getNonbondedEnergy();
+ for (Atom atom : ligAtoms) {atom.setUse(true);}logger.info(String.format(" Protein: %10.4f Ligand:  %10.4f Total:   %10.4f", protE, ligE, totE));
+ totalEnergies.add(totE);
+ ligandEnergies.add(ligE);
+ proteinEnergies.add(protE);
+ ++nSnapshots;
+ meanEnergy += (totE - ligE - protE);
+ logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));}} else {double totE = functs.returnEnergy(mola);
+
+ logger.info(String.format(" Total:   %10.4f", totE));
+ totalEnergies.add(totE);
+ meanEnergy += totE;
+ logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
+
+ // Can replace with do-while when Groovy implements do-while.
+ while (filter.readNext()) {totE = functs.returnEnergy(mola);
+
+ logger.info(String.format(" Total:   %10.4f", totE));
+ totalEnergies.add(totE);
+ ++nSnapshots;
+ meanEnergy += totE;
+ logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));}}meanEnergy /= ((double) nSnapshots);
+ logger.info(String.format(" Mean energy: %12.6f", meanEnergy));*/

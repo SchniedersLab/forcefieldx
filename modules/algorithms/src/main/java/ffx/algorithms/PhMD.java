@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -87,17 +87,19 @@ import static ffx.potential.extended.TitrationUtils.performTitration;
 import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
 
 /**
+ * <p>PhMD class.</p>
+ *
  * @author S. LuCore
  */
 public class PhMD implements MonteCarloListener {
     private static final Logger logger = Logger.getLogger(PhMD.class.getName());
-    
+
     /**
      * Disallow code paths other than that which is being validated.
      * DEBUG: reset to false.
      */
     private static final boolean CAUTIOUS = true;
-    
+
     private static final double NS_TO_SEC = 0.000000001;
     private long startTime;
     private StringBuilder discountLogger;
@@ -180,8 +182,9 @@ public class PhMD implements MonteCarloListener {
     private DynamicsLauncher mdLauncher;
     private RotamerLibrary library;
     private final TitrationConfig config;
-    
+
     private final Distribution distribution;
+
     public enum Distribution {
         DISCRETE, CONTINUOUS;
     }
@@ -189,13 +192,15 @@ public class PhMD implements MonteCarloListener {
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
      *
-     * @param mola the molecular assembly
+     * @param mola            the molecular assembly
      * @param mcStepFrequency number of MD steps between switch attempts
-     * @param pH the simulation pH
-     * @param thermostat the MD thermostat
+     * @param pH              the simulation pH
+     * @param distribution    a {@link ffx.algorithms.PhMD.Distribution} object.
+     * @param molDyn          a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param titrating       a {@link java.util.List} object.
      */
     public PhMD(Distribution distribution, MolecularAssembly mola, MolecularDynamics molDyn,
-            List<Residue> titrating, double pH, int mcStepFrequency) {
+                List<Residue> titrating, double pH, int mcStepFrequency) {
         this.config = new TitrationConfig();
         this.distribution = distribution;
         this.mola = mola;
@@ -207,7 +212,7 @@ public class PhMD implements MonteCarloListener {
         this.pH = pH;
         this.numMovesAccepted = 0;
         this.chosenResidues = titrating;
-        
+
         // Set the rotamer library in case we do rotamer MC moves.
         library = RotamerLibrary.getDefaultLibrary();
         library.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
@@ -223,11 +228,16 @@ public class PhMD implements MonteCarloListener {
         reInitialize(true, false);
         readyup();
     }
-    
+
+    /**
+     * <p>Setter for the field <code>rotamerStepFrequency</code>.</p>
+     *
+     * @param frequency a int.
+     */
     public void setRotamerStepFrequency(int frequency) {
         this.rotamerStepFrequency = (frequency <= 0) ? Integer.MAX_VALUE : frequency;
     }
-    
+
     private void readyup() {
         // Create MultiTerminus objects to wrap termini.
         if (config.titrateTermini) {
@@ -242,11 +252,11 @@ public class PhMD implements MonteCarloListener {
                 }
             }
         }
-        
+
         /* Create containers for titratables: MultiResidues for discrete, ExtendedVariables for continuous. */
         if (distribution == Distribution.CONTINUOUS) {
             esvSystem = new ExtendedSystem(mola);
-			esvSystem.setConstantPh(pH);
+            esvSystem.setConstantPh(pH);
             for (Residue res : chosenResidues) {
                 MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(mola, res);
                 TitrationESV esv = new TitrationESV(esvSystem, multi);
@@ -261,20 +271,20 @@ public class PhMD implements MonteCarloListener {
         } else {
             for (Residue res : chosenResidues) {
                 // Create MultiResidue objects to wrap titratables.
-               MultiResidue multiRes = new MultiResidue(res, ff, ffe);
-               Polymer polymer = findResiduePolymer(res, mola);
-               polymer.addMultiResidue(multiRes);
-               recursiveMap(res, multiRes);
+                MultiResidue multiRes = new MultiResidue(res, ff, ffe);
+                Polymer polymer = findResiduePolymer(res, mola);
+                polymer.addMultiResidue(multiRes);
+                recursiveMap(res, multiRes);
 
-               // Switch back to the original form and ready the ForceFieldEnergy.
-               multiRes.setActiveResidue(res);
-               reInitialize(true, false);
-               titratingMultis.add(multiRes);
-               logger.info(String.format(" Titrating: %s", multiRes));
+                // Switch back to the original form and ready the ForceFieldEnergy.
+                multiRes.setActiveResidue(res);
+                reInitialize(true, false);
+                titratingMultis.add(multiRes);
+                logger.info(String.format(" Titrating: %s", multiRes));
             }
             logger.info(format(" Discrete MCMD readied with %d residues.", titratingMultis.size()));
         }
-        
+
         switch (distribution) {
             default:
             case DISCRETE:
@@ -342,10 +352,10 @@ public class PhMD implements MonteCarloListener {
                         continue;
                     }
                     double dist = sqrt(
-                            pow((a1.getX()-a2.getX()),2) +
-                            pow((a1.getY()-a2.getY()),2) +
-                            pow((a1.getZ()-a2.getZ()),2));
-                    if (dist < 0.8*(a1.getVDWR() + a2.getVDWR())) {
+                            pow((a1.getX() - a2.getX()), 2) +
+                                    pow((a1.getY() - a2.getY()), 2) +
+                                    pow((a1.getZ() - a2.getZ()), 2));
+                    if (dist < 0.8 * (a1.getVDWR() + a2.getVDWR())) {
                         logger.warning(String.format("Close vdW contact for atoms: \n   %s\n   %s", a1, a2));
                     }
                 }
@@ -353,7 +363,7 @@ public class PhMD implements MonteCarloListener {
         }
         logger.severe(String.format("Temperature above critical threshold: %f", thermostat.getCurrentTemperature()));
     }
-    
+
     /**
      * Wraps reinitialization calls so as to provide un-fucked atom numbering.
      */
@@ -367,21 +377,46 @@ public class PhMD implements MonteCarloListener {
         }
     }
 
+    /**
+     * <p>setDynamicsLauncher.</p>
+     *
+     * @param launcher a {@link ffx.algorithms.PhMD.DynamicsLauncher} object.
+     */
     public void setDynamicsLauncher(DynamicsLauncher launcher) {
         this.mdLauncher = launcher;
     }
+
+    /**
+     * <p>setDynamicsLauncher.</p>
+     *
+     * @param opt an array of {@link java.lang.Object} objects.
+     */
     public void setDynamicsLauncher(Object[] opt) {
         this.mdOptions = opt;
     }
 
+    /**
+     * <p>launch.</p>
+     *
+     * @param md              a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param mcStepFrequency a int.
+     * @param timeStep        a double.
+     * @param printInterval   a double.
+     * @param saveInterval    a double.
+     * @param temperature     a double.
+     * @param initVelocities  a boolean.
+     * @param dyn             a {@link java.io.File} object.
+     */
     public void launch(MolecularDynamics md, int mcStepFrequency, double timeStep,
-            double printInterval, double saveInterval,
-            double temperature, boolean initVelocities, File dyn) {
+                       double printInterval, double saveInterval,
+                       double temperature, boolean initVelocities, File dyn) {
         this.molDyn = md;
         this.mcStepFrequency = mcStepFrequency;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * The primary driver. Called by the MD engine at each dynamics step.
      */
     @Override
@@ -389,8 +424,8 @@ public class PhMD implements MonteCarloListener {
         startTime = System.nanoTime();
         if (thermostat.getCurrentTemperature() > config.meltdownTemperature) {
             meltdown();
-		}
-        
+        }
+
         if (thermostat.getCurrentTemperature() > config.warningTemperature) {
             Atom[] atoms = mola.getAtomArray();
             logger.info(format(" System heating! Dumping atomic velocities for %d D.o.F.:", ffe.getNumberOfVariables()));
@@ -400,8 +435,8 @@ public class PhMD implements MonteCarloListener {
                 logger.info(format(" %s: %s", atom.describe(Atom.Descriptions.Trim), Arrays.toString(velocity)));
             }
         }
-		esvSystem.setTemperature(temperature);
-        
+        esvSystem.setTemperature(temperature);
+
         propagateInactiveResidues(titratingMultis);
         stepCount++;
 
@@ -459,7 +494,7 @@ public class PhMD implements MonteCarloListener {
                 accepted = tryTitrationStep(targetMulti);
                 break;
             case ROTAMER:
-                accepted = (config.useConformationalBias) 
+                accepted = (config.useConformationalBias)
                         ? tryCBMCStep(targetMulti)
                         : tryRotamerStep(targetMulti);
                 break;
@@ -626,7 +661,7 @@ public class PhMD implements MonteCarloListener {
         if (CAUTIOUS) {
             throw new UnsupportedOperationException();
         }
-        
+
         // Record the pre-change electrostatic energy.
         double previousElectrostaticEnergy = currentElectrostaticEnergy();
 
@@ -737,7 +772,7 @@ public class PhMD implements MonteCarloListener {
         if (CAUTIOUS) {
             throw new UnsupportedOperationException();
         }
-        
+
         List<Residue> targets = new ArrayList<>();
         targets.add(targetMulti.getActive());
         int trialSetSize = 5;   // cost still scales with this, unfortunately
@@ -745,7 +780,7 @@ public class PhMD implements MonteCarloListener {
         boolean writeSnapshots = false;
         System.setProperty("cbmc-type", "CHEAP");
         RosenbluthCBMC cbmc = new RosenbluthCBMC(mola, mola.getPotentialEnergy(), null,
-            targets, mcFrequency, trialSetSize, writeSnapshots);
+                targets, mcFrequency, trialSetSize, writeSnapshots);
         boolean accepted = cbmc.cbmcStep();
         if (config.logTimings) {
             long took = System.nanoTime() - startTime;
@@ -764,7 +799,7 @@ public class PhMD implements MonteCarloListener {
         if (CAUTIOUS) {
             throw new UnsupportedOperationException();
         }
-        
+
         // Record the pre-change total energy.
         double previousTotalEnergy = currentTotalEnergy();
 
@@ -841,7 +876,7 @@ public class PhMD implements MonteCarloListener {
         if (CAUTIOUS) {
             throw new UnsupportedOperationException();
         }
-        
+
         // Record the pre-change total energy.
         double previousTotalEnergy = currentTotalEnergy();
         double previousElectrostaticEnergy = currentElectrostaticEnergy();
@@ -953,7 +988,7 @@ public class PhMD implements MonteCarloListener {
             }
         }
     }
-    
+
     /**
      * Get the current MC acceptance rate.
      *
@@ -964,7 +999,7 @@ public class PhMD implements MonteCarloListener {
         int numTries = stepCount / mcStepFrequency;
         return (double) numMovesAccepted / numTries;
     }
-    
+
     /**
      * Calculates the electrostatic energy at the current state.
      *
@@ -976,7 +1011,7 @@ public class PhMD implements MonteCarloListener {
         ffe.energy(x);
         return ffe.getTotalElectrostaticEnergy();
     }
-    
+
     /**
      * Calculates the total energy at the current state.
      *
@@ -1037,37 +1072,59 @@ public class PhMD implements MonteCarloListener {
         private final double timeStep, print, save, restart, temperature;
         private final String fileType;
         private final File dynFile;
+
         public DynamicsLauncher(MolecularDynamics md, Object[] opt) {
             molDyn = md;
             nSteps = (int) opt[0];
-            timeStep = (double) opt[1]; print = (double) opt[2];
-            save = (double) opt[3]; restart = (double) opt[4]; initVelocities = (boolean) opt[5];
-            fileType = (String) opt[6]; temperature = (double) opt[7];  dynFile = (File) opt[8];
+            timeStep = (double) opt[1];
+            print = (double) opt[2];
+            save = (double) opt[3];
+            restart = (double) opt[4];
+            initVelocities = (boolean) opt[5];
+            fileType = (String) opt[6];
+            temperature = (double) opt[7];
+            dynFile = (File) opt[8];
         }
+
         public DynamicsLauncher(MolecularDynamics md,
-                int nSteps, double timeStep,
-                double print, double save,
-                double temperature, boolean initVelocities,
-                String fileType, double restart,
-                File dynFile) {
+                                int nSteps, double timeStep,
+                                double print, double save,
+                                double temperature, boolean initVelocities,
+                                String fileType, double restart,
+                                File dynFile) {
             molDyn = md;
-            this.nSteps = nSteps; this.initVelocities = initVelocities;
-            this.timeStep = timeStep; this.print = print; this.save = save; this.restart = restart;
-            this.temperature = temperature; this.fileType = fileType; this.dynFile = dynFile;
+            this.nSteps = nSteps;
+            this.initVelocities = initVelocities;
+            this.timeStep = timeStep;
+            this.print = print;
+            this.save = save;
+            this.restart = restart;
+            this.temperature = temperature;
+            this.fileType = fileType;
+            this.dynFile = dynFile;
         }
+
         public DynamicsLauncher(MolecularDynamics md,
-                int nSteps, double timeStep,
-                double print, double save,
-                double temperature, boolean initVelocities,
-                File dynFile) {
+                                int nSteps, double timeStep,
+                                double print, double save,
+                                double temperature, boolean initVelocities,
+                                File dynFile) {
             molDyn = md;
-            this.nSteps = nSteps; this.initVelocities = initVelocities;
-            this.timeStep = timeStep; this.print = print; this.save = save; this.restart = 0.1;
-            this.temperature = temperature; this.fileType = "PDB"; this.dynFile = dynFile;
+            this.nSteps = nSteps;
+            this.initVelocities = initVelocities;
+            this.timeStep = timeStep;
+            this.print = print;
+            this.save = save;
+            this.restart = 0.1;
+            this.temperature = temperature;
+            this.fileType = "PDB";
+            this.dynFile = dynFile;
         }
+
         public void launch() {
             launch(nSteps);
         }
+
         public void launch(int nSteps) {
             /* For reference:
             molDyn.init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
@@ -1090,7 +1147,7 @@ public class PhMD implements MonteCarloListener {
     private enum StepType {
         TITRATE, ROTAMER, COMBO, CONTINUOUS_DYNAMICS;
     }
-    
+
     private void debug(int level, String message) {
         if (config.debugLogLevel >= level) {
             logger.info(message);

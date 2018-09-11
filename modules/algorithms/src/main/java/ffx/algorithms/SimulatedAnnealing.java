@@ -52,7 +52,6 @@ import ffx.potential.MolecularAssembly;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class SimulatedAnnealing implements Runnable, Terminatable {
 
@@ -72,11 +71,11 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * <p>
      * Constructor for SimulatedAnnealing.</p>
      *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param assembly        a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param properties      a
+     *                        {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener        a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
                               Potential potentialEnergy,
@@ -91,15 +90,15 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * <p>
      * Constructor for SimulatedAnnealing.</p>
      *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a
+     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.thermostats.ThermostatEnum}
+     *                            {@link ffx.algorithms.thermostats.ThermostatEnum}
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.integrators.IntegratorEnum}
+     *                            {@link ffx.algorithms.integrators.IntegratorEnum}
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
                               Potential potentialEnergy,
@@ -121,9 +120,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * anneal</p>
      *
      * @param highTemperature a double.
-     * @param lowTemperature a double.
-     * @param annealingSteps a int.
-     * @param mdSteps a int.
+     * @param lowTemperature  a double.
+     * @param annealingSteps  a int.
+     * @param mdSteps         a int.
      */
     public void anneal(double highTemperature,
                        double lowTemperature,
@@ -137,10 +136,10 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * anneal</p>
      *
      * @param highTemperature a double.
-     * @param lowTemperature a double.
-     * @param annealingSteps a int.
-     * @param mdSteps a int.
-     * @param timeStep a double
+     * @param lowTemperature  a double.
+     * @param annealingSteps  a int.
+     * @param mdSteps         a int.
+     * @param timeStep        a double
      */
     public void anneal(double highTemperature,
                        double lowTemperature,
@@ -205,6 +204,13 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
     }
 
+    /**
+     * <p>annealToTargetValues.</p>
+     *
+     * @param targetTemperatures an array of {@link double} objects.
+     * @param mdSteps            a int.
+     * @param timeStep           a double.
+     */
     public void annealToTargetValues(double[] targetTemperatures,
                                      int mdSteps,
                                      double timeStep) {
@@ -238,7 +244,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This method should only be invoked within the SimulatedAnnealing
      * instance.
      */
@@ -276,6 +282,12 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     //Set print interval to report thermodyanamics (psec)
+
+    /**
+     * <p>Setter for the field <code>printInterval</code>.</p>
+     *
+     * @param printInterval a double.
+     */
     public void setPrintInterval(double printInterval) {
         this.printInterval = printInterval;
     }
@@ -296,20 +308,40 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
             }
         }
     }
-    
-    public double getKineticEnergy(){
+
+    /**
+     * <p>getKineticEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getKineticEnergy() {
         return molecularDynamics.getKineticEnergy();
     }
-    
-    public double getPotentialEnergy(){
+
+    /**
+     * <p>getPotentialEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getPotentialEnergy() {
         return molecularDynamics.getPotentialEnergy();
     }
-    
-    public double getTotalEnergy(){
+
+    /**
+     * <p>getTotalEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getTotalEnergy() {
         return molecularDynamics.getTotalEnergy();
     }
-    
-    public double getTemperature(){
+
+    /**
+     * <p>getTemperature.</p>
+     *
+     * @return a double.
+     */
+    public double getTemperature() {
         return molecularDynamics.getTemperature();
     }
 }

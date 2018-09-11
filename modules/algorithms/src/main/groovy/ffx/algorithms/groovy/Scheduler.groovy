@@ -2,6 +2,7 @@ package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 
@@ -17,7 +18,6 @@ import picocli.CommandLine.Option
  */
 @Command(description = " The Scheduler runs Parallel jobs over nodes.", name = "ffxc Scheduler")
 class Scheduler extends AlgorithmsScript {
-
 
     /**
      * -v or --verbose to turn on verbose backend Parallel Java logging.
@@ -109,7 +109,7 @@ class Scheduler extends AlgorithmsScript {
         String frontend = hostnames[0]
         StringBuffer sb = new StringBuffer()
         sb.append("# Force Field X Cluster Configuration File\n")
-        sb.append("cluster Force Field X TACC Cluster\n")
+        sb.append("cluster Force Field X Cluster\n")
         sb.append("logfile ffx-scheduler.log\n")
         sb.append("webhost 127.0.0.1\n")
         sb.append("webport 8080\n")

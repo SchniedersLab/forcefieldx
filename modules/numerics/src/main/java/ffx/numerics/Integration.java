@@ -44,7 +44,7 @@ import java.text.DecimalFormat;
  * This program integrates using three methods: the trapezoidal method,
  * Simpson's Three Point Integration, and Boole's Five Point Integration
  *
- * @author ceoconnell
+ * @author Claire O'Connell
  */
 public class Integration {
 
@@ -57,6 +57,11 @@ public class Integration {
         x[201] = 1;
     }
     
+    /**
+     * <p>main.</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String[] args) {
         double testAnswer;
         double testTrap,testTrapRight,avgTrap,avgTrapError;
@@ -119,6 +124,13 @@ public class Integration {
         System.out.print("Average Boole error " + decimalFormat.format(avgBooleError) + "%\n");
     }
 
+    /**
+     * <p>averageIntegral.</p>
+     *
+     * @param leftInt a double.
+     * @param rightInt a double.
+     * @return a double.
+     */
     public static double averageIntegral(double leftInt, double rightInt) {
         double avgInt = 0;
 
@@ -127,6 +139,11 @@ public class Integration {
         return avgInt;
     }
 
+    /**
+     * <p>generateTestData_v1.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public static double[] generateTestData_v1() {
         double y[] = new double[202];
        
@@ -137,6 +154,14 @@ public class Integration {
         return y;
     }
 
+    /**
+     * <p>HalfBinComposite.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @param mode a int.
+     * @param side a {@link java.lang.String} object.
+     * @return a double.
+     */
     public static double HalfBinComposite(double[] inputData, int mode, String side){
         double halfBinComposite = 0, lowerHalfBin, upperHalfBin, upperTrapArea;
         double lowerTrapArea, upperSimpson, lowerSimpson;
@@ -190,6 +215,12 @@ public class Integration {
         return halfBinComposite;
     }
     
+    /**
+     * <p>trapInputLeft.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
     public static double trapInputLeft(double[] inputData) {
         double trapIntegral = 0, sum, area, total;
     
@@ -218,6 +249,12 @@ public class Integration {
         return trapIntegral;
     }
     
+        /**
+         * <p>trapInputRight.</p>
+         *
+         * @param inputData an array of {@link double} objects.
+         * @return a double.
+         */
         public static double trapInputRight(double[] inputData) {
         double trapIntegral = 0, sum, area, total;
         int n = 0;
@@ -246,6 +283,12 @@ public class Integration {
         return trapIntegral;
     }
 
+    /**
+     * <p>SimpsonsLeft.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
     public static double SimpsonsLeft(double[] inputData){
         double normalSimpsons=0, area, sum, total;
         int n;
@@ -267,6 +310,12 @@ public class Integration {
         return normalSimpsons;
     }
     
+    /**
+     * <p>SimpsonsRight.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
     public static double SimpsonsRight(double[] inputData){
         double normalSimpsons=0, area;
         int n;
@@ -286,6 +335,12 @@ public class Integration {
         return normalSimpsons;
     }
     
+    /**
+     * <p>BooleLeft.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
     public static double BooleLeft(double[] inputData){
         double normalBoole=0, area;
         int n;
@@ -305,6 +360,12 @@ public class Integration {
         return normalBoole;
     }
     
+    /**
+     * <p>BooleRight.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
     public static double BooleRight(double[] inputData){
         double normalBoole=0, area;
         int n;
@@ -325,6 +386,12 @@ public class Integration {
         return normalBoole;
     }
     
+    /**
+     * <p>rectangularMethodLeft.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
     public static double rectangularMethodLeft(double[] inputData) {
         double rectangularIntegral = 0, area;
         double[] y = new double [202];
@@ -343,6 +410,12 @@ public class Integration {
         return rectangularIntegral;
     }
 
+    /**
+     * <p>rectangularMethodRight.</p>
+     *
+     * @param inputData an array of {@link double} objects.
+     * @return a double.
+     */
     public static double rectangularMethodRight(double[] inputData) {
         double rectangularIntegral = 0, area = 0;
         double[] y = new double[202];

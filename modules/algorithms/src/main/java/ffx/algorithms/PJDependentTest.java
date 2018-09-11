@@ -1,13 +1,23 @@
 package ffx.algorithms;
 
-import edu.rit.pj.Comm;
-import ffx.utilities.BaseFFXTest;
-import org.junit.BeforeClass;
-
 import java.util.logging.Level;
 
+import org.junit.BeforeClass;
+
+import edu.rit.pj.Comm;
+
+import ffx.utilities.BaseFFXTest;
+
+/**
+ * <p>Abstract PJDependentTest class.</p>
+ *
+ * @author Michael J. Schnieders
+ */
 public abstract class PJDependentTest extends BaseFFXTest {
 
+    /**
+     * <p>beforeClass.</p>
+     */
     @BeforeClass
     public static void beforeClass() {
         BaseFFXTest.beforeClass();

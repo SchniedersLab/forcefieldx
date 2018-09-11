@@ -123,27 +123,27 @@ RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.loopBuilder [options] <filename1>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
-cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');
-cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name to limit optimization to single chain.');
-cli.d(longOpt:'dt', args:1, argName:'2.5', 'Time discretization step (fsec).');
-cli.i(longOpt:'integrator', args:1, argName:'Beeman', 'Integrator: [Beeman / Respa / Stochastic]');
-cli.r(longOpt:'report', args:1, argName:'0.01', 'Interval to report thermodyanamics (psec).');
-cli.m(longOpt:'minimize','Local minimization of loop residues (need -s and -f flags).');
-cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
-cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
-cli.g(longOpt:'bias', args:1, argName:'0.01', 'Gaussian bias magnitude (kcal/mol).');
-cli.osrw(longOpt:'OSRW', 'Run OSRW.');
-cli.tt(longOpt:'ttOSRW', 'Run Transition Tempered OSRW');
-cli.sa(longOpt:'simulated annealing', 'Run simulated annealing.');
-cli.rot(longOpt:'rotamer', 'Run rotamer optimization.');
-cli.mc(longOpt:'MC Loop','Run Monte Carlo KIC');
-cli.a(longOpt:'all', 'Run optimal pipeline of algorithms.');
-cli.s(longOpt:'start', args:1, argName:'1', 'Starting residue of existing loop.');
-cli.f(longOpt:'final', args:1, argName:'-1', 'Final residue of an existing loop.');
-cli.mcn(longOpt:'mcStepFreq', args:1, argName:'10', 'Number of MD steps between Monte-Carlo protonation changes.')
+def cli = new CliBuilder(usage: ' ffxc test.loopBuilder [options] <filename1>');
+cli.h(longOpt: 'help', 'Print this help message.');
+cli.e(longOpt: 'eps', args: 1, argName: '1.0', 'RMS gradient convergence criteria');
+cli.n(longOpt: 'steps', args: 1, argName: '10000', 'Number of molecular dynamics steps.');
+cli.c(longOpt: 'chain', args: 1, argName: ' ', 'Single character chain name to limit optimization to single chain.');
+cli.d(longOpt: 'dt', args: 1, argName: '2.5', 'Time discretization step (fsec).');
+cli.i(longOpt: 'integrator', args: 1, argName: 'Beeman', 'Integrator: [Beeman / Respa / Stochastic]');
+cli.r(longOpt: 'report', args: 1, argName: '0.01', 'Interval to report thermodyanamics (psec).');
+cli.m(longOpt: 'minimize', 'Local minimization of loop residues (need -s and -f flags).');
+cli.w(longOpt: 'write', args: 1, argName: '100.0', 'Interval to write out coordinates (psec).');
+cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
+cli.g(longOpt: 'bias', args: 1, argName: '0.01', 'Gaussian bias magnitude (kcal/mol).');
+cli.osrw(longOpt: 'OSRW', 'Run OSRW.');
+cli.tt(longOpt: 'ttOSRW', 'Run Transition Tempered OSRW');
+cli.sa(longOpt: 'simulated annealing', 'Run simulated annealing.');
+cli.rot(longOpt: 'rotamer', 'Run rotamer optimization.');
+cli.mc(longOpt: 'MC Loop', 'Run Monte Carlo KIC');
+cli.a(longOpt: 'all', 'Run optimal pipeline of algorithms.');
+cli.s(longOpt: 'start', args: 1, argName: '1', 'Starting residue of existing loop.');
+cli.f(longOpt: 'final', args: 1, argName: '-1', 'Final residue of an existing loop.');
+cli.mcn(longOpt: 'mcStepFreq', args: 1, argName: '10', 'Number of MD steps between Monte-Carlo protonation changes.')
 
 def options = cli.parse(args);
 
@@ -155,7 +155,7 @@ if (options.h) {
 if (options.s && options.f) {
     loopStart = Integer.parseInt(options.s);
     loopStop = Integer.parseInt(options.f);
-} else if (options.s || options.f){
+} else if (options.s || options.f) {
     logger.info("Starting atom and final atom numbers are need to use this option.");
 }
 
@@ -214,7 +214,7 @@ if (options.e) {
 }
 
 // Run OSRW
-if (options.osrw){
+if (options.osrw) {
     runOSRW = true;
 }
 
@@ -224,39 +224,39 @@ if (options.g) {
 }
 
 // Run Simulated Annealing
-if (options.sa){
+if (options.sa) {
     runSimulatedAnnealing = true;
 }
 
 // Run Rotamer Optimization
-if (options.rot){
+if (options.rot) {
     runRotamer = true;
 }
 
 // Run Transition Tempered OSRW
-if (options.tt){
+if (options.tt) {
     runTTOSRW = true;
 }
 
 // Default
-if (!(options.osrw && options.sa)){
+if (!(options.osrw && options.sa)) {
     runOSRW = true;
 }
 
 // Run MC Loop Optimization
-if (options.mc){
+if (options.mc) {
     runMCLoop = true;
-  //  runOSRW = false;
+    //  runOSRW = false;
     MCLoop mcLoop;
 }
 
 // Robust Default
-if (options.a){
+if (options.a) {
     runOSRW = true;
     runRotamer = true;
 }
 //build loop with PDBFilter if an existing loop is not provided
-if(!(options.s && options.f)){
+if (!(options.s && options.f)) {
     System.setProperty("buildLoops", "true");
 }
 System.setProperty("vdwterm", "false");
@@ -281,7 +281,7 @@ Comm world = Comm.world();
 int size = world.size();
 int rank = 0;
 double[] energyArray = new double[world.size()];
-for(int i =0; i < world.size(); i++){
+for (int i = 0; i < world.size(); i++) {
     energyArray[i] = Double.MAX_VALUE;
 }
 
@@ -315,11 +315,11 @@ forceFieldEnergy.setPrintOnFailure(false, false);
 Atom[] atoms = active.getAtomArray();
 
 //if existing loop is used, set loop atoms to match atoms built with PDBFilter
-if(options.s && options.f){
-    for (int i = 0; i < atoms.length; i++){
+if (options.s && options.f) {
+    for (int i = 0; i < atoms.length; i++) {
         Atom ai = atoms[i];
-        if(!options.c || chain == ai.getChainID()){
-            if(ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop){
+        if (!options.c || chain == ai.getChainID()) {
+            if (ai.getResidueNumber() >= loopStart && ai.getResidueNumber() <= loopStop) {
                 ai.setBuilt(true);
             }
         }
@@ -327,7 +327,7 @@ if(options.s && options.f){
 } else {
     //create array of built residues
     ArrayList<Residue> loopResidues = new ArrayList<>();
-    for (int i = 0; i < active.getChains().size(); i++){
+    for (int i = 0; i < active.getChains().size(); i++) {
         ArrayList<Residue> allResidues = active.getChains()[i].getResidues();
 
         for (int j = 0; j < allResidues.size(); j++) {
@@ -339,9 +339,9 @@ if(options.s && options.f){
     }
     loopStart = loopResidues.get(0).getResidueNumber();
     loopStop = loopResidues.get(0).getResidueNumber();
-    for (int i = 0; i < loopResidues.size(); i++){
-        if(loopResidues.get(i).getChainID() == loopResidues.get(0).getChainID()){
-            if (loopStop + 1 == loopResidues.get(i).getResidueNumber()){
+    for (int i = 0; i < loopResidues.size(); i++) {
+        if (loopResidues.get(i).getChainID() == loopResidues.get(0).getChainID()) {
+            if (loopStop + 1 == loopResidues.get(i).getResidueNumber()) {
                 loopStop = loopResidues.get(i).getResidueNumber();
             }
         }
@@ -363,7 +363,7 @@ logger.info("\n Running minimize on built atoms of " + active.getName());
 logger.info(" RMS gradient convergence criteria: " + eps);
 
 // Minimization without vdW.
-if (localMin){
+if (localMin) {
     runOSRW = false;
 } else {
     e = minimize(eps);
@@ -372,7 +372,7 @@ if (localMin){
 
 boolean loopBuildError = false;
 
-if(runOSRW){
+if (runOSRW) {
     // Run OSRW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "true");
@@ -381,11 +381,11 @@ if(runOSRW){
     System.setProperty("intermolecular-softcore", "true");
     System.setProperty("lambdaterm", "true");
     System.setProperty("lambda-torsions", "true");
-    System.setProperty("ligand-vapor-elec","false");
+    System.setProperty("ligand-vapor-elec", "false");
     System.setProperty("vdw-cutoff", "9.0");
     System.setProperty("lambda-bias-cutoff", "3");
     if (options.g) {
-        System.setProperty("bias-gaussian-mag",String.format("%f",biasMag));
+        System.setProperty("bias-gaussian-mag", String.format("%f", biasMag));
     } else {
         System.setProperty("bias-gaussian-mag", "0.002");
     }
@@ -394,7 +394,7 @@ if(runOSRW){
     System.setProperty("tau-temperature", String.format("%f", timeStep * 1.0e-3));
 
     System.setProperty("lambda-bin-width", "0.01");
-    System.setProperty("tau-temperature","0.05");
+    System.setProperty("tau-temperature", "0.05");
 
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
@@ -416,12 +416,12 @@ if(runOSRW){
     boolean asynchronous = true;
 
     Potential osrw;
-    if(runTTOSRW){
+    if (runTTOSRW) {
         osrw = new TransitionTemperedOSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
+                (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     } else {
-        osrw =  new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-            (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
+        osrw = new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+                (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
     }
 
     osrw.setLambda(lambda);
@@ -429,11 +429,11 @@ if(runOSRW){
     osrw.setOptimization(true, active);
     // Create the MolecularDynamics instance.
     MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
-        null, thermostat, integrator);
+            null, thermostat, integrator);
 
 
-    if(runMCLoop){
-        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
+    if (runMCLoop) {
+        mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(), loopStart, loopStop);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
         mcLoop.addLambdaInterface(osrw.getLambdaInterface());
@@ -443,35 +443,35 @@ if(runOSRW){
 
 
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
-        fileType, restartInterval, dyn);
+            fileType, restartInterval, dyn);
 
     logger.info("Obtaining low energy coordinates");
     double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
     double currentOSRWOptimum = osrw.getOSRWOptimum();
-    if (lowEnergyCoordinates != null){
+    if (lowEnergyCoordinates != null) {
         forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
     } else {
         logger.info("OSRW stage did not succeed in finding a loop.");
         loopBuildError = true;
     }
 }
- /*
+/*
 if (runMCLoop){
-    // Monte Carlo with KIC
-    System.setProperty("vdwterm", "false");
-    System.setProperty("polarization", "none");
-    logger.info("\n Running molecular dynamics on " + baseFilename);
+   // Monte Carlo with KIC
+   System.setProperty("vdwterm", "false");
+   System.setProperty("polarization", "none");
+   logger.info("\n Running molecular dynamics on " + baseFilename);
 
-    forceFieldEnergy= ForceFieldEnergy.energyFactory(active);
-    // create the MD object
-    MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
+   forceFieldEnergy= ForceFieldEnergy.energyFactory(active);
+   // create the MD object
+   MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
 
-    // create the Monte-Carlo listener and connect it to the MD
-    mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
-    molDyn.addMCListener(mcLoop);
-    mcLoop.addMolDyn(molDyn);
+   // create the Monte-Carlo listener and connect it to the MD
+   mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(),loopStart,loopStop);
+   molDyn.addMCListener(mcLoop);
+   mcLoop.addMolDyn(molDyn);
 
-    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,fileType,restartInterval,dyn);
+   molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,fileType,restartInterval,dyn);
 }   */
 
 
@@ -485,7 +485,7 @@ if (runSimulatedAnnealing) {
 
     // SA with vdW.
     logger.info("\n Running simulated annealing on " + active.getName());
-    double[] heatUpTemperatures = [150,250,400,700,1000];
+    double[] heatUpTemperatures = [150, 250, 400, 700, 1000];
     // Number of molecular dynamics steps at each temperature.
     int steps = 267; //267 at 3
     // Time step in femtoseconds.
@@ -502,7 +502,7 @@ if (runSimulatedAnnealing) {
 
     double[] annealingTargetTemperatures = [1000, 800, 600, 500, 400, 300];
     steps = 800; //800 at 3
-    simulatedAnnealing.annealToTargetValues(annealingTargetTemperatures,steps,timeStep);
+    simulatedAnnealing.annealToTargetValues(annealingTargetTemperatures, steps, timeStep);
 }
 
 
@@ -512,7 +512,7 @@ for (int i = 0; i <= atoms.length; i++) {
     ai.setApplyLambda(false);
 }
 
-if(!loopBuildError){
+if (!loopBuildError) {
     // Optimize with the full AMOEBA potential energy.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "true");
@@ -526,34 +526,34 @@ if(!loopBuildError){
     forcefieldEnergy.setPrintOnFailure(false, false);
     e = minimize(eps);
     energy();
-    if (size > 1){
-        structureFile = new File("postOSRW."+ String.format("%d",world.rank())+"." + structureFile.getName());
-    } else{
-        structureFile = new File("postOSRW."+structureFile.getName());
+    if (size > 1) {
+        structureFile = new File("postOSRW." + String.format("%d", world.rank()) + "." + structureFile.getName());
+    } else {
+        structureFile = new File("postOSRW." + structureFile.getName());
     }
     saveAsPDB(structureFile);
 }
 
 
-if (runOSRW && size > 1){
+if (runOSRW && size > 1) {
 
     DoubleBuf receiveBuffer = DoubleBuf.buffer(energyArray);
-    if (!(world.rank() == 0)){
-        world.receive(world.rank()-1,receiveBuffer);
-        energyArray[world.rank()-1] = receiveBuffer.get(world.rank()-1);
+    if (!(world.rank() == 0)) {
+        world.receive(world.rank() - 1, receiveBuffer);
+        energyArray[world.rank() - 1] = receiveBuffer.get(world.rank() - 1);
     }
-    if(!loopBuildError){
+    if (!loopBuildError) {
         energyArray[world.rank()] = active.getPotentialEnergy().getTotalEnergy();
     } else {
         energyArray[world.rank()] = Double.MAX_VALUE;
     }
-    if (world.rank() < world.size()-1){
+    if (world.rank() < world.size() - 1) {
         DoubleBuf sendBuffer = DoubleBuf.buffer(energyArray);
-        world.send(world.rank()+1,sendBuffer);
+        world.send(world.rank() + 1, sendBuffer);
     }
     world.barrier();
-    if(world.rank() == world.size()-1){
-        for(int i = 0; i < world.size(); i++) {
+    if (world.rank() == world.size() - 1) {
+        for (int i = 0; i < world.size(); i++) {
             String resultFileName = "Loop.txt";
             File rankAndEnergyFile = new File(resultFileName);
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(rankAndEnergyFile, true));
@@ -561,7 +561,7 @@ if (runOSRW && size > 1){
             String rankString = Integer.toString(i);
             String energyString = Double.toString(energyArray[i]);
 
-            bufferedWriter.write( rankString + ":" + energyString);
+            bufferedWriter.write(rankString + ":" + energyString);
             bufferedWriter.newLine();
             bufferedWriter.flush();
         }
@@ -569,7 +569,7 @@ if (runOSRW && size > 1){
     saveAsPDB(structureFile);
 }
 
-if (runRotamer){
+if (runRotamer) {
 
     for (int i = 0; i <= atoms.length; i++) {
         Atom ai = atoms[i - 1];
@@ -595,11 +595,11 @@ if (runRotamer){
     int finalResID = residuesToRO.get(residuesToRO.size() - 1).getResidueNumber();
 
     //Find best loop generated by multiple walkers
-    if (runOSRW && size > 1){
+    if (runOSRW && size > 1) {
         world.barrier();
         int bestRank;
 
-        if (world.rank() == 0){
+        if (world.rank() == 0) {
             int[] loopRanks = new int[size];
             double[] loopEnergies = new double[size];
 
@@ -607,12 +607,12 @@ if (runRotamer){
             BufferedReader reader = new BufferedReader(new FileReader("Loop.txt"));
             String line = null;
             int i = 0;
-            while((line = reader.readLine()) != null){
+            while ((line = reader.readLine()) != null) {
                 String[] lineData;
                 lineData = line.split(":");
                 //lineData[0] contains rank information (see Loop.txt)
                 //lineData[1] contains energy information (see Loop.txt)
-                if(Double.parseDouble(lineData[1]) < lowestEnergy){
+                if (Double.parseDouble(lineData[1]) < lowestEnergy) {
                     bestRank = Integer.parseInt(lineData[0]);
                     lowestEnergy = Double.parseDouble(lineData[1]);
                 }
@@ -621,10 +621,10 @@ if (runRotamer){
         }
         world.barrier();
         IntegerBuf broadcastBuf = IntegerBuf.buffer(bestRank);
-        world.broadcast(0,broadcastBuf);
+        world.broadcast(0, broadcastBuf);
         bestRank = broadcastBuf.get(0);
 
-        if(world.rank()==bestRank){
+        if (world.rank() == bestRank) {
             energy();
         }
 
@@ -661,7 +661,7 @@ if (runRotamer){
 
     if (expandList) {
         // Do a sliding-window rotamer optimization on loop window with a radius-inclusion criterion.
-        rotamerOptimization.setForcedResidues(startResID,finalResID);
+        rotamerOptimization.setForcedResidues(startResID, finalResID);
         rotamerOptimization.setWindowSize(1);
         rotamerOptimization.setDistanceCutoff(expansionDistance);
     }

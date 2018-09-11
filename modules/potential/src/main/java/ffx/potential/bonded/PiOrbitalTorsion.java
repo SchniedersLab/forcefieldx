@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -61,7 +61,6 @@ import static ffx.potential.parameters.PiTorsionType.units;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
 
@@ -107,7 +106,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
      * Attempt to create a new PiOrbitalTorsion based on the supplied bond and
      * forceField.
      *
-     * @param bond the Bond to create a PiOrbitalTorsion around.
+     * @param bond       the Bond to create a PiOrbitalTorsion around.
      * @param forceField the ForceField parameters to use.
      * @return a new PiOrbitalToersion, or null.
      */
@@ -132,27 +131,19 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Evaluate the Pi-Orbital Torsion energy.
-     *
-     * @param gradient Evaluate the gradient.
-     * @param threadID
-     * @param gradX
-     * @param gradY
-     * @param gradZ
-     * @param lambdaGradX
-     * @param lambdaGradY
-     * @param lambdaGradZ
-     * @return Returns the energy.
      */
     @Override
     public double energy(boolean gradient,
-            int threadID,
-            AtomicDoubleArray gradX,
-            AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ,
-            AtomicDoubleArray lambdaGradX,
-            AtomicDoubleArray lambdaGradY,
-            AtomicDoubleArray lambdaGradZ) {
+                         int threadID,
+                         AtomicDoubleArray gradX,
+                         AtomicDoubleArray gradY,
+                         AtomicDoubleArray gradZ,
+                         AtomicDoubleArray lambdaGradX,
+                         AtomicDoubleArray lambdaGradY,
+                         AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -383,7 +374,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Over-ridden toString Method returns the Term's id.
      */
     @Override
@@ -391,6 +382,9 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (applyAllLambda()) {
@@ -401,11 +395,17 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -415,11 +415,17 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         return 0.0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         return;

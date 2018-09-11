@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -46,13 +46,15 @@ import ffx.potential.extended.TitrationUtils.Titration;
  * An extended system variable that allows continuous fractional protonation of
  * an amino acid. All atomic charges and bonded terms scale linearly between
  * prot and deprot states.
- *
+ * <p>
  * Possible expansions: (1) Add back the ability to interact with OSRW lambda
  * and thereby combine with protein design (QuadTop). (2) Allow triple-state
  * systems such as histidine with 0.5 protons per nitrogen or tautomeric
  * ASP/GLU. (3) Assess bytecode-output implementation via eg. ASM.
  *
- * @author slucore
+ * @author Stephen LuCore
+ *
+ * @since 1.0
  */
 public final class TitrationESV extends ExtendedVariable {
 
@@ -61,6 +63,12 @@ public final class TitrationESV extends ExtendedVariable {
     private final double constPh;                   // Simulation pH.
     private final double pKaModel;                  // Reference pKa value.
 
+    /**
+     * <p>Constructor for TitrationESV.</p>
+     *
+     * @param esvSystem a {@link ffx.potential.extended.ExtendedSystem} object.
+     * @param multiRes  a {@link ffx.potential.bonded.MultiResidue} object.
+     */
     public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
         super(esvSystem, multiRes, 1.0);
         this.constPh = esvSystem.getConstantPh();
@@ -70,6 +78,9 @@ public final class TitrationESV extends ExtendedVariable {
         this.pKaModel = titration.pKa;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double getTotalBias(double temperature, boolean print) {
         double eDiscr = getDiscrBias();
@@ -77,6 +88,9 @@ public final class TitrationESV extends ExtendedVariable {
         return (eDiscr + ePh);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double getTotalBiasDeriv(double temperature, boolean print) {
         double dDiscr = getDiscrBiasDeriv();
@@ -90,6 +104,9 @@ public final class TitrationESV extends ExtendedVariable {
      * potential of mean force for protonation (or -deprot) of model compound
      * U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh) This method
      * returns U_pH + U_mod_prot.
+     *
+     * @param temperature a double.
+     * @return a double.
      */
     protected double getPhBias(double temperature) {
         double lambda = getLambda();
@@ -98,12 +115,21 @@ public final class TitrationESV extends ExtendedVariable {
         return uph + umod;
     }
 
+    /**
+     * <p>getPhBiasDeriv.</p>
+     *
+     * @param temperature a double.
+     * @return a double.
+     */
     protected double getPhBiasDeriv(double temperature) {
         double duphdl = ExtConstants.log10 * ExtConstants.Boltzmann * temperature * (pKaModel - constPh);
         double dumoddl = referenceEnergy;
         return duphdl + dumoddl;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getName() {
         return format("Titr%d", esvIndex);

@@ -45,13 +45,13 @@ import org.apache.commons.configuration2.Configuration;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.MonteCarloOSRW;
 import ffx.algorithms.TransitionTemperedOSRW;
+import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.AlchemicalOptions;
-import ffx.algorithms.MonteCarloOSRW;
-import ffx.algorithms.thermostats.ThermostatEnum;
 
 import picocli.CommandLine;
 
@@ -106,20 +106,52 @@ public class OSRWOptions {
     @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.1", description = "Standard deviation for lambda move")
     private double mcL = 0.1;
 
+    /**
+     * <p>Getter for the field <code>temperParam</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTemperParam() {
         return temperParam;
     }
 
+    /**
+     * <p>constructOSRW.</p>
+     *
+     * @param potential        a {@link ffx.crystal.CrystalPotential} object.
+     * @param lambdaRestart    a {@link java.io.File} object.
+     * @param histogramRestart a {@link java.io.File} object.
+     * @param firstAssembly    a {@link ffx.potential.MolecularAssembly} object.
+     * @param dynamics         a {@link ffx.algorithms.cli.DynamicsOptions} object.
+     * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
+     * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
+     * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
+     * @return a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     */
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-            MolecularAssembly firstAssembly, DynamicsOptions dynamics,
-            MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
+                                                MolecularAssembly firstAssembly, DynamicsOptions dynamics,
+                                                MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
         return constructOSRW(potential, lambdaRestart, histogramRestart, firstAssembly, null, dynamics, mdo, thermo, aListener);
     }
 
+    /**
+     * <p>constructOSRW.</p>
+     *
+     * @param potential        a {@link ffx.crystal.CrystalPotential} object.
+     * @param lambdaRestart    a {@link java.io.File} object.
+     * @param histogramRestart a {@link java.io.File} object.
+     * @param firstAssembly    a {@link ffx.potential.MolecularAssembly} object.
+     * @param addedProperties  a {@link org.apache.commons.configuration2.Configuration} object.
+     * @param dynamics         a {@link ffx.algorithms.cli.DynamicsOptions} object.
+     * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
+     * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
+     * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
+     * @return a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     */
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-            MolecularAssembly firstAssembly, Configuration addedProperties,
-            DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
-            AlgorithmListener aListener) {
+                                                MolecularAssembly firstAssembly, Configuration addedProperties,
+                                                DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
+                                                AlgorithmListener aListener) {
 
         LambdaInterface linter = (LambdaInterface) potential;
         CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
@@ -145,19 +177,19 @@ public class OSRWOptions {
      * the TTOSRW object or something that wraps the TTOSRW (such as a
      * Barostat).
      *
-     * @param ttOSRW Transition-Tempered Orthogonal Space Random Walk.
-     * @param firstAssembly Primary assembly in ttOSRW.
-     * @param dynamics MD options.
-     * @param lpo Lambda particle options.
-     * @param alch Alchemy options.
-     * @param barostat NPT options.
-     * @param lamExists If the lambda file exists for this walker.
+     * @param ttOSRW          Transition-Tempered Orthogonal Space Random Walk.
+     * @param firstAssembly   Primary assembly in ttOSRW.
+     * @param dynamics        MD options.
+     * @param lpo             Lambda particle options.
+     * @param alch            Alchemy options.
+     * @param barostat        NPT options.
+     * @param lamExists       If the lambda file exists for this walker.
      * @param histogramExists If the histogram file exists already.
-     * @return TTOSRW, possibly wrapped.
+     * @return a {@link ffx.crystal.CrystalPotential} object.
      */
     public CrystalPotential applyAllOSRWOptions(TransitionTemperedOSRW ttOSRW, MolecularAssembly firstAssembly,
-            DynamicsOptions dynamics, LambdaParticleOptions lpo, AlchemicalOptions alch,
-            BarostatOptions barostat, boolean lamExists, boolean histogramExists) {
+                                                DynamicsOptions dynamics, LambdaParticleOptions lpo, AlchemicalOptions alch,
+                                                BarostatOptions barostat, boolean lamExists, boolean histogramExists) {
 
         CrystalPotential cpot = ttOSRW;
         applyOSRWOptions(ttOSRW, histogramExists);
@@ -181,6 +213,12 @@ public class OSRWOptions {
         return cpot;
     }
 
+    /**
+     * <p>applyOSRWOptions.</p>
+     *
+     * @param ttOSRW          a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     * @param histogramExists a boolean.
+     */
     public void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
         ttOSRW.setTemperingParameter(temperParam);
         if (!histogramExists) {
@@ -192,17 +230,19 @@ public class OSRWOptions {
     /**
      * Begins MD-OSRW sampling from an assembled TT-OSRW.
      *
-     * @param ttOSRW The TT-OSRW object.
+     * @param ttOSRW     The TT-OSRW object.
      * @param topologies All MolecularAssemblys.
-     * @param potential The top-layer CrystalPotential.
-     * @param dynamics Dynamics options.
-     * @param thermo Thermodynamics options.
-     * @param dyn The .dyn dynamics restart file.
-     * @param aListener AlgorithmListener
+     * @param potential  The top-layer CrystalPotential.
+     * @param dynamics   Dynamics options.
+     * @param thermo     Thermodynamics options.
+     * @param dynamics   Dynamics options.
+     * @param dyn        The .dyn dynamics restart file.
+     * @param aListener  AlgorithmListener
+     * @param writeout   a {@link ffx.algorithms.cli.WriteoutOptions} object.
      */
     public void beginMDOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
-            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermo,
-            File dyn, AlgorithmListener aListener) {
+                            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermo,
+                            File dyn, AlgorithmListener aListener) {
         // Create the MolecularDynamics instance.
         MolecularAssembly firstTop = topologies[0];
         CompositeConfiguration props = firstTop.getProperties();
@@ -241,9 +281,21 @@ public class OSRWOptions {
         }
     }
 
+    /**
+     * <p>beginMCOSRW.</p>
+     *
+     * @param ttOSRW         a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     * @param topologies     an array of {@link ffx.potential.MolecularAssembly} objects.
+     * @param potential      a {@link ffx.crystal.CrystalPotential} object.
+     * @param dynamics       a {@link ffx.algorithms.cli.DynamicsOptions} object.
+     * @param writeout       a {@link ffx.algorithms.cli.WriteoutOptions} object.
+     * @param thermodynamics a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
+     * @param dyn            a {@link java.io.File} object.
+     * @param aListener      a {@link ffx.algorithms.AlgorithmListener} object.
+     */
     public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
-            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermodynamics,
-            File dyn, AlgorithmListener aListener) {
+                            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermodynamics,
+                            File dyn, AlgorithmListener aListener) {
 
         MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
                 topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator);

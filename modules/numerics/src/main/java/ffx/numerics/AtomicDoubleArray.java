@@ -39,14 +39,16 @@ package ffx.numerics;
 
 /**
  * This interface abstracts away the implementation of maintaining a 1D double
- * array that is operated on by multiple threads..
+ * array that is operated on by multiple threads.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public interface AtomicDoubleArray {
 
+    /**
+     * AtomicDoubleArray is implementations (ADDER, MULTI, PJ).
+     */
     public enum AtomicDoubleArrayImpl {
         ADDER, MULTI, PJ
     };
@@ -54,34 +56,34 @@ public interface AtomicDoubleArray {
     /**
      * Ensure the AtomicDoubleArray instance is greater than or equal to size.
      *
-     * @param size
+     * @param size a int.
      */
     public void alloc(int size);
 
     /**
      * Reset the double array to Zero.
      *
-     * @param threadID
-     * @param lb
-     * @param ub
+     * @param threadID a int.
+     * @param lb a int.
+     * @param ub a int.
      */
     public void reset(int threadID, int lb, int ub);
 
     /**
      * Add value to the double array at the specified index.
      *
-     * @param threadID
-     * @param index
-     * @param value
+     * @param threadID a int.
+     * @param index a int.
+     * @param value a double.
      */
     public void add(int threadID, int index, double value);
 
     /**
      * Subtract value to the double array at the specified index.
      *
-     * @param threadID
-     * @param index
-     * @param value
+     * @param threadID a int.
+     * @param index a int.
+     * @param value a double.
      */
     public void sub(int threadID, int index, double value);
 
@@ -89,8 +91,8 @@ public interface AtomicDoubleArray {
      * Perform reduction between the given lower bound (lb) and upper bound (up)
      * if necessary.
      *
-     * @param lb
-     * @param ub
+     * @param lb a int.
+     * @param ub a int.
      */
     public void reduce(int lb, int ub);
 
@@ -98,8 +100,8 @@ public interface AtomicDoubleArray {
      * Get the value of the array at the specified index (usually subsequent to
      * calling the <code>reduce</code> method.
      *
-     * @param index
-     * @return
+     * @param index a int.
+     * @return a double.
      */
     public double get(int index);
 

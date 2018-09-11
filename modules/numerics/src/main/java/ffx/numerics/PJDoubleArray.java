@@ -51,17 +51,23 @@ import edu.rit.pj.reduction.SharedDoubleArray;
  * stored as a long whose bit pattern is the same as the double value.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class PJDoubleArray implements AtomicDoubleArray {
 
     private SharedDoubleArray array;
 
+    /**
+     * <p>Constructor for PJDoubleArray.</p>
+     *
+     * @param nThreads a int.
+     * @param size a int.
+     */
     public PJDoubleArray(int nThreads, int size) {
         array = new SharedDoubleArray(size);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void alloc(int size) {
         if (array.length() < size) {
@@ -69,6 +75,7 @@ public class PJDoubleArray implements AtomicDoubleArray {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void reset(int threadID, int lb, int ub) {
         for (int i = lb; i <= ub; i++) {
@@ -76,27 +83,29 @@ public class PJDoubleArray implements AtomicDoubleArray {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void add(int threadID, int index, double value) {
         array.getAndAdd(index, value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void sub(int threadID, int index, double value) {
         array.getAndAdd(index, -value);
     }
 
     /**
-     * Reduction is handled atomically by the PJ SharedDoubleArray.
+     * {@inheritDoc}
      *
-     * @param lb
-     * @param ub
+     * Reduction is handled atomically by the PJ SharedDoubleArray.
      */
     @Override
     public void reduce(int lb, int ub) {
         // Nothing to do.
     }
 
+    /** {@inheritDoc} */
     @Override
     public double get(int index) {
         return array.get(index);

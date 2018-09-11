@@ -102,7 +102,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
- * atomic multipole force field in parallel using a {@link NeighborList}.
+ * atomic multipole force field in parallel using a {@link ffx.potential.nonbonded.NeighborList}.
  *
  * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Michael J.
  * Schnieders and Jay W. Ponder<br>
@@ -295,18 +295,33 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final Level GK_WARN_LEVEL;
 
     private double evol, earea, esurf, ecav;
-    
+
     private boolean doVolume;
     private final boolean outputVolume;
 
+    /**
+     * <p>Getter for the field <code>overlapScale</code>.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[] getOverlapScale() {
         return overlapScale;
     }
 
+    /**
+     * <p>getBaseRadii.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[] getBaseRadii() {
         return baseRadiusWithBondi;
     }
 
+    /**
+     * <p>Getter for the field <code>surfaceTension</code>.</p>
+     *
+     * @return a double.
+     */
     public double getSurfaceTension() {
         return surfaceTension;
     }
@@ -323,8 +338,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
      */
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
-            ParticleMeshEwald particleMeshEwald, Crystal crystal,
-            ParallelTeam parallelTeam) {
+                               ParticleMeshEwald particleMeshEwald, Crystal crystal,
+                               ParallelTeam parallelTeam) {
 
         this.forceField = forceField;
         this.atoms = atoms;
@@ -554,6 +569,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     }
 
+    /**
+     * <p>getNonPolarModel.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar} object.
+     */
     public NonPolar getNonPolarModel() {
         return nonPolar;
     }
@@ -585,23 +605,48 @@ public class GeneralizedKirkwood implements LambdaInterface {
         return probe;
     }
 
+    /**
+     * <p>Setter for the field <code>cutoff</code>.</p>
+     *
+     * @param cutoff a double.
+     */
     public void setCutoff(double cutoff) {
         this.cutoff = cutoff;
         this.cut2 = cutoff * cutoff;
     }
 
+    /**
+     * <p>Getter for the field <code>cutoff</code>.</p>
+     *
+     * @return a double.
+     */
     public double getCutoff() {
         return cutoff;
     }
 
+    /**
+     * <p>Setter for the field <code>crystal</code>.</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     */
     public void setCrystal(Crystal crystal) {
         this.crystal = crystal;
     }
 
+    /**
+     * <p>setNeighborList.</p>
+     *
+     * @param neighbors an array of {@link int} objects.
+     */
     public void setNeighborList(int neighbors[][][]) {
         this.neighborLists = neighbors;
     }
 
+    /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public void setAtoms(Atom atoms[]) {
         this.atoms = atoms;
         nAtoms = atoms.length;
@@ -609,10 +654,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
         initAtomArrays();
     }
 
+    /**
+     * <p>Setter for the field <code>fixedRadii</code>.</p>
+     *
+     * @param fixedRadii a boolean.
+     */
     public void setFixedRadii(boolean fixedRadii) {
         this.fixedRadii = fixedRadii;
     }
 
+    /**
+     * <p>Getter for the field <code>fixedRadii</code>.</p>
+     *
+     * @return a boolean.
+     */
     public boolean getFixedRadii() {
         return fixedRadii;
     }
@@ -910,6 +965,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     }
 
+    /**
+     * <p>Setter for the field <code>use</code>.</p>
+     *
+     * @param use an array of {@link boolean} objects.
+     */
     public void setUse(boolean use[]) {
         this.use = use;
     }
@@ -1102,10 +1162,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             case CAV_DISP:
                 if (doVolume) {
                     solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
-                        + volumeRegion.getEnergy();
+                            + volumeRegion.getEnergy();
                 } else {
-                   solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
-                        + cavitationRegion.getEnergy(); 
+                    solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
+                            + cavitationRegion.getEnergy();
                 }
                 break;
             case BORN_CAV_DISP:
@@ -1143,7 +1203,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * is operating without a cavitation term, it either returns 0, or throws an
      * error if throwError is true.
      *
-     * @param throwError
+     * @param throwError a boolean.
      * @return Cavitation energy
      */
     public double getCavitationEnergy(boolean throwError) {
@@ -1165,7 +1225,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * is operating without a dispersion term, it either returns 0, or throws an
      * error if throwError is true.
      *
-     * @param throwError
+     * @param throwError a boolean.
      * @return Cavitation energy
      */
     public double getDispersionEnergy(boolean throwError) {
@@ -1193,9 +1253,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Updates the value of lPow.
-     *
-     * @param lambda the current lPow value.
      */
     @Override
     public void setLambda(double lambda) {
@@ -1248,9 +1308,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * The 2nd derivative is 0.0. (U=Lambda*Egk, dU/dL=Egk, d2U/dL2=0.0)
-     *
-     * @return 0.0 is always returned.
      */
     @Override
     public double getd2EdL2() {
@@ -1262,14 +1322,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * These contributions are already aggregated into the arrays used by PME.
-     *
-     * @param gradient the Gradient array.
      */
     @Override
     public void getdEdXdL(double[] gradient) {
     }
 
+    /**
+     * <p>getNonPolarModel.</p>
+     *
+     * @param nonpolarModel a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar} object.
+     */
     public static NonPolar getNonPolarModel(String nonpolarModel) {
         try {
             return NonPolar.valueOf(toEnumForm(nonpolarModel));
@@ -2539,7 +2605,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Compute the GK interaction energy.
                  */
-                double eik = energy(i,k);
+                double eik = energy(i, k);
                 gkEnergy += eik;
                 count++;
 
@@ -4966,17 +5032,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     area[ir] *= rrisq * wght;
                     esurf += area[ir];
                 }
-                
+
                 double solvprs = 0.0327;
                 double cross = 3.0 * surfaceTension / solvprs;
                 double stcut = cross + 3.9;
                 double reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));
                 doVolume = reff <= stcut;
-                
+
             }
 
             public void surface(double xi, double yi, double zi, double rri, double rri2,
-                    double rrisq, double wght, boolean moved, int ir) {
+                                double rrisq, double wght, boolean moved, int ir) {
 
                 ib = 0;
                 int jb = 0;
@@ -5427,7 +5493,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param arclen
              */
             public boolean independentBoundaries(int k, double exang,
-                    int jb, int ir, double arclen) {
+                                                 int jb, int ir, double arclen) {
                 int m = kout[i];
                 kout[i] = -1;
                 j = j + 1;
@@ -5802,7 +5868,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         public double getVolume() {
             return sharedVolume.get();
         }
-        
+
         public double getEnergy() {
             return sharedVolumeCavitation.get();
         }
@@ -5919,7 +5985,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private boolean ttok, cinsp, cintp;
             private final double vdwrad[] = new double[nAtoms];
             private final double dex[][] = new double[3][nAtoms];
-            
+
             // module limits
             double vdwcut, chgcut;
             double dplcut, mpolecut;
@@ -9261,7 +9327,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * center.
              */
             public void gendot(int ndots[], double dots[][], double radius,
-                    double xcenter, double ycenter, double zcenter) {
+                               double xcenter, double ycenter, double zcenter) {
                 int nequat = (int) sqrt(PI * ((double) ndots[0]));
                 //logger.info(String.format("nequat:\t%s", nequat));
                 int nvert = nequat / 2;
@@ -9304,7 +9370,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * specified circle and plane.
              */
             public boolean cirpln(double circen[], double cirrad, double cirvec[], double plncen[],
-                    double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
+                                  double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
                 double cpvect[] = new double[3];
                 double pnt1[] = new double[3];
                 double vect1[] = new double[3];
@@ -9855,7 +9921,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         cut = Math.min(vdwtaper, Math.min(chgtaper, Math.min(dpltaper, mpoletaper)));
                         break;
                 }
-                
+
                 /**
                  * Set switching coefficients to zero for truncation cutoffs.
                  */
@@ -9940,7 +10006,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Compute SASA and effective radius needed for cavity term.
                  */
-                reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));             
+                reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));
                 reff2 = reff * reff;
                 reff3 = reff2 * reff;
                 reff4 = reff3 * reff;
@@ -9956,7 +10022,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  * Find cavity energy from only the solvent excluded volume.
                  */
                 if (reff <= spcut) {
-                    ecav = evolume;                 
+                    ecav = evolume;
                 } else if (reff > spcut && reff <= stoff) {
                     /**
                      * Find cavity energy from only a tapered volume term.
@@ -9994,7 +10060,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     ecav = esurf;
                 }
             }
-            
+
             @Override
             public void run(int lb, int ub) {
                 setRadius();

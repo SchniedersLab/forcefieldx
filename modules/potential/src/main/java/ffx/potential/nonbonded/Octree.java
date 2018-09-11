@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -51,7 +51,10 @@ import static java.lang.String.format;
 import ffx.potential.bonded.Atom;
 
 /**
+ * <p>Octree class.</p>
+ *
  * @author Stephen LuCore
+ *
  */
 public class Octree {
 
@@ -68,12 +71,25 @@ public class Octree {
     private Point3d corner;
     private double edgeLength;
 
+    /**
+     * <p>Constructor for Octree.</p>
+     *
+     * @param depth a int.
+     * @param corner a {@link javax.vecmath.Point3d} object.
+     * @param edgeLength a double.
+     */
     public Octree(int depth, Point3d corner, double edgeLength) {
         this.depth = depth;
         this.corner = corner;
         this.edgeLength = edgeLength;
     }
 
+    /**
+     * <p>debugPrintStats.</p>
+     *
+     * @param writePartitionFile a boolean.
+     * @param partFile a {@link java.io.File} object.
+     */
     public void debugPrintStats(boolean writePartitionFile, File partFile) {
         List<Octree> nodes = new ArrayList<>();
         List<Octree> leaves = new ArrayList<>();
@@ -141,20 +157,40 @@ public class Octree {
         }
     }
 
+    /**
+     * <p>addAtoms.</p>
+     *
+     * @param atoms a {@link java.util.List} object.
+     */
     public void addAtoms(List<Atom> atoms) {
         for (Atom atom : atoms) {
             addAtom(atom);
         }
     }
 
+    /**
+     * <p>Setter for the field <code>maxAtomsPerVolume</code>.</p>
+     *
+     * @param max a int.
+     */
     public void setMaxAtomsPerVolume(int max) {
         maxAtomsPerVolume = max;
     }
 
+    /**
+     * <p>Setter for the field <code>maxTreeDepth</code>.</p>
+     *
+     * @param max a int.
+     */
     public void setMaxTreeDepth(int max) {
         maxTreeDepth = max;
     }
 
+    /**
+     * <p>Setter for the field <code>leaveStraddlersInParent</code>.</p>
+     *
+     * @param set a boolean.
+     */
     public void setLeaveStraddlersInParent(boolean set) {
         leaveStraddlersInParent = set;
     }
@@ -212,7 +248,7 @@ public class Octree {
                 return;
             }
             split();
-            for (int i = 0; i < contents.size();) {    // NOTE: intentional lack of auto-increment
+            for (int i = 0; i < contents.size(); ) {    // NOTE: intentional lack of auto-increment
                 if (leaveStraddlersInParent) {
                     int index = findAtomIndex(contents.get(i));
                     if (index != -1) {
@@ -316,22 +352,47 @@ public class Octree {
         return b;
     }
 
+    /**
+     * <p>Getter for the field <code>depth</code>.</p>
+     *
+     * @return a int.
+     */
     public int getDepth() {
         return depth;
     }
 
+    /**
+     * <p>Getter for the field <code>children</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.nonbonded.Octree} objects.
+     */
     public Octree[] getChildren() {
         return children;
     }
 
+    /**
+     * <p>Getter for the field <code>contents</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<Atom> getContents() {
         return contents;
     }
 
+    /**
+     * <p>Getter for the field <code>corner</code>.</p>
+     *
+     * @return a {@link javax.vecmath.Point3d} object.
+     */
     public Point3d getCorner() {
         return corner;
     }
 
+    /**
+     * <p>Getter for the field <code>edgeLength</code>.</p>
+     *
+     * @return a double.
+     */
     public double getEdgeLength() {
         return edgeLength;
     }

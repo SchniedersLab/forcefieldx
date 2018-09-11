@@ -328,9 +328,9 @@ public class SpaceGroup {
      * Note that a ranking of 97 or higher indicates the space group has not
      * been observed.
      *
-     * @param sg
+     * @param sg a SpaceGroup instance.
      *
-     * @return
+     * @return the PDB space group ranking.
      */
     public static int getPDBRank(SpaceGroup sg) {
         String r = rank.getOrDefault(sg.pdbName, "97");

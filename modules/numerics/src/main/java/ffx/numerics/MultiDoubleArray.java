@@ -44,7 +44,6 @@ import java.util.Arrays;
  * of storing a full size double array for each thread.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class MultiDoubleArray implements AtomicDoubleArray {
@@ -52,11 +51,18 @@ public class MultiDoubleArray implements AtomicDoubleArray {
     private final int threadCount;
     private final double array[][];
 
+    /**
+     * <p>Constructor for MultiDoubleArray.</p>
+     *
+     * @param nThreads a int.
+     * @param size a int.
+     */
     public MultiDoubleArray(int nThreads, int size) {
         array = new double[nThreads][size];
         threadCount = nThreads;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void alloc(int size) {
         for (int i = 0; i < threadCount; i++) {
@@ -67,33 +73,32 @@ public class MultiDoubleArray implements AtomicDoubleArray {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Initialize the storage space for the specified thread, to given value,
      * after assuring adequate storage size.
-     *
-     * @param threadID
-     * @param lb
-     * @param ub
      */
     @Override
     public void reset(int threadID, int lb, int ub) {
         Arrays.fill(array[threadID], 0.0);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void add(int threadID, int index, double value) {
         array[threadID][index] += value;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void sub(int threadID, int index, double value) {
         array[threadID][index] -= value;
     }
 
     /**
-     * Reduce the contributions from each thread into array[0];
+     * {@inheritDoc}
      *
-     * @param lb The lower array bound of the reduction.
-     * @param ub The upper array bound of the reduction.
+     * Reduce the contributions from each thread into array[0];
      */
     @Override
     public void reduce(int lb, int ub) {
@@ -107,10 +112,9 @@ public class MultiDoubleArray implements AtomicDoubleArray {
     }
 
     /**
-     * Return a reduced value at the given index.
+     * {@inheritDoc}
      *
-     * @param index
-     * @return a double value.
+     * Return a reduced value at the given index.
      */
     @Override
     public double get(int index) {

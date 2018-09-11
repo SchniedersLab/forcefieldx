@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -71,10 +71,13 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
  * Utilities for creating Amino Acid residues.
  *
  * @author Michael Schnieders
+ * @since 1.0
  */
 public class AminoAcidUtils {
-    
-    private AminoAcidUtils() {}
+
+    private AminoAcidUtils() {
+    }
+
     private static final Logger logger = Logger.getLogger(AminoAcidUtils.class.getName());
 
     /**
@@ -82,7 +85,7 @@ public class AminoAcidUtils {
      * NME cap.
      *
      * @param aminoAcid 3-letter amino acid name.
-     * @param residue the amino acid Residue.
+     * @param residue   the amino acid Residue.
      */
     public static void removeH1_H2_H3(AminoAcid3 aminoAcid, Residue residue) {
         if (aminoAcid != AminoAcid3.NME) {
@@ -130,8 +133,19 @@ public class AminoAcidUtils {
         toAtom.setXYZ(fromAtom.getXYZ(null));
     }
 
+    /**
+     * <p>assignAminoAcidAtomTypes.</p>
+     *
+     * @param residue         a {@link ffx.potential.bonded.Residue} object.
+     * @param previousResidue a {@link ffx.potential.bonded.Residue} object.
+     * @param nextResidue     a {@link ffx.potential.bonded.Residue} object.
+     * @param forceField      a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList        a {@link java.util.ArrayList} object.
+     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
+     * @throws ffx.potential.bonded.BondedUtils.MissingAtomTypeException  if any.
+     */
     public static void assignAminoAcidAtomTypes(Residue residue, Residue previousResidue,
-            Residue nextResidue, ForceField forceField, ArrayList<Bond> bondList)
+                                                Residue nextResidue, ForceField forceField, ArrayList<Bond> bondList)
             throws MissingHeavyAtomException, MissingAtomTypeException {
 
         String residueName = residue.getName().toUpperCase();
@@ -415,20 +429,23 @@ public class AminoAcidUtils {
     /**
      * Assign atom types to a single amino acid side chain.
      *
-     * @param position The position of this amino acid in the chain.
-     * @param aminoAcid The amino acid to use.
-     * @param residue The residue node.
-     * @param CA The C-alpha carbon of this residue.
-     * @param N The peptide nitrogen of this residue.
-     * @param C The peptide carbonyl carbon.
-     * @param forceField
-     * @param bondList
-     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException this
-     * exception is thrown if when heavy is atom is missing that cannot be
-     * built.
+     * @param position   The position of this amino acid in the chain.
+     * @param aminoAcid  The amino acid to use.
+     * @param residue    The residue node.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param N          The peptide nitrogen of this residue.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param C          The peptide carbonyl carbon.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     public static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
-            Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList)
+                                                Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList)
             throws MissingHeavyAtomException {
         int k = AA_CB[aminoAcid.ordinal()];
         switch (aminoAcid) {
@@ -745,6 +762,12 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>copyResidue.</p>
+     *
+     * @param fromResidue a {@link ffx.potential.bonded.Residue} object.
+     * @param toResidue   a {@link ffx.potential.bonded.Residue} object.
+     */
     public static void copyResidue(Residue fromResidue, Residue toResidue) {
         String resName = fromResidue.getName();
         AA3 res = AA3.valueOf(resName);
@@ -838,8 +861,21 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>buildAlanine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildAlanine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                       ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom HB1 = buildHydrogen(residue, "HB1", CB, 1.11, CA, 109.4, N, 180.0, 0, k + 1, forceField, bondList);
         buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, HB1, 109.4, 1, k + 1, forceField, bondList);
@@ -847,8 +883,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildValine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildValine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                      ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG1 = buildHeavy(residue, "CG1", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, CG1, 109.5, -1, k + 4, forceField, bondList);
@@ -862,8 +911,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildLeucine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildLeucine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                       ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD1 = buildHeavy(residue, "CD1", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4, forceField, bondList);
@@ -880,8 +942,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildIsoleucine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildIsoleucine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                          ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k, forceField, bondList);
         Atom CG1 = buildHeavy(residue, "CG1", CB, 1.54, CA, 109.5, N, 0, 0, k + 2, forceField, bondList);
         Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, CG1, 109.5, 1, k + 4, forceField, bondList);
@@ -899,8 +974,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildSerine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildSerine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                      ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom OG = buildHeavy(residue, "OG", CB, 1.41, CA, 107.5, N, 180, 0, k + 2, forceField, bondList);
         Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, OG, 106.7, 1, k + 1, forceField, bondList);
@@ -909,8 +997,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildThreonine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildThreonine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                         ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k, forceField, bondList);
         Atom OG1 = buildHeavy(residue, "OG1", CB, 1.41, CA, 107.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CG2 = buildHeavy(residue, "CG2", CB, 1.54, CA, 109.5, OG1, 107.7, 1, k + 4, forceField, bondList);
@@ -922,8 +1023,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildCysteine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildCysteine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                        ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom SG = buildHeavy(residue, "SG", CB, 1.82, CA, 109.0, N, 180, 0, k + 2, forceField, bondList);
         Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1, forceField, bondList);
@@ -932,8 +1046,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildDeprotonatedCysteine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildDeprotonatedCysteine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                                    ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom SG = buildHeavy(residue, "SG", CB, 1.82, CA, 109.0, N, 180, 0, k + 2, forceField, bondList);
         Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1, forceField, bondList);
@@ -941,8 +1068,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildCystine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildCystine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                       ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom SG = buildHeavy(residue, "SG", CB, 1.82, CA, 109.0, N, 180, 0, k + 2, forceField, bondList);
         Atom HB2 = buildHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1, forceField, bondList);
@@ -955,8 +1095,22 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildProline.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param position   a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildProline(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ResiduePosition position, ForceField forceField, ArrayList<Bond> bondList) {
+                                       ResiduePosition position, ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.5247, N, 104.0, C, 109.5, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.5247, CA, 104.0, N, 30.0, 0, k + 2, forceField, bondList);
         int cdKey = position == FIRST_RESIDUE ? 469 : k + 4;
@@ -988,8 +1142,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildPhenylalanine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildPhenylalanine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                             ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 180, 0, k + 3, forceField, bondList);
@@ -1008,8 +1175,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildTyrosine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildTyrosine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                        ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2, forceField, bondList);
         Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 90, 0, k + 3, forceField, bondList);
@@ -1029,8 +1209,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildDeprotonatedTyrosine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildDeprotonatedTyrosine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                                    ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2, forceField, bondList);
         Atom CD1 = buildHeavy(residue, "CD1", CG, 1.39, CB, 120.0, CA, 90, 0, k + 3, forceField, bondList);
@@ -1049,8 +1242,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildTryptophan.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildTryptophan(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                          ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 62, 0, k + 2, forceField, bondList);
         Atom CD1 = buildHeavy(residue, "CD1", CG, 1.35, CB, 126.0, CA, -90, 0, k + 3, forceField, bondList);
@@ -1074,8 +1280,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildHistidine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildHistidine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                         ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom ND1 = buildHeavy(residue, "ND1", CG, 1.35, CB, 126.0, CA, 180, 0, k + 3, forceField, bondList);
@@ -1092,8 +1311,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildNeutralHistidineD.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildNeutralHistidineD(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                                 ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom ND1 = buildHeavy(residue, "ND1", CG, 1.35, CB, 126.0, CA, 180, 0, k + 3, forceField, bondList);
@@ -1109,8 +1341,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildNeutralHistidineE.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildNeutralHistidineE(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                                 ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 109.5, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.50, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom ND1 = buildHeavy(residue, "ND1", CG, 1.35, CB, 126.0, CA, 180, 0, k + 3, forceField, bondList);
@@ -1126,8 +1371,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildAspartate.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildAspartate(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                         ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.51, CA, 107.8, N, 180, 0, k + 2, forceField, bondList);
         Atom OD1 = buildHeavy(residue, "OD1", CG, 1.25, CB, 117.0, CA, 0.0, 0, k + 3, forceField, bondList);
@@ -1137,8 +1395,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildNeutralAsparticAcid.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildNeutralAsparticAcid(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                                   ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.51, CA, 107.8, N, 180, 0, k + 2, forceField, bondList);
         Atom OD1 = buildHeavy(residue, "OD1", CG, 1.25, CB, 117.0, CA, 0.0, 0, k + 3, forceField, bondList);
@@ -1149,8 +1420,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildAsparagine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildAsparagine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                          ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.51, CA, 107.8, N, 180, 0, k + 2, forceField, bondList);
         Atom OD1 = buildHeavy(residue, "OD1", CG, 1.22, CB, 122.5, CA, 180, 0, k + 3, forceField, bondList);
@@ -1162,8 +1446,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildGlutamate.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildGlutamate(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                         ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.51, CB, 107.8, CA, 180, 0, k + 4, forceField, bondList);
@@ -1176,8 +1473,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildNeutralGlutamicAcid.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildNeutralGlutamicAcid(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                                   ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.51, CB, 107.8, CA, 180, 0, k + 4, forceField, bondList);
@@ -1191,8 +1501,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildGlutamine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildGlutamine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                         ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.51, CB, 107.8, CA, 180, 0, k + 4, forceField, bondList);
@@ -1207,8 +1530,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildMethionine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildMethionine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                          ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom SD = buildHeavy(residue, "SD", CG, 1.82, CB, 109.0, CA, 180, 0, k + 4, forceField, bondList);
@@ -1223,8 +1559,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildLysine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildLysine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                      ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4, forceField, bondList);
@@ -1244,8 +1593,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildDeprotonatedLysine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildDeprotonatedLysine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                                  ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4, forceField, bondList);
@@ -1264,8 +1626,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildArginine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildArginine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                        ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4, forceField, bondList);
@@ -1287,8 +1662,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildOrnithine.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildOrnithine(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                         ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4, forceField, bondList);
@@ -1305,8 +1693,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildAIB.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildAIB(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                   ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB1 = buildHeavy(residue, "CB1", CA, 1.54, N, 109.5, C, 107.8, -1, k, forceField, bondList);
         Atom CB2 = buildHeavy(residue, "CB1", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom HB11 = buildHydrogen(residue, "HB11", CB1, 1.11, CA, 109.4, N, 180.0, 0, k + 1, forceField, bondList);
@@ -1318,8 +1719,21 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>buildPCA.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.Residue} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param N          a {@link ffx.potential.bonded.Atom} object.
+     * @param CA         a {@link ffx.potential.bonded.Atom} object.
+     * @param C          a {@link ffx.potential.bonded.Atom} object.
+     * @param k          a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public static Residue buildPCA(Residue residue, Atom CA, Atom N, Atom C, int k,
-            ForceField forceField, ArrayList<Bond> bondList) {
+                                   ForceField forceField, ArrayList<Bond> bondList) {
         Atom CB = buildHeavy(residue, "CB", CA, 1.54, N, 109.5, C, 107.8, 1, k, forceField, bondList);
         Atom CG = buildHeavy(residue, "CG", CB, 1.54, CA, 109.5, N, 180, 0, k + 2, forceField, bondList);
         Atom CD = buildHeavy(residue, "CD", CG, 1.54, CB, 109.5, CA, 180, 0, k + 4, forceField, bondList);
@@ -1331,6 +1745,12 @@ public class AminoAcidUtils {
         return residue;
     }
 
+    /**
+     * <p>renameGlycineAlphaHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     */
     public static void renameGlycineAlphaHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HA2 = (Atom) residue.getAtomNode("HA2");
         Atom HA3 = (Atom) residue.getAtomNode("HA3");
@@ -1349,10 +1769,25 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameHydrogenType.</p>
+     *
+     * @param residue      a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms     a {@link java.util.List} object.
+     * @param indices      a int.
+     * @param hydrogenType a {@link java.lang.String} object.
+     */
     public static void renameHydrogenType(Residue residue, List<Atom> resAtoms, int indices, String hydrogenType) {
         // Planned to replace rename<Beta/Gamma/...>Hydrogens methods.
     }
 
+    /**
+     * <p>renameBetaHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     * @param indexes  a int.
+     */
     public static void renameBetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HBn = new Atom[3];
         switch (indexes) {
@@ -1390,6 +1825,13 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameGammaHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     * @param indexes  a int.
+     */
     public static void renameGammaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HGn = new Atom[3];
         switch (indexes) {
@@ -1427,6 +1869,13 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameDeltaHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     * @param indexes  a int.
+     */
     public static void renameDeltaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HDn = new Atom[3];
         switch (indexes) {
@@ -1464,6 +1913,13 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameEpsilonHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     * @param indexes  a int.
+     */
     public static void renameEpsilonHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HEn = new Atom[3];
         switch (indexes) {
@@ -1501,6 +1957,13 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameZetaHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     * @param indexes  a int.
+     */
     public static void renameZetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
         Atom[] HZn = new Atom[3];
         switch (indexes) {
@@ -1538,6 +2001,12 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameIsoleucineHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     */
     public static void renameIsoleucineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HG12 = (Atom) residue.getAtomNode("HG12");
         Atom HG13 = (Atom) residue.getAtomNode("HG13");
@@ -1556,6 +2025,12 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameAsparagineHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     */
     public static void renameAsparagineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HD21 = (Atom) residue.getAtomNode("HD21");
         Atom HD22 = (Atom) residue.getAtomNode("HD22");
@@ -1574,6 +2049,12 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameGlutamineHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     */
     public static void renameGlutamineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HE21 = (Atom) residue.getAtomNode("HE21");
         Atom HE22 = (Atom) residue.getAtomNode("HE22");
@@ -1592,6 +2073,12 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameArginineHydrogens.</p>
+     *
+     * @param residue  a {@link ffx.potential.bonded.Residue} object.
+     * @param resAtoms a {@link java.util.List} object.
+     */
     public static void renameArginineHydrogens(Residue residue, List<Atom> resAtoms) {
         Atom HH11 = (Atom) residue.getAtomNode("HH11");
         Atom HH12 = (Atom) residue.getAtomNode("HH12");
@@ -1627,6 +2114,11 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * <p>renameNTerminusHydrogens.</p>
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     */
     public static void renameNTerminusHydrogens(Residue residue) {
         Atom[] h = new Atom[3];
         h[0] = (Atom) residue.getAtomNode("H1");
@@ -1675,14 +2167,14 @@ public class AminoAcidUtils {
      * Check for missing heavy atoms. This check ignores special terminating
      * groups like FOR, NH2, etc.
      *
-     * @param aminoAcidNumber
-     * @param aminoAcid
-     * @param position
-     * @param residue
-     * @throws MissingHeavyAtomException
+     * @param aminoAcidNumber a int.
+     * @param aminoAcid       a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+     * @param position        a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
+     * @param residue         a {@link ffx.potential.bonded.Residue} object.
+     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     public static void checkForMissingHeavyAtoms(int aminoAcidNumber, AminoAcid3 aminoAcid,
-            ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
+                                                 ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
         int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
         if (aminoAcid != AminoAcid3.GLY && expected >= 4) {
             int actual = 0;
@@ -1727,30 +2219,102 @@ public class AminoAcidUtils {
         }
     }
 
+    /**
+     * Constant <code>nCapBackboneAtoms</code>
+     */
     public static final String nCapBackboneAtoms[] = {"N", "H1", "H2", "H3", "CA", "HA", "C", "O"};
+    /**
+     * Constant <code>backboneAtoms</code>
+     */
     public static final String backboneAtoms[] = {"N", "H", "CA", "HA", "C", "O"};
+    /**
+     * Constant <code>glycineBackboneAtoms</code>
+     */
     public static final String glycineBackboneAtoms[] = {"N", "H", "CA", "HA2", "HA3", "C", "O"};
+    /**
+     * Constant <code>prolineBackboneAtoms</code>
+     */
     public static final String prolineBackboneAtoms[] = {"N", "CA", "HA", "C", "O"};
 
+    /**
+     * Constant <code>alanineAtoms</code>
+     */
     public static final String alanineAtoms[] = {"CB", "HB1", "HB2", "HB3"};
+    /**
+     * Constant <code>glycineAtoms</code>
+     */
     public static final String glycineAtoms[] = {"HA2"};
+    /**
+     * Constant <code>valineAtoms</code>
+     */
     public static final String valineAtoms[] = {"CB", "HB", "CG1", "HG11", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23"};
+    /**
+     * Constant <code>leucineAtoms</code>
+     */
     public static final String leucineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG", "CD1", "HD11", "HD12", "HD13", "CD2", "HD21", "HD22", "HD23"};
+    /**
+     * Constant <code>isoleucineAtoms</code>
+     */
     public static final String isoleucineAtoms[] = {"CB", "HB", "CG1", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23", "CD1", "HD11", "HD12", "HD13"};
+    /**
+     * Constant <code>serineAtoms</code>
+     */
     public static final String serineAtoms[] = {"CB", "HB2", "HB3", "OG", "HG"};
+    /**
+     * Constant <code>threonineAtoms</code>
+     */
     public static final String threonineAtoms[] = {"CB", "HB", "OG1", "HG1", "CG2", "HG21", "HG22", "HG23"};
+    /**
+     * Constant <code>cysteineAtoms</code>
+     */
     public static final String cysteineAtoms[] = {"CB", "HB2", "HB3", "SG", "HG"};
+    /**
+     * Constant <code>prolineAtoms</code>
+     */
     public static final String prolineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3"};
+    /**
+     * Constant <code>phenylalanineAtoms</code>
+     */
     public static final String phenylalanineAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "HZ"};
+    /**
+     * Constant <code>tyrosineAtoms</code>
+     */
     public static final String tyrosineAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "OH", "HH"};
+    /**
+     * Constant <code>tryptophanAtoms</code>
+     */
     public static final String tryptophanAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "NE1", "HE1", "CE2", "CE3", "HE3", "CZ2", "HZ2", "CZ3", "HZ3", "CH2", "HH2"};
+    /**
+     * Constant <code>histidineAtoms</code>
+     */
     public static final String histidineAtoms[] = {"CB", "HB2", "HB3", "CG", "ND1", "HD1", "CD2", "HD2", "CE1", "HE1", "NE2", "HE2"};
+    /**
+     * Constant <code>aspartateAtoms</code>
+     */
     public static final String aspartateAtoms[] = {"CB", "HB2", "HB3", "CG", "OD1", "OD2"};
+    /**
+     * Constant <code>asparagineAtoms</code>
+     */
     public static final String asparagineAtoms[] = {"CB", "HB2", "HB3", "CG", "OD1", "ND2", "HD21", "HD22"};
+    /**
+     * Constant <code>glutamateAtoms</code>
+     */
     public static final String glutamateAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "OE2"};
+    /**
+     * Constant <code>glutamineAtoms</code>
+     */
     public static final String glutamineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "NE2", "HE21", "HE22"};
+    /**
+     * Constant <code>methionineAtoms</code>
+     */
     public static final String methionineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "SD", "CE", "HE1", "HE2", "HE3"};
+    /**
+     * Constant <code>lysineAtoms</code>
+     */
     public static final String lysineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "CE", "HE2", "HE3", "NZ", "HZ1", "HZ2", "HZ3"};
+    /**
+     * Constant <code>arginineAtoms</code>
+     */
     public static final String arginineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "NE", "HE", "CZ", "NH1", "HH11", "HH12", "NH2", "HH21", "HH22"};
 
     /**
@@ -1764,136 +2328,154 @@ public class AminoAcidUtils {
      * xType[2][..] are for C-terminal residues.
      */
     public static final int[][] AA_N = {
-        {
-            403, 409, 415, 421, 427, 433, 439, 445,
-            451, 457, 463, 471, 477, 483, 489, 495,
-            501, 507, 513, 519, 525, 531, 537, 543,
-            549, 555, 561, 567, 573, 579, 391, 762,
-            0, 0, 0, 0, 0, 403
-        }, {
+            {
+                    403, 409, 415, 421, 427, 433, 439, 445,
+                    451, 457, 463, 471, 477, 483, 489, 495,
+                    501, 507, 513, 519, 525, 531, 537, 543,
+                    549, 555, 561, 567, 573, 579, 391, 762,
+                    0, 0, 0, 0, 0, 403
+            }, {
             1, 7, 15, 27, 41, 55, 65, 77,
             87, 96, 105, 116, 131, 147, 162, 185,
             202, 218, 234, 244, 256, 268, 280, 294,
             308, 321, 337, 353, 370, 384, 391, 0,
             0, 0, 0, 0, 0, 1
-        }, {
+    }, {
             584, 590, 596, 602, 608, 614, 620, 626,
             632, 638, 644, 649, 655, 661, 667, 673,
             679, 685, 691, 697, 703, 709, 715, 721,
             727, 733, 739, 745, 751, 757, 0, 0,
             0, 0, 773, 775, 777, 584
-        }
+    }
     };
+    /**
+     * Constant <code>AA_CA</code>
+     */
     public static final int[][] AA_CA = {
-        {
-            404, 410, 416, 422, 428, 434, 440, 446,
-            452, 458, 464, 472, 478, 484, 490, 496,
-            502, 508, 514, 520, 526, 532, 538, 544,
-            550, 556, 562, 568, 574, 580, 392, 0,
-            0, 767, 0, 0, 0, 404
-        }, {
+            {
+                    404, 410, 416, 422, 428, 434, 440, 446,
+                    452, 458, 464, 472, 478, 484, 490, 496,
+                    502, 508, 514, 520, 526, 532, 538, 544,
+                    550, 556, 562, 568, 574, 580, 392, 0,
+                    0, 767, 0, 0, 0, 404
+            }, {
             2, 8, 16, 28, 42, 56, 66, 78,
             88, 97, 106, 117, 132, 148, 163, 186,
             203, 219, 235, 245, 257, 269, 281, 295,
             309, 322, 338, 354, 371, 385, 392, 0,
             0, 0, 0, 0, 0, 2
-        }, {
+    }, {
             585, 591, 597, 603, 609, 615, 621, 627,
             633, 639, 645, 650, 656, 662, 668, 674,
             680, 686, 692, 698, 704, 710, 716, 722,
             728, 734, 740, 746, 752, 758, 0, 0,
             0, 0, 0, 0, 779, 585
-        }
+    }
     };
+    /**
+     * Constant <code>AA_C</code>
+     */
     public static final int[][] AA_C = {
-        {
-            405, 411, 417, 423, 429, 435, 441, 447,
-            453, 459, 465, 473, 479, 485, 491, 497,
-            503, 509, 515, 521, 527, 533, 539, 545,
-            551, 557, 563, 569, 575, 581, 393, 0,
-            764, 769, 0, 0, 0, 405
-        }, {
+            {
+                    405, 411, 417, 423, 429, 435, 441, 447,
+                    453, 459, 465, 473, 479, 485, 491, 497,
+                    503, 509, 515, 521, 527, 533, 539, 545,
+                    551, 557, 563, 569, 575, 581, 393, 0,
+                    764, 769, 0, 0, 0, 405
+            }, {
             3, 9, 17, 29, 43, 57, 67, 79,
             89, 98, 107, 118, 133, 149, 164, 187,
             204, 220, 236, 246, 258, 270, 282, 296,
             310, 323, 339, 355, 372, 386, 393, 0,
             0, 0, 0, 0, 0, 3
-        }, {
+    }, {
             586, 592, 598, 604, 610, 616, 622, 628,
             634, 640, 646, 651, 657, 663, 669, 675,
             681, 687, 693, 699, 705, 711, 717, 723,
             729, 735, 741, 747, 753, 759, 0, 0,
             0, 0, 771, 0, 0, 586
-        }
+    }
     };
+    /**
+     * Constant <code>AA_HN</code>
+     */
     public static final int[][] AA_HN = {
-        {
-            406, 412, 418, 424, 430, 436, 442, 448,
-            454, 460, 466, 474, 480, 486, 492, 498,
-            504, 510, 516, 522, 528, 534, 540, 546,
-            552, 558, 564, 570, 576, 582, 394, 763,
-            0, 0, 0, 0, 0, 406
-        }, {
+            {
+                    406, 412, 418, 424, 430, 436, 442, 448,
+                    454, 460, 466, 474, 480, 486, 492, 498,
+                    504, 510, 516, 522, 528, 534, 540, 546,
+                    552, 558, 564, 570, 576, 582, 394, 763,
+                    0, 0, 0, 0, 0, 406
+            }, {
             4, 10, 18, 30, 44, 58, 68, 80,
             90, 99, 0, 119, 134, 150, 165, 188,
             205, 221, 237, 247, 259, 271, 283, 297,
             311, 324, 340, 356, 373, 387, 394, 0,
             0, 0, 0, 0, 0, 4
-        }, {
+    }, {
             587, 593, 599, 605, 611, 617, 623, 629,
             635, 641, 0, 652, 658, 664, 670, 676,
             682, 688, 694, 700, 706, 712, 718, 724,
             730, 736, 742, 748, 754, 760, 0, 0,
             0, 0, 774, 776, 778, 587}
     };
+    /**
+     * Constant <code>AA_O</code>
+     */
     public static final int[][] AA_O = {
-        {
-            407, 413, 419, 425, 431, 437, 443, 449,
-            455, 461, 467, 475, 481, 487, 493, 499,
-            505, 511, 517, 523, 529, 535, 541, 547,
-            553, 559, 565, 571, 577, 583, 395, 0,
-            766, 770, 0, 0, 0, 407
-        }, {
+            {
+                    407, 413, 419, 425, 431, 437, 443, 449,
+                    455, 461, 467, 475, 481, 487, 493, 499,
+                    505, 511, 517, 523, 529, 535, 541, 547,
+                    553, 559, 565, 571, 577, 583, 395, 0,
+                    766, 770, 0, 0, 0, 407
+            }, {
             5, 11, 19, 31, 45, 59, 69, 81,
             91, 100, 108, 120, 135, 151, 166, 189,
             206, 222, 238, 248, 260, 272, 284, 298,
             312, 325, 341, 357, 374, 388, 395, 0,
             0, 0, 0, 0, 0, 5
-        }, {
+    }, {
             588, 594, 600, 606, 612, 618, 624, 630,
             636, 642, 647, 653, 659, 665, 671, 677,
             683, 689, 695, 701, 707, 713, 719, 725,
             731, 737, 743, 749, 755, 761, 0, 0,
             0, 0, 772, 0, 0, 588
-        }
+    }
     };
+    /**
+     * Constant <code>AA_HA</code>
+     */
     public static final int[][] AA_HA = {
-        {
-            408, 414, 420, 426, 432, 438, 444, 450,
-            456, 462, 468, 476, 482, 488, 494, 500,
-            506, 512, 518, 524, 530, 536, 542, 548,
-            554, 560, 566, 572, 578, 0, 396, 0,
-            765, 768, 0, 0, 0, 408},
-        {
-            6, 12, 20, 32, 46, 60, 70, 82,
-            92, 101, 109, 121, 136, 152, 167, 190,
-            207, 223, 239, 249, 261, 273, 285, 299,
-            313, 326, 342, 358, 375, 0, 396, 0,
-            0, 0, 0, 0, 0, 6},
-        {
-            589, 595, 601, 607, 613, 619, 625, 631,
-            637, 643, 648, 654, 660, 666, 672, 678,
-            684, 690, 696, 702, 708, 714, 720, 726,
-            732, 738, 744, 750, 756, 0, 0, 0,
-            0, 0, 0, 0, 780, 589
-        }
+            {
+                    408, 414, 420, 426, 432, 438, 444, 450,
+                    456, 462, 468, 476, 482, 488, 494, 500,
+                    506, 512, 518, 524, 530, 536, 542, 548,
+                    554, 560, 566, 572, 578, 0, 396, 0,
+                    765, 768, 0, 0, 0, 408},
+            {
+                    6, 12, 20, 32, 46, 60, 70, 82,
+                    92, 101, 109, 121, 136, 152, 167, 190,
+                    207, 223, 239, 249, 261, 273, 285, 299,
+                    313, 326, 342, 358, 375, 0, 396, 0,
+                    0, 0, 0, 0, 0, 6},
+            {
+                    589, 595, 601, 607, 613, 619, 625, 631,
+                    637, 643, 648, 654, 660, 666, 672, 678,
+                    684, 690, 696, 702, 708, 714, 720, 726,
+                    732, 738, 744, 750, 756, 0, 0, 0,
+                    0, 0, 0, 0, 780, 589
+            }
     };
+    /**
+     * Constant <code>AA_CB</code>
+     */
     public static final int[] AA_CB = {
-        0, 13, 21, 33, 47, 61, 71, 83,
-        93, 102, 110, 122, 137, 153, 168, 191,
-        208, 224, 240, 250, 262, 274, 286, 300,
-        314, 327, 343, 359, 376, 389, 397, 0,
-        0, 0, 0, 0, 0, 0
+            0, 13, 21, 33, 47, 61, 71, 83,
+            93, 102, 110, 122, 137, 153, 168, 191,
+            208, 224, 240, 250, 262, 274, 286, 300,
+            314, 327, 343, 359, 376, 389, 397, 0,
+            0, 0, 0, 0, 0, 0
     };
 
 }

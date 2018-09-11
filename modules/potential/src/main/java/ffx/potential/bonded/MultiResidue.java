@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -62,6 +62,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  *
  * @author Will Tollefson
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class MultiResidue extends Residue {
 
@@ -86,9 +87,17 @@ public class MultiResidue extends Residue {
     ForceFieldEnergy forceFieldEnergy;
     private Rotamer[] rotamers;
     private Rotamer originalRotamer;
-	
-	private final static boolean automaticReinitialization = prop("mr-autoReinit", true);
 
+    private final static boolean automaticReinitialization = prop("mr-autoReinit", true);
+
+    /**
+     * <p>Constructor for MultiResidue.</p>
+     *
+     * @param residue          a {@link ffx.potential.bonded.Residue} object.
+     * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
+     * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
+     */
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType,
                 residue.getChainID(), residue.getChainID().toString());
@@ -102,6 +111,9 @@ public class MultiResidue extends Residue {
         removeLeaves();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode addMSNode(MSNode o) {
         if (o instanceof Residue) {
@@ -112,95 +124,154 @@ public class MultiResidue extends Residue {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void assignBondedTerms(ForceField forceField) {
         activeResidue.assignBondedTerms(forceField);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void constructValenceTerms() {
         activeResidue.constructValenceTerms();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2, ForceField forceField) {
         return activeResidue.createJoint(bond, group1, group2, forceField);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Joint createJoint(MSGroup group1, MSGroup group2, ForceField forceField) {
         return activeResidue.createJoint(group1, group2, forceField);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finalize(boolean finalizeGeometry, ForceField forceField) {
         activeResidue.finalize(finalizeGeometry, forceField);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void findDangelingAtoms() {
         activeResidue.findDangelingAtoms();
     }
 
+    /**
+     * <p>getActive.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public Residue getActive() {
         return activeResidue;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode getAngles() {
         return activeResidue.getAngles();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode getAtomNode() {
         return activeResidue.getAtomNode();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode getAtomNode(int index) {
         return activeResidue.getAtomNode(index);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode getAtomNode(String n) {
         return activeResidue.getAtomNode(n);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<MSNode> getAtomNodeList() {
         return activeResidue.getAtomNodeList();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Bond getBond(String id) {
         return activeResidue.getBond(id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Bond getBond(int index) {
         return activeResidue.getBond(index);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode getBonds() {
         return activeResidue.getBonds();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCenter() {
         return activeResidue.getCenter();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList getDangelingAtoms() {
         return activeResidue.getDangelingAtoms();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMultiScaleCenter(boolean w) {
         return activeResidue.getMultiScaleCenter(w);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getName() {
         if (activeResidue != null) {
@@ -209,118 +280,187 @@ public class MultiResidue extends Residue {
         return super.getName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode getTermNode() {
         return activeResidue.getTermNode();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode getTorsions() {
         return activeResidue.getTorsions();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isFinalized() {
         return activeResidue.isFinalized();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void reOrderAtoms() {
         activeResidue.reOrderAtoms();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAngles(MSNode t) {
         activeResidue.setAngles(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAtomNode(MSNode t) {
         activeResidue.setAtomNode(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setBonds(MSNode t) {
         activeResidue.setBonds(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCenter(double[] d) {
         activeResidue.setCenter(d);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         activeResidue.setColor(newColorModel, color, mat);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setDangelingAtoms(ArrayList<Atom> a) {
         activeResidue.setDangelingAtoms(a);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setFinalized(boolean t) {
         activeResidue.setFinalized(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setOutOfPlaneBends(MSNode t) {
         activeResidue.setOutOfPlaneBends(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPiOrbitalTorsions(MSNode t) {
         activeResidue.setPiOrbitalTorsions(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setStretchBends(MSNode t) {
         activeResidue.setStretchBends(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setTerms(MSNode t) {
         activeResidue.setTerms(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setTorsions(MSNode t) {
         activeResidue.setTorsions(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setTorsionTorsions(MSNode t) {
         activeResidue.setTorsionTorsions(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setUreyBradleys(MSNode t) {
         activeResidue.setUreyBradleys(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         activeResidue.setView(newViewModel, newShapes);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update() {
         activeResidue.update();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void updateAtoms() {
         activeResidue.updateAtoms();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void updateBonds() {
         activeResidue.updateBonds();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Rotamer[] getRotamers(RotamerLibrary library) {
         if (rotamers != null) {
@@ -398,9 +538,9 @@ public class MultiResidue extends Residue {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Publicly accessible method for storing a MultiResidue state.
-     *
-     * @return A ResidueState.
      */
     @Override
     public ResidueState storeState() {
@@ -418,6 +558,9 @@ public class MultiResidue extends Residue {
         return new ResidueState(this, activeResidue);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void revertState(ResidueState state) {
         revertState(state, true);
@@ -427,7 +570,7 @@ public class MultiResidue extends Residue {
         Residue res = state.getStateResidue();
         if (!setActiveResidue(res)) {
             throw new IllegalArgumentException(String.format(" Could not revert "
-                    + "multi-residue %s to residue identity %s", this.toString(),
+                            + "multi-residue %s to residue identity %s", this.toString(),
                     state.getStateResidue().toString()));
         }
         for (Atom atom : getAtomList()) {
@@ -547,7 +690,7 @@ public class MultiResidue extends Residue {
      * @param residue
      */
     private void updateGeometry(Residue residue, Residue prev, Residue next,
-            Residue prev2, Residue next2) {
+                                Residue prev2, Residue next2) {
         if (residue == null) {
             return;
         }
@@ -622,6 +765,11 @@ public class MultiResidue extends Residue {
         }
     }
 
+    /**
+     * <p>addResiduesByName.</p>
+     *
+     * @param resNames a {@link java.util.List} object.
+     */
     public void addResiduesByName(List<String> resNames) {
         boolean resAdded = false;
         Residue currentRes = activeResidue;
@@ -634,22 +782,32 @@ public class MultiResidue extends Residue {
                 resAdded = true;
             } catch (IllegalArgumentException e) {
                 logger.warning(String.format(" Could not parse %s as an amino "
-                        + "acid; not adding to multi-residue %s", resName,
+                                + "acid; not adding to multi-residue %s", resName,
                         this.toString()));
             }
         }
         if (resAdded) {
             setActiveResidue(currentRes);
-			if (automaticReinitialization) {
-				forceFieldEnergy.reInit();
-			}
+            if (automaticReinitialization) {
+                forceFieldEnergy.reInit();
+            }
         }
     }
 
+    /**
+     * <p>addLinkedMultiRes.</p>
+     *
+     * @param mres a {@link ffx.potential.bonded.MultiResidue} object.
+     */
     public void addLinkedMultiRes(MultiResidue mres) {
         linkedMultiRes.add(mres);
     }
 
+    /**
+     * <p>addResidue.</p>
+     *
+     * @param newResidue a {@link ffx.potential.bonded.Residue} object.
+     */
     public void addResidue(Residue newResidue) {
         addResidue(newResidue, true);
     }
@@ -754,8 +912,9 @@ public class MultiResidue extends Residue {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns the AminoAcid3 of the active residue.
-     * @return
      */
     @Override
     public AminoAcid3 getAminoAcid3() {
@@ -765,8 +924,7 @@ public class MultiResidue extends Residue {
     /**
      * Request the passed amino acid be set as the active residue.
      *
-     * @param aa
-     *
+     * @param aa a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
      * @return true if the request is satisfied.
      */
     public boolean requestSetActiveResidue(AminoAcid3 aa) {
@@ -785,8 +943,7 @@ public class MultiResidue extends Residue {
     /**
      * Request the ith residue be set active.
      *
-     * @param i
-     *
+     * @param i a int.
      * @return true if the ith residue was set active, false otherwise.
      */
     public boolean setActiveResidue(int i) {
@@ -799,6 +956,12 @@ public class MultiResidue extends Residue {
         return setActiveResidue(consideredResidues.get(i));
     }
 
+    /**
+     * <p>Setter for the field <code>activeResidue</code>.</p>
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     * @return a boolean.
+     */
     public boolean setActiveResidue(Residue residue) {
         return setActiveResidue(residue, true);
     }
@@ -807,7 +970,6 @@ public class MultiResidue extends Residue {
      * Request the passed residue be set active.
      *
      * @param residue
-     *
      * @return true if the passed residue is now active.
      */
     private boolean setActiveResidue(Residue residue, boolean isFirst) {
@@ -838,10 +1000,10 @@ public class MultiResidue extends Residue {
         activeResidue = residue;
         setName(activeResidue.getName());
         add(activeResidue);
-		
-		if (automaticReinitialization) {
-			forceFieldEnergy.reInit();
-		}
+
+        if (automaticReinitialization) {
+            forceFieldEnergy.reInit();
+        }
         if (isFirst) {
             for (MultiResidue mres : linkedMultiRes) {
                 if (!mres.setActiveResidue(residue.getAminoAcid3(), false)) {
@@ -851,11 +1013,12 @@ public class MultiResidue extends Residue {
         }
         return true;
     }
+
     /**
      * Method may be redundant with requestSetActiveResidue. Will not function
      * correctly if there is more than one residue of type UNK (unknown).
      *
-     * @param aa
+     * @param aa a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
      * @return True if successful
      */
     public boolean setActiveResidue(AminoAcid3 aa) {
@@ -876,6 +1039,11 @@ public class MultiResidue extends Residue {
         return setActiveResidue(residue, isFirst);
     }
 
+    /**
+     * <p>getResidueCount.</p>
+     *
+     * @return a int.
+     */
     public int getResidueCount() {
         if (consideredResidues == null) {
             return 0;
@@ -883,15 +1051,18 @@ public class MultiResidue extends Residue {
         return consideredResidues.size();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<Atom> getSideChainAtoms() {
         return activeResidue.getSideChainAtoms();
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns all atoms (all atoms are variable during DEE).
-     *
-     * @return All atoms.
      */
     @Override
     public List<Atom> getVariableAtoms() {
@@ -900,13 +1071,10 @@ public class MultiResidue extends Residue {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden equals method that return true if object is not equals to this,
      * is of the same class, has the same parent Polymer, the same sequence
      * number, the same ResidueType, and the same AA3/NA3.
-     *
-     * @param object
-     * @return Object equality
      */
     @Override
     public boolean equals(Object object) {
@@ -927,6 +1095,9 @@ public class MultiResidue extends Residue {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = hash(SEED, getParent().hashCode());
@@ -936,6 +1107,9 @@ public class MultiResidue extends Residue {
         return hash(hash, getResidueNumber());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         int resNum = consideredResidues.get(0).getResidueNumber();

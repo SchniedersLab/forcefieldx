@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -64,6 +64,8 @@ import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
 import org.biojava.bio.structure.io.PDBFileReader;
 
 /**
+ * <p>ClusterStructures class.</p>
+ *
  * @author Jacob M. Litman
  */
 public class ClusterStructures {
@@ -115,39 +117,84 @@ public class ClusterStructures {
         nFiles = files.length;
     }
 
+    /**
+     * <p>Setter for the field <code>files</code>.</p>
+     *
+     * @param files an array of {@link java.io.File} objects.
+     */
     public void setFiles(File[] files) {
         this.files = files;
         nFiles = files.length;
     }
 
+    /**
+     * <p>Setter for the field <code>numClusters</code>.</p>
+     *
+     * @param numClusters a int.
+     */
     public void setNumClusters(int numClusters) {
         this.numClusters = numClusters;
     }
 
+    /**
+     * <p>setDistanceFunction.</p>
+     *
+     * @param distFunction a {@link ffx.algorithms.ClusterStructures.ClusterDistanceFunction} object.
+     */
     public void setDistanceFunction(ClusterDistanceFunction distFunction) {
         this.distFunction = distFunction;
     }
 
+    /**
+     * <p>Setter for the field <code>algorithm</code>.</p>
+     *
+     * @param algorithm a {@link ffx.algorithms.ClusterStructures.ClustAlg} object.
+     */
     public void setAlgorithm(ClustAlg algorithm) {
         this.algorithm = algorithm;
     }
 
+    /**
+     * <p>setOutputDirectoryPrefix.</p>
+     *
+     * @param prefix a {@link java.lang.String} object.
+     */
     public void setOutputDirectoryPrefix(String prefix) {
         this.outputPrefix = prefix;
     }
 
+    /**
+     * <p>Setter for the field <code>copyFiles</code>.</p>
+     *
+     * @param copyFiles a boolean.
+     */
     public void setCopyFiles(boolean copyFiles) {
         this.copyFiles = copyFiles;
     }
 
+    /**
+     * <p>setClusterParallel.</p>
+     *
+     * @param parallel a boolean.
+     */
     public void setClusterParallel(boolean parallel) {
         this.parallel = parallel;
     }
 
+    /**
+     * <p>Setter for the field <code>cacheSize</code>.</p>
+     *
+     * @param cacheSize a int.
+     */
     public void setCacheSize(int cacheSize) {
         this.cacheSize = cacheSize;
     }
 
+    /**
+     * <p>Setter for the field <code>rmsdCutoff</code>.</p>
+     *
+     * @param rmsdCutoff a double.
+     */
     public void setRmsdCutoff(double rmsdCutoff) {
         this.rmsdCutoff = rmsdCutoff;
     }
@@ -189,7 +236,7 @@ public class ClusterStructures {
      * Gets the specified structure, either from the array of stored Structures,
      * or by reading from disk (depending on array size).
      *
-     * @param index Structure index
+     * @param index  Structure index
      * @param reader PDB file reader to use
      * @return the corresponding Structure
      * @throws IOException If the PDBFileReader encounters an error
@@ -403,7 +450,6 @@ public class ClusterStructures {
      *
      * @param cluster
      * @param cutoff
-     *
      * @return A List of Cluster instances.
      */
     private List<Cluster> getSubclusters(Cluster cluster, double cutoff) {
@@ -470,7 +516,7 @@ public class ClusterStructures {
          * clusters. AV_LINK (average link) is the UPGMA (Unweighted Pair Group
          * Method with Arithmetic Mean) function, which takes the mean distance
          * between points in a cluster.
-         *
+         * <p>
          * Makes me wonder if there's a WPGMA algorithm which does weight one
          * way or the other, or perhaps a RPGMA RMSD-like algorithm.
          */

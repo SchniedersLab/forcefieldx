@@ -37,14 +37,14 @@
  */
 package ffx.potential.cli;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.BaseScript;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Base class for scripts in the Potentials package, providing some key functions.
@@ -65,9 +65,9 @@ public class PotentialScript extends BaseScript {
     public MolecularAssembly activeAssembly;
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Execute the BaseScript init method, then load potential functions.
-     *
-     * @return Returns true if the script should continue.
      */
     @Override
     public boolean init() {

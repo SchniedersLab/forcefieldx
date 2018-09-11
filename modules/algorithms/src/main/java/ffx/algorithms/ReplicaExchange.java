@@ -103,9 +103,9 @@ public class ReplicaExchange implements Terminatable {
     /**
      * ReplicaExchange constructor.
      *
-     * @param molecularDynamics
-     * @param listener
-     * @param temperature
+     * @param molecularDynamics a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param listener          a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param temperature       a double.
      */
     public ReplicaExchange(MolecularDynamics molecularDynamics,
                            AlgorithmListener listener, double temperature) {
@@ -148,11 +148,22 @@ public class ReplicaExchange implements Terminatable {
         myParametersBuf = parametersBuf[rank];
     }
 
+    /**
+     * <p>Setter for the field <code>temperatures</code>.</p>
+     *
+     * @param temperatures an array of {@link double} objects.
+     */
     public void setTemperatures(double temperatures[]) {
         assert (temperatures.length == nReplicas);
         this.temperatures = temperatures;
     }
 
+    /**
+     * <p>setExponentialTemperatureLadder.</p>
+     *
+     * @param lowTemperature a double.
+     * @param exponent       a double.
+     */
     public void setExponentialTemperatureLadder(double lowTemperature, double exponent) {
         for (int i = 0; i < nReplicas; i++) {
             temperatures[i] = lowTemperature * exp(exponent * i);
@@ -161,6 +172,15 @@ public class ReplicaExchange implements Terminatable {
         }
     }
 
+    /**
+     * <p>sample.</p>
+     *
+     * @param cycles        a int.
+     * @param nSteps        a int.
+     * @param timeStep      a double.
+     * @param printInterval a double.
+     * @param saveInterval  a double.
+     */
     public void sample(int cycles, int nSteps, double timeStep, double printInterval, double saveInterval) {
         done = false;
         terminate = false;
@@ -186,7 +206,7 @@ public class ReplicaExchange implements Terminatable {
         for (int i = 0; i < nReplicas - 1; i++) {
 
             int i1 = temp2Rank[i];
-            int i2 = temp2Rank[i+1];
+            int i2 = temp2Rank[i + 1];
 
             double tempA = parameters[i1][0];
             double tempB = parameters[i2][0];
@@ -219,7 +239,7 @@ public class ReplicaExchange implements Terminatable {
                  * Map temperatures to process ranks.
                  */
                 temp2Rank[i] = i2;
-                temp2Rank[i+1] = i1;
+                temp2Rank[i + 1] = i1;
 
                 /**
                  * Map ranks to temperatures.
@@ -276,6 +296,8 @@ public class ReplicaExchange implements Terminatable {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * This should be implemented as a blocking interrupt; when the method
      * returns the <code>Terminatable</code> algorithm has reached a clean
      * termination point. For example, between minimize or molecular dynamics

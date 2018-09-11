@@ -1,6 +1,5 @@
 package ffx.xray.groovy
 
-import ffx.numerics.Potential
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -9,14 +8,15 @@ import edu.rit.pj.Comm
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
-import ffx.xray.RefinementMinimize.RefinementMode
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin

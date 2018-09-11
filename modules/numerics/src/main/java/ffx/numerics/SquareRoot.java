@@ -59,7 +59,6 @@ import static java.lang.Float.intBitsToFloat;
  *
  * @author Michael J. Schnieders
  * @author Ported to Java from the GROMACS code in cinvsqrtdata.c
- *
  * @since 1.0
  */
 public class SquareRoot {
@@ -144,6 +143,11 @@ public class SquareRoot {
         return ((val) & (0x007fffff | 0x00800000)) >> 12;
     }
 
+    /**
+     * <p>main.</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String[] args) {
         for (int j = 0; j < 10; j++) {
             Random random = new Random(1);

@@ -105,27 +105,27 @@ PhMD.Distribution distribution = PhMD.Distribution.DISCRETE;
 
 // Create the command line parser.
 // Holy mother of god.
-def cli = new CliBuilder(usage:' ffxc test.phMD [options] <filename>');
-cli.h(longOpt:'help', 'Print this message.');
-cli.d(longOpt:'distribution', args:1, argName:'Discrete', 'Distribution: [DISCRETE / CONTINUOUS]');
-cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
-cli.dt(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
-cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
-cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
-cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
-cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
-cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
-cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
-cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.ra(longOpt:'resAll', 'Titrate all residues.');
-cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
-cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
-cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
-cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
-cli.mc(longOpt:'mc-frequency', args:1, argName:'10', '[DISCRETE only] Number of MD steps between Monte-Carlo attempts.')
-cli.nomd(longOpt:'no-dynamics', 'Testing; no movement.');
-cli.noref(longOpt:'no-references', 'Testing; zero out reference energies.')
+def cli = new CliBuilder(usage: ' ffxc test.phMD [options] <filename>');
+cli.h(longOpt: 'help', 'Print this message.');
+cli.d(longOpt: 'distribution', args: 1, argName: 'Discrete', 'Distribution: [DISCRETE / CONTINUOUS]');
+cli.b(longOpt: 'thermostat', args: 1, argName: 'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+cli.dt(longOpt: 'dt', args: 1, argName: '1.0', 'Time discretization (fsec).');
+cli.i(longOpt: 'integrate', args: 1, argName: 'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
+cli.l(longOpt: 'log', args: 1, argName: '0.01', 'Interval to log thermodyanamics (psec).');
+cli.n(longOpt: 'steps', args: 1, argName: '1000000', 'Number of molecular dynamics steps.');
+cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual', 'Polarization: [None / Direct / Mutual]');
+cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
+cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
+cli.s(longOpt: 'restart', args: 1, argName: '0.1', 'Interval to write out restart file (psec).');
+cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [PDB/XYZ]');
+cli.ra(longOpt: 'resAll', 'Titrate all residues.');
+cli.rl(longOpt: 'resList', args: 1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
+cli.rn(longOpt: 'resName', args: 1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
+cli.rw(longOpt: 'resWindow', args: 1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
+cli.pH(longOpt: 'pH', args: 1, argName: '7.4', 'Constant simulation pH.');
+cli.mc(longOpt: 'mc-frequency', args: 1, argName: '10', '[DISCRETE only] Number of MD steps between Monte-Carlo attempts.')
+cli.nomd(longOpt: 'no-dynamics', 'Testing; no movement.');
+cli.noref(longOpt: 'no-references', 'Testing; zero out reference energies.')
 
 // cli.mcr(longOpt:'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
 // cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
@@ -160,7 +160,7 @@ if (options.noref) {
 }
 if (options.tt) {
     titrateTermini = true;
-    System.setProperty("cphmd-termini","true");
+    System.setProperty("cphmd-termini", "true");
 }
 if (options.nomd) {
     dynamics = false;

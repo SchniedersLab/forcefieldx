@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -46,7 +46,6 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.VectorMath.rsq;
@@ -55,6 +54,7 @@ import static ffx.numerics.VectorMath.rsq;
  * Restrain molecules to their center of mass.
  *
  * @author Julia Park
+ *
  */
 public class COMRestraint implements LambdaInterface {
 
@@ -98,7 +98,7 @@ public class COMRestraint implements LambdaInterface {
      * @param forceField the ForceField to apply.
      */
     public COMRestraint(Atom atoms[], Polymer polymers[], List<MSNode> molecules,
-            List<MSNode> waters, List<MSNode> ions, ForceField forceField) {
+                        List<MSNode> waters, List<MSNode> ions, ForceField forceField) {
         this.atoms = atoms;
         nAtoms = atoms.length;
         this.polymers = polymers;
@@ -128,6 +128,13 @@ public class COMRestraint implements LambdaInterface {
         logger.info("\n COM restraint initialized");
     }
 
+    /**
+     * <p>residual.</p>
+     *
+     * @param gradient a boolean.
+     * @param print a boolean.
+     * @return a double.
+     */
     public double residual(boolean gradient, boolean print) {
         if (lambdaTerm) {
             dEdL = 0.0;
@@ -353,6 +360,7 @@ public class COMRestraint implements LambdaInterface {
         return count;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -389,16 +397,23 @@ public class COMRestraint implements LambdaInterface {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>lambdaTerm</code>.</p>
+     *
+     * @param lambdaTerm a boolean.
+     */
     public void setLambdaTerm(boolean lambdaTerm) {
         this.lambdaTerm = lambdaTerm;
         setLambda(lambda);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -408,6 +423,7 @@ public class COMRestraint implements LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         if (lambdaTerm) {
@@ -417,6 +433,7 @@ public class COMRestraint implements LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {

@@ -50,6 +50,11 @@ import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
 
+/**
+ * <p>BaseScript class.</p>
+ *
+ * @author Michael J. Schnieders
+ */
 public class BaseScript extends Script {
 
     /**
@@ -59,7 +64,7 @@ public class BaseScript extends Script {
 
     /**
      * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does not.
-     *
+     * <p>
      * In a headless environment, color will be ON for command line help, but OFF for the GUI.
      */
     public final Ansi color;
@@ -104,9 +109,14 @@ public class BaseScript extends Script {
     public boolean init() {
         context = getBinding();
         args = (String[]) context.getProperty("args");
-        
+
         CommandLine commandLine = new CommandLine(this);
-        parseResult = commandLine.parseArgs(args);
+        try {
+            parseResult = commandLine.parseArgs(args);
+        } catch (CommandLine.UnmatchedArgumentException uae) {
+            logger.warning(" The usual source of this exception is when long-form arguments (such as --uaA) are only preceded by one dash (such as -uaA, which is an error).");
+            throw uae;
+        }
 
         if (help) {
             logger.info(helpString());
@@ -133,6 +143,8 @@ public class BaseScript extends Script {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Execute the script.
      */
     @Override

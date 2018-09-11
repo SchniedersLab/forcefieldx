@@ -49,7 +49,8 @@ import ffx.xray.RefinementModel;
 /**
  * Combine the Real Space target and chemical potential energy.
  *
- * @author Timothy D. Fenn and Michael J. Schnieders
+ * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
@@ -97,12 +98,12 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     /**
      * Diffraction data energy target
      *
-     * @param realSpaceData  {@link RealSpaceData} object to associate with the
+     * @param realSpaceData  {@link ffx.realspace.RealSpaceData} object to associate with the
      *                       target
      * @param nxyz           number of xyz parameters
      * @param nb             number of b factor parameters
      * @param nocc           number of occupancy parameters
-     * @param refinementMode the {@link RefinementMode} type
+     * @param refinementMode the {@link ffx.xray.RefinementMinimize.RefinementMode} type
      *                       of refinement requested
      */
     public RealSpaceEnergy(RealSpaceData realSpaceData, int nxyz, int nb, int nocc,
@@ -443,9 +444,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
@@ -468,17 +469,26 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         return type;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(STATE state
     ) {
         this.state = state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity
     ) {
@@ -497,6 +507,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration
     ) {
@@ -515,6 +528,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration
     ) {
@@ -533,6 +549,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity
     ) {
@@ -553,6 +572,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         return velocity;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration
     ) {
@@ -573,6 +595,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         return acceleration;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration
     ) {
@@ -593,17 +618,26 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         return previousAcceleration;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ffx.crystal.Crystal getCrystal() {
         realSpaceData.getCrystal();
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         logger.severe(" RealSpaceEnergy does implement setCrystal yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         return realSpaceData.destroy();

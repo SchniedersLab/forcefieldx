@@ -39,22 +39,16 @@ package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-import edu.rit.pj.Comm;
-
-import ffx.algorithms.groovy.Dynamics;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.PJDependentTest;
 

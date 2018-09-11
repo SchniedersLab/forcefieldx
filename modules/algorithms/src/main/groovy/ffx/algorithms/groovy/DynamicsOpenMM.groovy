@@ -1,6 +1,5 @@
 package ffx.algorithms.groovy
 
-import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.MolecularDynamics
@@ -9,6 +8,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
@@ -25,7 +25,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
 
     @Mixin
     DynamicsOptions dynamics;
-    
+
     @Mixin
     BarostatOptions barostatOpt;
 
@@ -36,26 +36,26 @@ class DynamicsOpenMM extends AlgorithmsScript {
      * -z or --trajSteps sets the length of the MD trajectory run on the GPU in femtoseconds(defaul is 100 femtoseconds)
      */
     @Option(names = ['-z', '--trajSteps'], paramLabel = '100',
-        description = 'Number of steps for each MD Trajectory in femtoseconds')
+            description = 'Number of steps for each MD Trajectory in femtoseconds')
     int trajSteps = 100
     /**
      * --cf or --coeffOfFriction specifies what the coefficient of friction is to be used with Langevin and Brownian integrators
      */
     @Option(names = ['--cf', '--coeffOfFriction'], paramLabel = '0.01',
-        description = 'Coefficient of friction to be used with the Langevin and Brownian integrators')
+            description = 'Coefficient of friction to be used with the Langevin and Brownian integrators')
     double coeffOfFriction = 0.01
     /**
      * -q or --collisionFreq specifies the frequency for particle collision to be used with the Anderson thermostat
      */
     @Option(names = ['-q', '--collisionFreq'], paramLabel = '91.0',
-        description = 'Collision frequency to be set when Anderson Thermostat is created: Can be used with Verlet integrator')
+            description = 'Collision frequency to be set when Anderson Thermostat is created: Can be used with Verlet integrator')
     double collisionFreq = 91.0
 
     /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files",
-        description = "XYZ or PDB input files.")
+            description = "XYZ or PDB input files.")
     private List<String> filenames
 
     private MolecularDynamicsOpenMM molDynOpenMM;
@@ -89,18 +89,18 @@ class DynamicsOpenMM extends AlgorithmsScript {
 
         ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy();
         switch (forceFieldEnergy.getPlatform()) {
-        case ForceFieldEnergy.Platform.OMM:
-        case ForceFieldEnergy.Platform.OMM_CUDA:
-        case ForceFieldEnergy.Platform.OMM_OPENCL:
-        case ForceFieldEnergy.Platform.OMM_OPTCPU:
-        case ForceFieldEnergy.Platform.OMM_REF:
-            logger.fine(" Platform is appropriate for OpenMM Dynamics.")
-            break
-        case ForceFieldEnergy.Platform.FFX:
-        default:
-            logger.severe(String.format(" Platform %s is inappropriate for OpenMM dynamics. Please explicitly specify an OpenMM platform.",
-                    forceFieldEnergy.getPlatform()))
-            break
+            case ForceFieldEnergy.Platform.OMM:
+            case ForceFieldEnergy.Platform.OMM_CUDA:
+            case ForceFieldEnergy.Platform.OMM_OPENCL:
+            case ForceFieldEnergy.Platform.OMM_OPTCPU:
+            case ForceFieldEnergy.Platform.OMM_REF:
+                logger.fine(" Platform is appropriate for OpenMM Dynamics.")
+                break
+            case ForceFieldEnergy.Platform.FFX:
+            default:
+                logger.severe(String.format(" Platform %s is inappropriate for OpenMM dynamics. Please explicitly specify an OpenMM platform.",
+                        forceFieldEnergy.getPlatform()))
+                break
         }
 
 
@@ -122,7 +122,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
         }
 
         MolecularDynamics moldyn = MolecularDynamics.dynamicsFactory(activeAssembly, forceFieldEnergy, activeAssembly.getProperties(),
-            algorithmListener, dynamics.thermostat, dynamics.integrator)
+                algorithmListener, dynamics.thermostat, dynamics.integrator)
 
         if (moldyn instanceof MolecularDynamicsOpenMM) {
             molDynOpenMM = (MolecularDynamicsOpenMM) moldyn
@@ -133,7 +133,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
             molDynOpenMM.setFileType(writeout.getFileType())
             molDynOpenMM.setIntervalSteps(trajSteps)
             boolean initVelocities = true
-            if (barostatOpt.pressure > 0){
+            if (barostatOpt.pressure > 0) {
                 logger.info(" Pressure > 0")
                 molDynOpenMM.setNPTDynamics()
                 molDynOpenMM.setPressure(barostatOpt.pressure)

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -57,8 +57,10 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.utils.EnergyException;
 
 /**
+ * <p>OctTopologyEnergy class.</p>
  *
- * @author jmlitman
+ * @author Jacob Litman
+ * @since 1.0
  */
 public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final static Logger logger = Logger.getLogger(OctTopologyEnergy.class.getName());
@@ -66,14 +68,14 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final QuadTopologyEnergy quadTopDelta;
     private final LambdaInterface linterGamma;
     private final LambdaInterface linterDelta;
-    
+
     private final int nVarG;
     private final int nVarD;
     private final int nShared;
     private final int uniqueG;
     private final int uniqueD;
     private final int nVarTot;
-    
+
     /**
      * Following arrays keep track of which index in the child QuadTopology is 
      * linked to which index in the OctTopology variable array.
@@ -82,7 +84,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final int[] indexDToGlobal;
     private final int[] indexGlobalToG;
     private final int[] indexGlobalToD;
-    
+
     private final double[] mass;
     private final double[] xG;
     private final double[] xD; // Laughing smiley not intended.
@@ -97,7 +99,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     private final double[] tempG;
     private final double[] tempD;
-    
+
     private Potential.STATE state = Potential.STATE.BOTH;
     private double lambda;
     private double totalEnergy;
@@ -105,46 +107,46 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     private double energyD;
     private double dEdL, dEdL_G, dEdL_D;
     private double d2EdL2, d2EdL2_G, d2EdL2_D;
-    
+
     private boolean inParallel = false;
     private ParallelTeam team;
     private final EnergyRegion region;
-    
+
     /**
      * Scaling and de-scaling will be applied inside QuadTopologyEnergy.
      */
     private double[] scaling;
     private Potential.VARIABLE_TYPE[] types = null;
-    
+
     /**
      * General structure: this layer has gamma and delta quad topologies (often
      * shortened to G/D), with dual topologies A/B, with force field energies 1/2.
-     * 
-     * This constructor assumes there are no shared variables in either quad 
+     *
+     * This constructor assumes there are no shared variables in either quad
      * topology; this behavior is opposite QuadTopologyEnergy behavior.
-     * 
+     *
      * @param quadTopG A QuadTopologyEnergy
      * @param quadTopD A QuadTopologyEnergy
-     */      
+     */
     public OctTopologyEnergy(QuadTopologyEnergy quadTopG, QuadTopologyEnergy quadTopD) {
         this(quadTopG, quadTopD, getVars(quadTopG, true), getVars(quadTopD, true));
     }
-    
+
     /**
      * General structure: this layer has gamma and delta quad topologies (often
      * shortened to G/D), with dual topologies A/B, with force field energies 1/2.
-     * 
+     *
      * This constructor permits QuadTopologyEnergy-like pin-all behavior with
      * uniqueAll true.
-     * 
+     *
      * @param quadTopG A QuadTopologyEnergy
      * @param quadTopD A QuadTopologyEnergy
      * @param uniqueAll All unique (else all shared)
-     */      
+     */
     public OctTopologyEnergy(QuadTopologyEnergy quadTopG, QuadTopologyEnergy quadTopD, boolean uniqueAll) {
         this(quadTopG, quadTopD, getVars(quadTopG, uniqueAll), getVars(quadTopD, uniqueAll));
-    }  
-    
+    }
+
     /**
      * Utility method to return either all variable indices in the quad topology,
      * or null (for sharing none or all variables, respectively).
@@ -160,16 +162,16 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             return null;
         }
     }
-    
+
     /**
      * General structure: this layer has gamma and delta quad topologies (often
      * shortened to G/D), with dual topologies A/B, with force field energies 1/2.
-     * 
+     *
      * @param quadTopG A QuadTopologyEnergy
      * @param quadTopD A QuadTopologyEnergy
      * @param uniqueGList Variables unique to gamma
      * @param uniqueDList Variables unique to delta
-     */        
+     */
     public OctTopologyEnergy(QuadTopologyEnergy quadTopG, QuadTopologyEnergy quadTopD, List<Integer> uniqueGList, List<Integer> uniqueDList) {
         this.quadTopGamma = quadTopG;
         this.quadTopDelta = quadTopD;
@@ -178,7 +180,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         linterDelta = (LambdaInterface) quadTopD;
         nVarG = quadTopGamma.getNumberOfVariables();
         nVarD = quadTopDelta.getNumberOfVariables();
-        
+
         /**
          * Following logic is to A, deal with Integer to int array
          * conversion issues, and B, ensure the set of unique variables is a 
@@ -202,7 +204,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         /*IntStream.range(0, uniqueA).parallel().forEach((i) -> {
             uniquesA[i] = uniqueAList.get(i);
         });*/
-        
+
         /**
          * Following logic is to A, deal with Integer to int array
          * conversion issues, and B, ensure the set of unique variables is a 
@@ -226,11 +228,11 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         /*IntStream.range(0, uniqueA).parallel().forEach((i) -> {
             uniquesA[i] = uniqueAList.get(i);
         });*/
-        
+
         nShared = nVarG - uniqueG;
         assert (nShared == nVarD - uniqueD);
         nVarTot = nShared + uniqueG + uniqueD;
-        
+
         indexGToGlobal = new int[nVarG];
         indexDToGlobal = new int[nVarD];
         indexGlobalToG = new int[nVarTot];
@@ -239,7 +241,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         // the dual topology.
         Arrays.fill(indexGlobalToG, -1);
         Arrays.fill(indexGlobalToD, -1);
-        
+
         if (uniqueG > 0) {
             int commonIndex = 0;
             int uniqueIndex = 0;
@@ -266,7 +268,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
                 indexGlobalToA[i] = i; 
             });*/
         }
-        
+
         if (uniquesD.length > 0) {
             int commonIndex = 0;
             int uniqueIndex = 0;
@@ -297,7 +299,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
                 indexGlobalToB[i] = i;
             });*/
         }
-        
+
         xG = new double[nVarG];
         xD = new double[nVarD];
         gG = new double[nVarG];
@@ -306,15 +308,15 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         tempD = new double[nVarD];
         mass = new double[nVarTot];
         doublesFrom(mass, quadTopGamma.getMass(), quadTopDelta.getMass());
-        
+
         region = new EnergyRegion();
         team = new ParallelTeam(1);
     }
-    
+
     /**
      * Copies from an object array of length nVarTot to two object arrays of 
      * length nVarG and nVarD.
-     * 
+     *
      * @param <T> Type of object
      * @param from Copy from
      * @param toG Copy shared and gamma-specific to
@@ -343,7 +345,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
      * Copies from object arrays of length nVarG and nVarD to an object array of
      * length nVarTot; asserts objects in common indices are equal. Should not
      * be used when the result of the common indices should be f(G,D)
-     * 
+     *
      * @param <T> Type of object
      * @param to Copy to
      * @param fromG Copy shared and gamma-specific from
@@ -364,7 +366,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             to[index] = fromD[i];
         }
     }
-    
+
     /**
      * Copies from an double array of length nVarTot to two double arrays of 
      * length nVarG and nVarD.
@@ -387,7 +389,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             }
         }
     }
-    
+
     private void doublesToNegD(double[] from, double[] toG, double[] toD) {
         toG = (toG == null) ? new double[nVarG] : toG;
         toD = (toD == null) ? new double[nVarD] : toD;
@@ -407,7 +409,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
      * Copies from double arrays of length nVarG and nVarD to an object array of
      * length nVarTot; asserts common indices are equal. Should not be used when 
      * the result of the common indices should be f(G,D)
-     * 
+     *
      * @param to Copy to
      * @param fromG Copy shared and gamma-specific from
      * @param fromD Copy delta-specific from
@@ -429,7 +431,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
      * Copies from double arrays of length nVarG and nVarD to an object array of
      * length nVarTot; asserts common indices are equal. Should not be used when 
      * the result of the common indices should be f(G,D)
-     * 
+     *
      * @param to Copy to
      * @param fromG Copy shared and gamma-specific from
      * @param fromD Copy delta-specific from
@@ -450,6 +452,52 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
     }*/
     
+    /*private void doublesFromNegD(double[] to, double[] fromG, double[] fromD) {
+        to = (to == null) ? new double[nVarTot] : to;
+        for (int i = 0; i < nVarG; i++) {
+            to[indexGToGlobal[i]] = fromG[i];
+        }
+        for (int i = 0; i < nVarD; i++) {
+            int index = indexDToGlobal[i];
+            // Assert this is either a unique from B or it's equal to what came from A.
+            if (index > nShared) {
+                to[index] = -1 * fromD[i];
+            }
+            assert (index >= nShared || to[index] == fromD[i]);
+            //to[index] = fromD[i];
+        }
+    }*/
+    /*private void doublesFromNegD(double[] to, double[] fromG, double[] fromD) {
+        to = (to == null) ? new double[nVarTot] : to;
+        for (int i = 0; i < nVarG; i++) {
+            to[indexGToGlobal[i]] = fromG[i];
+        }
+        for (int i = 0; i < nVarD; i++) {
+            int index = indexDToGlobal[i];
+            // Assert this is either a unique from B or it's equal to what came from A.
+            if (index > nShared) {
+                to[index] = -1 * fromD[i];
+            }
+            assert (index >= nShared || to[index] == fromD[i]);
+            //to[index] = fromD[i];
+        }
+    }*/
+
+    /*private void doublesFromNegD(double[] to, double[] fromG, double[] fromD) {
+        to = (to == null) ? new double[nVarTot] : to;
+        for (int i = 0; i < nVarG; i++) {
+            to[indexGToGlobal[i]] = fromG[i];
+        }
+        for (int i = 0; i < nVarD; i++) {
+            int index = indexDToGlobal[i];
+            // Assert this is either a unique from B or it's equal to what came from A.
+            if (index > nShared) {
+                to[index] = -1 * fromD[i];
+            }
+            assert (index >= nShared || to[index] == fromD[i]);
+            //to[index] = fromD[i];
+        }
+    }*/
     private void addDoublesFrom(double[] to, double[] fromG, double[] fromD) {
         addDoublesFrom(to, fromG, fromD, 1.0);
     }
@@ -458,7 +506,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
      * Assigns common indices of to to be sum of fromG and fromD, assigns unique
      * elements to the non-unique indices thereof. Additionally scales the results
      * by some scalar multiplier.
-     * 
+     *
      * @param to Sum to
      * @param fromG Add shared from and copy gamma-specific from.
      * @param fromD Add shared from and copy delta-specific from.
@@ -474,12 +522,12 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             to[indexDToGlobal[i]] += (fromD[i] * scalingFactor);
         }
     }
-    
+
     /**
      * Assigns common indices of to to be difference of fromG and fromD, assigns 
      * unique elements to the non-unique indices thereof (multiplied by -1 for
      * delta).
-     * 
+     *
      * @param to Sum to
      * @param fromG Add shared from and copy gamma-specific from.
      * @param fromD Subtract shared from and copy -1 * delta-specific from.
@@ -487,12 +535,12 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     private void subtractDoublesFrom(double[] to, double[] fromG, double[] fromD) {
         subtractDoublesFrom(to, fromG, fromD, 1.0);
     }
-    
+
     /**
      * Assigns common indices of to to be difference of fromG and fromD, assigns 
      * unique elements to the non-unique indices thereof (multiplied by -1 for
      * delta).
-     * 
+     *
      * @param to Sum to
      * @param fromG Add shared from and copy gamma-specific from.
      * @param fromD Subtract shared from and copy -1 * delta-specific from.
@@ -508,12 +556,14 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             to[indexDToGlobal[i]] -= (fromD[i] * scalingFactor);
         }
     }
-    
+
+    /** {@inheritDoc} */
     @Override
     public double energy(double[] x) {
         return energy(x, false);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double energy(double[] x, boolean verbose) {
         //if (inParallel) {
@@ -535,12 +585,14 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         return totalEnergy;
     }
-    
+
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         return energyAndGradient(x, g, false);
     }
-    
+
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double[] x, double[] g, boolean verbose) {
         //if (inParallel) {
@@ -574,7 +626,8 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         return totalEnergy;
     }
-    
+
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double[] scaling) {
         this.scaling = scaling;
@@ -587,11 +640,13 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return scaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double[] x) {
         quadTopGamma.getCoordinates(xG);
@@ -601,21 +656,25 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         return x;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         return mass;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getTotalEnergy() {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         return nVarTot;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Potential.VARIABLE_TYPE[] getVariableTypes() {
         if (types == null) {
@@ -632,6 +691,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         return types;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setVelocity(double[] velocity) {
         doublesTo(velocity, tempG, tempD);
@@ -639,6 +699,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         quadTopDelta.setVelocity(tempD);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setAcceleration(double[] acceleration) {
         doublesTo(acceleration, tempG, tempD);
@@ -646,6 +707,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         quadTopDelta.setVelocity(tempD);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         doublesTo(previousAcceleration, tempG, tempD);
@@ -653,24 +715,28 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         quadTopDelta.setPreviousAcceleration(tempD);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getVelocity(double[] velocity) {
         doublesFrom(velocity, quadTopGamma.getVelocity(tempG), quadTopDelta.getVelocity(tempD));
         return velocity;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         doublesFrom(acceleration, quadTopGamma.getAcceleration(tempG), quadTopDelta.getAcceleration(tempD));
         return acceleration;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         doublesFrom(previousAcceleration, quadTopGamma.getPreviousAcceleration(tempG), quadTopDelta.getPreviousAcceleration(tempD));
         return previousAcceleration;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setEnergyTermState(Potential.STATE state) {
         this.state = state;
@@ -678,11 +744,13 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         quadTopDelta.setEnergyTermState(state);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Potential.STATE getEnergyTermState() {
         return state;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         this.lambda = lambda;
@@ -691,21 +759,25 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         quadTopDelta.setLambda((1.0 - lambdaG));
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         return dEdL;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         return d2EdL2;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] g) {
         quadTopGamma.getdEdXdL(tempG);
@@ -713,7 +785,12 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         //addDoublesFrom(g, tempG, tempD, 0.5);
         subtractDoublesFrom(g, tempG, tempD, 0.5);
     }
-    
+
+    /**
+     * <p>setParallel.</p>
+     *
+     * @param parallel a boolean.
+     */
     public void setParallel(boolean parallel) {
         this.inParallel = parallel;
         if (team != null) {
@@ -726,17 +803,20 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Crystal getCrystal() {
         return quadTopGamma.getCrystal();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setCrystal(Crystal crystal) {
         quadTopGamma.setCrystal(crystal);
         quadTopDelta.setCrystal(crystal);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean destroy() {
         boolean qtDeltaDestroy = quadTopDelta.destroy();
@@ -752,35 +832,35 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             return false;
         }
     }
-    
+
     private class EnergyRegion extends ParallelRegion {
-        
+
         private double[] x;
         private double[] g;
         private boolean gradient = false;
-        
+
         private final EnergyGSection sectG;
         private final EnergyDSection sectD;
-        
+
         public EnergyRegion() {
             sectG = new EnergyGSection();
             sectD = new EnergyDSection();
         }
-        
+
         public void setX(double[] x) {
             this.x = x;
         }
-        
+
         public void setG(double[] g) {
             this.g = g;
             setGradient(true);
         }
-        
+
         public void setVerbose(boolean verbose) {
             sectG.setVerbose(verbose);
             sectD.setVerbose(verbose);
         }
-        
+
         public void setGradient(boolean gradient) {
             this.gradient = gradient;
             sectG.setGradient(gradient);
@@ -792,12 +872,12 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             //doublesTo(x, xG, xD);
             doublesToNegD(x, xG, xD);
         }
-        
+
         @Override
         public void run() throws Exception {
             execute(sectG, sectD);
         }
-        
+
         @Override
         public void finish() throws Exception {
             totalEnergy = energyG - energyD;
@@ -810,12 +890,12 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             gradient = false;
         }
     }
-    
+
     private class EnergyGSection extends ParallelSection {
 
         private boolean verbose = false;
         private boolean gradient = false;
-        
+
         @Override
         public void run() throws Exception {
             if (gradient) {
@@ -828,16 +908,16 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             this.verbose = false;
             this.gradient = false;
         }
-        
+
         public void setVerbose(boolean verbose) {
             this.verbose = verbose;
         }
-        
+
         public void setGradient(boolean gradient) {
             this.gradient = gradient;
         }
     }
-    
+
     private class EnergyDSection extends ParallelSection {
 
         private boolean verbose = false;
@@ -855,11 +935,11 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
             this.verbose = false;
             this.gradient = false;
         }
-        
+
         public void setVerbose(boolean verbose) {
             this.verbose = verbose;
         }
-        
+
         public void setGradient(boolean gradient) {
             this.gradient = gradient;
         }

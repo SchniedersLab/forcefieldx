@@ -50,13 +50,13 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.parsers.PDBFileFilter
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.biojLoader [options] <PDB> <Biojava PDB>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.p(longOpt:'print', 'Test by printing to file.');
-cli.m(longOpt:'minimize', 'Not implemented: tests minimization of structure.');
-cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criterion');
-cli.l(longOpt:'local', 'Use the local Potentials package loader instead of the User Interfaces loader');
-cli.d(longOpt:'biojDefault', 'Forces the use of default mechanisms to find the Biojava structure file');
+def cli = new CliBuilder(usage: ' ffxc test.biojLoader [options] <PDB> <Biojava PDB>');
+cli.h(longOpt: 'help', 'Print this help message.');
+cli.p(longOpt: 'print', 'Test by printing to file.');
+cli.m(longOpt: 'minimize', 'Not implemented: tests minimization of structure.');
+cli.e(longOpt: 'eps', args: 1, argName: '1.0', 'RMS gradient convergence criterion');
+cli.l(longOpt: 'local', 'Use the local Potentials package loader instead of the User Interfaces loader');
+cli.d(longOpt: 'biojDefault', 'Forces the use of default mechanisms to find the Biojava structure file');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();

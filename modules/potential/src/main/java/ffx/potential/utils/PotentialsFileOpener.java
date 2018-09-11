@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -75,6 +75,7 @@ import ffx.utilities.Keyword;
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class PotentialsFileOpener implements FileOpener {
 
@@ -91,6 +92,11 @@ public class PotentialsFileOpener implements FileOpener {
     private SystemFilter filter;
     private List<Mutation> mutationsToApply;
 
+    /**
+     * <p>Constructor for PotentialsFileOpener.</p>
+     *
+     * @param file a {@link java.io.File} object.
+     */
     public PotentialsFileOpener(File file) {
         if (!file.exists() || !file.isFile()) {
             throw new IllegalArgumentException(String.format(" File %s either did not exist or was not a file.", file.getName()));
@@ -117,14 +123,29 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
+    /**
+     * <p>Constructor for PotentialsFileOpener.</p>
+     *
+     * @param filename a {@link java.lang.String} object.
+     */
     public PotentialsFileOpener(String filename) {
         this(new File(filename));
     }
 
+    /**
+     * <p>Constructor for PotentialsFileOpener.</p>
+     *
+     * @param filepath a {@link java.nio.file.Path} object.
+     */
     public PotentialsFileOpener(Path filepath) {
         this(filepath.toString());
     }
 
+    /**
+     * <p>Constructor for PotentialsFileOpener.</p>
+     *
+     * @param files an array of {@link java.io.File} objects.
+     */
     public PotentialsFileOpener(File[] files) {
         if (files == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
@@ -167,6 +188,11 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
 
+    /**
+     * <p>Constructor for PotentialsFileOpener.</p>
+     *
+     * @param filenames an array of {@link java.lang.String} objects.
+     */
     public PotentialsFileOpener(String[] filenames) {
         if (filenames == null) {
             throw new IllegalArgumentException(" Array of files to be opened was null.");
@@ -214,16 +240,28 @@ public class PotentialsFileOpener implements FileOpener {
         assemblies = new ArrayList<>();
         propertyList = new ArrayList<>();
     }
-    
+
+    /**
+     * <p>setMutations.</p>
+     *
+     * @param mutations a {@link java.util.List} object.
+     */
     public void setMutations(List<Mutation> mutations) {
         mutationsToApply = mutations;
     }
-    
+
+    /**
+     * <p>Setter for the field <code>nThreads</code>.</p>
+     *
+     * @param nThreads a int.
+     */
     public void setNThreads(int nThreads) {
         this.nThreads = nThreads;
     }
 
     /**
+     * {@inheritDoc}
+     *
      * At present, parses the PDB, XYZ, INT, or ARC file from the constructor
      * and creates MolecularAssembly and properties objects.
      */
@@ -265,7 +303,7 @@ public class PotentialsFileOpener implements FileOpener {
             } else {
                 throw new IllegalArgumentException(String.format(" File %s could not be recognized as a valid PDB, XYZ, INT, or ARC file.", pathI.toString()));
             }
-            
+
             /* If on-open mutations requested, add them to filter. */
             if (mutationsToApply != null && !mutationsToApply.isEmpty()) {
                 if (!(filter instanceof PDBFilter)) {
@@ -273,7 +311,7 @@ public class PotentialsFileOpener implements FileOpener {
                 }
                 ((PDBFilter) filter).mutate(mutationsToApply);
             }
-            
+
             if (filter.readFile()) {
                 if (!(filter instanceof PDBFilter)) {
                     Utilities.biochemistry(assembly, filter.getAtomList());
@@ -344,9 +382,9 @@ public class PotentialsFileOpener implements FileOpener {
     }
 
     /**
-     * Returns the first MolecularAssembly created by the run() function.
+     * {@inheritDoc}
      *
-     * @return A MolecularAssembly
+     * Returns the first MolecularAssembly created by the run() function.
      */
     @Override
     public MolecularAssembly getAssembly() {
@@ -354,9 +392,9 @@ public class PotentialsFileOpener implements FileOpener {
     }
 
     /**
-     * Returns all MolecularAssembly objects created by this opener.
+     * {@inheritDoc}
      *
-     * @return Array of MolecularAssemblys
+     * Returns all MolecularAssembly objects created by this opener.
      */
     @Override
     public MolecularAssembly[] getAllAssemblies() {
@@ -364,9 +402,9 @@ public class PotentialsFileOpener implements FileOpener {
     }
 
     /**
-     * Returns the properties associated with the first MolecularAssembly.
+     * {@inheritDoc}
      *
-     * @return Active properties
+     * Returns the properties associated with the first MolecularAssembly.
      */
     @Override
     public CompositeConfiguration getProperties() {
@@ -374,16 +412,21 @@ public class PotentialsFileOpener implements FileOpener {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns the properties of all MolecularAssembly objects created by this
      * opener.
-     *
-     * @return Array of all properties
      */
     @Override
     public CompositeConfiguration[] getAllProperties() {
         return propertyList.toArray(new CompositeConfiguration[propertyList.size()]);
     }
-    
+
+    /**
+     * <p>Getter for the field <code>filter</code>.</p>
+     *
+     * @return a {@link ffx.potential.parsers.SystemFilter} object.
+     */
     public SystemFilter getFilter() {
         return filter;
     }

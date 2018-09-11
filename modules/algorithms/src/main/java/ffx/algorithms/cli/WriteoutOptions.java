@@ -55,6 +55,11 @@ public class WriteoutOptions {
             description = "Choose file type to write [PDB/XYZ].")
     private String fileType = "XYZ";
 
+    /**
+     * <p>Getter for the field <code>fileType</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getFileType() {
         return fileType;
     }

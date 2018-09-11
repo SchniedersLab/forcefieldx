@@ -62,10 +62,20 @@ public class MinimizeOptions {
             description = "Convergence criteria.")
     double eps = 1.0;
 
+    /**
+     * <p>Getter for the field <code>iterations</code>.</p>
+     *
+     * @return a int.
+     */
     public int getIterations() {
         return iterations;
     }
 
+    /**
+     * <p>Getter for the field <code>eps</code>.</p>
+     *
+     * @return a double.
+     */
     public double getEps() {
         return eps;
     }

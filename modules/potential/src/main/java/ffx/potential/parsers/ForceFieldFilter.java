@@ -89,12 +89,11 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
  * data from keyword/property and parameter (*.PRM) files.
- *
+ * <p>
  * Alternatively, an Apache Commons "Configuration" instance can be parsed.
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class ForceFieldFilter {
 
@@ -112,18 +111,38 @@ public class ForceFieldFilter {
     private double torsionScale = -1.0;
     private double improperTorsionScale = -1.0;
 
+    /**
+     * <p>Setter for the field <code>convertRadiusToDiameter</code>.</p>
+     *
+     * @param convertRadiusToDiameter a boolean.
+     */
     public void setConvertRadiusToDiameter(boolean convertRadiusToDiameter) {
         this.convertRadiusToDiameter = convertRadiusToDiameter;
     }
 
+    /**
+     * <p>Setter for the field <code>convertSigmaToRMin</code>.</p>
+     *
+     * @param convertSigmaToRMin a boolean.
+     */
     public void setConvertSigmaToRMin(boolean convertSigmaToRMin) {
         this.convertSigmaToRMin = convertSigmaToRMin;
     }
 
+    /**
+     * <p>Setter for the field <code>torsionScale</code>.</p>
+     *
+     * @param torsionScale a double.
+     */
     public void setTorsionScale(double torsionScale) {
         this.torsionScale = torsionScale;
     }
 
+    /**
+     * <p>Setter for the field <code>improperTorsionScale</code>.</p>
+     *
+     * @param improperTorsionScale a double.
+     */
     public void setImproperTorsionScale(double improperTorsionScale) {
         this.improperTorsionScale = improperTorsionScale;
     }
@@ -133,7 +152,7 @@ public class ForceFieldFilter {
      * Constructor for ForceFieldFilter.</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ForceFieldFilter(CompositeConfiguration properties) {
         this.properties = properties;
@@ -158,7 +177,7 @@ public class ForceFieldFilter {
      * parseParameterLocation</p>
      *
      * @param parameterLocation a {@link java.lang.String} object.
-     * @param keyFile a {@link java.io.File} object.
+     * @param keyFile           a {@link java.io.File} object.
      * @return a {@link java.io.File} object.
      */
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
@@ -832,7 +851,6 @@ public class ForceFieldFilter {
      *
      * @param input
      * @param tokens
-     *
      * @since 1.0
      */
     private void parseMultipole(String input, String[] tokens) {

@@ -44,13 +44,18 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
+/**
+ * <p>DirectoryUtils class.</p>
+ *
+ * @author Michael J. Schnieders
+ */
 public class DirectoryUtils {
 
     /**
      * Recursively delete the contents of a directory.
      *
-     * @param path
-     * @throws IOException
+     * @param path a {@link java.nio.file.Path} object.
+     * @throws java.io.IOException Thrown if deletion fails.
      */
     public static void deleteDirectoryTree(Path path) throws IOException {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {

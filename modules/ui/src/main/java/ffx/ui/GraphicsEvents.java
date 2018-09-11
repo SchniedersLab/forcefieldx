@@ -73,7 +73,6 @@ import ffx.ui.behaviors.MouseZoom;
  * Translation Behaviors or to the GlobalOrbitBehavior.
  *
  * @author Michael J. Schnieders
- *
  */
 public class GraphicsEvents extends Behavior {
     // Behavior Post IDs
@@ -127,13 +126,13 @@ public class GraphicsEvents extends Behavior {
      * <p>
      * Constructor for GraphicsEvents.</p>
      *
-     * @param f a {@link ffx.ui.MainPanel} object.
-     * @param g a {@link ffx.ui.GraphicsCanvas} object.
-     * @param n a {@link ffx.ui.GraphicsAxis} object.
-     * @param u a {@link com.sun.j3d.utils.universe.SimpleUniverse} object.
-     * @param b a {@link javax.media.j3d.Bounds} object.
+     * @param f    a {@link ffx.ui.MainPanel} object.
+     * @param g    a {@link ffx.ui.GraphicsCanvas} object.
+     * @param n    a {@link ffx.ui.GraphicsAxis} object.
+     * @param u    a {@link com.sun.j3d.utils.universe.SimpleUniverse} object.
+     * @param b    a {@link javax.media.j3d.Bounds} object.
      * @param root a {@link javax.media.j3d.BranchGroup} object.
-     * @param tg a {@link javax.media.j3d.TransformGroup} object.
+     * @param tg   a {@link javax.media.j3d.TransformGroup} object.
      */
     public GraphicsEvents(MainPanel f, GraphicsCanvas g, GraphicsAxis n,
                           SimpleUniverse u, Bounds b, BranchGroup root, TransformGroup tg) {
@@ -180,9 +179,9 @@ public class GraphicsEvents extends Behavior {
      * <p>
      * centerView</p>
      *
-     * @param resetRotation a boolean.
+     * @param resetRotation    a boolean.
      * @param resetTranslation a boolean.
-     * @param resetZoom a boolean.
+     * @param resetZoom        a boolean.
      */
     public void centerView(boolean resetRotation, boolean resetTranslation,
                            boolean resetZoom) {
@@ -291,7 +290,7 @@ public class GraphicsEvents extends Behavior {
 
     /**
      * Most of the logic for mouse interaction with the Scenegraph is here.
-     *
+     * <p>
      * {@inheritDoc}
      */
     public void processStimulus(Enumeration criteria) {

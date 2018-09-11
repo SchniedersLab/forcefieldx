@@ -50,7 +50,8 @@ import org.apache.commons.math3.linear.RealMatrix;
  * The NCS operators can be obtained from the BIOMT records of a PDB file, and are
  * permuted with the space group symmetry operators.
  *
- * @author Aaron J. Nessler & Michael J. Schnieders
+ * @author Aaron J. Nessler
+ * @author Michael J. Schnieders
  *
  * @since 1.0
  *

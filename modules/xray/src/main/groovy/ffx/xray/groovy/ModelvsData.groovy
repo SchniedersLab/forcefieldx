@@ -1,20 +1,21 @@
 package ffx.xray.groovy
 
-import ffx.numerics.Potential
-import ffx.xray.DiffractionData
+import java.util.stream.Collectors
+
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.xray.DiffractionData
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.util.stream.Collectors
 
 /**
  * The X-ray ModelvsData script.

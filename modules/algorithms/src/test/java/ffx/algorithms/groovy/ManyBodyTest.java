@@ -37,28 +37,29 @@
  */
 package ffx.algorithms.groovy;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import groovy.lang.Binding;
-
-import edu.rit.pj.Comm;
-
-import ffx.utilities.DirectoryUtils;
-import ffx.algorithms.PJDependentTest;
-import ffx.algorithms.groovy.ManyBody;
-import ffx.potential.PotentialComponent;
-
-import java.util.logging.Level;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import ffx.potential.Utilities;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.testng.Assert;
+
+import ffx.algorithms.PJDependentTest;
+import ffx.potential.PotentialComponent;
+import ffx.utilities.DirectoryUtils;
+import ffx.algorithms.groovy.ManyBody;
+
+import groovy.lang.Binding;
 
 /**
  * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
+ *
  * @author Mallory R. Tollefson
  */
 public class ManyBodyTest extends PJDependentTest {
@@ -93,7 +94,7 @@ public class ManyBodyTest extends PJDependentTest {
     public void testManyBodyGlobal() {
         // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "--tC", "2",
-            "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
         Path path = null;
@@ -107,8 +108,8 @@ public class ManyBodyTest extends PJDependentTest {
         // Evaluate the script.
         manyBody.run();
         double expectedTotalPotential = -219.8836543404126;
-        
-        
+
+
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
 
@@ -130,7 +131,7 @@ public class ManyBodyTest extends PJDependentTest {
     public void testManyBodyBoxOptimization() {
         // Set-up the input arguments for the script.
         String[] args = {"-a", "5", "-L", "2", "--bL", "10", "--bB", "2", "--tC", "2", "--pr", "2",
-            "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
         Path path = null;
@@ -143,7 +144,7 @@ public class ManyBodyTest extends PJDependentTest {
 
         // Evaluate the script.
         manyBody.run();
-        
+
         double expectedTotalPotential = -219.8836543404126;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
@@ -163,7 +164,7 @@ public class ManyBodyTest extends PJDependentTest {
      * Tests ManyBody.groovy and RotamerOptimization.java by running a monte carlo optimization simulation on a small pdb file. Elimination criteria are not used during this test. A monte carlo search is done on the permuatations the protein experience.
      */
     @Test
-    public void testManyBodyMonteCarlo(){
+    public void testManyBodyMonteCarlo() {
 
         System.setProperty("polarization", "direct");
 
@@ -206,15 +207,17 @@ public class ManyBodyTest extends PJDependentTest {
 
 
     /**
-     * Tests the restart file functionality. The test applies a 1 angstrom 2-body and 3-body cutoff but the restart
+     * Tests the restart file functionality. The test applies a 1.5 angstrom 2-body and 3-body cutoff but the restart
      * file was generated using 2-body and 3-body cutoffs of 2 angstroms.
      */
-    /*@Test
-    public void testManyBodyRestart(){
-        System.out.println("TEST MANY BODY RESTART!");
+    @Test
+    public void testManyBodyRestart() throws IOException {
+        File restartBackup = new File("src/main/java/ffx/algorithms/structures/5awl.restartBackup");
+        File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
+        FileUtils.copyFile(restartBackup, restart);
 
         // Set-up the input arguments for the script.
-        String[] args = {"-a", "2", "-L", "2", "--tC", "1", "-T", "--thC", "1", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
+        String[] args = {"-a", "2", "-L", "2", "--tC", "1.5", "-T", "--thC", "1.5", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
                 "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
@@ -227,9 +230,13 @@ public class ManyBodyTest extends PJDependentTest {
         }
 
         // Evaluate the script.
-        manyBody.run();
-
-        double expectedTotalPotential = -216.62517180;
+        try{
+            manyBody.run();
+        } catch (Error error){
+            System.out.println(Utilities.stackTraceToString(error));
+        }
+        
+        double expectedTotalPotential = -217.86618264654527;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
@@ -241,8 +248,54 @@ public class ManyBodyTest extends PJDependentTest {
             Assert.fail(" Exception deleting files created by ManyBodyTest.");
         }
 
-        // Clear properties and delete unneccesary files.
         manyBody.getManyBody().getRestartFile().delete();
-    } */
+    }
 
+
+
+    /**
+     * Tests the restart file functionality for box optimization. The test applies a 1.5 angstrom 2-body and 3-body cutoff but the restart
+     * file was generated using 2-body and 3-body cutoffs of 2 angstroms.
+     */
+    @Test
+    public void testManyBodyBoxRestart() throws IOException {
+        File restartBoxBackup = new File("src/main/java/ffx/algorithms/structures/5awl.restartBoxBackup");
+        File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
+        FileUtils.copyFile(restartBoxBackup, restart);
+
+        // Set-up the input arguments for the script.
+        String[] args = {"-a", "5", "--bL", "10", "--tC", "1.5", "-T", "--thC", "1.5", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+        binding.setVariable("args", args);
+
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("ManyBodyTest");
+            manyBody.setSaveDir(path.toFile());
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
+        // Evaluate the script.
+        try{
+            manyBody.run();
+        } catch (Error error){
+            System.out.println(Utilities.stackTraceToString(error));
+        }
+
+        double expectedTotalPotential = -219.88365434;
+        double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+
+        // Delete all created directories and files.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by ManyBodyTest.");
+        }
+
+        manyBody.getManyBody().getRestartFile().delete();
+        manyBody.getManyBody().getPartial().delete();
+    }
 }

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -63,7 +63,6 @@ import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DOpenCL;
 import ffx.numerics.fft.Complex3DParallel;
-import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtUtils;
 import ffx.potential.parameters.ForceField;
@@ -96,15 +95,15 @@ import static ffx.potential.parameters.MultipoleType.t300;
 
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to
- * {@link ParticleMeshEwald} for the AMOEBA force field.
+ * {@link ffx.potential.nonbonded.ParticleMeshEwald} for the AMOEBA force field.
  *
  * <ol>
  * <li>
  * Assignment of polarizable multipole charge density to the 3D grid, via
  * b-Splines, is parallelized using a spatial decomposition. </li>
  * <li>
- * The convolution depends on methods of the {@link Real3DParallel} and
- * {@link Complex3DParallel} classes.
+ * The convolution depends on methods of the {@link ffx.numerics.fft.Real3DParallel} and
+ * {@link ffx.numerics.fft.Complex3DParallel} classes.
  * </li>
  * <li> Finally, the electric potential and its gradients are collected, in
  * parallel, off the grid using b-Splines.
@@ -284,7 +283,9 @@ public class ReciprocalSpace {
     public enum GridMethod {
 
         SPATIAL, SLICE, ROW
-    };
+    }
+
+    ;
 
     /**
      * Reciprocal Space PME contribution.
@@ -299,8 +300,8 @@ public class ReciprocalSpace {
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
     public ReciprocalSpace(ParticleMeshEwald particleMeshEwald,
-            Crystal crystal, ForceField forceField, Atom atoms[],
-            double aewald, ParallelTeam fftTeam, ParallelTeam parallelTeam) {
+                           Crystal crystal, ForceField forceField, Atom atoms[],
+                           double aewald, ParallelTeam fftTeam, ParallelTeam parallelTeam) {
 
         this.particleMeshEwald = particleMeshEwald;
         this.crystal = crystal.getUnitCell();
@@ -434,6 +435,11 @@ public class ReciprocalSpace {
         inducedPhiTime = new long[threadCount];
     }
 
+    /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public void setAtoms(Atom atoms[]) {
         this.atoms = atoms;
         nAtoms = atoms.length;
@@ -475,6 +481,11 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>crystal</code>.</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     */
     public void setCrystal(Crystal crystal) {
         /**
          * Check if the number of symmetry operators has changed.
@@ -644,6 +655,9 @@ public class ReciprocalSpace {
         return density;
     }
 
+    /**
+     * <p>printTimings.</p>
+     */
     public void printTimings() {
         if (logger.isLoggable(Level.FINE)) {
             if (pjFFT3D != null) {
@@ -711,6 +725,9 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * <p>initTimings.</p>
+     */
     public void initTimings() {
         /**
          * Reset total timings.
@@ -763,9 +780,10 @@ public class ReciprocalSpace {
      *
      * @param globalMultipoles an array of double.
      * @param use an array of boolean.
+     * @param mode a int.
      */
     public void splinePermanentMultipoles(double globalMultipoles[][][],
-            int mode, boolean use[]) {
+                                          int mode, boolean use[]) {
         splinePermanentTotal -= System.nanoTime();
 
         double fracMultipoles[][][] = null;
@@ -881,6 +899,11 @@ public class ReciprocalSpace {
         permanentPhiTotal += System.nanoTime();
     }
 
+    /**
+     * <p>computePermanentDotPhi.</p>
+     *
+     * @param cartPermanentDotPhi an array of {@link double} objects.
+     */
     public void computePermanentDotPhi(double cartPermanentDotPhi[][]) {
         if (!esvTerm) {
             throw new UnsupportedOperationException();
@@ -901,11 +924,16 @@ public class ReciprocalSpace {
      *
      * @param inducedDipole Induced dipoles.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
+     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
+     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
+     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
+     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
+     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param use The atoms in use.
      */
     public void splineInducedDipoles(double inducedDipole[][][],
-            double inducedDipoleCR[][][],
-            boolean use[]) {
+                                     double inducedDipoleCR[][][],
+                                     boolean use[]) {
         splineInducedTotal -= System.nanoTime();
 
         switch (fftMethod) {
@@ -1004,7 +1032,7 @@ public class ReciprocalSpace {
      * @param cartInducedDipoleCRPhi an array of double.
      */
     public void computeInducedPhi(double cartInducedDipolePhi[][],
-            double cartInducedDipoleCRPhi[][]) {
+                                  double cartInducedDipoleCRPhi[][]) {
         inducedPhiTotal -= System.nanoTime();
         try {
             polarizationPhiRegion.setCartInducedDipolePhi(
@@ -1017,6 +1045,15 @@ public class ReciprocalSpace {
         inducedPhiTotal += System.nanoTime();
     }
 
+    /**
+     * <p>computeInducedPhi.</p>
+     *
+     * @param cartInducedDipolePhi an array of {@link double} objects.
+     * @param cartInducedDipoleCRPhi an array of {@link double} objects.
+     * @param cartUnscaledDipolePhi an array of {@link double} objects.
+     * @param cartUnscaledDipolePhiCR an array of {@link double} objects.
+     * @param cartUnscaledDipolePhiCR an array of {@link double} objects.
+     */
     public void computeInducedPhi(
             double cartInducedDipolePhi[][], double cartInducedDipoleCRPhi[][],
             double[][] cartUnscaledDipolePhi, double[][] cartUnscaledDipolePhiCR) {
@@ -1047,9 +1084,14 @@ public class ReciprocalSpace {
      *
      * @param inducedDipole an array of double.
      * @param inducedDipoleCR an array of double.
+     * @param inducedDipoleCR an array of double.
+     * @param inducedDipoleCR an array of double.
+     * @param inducedDipoleCR an array of double.
+     * @param inducedDipoleCR an array of double.
+     * @param inducedDipoleCR an array of double.
      */
     public void cartToFracInducedDipoles(double inducedDipole[][][],
-            double inducedDipoleCR[][][]) {
+                                         double inducedDipoleCR[][][]) {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             for (int i = 0; i < nAtoms; i++) {
                 double in[] = inducedDipole[iSymm][i];
@@ -1126,10 +1168,20 @@ public class ReciprocalSpace {
         return fracInducedDipoleCR[0];
     }
 
+    /**
+     * <p>Getter for the field <code>fracMultipoleDot</code>.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[][] getFracMultipoleDot() {
         return fracMultipoleDot[0];
     }
 
+    /**
+     * <p>Getter for the field <code>fracMultipoleDotPhi</code>.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[][] getFracMultipoleDotPhi() {
         return fracMultipoleDotPhi;
     }
@@ -1483,7 +1535,7 @@ public class ReciprocalSpace {
         }
 
         public void setInducedDipoles(double inducedDipole[][][],
-                double inducedDipoleCR[][][]) {
+                                      double inducedDipoleCR[][][]) {
             this.inducedDipole = inducedDipole;
             this.inducedDipoleCR = inducedDipoleCR;
         }
@@ -1805,7 +1857,7 @@ public class ReciprocalSpace {
         }
 
         public void setInducedDipoles(double inducedDipole[][][],
-                double inducedDipoleCR[][][]) {
+                                      double inducedDipoleCR[][][]) {
             this.inducedDipole = inducedDipole;
             this.inducedDipoleCR = inducedDipoleCR;
         }
@@ -1955,7 +2007,7 @@ public class ReciprocalSpace {
         }
 
         public void setPermanent(double globalMultipoles[][][],
-                double fracMultipoles[][][]) {
+                                 double fracMultipoles[][][]) {
             this.globalMultipoles = globalMultipoles;
             this.fracMultipoles = fracMultipoles;
         }
@@ -2128,7 +2180,7 @@ public class ReciprocalSpace {
         }
 
         public void setInducedDipoles(double inducedDipole[][][],
-                double inducedDipoleCR[][][]) {
+                                      double inducedDipoleCR[][][]) {
             this.inducedDipole = inducedDipole;
             this.inducedDipoleCR = inducedDipoleCR;
         }
@@ -2507,7 +2559,7 @@ public class ReciprocalSpace {
         }
 
         public void setCartInducedDipolePhi(double cartInducedDipolePhi[][],
-                double cartInducedDipoleCRPhi[][]) {
+                                            double cartInducedDipoleCRPhi[][]) {
             this.cartInducedDipolePhi = cartInducedDipolePhi;
             this.cartInducedDipoleCRPhi = cartInducedDipoleCRPhi;
         }
@@ -2960,6 +3012,12 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * <p>globalToFracDipole.</p>
+     *
+     * @param globalDipole an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public double[] globalToFracDipole(double[] globalDipole) {
         final double[] fracDipole = new double[3];
         // Dipole
@@ -2972,6 +3030,12 @@ public class ReciprocalSpace {
         return fracDipole;
     }
 
+    /**
+     * <p>globalToFracMultipole.</p>
+     *
+     * @param globalMultipole an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public double[] globalToFracMultipole(double[] globalMultipole) {
         double[] fracMultipole = new double[10];
         // Charge
@@ -3008,7 +3072,7 @@ public class ReciprocalSpace {
      * @param order
      */
     private static void discreteFTMod(double bsmod[], double bsarray[],
-            int nfft, int order) {
+                                      int nfft, int order) {
         /**
          * Get the modulus of the discrete Fourier fft.
          */
@@ -3070,6 +3134,7 @@ public class ReciprocalSpace {
             bsmod[i] = bsmod[i] * zeta * zeta;
         }
     }
+
     /**
      * First lookup index to pack a 2D tensor into a 1D array.
      */

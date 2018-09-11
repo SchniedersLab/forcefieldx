@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -57,7 +57,7 @@ import ffx.potential.bonded.RendererCache;
  * MolecularAssembly instances.
  *
  * @author Michael J. Schnieders
- *
+ * @since 1.0
  */
 public class Renderer extends Behavior {
 
@@ -97,15 +97,25 @@ public class Renderer extends Behavior {
      * This node arms UpdateBehavior with a graphics operation to carry out
      *
      * @param nodes Nodes where the operation will be performed
-     * @param t True for a change in atomic position
-     * @param v True for a change in rendering method
+     * @param t     True for a change in atomic position
+     * @param v     True for a change in rendering method
      * @param vtype The rendering method to use
-     * @param c True for a change in rendering color
+     * @param vtype The rendering method to use
+     * @param vtype The rendering method to use
+     * @param vtype The rendering method to use
+     * @param vtype The rendering method to use
+     * @param vtype The rendering method to use
+     * @param c     True for a change in rendering color
+     * @param ctype The coloring method to use
+     * @param ctype The coloring method to use
+     * @param ctype The coloring method to use
+     * @param ctype The coloring method to use
+     * @param ctype The coloring method to use
      * @param ctype The coloring method to use
      */
     public void arm(ArrayList<MSNode> nodes, boolean t, boolean v,
-            RendererCache.ViewModel vtype, boolean c,
-            RendererCache.ColorModel ctype) {
+                    RendererCache.ViewModel vtype, boolean c,
+                    RendererCache.ColorModel ctype) {
         // If the node isn't null, the last rendering
         // operation hasn't finished so one operation will be cached
         if (nodesToUpdate != null) {
@@ -130,18 +140,38 @@ public class Renderer extends Behavior {
      * <p>
      * arm</p>
      *
-     * @param node a {@link ffx.potential.bonded.MSNode} object.
-     * @param t a boolean.
-     * @param v a boolean.
+     * @param node  a {@link ffx.potential.bonded.MSNode} object.
+     * @param t     a boolean.
+     * @param v     a boolean.
      * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     * object.
-     * @param c a boolean.
+     *              object.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     *              object.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     *              object.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     *              object.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     *              object.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     *              object.
+     * @param c     a boolean.
      * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     * object.
+     *              object.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     *              object.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     *              object.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     *              object.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     *              object.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     *              object.
      */
     public void arm(MSNode node, boolean t, boolean v,
-            RendererCache.ViewModel vtype, boolean c,
-            RendererCache.ColorModel ctype) {
+                    RendererCache.ViewModel vtype, boolean c,
+                    RendererCache.ColorModel ctype) {
         ArrayList<MSNode> temp = new ArrayList<MSNode>();
         temp.add(node);
         arm(temp, t, v, vtype, c, ctype);
@@ -149,7 +179,7 @@ public class Renderer extends Behavior {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Initialize this behavior to respond to postID messages
      */
     @Override
@@ -185,7 +215,7 @@ public class Renderer extends Behavior {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This method is called by the Java3D Behavior thread after the following
      * sequence of events: 1.) A graphics operation is loaded using the "arm"
      * method. 2.) The PostID call is processed by the Java3D Behavior Thread.
@@ -288,7 +318,7 @@ public class Renderer extends Behavior {
                     MolecularAssembly ma = (MolecularAssembly) nodeToUpdate.getChildAt(0);
                     ma.sceneGraphChange(null);
                 } else if (nodeToUpdate instanceof MSRoot) {
-                    for (Enumeration e = nodeToUpdate.children(); e.hasMoreElements();) {
+                    for (Enumeration e = nodeToUpdate.children(); e.hasMoreElements(); ) {
                         MSNode updatedNode = (MSNode) e.nextElement();
                         if (updatedNode instanceof ROLSP) {
                             MolecularAssembly ma = (MolecularAssembly) updatedNode.getChildAt(0);

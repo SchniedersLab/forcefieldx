@@ -94,24 +94,24 @@ boolean bias = true;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.rosenMC [options] <filename>');
-cli.h(longOpt:'help', 'Print this message.');
-cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
-cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
-cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
-cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
-cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
-cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
-cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
-cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
-cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.rmcR(longOpt:'residue', args:1, argName:'1', 'RRMC target residue number.');
-cli.rmcF(longOpt:'mcFreq', args:1, argName:'50', 'RRMC frequency.');
-cli.rmcK(longOpt:'trialSetSize', args:1, argName:'10', 'Size of RRMC trial sets.');
-cli.rmcW(longOpt:'writeSnapshots', args:1, argName:'false', 'Output PDBs of trial sets and orig/proposed conformations.');
-cli.rmcD(longOpt:'dynamics', args:1, argName:'false', 'Skip molecular dynamics; do only Monte Carlo moves.')
-cli.rmcB(longOpt:'bias', args:1, argName:'true', 'For validation. Skips biasing.');
+def cli = new CliBuilder(usage: ' ffxc test.rosenMC [options] <filename>');
+cli.h(longOpt: 'help', 'Print this message.');
+cli.b(longOpt: 'thermostat', args: 1, argName: 'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+cli.d(longOpt: 'dt', args: 1, argName: '1.0', 'Time discretization (fsec).');
+cli.i(longOpt: 'integrate', args: 1, argName: 'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
+cli.l(longOpt: 'log', args: 1, argName: '0.01', 'Interval to log thermodyanamics (psec).');
+cli.n(longOpt: 'steps', args: 1, argName: '1000000', 'Number of molecular dynamics steps.');
+cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual', 'Polarization: [None / Direct / Mutual]');
+cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
+cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
+cli.s(longOpt: 'restart', args: 1, argName: '0.1', 'Interval to write out restart file (psec).');
+cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [PDB/XYZ]');
+cli.rmcR(longOpt: 'residue', args: 1, argName: '1', 'RRMC target residue number.');
+cli.rmcF(longOpt: 'mcFreq', args: 1, argName: '50', 'RRMC frequency.');
+cli.rmcK(longOpt: 'trialSetSize', args: 1, argName: '10', 'Size of RRMC trial sets.');
+cli.rmcW(longOpt: 'writeSnapshots', args: 1, argName: 'false', 'Output PDBs of trial sets and orig/proposed conformations.');
+cli.rmcD(longOpt: 'dynamics', args: 1, argName: 'false', 'Skip molecular dynamics; do only Monte Carlo moves.')
+cli.rmcB(longOpt: 'bias', args: 1, argName: 'true', 'For validation. Skips biasing.');
 def options = cli.parse(args);
 
 if (options.h) {
@@ -209,11 +209,11 @@ if (!dyn.exists()) {
 if (!dynamics) {
     int numAccepted = 0;
     logger.info("\n Running CBMC on " + modelfilename);
-    System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
+    System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
     mcFrequency = 1;
     targets.add(active.getChains()[0].getResidues().get(resNum));
     MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), null,
-        targets, mcFrequency, trialSetSize, writeSnapshots);
+            targets, mcFrequency, trialSetSize, writeSnapshots);
     while (numAccepted < nSteps) {
         if (bias) {
             boolean accepted = rrmc.cbmcStep();
@@ -237,7 +237,7 @@ molDyn.setRestartFrequency(restartFrequency);
 
 targets.add(active.getChains()[0].getResidues().get(resNum));
 MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), molDyn.getThermostat(),
-    targets, mcFrequency, trialSetSize, writeSnapshots);
+        targets, mcFrequency, trialSetSize, writeSnapshots);
 molDyn.addMCListener(rrmc);
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

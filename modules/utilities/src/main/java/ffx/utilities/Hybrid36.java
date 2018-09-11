@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -45,10 +45,8 @@ package ffx.utilities;
  * <br>
  * Derived from code by: Ralf W. Grosse-Kunstleve, Vincent B. Chen, Jeff J.
  * Headd, Sep 2007.
- *
  * @see <a href="http://cci.lbl.gov/hybrid_36" target="_blank">LBL Hybrid36
  * Reference</a>
- *
  * @since 1.0
  */
 public class Hybrid36 {
@@ -92,7 +90,7 @@ public class Hybrid36 {
     }
 
     private static int decodePure(int[] digits_values, int digits_size,
-            String s) {
+                                  String s) {
         boolean haveMinus = false;
         boolean haveNonBlank = false;
         int value = 0;
@@ -132,7 +130,7 @@ public class Hybrid36 {
      * Hybrid-36 encoder: converts integer value to string result.
      *
      * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for
-     * atom serial numbers).
+     *              atom serial numbers).
      * @param value the integer value to be converted.
      * @return a {@link java.lang.String} String of size width.
      */
@@ -180,8 +178,8 @@ public class Hybrid36 {
      * Hybrid-36 decoder: converts string s to integer result.
      *
      * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for
-     * atom serial numbers)
-     * @param s the {@link java.lang.String} to be converted.
+     *              atom serial numbers)
+     * @param s     the {@link java.lang.String} to be converted.
      * @return the conversion result.
      */
     public static int decode(int width, String s) {

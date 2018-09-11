@@ -95,6 +95,16 @@ public class MDMove implements MCMove {
     private final double saveInterval = 10000.0;
     private final MolecularDynamics molecularDynamics;
 
+    /**
+     * <p>Constructor for MDMove.</p>
+     *
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     */
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
                   CompositeConfiguration properties, AlgorithmListener listener,
                   ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
@@ -122,20 +132,39 @@ public class MDMove implements MCMove {
 
     }
 
+    /**
+     * <p>Setter for the field <code>temperature</code>.</p>
+     *
+     * @param temperature a double.
+     */
     public void setTemperature(double temperature) {
         this.temperature = temperature;
     }
 
+    /**
+     * <p>initVelocities.</p>
+     *
+     * @param initVelocities a boolean.
+     */
     public void initVelocities(boolean initVelocities) {
         this.initVelocities = initVelocities;
     }
 
+    /**
+     * <p>setMDParameters.</p>
+     *
+     * @param mdSteps  a int.
+     * @param timeStep a double.
+     */
     public void setMDParameters(int mdSteps, double timeStep) {
         this.mdSteps = mdSteps;
         this.timeStep = timeStep;
         printInterval = mdSteps * timeStep / 1000;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void move() {
         mdMoveCounter++;
@@ -160,18 +189,36 @@ public class MDMove implements MCMove {
         }
     }
 
+    /**
+     * <p>getStartingKineticEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getStartingKineticEnergy() {
         return molecularDynamics.getStartingKineticEnergy();
     }
 
+    /**
+     * <p>getKineticEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getKineticEnergy() {
         return molecularDynamics.getKineticEnergy();
     }
 
+    /**
+     * <p>getPotentialEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPotentialEnergy() {
         return molecularDynamics.getPotentialEnergy();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void revertMove() {
         try {
@@ -181,6 +228,11 @@ public class MDMove implements MCMove {
         }
     }
 
+    /**
+     * <p>getMDTime.</p>
+     *
+     * @return a long.
+     */
     public long getMDTime() {
         return molecularDynamics.getMDTime();
     }

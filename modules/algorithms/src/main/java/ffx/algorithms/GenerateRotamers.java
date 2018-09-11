@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -57,7 +57,7 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parsers.PDBFilter;
 
 /**
- * The GenerateRotamers class helps generate a rotamer library (particularly for 
+ * The GenerateRotamers class helps generate a rotamer library (particularly for
  * nonstandard amino acids) for a Residue.
  *
  * @author Jacob M. Litman
@@ -65,65 +65,67 @@ import ffx.potential.parsers.PDBFilter;
  */
 public class GenerateRotamers {
     private static final Logger logger = Logger.getLogger(GenerateRotamers.class.getName());
-    
+
     private final Residue residue;
     private final int nChi;
     private final double[] currentChi;
-    
+
     private final File outFile;
     private final MolecularAssembly mola;
     private final AlgorithmListener listener;
     private final RotamerLibrary library;
-    
+
     private final Potential potential;
     private double[] x;
-    
+
     private AminoAcid3 baselineAAres;
     private Rotamer[] baselineRotamers;
-    
+
     private double incr = 10.0; // Degrees to rotate each torsion by.
     private boolean aroundLibrary = false;
     private double width = 180.0; // Left 180 + right 180 = 360 degree coverage.
-    
+
     private int startDepth = 0;
     private int endDepth;
-    
+
     private boolean print = false; // If true, log energy at each torsion.
     private int nEval = 0;
-    
+
     private boolean writeVideo = false;
     private File videoFile;
     private PDBFilter videoFilter;
-    
+
     private static final Pattern atRangePatt = Pattern.compile("(\\d+)-(\\d+)");
-    
+
     /**
      * Intended to create rotamer sets for nonstandard amino acids.
-     * @param mola
-     * @param potential
-     * @param residue
-     * @param file Output file
-     * @param nChi Number of rotameric torsions in the residue
-     * @param listener
+     *
+     * @param mola      a {@link ffx.potential.MolecularAssembly} object.
+     * @param potential a {@link ffx.numerics.Potential} object.
+     * @param residue   a {@link ffx.potential.bonded.Residue} object.
+     * @param file      Output file
+     * @param nChi      Number of rotameric torsions in the residue
+     * @param listener  a {@link ffx.algorithms.AlgorithmListener} object.
      */
-    public GenerateRotamers(MolecularAssembly mola, Potential potential, 
-            Residue residue, File file, int nChi, AlgorithmListener listener) {
+    public GenerateRotamers(MolecularAssembly mola, Potential potential,
+                            Residue residue, File file, int nChi, AlgorithmListener listener) {
         this(mola, potential, residue, file, nChi, listener, RotamerLibrary.getDefaultLibrary());
     }
-    
+
     /**
      * Intended to create rotamer sets for nonstandard amino acids.
-     * @param mola
-     * @param potential
-     * @param residue
-     * @param file Output file
-     * @param nChi Number of rotameric torsions in the residue
-     * @param listener
-     * @param library Rotamer library to use
+     *
+     * @param mola      a {@link ffx.potential.MolecularAssembly} object.
+     * @param potential a {@link ffx.numerics.Potential} object.
+     * @param residue   a {@link ffx.potential.bonded.Residue} object.
+     * @param file      Output file
+     * @param nChi      Number of rotameric torsions in the residue
+     * @param listener  a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param library   Rotamer library to use
      */
-    public GenerateRotamers(MolecularAssembly mola, Potential potential, 
-            Residue residue, File file, int nChi, AlgorithmListener listener, 
-            RotamerLibrary library) {
+    public GenerateRotamers(MolecularAssembly mola, Potential potential,
+                            Residue residue, File file, int nChi, AlgorithmListener listener,
+                            RotamerLibrary library) {
         this.residue = residue;
         this.nChi = nChi;
         endDepth = nChi - 1;
@@ -150,11 +152,12 @@ public class GenerateRotamers {
         this.baselineAAres = residue.getAminoAcid3();
         baselineRotamers = library.getRotamers(baselineAAres);
     }
-    
+
     /**
      * Sets a standard amino acid to be the baseline for rotamer generation. For
      * example, use TYR as a baseline for phosphotyrosine.
-     * @param aa3 
+     *
+     * @param aa3 a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
      */
     public void setBaselineAARes(AminoAcid3 aa3) {
         this.baselineAAres = aa3;
@@ -168,20 +171,22 @@ public class GenerateRotamers {
         }
         aroundLibrary = true;
     }
-    
+
     /**
      * Sets algorithm to log all torsions/energies (not just to file).
-     * @param print 
+     *
+     * @param print a boolean.
      */
     public void setPrint(boolean print) {
         this.print = print;
     }
-    
+
     /**
      * Set which torsions to work on. Negative end values set the final depth
      * to be the total number of torsions.
-     * @param start
-     * @param end
+     *
+     * @param start a int.
+     * @param end   a int.
      */
     public void setDepth(int start, int end) {
         startDepth = start;
@@ -191,26 +196,29 @@ public class GenerateRotamers {
             endDepth = end;
         }
     }
-    
+
     /**
      * Sets the width around each torsion to search (+/-, so 10 degree width will
      * search a 20 degree arc).
-     * @param width 
+     *
+     * @param width a double.
      */
     public void setSearchWidth(double width) {
         this.width = width;
     }
-    
+
     /**
      * Sets the angle to change torsions by.
-     * @param incr 
+     *
+     * @param incr a double.
      */
     public void setIncrement(double incr) {
         this.incr = incr;
     }
-    
+
     /**
      * Null file indicates to not write a video.
+     *
      * @param videoFile Filename for video or null
      */
     public void setVideo(String videoFile) {
@@ -240,9 +248,10 @@ public class GenerateRotamers {
             writeVideo = false;
         }
     }
-    
+
     /**
      * Inactivates electrostatics for atom sets defined by 'start-end,start-end,...'.
+     *
      * @param electrostatics Input string
      */
     public void setElectrostatics(String electrostatics) {
@@ -266,7 +275,7 @@ public class GenerateRotamers {
             }
         }
     }
-    
+
     /**
      * Inactivates atom sets defined by 'start-end,start-end,...'.
      *
@@ -293,7 +302,7 @@ public class GenerateRotamers {
             }
         }
     }
-    
+
     /**
      * Main driver method; spins torsions, evaluates energy, and prints to file.
      */
@@ -312,32 +321,34 @@ public class GenerateRotamers {
             logger.warning(String.format(" IO exception in rotamer generation: %s", ex.toString()));
         }
     }
-    
+
     /**
-     * Applies a library rotamer, filling in the end with 0s as necessary. For 
+     * Applies a library rotamer, filling in the end with 0s as necessary. For
      * example, PTR requires more torsions than TYR, so one cannot simply apply
      * a TYR rotamer to a PTR residue.
-     * @param rotamer 
+     *
+     * @param rotamer
      */
     private void applyLibRotamer(Rotamer rotamer) {
-        double[] rotValues = new double[nChi*2];
+        double[] rotValues = new double[nChi * 2];
         Arrays.fill(rotValues, 0.0);
         Arrays.fill(currentChi, 0.0);
         int fillTo = Math.min(startDepth, (rotamer.length - 1));
         for (int i = 0; i < fillTo; i++) {
-            int ii = 2*i;
+            int ii = 2 * i;
             rotValues[ii] = rotamer.angles[i];
             currentChi[i] = rotamer.angles[i];
-            rotValues[ii+1] = rotamer.sigmas[i];
+            rotValues[ii + 1] = rotamer.sigmas[i];
         }
         Rotamer newRot = generateRotamer(rotValues);
         RotamerLibrary.applyRotamer(residue, newRot);
     }
-    
+
     /**
      * Generates an aa/na/unk Rotamer for the selected residue given values.
+     *
      * @param values
-     * @return 
+     * @return
      */
     private Rotamer generateRotamer(double[] values) {
         switch (residue.getResidueType()) {
@@ -352,16 +363,17 @@ public class GenerateRotamers {
                 return new Rotamer(values);
         }
     }
-    
+
     /**
      * Recursive method for turning the torsions.
+     *
      * @param depth Current depth of the recursion
      * @param bw
-     * @throws IOException 
+     * @throws IOException
      */
     private void turnChi(int depth, BufferedWriter bw) throws IOException {
         double chi = currentChi[depth];
-        for (double i = chi - width; i <= chi + width; i+= incr) {
+        for (double i = chi - width; i <= chi + width; i += incr) {
             currentChi[depth] = i;
             if (depth == endDepth) {
                 evaluateChi(bw);
@@ -372,12 +384,12 @@ public class GenerateRotamers {
                     writeSnapshot();
                 }
             } else {
-                turnChi(depth+1, bw);
+                turnChi(depth + 1, bw);
             }
         }
         currentChi[depth] = chi; // Reset the chi value to where it was.
     }
-    
+
     private void writeSnapshot() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(videoFile, true))) {
             bw.write(String.format("MODEL %d", nEval));
@@ -394,11 +406,12 @@ public class GenerateRotamers {
                     + "%s", videoFile.getName(), ex.toString()));
         }
     }
-    
+
     /**
      * Called at a leaf of the recursion.
+     *
      * @param bw
-     * @throws IOException 
+     * @throws IOException
      */
     private void evaluateChi(BufferedWriter bw) throws IOException {
         try {
@@ -418,23 +431,24 @@ public class GenerateRotamers {
             logger.info(String.format(" Force field exception at chi %s", formatChi()));
         }
     }
-    
+
     /**
      * Converts the chi array to a Rotamer and applies it.
      */
     private void applyChi() {
-        double[] rotValues = new double[nChi*2];
+        double[] rotValues = new double[nChi * 2];
         for (int i = 0; i < nChi; i++) {
-            int ii = 2*i;
+            int ii = 2 * i;
             rotValues[ii] = currentChi[i];
-            rotValues[ii+1] = 0.0;
+            rotValues[ii + 1] = 0.0;
         }
         RotamerLibrary.applyRotamer(residue, generateRotamer(rotValues));
     }
-    
+
     /**
      * Returns a formatted String with chi values.
-     * @return 
+     *
+     * @return
      */
     private String formatChi() {
         StringBuilder sb = new StringBuilder(String.format("%8f", currentChi[0]));
@@ -444,20 +458,21 @@ public class GenerateRotamers {
         }
         return sb.toString();
     }
-    
+
     /**
      * Accessory method for more simplistic saving of specific torsion states.
-     * @param torSets 
+     *
+     * @param torSets an array of {@link java.lang.String} objects.
      */
     public void applyAndSaveTorsions(String[] torSets) {
         for (String torSet : torSets) {
             String[] torsions = torSet.split(",");
-            double[] values = new double[nChi*2];
+            double[] values = new double[nChi * 2];
             Arrays.fill(values, 0.0);
             for (int i = 0; i < (Math.min(torsions.length, nChi)); i++) {
                 double chival = Double.parseDouble(torsions[i]);
                 currentChi[i] = chival;
-                values[2*i] = chival;
+                values[2 * i] = chival;
             }
             Rotamer newRot = generateRotamer(values);
             RotamerLibrary.applyRotamer(residue, newRot);
@@ -474,7 +489,7 @@ public class GenerateRotamers {
         if (x == null) {
             int nVar = potential.getNumberOfVariables();
             x = new double[nVar * 3];
-            
+
         }
         potential.getCoordinates(x);
         return potential.energy(x);

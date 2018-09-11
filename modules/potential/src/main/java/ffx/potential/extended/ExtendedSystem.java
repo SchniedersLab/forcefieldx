@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -49,8 +49,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.numerics.Potential;
@@ -69,12 +67,18 @@ import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 
 /**
+ * <p>ExtendedSystem class.</p>
  *
- * @author slucore
+ * @author Stephen LuCore
+ *
+ * @since 1.0
  */
 public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
+    /**
+     * Constant <code>esvSystemActive=false</code>
+     */
     public static boolean esvSystemActive = false;
     private int indexer = 0;
     private static final StringBuilder sb = new StringBuilder();
@@ -92,8 +96,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     static {
         /*
-		 * During static initialization, clear System properties of "esv." keys
-		 * to load the default ExtendedSystemConfig, then put them back.
+         * During static initialization, clear System properties of "esv." keys
+         * to load the default ExtendedSystemConfig, then put them back.
          */
         synchronized (System.getProperties()) {
             HashMap<String, String> bak = new HashMap<>();
@@ -131,15 +135,15 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
          */
         public final boolean allowLambdaSwitch = prop("esv.allowLambdaSwitch", true);
 
-        public final boolean nonlinearMultipoles = prop("esv.nonlinearMultipoles", false);	// sigmoid lambda Mpole switch
+        public final boolean nonlinearMultipoles = prop("esv.nonlinearMultipoles", false);    // sigmoid lambda Mpole switch
         public final double discrBias = prop("esv.biasMagnitude", 1.0);
         public final boolean forceRoomTemp = prop("esv.forceRoomTemp", false);
         public final boolean propagation = prop("esv.propagation", true);
-        public final double thetaMass = prop("esv.thetaMass", 1.0e-18);	// from OSRW, reasonably 100 a.m.u.
-        public final double thetaFriction = prop("esv.thetaFriction", 1.0e-19);	// from OSRW, reasonably 60/ps
+        public final double thetaMass = prop("esv.thetaMass", 1.0e-18);    // from OSRW, reasonably 100 a.m.u.
+        public final double thetaFriction = prop("esv.thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
 
         // Options below are untested and/or dangerous if changed.
-        public final boolean cloneXyzIndices = prop("esv.cloneXyzIndices", true);	// set bg_idx = fg_idx
+        public final boolean cloneXyzIndices = prop("esv.cloneXyzIndices", true);    // set bg_idx = fg_idx
 
         public static void print(ExtendedSystemConfig config) {
             List<Field> fields = Arrays.asList(ExtendedSystemConfig.class.getDeclaredFields());
@@ -158,8 +162,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
                 }
             }
             sb.append(format(" %-30s %7.7s          %-30s %7.7s          %-30s %7.7s"
-                    + "\n %-30s %7.7s          %-30s %7.7s          %-30s %7.7s"
-                    + "\n %-30s %7.7s",
+                            + "\n %-30s %7.7s          %-30s %7.7s          %-30s %7.7s"
+                            + "\n %-30s %7.7s",
                     "polarization", System.getProperty("polarization"),
                     "scf-algorithm", System.getProperty("scf-algorithm"),
                     "polar-eps", System.getProperty("polar-eps"),
@@ -195,6 +199,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     /**
      * Construct extended system with a default configuration and/or system
      * properties.
+     *
+     * @param mola a {@link ffx.potential.MolecularAssembly} object.
      */
     public ExtendedSystem(MolecularAssembly mola) {
         this(mola, new ExtendedSystemConfig());
@@ -202,6 +208,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     /**
      * Construct extended system with the provided configuration.
+     *
+     * @param mola   a {@link ffx.potential.MolecularAssembly} object.
+     * @param config a {@link ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig} object.
      */
     public ExtendedSystem(MolecularAssembly mola, ExtendedSystemConfig config) {
         if (mola == null) {
@@ -234,7 +243,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             pmeNode = (ParticleMeshEwaldQI) getPme.invoke(ffe);
         } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException ex) {
             /* To run ExtendedSystem under a SecurityManager, expose as public the methods
-			 * ForceFieldEnergy::getVdwNode and ForceFieldEnergy::getPmeNode.			*/
+             * ForceFieldEnergy::getVdwNode and ForceFieldEnergy::getPmeNode.			*/
             logger.log(Level.SEVERE, "Extended system unable to reflectively obtain VdW, PME nodes.", ex);
         } catch (ClassCastException ex) {
             logger.warning("Extended system supported only for quasi-internal ParticleMeshEwald.");
@@ -267,10 +276,20 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return indexer++;
     }
 
+    /**
+     * <p>initializeBackgroundMultipoles.</p>
+     *
+     * @param atomsBackground a {@link java.util.List} object.
+     */
     public void initializeBackgroundMultipoles(List<Atom> atomsBackground) {
         ExtUtils.initializeBackgroundMultipoles(atomsBackground, mola.getForceField());
     }
 
+    /**
+     * <p>populate.</p>
+     *
+     * @param residueIDs a {@link java.util.List} object.
+     */
     public void populate(List<String> residueIDs) {
         // Locate the Residue identified by the given resid.
         Polymer[] polymers = mola.getChains();
@@ -302,10 +321,20 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
     }
 
+    /**
+     * <p>populate.</p>
+     *
+     * @param residueIDs an array of {@link java.lang.String} objects.
+     */
     public void populate(String[] residueIDs) {
         populate(Arrays.asList(residueIDs));
     }
 
+    /**
+     * <p>populate.</p>
+     *
+     * @param residueIDs a {@link java.lang.String} object.
+     */
     public void populate(String residueIDs) {
         String[] tokens
                 = (residueIDs.split(".").length > 1) ? residueIDs.split(".")
@@ -314,6 +343,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         populate(tokens);
     }
 
+    /**
+     * <p>Getter for the field <code>config</code>.</p>
+     *
+     * @return a {@link ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig} object.
+     */
     public ExtendedSystemConfig getConfig() {
         return config;
     }
@@ -321,6 +355,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     /**
      * All atoms of the fully-protonated system (not just those affected by this
      * system).
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
     public Atom[] getExtendedAtoms() {
         return extendedAtoms;
@@ -328,6 +364,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     /**
      * Companion to getExtendedAtoms() for vdw::setAtoms and pme::setAtoms.
+     *
+     * @return an array of {@link int} objects.
      */
     public int[] getExtendedMolecule() {
         return extendedMolecule;
@@ -336,45 +374,102 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     /**
      * Whether the Atom at extendedAtoms[i] is affected by an ESV of this
      * system.
+     *
+     * @param i a int.
+     * @return a boolean.
      */
     public boolean isExtended(int i) {
         return isShared(i) || isUnshared(i);
     }
 
+    /**
+     * <p>isAlphaScaled.</p>
+     *
+     * @param i a int.
+     * @return a boolean.
+     */
     public boolean isAlphaScaled(int i) {
         return isExtended(i) && isTitratableHydrogen(extendedAtoms[i]);
     }
 
+    /**
+     * <p>isShared.</p>
+     *
+     * @param i a int.
+     * @return a boolean.
+     */
     public boolean isShared(int i) {
         return esvForShared[i] != null;
     }
 
+    /**
+     * <p>isUnshared.</p>
+     *
+     * @param i a int.
+     * @return a boolean.
+     */
     public boolean isUnshared(int i) {
         return esvForUnshared[i] != null;
     }
 
+    /**
+     * <p>getEsvForAtom.</p>
+     *
+     * @param i a int.
+     * @return a {@link ffx.potential.extended.ExtendedVariable} object.
+     */
     public ExtendedVariable getEsvForAtom(int i) {
         return (isShared(i)) ? esvForShared[i]
                 : (isUnshared(i)) ? esvForUnshared[i]
                 : null;
     }
 
+    /**
+     * <p>getEsvIndex.</p>
+     *
+     * @param i a int.
+     * @return a {@link java.lang.Integer} object.
+     */
     public Integer getEsvIndex(int i) {
         return (isExtended(i)) ? getEsvForAtom(i).esvIndex : null;
     }
 
+    /**
+     * <p>getLambda.</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double getLambda(int i) {
         return (isExtended(i)) ? getEsvForAtom(i).getLambda() : Defaults.lambda;
     }
 
+    /**
+     * <p>getLambdaSwitch.</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double getLambdaSwitch(int i) {
         return (isExtended(i)) ? getEsvForAtom(i).getLambdaSwitch() : Defaults.lambdaSwitch;
     }
 
+    /**
+     * <p>getSwitchDeriv.</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double getSwitchDeriv(int i) {
         return (isExtended(i)) ? getEsvForAtom(i).getSwitchDeriv() : Defaults.switchDeriv;
     }
 
+    /**
+     * <p>setLambda.</p>
+     *
+     * @param esvId  a int.
+     * @param lambda a double.
+     */
     public void setLambda(int esvId, double lambda) {
         if (esvId >= numESVs) {
             logger.warning("Requested an invalid ESV id.");
@@ -383,14 +478,29 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         updateListeners();
     }
 
+    /**
+     * <p>setLambda.</p>
+     *
+     * @param esvIdChar a char.
+     * @param lambda    a double.
+     */
     public void setLambda(char esvIdChar, double lambda) {
         setLambda(esvIdChar - 'A', lambda);
     }
 
+    /**
+     * <p>getLambda.</p>
+     *
+     * @param esvIdChar a char.
+     * @return a double.
+     */
     public double getLambda(char esvIdChar) {
         return getEsv(esvIdChar - 'A').getLambda();
     }
 
+    /**
+     * <p>updateListeners.</p>
+     */
     protected void updateListeners() {
         if (config.vanDerWaals) {
             vdw.updateEsvLambda();
@@ -400,10 +510,20 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
     }
 
+    /**
+     * <p>size.</p>
+     *
+     * @return a int.
+     */
     public int size() {
         return esvList.size();
     }
 
+    /**
+     * <p>getBiasEnergy.</p>
+     *
+     * @return a double.
+     */
     public final double getBiasEnergy() {
         return getBiasEnergy(currentTemperature);
     }
@@ -411,6 +531,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     /**
      * Get ESV biases such as discretization, pH, etc. This method public and
      * final for error-checking; new ESVs should override biasEnergy().
+     *
+     * @param temperature a double.
+     * @return a double.
      */
     public final double getBiasEnergy(double temperature) {
         if (!config.biasTerm) {
@@ -439,6 +562,10 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * Update the position of all ESV particles via langevin dynamics.
      * Temperature controls propagation speed and also affects (pH-) bias
      * energy.
+     *
+     * @param temperature   a double.
+     * @param dt            a double.
+     * @param currentTimePs a double.
      */
     public void propagateESVs(double temperature, double dt, double currentTimePs) {
         if (config.forceRoomTemp) {
@@ -463,12 +590,19 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         updateListeners();
     }
 
+    /**
+     * <p>setTemperature.</p>
+     *
+     * @param set a double.
+     */
     public void setTemperature(double set) {
         currentTemperature = set;
     }
 
     /**
      * Prefer ExtendedSystem::populate to manual ESV creation.
+     *
+     * @param esv a {@link ffx.potential.extended.ExtendedVariable} object.
      */
     public void addVariable(ExtendedVariable esv) {
         esvSystemActive = true;
@@ -508,6 +642,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         updateListeners();
     }
 
+    /**
+     * <p>setConstantPh.</p>
+     *
+     * @param pH a double.
+     */
     public void setConstantPh(double pH) {
         if (constantSystemPh != null) {
             logger.severe("Attempted to modify an existing constant pH value.");
@@ -515,6 +654,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         constantSystemPh = pH;
     }
 
+    /**
+     * <p>getConstantPh.</p>
+     *
+     * @return a double.
+     */
     public double getConstantPh() {
         if (constantSystemPh == null) {
             logger.severe("Requested an unset system pH value.");
@@ -525,6 +669,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     /**
      * Used only by ForceFieldEnergy and only once; we'd prefer to be rid of
      * this altogether. Background atoms are not true degrees of freedom.
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
     public Atom[] getExtendedAndBackgroundAtoms() {
         Atom[] extended = getExtendedAtoms();
@@ -538,6 +684,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return mega.toArray(new Atom[0]);
     }
 
+    /**
+     * <p>getExtendedAndBackgroundMolecule.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public int[] getExtendedAndBackgroundMolecule() {
         Atom[] mega = getExtendedAndBackgroundAtoms();
         int[] molecule = new int[mega.length];
@@ -547,6 +698,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return molecule;
     }
 
+    /**
+     * <p>crashDump.</p>
+     */
     protected final void crashDump() {
         sb.append("*************");
         sb.append(" Crash Dump:");
@@ -565,6 +719,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     /**
      * Potential gradient with respect to each ESV; used to propagate langevin
      * dynamics.
+     *
+     * @return an array of {@link double} objects.
      */
     public double[] getDerivatives() {
         double esvDeriv[] = new double[numESVs];
@@ -574,6 +730,13 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return esvDeriv;
     }
 
+    /**
+     * <p>getDerivativeComponent.</p>
+     *
+     * @param dd    a {@link ffx.potential.PotentialComponent} object.
+     * @param esvID a int.
+     * @return a double.
+     */
     public double getDerivativeComponent(PotentialComponent dd, int esvID) {
         switch (dd) {
             case Topology:
@@ -736,6 +899,12 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return esvDeriv;
     }
 
+    /**
+     * <p>getEnergyComponent.</p>
+     *
+     * @param component a {@link ffx.potential.PotentialComponent} object.
+     * @return a double.
+     */
     public double getEnergyComponent(PotentialComponent component) {
         double uComp = 0.0;
         switch (component) {
@@ -757,10 +926,21 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
     }
 
+    /**
+     * <p>getEsv.</p>
+     *
+     * @param esvID a int.
+     * @return a {@link ffx.potential.extended.ExtendedVariable} object.
+     */
     public ExtendedVariable getEsv(int esvID) {
         return esvList.get(esvID);
     }
 
+    /**
+     * <p>getBiasDecomposition.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getBiasDecomposition() {
         if (!config.biasTerm) {
             return "";
@@ -777,6 +957,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
                 + format("    %-16s %16.8f\n", "Acidostat", phBias);
     }
 
+    /**
+     * <p>getLambdaList.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getLambdaList() {
         if (numESVs < 1) {
             return "";
@@ -792,6 +977,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Allows simple iteration over ESV via "for (ExtendedVariable :
      * ExtendedSystem)".
      */
@@ -808,6 +995,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
         private Defaults() {
         }   // value singleton
+
         public static final ExtendedVariable esv = null;
         public static final Integer esvId = null;
         public static final double lambda = 1.0;

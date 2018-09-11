@@ -57,7 +57,6 @@ import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.scalar;
 import static ffx.numerics.VectorMath.sum;
-import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
  * The StretchTorsion class represents a coupling between a torsional angle and the three
@@ -83,6 +82,7 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     private double constants[] = new double[9];
 
     private static final String mathForm;
+
     static {
         /**
          * Defined constants:
@@ -112,7 +112,7 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         mathFormBuilder.replace(lenStr - 1, lenStr, ";");
 
         for (int m = 1; m < 4; m++) {
-            mathFormBuilder.append(String.format("bVal%d=distance(p%d,p%d);", m, m, (m+1)));
+            mathFormBuilder.append(String.format("bVal%d=distance(p%d,p%d);", m, m, (m + 1)));
         }
 
         mathFormBuilder.append("tVal=dihedral(p1,p2,p3,p4)");
@@ -149,10 +149,10 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
      * <p>
      * compare</p>
      *
-     * @param a0 a {@link Atom} object.
-     * @param a1 a {@link Atom} object.
-     * @param a2 a {@link Atom} object.
-     * @param a3 a {@link Atom} object.
+     * @param a0 a {@link ffx.potential.bonded.Atom} object.
+     * @param a1 a {@link ffx.potential.bonded.Atom} object.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @param a3 a {@link ffx.potential.bonded.Atom} object.
      * @return a boolean.
      */
     public boolean compare(Atom a0, Atom a1, Atom a2, Atom a3) {
@@ -179,8 +179,13 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         value = calculateDihedralAngle();
     }
 
+    /**
+     * <p>setFlipped.</p>
+     *
+     * @param flipped a boolean.
+     */
     public void setFlipped(boolean flipped) {
-        for (int i=0;i<9;i++) {
+        for (int i = 0; i < 9; i++) {
             constants[i] = stretchTorsionType.forceConstants[i];
         }
         if (flipped) {
@@ -317,6 +322,7 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
 
     /**
      * Returns the array of stretch-torsion constants, in units of kcal/mol/A.
+     *
      * @return Stretch-torsion constants.
      */
     public double[] getConstants() {
@@ -324,17 +330,9 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Evaluate the Stretch-Torsion energy.
-     *
-     * @param gradient    Evaluate the gradient.
-     * @param threadID
-     * @param gradX
-     * @param gradY
-     * @param gradZ
-     * @param lambdaGradX
-     * @param lambdaGradY
-     * @param lambdaGradZ
-     * @return Returns the energy.
      */
     @Override
     public double energy(boolean gradient,
@@ -475,11 +473,11 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             double ddrdx[] = new double[3];
             double dedxt[] = new double[3];
             double dedxu[] = new double[3];
-            scalar(v01,ddr1,ddrdx);
-            cross(x0112,v12,dedxt);
-            scalar(dedxt,dedphi1/(r01_12*r12),dedxt);
-            cross(x1223,v12,dedxu);
-            scalar(dedxu,-dedphi1/(r12_23*r12),dedxu);
+            scalar(v01, ddr1, ddrdx);
+            cross(x0112, v12, dedxt);
+            scalar(dedxt, dedphi1 / (r01_12 * r12), dedxt);
+            cross(x1223, v12, dedxu);
+            scalar(dedxu, -dedphi1 / (r12_23 * r12), dedxu);
 
             /**
              * Gradient for atoms 0, 1, 2 & 3.
@@ -495,26 +493,26 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             double x2[] = new double[3];
 
             // Determine chain rule components for the first bond.
-            cross(dedxt,v12,g0);
-            diff(g0,ddrdx,g0);
-            cross(v02,dedxt,x1);
-            cross(dedxu,v23,x2);
-            sum(x1,x2,g1);
-            sum(g1,ddrdx,g1);
-            cross(dedxt,v01,x1);
-            cross(v13,dedxu,x2);
-            sum(x1,x2,g2);
-            cross(dedxu,v12,g3);
+            cross(dedxt, v12, g0);
+            diff(g0, ddrdx, g0);
+            cross(v02, dedxt, x1);
+            cross(dedxu, v23, x2);
+            sum(x1, x2, g1);
+            sum(g1, ddrdx, g1);
+            cross(dedxt, v01, x1);
+            cross(v13, dedxu, x2);
+            sum(x1, x2, g2);
+            cross(dedxu, v12, g3);
 
             // Compute derivative components for the 2nd bond.
             double dedphi2 = stretchTorsionType.units * dr2 * (v4 * dphi1 + v5 * dphi2 + v6 * dphi3);
             double ddr2 = stretchTorsionType.units * (v4 * phi1 + v5 * phi2 + v6 * phi3) / r12;
 
-            scalar(v12,ddr2,ddrdx);
-            cross(x0112,v12,dedxt);
-            scalar(dedxt,dedphi2/(r01_12*r12),dedxt);
-            cross(x1223,v12,dedxu);
-            scalar(dedxu,-dedphi2/(r12_23*r12),dedxu);
+            scalar(v12, ddr2, ddrdx);
+            cross(x0112, v12, dedxt);
+            scalar(dedxt, dedphi2 / (r01_12 * r12), dedxt);
+            cross(x1223, v12, dedxu);
+            scalar(dedxu, -dedphi2 / (r12_23 * r12), dedxu);
 
             //  Partial gradient on atoms 0, 1, 2 & 3.
             double pg0[] = new double[3];
@@ -523,49 +521,49 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             double pg3[] = new double[3];
 
             // Compute chain rule components for the second bond.
-            cross(dedxt,v12,pg0);
-            cross(v02,dedxt,x1);
-            cross(dedxu,v23,x2);
-            sum(x1,x2,pg1);
-            diff(pg1,ddrdx,pg1);
-            cross(dedxt,v01,x1);
-            cross(v13,dedxu,x2);
-            sum(x1,x2,pg2);
-            sum(pg2,ddrdx,pg2);
-            cross(dedxu,v12,pg3);
+            cross(dedxt, v12, pg0);
+            cross(v02, dedxt, x1);
+            cross(dedxu, v23, x2);
+            sum(x1, x2, pg1);
+            diff(pg1, ddrdx, pg1);
+            cross(dedxt, v01, x1);
+            cross(v13, dedxu, x2);
+            sum(x1, x2, pg2);
+            sum(pg2, ddrdx, pg2);
+            cross(dedxu, v12, pg3);
 
             // Accumulate derivative components.
-            sum(pg0,g0,g0);
-            sum(pg1,g1,g1);
-            sum(pg2,g2,g2);
-            sum(pg3,g3,g3);
+            sum(pg0, g0, g0);
+            sum(pg1, g1, g1);
+            sum(pg2, g2, g2);
+            sum(pg3, g3, g3);
 
             // Compute derivative components for the 3rd bond.
             double dedphi3 = stretchTorsionType.units * dr3 * (v7 * dphi1 + v8 * dphi2 + v9 * dphi3);
             double ddr3 = stretchTorsionType.units * (v7 * phi1 + v8 * phi2 + v9 * phi3) / r23;
-            scalar(v23,ddr3,ddrdx);
-            cross(x0112,v12,dedxt);
-            scalar(dedxt,dedphi3/(r01_12*r12),dedxt);
-            cross(x1223,v12,dedxu);
-            scalar(dedxu,-dedphi3/(r12_23*r12),dedxu);
+            scalar(v23, ddr3, ddrdx);
+            cross(x0112, v12, dedxt);
+            scalar(dedxt, dedphi3 / (r01_12 * r12), dedxt);
+            cross(x1223, v12, dedxu);
+            scalar(dedxu, -dedphi3 / (r12_23 * r12), dedxu);
 
             // Compute chain rule components for the third bond.
-            cross(dedxt,v12,pg0);
-            cross(v02,dedxt,x1);
-            cross(dedxu,v23,x2);
-            sum(x1,x2,pg1);
-            cross(dedxt,v01,x1);
-            cross(v13,dedxu,x2);
-            sum(x1,x2,pg2);
-            diff(pg2,ddrdx,pg2);
-            cross(dedxu,v12,pg3);
-            sum(pg3,ddrdx,pg3);
+            cross(dedxt, v12, pg0);
+            cross(v02, dedxt, x1);
+            cross(dedxu, v23, x2);
+            sum(x1, x2, pg1);
+            cross(dedxt, v01, x1);
+            cross(v13, dedxu, x2);
+            sum(x1, x2, pg2);
+            diff(pg2, ddrdx, pg2);
+            cross(dedxu, v12, pg3);
+            sum(pg3, ddrdx, pg3);
 
             // Accumulate derivative components.
-            sum(pg0,g0,g0);
-            sum(pg1,g1,g1);
-            sum(pg2,g2,g2);
-            sum(pg3,g3,g3);
+            sum(pg0, g0, g0);
+            sum(pg1, g1, g1);
+            sum(pg2, g2, g2);
+            sum(pg3, g3, g3);
 
             scalar(g0, esvLambda, g0);
             scalar(g1, esvLambda, g1);
@@ -641,12 +639,16 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
 
     /**
      * Returns the mathematical form of a stretch-torsion as an OpenMM-parsable String.
+     *
      * @return Mathematical form of the stretch-torsion coupling.
      */
     public static String stretchTorsionForm() {
         return mathForm;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (applyAllLambda()) {
@@ -657,11 +659,17 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -671,11 +679,17 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         return 0.0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         return;

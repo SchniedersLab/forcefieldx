@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -64,12 +64,21 @@ import static ffx.potential.extended.ExtUtils.prop;
 
 /**
  * Helper methods to define titration-specific phenomena.
+ *
+ * @author Stephen LuCore
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 @SuppressWarnings("serial")
 public class TitrationUtils {
 
+    /**
+     * Utility class
+     */
     private TitrationUtils() {
-    } // utility class
+    }
+
     private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
 
     /**
@@ -101,8 +110,17 @@ public class TitrationUtils {
         }
     }
 
+    /**
+     * Constant <code>heavyStrandedDynamics=prop("phmd-heavyStrandedDynamics", false)</code>
+     */
     public static final boolean heavyStrandedDynamics = prop("phmd-heavyStrandedDynamics", false);
+    /**
+     * Constant <code>threeStateHistidines=prop("phmd-threeState", false)</code>
+     */
     public static final boolean threeStateHistidines = prop("phmd-threeState", false);   // not yet implemented
+    /**
+     * Constant <code>threeStateCarboxylics=prop("phmd-threeState", false)</code>
+     */
     public static final boolean threeStateCarboxylics = prop("phmd-threeState", false);   // not yet implemented
 
     /**
@@ -132,6 +150,11 @@ public class TitrationUtils {
         HIE_ONLY, HID_ONLY, SINGLE, DOUBLE;
     }
 
+    /**
+     * <p>renumberAtoms.</p>
+     *
+     * @param mola a {@link ffx.potential.MolecularAssembly} object.
+     */
     public static void renumberAtoms(MolecularAssembly mola) {
         Atom[] atoms = mola.getAtomArray();
         int setter = 0;
@@ -141,12 +164,17 @@ public class TitrationUtils {
     }
 
     /**
-     * @see TitrationUtils::initEsvPreloadProperties
+     * <p>initDiscountPreloadProperties.</p>
+     *
+     * @param cutoffs a {@link java.lang.Double} object.
      */
     public static void initDiscountPreloadProperties(Double cutoffs) {
         initEsvPreloadProperties(cutoffs);
     }
 
+    /**
+     * <p>initDiscountPreloadProperties.</p>
+     */
     public static void initDiscountPreloadProperties() {
         initDiscountPreloadProperties(null);
     }
@@ -154,6 +182,8 @@ public class TitrationUtils {
     /**
      * Note that this must (generally) be called before loading the input file
      * or instantiating titration classes.
+     *
+     * @param cutoffs a {@link java.lang.Double} object.
      */
     public static void initEsvPreloadProperties(Double cutoffs) {
         // Active Potential
@@ -208,10 +238,18 @@ public class TitrationUtils {
 //        System.setProperty("esv.scaleUnshared", "true");        // use multipole scaling in all cases (eliminates softcoring)
     }
 
+    /**
+     * <p>initEsvPreloadProperties.</p>
+     */
     public static void initEsvPreloadProperties() {
         initEsvPreloadProperties(null);
     }
 
+    /**
+     * <p>activateResidue.</p>
+     *
+     * @param addDoF a {@link ffx.potential.bonded.Residue} object.
+     */
     public static void activateResidue(Residue addDoF) {
         List<Atom> atomList = addDoF.getAtomList();
         for (Atom atom : atomList) {
@@ -219,6 +257,11 @@ public class TitrationUtils {
         }
     }
 
+    /**
+     * <p>inactivateResidue.</p>
+     *
+     * @param killDoF a {@link ffx.potential.bonded.Residue} object.
+     */
     public static void inactivateResidue(Residue killDoF) {
         List<Atom> atomList = killDoF.getAtomList();
         for (Atom atom : atomList) {
@@ -230,8 +273,10 @@ public class TitrationUtils {
      * Perform the requested titration on the given MultiResidue. Remember to
      * call reInit() on affected ForceFieldEnergy and MolecularDynamics objects!
      *
-     * @param multiRes
-     * @param titration
+     * @param multiRes             a {@link ffx.potential.bonded.MultiResidue} object.
+     * @param titration            a {@link ffx.potential.extended.TitrationUtils.Titration} object.
+     * @param inactivateBackground a boolean.
+     * @return a {@link ffx.potential.extended.TitrationUtils.TitrationType} object.
      */
     public static TitrationType performTitration(MultiResidue multiRes, Titration titration, boolean inactivateBackground) {
         AminoAcid3 current = multiRes.getActive().getAminoAcid3();
@@ -299,6 +344,12 @@ public class TitrationUtils {
         return type;
     }
 
+    /**
+     * <p>openFullyProtonated.</p>
+     *
+     * @param structure a {@link java.io.File} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
     public static MolecularAssembly openFullyProtonated(File structure) {
         String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
         MolecularAssembly mola = new MolecularAssembly(name);
@@ -320,6 +371,12 @@ public class TitrationUtils {
         return utils.openWithMutations(structure, mutations);
     }
 
+    /**
+     * <p>openFullyProtonated.</p>
+     *
+     * @param filename a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
     public static MolecularAssembly openFullyProtonated(String filename) {
         return openFullyProtonated(new File(filename));
     }
@@ -327,6 +384,10 @@ public class TitrationUtils {
     /**
      * Create a MultiResidue from the given Residue by adding its alternated
      * protonation state(s) as alternate possibilities.
+     *
+     * @param mola a {@link ffx.potential.MolecularAssembly} object.
+     * @param res  a {@link ffx.potential.bonded.Residue} object.
+     * @return a {@link ffx.potential.bonded.MultiResidue} object.
      */
     public static MultiResidue titratingMultiresidueFactory(MolecularAssembly mola, Residue res) {
         ForceField ff = mola.getForceField();
@@ -360,6 +421,10 @@ public class TitrationUtils {
 
     /**
      * Locate to which Polymer in a MolecularAssembly the given Residue belongs.
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     * @param mola    a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link ffx.potential.bonded.Polymer} object.
      */
     public static Polymer findResiduePolymer(Residue residue, MolecularAssembly mola) {
         if (residue.getChainID() == null) {
@@ -380,6 +445,9 @@ public class TitrationUtils {
 
     /**
      * Identify titratable residues and choose them all.
+     *
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
      */
     public static List<Residue> chooseTitratables(MolecularAssembly searchMe) {
         List<Residue> chosen = new ArrayList<>();
@@ -400,8 +468,10 @@ public class TitrationUtils {
     /**
      * Choose titratables with intrinsic pKa inside (pH-window,pH+window).
      *
-     * @param pH
-     * @param window
+     * @param pH       a double.
+     * @param window   a double.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
      */
     public static List<Residue> chooseTitratables(double pH, double window, MolecularAssembly searchMe) {
         List<Residue> chosen = new ArrayList<>();
@@ -422,6 +492,13 @@ public class TitrationUtils {
         return chosen;
     }
 
+    /**
+     * <p>chooseTitratables.</p>
+     *
+     * @param residueIDs a {@link java.lang.String} object.
+     * @param searchMe   a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
     public static List<Residue> chooseTitratables(String residueIDs, MolecularAssembly searchMe) {
         String[] tokens
                 = (residueIDs.split(".").length > 1) ? residueIDs.split(".")
@@ -433,6 +510,10 @@ public class TitrationUtils {
 
     /**
      * Select titrating residues by amino acid.
+     *
+     * @param aa       a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
      */
     public static List<Residue> chooseTitratables(AminoAcid3 aa, MolecularAssembly searchMe) {
         List<Residue> chosen = new ArrayList<>();
@@ -451,6 +532,13 @@ public class TitrationUtils {
         return chosen;
     }
 
+    /**
+     * <p>chooseTitratables.</p>
+     *
+     * @param crIDs    a {@link java.util.List} object.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
     public static List<Residue> chooseTitratables(List<String> crIDs, MolecularAssembly searchMe) {
         List<Residue> chosen = new ArrayList<>();
         for (String crID : crIDs) {
@@ -472,6 +560,14 @@ public class TitrationUtils {
         return chosen;
     }
 
+    /**
+     * <p>chooseTitratables.</p>
+     *
+     * @param chain    a char.
+     * @param resID    a int.
+     * @param searchMe a {@link ffx.potential.MolecularAssembly} object.
+     * @return a {@link java.util.List} object.
+     */
     public static List<Residue> chooseTitratables(char chain, int resID, MolecularAssembly searchMe) {
         List<Residue> chosen = new ArrayList<>();
         Polymer polymers[] = searchMe.getChains();
@@ -490,7 +586,10 @@ public class TitrationUtils {
     }
 
     /**
-     * @see TitrationUtils::propagateInactiveResidues(MultiResidue, boolean)
+     * <p>propagateInactiveResidues.</p>
+     *
+     * @param multiResidues     a {@link java.util.List} object.
+     * @param propagateDynamics a boolean.
      */
     public static void propagateInactiveResidues(List<MultiResidue> multiResidues, boolean propagateDynamics) {
         for (MultiResidue multiRes : multiResidues) {
@@ -499,7 +598,9 @@ public class TitrationUtils {
     }
 
     /**
-     * @see TitrationUtils::propagateInactiveResidues(MultiResidue, boolean)
+     * <p>propagateInactiveResidues.</p>
+     *
+     * @param multiResidues a {@link java.util.List} object.
      */
     public static void propagateInactiveResidues(List<MultiResidue> multiResidues) {
         for (MultiResidue multiRes : multiResidues) {
@@ -508,7 +609,9 @@ public class TitrationUtils {
     }
 
     /**
-     * @see TitrationUtils::propagateInactiveResidues(MultiResidue, boolean)
+     * <p>propagateInactiveResidues.</p>
+     *
+     * @param multiResidue a {@link ffx.potential.bonded.MultiResidue} object.
      */
     public static void propagateInactiveResidues(MultiResidue multiResidue) {
         propagateInactiveResidues(multiResidue, true);
@@ -518,11 +621,13 @@ public class TitrationUtils {
      * Copies atomic coordinates from each active residue to its inactive
      * counterparts. Inactive hydrogen coordinates are updated by geometry with
      * the propagated heavies.
+     *
+     * @param multiRes          a {@link ffx.potential.bonded.MultiResidue} object.
+     * @param propagateDynamics a boolean.
      */
     public static void propagateInactiveResidues(MultiResidue multiRes, boolean propagateDynamics) {
         // Propagate all atom coordinates from active residues to their inactive counterparts.
         Residue active = multiRes.getActive();
-        String activeResName = active.getName();
         List<Residue> inactives = multiRes.getInactive();
         for (Atom activeAtom : active.getAtomList()) {
             String activeName = activeAtom.getName();
@@ -582,6 +687,12 @@ public class TitrationUtils {
         rebuildStrandedProtons(multiRes);
     }
 
+    /**
+     * <p>isTitratableHydrogen.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @return a boolean.
+     */
     public static boolean isTitratableHydrogen(Atom atom) {
         String name = atom.getName();
         switch (atom.getResidueName()) {
@@ -786,9 +897,13 @@ public class TitrationUtils {
             return (titrations != null) ? titrations[0] : null;
         }
 
+
         /**
-         * Return a Titration object for the given Residue. TODO: Add support
-         * for multi-state titrations (HIS,ASP,GLU).
+         * Return a Titration object for the given Residue.
+         * TODO: Add support for multi-state titrations (HIS,ASP,GLU).
+         *
+         * @param res a Residue.
+         * @return a Titration instance.
          */
         public static Titration[] multiLookup(Residue res) {
             List<Titration> titrations = new ArrayList<>();

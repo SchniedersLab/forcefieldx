@@ -1,10 +1,10 @@
 package ffx.algorithms.groovy
 
-import ffx.algorithms.Minimize
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.ParallelTeam
 
+import ffx.algorithms.Minimize
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.numerics.Potential
@@ -16,6 +16,7 @@ import ffx.potential.cli.TopologyOptions
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
 /**
  * The Minimize script uses a limited-memory BFGS algorithm to minimize the 
  * energy of a molecular system or supersystem.

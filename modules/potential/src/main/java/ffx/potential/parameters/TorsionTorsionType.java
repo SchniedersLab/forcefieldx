@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -69,7 +69,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @return positive or negative 1.
      */
     private static int cytsy(int n, double dm[], double du[], double cr[],
-            double rs[], double c[]) {
+                             double rs[], double c[]) {
         if (n < 3) {
             return -2;
         }
@@ -176,7 +176,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param c
      */
     private static void cytsys(int n, double dm[], double du[], double cr[],
-            double rs[], double c[]) {
+                               double rs[], double c[]) {
         /**
          * Updating phase.
          */
@@ -224,6 +224,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         String key = c[4] + " " + c[3] + " " + c[2] + " " + c[1] + " " + c[0];
         return key;
     }
+
     /**
      * Atom classes that form this Torsion-Torsion type.
      */
@@ -252,7 +253,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param energy an array of double.
      */
     public TorsionTorsionType(int atomClasses[], int gridPoints[],
-            double torsion1[], double torsion2[], double energy[]) {
+                              double torsion1[], double torsion2[], double energy[]) {
         super(ForceField.ForceFieldType.TORTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         nx = gridPoints[0];
@@ -457,8 +458,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param dmu
      */
     private void nspline(int n, double x0[], double y0[],
-            double y21, double y2n, double s1[], double s2[], double h[], double g[],
-            double dy[], double dla[], double dmu[]) {
+                         double y21, double y2n, double s1[], double s2[], double h[], double g[],
+                         double dy[], double dla[], double dmu[]) {
         /**
          * Calculate the intervals.
          */
@@ -536,8 +537,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param rs
      */
     private void cspline(int n, double xn[], double fn[], double b[],
-            double[] c, double d[], double h[], double du[], double dm[],
-            double rc[], double rs[]) {
+                         double[] c, double d[], double h[], double du[], double dm[],
+                         double rc[], double rs[]) {
         double eps = 0.000001;
         if (Math.abs(fn[n] - fn[0]) > eps) {
             logger.severe("TORTOR values are not periodic.");
@@ -615,14 +616,13 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         }
         return tortorBuffer.toString();
     }
+
     /**
      * Convert Torsion-Torsion energy to kcal/mole.
      */
     public static final double units = 1.0;
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -637,9 +637,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -658,9 +656,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 3;
@@ -668,8 +664,16 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         return hash;
     }
 
+    /**
+     * <p>average.</p>
+     *
+     * @param torsionTorsionType1 a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     * @param torsionTorsionType2 a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     * @param atomClasses an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     */
     public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
-            TorsionTorsionType torsionTorsionType2, int atomClasses[]) {
+                                             TorsionTorsionType torsionTorsionType2, int atomClasses[]) {
         if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
             return null;
         }

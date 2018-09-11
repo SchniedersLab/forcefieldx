@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -63,6 +63,7 @@ import static ffx.potential.bonded.BondedUtils.intxyz;
  *
  * @author Will Tollefson
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class MultiTerminus extends Residue {
 
@@ -73,11 +74,23 @@ public class MultiTerminus extends Residue {
     private final MolecularAssembly mola;
     public final END end;
     public boolean isCharged;
+    /**
+     * Constant <code>kB=0.83144725</code>
+     */
     public static final double kB = 0.83144725;
     private final static boolean DEBUG = false;
 
+    /**
+     * <p>Constructor for MultiTerminus.</p>
+     *
+     * @param residue          a {@link ffx.potential.bonded.Residue} object.
+     * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
+     * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param mola             a {@link ffx.potential.MolecularAssembly} object.
+     */
     public MultiTerminus(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy,
-            MolecularAssembly mola) {
+                         MolecularAssembly mola) {
         super(residue.getName(), residue.getResidueNumber(), residue.residueType,
                 residue.getChainID(), residue.getChainID().toString());
         try {
@@ -104,6 +117,9 @@ public class MultiTerminus extends Residue {
 //        removeLeaves();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void revertState(ResidueState state) {
         if (state.getIsNeutralTerminus() && this.isCharged == true) {
@@ -111,7 +127,7 @@ public class MultiTerminus extends Residue {
         }
         super.revertState(state);
     }
-    
+
     /**
      * Useful for locating backbone atom nodes that share a name with side-chain atoms.
      */
@@ -133,7 +149,7 @@ public class MultiTerminus extends Residue {
         }
         return null;
     }
-    
+
     private void updateBondedTerms() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("Updating bonded terms: \n"));
@@ -149,8 +165,8 @@ public class MultiTerminus extends Residue {
             if (oldType != newType) {
                 sb.append(String.format(" Bond: %s --> %s \n", bond.bondType, newType));
                 bond.setBondType(newType);
-                if (newType.distance < 0.9*oldType.distance || newType.distance > 1.1*oldType.distance) {
-                    logger.info(String.format(" Large bond distance change: %s %s,  %.2f --> %.2f ", 
+                if (newType.distance < 0.9 * oldType.distance || newType.distance > 1.1 * oldType.distance) {
+                    logger.info(String.format(" Large bond distance change: %s %s,  %.2f --> %.2f ",
                             bond.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), bond.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
                             oldType.distance, newType.distance));
                 }
@@ -174,9 +190,9 @@ public class MultiTerminus extends Residue {
             if (oldType != newType) {
                 sb.append(String.format(" Angle: %s --> %s \n", angle.angleType, dummy.angleType));
                 angle.setAngleType(dummy.angleType);
-                if (newType.angle[0] < 0.9*oldType.angle[0] || newType.angle[0] > 1.1*oldType.angle[0]) {
-                    logger.info(String.format(" Large angle change: %s %s %s,  %.2f --> %.2f ", 
-                            angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name), 
+                if (newType.angle[0] < 0.9 * oldType.angle[0] || newType.angle[0] > 1.1 * oldType.angle[0]) {
+                    logger.info(String.format(" Large angle change: %s %s %s,  %.2f --> %.2f ",
+                            angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name),
                             oldType.angle[0], newType.angle[0]));
                 }
             }
@@ -207,6 +223,9 @@ public class MultiTerminus extends Residue {
     /**
      * Changes the charge state of this MultiTerminus.
      * Keep existing Atom objects but updates types, bonded terms, and builds new proton if necessary.
+     *
+     * @param temperature a double.
+     * @return a {@link ffx.potential.extended.TitrationUtils.TitrationType} object.
      */
     public TitrationType titrateTerminus_v1(double temperature) {
         logger.info(String.format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
@@ -238,7 +257,7 @@ public class MultiTerminus extends Residue {
         if (DEBUG) {
             printBonds();
         }
-        
+
         if (end == END.NTERM) {
             if (isCharged) {
                 if (rolsH3.isEmpty()) {
@@ -323,7 +342,7 @@ public class MultiTerminus extends Residue {
                 OH.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.neutType)));
                 if (uberHO == null) {
                     // Gotta build the HO and all its bonded terms.
-                    uberHO = new Atom(mola.getAtomArray().length, "HO", OH.getAltLoc(), new double[3], 
+                    uberHO = new Atom(mola.getAtomArray().length, "HO", OH.getAltLoc(), new double[3],
                             resName, resSeq, chainID, OH.getOccupancy(), OH.getTempFactor(), OH.getSegID(), true);
                     uberHO.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.HO.neutType)));
                     bondHO = new Bond(OH, uberHO);
@@ -396,7 +415,7 @@ public class MultiTerminus extends Residue {
         }
         return titrationType;
     }
-    
+
     private void printBonds() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("BondList: %s\n", this.toString()));
@@ -406,7 +425,10 @@ public class MultiTerminus extends Residue {
         }
         logger.info(sb.toString());
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void add(MutableTreeNode mtn) {
         super.add(mtn);
@@ -414,7 +436,7 @@ public class MultiTerminus extends Residue {
             logger.info("Adding to terminus: " + mtn.toString());
         }
     }
-    
+
     /**
      * Changes the charge state of this MultiTerminus.
      * Keep existing Atom objects but updates types, bonded terms, and builds new proton if necessary.
@@ -444,7 +466,7 @@ public class MultiTerminus extends Residue {
         String resName = C.getResidueName();
         int resSeq = C.getResidueNumber();
         Character chainID = C.getChainID();
-        
+
         if (end == END.NTERM) {
             if (isCharged) {
                 N.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.N.neutType)));
@@ -488,12 +510,12 @@ public class MultiTerminus extends Residue {
                 this.add(bondH3);
                 updateGeometry();
                 logger.info(String.format(" Finished titration. H3 statuses: "
-                        + "(They have each other: %b %b) (I have them: %b %b) (I have bond: %b)", 
-                        N.getBond(H3) != null, H3.getBond(N) != null, 
+                                + "(They have each other: %b %b) (I have them: %b %b) (I have bond: %b)",
+                        N.getBond(H3) != null, H3.getBond(N) != null,
                         this.getAtomNode().contains(H3) != null, H3.getParent() == this.getAtomNode(),
                         this.getBondList().contains(bondH3)));
                 logger.info(String.format(" Bonds from H3: %s %s",
-                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.XyzIndex_Name), 
+                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.XyzIndex_Name),
                         H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.XyzIndex_Name)));
             }
         } else if (end == END.CTERM) {
@@ -519,7 +541,7 @@ public class MultiTerminus extends Residue {
                 C.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.C.chrgType)));
                 O.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.O.chrgType)));
                 OH.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.chrgType)));
-                OH.setName("OXT");                
+                OH.setName("OXT");
                 Bond bondHO = OH.getBond(HO);
                 bondHO.removeFromParent();
                 HO.removeFromParent();
@@ -532,7 +554,7 @@ public class MultiTerminus extends Residue {
         isCharged = !isCharged;
         forceFieldEnergy.reInit();
     }
-    
+
     /**
      * For testing.
      */
@@ -552,7 +574,7 @@ public class MultiTerminus extends Residue {
         Atom NH2 = (Atom) this.getAtomNode("NH2");
 
         if (getNextResidue() == null) {
-            
+
         } else if (getPreviousResidue() == null) {
             String resName = C.getResidueName();
             int resSeq = C.getResidueNumber();
@@ -564,7 +586,7 @@ public class MultiTerminus extends Residue {
             O.getXYZ(Oxyz);
             OXT.getXYZ(OXTxyz);
 
-            int protCkey =  235;
+            int protCkey = 235;
             int protOkey = 236;
             int protOHkey = 237;
             int protHOkey = 238;
@@ -582,7 +604,7 @@ public class MultiTerminus extends Residue {
             protOH.setAtomType(forceField.getAtomType(Integer.toString(protOHkey)));
             protHO.setAtomType(forceField.getAtomType(Integer.toString(protHOkey)));
 
-            buildBond(CA, protO, forceField,  null);
+            buildBond(CA, protO, forceField, null);
             buildBond(protC, protO, forceField, null);
             buildBond(protC, protOH, forceField, null);
             buildBond(protOH, protHO, forceField, null);
@@ -631,7 +653,7 @@ public class MultiTerminus extends Residue {
             }
         }
     }
-    
+
 //  For reference.
 //    public void addResidue(Residue newResidue) {
 //        /**
@@ -691,36 +713,43 @@ public class MultiTerminus extends Residue {
 //        newResidue.finalize(true, forceField);
 //        updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
 //    }
-    
+
+    /**
+     * <p>isCharged.</p>
+     *
+     * @return a boolean.
+     */
     public boolean isCharged() {
         return isCharged;
     }
-    
+
     public enum BB_TYPE {
-        /**     [name from Biotype record appended]
-        atom    233     30  C     "C-Terminal COO-"            6   12.0110  3   C
-        atom    234     31  O     "C-Terminal COO-"            8   15.9990  1   OXT
-        atom    235     32  C     "C-Terminal COOH C=O"        6   12.0110  3   C
-        atom    236     33  O     "C-Terminal COOH O=C"        8   15.9990  1   O
-        atom    237     34  OH    "C-Terminal COOH OH"         8   15.9990  2   OH
-        atom    238     35  HO    "C-Terminal COOH HO"         1    1.0080  1   HO
-        atom    225      1  N     "Amide Cap NH2"              7   14.0070  3   N
-        atom    226      4  HN    "Amide Cap H2N"              1    1.0080  1   HN
-        atom    231     41  N     "N-Terminal NH3+"            7   14.0070  4   N
-        atom    232     42  H     "N-Terminal H3N+"            1    1.0080  1   HN
-        **/
-        N (231, 41, 225, 1),
-        C (233, 30, 235, 32),
-        O (234, 31, 236, 33),
-        OXT (234, 31, 236, 33),     // On titration, this'll need renamed.
-        OH (234, 31, 237, 34),      // ^
-        HO (-1, -1, 238, 35),
-        H1 (232, 41, 226, 4),       // On titration, these'll need removed and rebuilt.
-        H2 (232, 41, 226, 4),
-        H3 (232, 41, 226, 4);
-        
+        /**
+         * [name from Biotype record appended]
+         * atom    233     30  C     "C-Terminal COO-"            6   12.0110  3   C
+         * atom    234     31  O     "C-Terminal COO-"            8   15.9990  1   OXT
+         * atom    235     32  C     "C-Terminal COOH C=O"        6   12.0110  3   C
+         * atom    236     33  O     "C-Terminal COOH O=C"        8   15.9990  1   O
+         * atom    237     34  OH    "C-Terminal COOH OH"         8   15.9990  2   OH
+         * atom    238     35  HO    "C-Terminal COOH HO"         1    1.0080  1   HO
+         * atom    225      1  N     "Amide Cap NH2"              7   14.0070  3   N
+         * atom    226      4  HN    "Amide Cap H2N"              1    1.0080  1   HN
+         * atom    231     41  N     "N-Terminal NH3+"            7   14.0070  4   N
+         * atom    232     42  H     "N-Terminal H3N+"            1    1.0080  1   HN
+         **/
+        N(231, 41, 225, 1),
+        C(233, 30, 235, 32),
+        O(234, 31, 236, 33),
+        OXT(234, 31, 236, 33),     // On titration, this'll need renamed.
+        OH(234, 31, 237, 34),      // ^
+        HO(-1, -1, 238, 35),
+        H1(232, 41, 226, 4),       // On titration, these'll need removed and rebuilt.
+        H2(232, 41, 226, 4),
+        H3(232, 41, 226, 4);
+
         public int chrgType, chrgClass;
         public int neutType, neutClass;
+
         BB_TYPE(int chrgType, int chrgClass, int neutType, int neutClass) {
             this.chrgType = chrgType;
             this.chrgClass = chrgClass;
@@ -728,11 +757,11 @@ public class MultiTerminus extends Residue {
             this.neutClass = neutClass;
         }
     }
-    
+
     public enum END {
         NTERM, CTERM;
     }
-    
+
     private void maxwellMe(Atom atom, double temperature) {
         double vv[] = new double[3];
         for (int i = 0; i < 3; i++) {
@@ -743,8 +772,6 @@ public class MultiTerminus extends Residue {
 
     /**
      * {@inheritDoc}
-     * @param object
-     * @return Object equality
      */
     @Override
     public boolean equals(Object object) {

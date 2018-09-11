@@ -39,6 +39,7 @@ package ffx.numerics.integrate;
 
 /**
  * A SinWave describes points along a sine wave of f(x) = a*sin(jx).
+ *
  * @author Jacob M. Litman
  */
 public class SinWave extends FunctionDataCurve {
@@ -49,9 +50,10 @@ public class SinWave extends FunctionDataCurve {
     
     /**
      * Constructs f(x) = a*sin(jx).
-     * @param x
-     * @param a
-     * @param j 
+     *
+     * @param x an array of {@link double} objects.
+     * @param a a double.
+     * @param j a double.
      */
     public SinWave(double[] x, double a, double j) {
         this(x, false, a, j);
@@ -59,10 +61,11 @@ public class SinWave extends FunctionDataCurve {
 
     /**
      * Constructs f(x) = a*sin(jx).
-     * @param x
+     *
+     * @param x an array of {@link double} objects.
      * @param halfWidthEnds Use half-width start and end bins.
-     * @param a
-     * @param j 
+     * @param a a double.
+     * @param j a double.
      */
     public SinWave(double[] x, boolean halfWidthEnds, double a, double j) {
         int npoints = x.length;
@@ -82,11 +85,13 @@ public class SinWave extends FunctionDataCurve {
         System.arraycopy(x, 0, this.x, 0, x.length);
     }
     
+    /** {@inheritDoc} */
     @Override
     public double integralAt(double x) {
         return -1 * a * jinv * Math.cos(j*x);
     }
     
+    /** {@inheritDoc} */
     @Override
     public double fX(double x) {
         return sinAt(x);
@@ -97,6 +102,7 @@ public class SinWave extends FunctionDataCurve {
         return a*Math.sin(j*x);
     }
     
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Sine wave f(x) = ");

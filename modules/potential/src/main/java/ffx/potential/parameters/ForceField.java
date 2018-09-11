@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -229,7 +229,7 @@ public class ForceField {
     /**
      * Returns the minimum atom class value.
      *
-     * @return
+     * @return a int.
      */
     public int minClass() {
         int minClass = maxClass();
@@ -244,7 +244,7 @@ public class ForceField {
     /**
      * Returns the minimum atom type value.
      *
-     * @return
+     * @return a int.
      */
     public int minType() {
         int minType = maxType();
@@ -260,7 +260,7 @@ public class ForceField {
     /**
      * Returns the minimum Biotype value.
      *
-     * @return
+     * @return a int.
      */
     public int minBioType() {
         int minBioType = maxBioType();
@@ -276,7 +276,7 @@ public class ForceField {
     /**
      * Returns the maximum atom class value.
      *
-     * @return
+     * @return a int.
      */
     public int maxClass() {
         int maxClass = 0;
@@ -291,7 +291,7 @@ public class ForceField {
     /**
      * Returns the maximum atom type value.
      *
-     * @return
+     * @return a int.
      */
     public int maxType() {
         int maxType = 0;
@@ -307,7 +307,7 @@ public class ForceField {
     /**
      * Returns the maximum Biotype.
      *
-     * @return
+     * @return a int.
      */
     public int maxBioType() {
         int maxBioType = 0;
@@ -323,9 +323,9 @@ public class ForceField {
     /**
      * Renumber ForceField class, type and biotype values.
      *
-     * @param classOffset
-     * @param typeOffset
-     * @param bioTypeOffset
+     * @param classOffset a int.
+     * @param typeOffset a int.
+     * @param bioTypeOffset a int.
      */
     public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
         if (noRenumbering) {
@@ -465,7 +465,7 @@ public class ForceField {
         for (AngleTorsionType angleTorsionType : patch.angleTorsionTypes.values()) {
             angleTorsionTypes.put(angleTorsionType.getKey(), angleTorsionType);
         }
-        
+
         for (TorsionTorsionType torsionTorsionType : patch.torsionTorsionTypes.values()) {
             torsionTorsionTypes.put(torsionTorsionType.getKey(), torsionTorsionType);
         }
@@ -571,6 +571,11 @@ public class ForceField {
         return key.toUpperCase().replace("-", "_");
     }
 
+    /**
+     * <p>Getter for the field <code>properties</code>.</p>
+     *
+     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public CompositeConfiguration getProperties() {
         return properties;
     }
@@ -606,7 +611,7 @@ public class ForceField {
      * @return a double.
      */
     public double getDouble(ForceFieldDouble forceFieldDouble,
-            double defaultValue) {
+                            double defaultValue) {
         try {
             return getDouble(forceFieldDouble);
         } catch (Exception e) {
@@ -619,7 +624,8 @@ public class ForceField {
      *
      * @param forceFieldDouble ForceFieldDouble to check.
      * @return Ever specified.
-     * @throws NullPointerException If forceFieldDouble is null.
+     * @throws java.lang.NullPointerException If forceFieldDouble is null.
+     * @throws java.lang.NullPointerException if any.
      */
     public boolean hasDouble(ForceFieldDouble forceFieldDouble) throws NullPointerException {
         if (forceFieldDouble == null) {
@@ -660,7 +666,7 @@ public class ForceField {
      * @return a int.
      */
     public int getInteger(ForceFieldInteger forceFieldInteger,
-            int defaultValue) {
+                          int defaultValue) {
         try {
             return getInteger(forceFieldInteger);
         } catch (Exception e) {
@@ -699,7 +705,7 @@ public class ForceField {
      * @return a {@link java.lang.String} object.
      */
     public String getString(ForceFieldString forceFieldString,
-            String defaultString) {
+                            String defaultString) {
         try {
             return getString(forceFieldString);
         } catch (Exception e) {
@@ -738,7 +744,7 @@ public class ForceField {
      * @return a boolean.
      */
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean,
-            Boolean defaultBoolean) {
+                              Boolean defaultBoolean) {
         try {
             return getBoolean(forceFieldBoolean);
         } catch (Exception e) {
@@ -798,6 +804,12 @@ public class ForceField {
         }
     }
 
+    /**
+     * <p>isForceFieldKeyword.</p>
+     *
+     * @param keyword a {@link java.lang.String} object.
+     * @return a boolean.
+     */
     public static boolean isForceFieldKeyword(String keyword) {
         keyword = keyword.toUpperCase();
         try {
@@ -913,7 +925,7 @@ public class ForceField {
             logger.log(Level.WARNING,
                     " A force field entry of type {0} already exists with the key: {1}\n The (discarded) old entry: {2}\n The new entry            : {3}",
                     new Object[]{type.forceFieldType, type.key,
-                        treeMap.get(type.key).toString(), type.toString()});
+                            treeMap.get(type.key).toString(), type.toString()});
         }
         Class baseTypeClass = type.getClass();
         treeMap.put(type.key, baseTypeClass.cast(type));
@@ -960,6 +972,13 @@ public class ForceField {
         return null;
     }
 
+    /**
+     * <p>getBioType.</p>
+     *
+     * @param moleculeName a {@link java.lang.String} object.
+     * @param atomName a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.BioType} object.
+     */
     public BioType getBioType(String moleculeName, String atomName) {
         for (BioType bioType : bioTypes.values()) {
             if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
@@ -975,10 +994,10 @@ public class ForceField {
      * updated to the new type. The case where an atom such as CD is should map
      * to both CD1 and CD2.
      *
-     * @param molecule
-     * @param atom
-     * @param newType
-     * @return
+     * @param molecule a {@link java.lang.String} object.
+     * @param atom a {@link java.lang.String} object.
+     * @param newType a int.
+     * @return a {@link ffx.potential.parameters.AtomType} object.
      */
     public AtomType updateBioType(String molecule, String atom, int newType) {
         int type = 0;
@@ -995,6 +1014,11 @@ public class ForceField {
         return getAtomType(Integer.toString(type));
     }
 
+    /**
+     * <p>getBioTypeMap.</p>
+     *
+     * @return a {@link java.util.Map} object.
+     */
     public Map<String, BioType> getBioTypeMap() {
         return bioTypes;
     }
@@ -1018,6 +1042,11 @@ public class ForceField {
         return types;
     }
 
+    /**
+     * <p>Getter for the field <code>relativeSolvationTypes</code>.</p>
+     *
+     * @return a {@link java.util.HashMap} object.
+     */
     public HashMap<String, RelativeSolvationType> getRelativeSolvationTypes() {
         HashMap<String, RelativeSolvationType> types = new HashMap<>();
         for (String key : relativeSolvationTypes.keySet()) {
@@ -1218,14 +1247,30 @@ public class ForceField {
         return vanderWaalsTypes;
     }
 
+    /**
+     * <p>getISolvRadType.</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.ISolvRadType} object.
+     */
     public ISolvRadType getISolvRadType(String key) {
         return iSolvRadTypes.get(key);
     }
 
+    /**
+     * <p>Getter for the field <code>iSolvRadTypes</code>.</p>
+     *
+     * @return a {@link java.util.Map} object.
+     */
     public Map<String, ISolvRadType> getISolvRadTypes() {
         return iSolvRadTypes;
     }
 
+    /**
+     * <p>setTorsionScale.</p>
+     *
+     * @param scaleFactor a double.
+     */
     public void setTorsionScale(double scaleFactor) {
         for (TorsionType type : torsionTypes.values()) {
             type.setScaleFactor(scaleFactor);
@@ -1342,6 +1387,9 @@ public class ForceField {
         System.out.println(toString(type));
     }
 
+    /**
+     * <p>printMultipoleTypes.</p>
+     */
     public void printMultipoleTypes() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Loaded multipole types: \n"));
@@ -1351,6 +1399,9 @@ public class ForceField {
         logger.info(sb.toString());
     }
 
+    /**
+     * <p>printAtomTypes.</p>
+     */
     public void printAtomTypes() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Loaded atom types: \n"));
@@ -1380,6 +1431,7 @@ public class ForceField {
         return "";
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         String forceFieldName;
@@ -1419,6 +1471,7 @@ public class ForceField {
      * of new and existing types.
      *
      * @param typeMap A look-up from new types to existing types.
+     * @param patchTypes a {@link java.util.HashMap} object.
      */
     public void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap, HashMap<String, AtomType> patchTypes) {
 
@@ -1572,7 +1625,7 @@ public class ForceField {
         VDW_SCHEDULE,
         GK_RADIIOVERRIDE,
         GK_RADIIBYNUMBER,
-		PLATFORM,
+        PLATFORM,
         PRECISION /* Only meaningful for OpenMM; Java is always double-precision */;
     }
 
@@ -1631,7 +1684,7 @@ public class ForceField {
         SCF_CYCLES,
         SCF_PREDICTOR_ORDER,
         CUDA_DEVICE(0),
-        
+
         /* Flags for bonded-term force groups. If not specified, they default to DEFAULT_BONDED_FORCE_GROUP */
         BOND_FORCE_GROUP(0), ANGLE_FORCE_GROUP(0), TORSION_FORCE_GROUP(0), ANGLE_TORSION_FORCE_GROUP(0),
         IMPROPER_TORSION_FORCE_GROUP(0), OUT_OF_PLANE_BEND_FORCE_GROUP(0), PI_ORBITAL_TORSION_FORCE_GROUP(0),
@@ -1650,9 +1703,11 @@ public class ForceField {
         ForceFieldInteger() {
             this(1, false);
         }
+
         ForceFieldInteger(int defaultValue) {
             this(1, true);
         }
+
         ForceFieldInteger(int defaultValue, boolean constantDefault) {
             this.defaultValue = defaultValue;
             this.constantDefault = constantDefault;
@@ -1690,7 +1745,7 @@ public class ForceField {
     public enum ForceFieldBoolean {
 
         APERIODIC, BONDTERM, ANGLETERM, COMRESTRAINTERM, GKTERM, IMPROPERTERM,
-        OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM,  STRBNDTERM,
+        OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM, STRBNDTERM,
         TORSIONTERM, ANGTORSTERM, STRTORSTERM,
         TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
         RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS,

@@ -46,8 +46,8 @@ import java.util.regex.Pattern;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-
 import ffx.potential.utils.PotentialsFunctions;
+
 import picocli.CommandLine.Option;
 
 /**
@@ -65,6 +65,9 @@ public class AlchemicalOptions {
     public static final Logger logger = Logger.getLogger(AlchemicalOptions.class.getName());
 
     // A regular expression used to parse ranges of atoms.
+    /**
+     * Constant <code>rangeregex</code>
+     */
     public static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
 
     /**
@@ -126,7 +129,7 @@ public class AlchemicalOptions {
     /**
      * Set active atoms for a MolecularAssembly.
      *
-     * @param molecularAssembly
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setActiveAtoms(MolecularAssembly molecularAssembly) {
         Atom[] atoms = molecularAssembly.getAtomArray();
@@ -151,7 +154,7 @@ public class AlchemicalOptions {
     /**
      * Set the alchemical atoms for this molecularAssembly.
      *
-     * @param topology
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setFirstSystemAlchemistry(MolecularAssembly topology) {
         setAlchemicalAtoms(topology, s1, f1, ligAt1);
@@ -161,15 +164,15 @@ public class AlchemicalOptions {
      * Sets the alchemical atoms for a MolecularAssembly.
      *
      * @param assembly Assembly to which the atoms belong.
-     * @param start First atom to set lambda for.
-     * @param fin Last atom to set lambda for.
-     * @param ligAt Additional ranges of atoms to set lambda for.
+     * @param start    First atom to set lambda for.
+     * @param fin      Last atom to set lambda for.
+     * @param ligAt    Additional ranges of atoms to set lambda for.
      */
     public static void setAlchemicalAtoms(MolecularAssembly assembly, int start, int fin, String ligAt) {
         Atom[] atoms = assembly.getAtomArray();
         if (start > 0) {
             for (int i = start; i <= fin; i++) {
-                Atom ai = atoms[i-1];
+                Atom ai = atoms[i - 1];
                 ai.setApplyLambda(true);
                 ai.print();
             }
@@ -200,7 +203,7 @@ public class AlchemicalOptions {
     /**
      * Set uncharged atoms for this molecularAssembly.
      *
-     * @param topology
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setFirstSystemUnchargedAtoms(MolecularAssembly topology) {
         setUnchargedAtoms(topology, es1, ef1);
@@ -208,9 +211,10 @@ public class AlchemicalOptions {
 
     /**
      * Set uncharged atoms for a MolecularAssembly.
+     *
      * @param assembly Assembly to decharge on.
-     * @param eStart First atom to decharge.
-     * @param eEnd Last atom to decharge.
+     * @param eStart   First atom to decharge.
+     * @param eEnd     Last atom to decharge.
      */
     public static void setUnchargedAtoms(MolecularAssembly assembly, int eStart, int eEnd) {
         Atom atoms[] = assembly.getAtomArray();
@@ -266,10 +270,10 @@ public class AlchemicalOptions {
      * Opens a File to a MolecularAssembly for alchemistry.
      *
      * @param potentialFunctions A utility object for opening Files into MolecularAssemblys.
-     * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
-     * @param threadsPer Number of threads to be used for this MolecularAssembly.
-     * @param toOpen The name of the File to be opened.
-     * @param topNum The index of this topology.
+     * @param topOptions         TopologyOptions in case a dual-topology or greater is to be used.
+     * @param threadsPer         Number of threads to be used for this MolecularAssembly.
+     * @param toOpen             The name of the File to be opened.
+     * @param topNum             The index of this topology.
      * @return The processed MolecularAssembly.
      */
     public MolecularAssembly openFile(PotentialsFunctions potentialFunctions, Optional<TopologyOptions> topOptions, int threadsPer, String toOpen, int topNum) {
@@ -282,8 +286,8 @@ public class AlchemicalOptions {
      * Performs processing on a MolecularAssembly for alchemistry.
      *
      * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
-     * @param mola The MolecularAssembly to be processed.
-     * @param topNum The index of this topology, 0-indexed.
+     * @param mola       The MolecularAssembly to be processed.
+     * @param topNum     The index of this topology, 0-indexed.
      * @return The processed MolecularAssembly.
      */
     public MolecularAssembly processFile(Optional<TopologyOptions> topOptions, MolecularAssembly mola, int topNum) {

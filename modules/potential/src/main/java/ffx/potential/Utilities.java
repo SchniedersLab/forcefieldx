@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -59,7 +59,7 @@ import static ffx.numerics.VectorMath.diff;
  * system.
  *
  * @author Michael J. Schnieders
- *
+ * @since 1.0
  */
 public final class Utilities {
 
@@ -72,7 +72,7 @@ public final class Utilities {
 
         XYZ, INT, ARC, PDB, ANY, SIM, UNK
     }
-    
+
     public enum DataType {
         BIOJAVA, UNK
     }
@@ -84,6 +84,7 @@ public final class Utilities {
 
         AMINOACID, NUCLEICACID, UNKNOWN
     }
+
     /**
      * The algorithms used to split arrays of atoms into a structural hierarchy
      * use a bunch of List instances. Pooling them seems like it might be a
@@ -165,8 +166,8 @@ public final class Utilities {
      * into the residue. This assumes that the "cap" is only linked to the rest
      * of the polymer through the end atom.
      *
-     * @param end Atom
-     * @param seed Atom
+     * @param end     Atom
+     * @param seed    Atom
      * @param residue Residue
      */
     public static void addCap(Atom end, Atom seed, Residue residue) {
@@ -186,7 +187,7 @@ public final class Utilities {
      * the specified residue.
      *
      * @param phosphate Atom
-     * @param residue Residue
+     * @param residue   Residue
      */
     public static void addPhosphate(Atom phosphate, Residue residue) {
         if (phosphate == null) {
@@ -208,12 +209,12 @@ public final class Utilities {
     }
 
     private static Residue assignResidue(List<Atom> backbone, int start,
-            List<Atom> atoms, List<Atom> sidePolymer) {
+                                         List<Atom> atoms, List<Atom> sidePolymer) {
         Atom a;
         int atomicnum;
         int bins[] = new int[5]; // 0 = S, 1 = P, 2 = O, 3 = N, 4 = C
         char chars[] = {'S', 'P', 'O', 'N', 'C'};
-        for (ListIterator li = sidePolymer.listIterator(); li.hasNext();) {
+        for (ListIterator li = sidePolymer.listIterator(); li.hasNext(); ) {
             a = (Atom) li.next();
             atomicnum = a.getAtomicNumber();
             switch (atomicnum) {
@@ -269,7 +270,7 @@ public final class Utilities {
             Atom beta = null;
             List alphabonds = alpha.getBonds();
             Bond abond;
-            for (ListIterator li = alphabonds.listIterator(); li.hasNext();) {
+            for (ListIterator li = alphabonds.listIterator(); li.hasNext(); ) {
                 abond = (Bond) li.next();
                 beta = abond.get1_2(alpha);
                 // Don't want the peptide nitrogen or alpha hydrogen or carbonyl
@@ -285,7 +286,7 @@ public final class Utilities {
             List<Bond> betabonds = beta.getBonds();
             Atom gamma;
             int carboncount = 0;
-            for (ListIterator<Bond> li = betabonds.listIterator(); li.hasNext();) {
+            for (ListIterator<Bond> li = betabonds.listIterator(); li.hasNext(); ) {
                 abond = li.next();
                 gamma = abond.get1_2(beta);
                 if (gamma.getAtomicNumber() == 6) {
@@ -331,7 +332,7 @@ public final class Utilities {
             residue = new Residue(resname, Residue.ResidueType.UNK);
         }
         // Create the Residue group
-        for (ListIterator li = atoms.listIterator(); li.hasNext();) {
+        for (ListIterator li = atoms.listIterator(); li.hasNext(); ) {
             a = (Atom) li.next();
             residue.addMSNode(a);
         }
@@ -343,8 +344,8 @@ public final class Utilities {
      * molecules, and polynucleotides/polypeptides.
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param atoms a {@link java.util.List} object.
+     *                          object.
+     * @param atoms             a {@link java.util.List} object.
      */
     public static void biochemistry(MolecularAssembly molecularAssembly, List<Atom> atoms) {
         Atom atom, seed = null;
@@ -412,7 +413,7 @@ public final class Utilities {
             }
             List<Atom> backbone = findPolymer(atoms, seed, null);
             if (backbone.size() > 0) {
-                for (ListIterator li = backbone.listIterator(backbone.size()); li.hasPrevious();) {
+                for (ListIterator li = backbone.listIterator(backbone.size()); li.hasPrevious(); ) {
                     seed = (Atom) li.previous();
                     if (seed.getAtomicNumber() == 7) {
                         break;
@@ -487,7 +488,7 @@ public final class Utilities {
      * peptide backbone) Atoms preloaded into the List provide search
      * termination.
      *
-     * @param seed Atom
+     * @param seed  Atom
      * @param atoms List
      */
     private static void collectAtoms(Atom seed, List<Atom> atoms) {
@@ -535,7 +536,7 @@ public final class Utilities {
      * divideBackbone</p>
      *
      * @param backbone a {@link java.util.List} object.
-     * @param c a {@link ffx.potential.bonded.Polymer} object.
+     * @param c        a {@link ffx.potential.bonded.Polymer} object.
      * @return a boolean.
      */
     public static boolean divideBackbone(List<Atom> backbone, Polymer c) {
@@ -785,6 +786,7 @@ public final class Utilities {
 
     /**
      * Gets the stack trace for an exception and converts it to a String.
+     *
      * @param ex An exception.
      * @return A String of its stack trace.
      */
@@ -824,7 +826,12 @@ public final class Utilities {
      * Returns the first atom with the specified atomic number that bonds with
      * atom a, or null otherwise.
      *
-     * @param a Atom
+     * @param a            Atom
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
      * @param atomicNumber int
      * @return Atom
      */
@@ -950,13 +957,13 @@ public final class Utilities {
      * <p>
      * findPolymer</p>
      *
-     * @param atoms List
+     * @param atoms       List
      * @param currentAtom Atom
-     * @param path List
+     * @param path        List
      * @return List
      */
     public static List<Atom> findPolymer(List<Atom> atoms, Atom currentAtom,
-            List<Atom> path) {
+                                         List<Atom> path) {
         // Atom has no bonds to follow
         if (currentAtom.getBonds() == null) {
             path = getAtomListFromPool();
@@ -1063,7 +1070,7 @@ public final class Utilities {
     /**
      * Returns an atom bonded to the "end" atom, which is not equal to "other".
      *
-     * @param end Atom
+     * @param end   Atom
      * @param other Atom
      * @return Atom
      */
@@ -1081,7 +1088,12 @@ public final class Utilities {
      * True if Atom a forms a bond with another atom of the specified atomic
      * Number.
      *
-     * @param a Atom
+     * @param a            Atom
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
      * @param atomicNumber int
      * @return boolean
      */
@@ -1150,7 +1162,12 @@ public final class Utilities {
      * This function returns the number of times atom "a" is bonded to an atom
      * of the specified atomic number.
      *
-     * @param a Atom
+     * @param a            Atom
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
+     * @param atomicNumber int
      * @param atomicNumber int
      * @return int
      */
@@ -1168,7 +1185,7 @@ public final class Utilities {
     // Check to see if a portion of the backbone matches that of a
     // biological polymer, and if so determine the respective residue
     private static Residue patternMatch(int start, List<Atom> backbone,
-            PolymerType type) {
+                                        PolymerType type) {
         int pattern[];
         // Initialization
         if (type == PolymerType.AMINOACID) {
@@ -1308,7 +1325,7 @@ public final class Utilities {
         double[] db = new double[3];
         double rms = 0;
         ListIterator li, lj;
-        for (li = m1.getAtomList().listIterator(), lj = m2.getAtomList().listIterator(); li.hasNext();) {
+        for (li = m1.getAtomList().listIterator(), lj = m2.getAtomList().listIterator(); li.hasNext(); ) {
             a1 = (Atom) li.next();
             a2 = (Atom) lj.next();
             a1.getXYZ(da);

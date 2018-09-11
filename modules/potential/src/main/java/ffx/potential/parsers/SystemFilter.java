@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -125,8 +125,8 @@ public abstract class SystemFilter {
     /**
      * Use setVersioning() to choose between prefix/postfix.
      *
-     * @param file
-     * @return
+     * @param file a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
      */
     public static File version(File file) {
         if (vers == Versioning.TINKER) {
@@ -143,7 +143,7 @@ public abstract class SystemFilter {
     /**
      * Negative: prefix a version number; Positive: postfix; Zero: TINKER-style.
      *
-     * @param vers
+     * @param vers a {@link ffx.potential.parsers.SystemFilter.Versioning} object.
      */
     public static void setVersioning(Versioning vers) {
         SystemFilter.vers = vers;
@@ -235,6 +235,7 @@ public abstract class SystemFilter {
             return nf;
         }
      */
+
     /**
      * <p>
      * previousVersion</p>
@@ -284,6 +285,7 @@ public abstract class SystemFilter {
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
 
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
+    /** Constant <code>dieOnMissingAtom=</code> */
     protected static final boolean dieOnMissingAtom; // Defaults to false.
 
     static {
@@ -294,6 +296,7 @@ public abstract class SystemFilter {
             dieOnMissingAtom = Boolean.parseBoolean(dieOn);
         }
     }
+
     /**
      * The atomList is filled by filters that extend SystemFilter.
      */
@@ -359,7 +362,7 @@ public abstract class SystemFilter {
      * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public SystemFilter(List<File> files, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
+                        ForceField forceField, CompositeConfiguration properties) {
         this.files = files;
         if (files != null) {
             this.currentFile = files.get(0);
@@ -387,7 +390,7 @@ public abstract class SystemFilter {
      * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public SystemFilter(File file, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
+                        ForceField forceField, CompositeConfiguration properties) {
         files = new ArrayList<File>();
         if (file != null) {
             files.add(file);
@@ -415,7 +418,7 @@ public abstract class SystemFilter {
      * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies,
-            ForceField forceField, CompositeConfiguration properties) {
+                        ForceField forceField, CompositeConfiguration properties) {
         files = new ArrayList<File>();
         if (file != null) {
             files.add(file);
@@ -887,7 +890,7 @@ public abstract class SystemFilter {
 
                     double[] atXYZ = new double[3];
                     for (int i = 0; i < 3; i++) {
-                        atXYZ[i] = Double.parseDouble(toks[i+2]);
+                        atXYZ[i] = Double.parseDouble(toks[i + 2]);
                     }
                     int atNum = Integer.parseInt(toks[5]) - 1;
                     restraintAts.add(molaAtoms[atNum]);
@@ -966,8 +969,9 @@ public abstract class SystemFilter {
      * @param keyType Type of key
      * @param st Input string
      * @param nAtoms Number of atoms in the MolecularAssembly
-     * @throws IllegalArgumentException if an invalid argument
+     * @throws java.lang.IllegalArgumentException if an invalid argument
      * @return An int[2] with start, end indices (inclusive).
+     * @throws java.lang.IllegalArgumentException if any.
      */
     public static int[] parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
         Matcher m = intrangePattern.matcher(st);
@@ -1006,7 +1010,7 @@ public abstract class SystemFilter {
                 int atNum = Integer.parseUnsignedInt(st) - 1;
                 if (atNum < 0 || atNum >= nAtoms) {
                     throw new IllegalArgumentException(String.format(" %s numerical "
-                            + "argument %s out-of-bounds for range 1 to %d", keyType,
+                                    + "argument %s out-of-bounds for range 1 to %d", keyType,
                             st, nAtoms));
                 }
                 int[] indices = {atNum, atNum};

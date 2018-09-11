@@ -155,18 +155,38 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         scaling[n - 1] = 0.02 * sqrt(crystal.volume);
     }
 
+    /**
+     * <p>setFractionalCoordinateMode.</p>
+     *
+     * @param fractionalMode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     */
     public void setFractionalCoordinateMode(FractionalMode fractionalMode) {
         molecularAssembly.setFractionalMode(fractionalMode);
     }
 
+    /**
+     * <p>getGRMS.</p>
+     *
+     * @return a double.
+     */
     public double getGRMS() {
         return grms;
     }
 
+    /**
+     * <p>Getter for the field <code>status</code>.</p>
+     *
+     * @return a int.
+     */
     public int getStatus() {
         return status;
     }
 
+    /**
+     * <p>Getter for the field <code>energy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getEnergy() {
         return energy;
     }
@@ -226,6 +246,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * minimize</p>
      *
      * @param m             The number of previous steps used to estimate the Hessian.
+     * @param maxIterations The maximum number of minimization steps.
      * @param eps           The minimization convergence criteria.
      * @param maxIterations The maximum number of minimization steps.
      * @return a {@link ffx.numerics.Potential} object.
@@ -274,6 +295,11 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         computeStressTensor(true);
     }
 
+    /**
+     * <p>computeStressTensor.</p>
+     *
+     * @param verbose a boolean.
+     */
     public void computeStressTensor(boolean verbose) {
 
         double xOrig[] = new double[forceFieldEnergy.getNumberOfVariables()];

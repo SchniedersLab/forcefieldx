@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -71,6 +71,7 @@ import edu.rit.pj.ParallelTeam;
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
+ *
  */
 public class PDBFileMatcher {
 
@@ -93,6 +94,12 @@ public class PDBFileMatcher {
     private boolean fixCryst = false;
     private boolean fixModel = false;
 
+    /**
+     * <p>Constructor for PDBFileMatcher.</p>
+     *
+     * @param sourceFiles an array of {@link java.io.File} objects.
+     * @param matchFiles an array of {@link java.io.File} objects.
+     */
     public PDBFileMatcher(File[] sourceFiles, File[] matchFiles) {
         this.sourceFiles = sourceFiles;
         int numMatchFiles = matchFiles.length;
@@ -104,42 +111,92 @@ public class PDBFileMatcher {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>verbose</code>.</p>
+     *
+     * @param verbose a boolean.
+     */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
 
+    /**
+     * <p>Setter for the field <code>parallel</code>.</p>
+     *
+     * @param parallel a boolean.
+     */
     public void setParallel(boolean parallel) {
         this.parallel = parallel;
     }
 
+    /**
+     * <p>Setter for the field <code>headerLink</code>.</p>
+     *
+     * @param headerLink a boolean.
+     */
     public void setHeaderLink(boolean headerLink) {
         this.headerLink = headerLink;
     }
 
+    /**
+     * <p>Setter for the field <code>fixBFactors</code>.</p>
+     *
+     * @param fixBFactors a boolean.
+     */
     public void setFixBFactors(boolean fixBFactors) {
         this.fixBFactors = fixBFactors;
     }
 
+    /**
+     * <p>Setter for the field <code>fixSSBonds</code>.</p>
+     *
+     * @param fixSSBonds a boolean.
+     */
     public void setFixSSBonds(boolean fixSSBonds) {
         this.fixSSBonds = fixSSBonds;
     }
 
+    /**
+     * <p>Setter for the field <code>superpose</code>.</p>
+     *
+     * @param superpose a boolean.
+     */
     public void setSuperpose(boolean superpose) {
         this.superpose = superpose;
     }
 
+    /**
+     * <p>Setter for the field <code>atomsUsed</code>.</p>
+     *
+     * @param atomsUsed a int.
+     */
     public void setAtomsUsed(int atomsUsed) {
         this.atomsUsed = atomsUsed;
     }
 
+    /**
+     * <p>setSuffix.</p>
+     *
+     * @param suffix a {@link java.lang.String} object.
+     */
     public void setSuffix(String suffix) {
         this.fileSuffix = suffix;
     }
 
+    /**
+     * <p>Setter for the field <code>robustMatch</code>.</p>
+     *
+     * @param robustMatch a boolean.
+     */
     public void setRobustMatch(boolean robustMatch) {
         this.robustMatch = robustMatch;
     }
 
+    /**
+     * <p>Setter for the field <code>fixCryst</code>.</p>
+     *
+     * @param fixCryst a boolean.
+     */
     public void setFixCryst(boolean fixCryst) {
         this.fixCryst = fixCryst;
     }
@@ -650,7 +707,7 @@ public class PDBFileMatcher {
      * @throws IOException
      */
     private void matchFile(FileFilePair currentFilePair, PDBFileReader filereader,
-            StructurePairAligner aligner) throws IOException {
+                           StructurePairAligner aligner) throws IOException {
         Structure currentStructure = filereader.getStructure(currentFilePair.getMatchedFile());
         currentFilePair.setStructure(currentStructure);
         int numSources = sourceFiles.length;

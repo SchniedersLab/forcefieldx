@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -83,7 +83,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * @param periodicity int
      */
     public ImproperTorsionType(int atomClasses[], double k, double phase,
-            int periodicity) {
+                               int periodicity) {
         super(ForceField.ForceFieldType.IMPTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         double symm = 1.0;
@@ -193,7 +193,6 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * {@inheritDoc}
      *
      * Nicely formatted Torsion angle.
-     *
      * @since 1.0
      */
     @Override
@@ -212,7 +211,6 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * {@inheritDoc}
      *
      * Implements the Comparator interface.
-     *
      * @since 1.0
      */
     @Override
@@ -252,7 +250,6 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * {@inheritDoc}
      *
      * Override the default <code>equals</code> method.
-     *
      * @since 1.0
      */
     @Override
@@ -276,7 +273,6 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * {@inheritDoc}
      *
      * Implementation of the <code>hashCode</code> method.
-     *
      * @since 1.0
      */
     @Override
@@ -304,14 +300,14 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
     /**
      * Average two ImproperTorsionType instances. The atom classes that define the
      * new type must be supplied.
-     * 
-     * @param improperTorsionType1
-     * @param improperTorsionType2
-     * @param atomClasses
-     * @return
+     *
+     * @param improperTorsionType1 a {@link ffx.potential.parameters.ImproperTorsionType} object.
+     * @param improperTorsionType2 a {@link ffx.potential.parameters.ImproperTorsionType} object.
+     * @param atomClasses an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.ImproperTorsionType} object.
      */
     public static ImproperTorsionType average(ImproperTorsionType improperTorsionType1,
-            ImproperTorsionType improperTorsionType2, int atomClasses[]) {
+                                              ImproperTorsionType improperTorsionType2, int atomClasses[]) {
 
         if (improperTorsionType1 == null || improperTorsionType2 == null || atomClasses == null) {
             return null;

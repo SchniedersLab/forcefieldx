@@ -42,14 +42,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import static java.util.Arrays.copyOf;
 
-import static org.apache.commons.math3.util.FastMath.PI;
-
 
 /**
  * The AngleTorsionType class defines one angle-torsion energy type.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public final class AngleTorsionType extends BaseType implements Comparator<String> {
@@ -71,7 +68,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     /**
      * AngleTorsionType Constructor.
      *
-     * @param atomClasses int[]
+     * @param atomClasses    int[]
      * @param forceConstants double[]
      */
     public AngleTorsionType(int atomClasses[], double forceConstants[]) {
@@ -101,7 +98,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
-     * @return
+     * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
      */
     public AngleTorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
@@ -181,7 +178,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted Angle-Torsion string.
      */
     @Override
@@ -259,6 +256,14 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
         return hash;
     }
 
+    /**
+     * <p>average.</p>
+     *
+     * @param angleTorsionType1 a {@link ffx.potential.parameters.AngleTorsionType} object.
+     * @param angleTorsionType2 a {@link ffx.potential.parameters.AngleTorsionType} object.
+     * @param atomClasses       an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
+     */
     public static AngleTorsionType average(AngleTorsionType angleTorsionType1,
                                            AngleTorsionType angleTorsionType2, int atomClasses[]) {
         if (angleTorsionType1 == null || angleTorsionType2 == null || atomClasses == null) {

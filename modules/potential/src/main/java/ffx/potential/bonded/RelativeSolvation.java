@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -49,18 +49,28 @@ import ffx.potential.parameters.RelativeSolvationType;
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
- *
  * @since 1.0
  */
 public class RelativeSolvation {
     private static final Logger logger = Logger.getLogger(RelativeSolvation.class.getName());
     private SolvationLibrary solvationLibrary;
     private final Map<String, Double> nonStdEnergies;
-    
+
+    /**
+     * <p>Constructor for RelativeSolvation.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     */
     public RelativeSolvation(ForceField forceField) {
         this(SolvationLibrary.GK, forceField);
     }
-    
+
+    /**
+     * <p>Constructor for RelativeSolvation.</p>
+     *
+     * @param solvationLibrary a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
+     * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
+     */
     public RelativeSolvation(SolvationLibrary solvationLibrary, ForceField forceField) {
         this.solvationLibrary = solvationLibrary;
         nonStdEnergies = new HashMap<>();
@@ -72,22 +82,35 @@ public class RelativeSolvation {
             }
         }
     }
-    
+
+    /**
+     * <p>Setter for the field <code>solvationLibrary</code>.</p>
+     *
+     * @param solvationLibrary a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
+     */
     public void setSolvationLibrary(SolvationLibrary solvationLibrary) {
         this.solvationLibrary = solvationLibrary;
     }
-    
+
+    /**
+     * <p>Getter for the field <code>solvationLibrary</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.RelativeSolvation.SolvationLibrary} object.
+     */
     public SolvationLibrary getSolvationLibrary() {
         return solvationLibrary;
     }
-    
+
     /**
      * Gets the solvation energy (desolvation penalty) for a given residue, allowing
-     * for sequence optimization to include an estimate of energy relative to the 
+     * for sequence optimization to include an estimate of energy relative to the
      * unfolded state.
-     * @param residue Residue to check
+     *
+     * @param residue     Residue to check
      * @param checkZeroes Throws an error if not in solvation energy library
      * @return Solvation energy
+     * @throws java.lang.IllegalArgumentException if any.
+     * @throws java.lang.IllegalArgumentException if any.
      */
     public double getSolvationEnergy(Residue residue, boolean checkZeroes) throws IllegalArgumentException {
         String resName = "";
@@ -100,7 +123,7 @@ public class RelativeSolvation {
                 } else {
                     resName = theRes.getName();
                 }
-                
+
                 energy = getAASolvationEnergy(theRes);
                 break;
             case NA:
@@ -109,7 +132,7 @@ public class RelativeSolvation {
                 } else {
                     resName = theRes.getName();
                 }
-                
+
                 energy = getNASolvationEnergy(theRes);
                 break;
             default:
@@ -121,10 +144,11 @@ public class RelativeSolvation {
         }
         return energy;
     }
-    
+
     /**
      * Returns amino acid solvation energy based on solvation library.
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
     public double getAASolvationEnergy(Residue residue) {
@@ -145,32 +169,35 @@ public class RelativeSolvation {
                 return 0;
         }
     }
-    
+
     /**
      * Will return relative solvation energies for nucleic acids; currently returns
      * 0.
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Relative solvation energy
      */
     public double getNASolvationEnergy(Residue residue) {
         return 0;
     }
-    
+
     /**
      * Will return solvation energies relative to glycine for capped monomers
      * in GK solvent; currently wraps getExplicitSolvationEnergy.
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Relative solvation energy
      */
     public double getGKSolvationEnergy(Residue residue) {
         return getExplicitSolvationEnergy(residue);
     }
-    
+
     /**
      * Will return solvation energies relative to glycine for capped monomers in
-     * AMOEBA solvent; currently approximates this with charging energies in 
+     * AMOEBA solvent; currently approximates this with charging energies in
      * AMOEBA solvent.
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Relative solvation energy
      */
     public double getExplicitSolvationEnergy(Residue residue) {
@@ -234,12 +261,12 @@ public class RelativeSolvation {
                 return 0;
         }
     }
-    
+
     /**
      * Returns absolute solvation energies for side chain analogs as calculated
      * by MacCallum for OPLS in TIP4P solvent.
-     * 
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
     public double getMacCallumTIP4PSolvationEnergy(Residue residue) {
@@ -289,12 +316,12 @@ public class RelativeSolvation {
                 return 0;
         }
     }
-    
+
     /**
      * Returns absolute solvation energies for side chain analogs as calculated
      * by MacCallum for OPLS in SPC solvent.
-     * 
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
     public double getMacCallumSPCSolvationEnergy(Residue residue) {
@@ -344,12 +371,12 @@ public class RelativeSolvation {
                 return 0;
         }
     }
-    
+
     /**
      * Returns absolute solvation energies for side chain analogs as experimentally
      * measured by Cabani et al.
-     * 
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
     public double getCabaniSolvationEnergy(Residue residue) {
@@ -399,12 +426,12 @@ public class RelativeSolvation {
                 return 0;
         }
     }
-    
+
     /**
      * Returns absolute solvation energies for side chain analogs as experimentally
      * measured by Wolfenden et al.
-     * 
-     * @param residue
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
     public double getWolfendenSolvationEnergy(Residue residue) {
@@ -454,14 +481,16 @@ public class RelativeSolvation {
                 return 0; // Not listed.
         }
     }
-    
-    
-    
+
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "Relative solvation library: " + solvationLibrary.toString();
     }
-    
+
     public enum SolvationLibrary {
         WOLFENDEN, CABANI, EXPLICIT, GK, MACCALLUM_SPC, MACCALLUM_TIP4P, OPLS_EXPLICIT,
         OPLS_GK, AUTO, NONE
@@ -469,10 +498,10 @@ public class RelativeSolvation {
          * Citations:
          * Wolfenden et al:
          * Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C. B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
-         * 
+         *
          * Cabani et al:
          * Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
-         * 
+         *
          * MacCallum OPLS libraries:
          * Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
          */

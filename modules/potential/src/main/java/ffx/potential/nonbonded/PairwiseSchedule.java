@@ -47,7 +47,6 @@ import edu.rit.util.Range;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class PairwiseSchedule extends IntegerSchedule {
 
@@ -63,8 +62,8 @@ public class PairwiseSchedule extends IntegerSchedule {
      * Constructor for PairwiseSchedule.</p>
      *
      * @param nThreads a int.
-     * @param nAtoms a int.
-     * @param ranges an array of {@link edu.rit.util.Range} objects.
+     * @param nAtoms   a int.
+     * @param ranges   an array of {@link edu.rit.util.Range} objects.
      */
     public PairwiseSchedule(int nThreads, int nAtoms, Range ranges[]) {
         this.nAtoms = nAtoms;
@@ -74,13 +73,18 @@ public class PairwiseSchedule extends IntegerSchedule {
         threadDone = new boolean[nThreads];
     }
 
+    /**
+     * <p>setAtoms.</p>
+     *
+     * @param nAtoms a int.
+     */
     public void setAtoms(int nAtoms) {
         this.nAtoms = nAtoms;
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This is a fixed schedule.
      */
     @Override
@@ -118,9 +122,9 @@ public class PairwiseSchedule extends IntegerSchedule {
      * <p>
      * updateRanges</p>
      *
-     * @param totalInteractions a int.
+     * @param totalInteractions     a int.
      * @param atomsWithInteractions the number of chunks of interactions.
-     * @param listCount an array of int.
+     * @param listCount             an array of int.
      */
     public void updateRanges(int totalInteractions, int atomsWithInteractions, int listCount[]) {
         int id = 0;

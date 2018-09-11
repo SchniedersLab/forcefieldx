@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -63,6 +63,13 @@ public class Rattle {
 
     //set the velocity and original coordinates of global variables in Rattle Class
 
+    /**
+     * <p>Constructor for Rattle.</p>
+     *
+     * @param nVariables a int.
+     * @param molAss     a {@link ffx.potential.MolecularAssembly} object.
+     * @param v          an array of {@link double} objects.
+     */
     public Rattle(int nVariables, MolecularAssembly molAss, double v[]) {
 
         int i, j = 0;
@@ -88,6 +95,13 @@ public class Rattle {
     }
 
     // Rattle algorithm applied to distances and half-step velocity values
+
+    /**
+     * <p>postForce1.</p>
+     *
+     * @param molAss a {@link ffx.potential.MolecularAssembly} object.
+     * @param dt     a double.
+     */
     public void postForce1(MolecularAssembly molAss, double dt) {
         int i, n;
         int niter, maxiter;
@@ -141,7 +155,7 @@ public class Rattle {
 
         // Set the iteration counter, termination and tolerance
         maxiter = 500;
-        sor = 1.250;   
+        sor = 1.250;
         rateps = 0.0000010; // default in Tinker
         eps = rateps;
 
@@ -164,14 +178,14 @@ public class Rattle {
                     xyzr[1] = yr;
                     xyzr[2] = zr;
 
-                    dist2 = cryst.image(xyzr); 
-            
+                    dist2 = cryst.image(xyzr);
+
                     //update xr, yr, and zr
                     xr = xyzr[0];
                     yr = xyzr[1];
                     zr = xyzr[2];
                     delta = (krat[i] * krat[i]) - dist2;
-                    
+
                     if (abs(delta) > eps) {
                         done = false;
                         update[ia] = true;
@@ -188,7 +202,7 @@ public class Rattle {
                         xo = xyzo[0];
                         yo = xyzo[1];
                         zo = xyzo[2];
-                        
+
                         dot = (xr * xo) + (yr * yo) + (zr * zo);
                         rma = 1.00 / atomArray[ia].getMass();
                         rmb = 1.00 / atomArray[ib].getMass();
@@ -230,6 +244,11 @@ public class Rattle {
         }
     }
 
+    /**
+     * <p>postForce2.</p>
+     *
+     * @param dt a double.
+     */
     public void postForce2(double dt) {
         int i, n;
         int ia, ib;
@@ -274,8 +293,7 @@ public class Rattle {
         }
 
         //initialize ratimage for minimum image convention
-        for (i = 0; i < nrat; i++) 
-        {
+        for (i = 0; i < nrat; i++) {
             ratimage[i] = true;
         }
 
@@ -302,8 +320,7 @@ public class Rattle {
         while ((!done) && (niter < maxiter)) {
             niter++;
             done = true;
-            for (i = 1; i < nrat; i++) 
-            {
+            for (i = 1; i < nrat; i++) {
                 ia = bondAtmNum[i][0];
                 ib = bondAtmNum[i][1];
 
@@ -311,11 +328,11 @@ public class Rattle {
                     xr = x[ib] - x[ia];
                     yr = y[ib] - y[ia];
                     zr = z[ib] - z[ia];
-                    
+
                     xyzr[0] = xr;
                     xyzr[1] = yr;
                     xyzr[2] = zr;
-                    
+
                     cryst.image(xyzr);
                     xr = xyzr[0];
                     yr = xyzr[1];
@@ -349,8 +366,7 @@ public class Rattle {
                 }
 
             }
-            for(i = 0; i < n; i++)
-            {
+            for (i = 0; i < n; i++) {
                 moved[i] = update[i];
                 update[i] = false;
             }

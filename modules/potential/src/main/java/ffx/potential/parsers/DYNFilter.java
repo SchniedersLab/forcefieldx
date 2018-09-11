@@ -54,7 +54,6 @@ import ffx.crystal.Crystal;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class DYNFilter {
 
@@ -76,11 +75,16 @@ public class DYNFilter {
      * readDYN</p>
      *
      * @param dynFile a {@link java.io.File} object.
-     * @param crystal
-     * @param x an array of double.
-     * @param v an array of double.
-     * @param a an array of double.
-     * @param ap an array of double.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param x       an array of double.
+     * @param v       an array of double.
+     * @param a       an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
      * @return a boolean.
      */
     public boolean readDYN(File dynFile, Crystal crystal,
@@ -199,11 +203,16 @@ public class DYNFilter {
      * writeDYN</p>
      *
      * @param dynFile a {@link java.io.File} object.
-     * @param unitCell a {@link ffx.crystal.Crystal} object.
-     * @param x an array of double.
-     * @param v an array of double.
-     * @param a an array of double.
-     * @param ap an array of double.
+     * @param x       an array of double.
+     * @param v       an array of double.
+     * @param a       an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param ap      an array of double.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
      * @return a boolean.
      */
     public boolean writeDYN(File dynFile, Crystal crystal, double x[], double v[],

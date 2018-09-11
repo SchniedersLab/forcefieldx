@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -105,25 +105,25 @@ public class OSRW extends AbstractOSRW {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous,
-            AlgorithmListener algorithmListener) {
+                File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                double temperature, double dt, double printInterval,
+                double saveInterval, boolean asynchronous,
+                AlgorithmListener algorithmListener) {
         this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
                 temperature, dt, printInterval, saveInterval, asynchronous,
                 true, algorithmListener);
@@ -132,26 +132,26 @@ public class OSRW extends AbstractOSRW {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
-     * @param resetNumSteps whether to reset energy counts to 0
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
+     * @param resetNumSteps     whether to reset energy counts to 0
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous, boolean resetNumSteps,
-            AlgorithmListener algorithmListener) {
+                File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                double temperature, double dt, double printInterval,
+                double saveInterval, boolean asynchronous, boolean resetNumSteps,
+                AlgorithmListener algorithmListener) {
         super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
 
         /**
@@ -221,6 +221,8 @@ public class OSRW extends AbstractOSRW {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Called by Molecular Dynamics.
      */
     @Override
@@ -436,6 +438,9 @@ public class OSRW extends AbstractOSRW {
         return totalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void addBias(double dEdU, double[] x, double[] gradient) {
 
@@ -641,15 +646,27 @@ public class OSRW extends AbstractOSRW {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>recursionKernel</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public int[][] getRecursionKernel() {
         return recursionKernel;
     }
 
+    /**
+     * <p>Setter for the field <code>recursionKernel</code>.</p>
+     *
+     * @param recursionKernel an array of {@link int} objects.
+     */
     public void setRecursionKernel(int[][] recursionKernel) {
         this.recursionKernel = recursionKernel;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * If necessary, allocate more space.
      */
     @Override
@@ -711,10 +728,9 @@ public class OSRW extends AbstractOSRW {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Eq. 7 from the Xtal Thermodynamics paper.
-     *
-     * @param print
-     * @return the current free energy.
      */
     @Override
     protected double updateFLambda(boolean print) {
@@ -798,6 +814,9 @@ public class OSRW extends AbstractOSRW {
         return freeEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         if (receiveThread != null) {
@@ -806,6 +825,9 @@ public class OSRW extends AbstractOSRW {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double evaluateKernel(int cLambda, int cF_Lambda) {
         /**
@@ -864,6 +886,9 @@ public class OSRW extends AbstractOSRW {
         return sum;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getCountsReceived() {
         return receiveThread.getCountsReceived();

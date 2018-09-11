@@ -41,11 +41,11 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 /**
- * This program integrates using four methods: rectangular integration, the 
- * trapezoidal method, Simpson's Three Point Integration, and Boole's Five Point 
+ * This program integrates using four methods: rectangular integration, the
+ * trapezoidal method, Simpson's Three Point Integration, and Boole's Five Point
  * Integration. Of these, Simpson's and Boole's integration methods generally
  * perform the best. Parallelized methods exist and seem to function, but the
- * performance of a parallelized method should not be necessary, and the 
+ * performance of a parallelized method should not be necessary, and the
  * parallelization introduces some complexity and inefficiency.
  *
  * Primary methods: integrateData and integrateByBins, using some DataSet,
@@ -62,11 +62,12 @@ public class Integrate1DNumeric {
     
     /**
      * Generates a set of points along x.
+     *
      * @param lb Beginning value, inclusive
      * @param ub Ending value, inclusive
      * @param nPoints Total number of points
      * @param halfWidthEnds If ends should have 1/2 regular separation
-     * @return 
+     * @return an array of {@link double} objects.
      */
     public static double[] generateXPoints(double lb, double ub, int nPoints, boolean halfWidthEnds) {
         if (lb >= ub) {
@@ -91,9 +92,10 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set using trapezoidal integration. For most 
-     * data sets, Simpson's rule or Boole's rule will out-perform trapezoidal 
+     * Numerically integrates a data set using trapezoidal integration. For most
+     * data sets, Simpson's rule or Boole's rule will out-perform trapezoidal
      * integration. Prefer use of the sequential version unless necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -112,10 +114,11 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
      * trapezoidal integration. For most data sets, Simpson's rule or Boole's
-     * rule will out-perform trapezoidal integration. Prefer use of the 
+     * rule will out-perform trapezoidal integration. Prefer use of the
      * sequential version unless necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -134,9 +137,10 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set using trapezoidal integration. For most 
-     * data sets, Simpson's rule or Boole's rule will out-perform trapezoidal 
+     * Numerically integrates a data set using trapezoidal integration. For most
+     * data sets, Simpson's rule or Boole's rule will out-perform trapezoidal
      * integration.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -155,9 +159,10 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
      * trapezoidal integration. For most data sets, Simpson's rule or Boole's
      * rule will out-perform trapezoidal integration.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -178,8 +183,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Treats half-width bins at the ends of a DataSet using trapezoidal 
+     * Treats half-width bins at the ends of a DataSet using trapezoidal
      * integration.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Estimate of area in half-width start/end bins.
@@ -193,8 +199,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set using Boole's rule. The sequential 
+     * Numerically integrates a data set using Boole's rule. The sequential
      * version is preferred unless necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -213,8 +220,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
      * Simpson's rule. The sequential version is preferred unless necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -259,6 +267,7 @@ public class Integrate1DNumeric {
     
     /**
      * Numerically integrates a data set using Simpson's rule.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -277,8 +286,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
      * Simpson's rule.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -402,8 +412,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set using Boole's rule. The sequential 
+     * Numerically integrates a data set using Boole's rule. The sequential
      * version is preferred unless necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -422,8 +433,9 @@ public class Integrate1DNumeric {
     }
 
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
      * Boole's rule. The sequential version is preferred unless necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -468,6 +480,7 @@ public class Integrate1DNumeric {
     
     /**
      * Numerically integrates a data set using Boole's rule.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -486,8 +499,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
      * Boole's rule.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -529,9 +543,10 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set using parallelized rectangular 
-     * integration. Not recommended; preferably use at least trapezoidal 
+     * Numerically integrates a data set using parallelized rectangular
+     * integration. Not recommended; preferably use at least trapezoidal
      * integration, and avoid parallelized versions unless necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -550,10 +565,11 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
-     * rectangular integration. Not recommended; preferably use at least 
-     * trapezoidal integration. Also, prefer parallelized versions unless 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
+     * rectangular integration. Not recommended; preferably use at least
+     * trapezoidal integration. Also, prefer parallelized versions unless
      * necessary.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -574,8 +590,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set using rectangular integration. Not 
+     * Numerically integrates a data set using rectangular integration. Not
      * recommended; preferably use at least trapezoidal integration.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Area of integral
@@ -594,9 +611,10 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Numerically integrates a data set, in bounds lb-ub inclusive, using 
-     * rectangular integration. Not recommended; preferably use at least 
+     * Numerically integrates a data set, in bounds lb-ub inclusive, using
+     * rectangular integration. Not recommended; preferably use at least
      * trapezoidal integration.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @param lb First index to integrate over
@@ -627,8 +645,9 @@ public class Integrate1DNumeric {
     }
     
     /**
-     * Treats half-width bins at the ends of a DataSet using rectangular 
+     * Treats half-width bins at the ends of a DataSet using rectangular
      * integration. Not recommended, preferably use trapezoidal integration.
+     *
      * @param data Data set to integrate
      * @param side Side to integrate from
      * @return Estimate of area in half-width start/end bins.
@@ -652,6 +671,7 @@ public class Integrate1DNumeric {
     
     /**
      * Generic caller for 1D integration schemes given an IntegrationType.
+     *
      * @param data To integrate
      * @param side Integrate from side
      * @param type Scheme to use
@@ -675,17 +695,17 @@ public class Integrate1DNumeric {
     
     /**
      * Returns the contribution of each bin to the overall integral as an array;
-     * will be most accurate at break-points for the integration type. Overall 
+     * will be most accurate at break-points for the integration type. Overall
      * integral is the sum of the array of doubles, plus or minus minor rounding
      * errors.
-     * 
+     *
      * If N is a breakpoint for Boole's rule:
      * N+1 is a trapezoid from N to N+1.
      * N+2 is Simpson's from N to N+2, minus the prior trapezoid (N+1).
      * N+3 is 4-point integration from N to N+3, minus the N to N+2 parabola.
-     * N+4 is the full Boole's Rule from N to N+4, minus the N to N+3 4-point 
+     * N+4 is the full Boole's Rule from N to N+4, minus the N to N+3 4-point
      * integral.
-     * 
+     *
      * @param data Data to integrate
      * @param side Side to integrate from
      * @param maxType Maximum rule to be used

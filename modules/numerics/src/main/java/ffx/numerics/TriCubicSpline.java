@@ -43,9 +43,7 @@ package ffx.numerics;
  *
  * @author Timothy D. Fenn
  *
- * @see <a
- * href="http://www.cs.cmu.edu/~fp/courses/graphics/asst5/catmullRom.pdf"
- * target="_blank">Catmull-Rom splines</a>
+ * @see <a href="http://www.cs.cmu.edu/~fp/courses/graphics/asst5/catmullRom.pdf" target="_blank">Catmull-Rom splines</a>
  *
  * @since 1.0
  */

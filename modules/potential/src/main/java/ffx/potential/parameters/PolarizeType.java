@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -92,7 +92,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * @param thole a double.
      */
     public PolarizeType(int atomType, double polarizability, double thole,
-            int polarizationGroup[]) {
+                        int polarizationGroup[]) {
         super(ForceField.ForceFieldType.POLARIZE, Integer.toString(atomType));
         this.type = atomType;
         this.thole = thole;
@@ -125,7 +125,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * Add mapped known types to the polarization group of a new patch.
      *
      * @param typeMap a lookup between new atom types and known atom types.
-     * @return
+     * @return a boolean.
      */
     public boolean patchTypes(HashMap<AtomType, AtomType> typeMap) {
         if (polarizationGroup == null) {
@@ -191,9 +191,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         return polarizeString.toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
 
@@ -210,9 +208,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -229,9 +225,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 5;
@@ -243,14 +237,14 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * Average two PolarizeType instances. The atom types to include in the new
      * polarizationGroup must be supplied.
      *
-     * @param polarizeType1
-     * @param polarizeType2
-     * @param atomType
-     * @param polarizationGroup
-     * @return
+     * @param polarizeType1 a {@link ffx.potential.parameters.PolarizeType} object.
+     * @param polarizeType2 a {@link ffx.potential.parameters.PolarizeType} object.
+     * @param atomType a int.
+     * @param polarizationGroup an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.PolarizeType} object.
      */
     public static PolarizeType average(PolarizeType polarizeType1,
-            PolarizeType polarizeType2, int atomType, int polarizationGroup[]) {
+                                       PolarizeType polarizeType2, int atomType, int polarizationGroup[]) {
         if (polarizeType1 == null || polarizeType2 == null) {
             return null;
         }
@@ -258,7 +252,15 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
         return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
     }
-	
+
+    /**
+     * <p>assignPolarizationGroups.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param ip11 an array of {@link int} objects.
+     * @param ip12 an array of {@link int} objects.
+     * @param ip13 an array of {@link int} objects.
+     */
     public static void assignPolarizationGroups(Atom atoms[], int ip11[][], int ip12[][], int ip13[][]) {
         /**
          * Find directly connected group members for each atom.
@@ -386,7 +388,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * group.
      */
     private static void growGroup(List<Integer> polarizationGroup,
-            List<Integer> group, Atom seed) {
+                                  List<Integer> group, Atom seed) {
         List<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -64,6 +64,8 @@ import static ffx.numerics.VectorMath.binomial;
  * Predict Mutual Induced Dipoles based on previous steps.
  *
  * @author Stephen LuCore
+ *
+ * @since 1.0
  */
 public class ScfPredictor {
 
@@ -116,6 +118,13 @@ public class ScfPredictor {
      */
     private static final double eps = 1.0e-4;
 
+    /**
+     * <p>Constructor for ScfPredictor.</p>
+     *
+     * @param mode a {@link ffx.potential.nonbonded.ScfPredictor.PredictorMode} object.
+     * @param order a int.
+     * @param ff a {@link ffx.potential.parameters.ForceField} object.
+     */
     public ScfPredictor(PredictorMode mode, int order, ForceField ff) {
         predictorMode = mode;
         predictorOrder = order;
@@ -139,12 +148,12 @@ public class ScfPredictor {
      * To be called upon initialization and update of inducedDipole arrays in
      * parent.
      *
-     * @param inducedDipole
-     * @param inducedDipoleCR
-     * @param lambdaTerm
+     * @param inducedDipole an array of induced dipoles.
+     * @param inducedDipoleCR an array of induced dipoles chain rule terms.
+     * @param lambdaTerm a boolean.
      */
     public void setInducedDipoleReferences(double[][][] inducedDipole, double[][][] inducedDipoleCR,
-            boolean lambdaTerm) {
+                                           boolean lambdaTerm) {
         this.inducedDipole = inducedDipole;
         this.inducedDipoleCR = inducedDipoleCR;
         if (lambdaTerm) {
@@ -156,11 +165,17 @@ public class ScfPredictor {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return predictorMode.toString();
     }
 
+    /**
+     * <p>run.</p>
+     *
+     * @param lambdaMode a {@link ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode} object.
+     */
     public void run(LambdaMode lambdaMode) {
         if (predictorMode == PredictorMode.NONE) {
             return;
@@ -200,10 +215,10 @@ public class ScfPredictor {
     /**
      * Save the current converged mutual induced dipoles.
      *
-     * @param inducedDipole
-     * @param inducedDipoleCR
-     * @param directDipole
-     * @param directDipoleCR
+     * @param inducedDipole an array of induced dipoles.
+     * @param inducedDipoleCR an array of induced dipoles chain rule terms.
+     * @param directDipole an array of direct dipoles.
+     * @param directDipoleCR an array of direct dipoles chain rule terms.
      */
     public void saveMutualInducedDipoles(
             double[][][] inducedDipole, double[][][] inducedDipoleCR,
@@ -393,10 +408,10 @@ public class ScfPredictor {
             LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
             if (true)
                 logger.info(String.format(" LS Optimization parameters:"
-                    + "  %s %s\n"
-                    + "  %s %s\n"
-                    + "  %d %d", function, targetVector.toString(),
-                    start.toString(), checker.toString(), maxIter, maxEval));
+                                + "  %s %s\n"
+                                + "  %s %s\n"
+                                + "  %d %d", function, targetVector.toString(),
+                        start.toString(), checker.toString(), maxIter, maxEval));
             return optimum;
         }
 

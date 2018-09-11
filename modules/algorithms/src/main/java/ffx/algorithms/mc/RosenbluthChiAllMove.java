@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -111,6 +111,7 @@ public class RosenbluthChiAllMove implements MCMove {
     public enum MODE {
         EXPENSIVE, CHEAP, CHEAPINDIV, CHEAPDIFFS, CONTROL, CTRL_ALL;
     }
+
     private final MODE mode;
     private final double CATASTROPHE_THRESHOLD = -10000;
     public double origEnergy = 0.0;
@@ -119,9 +120,21 @@ public class RosenbluthChiAllMove implements MCMove {
     private long startTime, endTime, took;
     private final double NS_TO_MS = 0.000001;
 
+    /**
+     * <p>Constructor for RosenbluthChiAllMove.</p>
+     *
+     * @param mola           a {@link ffx.potential.MolecularAssembly} object.
+     * @param target         a {@link ffx.potential.bonded.Residue} object.
+     * @param testSetSize    a int.
+     * @param ffe            a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param temperature    a double.
+     * @param writeSnapshots a boolean.
+     * @param moveNumber     a int.
+     * @param verbose        a boolean.
+     */
     public RosenbluthChiAllMove(MolecularAssembly mola, Residue target,
-            int testSetSize, ForceFieldEnergy ffe, double temperature,
-            boolean writeSnapshots, int moveNumber, boolean verbose) {
+                                int testSetSize, ForceFieldEnergy ffe, double temperature,
+                                boolean writeSnapshots, int moveNumber, boolean verbose) {
         if (System.getProperty("cbmc-type") != null) {
             mode = MODE.valueOf(System.getProperty("cbmc-type"));
         } else {
@@ -405,10 +418,20 @@ public class RosenbluthChiAllMove implements MCMove {
         }
     }
 
+    /**
+     * <p>getWn.</p>
+     *
+     * @return a double.
+     */
     public double getWn() {
         return Wn;
     }
 
+    /**
+     * <p>getWo.</p>
+     *
+     * @return a double.
+     */
     public double getWo() {
         return Wo;
     }
@@ -1025,6 +1048,11 @@ public class RosenbluthChiAllMove implements MCMove {
         return accepted;
     }
 
+    /**
+     * <p>wasAccepted.</p>
+     *
+     * @return a boolean.
+     */
     public boolean wasAccepted() {
         return accepted;
     }
@@ -1079,6 +1107,8 @@ public class RosenbluthChiAllMove implements MCMove {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Performs the move associated with this MCMove. Also updates chi values in
      * associated Torsion objects.
      */
@@ -1089,6 +1119,8 @@ public class RosenbluthChiAllMove implements MCMove {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Reverts the last applied move() call.
      */
     @Override
@@ -1127,6 +1159,9 @@ public class RosenbluthChiAllMove implements MCMove {
 //        torsions.stream().forEach(t -> ((Torsion) t).update());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return String.format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Rota: %s",
@@ -1415,6 +1450,11 @@ public class RosenbluthChiAllMove implements MCMove {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>mode</code>.</p>
+     *
+     * @return a {@link ffx.algorithms.mc.RosenbluthChiAllMove.MODE} object.
+     */
     public MODE getMode() {
         return mode;
     }
@@ -1463,6 +1503,13 @@ public class RosenbluthChiAllMove implements MCMove {
         }
     }
 
+    /**
+     * <p>measureLysine.</p>
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     * @param print   a boolean.
+     * @return an array of {@link double} objects.
+     */
     public double[] measureLysine(Residue residue, boolean print) {
         if (!residue.getName().contains("LY")
                 || (residue.getAminoAcid3() != AminoAcid3.LYS && residue.getAminoAcid3() != AminoAcid3.LYD)) {

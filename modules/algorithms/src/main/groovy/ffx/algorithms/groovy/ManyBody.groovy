@@ -1,16 +1,16 @@
 package ffx.algorithms.groovy
 
-import ffx.numerics.Potential
-import org.apache.commons.io.FilenameUtils
-
 import edu.rit.pj.Comm
 
+import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.algorithms.RotamerOptimization;
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 
 import picocli.CommandLine.Command
@@ -38,11 +38,11 @@ class ManyBody extends AlgorithmsScript {
 
     private File baseDir = null;
     boolean testing = null;
-    
+
     ForceFieldEnergy potentialEnergy;
 
     boolean monteCarloTesting = false;
-    
+
     @Override
     ManyBody run() {
 
@@ -69,19 +69,28 @@ class ManyBody extends AlgorithmsScript {
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
         potentialEnergy = activeAssembly.getPotentialEnergy();
 
+        // TODO: Check if a "rot" file exists; if so read it in and assign save rotamers to their respective residue.
+//        String chainName = "";
+//        int resID = 0;
+//        Polymer polymer = activeAssembly.getChain(chainName);
+//        Residue residue = polymer.getResidue(resID);
+//        Rotamer rotamer = null;
+//        residue.addRotamer(rotamer);
+
+
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
-            activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
-        testing  = getTesting();
+                activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
 
+        testing = getTesting()
         if (testing) {
-            rotamerOptimization.turnRotamerSingleEliminationOff();
-            rotamerOptimization.turnRotamerPairEliminationOff();
+            rotamerOptimization.turnRotamerSingleEliminationOff()
+            rotamerOptimization.turnRotamerPairEliminationOff()
         }
 
-        if(monteCarloTesting){
-            rotamerOptimization.setMonteCarloTesting(true);
+        if (monteCarloTesting) {
+            rotamerOptimization.setMonteCarloTesting(true)
         }
-        manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly);
+        manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues();
 
@@ -140,7 +149,7 @@ class ManyBody extends AlgorithmsScript {
      * Returns the potential energy of the active assembly. Used during testing assertions.
      * @return potentialEnergy Potential energy of the active assembly.
      */
-    ForceFieldEnergy getPotential(){
+    ForceFieldEnergy getPotential() {
         return potentialEnergy;
     }
 
@@ -153,7 +162,7 @@ class ManyBody extends AlgorithmsScript {
      * Set method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
      * @param testing A boolean flag that turns off elimination criteria for testing purposes.
      */
-    void setTesting(boolean testing){
+    void setTesting(boolean testing) {
         this.testing = testing;
     }
 
@@ -161,7 +170,7 @@ class ManyBody extends AlgorithmsScript {
      * Get method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
      * @return testing A boolean flag that turns off elimination criteria for testing purposes.
      */
-    boolean getTesting(){
+    boolean getTesting() {
         return testing;
     }
 

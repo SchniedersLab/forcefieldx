@@ -118,33 +118,847 @@ import static ffx.potential.parameters.MultipoleType.zeroM;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
- * mutlipole force field in parallel using a {@link NeighborList} for any
- * {@link Crystal} space group. The real space contribution is contained within
+ * mutlipole force field in parallel using a {@link ffx.potential.nonbonded.NeighborList} for any
+ * {@link ffx.crystal.Crystal} space group. The real space contribution is contained within
  * this class and the reciprocal space contribution is delegated to the
- * {@link ReciprocalSpace} class.
+ * {@link ffx.potential.nonbonded.ReciprocalSpace} class.
  *
  * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Jay
  * Ponder, Pengyu Ren and Tom Darden.<br>
- *
  * @see <a href="http://dx.doi.org/10.1021/ct300035u" target="_blank"> M. J.
  * Schnieders, J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P.
  * Ren, The Structure, Thermodynamics, and Solubility of Organic Crystals from
  * Simulation with a Polarizable Force Field, Journal of Chemical Theory and
  * Computation 8 (5), 1721-36 (2012)</a>
- *
  * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
  * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
  * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
  * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
- *
  * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
  * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
  * 73 (2004)</a>
- *
  * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
  * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
  * Physics 98 (12), 10089 (1993)</a>
- *
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
+ * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
+ * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
+ * (1998)</a>
+ * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
+ * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
+ * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
+ * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
+ * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
+ * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
+ * 73 (2004)</a>
+ * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
+ * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * Physics 98 (12), 10089 (1993)</a>
  * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
  * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
  * (1998)</a>
@@ -385,7 +1199,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * ligand). 2.) Uenv = The polarization energy of the system without the
      * ligand. 3.) Uligand = The polarization energy of the ligand by itself.
      * 4.) Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
-     *
+     * <p>
      * Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for
      * parts 2 & 3. This is OSRW_lambda only; ESV_lambda scales by overwriting
      * polarizabilities in InitializationRegion.
@@ -401,11 +1215,11 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * ligand). 2.) Uenv = The polarization energy of the system without the
      * ligand. 3.) Uligand = The polarization energy of the ligand by itself.
      * 4.) Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
-     *
+     * <p>
      * Set the "use" array to true for all atoms for part 1. Set the "use" array
      * to true for all atoms except the ligand for part 2. Set the "use" array
      * to true only for the ligand atoms for part 3.
-     *
+     * <p>
      * The "use" array can also be employed to turn off atoms for computing the
      * electrostatic energy of sub-structures.
      */
@@ -579,10 +1393,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     private final ParallelTeam parallelTeam;
     /**
      * The sectionTeam encapsulates 1 or 2 threads.
-     *
+     * <p>
      * If it contains 1 thread, the real and reciprocal space calculations are
      * done sequentially.
-     *
+     * <p>
      * If it contains 2 threads, the real and reciprocal space calculations will
      * be done concurrently.
      */
@@ -590,7 +1404,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     /**
      * If the real and reciprocal space parts of PME are done sequentially, then
      * the realSpaceTeam is equal parallalTeam.
-     *
+     * <p>
      * If the real and reciprocal space parts of PME are done concurrently, then
      * the realSpaceTeam will have fewer threads than the default parallelTeam.
      */
@@ -598,7 +1412,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     /**
      * If the real and reciprocal space parts of PME are done sequentially, then
      * the reciprocalSpaceTeam is equal parallalTeam.
-     *
+     * <p>
      * If the real and reciprocal space parts of PME are done concurrently, then
      * the reciprocalSpaceTeam will have fewer threads than the default
      * parallelTeam.
@@ -647,12 +1461,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     /**
      * ParticleMeshEwald constructor.
      *
-     * @param atoms the Atom array to do electrostatics on.
-     * @param molecule the molecule number for each atom.
-     * @param forceField the ForceField the defines the electrostatics
-     * parameters.
-     * @param crystal The boundary conditions.
-     * @param elecForm The electrostatics functional form.
+     * @param atoms        the Atom array to do electrostatics on.
+     * @param molecule     the molecule number for each atom.
+     * @param forceField   the ForceField the defines the electrostatics
+     *                     parameters.
+     * @param crystal      The boundary conditions.
+     * @param elecForm     The electrostatics functional form.
      * @param neighborList The NeighborList for both van der Waals and PME.
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
@@ -1172,10 +1986,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Pass in atoms that have been assigned electrostatics from a fixed charge
      * force field.
-     *
-     * @param atoms
      */
     @Override
     public void setFixedCharges(Atom atoms[]) {
@@ -1291,6 +2105,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAtoms(Atom atoms[], int molecule[]) {
         this.atoms = atoms;
@@ -1307,6 +2124,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         /**
@@ -1339,11 +2159,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Calculate the PME electrostatic energy.
-     *
-     * @param gradient If <code>true</code>, the gradient will be calculated.
-     * @param print If <code>true</code>, extra logging is enabled.
-     * @return return the total electrostatic energy (permanent + polarization).
      */
     @Override
     public double energy(boolean gradient, boolean print) {
@@ -1929,34 +2747,61 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         return totalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getInteractions() {
         return interactions;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getCavitationEnergy(boolean throwError) {
         return generalizedKirkwood.getCavitationEnergy(throwError);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getDispersionEnergy(boolean throwError) {
         return generalizedKirkwood.getDispersionEnergy(throwError);
     }
 
+    /**
+     * <p>getCavitationEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getCavitationEnergy() {
         return generalizedKirkwood.getCavitationEnergy(false);
     }
 
+    /**
+     * <p>getDispersionEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getDispersionEnergy() {
         return generalizedKirkwood.getDispersionEnergy(false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getGKInteractions() {
         return gkInteractions;
     }
 
+    /**
+     * <p>getGradients.</p>
+     *
+     * @param grad an array of {@link double} objects.
+     */
     public void getGradients(double grad[][]) {
         if (grad == null) {
             grad = new double[3][nAtoms];
@@ -1974,21 +2819,33 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double[][][] getGradient() {
         return grad;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double[][][] getTorque() {
         return torque;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double[][][] getLambdaGradient() {
         return lambdaGrad;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double[][][] getLambdaTorque() {
         return lambdaTorque;
@@ -2179,6 +3036,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         return completedSCFCycles;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void destroy() {
         if (fftTeam != null) {
@@ -5792,9 +6652,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * Determine the real space Ewald parameters and permanent multipole self
      * energy.
      *
-     * @param off Real space cutoff.
+     * @param off    Real space cutoff.
      * @param aewald Ewald convergence parameter (0.0 turns off reciprocal
-     * space).
+     *               space).
      */
     private void setEwaldParameters(double off, double aewald) {
         off2 = off * off;
@@ -5868,9 +6728,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * <p>
      * ewaldCutoff</p>
      *
-     * @param coeff a double.
+     * @param coeff     a double.
      * @param maxCutoff a double.
-     * @param eps a double.
+     * @param eps       a double.
      * @return a double.
      */
     public static double ewaldCutoff(double coeff, double maxCutoff, double eps) {
@@ -5902,6 +6762,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         return cutoff;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getEwaldCutoff() {
         return off;
@@ -6096,13 +6959,16 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setLambdaMultipoleScale(double multipoleScale) {
         //
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Set the electrostatic lambda scaling factor.
      */
     @Override
@@ -6183,6 +7049,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
 
     /**
      * Attach system with extended variable such as titrations.
+     *
+     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
      */
     public void attachExtendedSystem(ExtendedSystem system) {
         // Set object handles.
@@ -6219,6 +7087,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         logger.info(format(" Attached extended system (%d variables) to PME.\n", numESVs));
     }
 
+    /**
+     * <p>detachExtendedSystem.</p>
+     */
     public void detachExtendedSystem() {
         fill(esvAtomsScaled, false);
         esvTerm = false;
@@ -6275,6 +7146,11 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
+    /**
+     * <p>getTensorsRecycled.</p>
+     *
+     * @return a int.
+     */
     public int getTensorsRecycled() {
         return recycledTensors;
     }
@@ -6330,11 +7206,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         if (shareddEdLambda == null || !lambdaTerm) {
@@ -6348,46 +7230,106 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         return dEdL;
     }
 
+    /**
+     * <p>getEsvDerivative.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDerivative(int id) {
         return getEsvDeriv_Permanent(id) + getEsvDeriv_Induced(id);
     }
 
+    /**
+     * <p>getEsvDeriv_Permanent.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_Permanent(int id) {
         return esvPermRealDeriv_shared[id].get()
                 + esvPermRecipDeriv_shared[id].get()
                 + esvPermSelfDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_PermReal.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_PermReal(int id) {
         return esvPermRealDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_PermSelf.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_PermSelf(int id) {
         return esvPermSelfDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_PermRecip.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_PermRecip(int id) {
         return esvPermRecipDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_Induced.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_Induced(int id) {
         return esvInducedRealDeriv_shared[id].get()
                 + esvInducedRecipDeriv_shared[id].get()
                 + esvInducedSelfDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_IndReal.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_IndReal(int id) {
         return esvInducedRealDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_IndSelf.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_IndSelf(int id) {
         return esvInducedSelfDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_IndRecip.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_IndRecip(int id) {
         return esvInducedRecipDeriv_shared[id].get();
     }
 
+    /**
+     * <p>getEsvDeriv_GK.</p>
+     *
+     * @param id a int.
+     * @return a double.
+     */
     public double getEsvDeriv_GK(int id) {
         throw new UnsupportedOperationException();
     }
@@ -6395,9 +7337,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     /**
      * Log the real space electrostatics interaction.
      *
-     * @param i Atom i.
-     * @param k Atom j.
-     * @param r The distance rij.
+     * @param i   Atom i.
+     * @param k   Atom j.
+     * @param r   The distance rij.
      * @param eij The interaction energy.
      * @since 1.0
      */
@@ -6407,6 +7349,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         if (sharedd2EdLambda2 == null || !lambdaTerm) {
@@ -7692,7 +8637,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     private double oneThird = 1.0 / 3.0;
 
     /**
-     ******************************
+     * {@inheritDoc}
+     * <p>
+     * *****************************
      * Access methods for OpenMM. *****************************
      */
     @Override
@@ -7700,61 +8647,97 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         return coordinates;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GeneralizedKirkwood getGK() {
         return generalizedKirkwood;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getPolarEps() {
         return poleps;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int[][] getPolarization11() {
         return ip11;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int[][] getPolarization12() {
         return ip12;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int[][] getPolarization13() {
         return ip13;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Polarization getPolarizationType() {
         return polarization;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int[][] getAxisAtoms() {
         return axisAtom;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getScale14() {
         return m14scale;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getEwaldCoefficient() {
         return aewald;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReciprocalSpace getReciprocalSpace() {
         return reciprocalSpace;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ELEC_FORM getElecForm() {
         return elecForm;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getName() {
         return "Quasi-internal";
@@ -7850,6 +8833,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         /**
          * Overriden by the ESV version which updates with every softcore
          * interaction.
+         *
+         * @param i    Atom i index.
+         * @param k    Atom k index.
+         * @param mode the LambdaMode
          */
         public void setFactors(int i, int k, LambdaMode mode) {
             /* no-op */
@@ -7991,46 +8978,101 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
+    /**
+     * <p>getTotalElectrostaticEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getTotalElectrostaticEnergy() {
         return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
     }
 
+    /**
+     * <p>getTotalMultipoleEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getTotalMultipoleEnergy() {
         return permanentMultipoleEnergy + polarizationEnergy;
     }
 
+    /**
+     * <p>getPermanentEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermanentEnergy() {
         return permanentMultipoleEnergy;
     }
 
+    /**
+     * <p>getPermRealEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermRealEnergy() {
         return permanentRealSpaceEnergy;
     }
 
+    /**
+     * <p>getPermSelfEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermSelfEnergy() {
         return permanentSelfEnergy;
     }
 
+    /**
+     * <p>getPermRecipEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermRecipEnergy() {
         return permanentReciprocalEnergy;
     }
 
+    /**
+     * <p>getPolarizationEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPolarizationEnergy() {
         return polarizationEnergy;
     }
 
+    /**
+     * <p>getIndRealEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getIndRealEnergy() {
         return inducedRealSpaceEnergy;
     }
 
+    /**
+     * <p>getIndSelfEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getIndSelfEnergy() {
         return inducedSelfEnergy;
     }
 
+    /**
+     * <p>getIndRecipEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getIndRecipEnergy() {
         return inducedReciprocalEnergy;
     }
 
+    /**
+     * <p>getGKEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getGKEnergy() {
         return generalizedKirkwoodEnergy;
     }

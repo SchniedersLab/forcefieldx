@@ -79,7 +79,6 @@ import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;
@@ -120,7 +119,6 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
  * Compute the potential energy and derivatives of an AMOEBA system.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
@@ -262,7 +260,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Constructor for ForceFieldEnergy.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
+     *                          object.
      */
     protected ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         this(molecularAssembly, null);
@@ -273,14 +271,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Constructor for ForceFieldEnergy.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param restraints list of {@link ffx.potential.nonbonded.CoordRestraint}
-     * objects.
+     *                          object.
+     * @param restraints        list of {@link ffx.potential.nonbonded.CoordRestraint}
+     *                          objects.
      */
     protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints) {
         this(molecularAssembly, restraints, ParallelTeam.getDefaultThreadCount());
     }
 
+    /**
+     * <p>Constructor for ForceFieldEnergy.</p>
+     *
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param restraints        a {@link java.util.List} object.
+     * @param numThreads        a int.
+     */
     protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
         if (noHeader) {
             logger.setLevel(Level.WARNING);
@@ -854,7 +859,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         if (lambdaTerm) {
-             this.setLambda(1.0);
+            this.setLambda(1.0);
         }
     }
 
@@ -863,7 +868,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * OpenMM implementations.
      *
      * @param assembly To create FFE over
-     * @return
+     * @return a {@link ffx.potential.ForceFieldEnergy} object.
      */
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly) {
         return energyFactory(assembly, null);
@@ -873,17 +878,23 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Static factory method to create a ForceFieldEnergy, possibly via FFX or
      * OpenMM implementations.
      *
-     * @param assembly To create FFE over
+     * @param assembly   To create FFE over
      * @param restraints Harmonic restraints
-     * @return
+     * @return a {@link ffx.potential.ForceFieldEnergy} object.
      */
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints) {
         return energyFactory(assembly, restraints, ParallelTeam.getDefaultThreadCount());
     }
 
+    /**
+     * <p>setPmeClass.</p>
+     *
+     * @param set a {@link java.lang.Class} object.
+     * @param <T> A class that extends ParticleMeshEwald.
+     * @return a T object.
+     */
     @SuppressWarnings("unchecked")
     public <T extends ParticleMeshEwald> T setPmeClass(Class<T> set) {
-//        if (set != particleMeshEwald.getClass()) {
         if (set == ParticleMeshEwaldQI.class) {
             particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecularAssembly.getMoleculeNumbers(),
                     molecularAssembly.getForceField(), crystal,
@@ -896,7 +907,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             throw new IllegalArgumentException();
         }
         reInit();
-//        }
         return (T) particleMeshEwald;
     }
 
@@ -904,7 +914,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Static factory method to create a ForceFieldEnergy, possibly via FFX or
      * OpenMM implementations.
      *
-     * @param assembly To create FFE over
+     * @param assembly   To create FFE over
      * @param restraints Harmonic restraints
      * @param numThreads Number of threads to use for FFX energy
      * @return A ForceFieldEnergy on some Platform
@@ -959,7 +969,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Overwrites current esvSystem if present. Multiple ExtendedSystems is
      * possible but unnecessary; add all ESVs to one system (per FFE, at least).
      *
-     * @param system
+     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
      */
     public void attachExtendedSystem(ExtendedSystem system) {
         if (system == null) {
@@ -988,6 +998,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         reInit();
     }
 
+    /**
+     * <p>detachExtendedSystem.</p>
+     */
     public void detachExtendedSystem() {
         esvTerm = false;
         esvSystem = null;
@@ -1002,6 +1015,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         reInit();
     }
 
+    /**
+     * <p>Setter for the field <code>resolution</code>.</p>
+     *
+     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
+     */
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
 
@@ -1374,30 +1392,40 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         bondedRegion = new BondedRegion();
     }
 
+    /**
+     * <p>setFixedCharges.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public void setFixedCharges(Atom atoms[]) {
         if (particleMeshEwald != null) {
             particleMeshEwald.setFixedCharges(atoms);
         }
     }
 
+    /**
+     * <p>Setter for the field <code>lambdaBondedTerms</code>.</p>
+     *
+     * @param lambdaBondedTerms a boolean.
+     */
     public void setLambdaBondedTerms(boolean lambdaBondedTerms) {
         this.lambdaBondedTerms = lambdaBondedTerms;
     }
 
     /**
-     * @see ForceFieldEnergy::energy(boolean, boolean)
+     * <p>energy.</p>
+     *
+     * @return a double.
      */
     public double energy() {
         return energy(false, false);
     }
 
     /**
+     * {@inheritDoc}
+     *
      * <p>
      * energy</p>
-     *
-     * @param gradient a boolean.
-     * @param print a boolean.
-     * @return a double.
      */
     public double energy(boolean gradient, boolean print) {
 
@@ -1891,21 +1919,31 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return sb.toString();
     }
 
+    /**
+     * <p>Getter for the field <code>parallelTeam</code>.</p>
+     *
+     * @return a {@link edu.rit.pj.ParallelTeam} object.
+     */
     public ParallelTeam getParallelTeam() {
         return parallelTeam;
     }
 
     /**
+     * {@inheritDoc}
+     *
      * <p>
      * Getter for the field <code>crystal</code>.</p>
-     *
-     * @return a {@link ffx.crystal.Crystal} object.
      */
     @Override
     public Crystal getCrystal() {
         return crystal;
     }
 
+    /**
+     * <p>Getter for the field <code>cutoffPlusBuffer</code>.</p>
+     *
+     * @return a double.
+     */
     public double getCutoffPlusBuffer() {
         return cutoffPlusBuffer;
     }
@@ -1961,10 +1999,20 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>printOverride</code>.</p>
+     *
+     * @param set a boolean.
+     */
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
     }
 
+    /**
+     * <p>setBondedCombined.</p>
+     *
+     * @param set a boolean.
+     */
     public void setBondedCombined(boolean set) {
         this.printCompact = set;
     }
@@ -1986,9 +2034,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
@@ -2013,6 +2061,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return energy(x, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x, boolean verbose) {
         /**
@@ -2129,6 +2180,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * getGradients</p>
      *
      * @param g an array of double.
+     * @return an array of {@link double} objects.
      */
     public double[] getGradients(double g[]) {
         return fillGradients(g);
@@ -2137,6 +2189,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Private method for internal use, so we don't have subclasses calling super.energy, and this class delegating to
      * the subclass's getGradients method.
+     *
      * @param g Gradient array to fill.
      * @return Gradient array.
      */
@@ -2184,7 +2237,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     /**
      * The coordinate array should only contain active atoms.
      *
-     * @param coords
+     * @param coords an array of {@link double} objects.
      */
     protected void setCoordinates(double coords[]) {
         if (coords == null) {
@@ -2202,6 +2255,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * <p>checkAtoms.</p>
+     */
     public void checkAtoms() {
         double vel[] = new double[3];
         double accel[] = new double[3];
@@ -2233,8 +2289,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * {@inheritDoc}
-     *
-     * @param x
      */
     @Override
     public double[] getCoordinates(double x[]) {
@@ -2334,9 +2388,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns true if lambda term is not enabled for this ForceFieldEnergy.
-     *
-     * @return If dEdL guaranteed zero at ends.
      */
     @Override
     public boolean dEdLZeroAtEnds() {
@@ -2347,8 +2401,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * {@inheritDoc}
-     *
-     * @param gradients
      */
     @Override
     public void getdEdXdL(double gradients[]) {
@@ -2453,7 +2505,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * unphysical self and pair configurations, so the algorithm should not
      * print out a large number of error PDBs.
      *
-     * @param onFail To set
+     * @param onFail   To set
      * @param override Override properties
      */
     public void setPrintOnFailure(boolean onFail, boolean override) {
@@ -2474,12 +2526,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>printOnFailure</code>.</p>
+     *
+     * @return a boolean.
+     */
     public boolean getPrintOnFailure() {
         return printOnFailure;
     }
 
     /**
      * Gets the Platform associated with this force field energy. For the reference platform, always returns FFX.
+     *
      * @return A Platform.
      */
     public Platform getPlatform() {
@@ -2490,9 +2548,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * <p>
      * setRestraintBond</p>
      *
-     * @param a1 a {@link ffx.potential.bonded.Atom} object.
-     * @param a2 a {@link ffx.potential.bonded.Atom} object.
-     * @param distance a double.
+     * @param a1            a {@link ffx.potential.bonded.Atom} object.
+     * @param a2            a {@link ffx.potential.bonded.Atom} object.
+     * @param distance      a double.
      * @param forceConstant the force constant in kcal/mole
      */
     public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
@@ -2503,11 +2561,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * <p>
      * setRestraintBond</p>
      *
-     * @param a1 a {@link ffx.potential.bonded.Atom} object.
-     * @param a2 a {@link ffx.potential.bonded.Atom} object.
-     * @param distance a double.
+     * @param a1            a {@link ffx.potential.bonded.Atom} object.
+     * @param a2            a {@link ffx.potential.bonded.Atom} object.
+     * @param distance      a double.
      * @param forceConstant the force constant in kcal/mole.
-     * @param flatBottom Radius of a flat-bottom potential in Angstroms.
+     * @param flatBottom    Radius of a flat-bottom potential in Angstroms.
      */
     public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
         restraintBondTerm = true;
@@ -2529,15 +2587,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         rb.log();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * This method is for the RESPA integrator only.
-     *
-     * @param state The STATE is FAST, SLOW or BOTH.
      */
     @Override
     public void setEnergyTermState(STATE state) {
@@ -2609,9 +2670,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Set the boundary conditions for this calculation.
-     *
-     * @param crystal the Crystal contains symmetry and PBC conditions.
      */
     @Override
     public void setCrystal(Crystal crystal) {
@@ -2636,7 +2697,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private Crystal configureNCS(ForceField forceField, Crystal unitCell) {
 
         // MTRIXn to be permuted with standard space group in NCSCrystal.java for experimental refinement.
-        if(forceField.getProperties().containsKey("MTRIX1") && forceField.getProperties().containsKey("MTRIX2") && forceField.getProperties().containsKey("MTRIX3")) {
+        if (forceField.getProperties().containsKey("MTRIX1") && forceField.getProperties().containsKey("MTRIX2") && forceField.getProperties().containsKey("MTRIX3")) {
             Crystal unitCell2 = new Crystal(unitCell.a, unitCell.b, unitCell.c, unitCell.alpha,
                     unitCell.beta, unitCell.gamma, unitCell.spaceGroup.pdbName);
             SpaceGroup spaceGroup = unitCell2.spaceGroup;
@@ -2649,21 +2710,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             double number1 = 0;
             double number2 = 0;
             double number3 = 0;
-            for (int i=0;i< MTRX1List.length;i++) {
-                double [][] Rot_MTRX = {{0,0,0},{0,0,0},{0,0,0}};
-                double [] Tr_MTRX = {0,0,0};
+            for (int i = 0; i < MTRX1List.length; i++) {
+                double[][] Rot_MTRX = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+                double[] Tr_MTRX = {0, 0, 0};
                 String tokens1[] = MTRX1List[i].trim().split(" +"); // 4 items: rot [0][1-3] * trans[0]
                 String tokens2[] = MTRX2List[i].trim().split(" +"); // 4 items: rot [1][1-3] * trans[1]
                 String tokens3[] = MTRX3List[i].trim().split(" +"); // 4 items: rot [2][1-3] * trans[2]
-                for (int k=0; k<4;k++) {
+                for (int k = 0; k < 4; k++) {
                     number1 = Double.parseDouble(tokens1[k]);
                     number2 = Double.parseDouble(tokens2[k]);
                     number3 = Double.parseDouble(tokens3[k]);
-                    if(k!=3) {
+                    if (k != 3) {
                         Rot_MTRX[0][k] = number1;
                         Rot_MTRX[1][k] = number2;
                         Rot_MTRX[2][k] = number3;
-                    }else{
+                    } else {
                         Tr_MTRX[0] = number1;
                         Tr_MTRX[1] = number2;
                         Tr_MTRX[2] = number3;
@@ -2751,112 +2812,248 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * <p>getNumberofAtoms.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofAtoms() {
         return nAtoms;
     }
 
+    /**
+     * <p>Getter for the field <code>bondEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getBondEnergy() {
         return bondEnergy;
     }
 
+    /**
+     * <p>getNumberofBonds.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofBonds() {
         return nBonds;
     }
 
+    /**
+     * <p>Getter for the field <code>angleEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getAngleEnergy() {
         return angleEnergy;
     }
 
+    /**
+     * <p>getNumberofAngles.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofAngles() {
         return nAngles;
     }
 
+    /**
+     * <p>getStrenchBendEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getStrenchBendEnergy() {
         return stretchBendEnergy;
     }
 
+    /**
+     * <p>getNumberofStretchBends.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofStretchBends() {
         return nStretchBends;
     }
 
+    /**
+     * <p>Getter for the field <code>ureyBradleyEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getUreyBradleyEnergy() {
         return ureyBradleyEnergy;
     }
 
+    /**
+     * <p>getNumberofUreyBradleys.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofUreyBradleys() {
         return nUreyBradleys;
     }
 
+    /**
+     * <p>Getter for the field <code>outOfPlaneBendEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getOutOfPlaneBendEnergy() {
         return outOfPlaneBendEnergy;
     }
 
+    /**
+     * <p>getNumberofOutOfPlaneBends.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofOutOfPlaneBends() {
         return nOutOfPlaneBends;
     }
 
+    /**
+     * <p>Getter for the field <code>torsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTorsionEnergy() {
         return torsionEnergy;
     }
 
+    /**
+     * <p>getNumberofTorsions.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofTorsions() {
         return nTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>stretchTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getStretchTorsionEnergy() {
         return stretchTorsionEnergy;
     }
 
+    /**
+     * <p>getNumberofStretchTorsions.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofStretchTorsions() {
         return nStretchTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>angleTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getAngleTorsionEnergy() {
         return angleTorsionEnergy;
     }
 
+    /**
+     * <p>getNumberofAngleTorsions.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofAngleTorsions() {
         return nAngleTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>improperTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getImproperTorsionEnergy() {
         return improperTorsionEnergy;
     }
 
+    /**
+     * <p>getNumberofImproperTorsions.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofImproperTorsions() {
         return nImproperTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>piOrbitalTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getPiOrbitalTorsionEnergy() {
         return piOrbitalTorsionEnergy;
     }
 
+    /**
+     * <p>getNumberofPiOrbitalTorsions.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofPiOrbitalTorsions() {
         return nPiOrbitalTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>torsionTorsionEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTorsionTorsionEnergy() {
         return torsionTorsionEnergy;
     }
 
+    /**
+     * <p>getNumberofTorsionTorsions.</p>
+     *
+     * @return a int.
+     */
     public int getNumberofTorsionTorsions() {
         return nTorsionTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>vanDerWaalsEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getVanDerWaalsEnergy() {
         return vanDerWaalsEnergy;
     }
 
+    /**
+     * <p>getVanDerWaalsInteractions.</p>
+     *
+     * @return a int.
+     */
     public int getVanDerWaalsInteractions() {
         return nVanDerWaalInteractions;
     }
 
+    /**
+     * <p>setLambdaMultipoleScale.</p>
+     *
+     * @param scale a double.
+     */
     public void setLambdaMultipoleScale(double scale) {
         if (particleMeshEwald != null) {
             particleMeshEwald.setLambdaMultipoleScale(scale);
         }
     }
 
+    /**
+     * <p>getEnergyComponent.</p>
+     *
+     * @param component a {@link ffx.potential.PotentialComponent} object.
+     * @return a double.
+     */
     public double getEnergyComponent(PotentialComponent component) {
         switch (component) {
             case Topology:
@@ -2921,26 +3118,56 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>permanentMultipoleEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getPermanentMultipoleEnergy() {
         return permanentMultipoleEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>permanentRealSpaceEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getPermanentRealSpaceEnergy() {
         return permanentRealSpaceEnergy;
     }
 
+    /**
+     * <p>getPermanentReciprocalSelfEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermanentReciprocalSelfEnergy() {
         return particleMeshEwald.getPermSelfEnergy();
     }
 
+    /**
+     * <p>getPermanentReciprocalMpoleEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermanentReciprocalMpoleEnergy() {
         return particleMeshEwald.getPermRecipEnergy();
     }
 
+    /**
+     * <p>getPermanentInteractions.</p>
+     *
+     * @return a int.
+     */
     public int getPermanentInteractions() {
         return nPermanentInteractions;
     }
 
+    /**
+     * <p>Getter for the field <code>polarizationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getPolarizationEnergy() {
         return polarizationEnergy;
     }
@@ -2955,34 +3182,74 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return (includeSolvation ? getTotalElectrostaticEnergy() : totalMultipoleEnergy);
     }
 
+    /**
+     * <p>getTotalElectrostaticEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getTotalElectrostaticEnergy() {
         return totalMultipoleEnergy + solvationEnergy;
     }
 
+    /**
+     * <p>getElectrostaticEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getElectrostaticEnergy() {
         return totalMultipoleEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>solvationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getSolvationEnergy() {
         return solvationEnergy;
     }
 
+    /**
+     * <p>getCavitationEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getCavitationEnergy() {
         return particleMeshEwald.getCavitationEnergy(false);
     }
 
+    /**
+     * <p>getDispersionEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getDispersionEnergy() {
         return particleMeshEwald.getDispersionEnergy(false);
     }
 
+    /**
+     * <p>getEsvBiasEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getEsvBiasEnergy() {
         return esvBias;
     }
 
+    /**
+     * <p>getExtendedSystem.</p>
+     *
+     * @return a {@link ffx.potential.extended.ExtendedSystem} object.
+     */
     public ExtendedSystem getExtendedSystem() {
         return esvSystem;
     }
 
+    /**
+     * <p>getGK.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood} object.
+     */
     public GeneralizedKirkwood getGK() {
         if (particleMeshEwald != null) {
             return particleMeshEwald.getGK();
@@ -2991,28 +3258,58 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * <p>getVdwNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.VanDerWaals} object.
+     */
     public VanDerWaals getVdwNode() {
         return vanderWaals;
     }
 
+    /**
+     * <p>getPmeNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+     */
     public ParticleMeshEwald getPmeNode() {
         return particleMeshEwald;
     }
 
+    /**
+     * <p>getPmeCartNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldCart} object.
+     */
     public ParticleMeshEwaldCart getPmeCartNode() {
         return (particleMeshEwald instanceof ParticleMeshEwaldCart)
                 ? (ParticleMeshEwaldCart) particleMeshEwald : null;
     }
 
+    /**
+     * <p>getPmeQiNode.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldQI} object.
+     */
     public ParticleMeshEwaldQI getPmeQiNode() {
         return (particleMeshEwald instanceof ParticleMeshEwaldQI)
                 ? (ParticleMeshEwaldQI) particleMeshEwald : null;
     }
 
+    /**
+     * <p>Getter for the field <code>coordRestraints</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<CoordRestraint> getCoordRestraints() {
         return new ArrayList<>(coordRestraints);
     }
 
+    /**
+     * <p>Getter for the field <code>restraintBonds</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     protected List<RestraintBond> getRestraintBonds() {
         if (restraintBonds != null && restraintBonds.length > 0) {
             return Arrays.asList(restraintBonds);
@@ -3021,18 +3318,28 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * <p>getSolvationInteractions.</p>
+     *
+     * @return a int.
+     */
     public int getSolvationInteractions() {
         return nGKInteractions;
     }
 
+    /**
+     * <p>Getter for the field <code>relativeSolvationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getRelativeSolvationEnergy() {
         return relativeSolvationEnergy;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * The velocity array should only contain velocity data for active atoms.
-     *
-     * @param velocity
      */
     @Override
     public void setVelocity(double[] velocity) {
@@ -3052,10 +3359,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * The acceleration array should only contain acceleration data for active
      * atoms.
-     *
-     * @param acceleration
      */
     @Override
     public void setAcceleration(double[] acceleration) {
@@ -3075,10 +3382,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * The previousAcceleration array should only contain previous acceleration
      * data for active atoms.
-     *
-     * @param previousAcceleration
      */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
@@ -3098,10 +3405,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns an array of velocity values for active atoms.
-     *
-     * @param velocity if the velocity array is null, it will be allocated.
-     * @return the velocity array is returned.
      */
     @Override
     public double[] getVelocity(double[] velocity) {
@@ -3124,11 +3430,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns an array of acceleration values for active atoms.
-     *
-     * @param acceleration if the acceleration array is null, it will be
-     * allocated.
-     * @return the acceleration array is returned.
      */
     @Override
     public double[] getAcceleration(double[] acceleration) {
@@ -3150,11 +3454,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns an array of previous acceleration values for active atoms.
-     *
-     * @param previousAcceleration if the previousAcceleration array is null, it
-     * will be allocated.
-     * @return the previousAcceleration array is returned.
      */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
@@ -3175,46 +3477,101 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return previousAcceleration;
     }
 
+    /**
+     * <p>Getter for the field <code>bonds</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Bond} objects.
+     */
     public Bond[] getBonds() {
         return bonds;
     }
 
+    /**
+     * <p>Getter for the field <code>angles</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Angle} objects.
+     */
     public Angle[] getAngles() {
         return angles;
     }
 
+    /**
+     * <p>Getter for the field <code>improperTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.ImproperTorsion} objects.
+     */
     public ImproperTorsion[] getImproperTorsions() {
         return improperTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>ureyBradleys</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.UreyBradley} objects.
+     */
     public UreyBradley[] getUreyBradleys() {
         return ureyBradleys;
     }
 
+    /**
+     * <p>Getter for the field <code>outOfPlaneBends</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.OutOfPlaneBend} objects.
+     */
     public OutOfPlaneBend[] getOutOfPlaneBends() {
         return outOfPlaneBends;
     }
 
+    /**
+     * <p>Getter for the field <code>stretchBends</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.StretchBend} objects.
+     */
     public StretchBend[] getStretchBends() {
         return stretchBends;
     }
 
+    /**
+     * <p>Getter for the field <code>torsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Torsion} objects.
+     */
     public Torsion[] getTorsions() {
         return torsions;
     }
 
+    /**
+     * <p>Getter for the field <code>piOrbitalTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.PiOrbitalTorsion} objects.
+     */
     public PiOrbitalTorsion[] getPiOrbitalTorsions() {
         return piOrbitalTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>torsionTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.TorsionTorsion} objects.
+     */
     public TorsionTorsion[] getTorsionTorsions() {
         return torsionTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>stretchTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.StretchTorsion} objects.
+     */
     public StretchTorsion[] getStretchTorsions() {
         return stretchTorsions;
     }
 
+    /**
+     * <p>Getter for the field <code>angleTorsions</code>.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.AngleTorsion} objects.
+     */
     public AngleTorsion[] getAngleTorsions() {
         return angleTorsions;
     }
@@ -3828,16 +4185,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Platform describes a set of force field implementations that include a
      * pure Java reference implementation (FFX), and two OpenMM implementations
      * (OMM_CUDA and OMM_REF are supported)
-     *
+     * <p>
      * FFX: reference FFX implementation
-     *
+     * <p>
      * OMM: Currently an alias for OMM_CUDA, may eventually become "try to find
      * best OpenMM implementation" OMM_CUDA:
-     *
+     * <p>
      * OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
-     *
+     * <p>
      * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
-     *
+     * <p>
      * OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
      */
     public static enum Platform {

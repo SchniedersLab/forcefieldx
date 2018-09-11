@@ -1,10 +1,9 @@
 package ffx.algorithms.groovy
 
-import ffx.algorithms.RotamerOptimization
-import ffx.numerics.Potential
 import org.apache.commons.configuration2.CompositeConfiguration
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Polymer
@@ -19,8 +18,6 @@ import ffx.utilities.Keyword
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.util.stream.Collectors
 
 /**
  * The MutatePDB script mutates a residue of a PDB file.

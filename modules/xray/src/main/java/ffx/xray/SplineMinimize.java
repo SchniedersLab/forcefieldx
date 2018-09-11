@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -54,6 +54,7 @@ import ffx.xray.SplineEnergy.Type;
  *
  * @author Timothy D. Fenn
  *
+ * @since 1.0
  */
 public class SplineMinimize implements OptimizationListener, Terminatable {
 
@@ -83,7 +84,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
      * @param type a int.
      */
     public SplineMinimize(ReflectionList reflectionList,
-            DiffractionRefinementData refinementData, double x[], int type) {
+                          DiffractionRefinementData refinementData, double x[], int type) {
         this.reflectionList = reflectionList;
         this.refinementData = refinementData;
         this.crystal = reflectionList.crystal;
@@ -105,14 +106,30 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>splineEnergy</code>.</p>
+     *
+     * @return a {@link ffx.xray.SplineEnergy} object.
+     */
     public SplineEnergy getSplineEnergy() {
         return splineEnergy;
     }
 
+    /**
+     * <p>getNumberOfVariables.</p>
+     *
+     * @return a int.
+     */
     public int getNumberOfVariables() {
         return x.length;
     }
 
+    /**
+     * <p>getCoordinates.</p>
+     *
+     * @param x an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public double[] getCoordinates(double x[]) {
         if (x == null) {
             x = new double[this.x.length];
@@ -176,9 +193,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return splineEnergy;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -213,9 +228,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

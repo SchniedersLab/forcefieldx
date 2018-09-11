@@ -91,30 +91,31 @@ public class BarostatOptions {
     int meanInterval = 10;
 
     /**
-     * If pressure has been set > 0, creates a Barostat around a CrystalPotential, else
+     * If pressure has been set &gt; 0, creates a Barostat around a CrystalPotential, else
      * returns the original, unmodified CrystalPotential.
      *
-     * @param assembly Primary assembly of the CrystalPotential.
-     * @param cpot A CrystalPotential.
+     * @param assembly         Primary assembly of the CrystalPotential.
+     * @param crystalPotential A CrystalPotential.
      * @return Either a Barostat (NPT enabled) or cpot.
      */
-    public CrystalPotential checkNPT(MolecularAssembly assembly, CrystalPotential cpot) {
+    public CrystalPotential checkNPT(MolecularAssembly assembly, CrystalPotential crystalPotential) {
         if (pressure > 0) {
-            return createBarostat(assembly, cpot);
+            return createBarostat(assembly, crystalPotential);
         } else {
-            return cpot;
+            return crystalPotential;
         }
     }
 
     /**
      * Creates a Barostat around a CrystalPotential.
      *
-     * @param assembly Primary assembly of the CrystalPotential.
-     * @param cpot A CrystalPotential.
+     * @param assembly         Primary assembly of the CrystalPotential.
+     * @param crystalPotential A CrystalPotential.
      * @return An NPT potential.
-     * @thros IllegalArgumentException If this BarostatOptions has pressure <= 0.
+     * @throws IllegalArgumentException If this BarostatOptions has pressure &lt;= 0.
      */
-    public Barostat createBarostat(MolecularAssembly assembly, CrystalPotential cpot) throws IllegalArgumentException {
+    public Barostat createBarostat(MolecularAssembly assembly,
+                                   CrystalPotential crystalPotential) throws IllegalArgumentException {
         if (pressure > 0) {
 
             CompositeConfiguration properties = assembly.getProperties();
@@ -125,7 +126,7 @@ public class BarostatOptions {
             maxAngleMove = properties.getDouble("maxAngleMove", 0.5);
             meanInterval = properties.getInt("meanInterval", 10);
 
-            Barostat barostat = new Barostat(assembly, cpot);
+            Barostat barostat = new Barostat(assembly, crystalPotential);
             barostat.setPressure(pressure);
             barostat.setMaxDensity(maxDensity);
             barostat.setMinDensity(minDensity);

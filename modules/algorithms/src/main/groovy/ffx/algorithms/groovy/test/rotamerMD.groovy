@@ -116,37 +116,37 @@ double temperature = 298.15;
 RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.rotamerMD [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.l(longOpt:'library', args:1, argName:'1', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
-cli.a(longOpt:'algorithm', args:1, argName:'1', 'Algorithm for rotamer optimization; choices are independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5).');
-cli.iT(longOpt:'iterations', args:1, argName:'1', 'Number of total moves.');
-cli.tH(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
-cli.iN(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');
-cli.w(longOpt:'window', args:1, argName:'7', 'Size of the sliding window with respect to adjacent residues');
-cli.i(longOpt:'increment', args:1, argName:'3', 'Distance sliding window shifts with respect to adjacent residues');
-cli.r(longOpt:'cutoff', args:1, argName:'2.0', 'The sliding window cutoff radius (Angstroms).')
-cli.d(longOpt:'direction', args:1, argName:'Forward', 'Direction of the sliding window or box optimization (boxes indexed by increasing Z,Y,X): [Forward / Backward]');
-cli.z(longOpt:'undo', args:1, argName:'false', 'Window optimizations that do not lower the energy are discarded.');
-cli.s(longOpt:'start', args:1, argName:'-1', 'Starting residue to perform the rotamer search on (-1 exits). For box optimization, first box to optimize.');
-cli.f(longOpt:'finish', args:1, argName:'-1', 'Final residue to perform the rotamer search on (-1 exits). For box optimization, last box to optimize.');
-cli.c(longOpt:'chain', args:1, argName:'A', 'Chain the residue selection belongs to.');
-cli.m(longOpt:'minimize', args:1, argName:'0.01', 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).');
-cli.t(longOpt:'threeBody', args:1, argName:'true', 'Include 3-Body interactions in elimination criteria.');
-cli.g(longOpt:'Goldstein', args:1, argName:'true', 'True to use Goldstein Criteria, False to use DEE');
-cli.p(longOpt:'pruning', args:1, argName:'2', 'Prune no clashes (0), only single clashes (1), or all clashes (2).');
-cli.e(longOpt:'ensemble', args:1, argName:'1', 'Produce an ensemble of this many of the most favorable structures.');
-cli.b(longOpt:'buffer', args:1, argName:'0.0/5.0', 'Sets a starting energy buffer value for use with ensemble search.');
-cli.x(longOpt:'all', args:1, argName:'1', 'Optimize all residues in the system beginning from the passed residue number (overrides other options); for box optimization, optimizes all boxes from the passed index.');
-cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
-cli.mn(longOpt: 'minimumNumberAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
-cli.pf(longOpt: 'nucleicPruningFactor', args:1, argName: '1.0', 'Multiplier of pruning constraints for nucleic acids.');
-cli.v(longOpt: 'verboseEnergies', args:1, argName: 'true', 'Calculates and prints beginning and default-conformation energies not necessary for the DEE algorithm');
-cli.o(longOpt:'includeOriginal', args:1, argName:'true', 'Include starting coordinates as their own rotamer.');
-cli.td(longOpt: 'threeBodyCutoffDist', args:1, argName: '9.0', 'Angstrom distance beyond which three-body interactions will be truncated (-1 for no cutoff).');
-cli.dO(longOpt: 'decomposeOriginal', args: 1, argName:'false', 'Only print energy decomposition of original-coordinates rotamers; overrides other flags!');
-cli.eR(longOpt: 'energyRestart', args: 1, argName:'filename', 'Load energy restart file from a previous run. Ensure that all parameters are the same!');
-cli.nB(longOpt: 'numXYZBoxes', args:1, argName: '3,3,3', 'Specify number of boxes along X, Y, and Z');
+def cli = new CliBuilder(usage: ' ffxc test.rotamerMD [options] <filename>');
+cli.h(longOpt: 'help', 'Print this help message.');
+cli.l(longOpt: 'library', args: 1, argName: '1', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
+cli.a(longOpt: 'algorithm', args: 1, argName: '1', 'Algorithm for rotamer optimization; choices are independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5).');
+cli.iT(longOpt: 'iterations', args: 1, argName: '1', 'Number of total moves.');
+cli.tH(longOpt: 'thermostat', args: 1, argName: 'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+cli.iN(longOpt: 'integrate', args: 1, argName: 'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');
+cli.w(longOpt: 'window', args: 1, argName: '7', 'Size of the sliding window with respect to adjacent residues');
+cli.i(longOpt: 'increment', args: 1, argName: '3', 'Distance sliding window shifts with respect to adjacent residues');
+cli.r(longOpt: 'cutoff', args: 1, argName: '2.0', 'The sliding window cutoff radius (Angstroms).')
+cli.d(longOpt: 'direction', args: 1, argName: 'Forward', 'Direction of the sliding window or box optimization (boxes indexed by increasing Z,Y,X): [Forward / Backward]');
+cli.z(longOpt: 'undo', args: 1, argName: 'false', 'Window optimizations that do not lower the energy are discarded.');
+cli.s(longOpt: 'start', args: 1, argName: '-1', 'Starting residue to perform the rotamer search on (-1 exits). For box optimization, first box to optimize.');
+cli.f(longOpt: 'finish', args: 1, argName: '-1', 'Final residue to perform the rotamer search on (-1 exits). For box optimization, last box to optimize.');
+cli.c(longOpt: 'chain', args: 1, argName: 'A', 'Chain the residue selection belongs to.');
+cli.m(longOpt: 'minimize', args: 1, argName: '0.01', 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).');
+cli.t(longOpt: 'threeBody', args: 1, argName: 'true', 'Include 3-Body interactions in elimination criteria.');
+cli.g(longOpt: 'Goldstein', args: 1, argName: 'true', 'True to use Goldstein Criteria, False to use DEE');
+cli.p(longOpt: 'pruning', args: 1, argName: '2', 'Prune no clashes (0), only single clashes (1), or all clashes (2).');
+cli.e(longOpt: 'ensemble', args: 1, argName: '1', 'Produce an ensemble of this many of the most favorable structures.');
+cli.b(longOpt: 'buffer', args: 1, argName: '0.0/5.0', 'Sets a starting energy buffer value for use with ensemble search.');
+cli.x(longOpt: 'all', args: 1, argName: '1', 'Optimize all residues in the system beginning from the passed residue number (overrides other options); for box optimization, optimizes all boxes from the passed index.');
+cli.nt(longOpt: 'nucleicCorrectionThreshold', args: 1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
+cli.mn(longOpt: 'minimumNumberAcceptedNARotamers', args: 1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
+cli.pf(longOpt: 'nucleicPruningFactor', args: 1, argName: '1.0', 'Multiplier of pruning constraints for nucleic acids.');
+cli.v(longOpt: 'verboseEnergies', args: 1, argName: 'true', 'Calculates and prints beginning and default-conformation energies not necessary for the DEE algorithm');
+cli.o(longOpt: 'includeOriginal', args: 1, argName: 'true', 'Include starting coordinates as their own rotamer.');
+cli.td(longOpt: 'threeBodyCutoffDist', args: 1, argName: '9.0', 'Angstrom distance beyond which three-body interactions will be truncated (-1 for no cutoff).');
+cli.dO(longOpt: 'decomposeOriginal', args: 1, argName: 'false', 'Only print energy decomposition of original-coordinates rotamers; overrides other flags!');
+cli.eR(longOpt: 'energyRestart', args: 1, argName: 'filename', 'Load energy restart file from a previous run. Ensure that all parameters are the same!');
+cli.nB(longOpt: 'numXYZBoxes', args: 1, argName: '3,3,3', 'Specify number of boxes along X, Y, and Z');
 cli.bB(longOpt: 'boxBorderSize', args: 1, argName: '3.0', 'Extent of overlap between optimization boxes (Angstroms).');
 cli.bL(longOpt: 'approxBoxLength', args: 1, argName: '0.0', 'Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes). Box sizes rounded up to make whole number of boxes along each axis. 0 disables this function.');
 //cli.bO(longOpt: 'boxOrder', args: 1, argName: 'IncreasingZYX', 'Order of boxes optimized. Options: Random, IncreasingZYX, DecreasingZYX, IncreasingXYZ, DecreasingXYZ, File (specify file name). Presently, always uses default behavior.');
@@ -155,15 +155,15 @@ cli.fR(longOpt: 'forceResidues', args: 1, argName: '-1,-1', 'Force residues in t
 cli.sT(longOpt: 'superpositionThreshold', args: 1, argName: '0.1', 'Sets the maximum atom-atom distance (Angstroms) which will cause a 2-Body or 3-Body energy to be defaulted to 1.0E100 kcal/mol.');
 cli.sC(longOpt: 'singletonClashThreshold', args: 1, argName: '20.0', 'Sets the threshold for singleton pruning.');
 cli.pC(longOpt: 'pairClashThreshold', args: 1, argName: '50.0', 'Sets the threshold for 2-body pruning');
-cli.mB(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
-cli.mD(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.mI(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');
-cli.mL(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
-cli.mN(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
-cli.mT(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
-cli.mW(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
-cli.mS(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
-cli.mF(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
+cli.mB(longOpt: 'thermostat', args: 1, argName: 'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+cli.mD(longOpt: 'dt', args: 1, argName: '1.0', 'Time discretization (fsec).');
+cli.mI(longOpt: 'integrate', args: 1, argName: 'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');
+cli.mL(longOpt: 'log', args: 1, argName: '0.01', 'Interval to log thermodyanamics (psec).');
+cli.mN(longOpt: 'steps', args: 1, argName: '1000000', 'Number of molecular dynamics steps.');
+cli.mT(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
+cli.mW(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
+cli.mS(longOpt: 'restart', args: 1, argName: '0.1', 'Interval to write out restart file (psec).');
+cli.mF(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [PDB/XYZ]');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -422,7 +422,7 @@ if (options.nB) {
             numXYZBoxes[i] = 3;
             logger.info("Input of zero to nB reset to default of three.");
         } else if (numXYZBoxes[i] < 0) {
-            numXYZBoxes[i] = -1*numXYZBoxes[i];
+            numXYZBoxes[i] = -1 * numXYZBoxes[i];
             logger.info("Input of negative number to nB reset to positive number");
         }
     }
@@ -546,11 +546,11 @@ if (algorithm != 5) {
         ArrayList<Residue> residueList = new ArrayList<Residue>();
         Polymer[] polymers = active.getChains();
         int nPolymers = polymers.length;
-        for (int p=0; p<nPolymers; p++) {
+        for (int p = 0; p < nPolymers; p++) {
             Polymer polymer = polymers[p];
             ArrayList<Residue> residues = polymer.getResidues();
             int nResidues = residues.size();
-            for (int i=0; i<nResidues; i++) {
+            for (int i = 0; i < nResidues; i++) {
                 Residue residue = residues.get(i);
                 Rotamer[] rotamers = residue.getRotamers(rLib);
                 if (rotamers != null) {
@@ -564,7 +564,7 @@ if (algorithm != 5) {
                     }
                 } else if (options.fR) {
                     if (counter >= allStartResID && counter >= forceResiduesStart
-                        && counter <= forceResiduesEnd) {
+                            && counter <= forceResiduesEnd) {
                         residueList.add(residue);
                     }
                 }
@@ -581,11 +581,11 @@ if (algorithm != 5) {
     ArrayList<Residue> residueList = new ArrayList<Residue>();
     Polymer[] polymers = active.getChains();
     int nPolymers = polymers.length;
-    for (int p=0; p<nPolymers; p++) {
+    for (int p = 0; p < nPolymers; p++) {
         Polymer polymer = polymers[p];
         ArrayList<Residue> residues = polymer.getResidues();
         int nResidues = residues.size();
-        for (int i=0; i<nResidues; i++) {
+        for (int i = 0; i < nResidues; i++) {
             Residue residue = residues.get(i);
             Rotamer[] rotamers = residue.getRotamers(rLib);
             if (rotamers != null) {
@@ -652,7 +652,7 @@ if (algorithm == 1) {
 e1 = returnEnergy();
 rotamerOptimization.revertCoordinates(residueList, original);
 for (int i = 0; i < numberOfIterations; i++) {
-    logger.info(String.format("\n Iteration %d of %d.", i+1, numberOfIterations));
+    logger.info(String.format("\n Iteration %d of %d.", i + 1, numberOfIterations));
     if (accepted) {
         original = rotamerOptimization.storeCoordinates(residueList);
     }
@@ -681,9 +681,9 @@ for (int i = 0; i < numberOfIterations; i++) {
     }
     e2 = returnEnergy();
     if (e1 >= e2) {
-        logger.info(String.format(" %16.8f <= %16.8f\n\n Move accepted.\n",e2,e1));
+        logger.info(String.format(" %16.8f <= %16.8f\n\n Move accepted.\n", e2, e1));
         // Check if it is the last iteration.
-        if (i != numberOfIterations-1) {
+        if (i != numberOfIterations - 1) {
             rotamerOptimization.revertCoordinates(residueList, move);
             e1 = returnEnergy();
         }
@@ -692,16 +692,16 @@ for (int i = 0; i < numberOfIterations; i++) {
         double k = 1.98720415e-3;
         double deltaE = e2 - e1;
         double metropolis = random();
-        double boltzmann = exp(-deltaE/(k*temperature));
+        double boltzmann = exp(-deltaE / (k * temperature));
         if (metropolis < boltzmann) {
-            logger.info(String.format("\n%16.8f < %16.8f Move accepted.\n",metropolis,boltzmann));
-            if (i != numberOfIterations-1) {
+            logger.info(String.format("\n%16.8f < %16.8f Move accepted.\n", metropolis, boltzmann));
+            if (i != numberOfIterations - 1) {
                 rotamerOptimization.revertCoordinates(residueList, move);
                 e1 = returnEnergy();
             }
         } else {
-            logger.info(String.format("\n%16.8f >= %16.8f Move rejected.\n",metropolis,boltzmann));
-            if (i != numberOfIterations-1) {
+            logger.info(String.format("\n%16.8f >= %16.8f Move rejected.\n", metropolis, boltzmann));
+            if (i != numberOfIterations - 1) {
                 rotamerOptimization.revertCoordinates(residueList, original);
                 e1 = returnEnergy();
             }

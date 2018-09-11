@@ -930,10 +930,11 @@
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>${javadoc.version}</version>
+                <inherited>true</inherited>
                 <configuration>
                     <quiet>true</quiet>
                     <failOnError>false</failOnError>
-                    <excludePackageNames>edu.rit.*</excludePackageNames>
+                    <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
                 </configuration>
                 <reportSets>
                     <reportSet>

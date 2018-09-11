@@ -7,8 +7,6 @@ package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -18,15 +16,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-import edu.rit.pj.Comm;
-import ffx.algorithms.MolecularDynamicsOpenMM;
 import ffx.algorithms.MolecularDynamicsOpenMM;
 import ffx.algorithms.PJDependentTest;
-import ffx.algorithms.PJDependentTest;
-
-import ffx.algorithms.groovy.DynamicsOpenMM;
 
 import groovy.lang.Binding;
 
@@ -56,7 +48,7 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
                         // 11796.9508,  endKineticEnergy
                         // -36782.1559, endPotentialEnergy
                         // -24985.2051  endTotalEnergy
-                        11017.6784,  -36276.1969, -25258.5186
+                        11017.6784, -36276.1969, -25258.5186
                 }
         });
     }

@@ -74,7 +74,7 @@ import edu.rit.pj.ParallelTeam;
  * uncertainty of each lambda bin. First-order error propagation is used to
  * combine bin uncertainties into a total uncertainty.
  *
- * @author S. LuCore
+ * @author Stephen LuCore
  */
 @SuppressWarnings("unchecked")
 public class BlockAverager {
@@ -91,13 +91,13 @@ public class BlockAverager {
     private double[] stdError;
 
     /**
-     * Parallel Stuff                *
+     * Parallel Stuff.
      */
     private final ParallelTeam parallelTeam;
     private final int numThreads;
 
     /**
-     * Debugging and Testing Options *
+     * Debugging and Testing Options.
      */
     private final MODE mode = (System.getProperty("ba-mode") == null)
             ? MODE.dG : MODE.valueOf(System.getProperty("ba-mode"));
@@ -121,13 +121,14 @@ public class BlockAverager {
      * Constructor grabs all histograms from the file and loads them into data
      * structures. TODO: figure out how to disregard histogram-bin combos that
      * aren't (currently) changing per time.
-     * @param filename
-     * @param testMode
-     * @param grepCmd
-     * @param psPerHisto
-     * @param blockSizeStep
-     * @param maxBlockSize
-     * @throws java.io.IOException
+     *
+     * @param filename      a {@link java.lang.String} object.
+     * @param testMode      a boolean.
+     * @param grepCmd       a {@link java.util.Optional} object.
+     * @param psPerHisto    a {@link java.util.Optional} object.
+     * @param blockSizeStep a {@link java.util.Optional} object.
+     * @param maxBlockSize  a {@link java.util.Optional} object.
+     * @throws java.io.IOException if any.
      */
     public BlockAverager(String filename, boolean testMode,
                          Optional<String> grepCmd, Optional<Double> psPerHisto,
@@ -275,7 +276,8 @@ public class BlockAverager {
     /**
      * Use first-order error propagation to combine bin uncertainties into a
      * total std error.
-     * @return
+     *
+     * @return a double.
      */
     public double computeTotalUncertainty() {
         logger.info(format(" Total Combined StdError of %s:", mode.toString()));
@@ -289,6 +291,9 @@ public class BlockAverager {
         return totalStdError;
     }
 
+    /**
+     * <p>describe.</p>
+     */
     public final void describe() {
         StringBuilder sb = new StringBuilder();
         sb.append(format(" BlockAverager over %s: \n", mode.toString()));
@@ -613,6 +618,10 @@ public class BlockAverager {
     /**
      * Uncorrelated process: x = 5 + 2 * rand(N,1) - 1 Correlated process: x(1)
      * = 0; x(t+1) = 0.95 * x(t) + 2 * rand(N,1) - 1; shift all up by 5
+     *
+     * @param filename a {@link java.lang.String} object.
+     * @param size     a int.
+     * @throws java.io.IOException if any.
      */
     public static void generateTestData(String filename, int size) throws IOException {
         logger.info(format(" Generating test data set of size: %d.", size));

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -57,30 +57,32 @@ public interface AlgorithmFunctions extends PotentialsFunctions {
 
     /**
      * Runs molecular dynamics on an assembly.
-     * 
-     * @param assembly
-     * @param nStep Timesteps
-     * @param timeStep Time per step
-     * @param printInterval
-     * @param saveInterval
-     * @param temperature
+     *
+     * @param assembly       a {@link ffx.potential.MolecularAssembly} object.
+     * @param nStep          Timesteps
+     * @param timeStep       Time per step
+     * @param printInterval  a double.
+     * @param saveInterval   a double.
+     * @param temperature    a double.
      * @param initVelocities Initialize velocities from Maxwell-Boltzmann distribution
-     * @param dyn Dynamics file
+     * @param dyn            Dynamics file
      */
     abstract public void md(MolecularAssembly assembly, int nStep, double timeStep,
-            double printInterval, double saveInterval, double temperature,
-            boolean initVelocities, File dyn);
+                            double printInterval, double saveInterval, double temperature,
+                            boolean initVelocities, File dyn);
 
     /**
      * Relax the coordinates of a MolecularAssembly and minimize its potential energy
-     * @param assembly
-     * @param eps RMS gradient convergence criteria
+     *
+     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param eps      RMS gradient convergence criteria
      * @return A <code>Potential</code>
      */
     abstract public Potential minimize(MolecularAssembly assembly, double eps);
-    
+
     /**
      * Returns a default Listener if available (null by default).
+     *
      * @return An AlgorithmListener or null.
      */
     default public AlgorithmListener getDefaultListener() {

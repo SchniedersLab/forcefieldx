@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -67,7 +67,6 @@ import static ffx.potential.parameters.AngleType.units;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class Angle extends BondedTerm implements BondedEnergy {
 
@@ -77,6 +76,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
 
         NORMAL, IN_PLANE;
     }
+
     /**
      * Force field parameters to compute the angle bending energy.
      */
@@ -119,6 +119,14 @@ public class Angle extends BondedTerm implements BondedEnergy {
         setID_Key(false);
     }
 
+    /**
+     * <p>angleFactory.</p>
+     *
+     * @param b1         a {@link ffx.potential.bonded.Bond} object.
+     * @param b2         a {@link ffx.potential.bonded.Bond} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @return a {@link ffx.potential.bonded.Angle} object.
+     */
     public static Angle angleFactory(Bond b1, Bond b2, ForceField forceField) {
         Angle newAngle = new Angle(b1, b2);
         Atom ac = b1.getCommonAtom(b2);
@@ -143,13 +151,18 @@ public class Angle extends BondedTerm implements BondedEnergy {
      * Setter for the field <code>angleMode</code>.</p>
      *
      * @param mode a {@link ffx.potential.bonded.Angle.AngleMode} object.
-     * @param a4 a {@link ffx.potential.bonded.Atom} object.
+     * @param a4   a {@link ffx.potential.bonded.Atom} object.
      */
     public void setAngleMode(AngleMode mode, Atom a4) {
         angleMode = mode;
         atom4 = a4;
     }
 
+    /**
+     * <p>Getter for the field <code>atom4</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom getAtom4() {
         return atom4;
     }
@@ -218,10 +231,20 @@ public class Angle extends BondedTerm implements BondedEnergy {
         return null;
     }
 
+    /**
+     * <p>getCentralAtom.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom getCentralAtom() {
         return atoms[1];
     }
 
+    /**
+     * <p>Getter for the field <code>angleMode</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Angle.AngleMode} object.
+     */
     public AngleMode getAngleMode() {
         return angleMode;
     }
@@ -289,23 +312,18 @@ public class Angle extends BondedTerm implements BondedEnergy {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Evaluate this Angle energy.
-     *
-     * @param gradient Evaluate the gradient.
-     * @param threadID
-     * @param gradX
-     * @param gradY
-     * @param gradZ
-     * @return Returns the energy.
      */
     @Override
     public double energy(boolean gradient, int threadID,
-            AtomicDoubleArray gradX,
-            AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ,
-            AtomicDoubleArray lambdaGradX,
-            AtomicDoubleArray lambdaGradY,
-            AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray gradX,
+                         AtomicDoubleArray gradY,
+                         AtomicDoubleArray gradZ,
+                         AtomicDoubleArray lambdaGradX,
+                         AtomicDoubleArray lambdaGradY,
+                         AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -625,7 +643,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
                                 // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
                                 // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
                                 // atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
-                                int i0 = atoms[0].getIndex()  - 1;
+                                int i0 = atoms[0].getIndex() - 1;
                                 gradX.add(threadID, i0, g0[0]);
                                 gradY.add(threadID, i0, g0[1]);
                                 gradZ.add(threadID, i0, g0[2]);
@@ -649,7 +667,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
                 break;
         }
         if (esvTerm) {
-            final double esvLambdaInv = (esvLambda != 0.0) ? 1/esvLambda : 1.0;
+            final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
             setEsvDeriv(energy * dedesvChain * esvLambdaInv);
         }
         return energy;
@@ -681,7 +699,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden toString Method returns the Term's id.
      */
     @Override

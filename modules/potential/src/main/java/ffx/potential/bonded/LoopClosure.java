@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -58,7 +58,10 @@ import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.dot;
 
 /**
+ * <p>LoopClosure class.</p>
+ *
  * @author Mallory R. Tollefson
+ * @since 1.0
  */
 public class LoopClosure {
 
@@ -111,8 +114,20 @@ public class LoopClosure {
         initializeLoopClosure();
     }
 
+    /**
+     * <p>solve3PepPoly.</p>
+     *
+     * @param r_n1     an array of {@link double} objects.
+     * @param r_a1     an array of {@link double} objects.
+     * @param r_a3     an array of {@link double} objects.
+     * @param r_c3     an array of {@link double} objects.
+     * @param r_soln_n an array of {@link double} objects.
+     * @param r_soln_a an array of {@link double} objects.
+     * @param r_soln_c an array of {@link double} objects.
+     * @param n_soln   an array of {@link int} objects.
+     */
     public void solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3, double[][][] r_soln_n,
-            double[][][] r_soln_a, double[][][] r_soln_c, int[] n_soln) {
+                              double[][][] r_soln_a, double[][][] r_soln_c, int[] n_soln) {
         double[] polyCoeff = new double[deg_pol[0] + 1];
         double[] roots = new double[max_soln];
 
@@ -129,15 +144,14 @@ public class LoopClosure {
         }
 
         getCoordsFromPolyRoots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
-        
+
     }
 
     /**
      * Returns the sign (positive or negative) of a variable.
      *
-     * @param a
-     * @param b
-     *
+     * @param a a double.
+     * @param b a double.
      * @return If b is positive or zero, return abs(a), else return -abs(a).
      */
     public double sign(double a, double b) {
@@ -254,9 +268,9 @@ public class LoopClosure {
      * A Basic 2D matrix multiplication. This function multiplies matrices ma
      * and mb, storing the answer in mc.
      *
-     * @param ma
-     * @param mb
-     * @param mc
+     * @param ma an array of {@link double} objects.
+     * @param mb an array of {@link double} objects.
+     * @param mc an array of {@link double} objects.
      */
     public void matMul(double[][] ma, double[] mb, double[] mc) {
         for (int i = 0; i < 3; i++) {
@@ -270,11 +284,11 @@ public class LoopClosure {
     /**
      * Get the input angles.
      *
-     * @param n_soln
-     * @param r_n1
-     * @param r_a1
-     * @param r_a3
-     * @param r_c3
+     * @param n_soln an array of {@link int} objects.
+     * @param r_n1   an array of {@link double} objects.
+     * @param r_a1   an array of {@link double} objects.
+     * @param r_a3   an array of {@link double} objects.
+     * @param r_c3   an array of {@link double} objects.
      */
     public void getInputAngles(int[] n_soln, double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3) {
         double[] tmp_val = new double[3];
@@ -391,13 +405,14 @@ public class LoopClosure {
     }
 
     /**
+     * <p>testTwoConeExistenceSoln.</p>
      *
-     * @param tt
-     * @param kx
-     * @param et
-     * @param ap
-     * @param n_soln
-     * @param cone_type
+     * @param tt        a double.
+     * @param kx        a double.
+     * @param et        a double.
+     * @param ap        a double.
+     * @param n_soln    an array of {@link int} objects.
+     * @param cone_type an array of {@link char} objects.
      */
     public void testTwoConeExistenceSoln(double tt, double kx, double et, double ap, int[] n_soln, char[] cone_type) {
 
@@ -450,7 +465,7 @@ public class LoopClosure {
     /**
      * Get Polynomial Coefficient.
      *
-     * @param polyCoeff
+     * @param polyCoeff an array of {@link double} objects.
      */
     public void getPolyCoeff(double[] polyCoeff) {
         double[] B0 = new double[3];
@@ -680,19 +695,19 @@ public class LoopClosure {
     /**
      * Polynomial multiplication subtraction 2.
      *
-     * @param u1
-     * @param u2
-     * @param u3
-     * @param u4
-     * @param p1
-     * @param p2
-     * @param p3
-     * @param p4
-     * @param u5
-     * @param p5
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param u4 an array of {@link double} objects.
+     * @param p1 an array of {@link int} objects.
+     * @param p2 an array of {@link int} objects.
+     * @param p3 an array of {@link int} objects.
+     * @param p4 an array of {@link int} objects.
+     * @param u5 an array of {@link double} objects.
+     * @param p5 an array of {@link int} objects.
      */
     public void polyMulSub2(double[][] u1, double[][] u2, double[][] u3, double[][] u4,
-            int[] p1, int[] p2, int[] p3, int[] p4, double[][] u5, int[] p5) {
+                            int[] p1, int[] p2, int[] p3, int[] p4, double[][] u5, int[] p5) {
         double[][] d1 = new double[5][5];
         double[][] d2 = new double[5][5];
         int[] pd1 = new int[2];
@@ -706,12 +721,12 @@ public class LoopClosure {
     /**
      * Polynomial multiplication 2.
      *
-     * @param u1
-     * @param u2
-     * @param p1
-     * @param p2
-     * @param u3
-     * @param p3
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param p1 an array of {@link int} objects.
+     * @param p2 an array of {@link int} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param p3 an array of {@link int} objects.
      */
     public void polyMul2(double[][] u1, double[][] u2, int[] p1, int[] p2, double[][] u3, int[] p3) {
         for (int i = 0; i < 2; i++) {
@@ -743,12 +758,12 @@ public class LoopClosure {
     /**
      * Polynomial subtraction 2.
      *
-     * @param u1
-     * @param u2
-     * @param p1
-     * @param p2
-     * @param u3
-     * @param p3
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param p1 an array of {@link int} objects.
+     * @param p2 an array of {@link int} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param p3 an array of {@link int} objects.
      */
     public void polySub2(double[][] u1, double[][] u2, int[] p1, int[] p2, double[][] u3, int[] p3) {
         int p11 = p1[0];
@@ -776,19 +791,19 @@ public class LoopClosure {
     /**
      * Polynomial multiply subtraction 1.
      *
-     * @param u1
-     * @param u2
-     * @param u3
-     * @param u4
-     * @param p1
-     * @param p2
-     * @param p3
-     * @param p4
-     * @param u5
-     * @param p5
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param u4 an array of {@link double} objects.
+     * @param p1 a int.
+     * @param p2 a int.
+     * @param p3 a int.
+     * @param p4 a int.
+     * @param u5 an array of {@link double} objects.
+     * @param p5 an array of {@link int} objects.
      */
     public void polyMulSub1(double[] u1, double[] u2, double[] u3, double[] u4,
-            int p1, int p2, int p3, int p4, double[] u5, int[] p5) {
+                            int p1, int p2, int p3, int p4, double[] u5, int[] p5) {
 
         double[] d1 = new double[17];
         double[] d2 = new double[17];
@@ -804,12 +819,12 @@ public class LoopClosure {
     /**
      * Polynomial multiply 1.
      *
-     * @param u1
-     * @param u2
-     * @param p1
-     * @param p2
-     * @param u3
-     * @param p3
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param p1 a int.
+     * @param p2 a int.
+     * @param u3 an array of {@link double} objects.
+     * @param p3 an array of {@link int} objects.
      */
     public void polyMul1(double[] u1, double[] u2, int p1, int p2, double[] u3, int[] p3) {
         p3[0] = p1 + p2;
@@ -828,12 +843,12 @@ public class LoopClosure {
     /**
      * Polynomial subtraction 1.
      *
-     * @param u1
-     * @param u2
-     * @param p1
-     * @param p2
-     * @param u3
-     * @param p3
+     * @param u1 an array of {@link double} objects.
+     * @param u2 an array of {@link double} objects.
+     * @param p1 an array of {@link int} objects.
+     * @param p2 an array of {@link int} objects.
+     * @param u3 an array of {@link double} objects.
+     * @param p3 an array of {@link int} objects.
      */
     public void polySub1(double[] u1, double[] u2, int[] p1, int[] p2, double[] u3, int[] p3) {
         p3[0] = max(p1[0], p2[0]);
@@ -851,18 +866,18 @@ public class LoopClosure {
     /**
      * Get coordinates from polynomial roots.
      *
-     * @param n_soln
-     * @param roots
-     * @param r_n1
-     * @param r_a1
-     * @param r_a3
-     * @param r_c3
-     * @param r_soln_n
-     * @param r_soln_a
-     * @param r_soln_c
+     * @param n_soln   an array of {@link int} objects.
+     * @param roots    an array of {@link double} objects.
+     * @param r_n1     an array of {@link double} objects.
+     * @param r_a1     an array of {@link double} objects.
+     * @param r_a3     an array of {@link double} objects.
+     * @param r_c3     an array of {@link double} objects.
+     * @param r_soln_n an array of {@link double} objects.
+     * @param r_soln_a an array of {@link double} objects.
+     * @param r_soln_c an array of {@link double} objects.
      */
     public void getCoordsFromPolyRoots(int[] n_soln, double[] roots, double[] r_n1, double[] r_a1,
-            double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c) {
+                                       double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c) {
         double[] ex = new double[3];
         double[] ey = new double[3];
         double[] ez = new double[3];
@@ -1156,8 +1171,7 @@ public class LoopClosure {
     /**
      * Calculate T2.
      *
-     * @param t0
-     *
+     * @param t0 a double.
      * @return a double T2.
      */
     public double calcT2(double t0) {
@@ -1190,9 +1204,8 @@ public class LoopClosure {
     /**
      * Calculate T1.
      *
-     * @param t0
-     * @param t2
-     *
+     * @param t0 a double.
+     * @param t2 a double.
      * @return return a double T1.
      */
     public double calcT1(double t0, double t2) {
@@ -1212,10 +1225,10 @@ public class LoopClosure {
     /**
      * Calculate dihedral angle.
      *
-     * @param r1
-     * @param r2
-     * @param r3
-     * @param angle
+     * @param r1    an array of {@link double} objects.
+     * @param r2    an array of {@link double} objects.
+     * @param r3    an array of {@link double} objects.
+     * @param angle an array of {@link double} objects.
      */
     public void calcDihedralAngle(double[] r1, double[] r2, double[] r3, double[] angle) {
         double[] p = new double[3];
@@ -1233,9 +1246,9 @@ public class LoopClosure {
     /**
      * Calculate bond angle.
      *
-     * @param r1
-     * @param r2
-     * @param angle
+     * @param r1    an array of {@link double} objects.
+     * @param r2    an array of {@link double} objects.
+     * @param angle an array of {@link double} objects.
      */
     public void calcBondAngle(double[] r1, double[] r2, double[] angle) {
         double arg = dot(r1, r2);
@@ -1246,9 +1259,9 @@ public class LoopClosure {
     /**
      * Quotient of two vectors in three dimensional space.
      *
-     * @param axis
-     * @param quarter_ang
-     * @param p
+     * @param axis        an array of {@link double} objects.
+     * @param quarter_ang a double.
+     * @param p           an array of {@link double} objects.
      */
     public void quaternion(double[] axis, double quarter_ang, double[] p) {
         double tan_w = tan(quarter_ang);

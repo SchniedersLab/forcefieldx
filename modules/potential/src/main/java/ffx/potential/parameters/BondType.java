@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -139,6 +139,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      * @param forceConstant double
      * @param distance double
      * @param bondFunction the BondFunction type to apply.
+     * @param flatBottomRadius a double.
      */
     public BondType(int atomClasses[], double forceConstant, double distance, BondFunction bondFunction, double flatBottomRadius) {
         super(ForceFieldType.BOND, sortKey(atomClasses));
@@ -167,7 +168,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
-     * @return
+     * @return a {@link ffx.potential.parameters.BondType} object.
      */
     public BondType patchClasses(HashMap<AtomType, AtomType> typeMap) {
 
@@ -187,7 +188,7 @@ public final class BondType extends BaseType implements Comparator<String> {
          * If found, create a new BondType that bridges to known classes.
          */
         if (count == 1) {
-            int newClasses[] =  Arrays.copyOf(atomClasses, len);
+            int newClasses[] = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
@@ -238,10 +239,10 @@ public final class BondType extends BaseType implements Comparator<String> {
      * Average two BondType instances. The atom classes that define the new type
      * must be supplied.
      *
-     * @param bondType1
-     * @param bondType2
-     * @param atomClasses
-     * @return
+     * @param bondType1 a {@link ffx.potential.parameters.BondType} object.
+     * @param bondType2 a {@link ffx.potential.parameters.BondType} object.
+     * @param atomClasses an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.BondType} object.
      */
     public static BondType average(BondType bondType1, BondType bondType2, int atomClasses[]) {
         if (bondType1 == null || bondType2 == null || atomClasses == null) {
@@ -271,9 +272,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     public static final double quartic = 3.793125;
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -298,9 +297,7 @@ public final class BondType extends BaseType implements Comparator<String> {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -317,9 +314,7 @@ public final class BondType extends BaseType implements Comparator<String> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 7;

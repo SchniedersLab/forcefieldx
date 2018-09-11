@@ -43,7 +43,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import ffx.potential.Utilities;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.floor;
 
@@ -57,6 +56,7 @@ import ffx.numerics.AtomicDoubleArray;
 import ffx.numerics.MultiDoubleArray;
 import ffx.numerics.TriCubicSpline;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
@@ -72,6 +72,8 @@ import static ffx.crystal.Crystal.mod;
  * RealSpaceData class.</p>
  *
  * @author Timothy D. Fenn
+ *
+ * @since 1.0
  */
 public class RealSpaceData implements DataContainer {
 
@@ -148,7 +150,7 @@ public class RealSpaceData implements DataContainer {
      * @param molecularAssembly {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
      *                          object, used as the atomic model for comparison against the data
      * @param properties        system properties file
-     * @param parallelTeam
+     * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
      * @param diffractionData   {@link ffx.xray.DiffractionData diffraction data}
      */
     public RealSpaceData(MolecularAssembly molecularAssembly,
@@ -165,7 +167,7 @@ public class RealSpaceData implements DataContainer {
      * @param molecularAssemblies {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
      *                            object, used as the atomic model for comparison against the data
      * @param properties          system properties file
-     * @param parallelTeam
+     * @param parallelTeam        a {@link edu.rit.pj.ParallelTeam} object.
      * @param diffractionData     {@link ffx.xray.DiffractionData diffraction data}
      */
     public RealSpaceData(MolecularAssembly molecularAssemblies[],
@@ -243,7 +245,7 @@ public class RealSpaceData implements DataContainer {
      * @param assembly     {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
      *                     object, used as the atomic model for comparison against the data
      * @param properties   system properties file
-     * @param parallelTeam
+     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
     public RealSpaceData(MolecularAssembly assembly,
                          CompositeConfiguration properties,
@@ -258,8 +260,8 @@ public class RealSpaceData implements DataContainer {
      * @param assembly     {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
      *                     object, used as the atomic model for comparison against the data
      * @param properties   system properties file
-     * @param parallelTeam
-     * @param datafile     one or more {@link RealSpaceFile} to be refined against
+     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+     * @param datafile     one or more {@link ffx.realspace.parsers.RealSpaceFile} to be refined against
      */
     public RealSpaceData(MolecularAssembly assembly,
                          CompositeConfiguration properties,
@@ -275,8 +277,8 @@ public class RealSpaceData implements DataContainer {
      *                            object array (typically containing alternate conformer assemblies), used
      *                            as the atomic model for comparison against the data
      * @param properties          system properties file
-     * @param parallelTeam
-     * @param dataFile            one or more {@link RealSpaceFile} to be refined against
+     * @param parallelTeam        a {@link edu.rit.pj.ParallelTeam} object.
+     * @param dataFile            one or more {@link ffx.realspace.parsers.RealSpaceFile} to be refined against
      */
     public RealSpaceData(MolecularAssembly molecularAssemblies[],
                          CompositeConfiguration properties,
@@ -388,14 +390,30 @@ public class RealSpaceData implements DataContainer {
         return realSpaceEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>realSpaceEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getRealSpaceEnergy() {
         return realSpaceEnergy;
     }
 
+    /**
+     * <p>getdEdL.</p>
+     *
+     * @return a double.
+     */
     public double getdEdL() {
         return realSpacedUdL;
     }
 
+    /**
+     * <p>Getter for the field <code>realSpaceGradient</code>.</p>
+     *
+     * @param gradient an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public double[] getRealSpaceGradient(double gradient[]) {
         int nAtoms = refinementModel.getTotalAtomArray().length;
         int nActiveAtoms = 0;
@@ -414,6 +432,12 @@ public class RealSpaceData implements DataContainer {
         return gradient;
     }
 
+    /**
+     * <p>getdEdXdL.</p>
+     *
+     * @param gradient an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public double[] getdEdXdL(double gradient[]) {
         int nAtoms = refinementModel.getTotalAtomArray().length;
         int nActiveAtoms = 0;
@@ -828,6 +852,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Setter for the field <code>molecularAssemblies</code>.</p>
+     *
      * @param molecularAssemblies the molecularAssemblies to set
      */
     public void setMolecularAssemblies(MolecularAssembly[] molecularAssemblies) {
@@ -835,6 +861,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>realSpaceFile</code>.</p>
+     *
      * @return the realSpaceFile
      */
     public RealSpaceFile[] getRealSpaceFile() {
@@ -842,6 +870,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Setter for the field <code>realSpaceFile</code>.</p>
+     *
      * @param realSpaceFile the realSpaceFile to set
      */
     public void setRealSpaceFile(RealSpaceFile[] realSpaceFile) {
@@ -849,6 +879,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>modelName</code>.</p>
+     *
      * @return the modelName
      */
     public String getModelName() {
@@ -856,6 +888,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Setter for the field <code>modelName</code>.</p>
+     *
      * @param modelName the modelName to set
      */
     public void setModelName(String modelName) {
@@ -863,6 +897,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>nRealSpaceData</code>.</p>
+     *
      * @return the nRealSpaceData
      */
     public int getnRealSpaceData() {
@@ -870,6 +906,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Setter for the field <code>nRealSpaceData</code>.</p>
+     *
      * @param nRealSpaceData the nRealSpaceData to set
      */
     public void setnRealSpaceData(int nRealSpaceData) {
@@ -877,6 +915,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>crystal</code>.</p>
+     *
      * @return the crystal
      */
     public Crystal[] getCrystal() {
@@ -884,6 +924,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Setter for the field <code>crystal</code>.</p>
+     *
      * @param crystal the crystal to set
      */
     public void setCrystal(Crystal[] crystal) {
@@ -891,6 +933,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>refinementData</code>.</p>
+     *
      * @return the refinementData
      */
     public RealSpaceRefinementData[] getRefinementData() {
@@ -898,6 +942,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Setter for the field <code>refinementData</code>.</p>
+     *
      * @param refinementData the refinementData to set
      */
     public void setRefinementData(RealSpaceRefinementData[] refinementData) {
@@ -905,6 +951,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Setter for the field <code>refinementModel</code>.</p>
+     *
      * @param refinementModel the refinementModel to set
      */
     public void setRefinementModel(RefinementModel refinementModel) {
@@ -912,6 +960,8 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>lambda</code>.</p>
+     *
      * @return the lambda
      */
     public double getLambda() {

@@ -54,7 +54,6 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  * implementations.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public abstract class Thermostat {
@@ -168,11 +167,11 @@ public abstract class Thermostat {
      * <p>
      * Constructor for Thermostat.</p>
      *
-     * @param nVariables a int.
-     * @param x an array of double.
-     * @param v an array of double.
-     * @param mass an array of double.
-     * @param type the VARIABLE_TYPE of each variable.
+     * @param nVariables        a int.
+     * @param x                 an array of double.
+     * @param v                 an array of double.
+     * @param mass              an array of double.
+     * @param type              the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      */
     public Thermostat(int nVariables, double x[], double v[], double mass[],
@@ -206,11 +205,12 @@ public abstract class Thermostat {
     /**
      * To allow chemical perturbations during MD.
      *
-     * @param nVariables
-     * @param x
-     * @param v
-     * @param mass
-     * @param type
+     * @param nVariables               a int.
+     * @param x                        an array of {@link double} objects.
+     * @param v                        an array of {@link double} objects.
+     * @param mass                     an array of {@link double} objects.
+     * @param type                     an array of {@link ffx.numerics.Potential.VARIABLE_TYPE} objects.
+     * @param removeCenterOfMassMotion a boolean.
      */
     public void setNumberOfVariables(int nVariables, double x[], double v[],
                                      double mass[], VARIABLE_TYPE type[], boolean removeCenterOfMassMotion) {
@@ -232,7 +232,7 @@ public abstract class Thermostat {
      * allowed.
      *
      * @param remove <code>true</code> if center of mass motion is being
-     * removed.
+     *               removed.
      */
     public void setRemoveCenterOfMassMotion(boolean remove) {
         removeCenterOfMassMotion = remove;
@@ -243,10 +243,20 @@ public abstract class Thermostat {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>removeCenterOfMassMotion</code>.</p>
+     *
+     * @return a boolean.
+     */
     public boolean getRemoveCenterOfMassMotion() {
         return removeCenterOfMassMotion;
     }
 
+    /**
+     * <p>Setter for the field <code>quiet</code>.</p>
+     *
+     * @param quiet a boolean.
+     */
     public void setQuiet(boolean quiet) {
         this.quiet = quiet;
     }
@@ -334,7 +344,6 @@ public abstract class Thermostat {
      * variance of each independent momentum component is kT * mass.
      *
      * @param mass The mass for the degrees of freedom.
-     *
      * @return three velocity components.
      */
     public double[] maxwellIndividual(double mass) {
@@ -351,7 +360,7 @@ public abstract class Thermostat {
      * momentum component is kT * mass.
      *
      * @param targetTemperature the target Temperature for the Maxwell
-     * distribution.
+     *                          distribution.
      */
     public void maxwell(double targetTemperature) {
 
@@ -407,7 +416,7 @@ public abstract class Thermostat {
      * Compute the center of mass, linear momentum and angular momentum.
      *
      * @param remove If true, the center of mass motion will be removed.
-     * @param print If true, the center of mass and momenta will be printed.
+     * @param print  If true, the center of mass and momenta will be printed.
      */
     public void centerOfMassMotion(boolean remove, boolean print) {
         totalMass = 0.0;

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -57,8 +57,10 @@ import ffx.potential.parsers.SystemFilter;
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public interface PotentialsFunctions {
+    /** Constant <code>logger</code> */
     static final Logger logger = Logger.getLogger(PotentialsFunctions.class.getName());
 
     /**
@@ -68,6 +70,12 @@ public interface PotentialsFunctions {
      */
     abstract public boolean isLocal(); // Return true if the local implementation from Potentials.
 
+    /**
+     * <p>open.</p>
+     *
+     * @param filename a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
+     */
     default public MolecularAssembly open(String filename) {
         MolecularAssembly[] assemblies = openAll(filename);
         if (assemblies.length > 1) {
@@ -111,7 +119,7 @@ public interface PotentialsFunctions {
      * objects, setting any underlying Potential to use a certain number of
      * threads. Default implementation simply ignores nThreads.
      *
-     * @param files
+     * @param files an array of {@link java.lang.String} objects.
      * @param nThreads Use non-default num threads
      * @return Array of MolecularAssembly.
      */
@@ -286,7 +294,8 @@ public interface PotentialsFunctions {
      * access to CLI arguments, and throws UnsupportedOperationException.
      *
      * @return CLI arguments
-     * @throws UnsupportedOperationException If unimplemented
+     * @throws java.lang.UnsupportedOperationException If unimplemented
+     * @throws java.lang.UnsupportedOperationException if any.
      */
     default public List<String> getArguments() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
@@ -299,6 +308,7 @@ public interface PotentialsFunctions {
      abstract public FileOpener open(String[] files);
      abstract public FileOpener open(File file, String commandDescription);
      abstract public FileOpener open(File[] files, String commandDescription);*/
+
     /**
      * Versions a file, attempting to find an unused filename in the set
      * filename, and filename_1 to filename_999.

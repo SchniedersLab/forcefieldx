@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -86,6 +86,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
 
         TEXTFIELD, CHECKBOX, CHECKBOXES, EDITCOMBOBOX, COMBOBOX, MULTIPOLE
     }
+
     /**
      * This is used to test if ANY keyword has been modified, so it is static
      * across all keyword objects
@@ -143,6 +144,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     public static void setKeywordModified(boolean b) {
         isModified = b;
     }
+
     /**
      * TINKER Keyword String.
      */
@@ -179,7 +181,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * @param jta a {@link javax.swing.JTextArea} object.
      */
     public KeywordComponent(String k, String kg, SwingRepresentation s,
-            String d, JTextArea jta) {
+                            String d, JTextArea jta) {
         flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
         keyword = k;
         keywordGroup = kg;
@@ -204,7 +206,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * @param o an array of {@link java.lang.String} objects.
      */
     public KeywordComponent(String k, String kg, SwingRepresentation s,
-            String d, JTextArea jta, String o[]) {
+                            String d, JTextArea jta, String o[]) {
         this(k, kg, s, d, jta);
         options = o;
     }
@@ -293,7 +295,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
             if (swingRepresentation == SwingRepresentation.CHECKBOX) {
                 ((JCheckBox) keywordValues.get(0)).setSelected(false);
             } else if (swingRepresentation == SwingRepresentation.CHECKBOXES) {
-                for (ListIterator li = keywordValues.listIterator(); li.hasNext();) {
+                for (ListIterator li = keywordValues.listIterator(); li.hasNext(); ) {
                     ((JCheckBox) li.next()).setSelected(false);
                 }
             } else if (swingRepresentation == SwingRepresentation.COMBOBOX) {

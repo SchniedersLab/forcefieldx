@@ -42,7 +42,6 @@ package ffx.numerics;
  * Scalar class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class Scalar {

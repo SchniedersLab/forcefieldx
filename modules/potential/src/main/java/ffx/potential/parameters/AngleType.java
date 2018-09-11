@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -84,6 +84,11 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * @param forceConstant a double.
      * @param angle an array of double.
      * @param angleFunction the AngleFunction to apply.
+     * @param angleFunction the AngleFunction to apply.
+     * @param angleFunction the AngleFunction to apply.
+     * @param angleFunction the AngleFunction to apply.
+     * @param angleFunction the AngleFunction to apply.
+     * @param angleFunction the AngleFunction to apply.
      */
     public AngleType(int atomClasses[], double forceConstant, double angle[], AngleFunction angleFunction) {
         super(ForceFieldType.ANGLE, sortKey(atomClasses));
@@ -110,7 +115,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
-     * @return
+     * @return a {@link ffx.potential.parameters.AngleType} object.
      */
     public AngleType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
@@ -129,7 +134,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
          * If found, create a new AngleType that bridges to known classes.
          */
         if (count == 1 || count == 2) {
-            int newClasses[] =  Arrays.copyOf(atomClasses, len);
+            int newClasses[] = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
@@ -166,10 +171,10 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * Average two AngleType instances. The atom classes that define the new
      * type must be supplied.
      *
-     * @param angleType1
-     * @param angleType2
-     * @param atomClasses
-     * @return
+     * @param angleType1 a {@link ffx.potential.parameters.AngleType} object.
+     * @param angleType2 a {@link ffx.potential.parameters.AngleType} object.
+     * @param atomClasses an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.AngleType} object.
      */
     public static AngleType average(AngleType angleType1, AngleType angleType2, int atomClasses[]) {
         if (angleType1 == null || angleType2 == null || atomClasses == null) {
@@ -207,6 +212,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
         }
         return angleString.toString();
     }
+
     /**
      * Cubic coefficient in angle bending potential.
      */
@@ -228,9 +234,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     public static final double units = 1.0 / pow(180.0 / PI, 2.0);
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -259,9 +263,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -278,9 +280,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 5;

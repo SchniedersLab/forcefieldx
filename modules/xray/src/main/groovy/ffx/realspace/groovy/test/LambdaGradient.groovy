@@ -1,4 +1,3 @@
-
 package ffx.realspace.groovy.test
 
 import ffx.algorithms.cli.AlgorithmsScript

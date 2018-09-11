@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -115,12 +115,15 @@ public class RosenbluthOBMC implements MonteCarloListener {
     /**
      * RRMC constructor.
      *
-     * @param targets Residues to undergo RRMC.
-     * @param mcFrequency Number of MD steps between RRMC proposals.
+     * @param targets      Residues to undergo RRMC.
+     * @param mcFrequency  Number of MD steps between RRMC proposals.
      * @param trialSetSize Larger values cost more but increase acceptance.
+     * @param mola         a {@link ffx.potential.MolecularAssembly} object.
+     * @param ffe          a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param thermostat   a {@link ffx.algorithms.thermostats.Thermostat} object.
      */
     public RosenbluthOBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat,
-            List<Residue> targets, int mcFrequency, int trialSetSize) {
+                          List<Residue> targets, int mcFrequency, int trialSetSize) {
         this.targets = targets;
         this.mcFrequency = mcFrequency;
         this.trialSetSize = trialSetSize;
@@ -129,12 +132,26 @@ public class RosenbluthOBMC implements MonteCarloListener {
         this.thermostat = thermostat;
     }
 
+    /**
+     * <p>Constructor for RosenbluthOBMC.</p>
+     *
+     * @param mola           a {@link ffx.potential.MolecularAssembly} object.
+     * @param ffe            a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param thermostat     a {@link ffx.algorithms.thermostats.Thermostat} object.
+     * @param targets        a {@link java.util.List} object.
+     * @param mcFrequency    a int.
+     * @param trialSetSize   a int.
+     * @param writeSnapshots a boolean.
+     */
     public RosenbluthOBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat,
-            List<Residue> targets, int mcFrequency, int trialSetSize, boolean writeSnapshots) {
+                          List<Residue> targets, int mcFrequency, int trialSetSize, boolean writeSnapshots) {
         this(mola, ffe, thermostat, targets, mcFrequency, trialSetSize);
         this.writeSnapshots = writeSnapshots;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean mcUpdate(double temperature) {
         steps++;
@@ -240,9 +257,9 @@ public class RosenbluthOBMC implements MonteCarloListener {
      * uDep[i]))
      */
     private MCMove calculateRosenbluthFactors( // orientational
-            Residue target, Torsion chi0,
-            ResidueState oldConf, List<MCMove> oldTrialSet,
-            ResidueState newConf, List<MCMove> newTrialSet) {
+                                               Residue target, Torsion chi0,
+                                               ResidueState oldConf, List<MCMove> oldTrialSet,
+                                               ResidueState newConf, List<MCMove> newTrialSet) {
         double temperature = thermostat.getCurrentTemperature();
         double beta = 1.0 / (BOLTZMANN * temperature);
 

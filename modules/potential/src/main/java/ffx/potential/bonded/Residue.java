@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -65,6 +65,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
+ * @since 1.0
  */
 public class Residue extends MSGroup {
 
@@ -98,12 +99,12 @@ public class Residue extends MSGroup {
      * other atom is drawn when applyRotamer is called. The backbone
      * corrections, however, move these atoms, so they must be reverted to their
      * original coordinates each time applyRotamer is called.
-     *
+     * <p>
      * O3' North and South coordinates are technically non-essential, as they
      * could be derived from C1', O4', C4', and a given sugar pucker, however,
      * it is much less computationally expensive to calculate them once and then
      * store them.
-     *
+     * <p>
      * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
      */
     private double[] O3sNorthCoords = null;
@@ -114,6 +115,9 @@ public class Residue extends MSGroup {
 
     private Rotamer currentRotamer = null;
     private Rotamer originalRotamer = null;
+    /**
+     * Constant <code>origAtEnd=</code>
+     */
     protected static final boolean origAtEnd;
     private static final boolean addOrigRot;
     private Rotamer rotamers[] = null;
@@ -137,7 +141,7 @@ public class Residue extends MSGroup {
      * Default Constructor where num is this Residue's position in the Polymer.
      *
      * @param num a int.
-     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @param rt  a {@link ffx.potential.bonded.Residue.ResidueType} object.
      */
     public Residue(int num, ResidueType rt) {
         super();
@@ -151,7 +155,7 @@ public class Residue extends MSGroup {
      * Constructor for Residue.</p>
      *
      * @param name a {@link java.lang.String} object.
-     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @param rt   a {@link ffx.potential.bonded.Residue.ResidueType} object.
      */
     public Residue(String name, ResidueType rt) {
         super(name);
@@ -164,8 +168,8 @@ public class Residue extends MSGroup {
      * the Polymer.
      *
      * @param name a {@link java.lang.String} object.
-     * @param num a int.
-     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @param num  a int.
+     * @param rt   a {@link ffx.potential.bonded.Residue.ResidueType} object.
      */
     public Residue(String name, int num, ResidueType rt) {
         this(name, rt);
@@ -176,14 +180,14 @@ public class Residue extends MSGroup {
      * Name is the residue's 3 letter abbreviation and num is its position in
      * the Polymer.
      *
-     * @param name a {@link java.lang.String} object.
+     * @param name      a {@link java.lang.String} object.
      * @param resNumber a int.
-     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
-     * @param chainID a {@link java.lang.Character} object.
-     * @param segID a {@link java.lang.String} object.
+     * @param rt        a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @param chainID   a {@link java.lang.Character} object.
+     * @param segID     a {@link java.lang.String} object.
      */
     public Residue(String name, int resNumber, ResidueType rt, Character chainID,
-            String segID) {
+                   String segID) {
         this(name, rt);
         this.resNumber = resNumber;
         this.chainID = chainID;
@@ -194,10 +198,10 @@ public class Residue extends MSGroup {
      * As above, with atoms being a FNode with this Residue's atoms as child
      * nodes
      *
-     * @param name a {@link java.lang.String} object.
-     * @param num a int.
-     * @param atoms a {@link ffx.potential.bonded.MSNode} object.
-     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @param name       a {@link java.lang.String} object.
+     * @param num        a int.
+     * @param atoms      a {@link ffx.potential.bonded.MSNode} object.
+     * @param rt         a {@link ffx.potential.bonded.Residue.ResidueType} object.
      * @param forceField the ForceField to use when created bonded terms.
      */
     public Residue(String name, int num, MSNode atoms, ResidueType rt, ForceField forceField) {
@@ -207,19 +211,20 @@ public class Residue extends MSGroup {
         assignResidueType();
         finalize(true, forceField);
     }
-    
+
     /**
      * Deprecated method to get this Residue's rotamers (should now pass in an
      * instance of a RotamerLibrary, where previously RotamerLibrary was largely
      * a static class).
-     * 
+     *
      * @return Rotamers
      */
+    /**
     @Deprecated
     public Rotamer[] getRotamers() {
         logger.warning(" Deprecated code path; use Residue.getRotamers(RotamerLibrary library) instead!");
         return this.getRotamers(RotamerLibrary.getDefaultLibrary());
-    }
+    } */
 
     /**
      * Gets the Rotamers for this residue, potentially incorporating the
@@ -242,7 +247,7 @@ public class Residue extends MSGroup {
          * Return rotamers for this residue from the RotamerLibrary.
          */
         Rotamer[] libRotamers = library.getRotamers(this);
-        
+
         /**
          * If there are no rotamers, and addOrigRot is true, return an array with
          * only an original-coordinates rotamer. Else if there are no rotamers,
@@ -303,9 +308,9 @@ public class Residue extends MSGroup {
             default:
                 double[] rotaValues = new double[chi.length * 2];
                 for (int i = 0; i < chi.length; i++) {
-                    int ii = i*2;
+                    int ii = i * 2;
                     rotaValues[ii] = chi[i];
-                    rotaValues[ii+1] = 0.0;
+                    rotaValues[ii + 1] = 0.0;
                 }
                 originalRotamer = new Rotamer(origState, rotaValues);
                 break;
@@ -330,10 +335,38 @@ public class Residue extends MSGroup {
         return rotamers;
     }
 
+    /**
+     * Add a rotamer to this Residue's cached array of rotamers.
+     *
+     * @param rotamer The rotamer to add.
+     */
+    public void addRotamer(Rotamer rotamer) {
+        if (rotamers != null) {
+            Rotamer libRotamers[] = rotamers;
+            int nRots = libRotamers.length;
+            rotamers = new Rotamer[nRots + 1];
+            System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
+            rotamers[rotamers.length - 1] = rotamer;
+        } else {
+            rotamers = new Rotamer[1];
+            rotamers[0] = rotamer;
+        }
+    }
+
+    /**
+     * <p>Getter for the field <code>residueType</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     */
     public ResidueType getResidueType() {
         return residueType;
     }
 
+    /**
+     * <p>isDeoxy.</p>
+     *
+     * @return a boolean.
+     */
     public boolean isDeoxy() {
         if (getResidueType() == ResidueType.NA) {
             Atom HOs = (Atom) getAtomNode("HO\'");
@@ -464,10 +497,20 @@ public class Residue extends MSGroup {
         return atom;
     }
 
+    /**
+     * <p>storeState.</p>
+     *
+     * @return a {@link ffx.potential.bonded.ResidueState} object.
+     */
     public ResidueState storeState() {
         return new ResidueState(this, this);
     }
 
+    /**
+     * <p>revertState.</p>
+     *
+     * @param state a {@link ffx.potential.bonded.ResidueState} object.
+     */
     public void revertState(ResidueState state) {
         List<Atom> atomList = getAtomList();
         for (Atom atom : atomList) {
@@ -475,6 +518,11 @@ public class Residue extends MSGroup {
         }
     }
 
+    /**
+     * <p>storeCoordinateArray.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[][] storeCoordinateArray() {
         List<Atom> atomList = getAtomList();
         int nAtoms = atomList.size();
@@ -486,17 +534,27 @@ public class Residue extends MSGroup {
         return coords;
     }
 
+    /**
+     * <p>setRotamer.</p>
+     *
+     * @param rotamer a {@link ffx.potential.bonded.Rotamer} object.
+     */
     public void setRotamer(Rotamer rotamer) {
         this.currentRotamer = rotamer;
     }
 
+    /**
+     * <p>getRotamer.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Rotamer} object.
+     */
     public Rotamer getRotamer() {
         return currentRotamer;
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Allows adding Atoms to the Residue.
      */
     @Override
@@ -587,7 +645,12 @@ public class Residue extends MSGroup {
                 return null;
         }
     }
-    
+
+    /**
+     * <p>getAminoAcid3.</p>
+     *
+     * @return a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+     */
     public AminoAcid3 getAminoAcid3() {
         if (this.residueType != ResidueType.AA) {
             throw new IllegalArgumentException(String.format(" This residue is "
@@ -598,7 +661,12 @@ public class Residue extends MSGroup {
         }
         return AminoAcid3.valueOf(getName());
     }
-    
+
+    /**
+     * <p>getNucleicAcid3.</p>
+     *
+     * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+     */
     public NucleicAcid3 getNucleicAcid3() {
         if (this.residueType != ResidueType.NA) {
             throw new IllegalArgumentException(String.format(" This residue is "
@@ -607,7 +675,7 @@ public class Residue extends MSGroup {
             return NucleicAcid3.UNK;
         }
         return NucleicAcid3.valueOf(getName());
-        
+
     }
 
     /**
@@ -668,7 +736,7 @@ public class Residue extends MSGroup {
      * residue.
      *
      * @param atList List to add to.
-     * @param name Atom to add.
+     * @param name   Atom to add.
      * @return If atom exists.
      */
     private boolean tryAddAtom(List<Atom> atList, String name) {
@@ -706,7 +774,7 @@ public class Residue extends MSGroup {
                 na = null;
                 try {
                     if (name.length() >= 2) {
-                        na = NA3.valueOf(name);
+                        na = NA3.parse(name);
                     } else if (name.length() == 1) {
                         NA1 na1 = NA1.valueOf(name);
                         na = NA1toNA3.get(na1);
@@ -738,7 +806,7 @@ public class Residue extends MSGroup {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden equals method that return true if object is not equals to this,
      * is of the same class, has the same parent Polymer, the same sequence
      * number, the same ResidueType, and the same AA3/NA3.
@@ -783,7 +851,7 @@ public class Residue extends MSGroup {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * The Finalize method should be called once all atoms have been added to
      * the Residue. Geometry objects (Bonds, Angles, etc) are then formed,
      * followed by a determination of under-constrained (Dangeling) atoms.
@@ -945,6 +1013,7 @@ public class Residue extends MSGroup {
     }
 
     // Public data access methods
+
     /**
      * Returns this Residue's sequence number.
      *
@@ -972,7 +1041,7 @@ public class Residue extends MSGroup {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Prints "Residue Number: x" to stdout.
      */
     @Override
@@ -984,11 +1053,16 @@ public class Residue extends MSGroup {
 
     }
 
+    /**
+     * <p>getSideChainCOM.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[] getSideChainCOM() {
         Vector3d v = new Vector3d();
         Vector3d v2 = new Vector3d();
         int count = 0;
-        for (ListIterator li = getSideChainAtoms().listIterator(); li.hasNext();) {
+        for (ListIterator li = getSideChainAtoms().listIterator(); li.hasNext(); ) {
             Atom a = (Atom) li.next();
             String id = a.getName();
             if (!id.equals("CA") && !id.equals("N") && !id.equals("C")
@@ -1020,7 +1094,7 @@ public class Residue extends MSGroup {
      */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
 // If Color by Residue, pass this Residue's Color
         if (newColorModel == RendererCache.ColorModel.RESIDUE) {
             switch (residueType) {
@@ -1083,11 +1157,12 @@ public class Residue extends MSGroup {
     public void setSSType(SSType ss) {
         ssType = ss;
     }
+
     private String shortString = null;
 
     /**
      * Formats this residue with some optional inclusions.
-     *
+     * <p>
      * [residue type]-[chain ID]ResNumber-Name.
      *
      * @param addResType Include the residue type
@@ -1177,7 +1252,7 @@ public class Residue extends MSGroup {
      * ignores the differences between DNA and RNA (deoxy-cytosine and cytosine
      * are both returned as C, for example).
      *
-     * @param na3 To convert
+     * @param na3         To convert
      * @param simpleCodes Whether to use the same codes for DNA and RNA
      * @return NA1 code
      */
@@ -1345,7 +1420,9 @@ public class Residue extends MSGroup {
     public enum ResiduePosition {
 
         FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
-    };
+    }
+
+    ;
 
     public enum AA {
 
@@ -1382,6 +1459,54 @@ public class Residue extends MSGroup {
     public enum NA3 {
 
         A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
+
+        /**
+         * Best-guess parse of a String to an NA3.
+         * 
+         * @param name Parse to NA3.
+         * @return Corresponding NA3.
+         * @throws IllegalArgumentException For 'DU', which has no implemented NA3.
+         */
+        public static NA3 parse(String name) throws IllegalArgumentException {
+            // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
+            switch (name.toUpperCase()) {
+                case "ADE":
+                case "A":
+                    return A;
+                case "CYT":
+                case "C":
+                    return C;
+                case "GUA":
+                case "G":
+                    return G;
+                case "URI":
+                case "U":
+                    return U;
+                case "DAD":
+                case "DA":
+                    return DA;
+                case "DCY":
+                case "DC":
+                    return DC;
+                case "DGU":
+                case "DG":
+                    return DG;
+                case "DTY":
+                case "THY":
+                case "DT":
+                    return DT;
+                case "DU":
+                    throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
+                case "MPO":
+                    return MPO;
+                case "DPO":
+                    return DPO;
+                case "TPO":
+                    return TPO;
+                default:
+                    return UNK;
+            }
+        }
     }
 
     public enum ResidueType {

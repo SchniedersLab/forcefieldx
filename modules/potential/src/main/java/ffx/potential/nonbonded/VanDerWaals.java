@@ -84,7 +84,7 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
  * The Van der Waals class computes Van der Waals interaction in parallel using
- * a {@link NeighborList} for any {@link Crystal}. The repulsive power (e.g.
+ * a {@link ffx.potential.nonbonded.NeighborList} for any {@link ffx.crystal.Crystal}. The repulsive power (e.g.
  * 12), attractive power (e.g. 6) and buffering (e.g. for the AMOEBA
  * buffered-14-7) can all be specified such that both Lennard-Jones and AMOEBA
  * are supported.
@@ -330,6 +330,8 @@ public class VanDerWaals implements MaskingInterface,
      * @param crystal      The boundary conditions.
      * @param forceField   the ForceField parameters to apply.
      * @param parallelTeam The parallel environment.
+     * @param vdwCutoff    a double.
+     * @param nlistCutoff  a double.
      * @since 1.0
      */
     public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
@@ -440,22 +442,47 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
+    /**
+     * <p>getAlpha.</p>
+     *
+     * @return a double.
+     */
     public double getAlpha() {
         return vdwLambdaAlpha;
     }
 
+    /**
+     * <p>getBeta.</p>
+     *
+     * @return a double.
+     */
     public double getBeta() {
         return vdwLambdaExponent;
     }
 
+    /**
+     * <p>Getter for the field <code>bondMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public int[][] getBondMask() {
         return bondMask;
     }
 
+    /**
+     * <p>Getter for the field <code>angleMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public int[][] getAngleMask() {
         return angleMask;
     }
 
+    /**
+     * <p>Getter for the field <code>torsionMask</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public int[][] getTorsionMask() {
         return torsionMask;
     }
@@ -633,10 +660,20 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
+    /**
+     * <p>Setter for the field <code>resolution</code>.</p>
+     *
+     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
+     */
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
     }
 
+    /**
+     * <p>buildNeighborList.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public final void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
         if (esvTerm) {  // TODO: Move ESV neighborlist construction into the parallel team.
@@ -653,6 +690,12 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
+    /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms    an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param molecule an array of {@link int} objects.
+     */
     public void setAtoms(Atom atoms[], int molecule[]) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
@@ -831,12 +874,17 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * Get the reduction index.
      *
-     * @return
+     * @return an array of {@link int} objects.
      */
     public int[] getReductionIndex() {
         return reductionIndex;
     }
 
+    /**
+     * <p>getVDWForm.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.VanDerWaalsForm} object.
+     */
     public VanDerWaalsForm getVDWForm() {
         return vdwForm;
     }
@@ -852,6 +900,11 @@ public class VanDerWaals implements MaskingInterface,
     }
 
 
+    /**
+     * <p>getVDWcutoff.</p>
+     *
+     * @return a double.
+     */
     public double getVDWcutoff() {
         return vdwCutoff;
     }
@@ -943,7 +996,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * Get details of the non-bonded cutoff.
      *
-     * @return
+     * @return a {@link ffx.potential.nonbonded.NonbondedCutoff} object.
      */
     public NonbondedCutoff getNonbondedCutoff() {
         return nonbondedCutoff;
@@ -1071,8 +1124,10 @@ public class VanDerWaals implements MaskingInterface,
         }
 
         /**
-         * Overriden by the ESV version which updates with every softcore
-         * interaction.
+         * Overriden by the ESV version which updates with every softcore interaction.
+         *
+         * @param i Index of atom i.
+         * @param k Index of atom k.
          */
         public void setFactors(int i, int k) {
         }
@@ -1143,6 +1198,11 @@ public class VanDerWaals implements MaskingInterface,
 
     }
 
+    /**
+     * <p>attachExtendedSystem.</p>
+     *
+     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
+     */
     public void attachExtendedSystem(ExtendedSystem system) {
         if (system == null) {
             logger.severe("Tried to attach null extended system.");
@@ -1178,6 +1238,9 @@ public class VanDerWaals implements MaskingInterface,
         updateEsvLambda();
     }
 
+    /**
+     * <p>detachExtendedSystem.</p>
+     */
     public void detachExtendedSystem() {
         setAtoms(previousAtoms, molecule);
         fill(esvAtoms, false);
@@ -1189,6 +1252,11 @@ public class VanDerWaals implements MaskingInterface,
         initSoftCore(); // To remove entries from isSoft[] that were due only to ESVs.
     }
 
+    /**
+     * <p>Setter for the field <code>intermolecularSoftcore</code>.</p>
+     *
+     * @param intermolecularSoftcore a boolean.
+     */
     public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
         if (!(lambdaTerm || esvTerm)) {
             logger.warning("Illegal softcoring.");
@@ -1197,6 +1265,11 @@ public class VanDerWaals implements MaskingInterface,
         this.intermolecularSoftcore = intermolecularSoftcore;
     }
 
+    /**
+     * <p>Setter for the field <code>intramolecularSoftcore</code>.</p>
+     *
+     * @param intramolecularSoftcore a boolean.
+     */
     public void setIntramolecularSoftcore(boolean intramolecularSoftcore) {
         if (!(lambdaTerm || esvTerm)) {
             logger.warning("Illegal softcoring.");
@@ -1224,10 +1297,21 @@ public class VanDerWaals implements MaskingInterface,
         return shareddEdL.get();
     }
 
+    /**
+     * <p>getEsvDerivative.</p>
+     *
+     * @param esvID a int.
+     * @return a double.
+     */
     public double getEsvDerivative(int esvID) {
         return esvDeriv[esvID].get();
     }
 
+    /**
+     * <p>getEsvDerivatives.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[] getEsvDerivatives() {
         if (!esvTerm) {
             throw new IllegalStateException();
@@ -1241,8 +1325,6 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * {@inheritDoc}
-     *
-     * @param lambdaGradient the lambda Gradient array (dU/dL/dX).
      */
     @Override
     public void getdEdXdL(double[] lambdaGradient) {
@@ -1310,6 +1392,11 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
+    /**
+     * <p>destroy.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     public void destroy() throws Exception {
         if (neighborList != null) {
             neighborList.destroy();

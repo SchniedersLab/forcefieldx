@@ -45,6 +45,7 @@ import ffx.algorithms.thermostats.Thermostat;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
@@ -129,7 +130,7 @@ public class DynamicsOptions {
      * Thermostat.
      */
     public ThermostatEnum thermostat;
-    
+
     /**
      * Integrator.
      */
@@ -140,22 +141,23 @@ public class DynamicsOptions {
      */
     public void init() {
         thermostat = Thermostat.parseThermostat(thermostatString);
-        integrator = Integrator.parseIntegrator(integratorString);        
+        integrator = Integrator.parseIntegrator(integratorString);
     }
 
     /**
      * Initialize a MolecularDynamics from the parsed options.
      *
-     * @param potential
-     * @param activeAssembly
-     * @param sh
-     * @return
+     * @param potential      a {@link ffx.numerics.Potential} object.
+     * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param sh             a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param writeout       a {@link ffx.algorithms.cli.WriteoutOptions} object.
+     * @return a {@link ffx.algorithms.MolecularDynamics} object.
      */
     public MolecularDynamics getDynamics(WriteoutOptions writeout,
-            Potential potential,
-            MolecularAssembly activeAssembly,
-            AlgorithmListener sh) {
-                
+                                         Potential potential,
+                                         MolecularAssembly activeAssembly,
+                                         AlgorithmListener sh) {
+
         MolecularDynamics molDyn = new MolecularDynamics(activeAssembly, potential,
                 activeAssembly.getProperties(), sh, thermostat, integrator);
         molDyn.setFileType(writeout.getFileType());
@@ -164,22 +166,47 @@ public class DynamicsOptions {
         return molDyn;
     }
 
+    /**
+     * <p>Getter for the field <code>temp</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTemp() {
         return temp;
     }
 
+    /**
+     * <p>Getter for the field <code>dt</code>.</p>
+     *
+     * @return a double.
+     */
     public double getDt() {
         return dt;
     }
 
+    /**
+     * <p>Getter for the field <code>report</code>.</p>
+     *
+     * @return a double.
+     */
     public double getReport() {
         return report;
     }
 
+    /**
+     * <p>Getter for the field <code>checkpoint</code>.</p>
+     *
+     * @return a double.
+     */
     public double getCheckpoint() {
         return checkpoint;
     }
 
+    /**
+     * <p>Getter for the field <code>optimize</code>.</p>
+     *
+     * @return a boolean.
+     */
     public boolean getOptimize() {
         return optimize;
     }

@@ -37,16 +37,16 @@
  */
 package ffx.algorithms.cli;
 
-import ffx.numerics.Potential;
-import ffx.potential.MolecularAssembly;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.AlgorithmListener;
-import ffx.utilities.BaseScript;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import ffx.algorithms.AlgorithmFunctions;
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.AlgorithmUtils;
+import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly;
+import ffx.utilities.BaseScript;
 
 /**
  * Base class for scripts in the Algorithms package, providing some key functions.
@@ -78,9 +78,9 @@ public class AlgorithmsScript extends BaseScript {
     protected File saveDir;
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Execute the BaseScript init method, then load algorithm functions.
-     *
-     * @return Returns true if the script should continue.
      */
     @Override
     public boolean init() {
@@ -136,6 +136,7 @@ public class AlgorithmsScript extends BaseScript {
 
     /**
      * Sets the directory this script should save files to. Mostly used for tests.
+     *
      * @param saveDir Directory to save output to.
      */
     public void setSaveDir(File saveDir) {

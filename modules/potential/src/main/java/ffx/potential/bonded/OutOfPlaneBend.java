@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -64,7 +64,6 @@ import static ffx.potential.parameters.OutOfPlaneBendType.units;
  * The OutOfPlaneBend class represents an Out-Of-Plane Bend.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class OutOfPlaneBend extends BondedTerm {
@@ -79,7 +78,7 @@ public class OutOfPlaneBend extends BondedTerm {
      * OutOfPlaneBend constructor.
      *
      * @param angle Angle that contains 3 of 4 OutOfPlaneBend atoms.
-     * @param atom The 4th atom of the trigonal center.
+     * @param atom  The 4th atom of the trigonal center.
      */
     public OutOfPlaneBend(Angle angle, Atom atom) {
         super();
@@ -99,7 +98,7 @@ public class OutOfPlaneBend extends BondedTerm {
      * Attempt to create a new OutOfPlaneBend instance for a given Angle and
      * Force Field.
      *
-     * @param angle the Angle to create an OutOfPlaneBend around.
+     * @param angle      the Angle to create an OutOfPlaneBend around.
      * @param forceField the ForceField parameters to use.
      * @return a new OutOfPlaneBend if the central atom of the angle is trigonal
      * and a force field type exists.
@@ -132,23 +131,18 @@ public class OutOfPlaneBend extends BondedTerm {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Evaluate this Out-of-Plane Bend energy.
-     *
-     * @param gradient Evaluate the gradient.
-     * @param threadID
-     * @param gradX
-     * @param gradY
-     * @param gradZ
-     * @return Returns the energy.
      */
     @Override
     public double energy(boolean gradient, int threadID,
-            AtomicDoubleArray gradX,
-            AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ,
-            AtomicDoubleArray lambdaGradX,
-            AtomicDoubleArray lambdaGradY,
-            AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray gradX,
+                         AtomicDoubleArray gradY,
+                         AtomicDoubleArray gradZ,
+                         AtomicDoubleArray lambdaGradX,
+                         AtomicDoubleArray lambdaGradY,
+                         AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -232,7 +226,7 @@ public class OutOfPlaneBend extends BondedTerm {
                 double deddt = units
                         * outOfPlaneBendType.forceConstant * dv
                         * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic
-                            * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4)
+                        * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4)
                         * esvLambda;
                 double dedcos = 0.0;
                 if (ee != 0.0) {
@@ -289,7 +283,7 @@ public class OutOfPlaneBend extends BondedTerm {
             }
         }
         if (esvTerm) {
-            final double esvLambdaInv = (esvLambda != 0.0) ? 1/esvLambda : 1.0;
+            final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
             setEsvDeriv(energy * dedesvChain * esvLambdaInv);
         }
         return energy;
@@ -305,7 +299,7 @@ public class OutOfPlaneBend extends BondedTerm {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overridden toString Method returns the Term's id.
      */
     @Override

@@ -67,8 +67,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import ffx.algorithms.cli.AlgorithmsScript;
-import ffx.potential.cli.PotentialScript;
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.AlgorithmFunctions;
@@ -76,6 +74,7 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
+import ffx.algorithms.cli.AlgorithmsScript;
 import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
@@ -84,6 +83,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
+import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
 
 import groovy.ui.Console;
@@ -94,7 +94,6 @@ import groovy.ui.Console;
  * includes the Force Field X API, Java API and Groovy extensions.
  *
  * @author Michael J. Schnieders
- *
  */
 public final class ModelingShell extends Console implements AlgorithmListener {
 
@@ -485,13 +484,13 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * <p>
      * md</p>
      *
-     * @param nStep a int.
-     * @param timeStep a double.
-     * @param printInterval a double.
-     * @param saveInterval a double.
-     * @param temperature a double.
+     * @param nStep          a int.
+     * @param timeStep       a double.
+     * @param printInterval  a double.
+     * @param saveInterval   a double.
+     * @param temperature    a double.
      * @param initVelocities a boolean.
-     * @param dyn a {@link java.io.File} object.
+     * @param dyn            a {@link java.io.File} object.
      */
     public void md(int nStep, double timeStep, double printInterval,
                    double saveInterval, double temperature, boolean initVelocities,
@@ -514,7 +513,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Return false if user elects to cancel.
      */
     @Override
@@ -537,7 +536,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Print out the Force Field X promo.
      */
     @Override
@@ -631,7 +630,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * Fix up the "Result: " message, then call the original method.
      *
      * @param string String to ouput.
-     * @param style Style to use.
+     * @param style  Style to use.
      */
     public void appendOutputNl(String string, Style style) {
         if (interrupted) {
@@ -680,7 +679,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * appendOutput</p>
      *
      * @param string a {@link java.lang.String} object.
-     * @param style a {@link javax.swing.text.Style} object.
+     * @param style  a {@link javax.swing.text.Style} object.
      */
     public void appendOutput(String string, Style style) {
         if (interrupted) {
@@ -715,7 +714,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     /**
      * If at exit time, a script is running, the user is given an option to
      * interrupt it first
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -755,7 +754,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * setMeasurement</p>
      *
      * @param measurement a {@link java.lang.String} object.
-     * @param d a double.
+     * @param d           a double.
      */
     public void setMeasurement(String measurement, double d) {
         try {

@@ -39,6 +39,8 @@ package ffx.algorithms.thermostats;
 
 /**
  * An enumeration of available Thermostats.
+ *
+ * @author Michael J. Schnieders
  */
 public enum ThermostatEnum {
 

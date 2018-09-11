@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -56,17 +56,31 @@ public class LambdaMove implements MCMove {
     private NormalDistribution dist;
     private double stdDev = 0.1;
 
+    /**
+     * <p>Constructor for LambdaMove.</p>
+     *
+     * @param currentLambda a double.
+     * @param osrw          a {@link ffx.algorithms.AbstractOSRW} object.
+     */
     public LambdaMove(double currentLambda, AbstractOSRW osrw) {
         this.osrw = osrw;
         currentLambda = osrw.getLambda();
         dist = new NormalDistribution(0.0, stdDev);
     }
 
+    /**
+     * <p>Setter for the field <code>stdDev</code>.</p>
+     *
+     * @param stdDev a double.
+     */
     public void setStdDev(double stdDev) {
         this.stdDev = stdDev;
         dist = new NormalDistribution(0.0, stdDev);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void move() {
         currentLambda = osrw.getLambda();
@@ -84,6 +98,9 @@ public class LambdaMove implements MCMove {
         osrw.setLambda(newLambda);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void revertMove() {
         osrw.setLambda(currentLambda);

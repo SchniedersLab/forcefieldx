@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -52,23 +52,14 @@ import static ffx.numerics.VectorMath.doubleFactorial;
 import static ffx.numerics.VectorMath.r;
 
 /**
- * The MultipoleTensor class computes derivatives of 1/|<b>r</b>| via recursion
- * to arbitrary order for Cartesian multipoles in either a global frame or a
- * quasi-internal frame. This class serves as the abstract parent to both and
- * defines all shared logic. Non-abstract methods are declared final to disallow
- * unnecessary overrides.
+ * The abstract MultipoleTensor is extended by classes that compute derivatives of 1/|<b>r</b>| via recursion
+ * to arbitrary order using Cartesian multipoles in either a global frame or a
+ * quasi-internal frame.
+ * <br>
+ * This class serves as the abstract parent to both and defines all shared logic.
+ * Non-abstract methods are declared final to disallow unnecessary overrides.
  *
  * @author Michael J. Schnieders
- *
- * @see
- * <a href="http://doi.org/10.1142/9789812830364_0002"
- * target="_blank">
- * Matt Challacombe, Eric Schwegler and Jan Almlof, Modern developments in
- * Hartree-Fock theory: Fast methods for computing the Coulomb matrix.
- * Computational Chemistry: Review of Current Trends. pp. 53-107, Ed. J.
- * Leczszynski, World Scientifc, 1996.
- * </a>
- *
  * @since 1.0
  */
 public abstract class MultipoleTensor {
@@ -80,14 +71,18 @@ public abstract class MultipoleTensor {
      */
     public enum OPERATOR {
         COULOMB, SCREENED_COULOMB, THOLE_FIELD
-    };
+    }
+
+    ;
 
     /**
      * Global and Quasi-Internal (QI) coordinate systems are supported.
      */
     public enum COORDINATES {
         GLOBAL, QI
-    };
+    }
+
+    ;
 
     protected OPERATOR operator;
     protected COORDINATES coordinates;
@@ -157,6 +152,7 @@ public abstract class MultipoleTensor {
      */
     protected final double[] rprev = new double[4];
     protected int tensorsRecycled = 0;
+    /** Constant <code>recycleTensors=false</code> */
     public static final boolean recycleTensors = false;
 //    public static final boolean recycleTensors = Boolean.valueOf(System.getProperty("sys.reuseTensors","false"));
 
@@ -167,6 +163,7 @@ public abstract class MultipoleTensor {
      * @param operator The tensor operator.
      * @param order The order of the tensor.
      * @param aewald The screening parameter.
+     * @param coordinates a {@link ffx.numerics.MultipoleTensor.COORDINATES} object.
      */
     public MultipoleTensor(OPERATOR operator, COORDINATES coordinates, int order, double aewald) {
         assert (order > 0);
@@ -302,17 +299,31 @@ public abstract class MultipoleTensor {
         t222 = ti(2, 2, 2, order);
     }
 
+    /**
+     * <p>isGlobal.</p>
+     *
+     * @return a boolean.
+     */
     public final boolean isGlobal() {
         return (MultipoleTensorGlobal.class.isAssignableFrom(this.getClass()));
     }
 
+    /**
+     * <p>isQI.</p>
+     *
+     * @return a boolean.
+     */
     public final boolean isQI() {
         return (MultipoleTensorQI.class.isAssignableFrom(this.getClass()));
     }
 
     /**
-     * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
-     * double[], double[], double[], double[], double, double)
+     * <p>permScreened.</p>
+     *
+     * @param r an array of {@link double} objects.
+     * @param lambdaFunction a double.
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
      */
     public void permScreened(double r[], double lambdaFunction, double[] Qi, double[] Qk) {
         boolean operatorChange = operator != OPERATOR.SCREENED_COULOMB;
@@ -331,8 +342,12 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
-     * double[], double[], double[], double[], double, double)
+     * <p>permCoulomb.</p>
+     *
+     * @param r an array of {@link double} objects.
+     * @param lambdaFunction a double.
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
      */
     public void permCoulomb(double r[], double lambdaFunction, double[] Qi, double[] Qk) {
         boolean operatorChange = operator != OPERATOR.COULOMB;
@@ -351,11 +366,18 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
-     * double[], double[], double[], double[], double, double)
+     * <p>polarScreened.</p>
+     *
+     * @param r an array of {@link double} objects.
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
+     * @param ui an array of {@link double} objects.
+     * @param uiCR an array of {@link double} objects.
+     * @param uk an array of {@link double} objects.
+     * @param ukCR an array of {@link double} objects.
      */
     public void polarScreened(double r[], double[] Qi, double[] Qk,
-            double[] ui, double[] uiCR, double[] uk, double[] ukCR) {
+                              double[] ui, double[] uiCR, double[] uk, double[] ukCR) {
         boolean operatorChange = operator != OPERATOR.SCREENED_COULOMB;
         if (operatorChange) {
             setOperator(OPERATOR.SCREENED_COULOMB);
@@ -372,11 +394,18 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
-     * double[], double[], double[], double[], double, double)
+     * <p>polarCoulomb.</p>
+     *
+     * @param r an array of {@link double} objects.
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
+     * @param ui an array of {@link double} objects.
+     * @param uiCR an array of {@link double} objects.
+     * @param uk an array of {@link double} objects.
+     * @param ukCR an array of {@link double} objects.
      */
     public void polarCoulomb(double r[], double[] Qi, double[] Qk,
-            double ui[], double uiCR[], double uk[], double ukCR[]) {
+                             double ui[], double uiCR[], double uk[], double ukCR[]) {
         boolean operatorChange = operator != OPERATOR.COULOMB;
         if (operatorChange) {
             setOperator(OPERATOR.COULOMB);
@@ -395,11 +424,18 @@ public abstract class MultipoleTensor {
     /**
      * For Thole tensors.
      *
-     * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
-     * double[], double[], double[], double[], double, double)
+     * @param r an array of {@link double} objects.
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
+     * @param ui an array of {@link double} objects.
+     * @param uiCR an array of {@link double} objects.
+     * @param uk an array of {@link double} objects.
+     * @param ukCR an array of {@link double} objects.
+     * @param pgamma a double.
+     * @param aiak a double.
      */
     public void tholeField(double[] r, double[] Qi, double[] Qk,
-            double[] ui, double[] uiCR, double[] uk, double[] ukCR, double pgamma, double aiak) {
+                           double[] ui, double[] uiCR, double[] uk, double[] ukCR, double pgamma, double aiak) {
         boolean operatorChange = operator != OPERATOR.THOLE_FIELD;
         if (operatorChange) {
             setOperator(OPERATOR.THOLE_FIELD);
@@ -430,15 +466,16 @@ public abstract class MultipoleTensor {
      * @param lambdaFunction addl. atomic distance to account for softcoring
      * @param Qi multipole of first atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
      * @param Qk multipole of second atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
-     * @param Ui dipole of first atom
-     * @param UiCR masked dipole of first atom
-     * @param Uk dipole of second atom
-     * @param UkCR masked dipole of second atom
      * @param damp aka pgamma, damping coefficient
      * @param aiak 1/(alphai*alphak)^6
+     * @param operator a {@link ffx.numerics.MultipoleTensor.OPERATOR} object.
+     * @param ui an array of {@link double} objects.
+     * @param uiCR an array of {@link double} objects.
+     * @param uk an array of {@link double} objects.
+     * @param ukCR an array of {@link double} objects.
      */
     public final void generateTensor(OPERATOR operator, double[] r, double lambdaFunction, double[] Qi, double[] Qk,
-            double[] ui, double[] uiCR, double[] uk, double[] ukCR, double damp, double aiak) {
+                                     double[] ui, double[] uiCR, double[] uk, double[] ukCR, double damp, double aiak) {
         boolean operatorChange = this.operator != operator;
         if (operatorChange) {
             setOperator(operator);
@@ -458,6 +495,11 @@ public abstract class MultipoleTensor {
 
     /**
      * For the MultipoleTensorTest class and testing.
+     *
+     * @param r an array of {@link double} objects.
+     * @param lambdaFunction a double.
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
      */
     public final void generateTensor(double[] r, double lambdaFunction, double[] Qi, double[] Qk) {
         boolean distanceChanged = setR(r, lambdaFunction);
@@ -473,9 +515,17 @@ public abstract class MultipoleTensor {
 
     /**
      * For the MultipoleTensorTest class and testing.
+     *
+     * @param r an array of {@link double} objects.
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
+     * @param ui an array of {@link double} objects.
+     * @param uiCR an array of {@link double} objects.
+     * @param uk an array of {@link double} objects.
+     * @param ukCR an array of {@link double} objects.
      */
     public final void generateTensor(double[] r, double[] Qi, double[] Qk,
-            double[] ui, double[] uiCR, double[] uk, double[] ukCR) {
+                                     double[] ui, double[] uiCR, double[] uk, double[] ukCR) {
         boolean distanceChanged = setR(r);
         setMultipoles(Qi, Qk);
         setDipoles(ui, uiCR, uk, ukCR);
@@ -485,20 +535,51 @@ public abstract class MultipoleTensor {
         }
     }
 
+    /**
+     * <p>multipoleEnergy.</p>
+     *
+     * @param Fi an array of {@link double} objects.
+     * @param Ti an array of {@link double} objects.
+     * @param Tk an array of {@link double} objects.
+     * @return a double.
+     */
     public abstract double multipoleEnergy(double Fi[], double Ti[], double Tk[]);
 
+    /**
+     * <p>polarizationEnergy.</p>
+     *
+     * @param scaleField a double.
+     * @param scaleEnergy a double.
+     * @param scaleMutual a double.
+     * @param Fi an array of {@link double} objects.
+     * @param Ti an array of {@link double} objects.
+     * @param Tk an array of {@link double} objects.
+     * @return a double.
+     */
     public abstract double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
-            double Fi[], double Ti[], double Tk[]);
+                                              double Fi[], double Ti[], double Tk[]);
 
     /**
      * Is a no-op when not using QI.
+     *
+     * @param Fi an array of {@link double} objects.
+     * @param Ti an array of {@link double} objects.
+     * @param Tk an array of {@link double} objects.
      */
     protected abstract void qiToGlobal(double[] Fi, double[] Ti, double[] Tk);
 
+    /**
+     * <p>getRecycledCount.</p>
+     *
+     * @return a int.
+     */
     public final int getRecycledCount() {
         return tensorsRecycled;
     }
 
+    /**
+     * <p>resetRecycledCount.</p>
+     */
     public final void resetRecycledCount() {
         tensorsRecycled = 0;
     }
@@ -506,7 +587,7 @@ public abstract class MultipoleTensor {
     /**
      * Set the Operator.
      *
-     * @param operator
+     * @param operator a {@link ffx.numerics.MultipoleTensor.OPERATOR} object.
      */
     public final void setOperator(OPERATOR operator) {
         this.operator = operator;
@@ -553,48 +634,65 @@ public abstract class MultipoleTensor {
     /**
      * Set the Thole damping parameters.
      *
-     * @param pgamma
+     * @param pgamma a double.
      * @param aiak 1/(alphai^6*alphak^6) where alpha is polarizability
      */
     public final void setTholeDamping(double pgamma, double aiak) {
         this.pgamma = pgamma;
-        this.aiak = aiak;		// == 1/(alphai*alphak)^6 where alpha is polarizability
+        this.aiak = aiak;        // == 1/(alphai*alphak)^6 where alpha is polarizability
     }
 
+    /**
+     * <p>checkDampingCriterion.</p>
+     *
+     * @param dx_local an array of {@link double} objects.
+     * @param pgamma a double.
+     * @param aiak a double.
+     * @return a boolean.
+     */
     public static final boolean checkDampingCriterion(double[] dx_local, double pgamma, double aiak) {
         double R = r(dx_local);
         return (-pgamma * (R * aiak) * (R * aiak) * (R * aiak) > -50.0);
     }
 
+    /**
+     * <p>unsetDipoles.</p>
+     */
     protected final void unsetDipoles() {
         uxi = uyi = uzi = pxi = pyi = pzi = 0.0;
         uxk = uyk = uzk = pxk = pyk = pzk = 0.0;
     }
 
+    /**
+     * <p>unsetDamping.</p>
+     */
     protected final void unsetDamping() {
         pgamma = aiak = 0.0;
     }
 
     /**
+     * <p>setR.</p>
+     *
      * @param r Whether distance changed as a result.
+     * @return a boolean.
      */
     protected final boolean setR(double r[]) {
         return setR(r, 0.0);
     }
 
     /**
+     * <p>setR.</p>
+     *
      * @param r Whether distance changed as a result.
+     * @param lambdaFunction a double.
+     * @return a boolean.
      */
     protected abstract boolean setR(double r[], double lambdaFunction);
 
     /**
      * Generate source terms for the Challacombe et al. recursion.
      *
-     * @param r Cartesian vector.
      * @param T000 Location to store the source terms.
-     * @param damp Thole damping for this interaction.
-     * @param aiak Inverse of the polarizability product to the sixth, ie
-     * 1/(site i * site k)^6.
      */
     protected final void source(double T000[]) {
 
@@ -657,6 +755,11 @@ public abstract class MultipoleTensor {
         }
     }
 
+    /**
+     * <p>log.</p>
+     *
+     * @param tensor an array of {@link double} objects.
+     */
     public final void log(double tensor[]) {
         log(this.operator, this.order, tensor);
     }
@@ -820,14 +923,18 @@ public abstract class MultipoleTensor {
      * @param j int j = 0 is the Tlmn tensor, j .GT. 0 is an intermediate.
      * @param r double[] The {x,y,z} coordinates.
      * @param T000 double[] Initial auxiliary tensor elements from Eq. (40).
-     *
      * @return double The requested Tensor element (intermediate if j .GT. 0).
-     *
      * @since 1.0
      */
     protected abstract double Tlmnj(final int l, final int m, final int n,
-            final int j, final double[] r, final double[] T000);
+                                    final int j, final double[] r, final double[] T000);
 
+    /**
+     * <p>unrolled.</p>
+     *
+     * @param r an array of {@link double} objects.
+     * @param tensor an array of {@link double} objects.
+     */
     protected final void unrolled(final double r[], final double tensor[]) {
         switch (order) {
             case 4:
@@ -845,7 +952,10 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * @see {@code MultipoleTensor#recursion(double[],double[])
+     * <p>recursion.</p>
+     *
+     * @param r an array of {@link double} objects.
+     * @param tensor an array of {@link double} objects.
      */
     protected abstract void recursion(final double r[], final double tensor[]);
 
@@ -866,7 +976,6 @@ public abstract class MultipoleTensor {
      * @param r double[] vector between two sites.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
      * @return Java code for the tensor recursion.
-     *
      * @since 1.0
      */
     protected String codeTensorRecursion(final double r[], final double tensor[]) {
@@ -1230,7 +1339,7 @@ public abstract class MultipoleTensor {
     }
 
     final double codeInteract5(double r[], double Qi[], double Qk[],
-            double Fi[], double Fk[], double Ti[], double Tk[]) {
+                               double Fi[], double Fk[], double Ti[], double Tk[]) {
         double T[] = new double[tensorCount(5)];
         recursion(r, T);
 
@@ -1281,23 +1390,44 @@ public abstract class MultipoleTensor {
 
     /**
      * Just the energy portion of multipoleEnergyQI().
+     *
+     * @return a double.
      */
     public final double mpoleIFieldDotK() {
         multipoleIField();
         return dotMultipoleK();
     }
 
+    /**
+     * <p>mpoleKFieldDotI.</p>
+     *
+     * @return a double.
+     */
     public final double mpoleKFieldDotI() {
         multipoleKField();
         return dotMultipoleI();
     }
 
+    /**
+     * <p>getdEdZ.</p>
+     *
+     * @return a double.
+     */
     public abstract double getdEdZ();
 
+    /**
+     * <p>getd2EdZ2.</p>
+     *
+     * @return a double.
+     */
     public abstract double getd2EdZ2();
 
     /**
-     * inducedIField_qi + inducedIFieldCR_qi -> dotMultipoleK
+     * inducedIField_qi + inducedIFieldCR_qi -&gt; dotMultipoleK
+     *
+     * @param scaleDipoleCR a double.
+     * @param scaleDipole a double.
+     * @return a double.
      */
     public final double indiFieldsDotK(double scaleDipoleCR, double scaleDipole) {
         return qk * -(uzi * scaleDipole + pzi * scaleDipoleCR) * R001
@@ -1312,7 +1442,11 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * inducedKField_qi + inducedKFieldCR_qi -> dotMultipoleI
+     * inducedKField_qi + inducedKFieldCR_qi -&gt; dotMultipoleI
+     *
+     * @param scaleDipoleCR a double.
+     * @param scaleDipole a double.
+     * @return a double.
      */
     public final double indkFieldsDotI(double scaleDipoleCR, double scaleDipole) {
         return qi * (uzk * scaleDipole + pzk * scaleDipoleCR) * R001
@@ -1326,26 +1460,51 @@ public abstract class MultipoleTensor {
                 + qyzi * (uyk * scaleDipole + pyk * scaleDipoleCR) * R021;
     }
 
+    /**
+     * <p>uiDotvk.</p>
+     *
+     * @return a double.
+     */
     public final double uiDotvk() {
         return uxi * -pxk * R200
                 + uyi * -pyk * R020
                 + uzi * -pzk * R002;
     }
 
+    /**
+     * <p>ukDotvi.</p>
+     *
+     * @return a double.
+     */
     public final double ukDotvi() {
         return uxk * -pxi * R200
                 + uyk * -pyi * R020
                 + uzk * -pzi * R002;
     }
 
+    /**
+     * <p>multipoleIField.</p>
+     */
     protected abstract void multipoleIField();
 
+    /**
+     * <p>multipoleKField.</p>
+     */
     protected abstract void multipoleKField();
 
+    /**
+     * <p>multipoleIdX.</p>
+     */
     protected abstract void multipoleIdX();
 
+    /**
+     * <p>multipoleIdY.</p>
+     */
     protected abstract void multipoleIdY();
 
+    /**
+     * <p>multipoleIdZ.</p>
+     */
     protected abstract void multipoleIdZ();
 
     /**
@@ -1353,30 +1512,71 @@ public abstract class MultipoleTensor {
      */
     protected abstract void multipoleIdZ2();
 
+    /**
+     * <p>inducedIField.</p>
+     */
     protected abstract void inducedIField();
 
+    /**
+     * <p>inducedKField.</p>
+     */
     protected abstract void inducedKField();
 
+    /**
+     * <p>inducedIFieldCR.</p>
+     */
     protected abstract void inducedIFieldCR();
 
+    /**
+     * <p>inducedKFieldCR.</p>
+     */
     protected abstract void inducedKFieldCR();
 
+    /**
+     * <p>inducedIFieldForTorque.</p>
+     */
     protected abstract void inducedIFieldForTorque();
 
+    /**
+     * <p>inducedKFieldForTorque.</p>
+     */
     protected abstract void inducedKFieldForTorque();
 
+    /**
+     * <p>inducedIdX.</p>
+     */
     protected abstract void inducedIdX();
 
+    /**
+     * <p>inducedIdY.</p>
+     */
     protected abstract void inducedIdY();
 
+    /**
+     * <p>inducedIdZ.</p>
+     */
     protected abstract void inducedIdZ();
 
+    /**
+     * <p>inducedKdX.</p>
+     */
     protected abstract void inducedKdX();
 
+    /**
+     * <p>inducedKdY.</p>
+     */
     protected abstract void inducedKdY();
 
+    /**
+     * <p>inducedKdZ.</p>
+     */
     protected abstract void inducedKdZ();
 
+    /**
+     * <p>multipoleITorque.</p>
+     *
+     * @param torque an array of {@link double} objects.
+     */
     protected final void multipoleITorque(double torque[]) {
         // Torque on dipole moments due to the field.
         double dx = dyi * E001 - dzi * E010;
@@ -1396,6 +1596,11 @@ public abstract class MultipoleTensor {
         torque[2] = dz - qz;
     }
 
+    /**
+     * <p>multipoleKTorque.</p>
+     *
+     * @param torque an array of {@link double} objects.
+     */
     protected final void multipoleKTorque(double torque[]) {
         // Torque on dipole moments due to the field.
         double dx = dyk * E001 - dzk * E010;
@@ -1415,6 +1620,11 @@ public abstract class MultipoleTensor {
         torque[2] = -(dz + qz);
     }
 
+    /**
+     * <p>dotMultipoleI.</p>
+     *
+     * @return a double.
+     */
     protected final double dotMultipoleI() {
         double total = qi * E000;
         total -= dxi * E100;
@@ -1429,6 +1639,11 @@ public abstract class MultipoleTensor {
         return total;
     }
 
+    /**
+     * <p>dotMultipoleK.</p>
+     *
+     * @return a double.
+     */
     protected final double dotMultipoleK() {
         double total = qk * E000;
         total += dxk * E100;
@@ -1462,7 +1677,6 @@ public abstract class MultipoleTensor {
      * @param l number of d/dx partial derivatives.
      * @param m number of d/dx partial derivatives.
      * @param n number of d/dx partial derivatives.
-     * @param j the jth intermediate term.
      * @return a String of the form <code>termlmnj</code>.
      */
     protected final static String term(int l, int m, int n) {
@@ -1493,6 +1707,11 @@ public abstract class MultipoleTensor {
         return String.format("R%d%d%d", l, m, n);
     }
 
+    /**
+     * <p>getTensor.</p>
+     *
+     * @param T an array of {@link double} objects.
+     */
     protected final void getTensor(double T[]) {
         if (T == null || order < 0) {
             return;
@@ -1576,6 +1795,11 @@ public abstract class MultipoleTensor {
         T[t122] = R122;
     }
 
+    /**
+     * <p>setTensor.</p>
+     *
+     * @param T an array of {@link double} objects.
+     */
     protected final void setTensor(double T[]) {
         if (T == null || order < 0) {
             return;
@@ -1659,16 +1883,36 @@ public abstract class MultipoleTensor {
         R122 = T[t122];
     }
 
+    /**
+     * <p>setMultipoles.</p>
+     *
+     * @param Qi an array of {@link double} objects.
+     * @param Qk an array of {@link double} objects.
+     */
     public final void setMultipoles(double[] Qi, double[] Qk) {
         setMultipoleI(Qi);
         setMultipoleK(Qk);
     }
 
+    /**
+     * <p>setDipoles.</p>
+     *
+     * @param ui an array of {@link double} objects.
+     * @param uiCR an array of {@link double} objects.
+     * @param uk an array of {@link double} objects.
+     * @param ukCR an array of {@link double} objects.
+     */
     public final void setDipoles(double ui[], double uiCR[], double uk[], double ukCR[]) {
         setDipoleI(ui, uiCR);
         setDipoleK(uk, ukCR);
     }
 
+    /**
+     * <p>scaleInduced.</p>
+     *
+     * @param scaleField a double.
+     * @param scaleEnergy a double.
+     */
     public final void scaleInduced(double scaleField, double scaleEnergy) {
         uxi *= scaleEnergy;
         uyi *= scaleEnergy;
@@ -1690,18 +1934,44 @@ public abstract class MultipoleTensor {
         szk = 0.5 * (uzk + pzk);
     }
 
+    /**
+     * <p>setMultipoleI.</p>
+     *
+     * @param Qi an array of {@link double} objects.
+     */
     protected abstract void setMultipoleI(double Qi[]);
 
+    /**
+     * <p>setMultipoleK.</p>
+     *
+     * @param Qk an array of {@link double} objects.
+     */
     protected abstract void setMultipoleK(double Qk[]);
 
+    /**
+     * <p>setDipoleI.</p>
+     *
+     * @param ui an array of {@link double} objects.
+     * @param uiCR an array of {@link double} objects.
+     */
     protected abstract void setDipoleI(double ui[], double uiCR[]);
 
+    /**
+     * <p>setDipoleK.</p>
+     *
+     * @param uk an array of {@link double} objects.
+     * @param ukCR an array of {@link double} objects.
+     */
     protected abstract void setDipoleK(double uk[], double ukCR[]);
 
     // Pre-calculated divisions.
+    /** Constant <code>oneThird=1.0 / 3.0</code> */
     protected static final double oneThird = 1.0 / 3.0;
+    /** Constant <code>twoThirds=2.0 / 3.0</code> */
     protected static final double twoThirds = 2.0 / 3.0;
+    /** Constant <code>threeFifths=3.0 / 5.0</code> */
     protected static final double threeFifths = 3.0 / 5.0;
+    /** Constant <code>oneThirtyFifth=1.0 / 35.0</code> */
     protected static final double oneThirtyFifth = 1.0 / 35.0;
 
     // Multipole components for atom i.
