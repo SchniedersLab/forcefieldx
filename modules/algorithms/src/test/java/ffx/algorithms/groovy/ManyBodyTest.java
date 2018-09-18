@@ -156,8 +156,6 @@ public class ManyBodyTest extends PJDependentTest {
             System.out.println(e.toString());
             Assert.fail(" Exception deleting files created by ManyBodyTest.");
         }
-
-        manyBody.getManyBody().getPartial().delete();
     }
 
     /**
@@ -296,6 +294,5 @@ public class ManyBodyTest extends PJDependentTest {
         }
 
         manyBody.getManyBody().getRestartFile().delete();
-        manyBody.getManyBody().getPartial().delete();
     }
 }

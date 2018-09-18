@@ -110,13 +110,14 @@ class Dynamics extends AlgorithmsScript {
             }
             logger.info(String.format(" Running NPT dynamics at pressure %7.4g", barostatOpt.pressure))
             CrystalPotential crystalPotential = (CrystalPotential) potential
-            ffx.algorithms.Barostat barostat = new ffx.algorithms.Barostat(activeAssembly, crystalPotential)
-            barostat.setPressure(barostatOpt.pressure)
-            barostat.setMaxDensity(barostatOpt.maxDensity)
-            barostat.setMinDensity(barostatOpt.minDensity)
-            barostat.setMaxSideMove(barostatOpt.maxSideMove)
-            barostat.setMaxAngleMove(barostatOpt.maxAngleMove)
-            barostat.setMeanBarostatInterval(barostatOpt.meanInterval)
+            ffx.algorithms.Barostat barostat = barostatOpt.createBarostat(activeAssembly, crystalPotential)
+            //ffx.algorithms.Barostat barostat = new ffx.algorithms.Barostat(activeAssembly, crystalPotential)
+            //barostat.setPressure(barostatOpt.pressure)
+            //barostat.setMaxDensity(barostatOpt.maxDensity)
+            //barostat.setMinDensity(barostatOpt.minDensity)
+            //barostat.setMaxSideMove(barostatOpt.maxSideMove)
+            //barostat.setMaxAngleMove(barostatOpt.maxAngleMove)
+            //barostat.setMeanBarostatInterval(barostatOpt.meanInterval)
             potential = barostat
         }
 

@@ -574,7 +574,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * Currently, electrostatics and vdW cannot undergo alchemical changes
          * simultaneously. Softcore vdW is given priority.
          */
+        logger.info(" Checking vdw lambda term");
         if (vdwLambdaTerm) {
+            logger.info(" vdw lambda term is true");
             pmeLambdaTerm = false;
         }
 

@@ -463,10 +463,6 @@ public class RotamerOptimization implements Terminatable {
      */
     private File energyRestartFile;
     /**
-     * Partial restart file for box optimization.
-     */
-    private File partialFile;
-    /**
      * ParallelTeam instance.
      */
     private ParallelTeam parallelTeam;
@@ -2186,15 +2182,6 @@ public class RotamerOptimization implements Terminatable {
      */
     public File getRestartFile() {
         return energyRestartFile;
-    }
-
-    /**
-     * Returns the partial file.
-     *
-     * @return partialFile File with saved box optimization energies.
-     */
-    public File getPartial() {
-        return partialFile;
     }
 
     /**
@@ -4304,18 +4291,11 @@ public class RotamerOptimization implements Terminatable {
                     logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
                 }
                 if (master && printFiles) {
-                    String filename = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath()) + ".partial";
-                    partialFile = new File(filename);
-                    if (firstCellSaved) {
-                        partialFile.delete();
-                    }
                     // Don't write a file if it's the final iteration.
                     if (i == (numCells - 1)) {
                         continue;
                     }
-                    PDBFilter windowFilter = new PDBFilter(partialFile, molecularAssembly, null, null);
                     try {
-                        windowFilter.writeFile(partialFile, false);
                         if (firstResidue != lastResidue) {
                             logIfMaster(format(" File with residues %s ... %s in window written.", firstResidue.toString(), lastResidue.toString()));
                         } else {
@@ -4323,7 +4303,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         firstCellSaved = true;
                     } catch (Exception e) {
-                        logger.warning(format("Exception writing to file: %s", partialFile.getName()));
+                       logger.warning(format("Exception writing to file."));
                     }
                 }
             } else {

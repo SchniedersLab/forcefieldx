@@ -72,7 +72,7 @@ public class DynamicsOptions {
      */
     @Option(names = {"-b", "--thermostat"}, paramLabel = "Berendsen",
             description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
-    String thermostatString = "BERENDSEN";
+    String thermostatString = "BUSSI";
 
     /**
      * -i or --integrator sets the desired integrator: current choices are

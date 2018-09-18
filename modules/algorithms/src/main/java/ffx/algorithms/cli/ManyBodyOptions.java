@@ -844,15 +844,6 @@ public class ManyBodyOptions {
     }
 
     /**
-     * Gets the partial file that is created during box optimization.
-     *
-     * @return Partial file.
-     */
-    public File getPartial() {
-        return rotamerOptimization.getPartial();
-    }
-
-    /**
      * Gets the algorithm number.
      *
      * @return Integer representing the algorithm being run (i.e. global, box
