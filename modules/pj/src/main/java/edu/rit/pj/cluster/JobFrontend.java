@@ -61,6 +61,7 @@ import edu.rit.util.TimerThread;
 import java.util.logging.Logger;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
+import java.util.logging.SimpleFormatter;
 
 /**
  * Class JobFrontend provides the message handler for the PJ job frontend
@@ -409,44 +410,46 @@ public class JobFrontend
             System.err.println();
         }
 
+        /**
+         * Without this pause of 10 msec, the SSH command below will often fail when using more than 10 to 12 nodes.
+         */
         try {
            Thread.sleep(10);
         } catch (InterruptedException e) {
            ;
         }
 
-        // if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
-        if (false) {
-            try {
-                // Remove all log handlers from the default logger.
-                java.util.logging.Logger defaultLogger = java.util.logging.LogManager.getLogManager().getLogger("");
-                java.util.logging.Handler defaultHandlers[] = defaultLogger.getHandlers();
-                for (java.util.logging.Handler h : defaultHandlers) {
-                    defaultLogger.removeHandler(h);
-                }
-
-                // Create a FileHandler that logs messages with a SimpleFormatter.
-                File file = new File(Integer.toString(rank));
-                file.mkdir();
-                fileHandler = new java.util.logging.FileHandler(file.getAbsolutePath() + "/frontend.log");
-                fileHandler.setFormatter(new java.util.logging.SimpleFormatter());
-                logger.addHandler(fileHandler);
-                logger.setLevel(java.util.logging.Level.INFO);
-            } catch (Exception e) {
-                logger.setLevel(java.util.logging.Level.OFF);
-            }
-        } else {
-            logger.setLevel(java.util.logging.Level.OFF);
-        }
-
-        logger.log(Level.INFO, " Username: " + username);
-        logger.log(Level.INFO, " Job number: " + jobnum);
-        logger.log(Level.INFO, " Nodes: " + Np);
-        logger.log(Level.INFO, " Rank: " + rank);
-        logger.log(Level.INFO, " Has Frontend Comm: " + hasFrontendComm);
-        logger.log(Level.INFO, " Frontend Host: " + myMiddlewareChannelGroup.listenAddress().getHostName());
-        logger.log(Level.INFO, " Frontend Port: " + myMiddlewareChannelGroup.listenAddress().getPort());
-        logger.log(Level.INFO, " Backend Host: " + host);
+//        if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
+//            try {
+//                // Remove all log handlers from the default logger.
+//                java.util.logging.Logger defaultLogger = java.util.logging.LogManager.getLogManager().getLogger("");
+//                java.util.logging.Handler defaultHandlers[] = defaultLogger.getHandlers();
+//                for (java.util.logging.Handler h : defaultHandlers) {
+//                    defaultLogger.removeHandler(h);
+//                }
+//
+//                // Create a FileHandler that logs messages with a SimpleFormatter.
+//                File file = new File(Integer.toString(rank));
+//                file.mkdir();
+//                fileHandler = new FileHandler(file.getAbsolutePath() + "/frontend.log");
+//                fileHandler.setFormatter(new SimpleFormatter());
+//                logger.addHandler(fileHandler);
+//                logger.setLevel(Level.INFO);
+//            } catch (Exception e) {
+//                logger.setLevel(Level.OFF);
+//            }
+//        } else {
+//            logger.setLevel(Level.OFF);
+//        }
+//
+//        logger.log(Level.INFO, " Username: " + username);
+//        logger.log(Level.INFO, " Job number: " + jobnum);
+//        logger.log(Level.INFO, " Nodes: " + Np);
+//        logger.log(Level.INFO, " Rank: " + rank);
+//        logger.log(Level.INFO, " Has Frontend Comm: " + hasFrontendComm);
+//        logger.log(Level.INFO, " Frontend Host: " + myMiddlewareChannelGroup.listenAddress().getHostName());
+//        logger.log(Level.INFO, " Frontend Port: " + myMiddlewareChannelGroup.listenAddress().getPort());
+//        logger.log(Level.INFO, " Backend Host: " + host);
 
         try {
             // Build a command to run on the backend node.
@@ -486,13 +489,7 @@ public class JobFrontend
             command.append(myMiddlewareChannelGroup.listenAddress().getPort());
             command.append(" '");
             command.append(host);
-
-            String pjLogging = System.getProperty("pj.log");
-            if (pjLogging != null && Boolean.parseBoolean(pjLogging)) {
-                command.append("' &\"");
-            } else {
-                command.append("' >/dev/null 2>/dev/null &\"");
-            }
+            command.append("' >/dev/null 2>/dev/null &\"");
 
             // So an SSH remote login and execute the above command.
             Process ssh

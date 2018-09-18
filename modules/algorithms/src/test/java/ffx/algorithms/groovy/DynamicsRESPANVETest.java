@@ -63,7 +63,9 @@ public class DynamicsRESPANVETest extends PJDependentTest {
     private String info;
     private String filename;
     private double startingTotalEnergy;
-    private double tolerance = 0.2;
+
+    // Tight tolerance on energy conservation.
+    private double tolerance = 0.01;
 
     private Binding binding;
     private Dynamics dynamics;
@@ -107,7 +109,7 @@ public class DynamicsRESPANVETest extends PJDependentTest {
     public void testRESPANVE() {
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "20", "--dt", "0.5", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
         // Evaluate the script.

@@ -964,13 +964,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         /**
-         * Initialize current and previous accelerations, unless they were just
-         * loaded from a restart file.
+         * Initialize current and previous accelerations.
          */
-        if (!loadRestart || initialized) {
+        if (!loadRestart || initialized || integrator instanceof Respa) {
+            // For the Respa integrator, initial accelerations are from the slowly varying forces.
+            if (integrator instanceof Respa) {
+                potential.setEnergyTermState(Potential.STATE.SLOW);
+                potential.energyAndGradient(x, grad);
+            }
+
             for (int i = 0; i < numberOfVariables; i++) {
                 a[i] = -Thermostat.convert * grad[i] / mass[i];
             }
+
             if (aPrevious != null) {
                 arraycopy(a, 0, aPrevious, 0, numberOfVariables);
             }
@@ -1017,18 +1023,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             integrator.preForce(potential);
 
-            double priorPE = currentPotentialEnergy;
             /**
              * Compute the potential energy and gradients.
              */
+            double priorPE = currentPotentialEnergy;
             try {
                 currentPotentialEnergy = potential.energyAndGradient(x, grad);
             } catch (EnergyException ex) {
                 writeStoredSnapshots();
                 throw ex;
             }
-
-            detectAtypicalEnergy(priorPE, defaultDeltaPEThresh);
 
             /**
              * Add the potential energy of the slow degrees of freedom.
@@ -1037,6 +1041,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 Respa r = (Respa) integrator;
                 currentPotentialEnergy += r.getHalfStepEnergy();
             }
+
+            detectAtypicalEnergy(priorPE, defaultDeltaPEThresh);
 
             /**
              * Do the full-step integration operation.
@@ -1170,6 +1176,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.info(String.format("\n Terminating after %8d time steps\n", step));
                 break;
             }
+        }
+
+        /**
+         * Add the potential energy of the slow degrees of freedom.
+         */
+        if (integrator instanceof Respa) {
+            potential.setEnergyTermState(Potential.STATE.BOTH);
         }
 
         /**

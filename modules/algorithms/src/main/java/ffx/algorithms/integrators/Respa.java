@@ -55,17 +55,17 @@ public class Respa extends Integrator {
     /**
      * Number of inner time steps.
      */
-    private int nalt;
+    private int innerSteps;
 
     /**
      * Inner time step in psec.
      */
-    private double dta;
+    private double innerTimeStep;
 
     /**
      * Half the inner time step.
      */
-    private double dta_2;
+    private double halfInnerTimeStep;
 
     private double halfStepEnergy = 0;
 
@@ -84,9 +84,9 @@ public class Respa extends Integrator {
                  double aPrevious[], double mass[]) {
         super(nVariables, x, v, a, aPrevious, mass);
 
-        nalt = 4;
-        dta = dt / nalt;
-        dta_2 = 0.5 * dta;
+        innerSteps = 4;
+        innerTimeStep = dt / innerSteps;
+        halfInnerTimeStep = 0.5 * innerTimeStep;
     }
 
     /**
@@ -106,25 +106,54 @@ public class Respa extends Integrator {
     @Override
     public void preForce(Potential potential) {
         double gradient[] = new double[nVariables];
+
+        /**
+         * Find half-step velocities via velocity Verlet recursion
+         */
         for (int i = 0; i < nVariables; i++) {
             v[i] += a[i] * dt_2;
         }
 
         /**
-         * The inner RESPA loop.
+         * Initialize accelerations due to fast-evolving forces.
          */
-        for (int j = 0; j < nalt; j++) {
+        potential.setEnergyTermState(Potential.STATE.FAST);
+        halfStepEnergy = potential.energyAndGradient(x, gradient);
+        for (int i = 0; i < nVariables; i++) {
+            aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
+        }
+
+        /**
+         * Complete the inner RESPA loop.
+         */
+        for (int j = 0; j < innerSteps; j++) {
+
+            /**
+             * Find fast-evolving velocities and positions via Verlet recursion.
+             */
             for (int i = 0; i < nVariables; i++) {
-                x[i] += v[i] * dta_2;
+                v[i] += aPrevious[i] * halfInnerTimeStep;
+                x[i] += v[i] * innerTimeStep;
             }
-            potential.setEnergyTermState(Potential.STATE.FAST);
+
+            /**
+             * Update accelerations from fast varying forces.
+             */
             halfStepEnergy = potential.energyAndGradient(x, gradient);
             for (int i = 0; i < nVariables; i++) {
+
+                /**
+                 * Use Newton's second law to get fast-evolving accelerations.
+                 * Update fast-evolving velocities using the Verlet recursion.
+                 */
                 aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
-                v[i] += aPrevious[i] * dta;
-                x[i] += v[i] * dta_2;
+                v[i] += aPrevious[i] * halfInnerTimeStep;
             }
         }
+
+        /**
+         * Revert to computing slowly varying forces.
+         */
         potential.setEnergyTermState(Potential.STATE.SLOW);
     }
 
@@ -154,11 +183,11 @@ public class Respa extends Integrator {
 
         this.dt = dt;
         dt_2 = 0.5 * dt;
-        dta = dt / nalt;
-        dta_2 = 0.5 * dta;
+        innerTimeStep = dt / innerSteps;
+        halfInnerTimeStep = 0.5 * innerTimeStep;
 
 
-        System.out.printf(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, dta);
+        System.out.printf(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, innerTimeStep);
     }
 
     /**
@@ -171,7 +200,7 @@ public class Respa extends Integrator {
             n = 2;
         }
 
-        nalt = n;
+        innerSteps = n;
 
         // Update inner time step
         setTimeStep(dt);
