@@ -131,9 +131,9 @@ class ManyBody extends AlgorithmsScript {
         if (master) {
             logger.info(" Final Minimum Energy");
 
-            algorithmFunctions.energy(activeAssembly);
             File modelFile = saveDirFile(activeAssembly.getFile());
             algorithmFunctions.saveAsPDB(activeAssembly, modelFile);
+            algorithmFunctions.energy(activeAssembly);
         }
 
         manyBody.saveEliminatedRotamers();
