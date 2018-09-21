@@ -218,6 +218,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             double currentOSRWEnergy = osrw.energyAndGradient(coordinates, gradient);
             double currentdUdL = osrw.getForceFielddEdL();
+            double currentPotentialEnergy = potential.energyAndGradient(coordinates, gradient);
+            double currentBias = currentOSRWEnergy - currentPotentialEnergy;
+            
 
             /**
              * Run MD in an approximate potential U* (U star) that does not include the OSRW bias.
@@ -232,6 +235,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(proposedCoordinates);
             double proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
+            double proposedPotentialEnergy = potential.energyAndGradient(proposedCoordinates, gradient);
+            double proposedBias = proposedOSRWEnergy - proposedPotentialEnergy;
 
             // Acceptance Probability
             // Min[1, exp[-Beta(deltaMD)]
@@ -241,10 +246,16 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double currentEnergy = currentOSRWEnergy + currentKineticEnergy;
             double proposedEnergy = proposedOSRWEnergy + proposedKineticEnergy;
 
+            /**
             logger.info(format(" Current  OSRW %12.3f + Kinetic %12.3f = %12.3f.", currentOSRWEnergy, currentKineticEnergy, currentEnergy));
             logger.info(format(" Proposed OSRW %12.3f + Kinetic %12.3f = %12.3f.", proposedOSRWEnergy, proposedKineticEnergy, proposedEnergy));
             logger.info(format(" MCMD Energy change:                                 %12.3f (kcal/mol).", proposedEnergy - currentEnergy));
-
+            */
+            
+            logger.info(format("  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
+            logger.info(format("  Current  %12.3f %12.3f %12.3f %12.3f", currentKineticEnergy, currentOSRWEnergy, currentBias, currentEnergy));
+            logger.info(format("  Proposed %12.3f %12.3f %12.3f %12.3f", proposedKineticEnergy, proposedOSRWEnergy, proposedBias, proposedEnergy));
+      
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 /**
                  * Accept MD move.
@@ -286,7 +297,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             logger.info(format("\n Current  OSRW     %12.3f at L=%5.3f.", currentOSRWEnergy, currentLambda));
             logger.info(format(" Proposed OSRW     %12.3f at L=%5.3f.", proposedOSRWEnergy, proposedLambda));
             logger.info(format(" MC Energy change: %12.3f (kcal/mol).", proposedEnergy - currentEnergy));
-
+            
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 acceptLambda++;
                 double percent = (acceptLambda * 100.0) / (imove + 1);

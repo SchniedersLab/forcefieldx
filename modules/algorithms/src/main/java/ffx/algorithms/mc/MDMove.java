@@ -215,7 +215,7 @@ public class MDMove implements MCMove {
     public double getPotentialEnergy() {
         return molecularDynamics.getPotentialEnergy();
     }
-
+    
     /**
      * {@inheritDoc}
      */

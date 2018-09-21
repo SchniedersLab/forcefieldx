@@ -142,8 +142,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     private long mdTime = 0;
 
-    private double startingTotalEnergy;
-
     private double endTotalEnergy;
 
     private int natoms;
@@ -160,24 +158,26 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     private int barostatFrequency;
 
+    private int contextCounter = 0;
+
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
      * dynamics using native OpenMM routines, avoiding the cost of communicating
      * coordinates, gradients, and energies back and forth across the PCI bus.
      *
-     * @param assembly               MolecularAssembly to operate on
+     * @param assembly MolecularAssembly to operate on
      * @param forceFieldEnergyOpenMM ForceFieldEnergyOpenMM Potential. Cannot be
-     *                               any other type of Potential.
-     * @param properties             Associated properties
-     * @param listener               a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param thermostat             May have to be slightly modified for native OpenMM
-     *                               routines
-     * @param integratorMD           May have to be slightly modified for native OpenMM
-     *                               routines
+     * any other type of Potential.
+     * @param properties Associated properties
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param thermostat May have to be slightly modified for native OpenMM
+     * routines
+     * @param integratorMD May have to be slightly modified for native OpenMM
+     * routines
      */
     public MolecularDynamicsOpenMM(MolecularAssembly assembly, ForceFieldEnergyOpenMM forceFieldEnergyOpenMM,
-                                   CompositeConfiguration properties, AlgorithmListener listener,
-                                   ThermostatEnum thermostat, IntegratorEnum integratorMD) {
+            CompositeConfiguration properties, AlgorithmListener listener,
+            ThermostatEnum thermostat, IntegratorEnum integratorMD) {
         super(assembly, forceFieldEnergyOpenMM, properties, listener, thermostat, integratorMD);
 
         /**
@@ -339,7 +339,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     @Override
     public void init(int numSteps, double timeStep, double printInterval, double saveInterval,
-                     String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
+            String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
         this.targetTemperature = temperature;
         this.dt = timeStep;
         this.printFrequency = (int) printInterval;
@@ -347,16 +347,23 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         this.initVelocities = initVelocities;
 
         //logger.info(String.format(" Target Temperature %f", targetTemperature));
-        updateContext();
+        // Uncomment this to get code back to normal
+        //updateContext();
 
         switch (thermostatType) {
             case BUSSI:
             case BERENDSEN:
-                logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
-                forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
-                if (NPT) {
-                    setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
+                if (!integratorString.equalsIgnoreCase("LANGEVIN")) {
+                    logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
+                    forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
+                    if (NPT) {
+                        setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
+                    }
                 }
+                else {
+                    logger.info(" Langevin/Stochastic dynamics already has temperature control, will not be adding thermostat!");
+                }
+
                 break;
             case ADIABATIC:
                 if (integratorString.equalsIgnoreCase("LANGEVIN") && NPT) {
@@ -367,6 +374,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             // No thermostat.
         }
 
+        updateContext();
         /**
          * Convert the print interval to a print frequency.
          */
@@ -518,9 +526,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * <p>integratorToString.</p>
+     * <p>
+     * integratorToString.</p>
      *
-     * @param integrator a {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     * @param integrator a {@link ffx.algorithms.integrators.IntegratorEnum}
+     * object.
      */
     public final void integratorToString(IntegratorEnum integrator) {
         if (integrator == null) {
@@ -548,18 +558,20 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * <p>setMonteCarloBarostat.</p>
+     * <p>
+     * setMonteCarloBarostat.</p>
      *
-     * @param pressure    a double.
+     * @param pressure a double.
      * @param temperature a double.
-     * @param frequency   a int.
+     * @param frequency a int.
      */
     public void setMonteCarloBarostat(double pressure, double temperature, int frequency) {
         forceFieldEnergyOpenMM.addMonteCarloBarostat(pressure, temperature, frequency);
     }
 
     /**
-     * <p>Setter for the field <code>pressure</code>.</p>
+     * <p>
+     * Setter for the field <code>pressure</code>.</p>
      *
      * @param pressure a double.
      */
@@ -568,7 +580,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * <p>Setter for the field <code>barostatFrequency</code>.</p>
+     * <p>
+     * Setter for the field <code>barostatFrequency</code>.</p>
      *
      * @param barostatFrequency a int.
      */
@@ -577,14 +590,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * <p>setNPTDynamics.</p>
+     * <p>
+     * setNPTDynamics.</p>
      */
     public void setNPTDynamics() {
         NPT = true;
     }
 
     /**
-     * <p>Setter for the field <code>intervalSteps</code>.</p>
+     * <p>
+     * Setter for the field <code>intervalSteps</code>.</p>
      *
      * @param intervalSteps a int.
      */
@@ -594,16 +609,21 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * <p>updateContext.</p>
+     * <p>
+     * updateContext.</p>
      */
     public final void updateContext() {
         String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
         double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
         double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
-        if (currentTemperature != targetTemperature || currentTimeStp != dt || !currentIntegrator.equalsIgnoreCase(integratorString)) {
+
+        //logger.info(String.format(" Outside if statement"));
+        //logger.info(String.format(" Counter is %d", counter));
+        if (currentTemperature != targetTemperature || currentTimeStp != dt || !currentIntegrator.equalsIgnoreCase(integratorString) || (currentIntegrator.equalsIgnoreCase("VERLET") && contextCounter != 0)) {
             if (!quiet) {
                 logger.info(String.format(" Creating OpenMM Context with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
             }
+            logger.info(" Creating new OpenMM Context");
             forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
             integrator = forceFieldEnergyOpenMM.getIntegrator();
             context = forceFieldEnergyOpenMM.getContext();
@@ -612,6 +632,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             context = forceFieldEnergyOpenMM.getContext();
         }
         quiet = false;
+        contextCounter++;
     }
 
     /**
