@@ -123,137 +123,711 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
  */
 public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
+    /**
+     * A Logger for the ForceFieldEnergy class.
+     */
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
 
-    private static final double toSeconds = 0.000000001;
-
-    protected final MolecularAssembly molecularAssembly;
-    private Atom[] atoms;
-    private Crystal crystal;
-    private double cutoffPlusBuffer;
-    private final ParallelTeam parallelTeam;
-    private BondedRegion bondedRegion;
-    private STATE state = STATE.BOTH;
-    private Bond bonds[];
-    private Angle angles[];
-    private StretchBend stretchBends[];
-    private UreyBradley ureyBradleys[];
-    private OutOfPlaneBend outOfPlaneBends[];
-    private Torsion torsions[];
-    private StretchTorsion stretchTorsions[];
-    private AngleTorsion angleTorsions[];
-    private PiOrbitalTorsion piOrbitalTorsions[];
-    private TorsionTorsion torsionTorsions[];
-    private ImproperTorsion improperTorsions[];
-    private RestraintBond restraintBonds[];
-    private RelativeSolvation relativeSolvation;
-    private final VanDerWaals vanderWaals;
-    private ParticleMeshEwald particleMeshEwald;
-    private final NCSRestraint ncsRestraint;
-    private final List<CoordRestraint> coordRestraints;
-    private final CoordRestraint autoCoordRestraint;
-    private final COMRestraint comRestraint;
-    private int nAtoms;
-    private int nBonds;
-    private int nAngles;
-    private int nStretchBends;
-    private int nUreyBradleys;
-    private int nOutOfPlaneBends;
-    private int nTorsions;
-    private int nAngleTorsions;
-    private int nStretchTorsions;
-    private int nImproperTorsions;
-    private int nPiOrbitalTorsions;
-    private int nTorsionTorsions;
-    private int nRestraintBonds = 0;
-    private int nVanDerWaalInteractions;
-    private int nPermanentInteractions;
-    private int nGKInteractions;
-    private int nRelativeSolvations;
-
-    // Flags that control the use of force field energy terms.
-    private boolean bondTerm, bondTermOrig;
-    private boolean angleTerm, angleTermOrig;
-    private boolean stretchBendTerm, stretchBendTermOrig;
-    private boolean ureyBradleyTerm, ureyBradleyTermOrig;
-    private boolean outOfPlaneBendTerm, outOfPlaneBendTermOrig;
-    private boolean torsionTerm, torsionTermOrig;
-    private boolean stretchTorsionTerm, stretchTorsionTermOrig;
-    private boolean angleTorsionTerm, angleTorsionTermOrig;
-    private boolean improperTorsionTerm, improperTorsionTermOrig;
-    private boolean piOrbitalTorsionTerm, piOrbitalTorsionTermOrig;
-    private boolean torsionTorsionTerm, torsionTorsionTermOrig;
-    private boolean restraintBondTerm, restraintBondTermOrig;
-    private boolean vanderWaalsTerm, vanderWaalsTermOrig;
-    private boolean multipoleTerm, multipoleTermOrig;
-    private boolean polarizationTerm, polarizationTermOrig;
-    private boolean generalizedKirkwoodTerm, generalizedKirkwoodTermOrig;
-    private boolean ncsTerm, ncsTermOrig;
-    private boolean restrainTerm, restrainTermOrig;
-    private boolean comTerm, comTermOrig;
-
-    private boolean esvTerm;
-    protected boolean lambdaTerm;
-    protected boolean lambdaBondedTerms = false;
-    private boolean restrainWithLambda;
-
-    private boolean relativeSolvationTerm;
-    private boolean rigidHydrogens = false;
-    private boolean lambdaTorsions = false;
-    private double rigidScale = 1.0;
-
-    private double bondEnergy, bondRMSD;
-    private double angleEnergy, angleRMSD;
-    private double stretchBendEnergy;
-    private double ureyBradleyEnergy;
-    private double outOfPlaneBendEnergy;
-    private double torsionEnergy;
-    private double stretchTorsionEnergy;
-    private double angleTorsionEnergy;
-    private double improperTorsionEnergy;
-    private double piOrbitalTorsionEnergy;
-    private double torsionTorsionEnergy;
-    private double restraintBondEnergy;
-    private double totalBondedEnergy;
-    private double vanDerWaalsEnergy;
-    private double permanentMultipoleEnergy;
-    private double permanentRealSpaceEnergy;
-    private double polarizationEnergy;
-    private double totalMultipoleEnergy;
-    private double totalNonBondedEnergy;
-    private double solvationEnergy;
-    private double relativeSolvationEnergy;
-    private double ncsEnergy;
-    private double restrainEnergy;
-    private double comRestraintEnergy;
-    private double esvBias;
-    private double totalEnergy;
-    protected final double maxDebugGradient;
-    private long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
-    private long outOfPlaneBendTime, torsionTime, angleTorsionTime, stretchTorsionTime;
-    private long piOrbitalTorsionTime, improperTorsionTime;
-    private long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
-    private long restraintBondTime, ncsTime, coordRestraintTime, comRestraintTime;
-    private long totalTime;
-    private double lambda = 1.0;
-    protected double[] optimizationScaling = null;
-    private VARIABLE_TYPE[] variableTypes = null;
-    private double xyz[] = null;
-    private boolean printOnFailure;
-    private boolean printCompact = prop("ffe.combineBonded", false);
-    private boolean printOverride = prop("ffe.printOverride", false);
-    private final boolean noHeader = prop("ffe.noHeader", false);
-
-    private ExtendedSystem esvSystem = null;
-    private final boolean pmeQI = prop("pme.qi", false);
     /**
-     * *************************************
+     * Convert from nanoseconds to seconds.
      */
+    private static final double toSeconds = 1.0e-9;
 
+    /**
+     * The MolecularAssembly associated with this force field energy.
+     */
+    protected final MolecularAssembly molecularAssembly;
+
+    /**
+     * The array of Atoms being evaluated.
+     */
+    private Atom[] atoms;
+
+    /**
+     * The boundary conditions used when evaluating the force field energy.
+     */
+    private Crystal crystal;
+
+    /**
+     * The non-bonded cut-off plus buffer distance (Angstroms).
+     */
+    private double cutoffPlusBuffer;
+
+    /**
+     * The Parallel Java ParallelTeam instance.
+     */
+    private final ParallelTeam parallelTeam;
+
+    /**
+     * A Parallel Java Region used to evaluate Bonded energy values.
+     */
+    private BondedRegion bondedRegion;
+
+    /**
+     * An instance of the STATE enumeration to specify calculation of slowly varying energy terms, fast varying or both.
+     */
+    private STATE state = STATE.BOTH;
+
+    /**
+     * An array of Bond terms.
+     */
+    private Bond bonds[];
+
+    /**
+     * An array of Angle terms.
+     */
+    private Angle angles[];
+
+    /**
+     * An array of Stretch-Bend terms.
+     */
+    private StretchBend stretchBends[];
+
+    /**
+     * An array of Urey-Bradley terms.
+     */
+    private UreyBradley ureyBradleys[];
+
+    /**
+     * An array of Out of Plane Bend terms.
+     */
+    private OutOfPlaneBend outOfPlaneBends[];
+
+    /**
+     * An array of Torsion terms.
+     */
+    private Torsion torsions[];
+
+    /**
+     * An array of Stretch-Torsion terms.
+     */
+    private StretchTorsion stretchTorsions[];
+
+    /**
+     * An array of Angle-Torsion terms.
+     */
+    private AngleTorsion angleTorsions[];
+
+    /**
+     * An array of Pi-Orbital Torsion terms.
+     */
+    private PiOrbitalTorsion piOrbitalTorsions[];
+
+    /**
+     * An array of Torsion-Torsion terms.
+     */
+    private TorsionTorsion torsionTorsions[];
+
+    /**
+     * An array of Improper Torsion terms.
+     */
+    private ImproperTorsion improperTorsions[];
+
+    /**
+     * An array of Bond Restraint terms.
+     */
+    private RestraintBond restraintBonds[];
+
+    /**
+     * An array of Coordinate Restraint terms.
+     */
+    private final List<CoordRestraint> coordRestraints;
+
+    /**
+     * An NCS restraint term.
+     */
+    private final NCSRestraint ncsRestraint;
+
+    /**
+     * A coordinate restraint term.
+     */
+    private final CoordRestraint autoCoordRestraint;
+
+    /**
+     * A Center-of-Mass restraint term.
+     */
+    private final COMRestraint comRestraint;
+
+    /**
+     * Non-Bonded van der Waals energy.
+     */
+    private final VanDerWaals vanderWaals;
+
+    /**
+     * Particle-Mesh Ewald electrostatic energy.
+     */
+    private ParticleMeshEwald particleMeshEwald;
+
+    /**
+     * Number of atoms in the system.
+     */
+    private int nAtoms;
+
+    /**
+     * Number of bond terms in the system.
+     */
+    private int nBonds;
+
+    /**
+     * Number of angle terms in the system.
+     */
+    private int nAngles;
+
+    /**
+     * Number of stretch-bend terms in the system.
+     */
+    private int nStretchBends;
+
+    /**
+     * Number of Urey-Bradley terms in the system.
+     */
+    private int nUreyBradleys;
+
+    /**
+     * Number of Out of Plane Bend terms in the system.
+     */
+    private int nOutOfPlaneBends;
+
+    /**
+     * Number of Torsion terms in the system.
+     */
+    private int nTorsions;
+
+    /**
+     * Number of Angle-Torsion terms in the system.
+     */
+    private int nAngleTorsions;
+
+    /**
+     * Number of Stretch-Torsion terms in the system.
+     */
+    private int nStretchTorsions;
+
+    /**
+     * Number of Improper Torsion terms in the system.
+     */
+    private int nImproperTorsions;
+
+    /**
+     * Number of Pi-Orbital Torsion terms in the system.
+     */
+    private int nPiOrbitalTorsions;
+
+    /**
+     * Number of Torsion-Torsion terms in the system.
+     */
+    private int nTorsionTorsions;
+
+    /**
+     * Number of Restraint Bond terms in the system.
+     */
+    private int nRestraintBonds = 0;
+
+    /**
+     * Number of van der Waals interactions evaluated.
+     */
+    private int nVanDerWaalInteractions;
+
+    /**
+     * Number of electrostatic interactions evaluated.
+     */
+    private int nPermanentInteractions;
+
+    /**
+     * Number of implicit solvent interactions evaluated.
+     */
+    private int nGKInteractions;
+
+    /**
+     * Evaluate Bond energy terms.
+     */
+    private boolean bondTerm;
+
+    /**
+     * Original state of the Bond energy term flag.
+     */
+    private boolean bondTermOrig;
+
+    /**
+     * Evaluate Angle energy terms.
+     */
+    private boolean angleTerm;
+
+    /**
+     * Original state of the Angle energy term flag.
+     */
+    private boolean angleTermOrig;
+
+    /**
+     * Evaluate Stretch-Bend energy terms.
+     */
+    private boolean stretchBendTerm;
+
+    /**
+     * Original state of the Stretch-Bend energy term flag.
+     */
+    private boolean stretchBendTermOrig;
+
+    /**
+     * Evaluate Urey-Bradley energy terms.
+     */
+    private boolean ureyBradleyTerm;
+
+    /**
+     * Original state of the Urey-Bradley energy term flag.
+     */
+    private boolean ureyBradleyTermOrig;
+
+    /**
+     * Evaluate Out of Plane Bend energy terms.
+     */
+    private boolean outOfPlaneBendTerm;
+
+    /**
+     * Original state of the Out-of-Plane Bend energy term flag.
+     */
+    private boolean outOfPlaneBendTermOrig;
+
+    /**
+     * Evaluate Torsion energy terms.
+     */
+    private boolean torsionTerm;
+
+    /**
+     * Original state of the Torsion energy term flag.
+     */
+    private boolean torsionTermOrig;
+
+    /**
+     * Evaluate Stretch-Torsion energy terms.
+     */
+    private boolean stretchTorsionTerm;
+
+    /**
+     * Original state of the Stretch-Torsion energy term flag.
+     */
+    private boolean stretchTorsionTermOrig;
+
+    /**
+     * Evaluate Angle-Torsion energy terms.
+     */
+    private boolean angleTorsionTerm;
+
+    /**
+     * Original state of the Angle-Torsion energy term flag.
+     */
+    private boolean angleTorsionTermOrig;
+
+    /**
+     * Evaluate Improper Torsion energy terms.
+     */
+    private boolean improperTorsionTerm;
+
+    /**
+     * Original state of the Improper Torsion energy term flag.
+     */
+    private boolean improperTorsionTermOrig;
+
+    /**
+     * Evaluate Pi-Orbital Torsion energy terms.
+     */
+    private boolean piOrbitalTorsionTerm;
+
+    /**
+     * Original state of the Pi-Orbital Torsion energy term flag.
+     */
+    private boolean piOrbitalTorsionTermOrig;
+
+    /**
+     * Evaluate Torsion-Torsion energy terms.
+     */
+    private boolean torsionTorsionTerm;
+
+    /**
+     * Original state of the Torsion-Torsion energy term flag.
+     */
+    private boolean torsionTorsionTermOrig;
+
+    /**
+     * Evaluate Restraint Bond energy terms.
+     */
+    private boolean restraintBondTerm;
+
+    /**
+     * Original state of the Restraint Bond energy term flag.
+     */
+    private boolean restraintBondTermOrig;
+
+    /**
+     * Evaluate van der Waals energy term.
+     */
+    private boolean vanderWaalsTerm;
+
+    /**
+     * Original state of the van der Waals energy term flag.
+     */
+    private boolean vanderWaalsTermOrig;
+
+    /**
+     * Evaluate permanent multipole electrostatics energy term.
+     */
+    private boolean multipoleTerm;
+
+    /**
+     * Original state of the multipole energy term flag.
+     */
+    private boolean multipoleTermOrig;
+
+    /**
+     * Evaluate polarization energy term.
+     */
+    private boolean polarizationTerm;
+
+    /**
+     * Original state of the polarization energy term flag.
+     */
+    private boolean polarizationTermOrig;
+
+    /**
+     * Evaluate generalized Kirkwood energy term.
+     */
+    private boolean generalizedKirkwoodTerm;
+
+    /**
+     * Original state of the GK energy term flag.
+     */
+    private boolean generalizedKirkwoodTermOrig;
+
+    /**
+     * Evaluate NCS energy term.
+     */
+    private boolean ncsTerm;
+
+    /**
+     * Original state of the NCS energy term flag.
+     */
+    private boolean ncsTermOrig;
+
+    /**
+     * Evaluate Restrain energy term.
+     */
+    private boolean restrainTerm;
+
+    /**
+     * Original state of the Restrain energy term flag.
+     */
+    private boolean restrainTermOrig;
+
+    /**
+     * Evaluate COM energy term.
+     */
+    private boolean comTerm;
+
+    /**
+     * Original state of the COM energy term flag.
+     */
+    private boolean comTermOrig;
+
+    /**
+     * Flag to indicate hydrogen bonded terms should be scaled up.
+     */
+    private boolean rigidHydrogens;
+
+    /**
+     * Scale factor for increasing the strength of bonded terms involving hydrogen atoms.
+     */
+    private double rigidScale;
+
+    /**
+     * The total Bond term energy.
+     */
+    private double bondEnergy;
+
+    /**
+     * The RMSD of all Bond distances relative to their equilibrium values.
+     */
+    private double bondRMSD;
+
+    /**
+     * The total Angle term energy.
+     */
+    private double angleEnergy;
+
+    /**
+     * The RMSD of all Angle bends relative to their equilibrium values.
+     */
+    private double angleRMSD;
+
+    /**
+     * The total Stretch-Bend term energy.
+     */
+    private double stretchBendEnergy;
+
+    /**
+     * The total Urey-Bradley term energy.
+     */
+    private double ureyBradleyEnergy;
+
+    /**
+     * The total Out-of-Plane term energy.
+     */
+    private double outOfPlaneBendEnergy;
+
+    /**
+     * The total Torsion term energy.
+     */
+    private double torsionEnergy;
+
+    /**
+     * The total Stretch-Torsion term energy.
+     */
+    private double stretchTorsionEnergy;
+
+    /**
+     * The total Angle-Torsion term energy.
+     */
+    private double angleTorsionEnergy;
+
+    /**
+     * The total Improper Torsion term energy.
+     */
+    private double improperTorsionEnergy;
+
+    /**
+     * The total Pi-Orbital Torsion term energy.
+     */
+    private double piOrbitalTorsionEnergy;
+
+    /**
+     * The total Torsion-Torsion term energy.
+     */
+    private double torsionTorsionEnergy;
+
+    /**
+     * The total Restraint Bond term energy.
+     */
+    private double restraintBondEnergy;
+
+    /**
+     * The total energy for all Bonded Energy terms.
+     */
+    private double totalBondedEnergy;
+
+    /**
+     * The total van der Waals energy.
+     */
+    private double vanDerWaalsEnergy;
+
+    /**
+     * The permanent Multipole energy.
+     */
+    private double permanentMultipoleEnergy;
+
+    /**
+     * The permanent multipole real space energy.
+     */
+    private double permanentRealSpaceEnergy;
+
+    /**
+     * The total polarization energy.
+     */
+    private double polarizationEnergy;
+
+    /**
+     * The total electrostatic energy.
+     */
+    private double totalMultipoleEnergy;
+
+    /**
+     * The total non-bonded energy (van der Waals plus electrostatic).
+     */
+    private double totalNonBondedEnergy;
+
+    /**
+     * The solvation energy (GK).
+     */
+    private double solvationEnergy;
+
+    /**
+     * The total NCS Energy.
+     */
+    private double ncsEnergy;
+
+    /**
+     * The total Restrain Energy.
+     */
+    private double restrainEnergy;
+
+    /**
+     * The total COM Restraint Energy.
+     */
+    private double comRestraintEnergy;
+
+    /**
+     * The total system energy.
+     */
+    private double totalEnergy;
+
+    /**
+     * Time to evaluate Bond terms.
+     */
+    private long bondTime;
+
+    /**
+     * Time to evaluate Angle terms.
+     */
+    private long angleTime;
+
+    /**
+     * Time to evaluate Stretch-Bend terms.
+     */
+    private long stretchBendTime;
+
+    /**
+     * Time to evaluate Urey-Bradley terms.
+     */
+    private long ureyBradleyTime;
+
+    /**
+     * Time to evaluate Out-Of-Plane Bend terms.
+     */
+    private long outOfPlaneBendTime;
+
+    /**
+     * Time to evaluate Torsion terms.
+     */
+    private long torsionTime;
+
+    /**
+     * Time to evaluate Angle-Torsion terms.
+     */
+    private long angleTorsionTime;
+
+    /**
+     * Time to evaluate Stretch-Torsion terms.
+     */
+    private long stretchTorsionTime;
+
+    /**
+     * Time to evaluate Pi-Orbital Torsion terms.
+     */
+    private long piOrbitalTorsionTime;
+
+    /**
+     * Time to evaluate Improper Torsion terms.
+     */
+    private long improperTorsionTime;
+
+    /**
+     * Time to evaluate Torsion-Torsion terms.
+     */
+    private long torsionTorsionTime;
+
+    /**
+     * Time to evaluate van der Waals term.
+     */
+    private long vanDerWaalsTime;
+
+    /**
+     * Time to evaluate electrostatics term.
+     */
+    private long electrostaticTime;
+
+    /**
+     * Time to evaluate Restraint Bond term.
+     */
+    private long restraintBondTime;
+
+    /**
+     * Time to evaluate NCS term.
+     */
+    private long ncsTime;
+
+    /**
+     * Time to evaluate coordinate restraint term.
+     */
+    private long coordRestraintTime;
+
+    /**
+     * Time to evaluate Center of Mass restraint term.
+     */
+    private long comRestraintTime;
+
+    /**
+     * Time to evaluate all energy terms.
+     */
+    private long totalTime;
+
+    /**
+     * Current value of the Lambda state variable.
+     */
+    private double lambda = 1.0;
+
+    /**
+     * Indicates use of the Lambda state variable.
+     */
+    protected boolean lambdaTerm;
+
+    /**
+     * Indicates only bonded energy terms effected by Lambda should be evaluated.
+     */
+    protected boolean lambdaBondedTerms = false;
+
+    /**
+     * Indicates application of lambda scaling to all Torsion based energy terms.
+     */
+    private boolean lambdaTorsions;
+
+    /**
+     * Optimization scaling value to use for each degree of freedom.
+     */
+    protected double[] optimizationScaling = null;
+
+    /**
+     * Value of each degree of freedom.
+     */
+    private double xyz[];
+
+    /**
+     * Enable verbose printing if large energy gradient components are observed.
+     */
+    private boolean printOnFailure;
+
+    /**
+     * If the absolute value of a gradient component is greater than "maxDebugGradient", verbose logging results.
+     */
+    protected final double maxDebugGradient;
+
+    /**
+     * Flag to indicate proper shutdown of the ForceFieldEnergy.
+     */
+    protected boolean destroyed = false;
+
+    /**
+     * Indicate use of the quasi-internal version of PME.
+     */
+    private final boolean pmeQI = prop("pme.qi", false);
+
+    /**
+     * Indicate resolution of this ForceFieldEnergy (TODO: needs further testing).
+     */
     private Resolution resolution = Resolution.AMOEBA;
 
-    // Flag to indicate proper shutdown of FFE
-    protected boolean destroyed = false;
+    /**
+     * Constant pH extended system (TODO: needs further testing).
+     */
+    private ExtendedSystem esvSystem = null;
+    private boolean esvTerm;
+    private double esvBias;
+
+    /**
+     * Relative solvation term (TODO: needs further testing).
+     */
+    private RelativeSolvation relativeSolvation;
+    private int nRelativeSolvations;
+    private boolean relativeSolvationTerm;
+    private double relativeSolvationEnergy;
+
 
     /**
      * <p>
@@ -287,10 +861,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param numThreads        a int.
      */
     protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
-        if (noHeader) {
-            logger.setLevel(Level.WARNING);
-        }
-
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
@@ -334,8 +904,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
             } else {
                 /**
-                 * If multipole electrostatics is turned off, turn off all
-                 * electrostatics.
+                 * If multipole electrostatics is turned off, turn off all electrostatics.
                  */
                 polarizationTerm = false;
                 generalizedKirkwoodTerm = false;
@@ -351,7 +920,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         restraintBondTerm = false;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
-        restrainWithLambda = forceField.getBoolean(ForceField.ForceFieldBoolean.RESTRAIN_WITH_LAMBDA, true);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
         printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, false);
@@ -365,6 +933,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         torsionTermOrig = torsionTerm;
         angleTorsionTermOrig = angleTorsionTerm;
         stretchTorsionTermOrig = stretchTorsionTerm;
+        improperTorsionTermOrig = improperTorsionTerm;
         piOrbitalTorsionTermOrig = piOrbitalTorsionTerm;
         torsionTorsionTermOrig = torsionTorsionTerm;
         restraintBondTermOrig = restraintBondTerm;
@@ -852,10 +1421,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             } catch (Exception ex) {
                 logger.info(String.format(" Exception in parsing restrain-distance: %s", ex.toString()));
             }
-        }
-
-        if (noHeader) {
-            logger.setLevel(logger.getParent().getLevel());
         }
 
         if (lambdaTerm) {
@@ -1565,8 +2130,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         Atom refAtom = residue.getSideChainAtoms().get(0);
                         if (refAtom != null && refAtom.getUse()) {
                             /**
-                             * Reasonably confident that it should be -=, as we
-                             * are trying to penalize residues with strong
+                             * Reasonably confident that it should be -=, as we are trying to penalize residues with strong
                              * solvation energy.
                              */
                             double thisSolvation = relativeSolvation.getSolvationEnergy(residue, false);
@@ -1618,19 +2182,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
         }
 
-        if (print || printOverride) {
-            if (printCompact) {
-                logger.info(this.toString());
+        if (print) {
+            StringBuilder sb = new StringBuilder();
+            if (gradient) {
+                sb.append("\n Computed Potential Energy and Atomic Coordinate Gradients\n");
             } else {
-                StringBuilder sb = new StringBuilder();
-                if (gradient) {
-                    sb.append("\n Computed Potential Energy and Atomic Coordinate Gradients\n");
-                } else {
-                    sb.append("\n Computed Potential Energy\n");
-                }
-                sb.append(this);
-                logger.info(sb.toString());
+                sb.append("\n Computed Potential Energy\n");
             }
+            sb.append(this);
+            logger.info(sb.toString());
         }
         return totalEnergy;
     }
@@ -1772,75 +2332,63 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (printCompact) {
-            double totalBondedEnergy = bondEnergy + angleEnergy + stretchBendEnergy
-                    + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy
-                    + angleTorsionEnergy + stretchTorsionEnergy
-                    + piOrbitalTorsionEnergy + torsionTorsionEnergy + improperTorsionEnergy;
-            int totalBondedInteractions = nBonds + nAngles + nStretchBends
-                    + nUreyBradleys + nOutOfPlaneBends + nTorsions
-                    + nPiOrbitalTorsions + nTorsionTorsions + nImproperTorsions;
-            double totalBondedTime = (bondTime + angleTime) * toSeconds;
-            sb.append(String.format("  %s %16.8f %12d %12.3f (%6.4f, %6.4f)\n",
-                    "Bonded Terms      ", totalBondedEnergy, totalBondedInteractions,
-                    totalBondedTime, bondRMSD, angleRMSD));
-        } else {
-            if (bondTerm && nBonds > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
-                        "Bond Stretching   ", bondEnergy, nBonds,
-                        bondTime * toSeconds, bondRMSD));
-            }
-            if (angleTerm && nAngles > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
-                        "Angle Bending     ", angleEnergy, nAngles,
-                        angleTime * toSeconds, angleRMSD));
-            }
-            if (stretchBendTerm && nStretchBends > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Stretch-Bend      ", stretchBendEnergy,
-                        nStretchBends, stretchBendTime * toSeconds));
-            }
-            if (ureyBradleyTerm && nUreyBradleys > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Urey-Bradley      ", ureyBradleyEnergy,
-                        nUreyBradleys, ureyBradleyTime * toSeconds));
-            }
-            if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Out-of-Plane Bend ", outOfPlaneBendEnergy,
-                        nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
-            }
-            if (torsionTerm && nTorsions > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Torsional Angle   ", torsionEnergy, nTorsions,
-                        torsionTime * toSeconds));
-            }
-            if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
-                        nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
-            }
-            if (stretchTorsionTerm && nStretchTorsions > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Stretch-Torsion   ", stretchTorsionEnergy, nStretchTorsions,
-                        stretchTorsionTime * toSeconds));
-            }
-            if (angleTorsionTerm && nAngleTorsions > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Angle-Torsion     ", angleTorsionEnergy, nAngleTorsions,
-                        angleTorsionTime * toSeconds));
-            }
-            if (torsionTorsionTerm && nTorsionTorsions > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Torsion-Torsion   ", torsionTorsionEnergy,
-                        nTorsionTorsions, torsionTorsionTime * toSeconds));
-            }
-            if (improperTorsionTerm && nImproperTorsions > 0) {
-                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Improper Torsion  ", improperTorsionEnergy,
-                        nImproperTorsions, improperTorsionTime * toSeconds));
-            }
+
+        if (bondTerm && nBonds > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
+                    "Bond Stretching   ", bondEnergy, nBonds,
+                    bondTime * toSeconds, bondRMSD));
         }
+        if (angleTerm && nAngles > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
+                    "Angle Bending     ", angleEnergy, nAngles,
+                    angleTime * toSeconds, angleRMSD));
+        }
+        if (stretchBendTerm && nStretchBends > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Stretch-Bend      ", stretchBendEnergy,
+                    nStretchBends, stretchBendTime * toSeconds));
+        }
+        if (ureyBradleyTerm && nUreyBradleys > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Urey-Bradley      ", ureyBradleyEnergy,
+                    nUreyBradleys, ureyBradleyTime * toSeconds));
+        }
+        if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
+                    nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
+        }
+        if (torsionTerm && nTorsions > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Torsional Angle   ", torsionEnergy, nTorsions,
+                    torsionTime * toSeconds));
+        }
+        if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
+                    nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
+        }
+        if (stretchTorsionTerm && nStretchTorsions > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Stretch-Torsion   ", stretchTorsionEnergy, nStretchTorsions,
+                    stretchTorsionTime * toSeconds));
+        }
+        if (angleTorsionTerm && nAngleTorsions > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Angle-Torsion     ", angleTorsionEnergy, nAngleTorsions,
+                    angleTorsionTime * toSeconds));
+        }
+        if (torsionTorsionTerm && nTorsionTorsions > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Torsion-Torsion   ", torsionTorsionEnergy,
+                    nTorsionTorsions, torsionTorsionTime * toSeconds));
+        }
+        if (improperTorsionTerm && nImproperTorsions > 0) {
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                    "Improper Torsion  ", improperTorsionEnergy,
+                    nImproperTorsions, improperTorsionTime * toSeconds));
+        }
+
         if (restraintBondTerm && nRestraintBonds > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Bond Restraint    ", restraintBondEnergy, nRestraintBonds,
@@ -2000,24 +2548,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
-     * <p>Setter for the field <code>printOverride</code>.</p>
-     *
-     * @param set a boolean.
-     */
-    public void setPrintOverride(boolean set) {
-        this.printOverride = set;
-    }
-
-    /**
-     * <p>setBondedCombined.</p>
-     *
-     * @param set a boolean.
-     */
-    public void setBondedCombined(boolean set) {
-        this.printCompact = set;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -2142,7 +2672,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     PotentialsFunctions ef = new PotentialsUtils();
                     filename = ef.versionFile(filename);
 
-                    logger.warning(String.format(" Excessively large gradients detected; printing snapshot to file %s", filename));
+                    logger.warning(String.format(" Excessively large gradient detected; printing snapshot to file %s", filename));
                     ef.saveAsPDB(molecularAssembly, new File(filename));
                     molecularAssembly.setFile(origFile);
                 }
