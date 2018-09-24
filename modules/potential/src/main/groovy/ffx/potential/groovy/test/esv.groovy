@@ -193,7 +193,7 @@ if (options.pH) {
 System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
 System.setProperty("esvterm", "true");
 System.setProperty("lambdaterm", "false");
-System.setProperty("pme.qi", "true");
+System.setProperty("pme-qi", "true");
 
 // Optional Potential
 System.setProperty("vdwterm", String.valueOf(testVdw));                 // van der Waals

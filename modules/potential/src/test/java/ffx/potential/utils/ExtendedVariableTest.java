@@ -215,7 +215,7 @@ public class ExtendedVariableTest {
 
         // Potential Details
         setProp(true, "vdwterm", "esv.vanDerWaals", "mpoleterm", "esv.electrostatics");
-        setProp(true, "pme.qi", "polarizeterm", "recipterm");
+        setProp(true, "pme-qi", "polarizeterm", "recipterm");
         setProp("polarization", Polarization.MUTUAL);
         setProp("scf-algorithm", SCFAlgorithm.SOR);
         setProp("polar-eps", 1e-12);
@@ -280,7 +280,7 @@ public class ExtendedVariableTest {
             utils.setSilentPotential(true);
         }
 
-        setProp("pme.qi", true);
+        setProp("pme-qi", true);
         MolecularAssembly mola = openResource(filename, quietly);
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
         mola.getPotentialEnergy().getCrystal().setSpecialPositionCutoff(0.0);
@@ -654,7 +654,7 @@ public class ExtendedVariableTest {
         // Get manual (no ESVs) end state energy components from both vanilla-qi and cartesian PME.
         for (int i = 0; i < stateFilenames.length; i++) {
             String state = stateFilenames[i];
-            setProp("pme.qi", true);
+            setProp("pme-qi", true);
             qiMola = openResource(stateFilenames[i], true);
             qiPot = qiMola.getPotentialEnergy();
             ParticleMeshEwaldQI qiPme = qiPot.getPmeQiNode();
@@ -675,7 +675,7 @@ public class ExtendedVariableTest {
             decompPolarCompQi[i] = qiPme.getPolarizationEnergy();
             utils.close(qiMola);
 
-            setProp("pme.qi", false);
+            setProp("pme-qi", false);
             cartMola = openResource(stateFilenames[i], true);
             cartPot = cartMola.getPotentialEnergy();
             ParticleMeshEwaldCart cartPme = (ParticleMeshEwaldCart) cartPot.getPmeNode();

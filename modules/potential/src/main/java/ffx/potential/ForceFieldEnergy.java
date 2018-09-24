@@ -111,8 +111,6 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import static ffx.potential.extended.ExtUtils.prop;
-import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
@@ -804,11 +802,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     protected boolean destroyed = false;
 
     /**
-     * Indicate use of the quasi-internal version of PME.
-     */
-    private final boolean pmeQI = prop("pme.qi", false);
-
-    /**
      * Indicate resolution of this ForceFieldEnergy (TODO: needs further testing).
      */
     private Resolution resolution = Resolution.AMOEBA;
@@ -1323,6 +1316,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             } else {
                 form = ELEC_FORM.PAM;
             }
+
+            boolean pmeQI = forceField.getBoolean(ForceFieldBoolean.PME_QI, false);
+
             if (pmeQI) {
                 particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecule, forceField, crystal,
                         vanderWaals.getNeighborList(), form, parallelTeam);
@@ -4228,7 +4224,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
              */
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
             ForceField forceField = molecularAssembly.getForceField();
-            String value = forceField.getString(ARRAY_REDUCTION, "MULTI");
+            String value = forceField.getString(ForceFieldString.ARRAY_REDUCTION, "MULTI");
             try {
                 atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
             } catch (Exception e) {

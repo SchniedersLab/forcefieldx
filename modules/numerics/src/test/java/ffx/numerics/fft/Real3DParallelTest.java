@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -51,7 +51,6 @@ import static org.junit.Assert.assertEquals;
 import edu.rit.pj.ParallelTeam;
 
 /**
- *
  * @author Michael J. Schnieders
  */
 @RunWith(Parameterized.class)
@@ -60,11 +59,12 @@ public class Real3DParallelTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32, nCPUs=1}", 32, 32, 32, 1},
-        {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
-        {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
-        {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
+                {"Test nx=32, ny=32, nz=32, nCPUs=2}", 32, 32, 32, 2},
+                {"Test nx=32, ny=45, nz=21, nCPUs=1}", 32, 45, 21, 1},
+                {"Test nx=32, ny=45, nz=21, nCPUs=2}", 32, 45, 21, 2}
         });
     }
+
     private final String info;
     private final int nx;
     private final int ny;
@@ -152,17 +152,4 @@ public class Real3DParallelTest {
         }
     }
 
-    /**
-     * Disable quasi-internal frame for all tests from this class.
-     */
-    @org.junit.BeforeClass
-    public static void setUpClass() {
-        qiPrevious = Boolean.valueOf(System.getProperty("pme.qi", "false"));
-        System.setProperty("pme.qi", "false");
-    }
-    private static boolean qiPrevious;
-    @org.junit.AfterClass
-    public static void tearDownClass() {
-        System.setProperty("pme.qi", String.valueOf(qiPrevious));
-    }
 }
