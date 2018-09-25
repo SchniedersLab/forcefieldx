@@ -39,8 +39,8 @@ package ffx.algorithms.mc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
+import java.util.Random;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 
@@ -69,6 +69,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
     private double e1 = 0.0;
     private double e2 = 0.0;
     private double lastE = 0.0;
+    private Random random = new Random();
 
     private boolean lastAccept = false;
 
@@ -88,7 +89,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
 
             assert (prob >= 0.0 && prob <= 1.0) : "Probability of a Monte Carlo move up in energy should be 0-1";
 
-            double trial = ThreadLocalRandom.current().nextDouble();
+            double trial = random.nextDouble();
 
             return (trial <= prob);
         }
@@ -217,6 +218,11 @@ public abstract class BoltzmannMC implements MetropolisMC {
     @Override
     public boolean getAccept() {
         return lastAccept;
+    }
+    
+    
+    public void setRandomSeed(int randomseed){
+        random.setSeed(randomseed);
     }
 
     /**

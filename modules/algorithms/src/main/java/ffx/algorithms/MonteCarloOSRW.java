@@ -51,7 +51,6 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import static ffx.algorithms.MolecularDynamics.NS2SEC;
 
-
 /**
  * Sample a thermodynamic path using the OSRW method, with the time-dependent
  * bias built up using Metropolis Monte Carlo steps.
@@ -62,15 +61,16 @@ import static ffx.algorithms.MolecularDynamics.NS2SEC;
  * 1.) At a fixed Lambda, run a defined length MD trajectory to "move"
  * coordinates and dU/dL on an approximate potential U* (i.e. no OSRW Bias).
  * <p>
- * 2.) Accept / Reject the MD move with probability exp[-Beta(dU - dU*)]
- * where dU is the change in AMOEBA + Bias energy
- * and dU* is the change in AMOEBA + Kinetic energy from the MD.
+ * 2.) Accept / Reject the MD move with probability exp[-Beta(dU - dU*)] where
+ * dU is the change in AMOEBA + Bias energy and dU* is the change in AMOEBA +
+ * Kinetic energy from the MD.
  * <p>
  * 3.) Randomly change the value of Lambda.
  * <p>
  * 4.) Accept / Reject the Lambda move using the AMOEBA + OSRW Bias energy.
  * <p>
- * 5.) Add to the time dependent 2D bias using the current values of Lambda and dU/dL.
+ * 5.) Add to the time dependent 2D bias using the current values of Lambda and
+ * dU/dL.
  *
  * @author Michael J. Schnieders
  * @author Hernan Beranbe
@@ -98,19 +98,24 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private boolean equilibration = false;
 
     /**
-     * <p>Constructor for MonteCarloOSRW.</p>
+     * <p>
+     * Constructor for MonteCarloOSRW.</p>
      *
-     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param osrw                a {@link ffx.algorithms.AbstractOSRW} object.
-     * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly} object.
-     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ffx.algorithms.thermostats.ThermostatEnum} object.
-     * @param requestedIntegrator a {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param osrw a {@link ffx.algorithms.AbstractOSRW} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
+     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a
+     * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     * @param requestedIntegrator a
+     * {@link ffx.algorithms.integrators.IntegratorEnum} object.
      */
     public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
-                          MolecularAssembly molecularAssembly, CompositeConfiguration properties,
-                          AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+            MolecularAssembly molecularAssembly, CompositeConfiguration properties,
+            AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
         this.potential = potentialEnergy;
         this.osrw = osrw;
 
@@ -118,7 +123,15 @@ public class MonteCarloOSRW extends BoltzmannMC {
          * Create the MC MD and Lambda moves.
          */
         mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator);
-        lambdaMove = new LambdaMove(lambda, osrw);
+        if (properties.containsKey("randomseed")) {
+            int randomSeed = properties.getInt("randomseed", 0);
+            logger.info(String.format(" Setting random seed for lambdaMove to %d ", randomSeed));
+            lambdaMove = new LambdaMove(randomSeed, lambda, osrw);
+            setRandomSeed(randomSeed);
+        }
+        else{
+            lambdaMove = new LambdaMove(lambda, osrw);
+        }
 
         /**
          * Changing the value of lambda will be handled by this class, as well
@@ -133,9 +146,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * the stepsPerMove and timeStep parameters to the current value in this
      * class
      *
-     * @param totalSteps   a int.
+     * @param totalSteps a int.
      * @param stepsPerMove a int.
-     * @param timeStep     a double.
+     * @param timeStep a double.
      */
     public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
         this.totalSteps = totalSteps;
@@ -221,9 +234,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double currentPotentialEnergy = potential.energyAndGradient(coordinates, gradient);
             double currentBias = currentOSRWEnergy - currentPotentialEnergy;
             
-
             /**
-             * Run MD in an approximate potential U* (U star) that does not include the OSRW bias.
+             * Run MD in an approximate potential U* (U star) that does not
+             * include the OSRW bias.
              */
             mdMove.move();
 
@@ -242,20 +255,22 @@ public class MonteCarloOSRW extends BoltzmannMC {
             // Min[1, exp[-Beta(deltaMD)]
             // where
             // deltaMD = U_OSRW(proposed) + U_Kinetic(proposed) - U_OSRW(current) - U_Kinetic(current)
-
             double currentEnergy = currentOSRWEnergy + currentKineticEnergy;
             double proposedEnergy = proposedOSRWEnergy + proposedKineticEnergy;
 
             /**
-            logger.info(format(" Current  OSRW %12.3f + Kinetic %12.3f = %12.3f.", currentOSRWEnergy, currentKineticEnergy, currentEnergy));
-            logger.info(format(" Proposed OSRW %12.3f + Kinetic %12.3f = %12.3f.", proposedOSRWEnergy, proposedKineticEnergy, proposedEnergy));
-            logger.info(format(" MCMD Energy change:                                 %12.3f (kcal/mol).", proposedEnergy - currentEnergy));
-            */
-            
+             * logger.info(format(" Current OSRW %12.3f + Kinetic %12.3f =
+             * %12.3f.", currentOSRWEnergy, currentKineticEnergy,
+             * currentEnergy)); logger.info(format(" Proposed OSRW %12.3f +
+             * Kinetic %12.3f = %12.3f.", proposedOSRWEnergy,
+             * proposedKineticEnergy, proposedEnergy)); logger.info(format("
+             * MCMD Energy change: %12.3f (kcal/mol).", proposedEnergy -
+             * currentEnergy));
+             */
             logger.info(format("  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
             logger.info(format("  Current  %12.3f %12.3f %12.3f %12.3f", currentKineticEnergy, currentOSRWEnergy, currentBias, currentEnergy));
             logger.info(format("  Proposed %12.3f %12.3f %12.3f %12.3f", proposedKineticEnergy, proposedOSRWEnergy, proposedBias, proposedEnergy));
-      
+
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 /**
                  * Accept MD move.
@@ -297,7 +312,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             logger.info(format("\n Current  OSRW     %12.3f at L=%5.3f.", currentOSRWEnergy, currentLambda));
             logger.info(format(" Proposed OSRW     %12.3f at L=%5.3f.", proposedOSRWEnergy, proposedLambda));
             logger.info(format(" MC Energy change: %12.3f (kcal/mol).", proposedEnergy - currentEnergy));
-            
+
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 acceptLambda++;
                 double percent = (acceptLambda * 100.0) / (imove + 1);
@@ -316,7 +331,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             /**
              * Update time dependent bias.
              */
-
             osrw.addBias(currentdUdL, coordinates, gradient);
             totalMoveTime += System.nanoTime();
             logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f] in %6.3f sec.", lambda, currentdUdL, totalMoveTime * NS2SEC));
