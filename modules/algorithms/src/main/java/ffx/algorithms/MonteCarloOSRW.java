@@ -231,8 +231,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             double currentOSRWEnergy = osrw.energyAndGradient(coordinates, gradient);
             double currentdUdL = osrw.getForceFielddEdL();
-            double currentPotentialEnergy = potential.energyAndGradient(coordinates, gradient);
-            double currentBias = currentOSRWEnergy - currentPotentialEnergy;
+            double currentPotentialEnergy = osrw.getForceFieldEnergy();
+            double currentBias = osrw.getBiasEnergy();
             
             /**
              * Run MD in an approximate potential U* (U star) that does not
@@ -248,9 +248,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(proposedCoordinates);
             double proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
-            double proposedPotentialEnergy = potential.energyAndGradient(proposedCoordinates, gradient);
-            double proposedBias = proposedOSRWEnergy - proposedPotentialEnergy;
-
+            double proposedPotentialEnergy = osrw.getForceFieldEnergy();
+            double proposedBias = osrw.getBiasEnergy();
+            
             // Acceptance Probability
             // Min[1, exp[-Beta(deltaMD)]
             // where
@@ -270,6 +270,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
             logger.info(format("  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
             logger.info(format("  Current  %12.3f %12.3f %12.3f %12.3f", currentKineticEnergy, currentOSRWEnergy, currentBias, currentEnergy));
             logger.info(format("  Proposed %12.3f %12.3f %12.3f %12.3f", proposedKineticEnergy, proposedOSRWEnergy, proposedBias, proposedEnergy));
+            logger.info(format("  Delta    %12.3f %12.3f %12.3f %12.3f", proposedKineticEnergy - currentKineticEnergy, proposedOSRWEnergy - currentOSRWEnergy,
+                    proposedBias - currentBias, proposedEnergy - currentEnergy));
 
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 /**
