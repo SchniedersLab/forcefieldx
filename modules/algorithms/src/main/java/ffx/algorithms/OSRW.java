@@ -237,11 +237,13 @@ public class OSRW extends AbstractOSRW {
             return forceFieldEnergy;
         }
 
+        biasEnergy = 0.0;
+
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
             minimize(forceFieldEnergy, x, gradient);
         }
 
-        biasEnergy = 0.0;
+
         dUdLambda = lambdaInterface.getdEdL();
         d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
@@ -257,6 +259,7 @@ public class OSRW extends AbstractOSRW {
          * Calculate recursion kernel G(L, F_L) and its derivatives with respect
          * to L and F_L.
          */
+        gLdEdL = 0.0;
         double dGdLambda = 0.0;
         double dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
@@ -293,12 +296,11 @@ public class OSRW extends AbstractOSRW {
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
-                biasEnergy += bias;
+                gLdEdL += bias;
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;
             }
         }
-        gLdEdL = biasEnergy;
 
         /**
          * Lambda gradient due to recursion kernel G(L, F_L).
@@ -385,8 +387,7 @@ public class OSRW extends AbstractOSRW {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        double freeEnergy = currentFreeEnergy();
-        biasEnergy += freeEnergy;
+        biasEnergy = current1DBiasEnergy() + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -424,7 +425,6 @@ public class OSRW extends AbstractOSRW {
             langevin();
         } else {
             equilibrationCounts++;
-
             if (jobBackend != null) {
                 jobBackend.setComment(String.format("Equilibration [L=%6.4f, F_L=%10.4f]", lambda, dEdU));
             }

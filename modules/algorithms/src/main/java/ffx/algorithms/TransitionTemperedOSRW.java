@@ -395,8 +395,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        double freeEnergy = currentFreeEnergy();
-        biasEnergy = freeEnergy + gLdEdL;
+        biasEnergy = current1DBiasEnergy() + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));

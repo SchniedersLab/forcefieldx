@@ -651,11 +651,13 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * <p>currentFreeEnergy.</p>
+     * This calculates the 1D OSRW bias and its derivative with respect to Lambda.
+     *
+     * See Equation 8 in http://doi.org/10.1021/ct300035u.
      *
      * @return a double.
      */
-    protected double currentFreeEnergy() {
+    protected double current1DBiasEnergy() {
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
