@@ -90,11 +90,10 @@ class MoveIntoUnitCell extends PotentialScript {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
 
+        String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
         String ext = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName)
-
-        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
 
         if (ext.toUpperCase().contains("XYZ")) {
             potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))

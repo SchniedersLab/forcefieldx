@@ -57,6 +57,12 @@ import ffx.numerics.LineSearch.LineSearchResult;
  * @author Michael J. Schnieders<br> Derived from:
  * <br>
  * Robert Dodier's Java translation of original FORTRAN code by Jorge Nocedal.
+ * <br>
+ * J. Nocedal, "Updating Quasi-Newton Matrices with Limited Storage", Mathematics of Computation, 35, 773-782 (1980)
+ * <br>
+ * D. C. Lui and J. Nocedal, "On the Limited Memory BFGS Method for Large Scale Optimization", Mathematical Programming, 45, 503-528 (1989)
+ * <br>
+ * J. Nocedal and S. J. Wright, "Numerical Optimization", Springer-Verlag, New York, 1999, Section 9.1
  *
  * @since 1.0
  */
