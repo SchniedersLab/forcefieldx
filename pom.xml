@@ -1113,7 +1113,7 @@
         <changes.version>2.12.1</changes.version>
         <checkstyle.version>3.0.0</checkstyle.version>
         <javadoc.version>3.0.1</javadoc.version>
-        <jxr.version>2.5</jxr.version>
+        <jxr.version>3.0.0</jxr.version>
         <linkcheck.version>1.2</linkcheck.version>
         <pmd.version>3.10.0</pmd.version>
         <project-info-reports.version>3.0.0</project-info-reports.version>
@@ -1124,13 +1124,13 @@
         <enforcer.version>3.0.0-M2</enforcer.version>
         <jarsigner.version>1.4</jarsigner.version>
         <release.version>2.5.3</release.version>
-        <scm.version>1.10.0</scm.version>
+        <scm.version>1.11.1</scm.version>
         <!-- MojoHaus Plugins -->
         <jdepend.version>2.0</jdepend.version>
         <appassembler.version>1.10</appassembler.version>
         <buildnumber.version>1.2.10</buildnumber.version>
         <exec.version>1.6.0</exec.version>
-        <versions.version>2.5</versions.version>
+        <versions.version>2.7</versions.version>
         <properties.version>1.0.0</properties.version>
         <!-- Clover Plugin -->
         <clover.version>4.2.0</clover.version>
