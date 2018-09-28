@@ -70,6 +70,7 @@ import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import ffx.potential.ForceFieldEnergyOpenMM;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.commons.math3.util.FastMath;
@@ -694,6 +695,22 @@ public class RotamerOptimization implements Terminatable {
      * CSV file.
      */
     public boolean outputFile[];
+
+    /**
+     * Default value for the singularityThreshold in kcal/mol.
+     */
+    private static final double DEFAULT_SINGULARITY_THRESHOLD = -1000;
+    /**
+     * Reject any self, pair, or triple energy beneath singularityThreshold.
+     *
+     * This is meant to check for running into singularities in the energy function,
+     * where an energy is "too good to be true" and actually represents a poor conformation.
+     */
+    private final double singularityThreshold;
+    /**
+     * Indicates if the Potential is an OpenMMForceFieldEnergy.
+     */
+    private final boolean potentialIsOpenMM;
     /**
      * Stores eliminated residue and rotamer singles and pairs.
      */
@@ -971,6 +988,17 @@ public class RotamerOptimization implements Terminatable {
 
         prop = System.getProperty("revertUnfavorable", "false");
         revert = Boolean.parseBoolean(prop);
+
+        prop = System.getProperty("ro-singularityThreshold");
+        double singT = DEFAULT_SINGULARITY_THRESHOLD;
+        try {
+            singT = Double.parseDouble(prop);
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in parsing ro-singularityThreshold: %s", ex));
+            singT = DEFAULT_SINGULARITY_THRESHOLD;
+        }
+        singularityThreshold = singT;
+        potentialIsOpenMM = potential instanceof ForceFieldEnergyOpenMM;
 
         allAssemblies = new ArrayList<>();
         allAssemblies.add(molecularAssembly);
@@ -4736,6 +4764,16 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Forces the use of a ForceFieldEnergyOpenMM's underlying ForceFieldEnergy.
+     *
+     * @return Current potential energy as calculated by FFX reference platform.
+     */
+    private double currentFFXPE() {
+        potential.getCoordinates(x);
+        return ((ForceFieldEnergyOpenMM) potential).ffxEnergy(x, false);
+    }
+
+    /**
      * Wrapper intended for use with RotamerMatrixMC.
      *
      * @param resList
@@ -5116,6 +5154,13 @@ public class RotamerOptimization implements Terminatable {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
             energy = currentEnergy(residues) - backboneEnergy;
+            if (energy < singularityThreshold) {
+                logger.warning(String.format(" Self energy for %s-%d is %10.5g << %10f, likely in error.", residues[i], ri, energy, singularityThreshold));
+                if (potentialIsOpenMM) {
+                    logger.warning(" Experimental: re-computing energy using Force Field X");
+                    energy = currentFFXPE() - backboneEnergy;
+                }
+            }
         } finally {
             turnOffResidue(residues[i]);
         }
@@ -5144,6 +5189,13 @@ public class RotamerOptimization implements Terminatable {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
             energy = currentEnergy(residues) - backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
+            if (energy < singularityThreshold) {
+                logger.warning(String.format(" Pair energy for %s-%d %s-%d is %10.5g << %10f, likely in error.", residues[i], ri, residues[j], rj, energy, singularityThreshold));
+                if (potentialIsOpenMM) {
+                    logger.warning(" Experimental: re-computing energy using Force Field X");
+                    energy = currentFFXPE() - backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
+                }
+            }
         } finally {
             // Revert if the currentEnergy call throws an exception.
             turnOffResidue(residues[i]);
@@ -5179,6 +5231,14 @@ public class RotamerOptimization implements Terminatable {
             }
             energy = currentEnergy(residues) - backboneEnergy - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk)
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(j, rj, k, rk);
+            if (energy < singularityThreshold) {
+                logger.warning(String.format(" Triple energy for %s-%d %s-%d %s-%d is %10.5g << %10f, likely in error.", residues[i], ri, residues[j], rj, residues[k], rk, energy, singularityThreshold));
+                if (potentialIsOpenMM) {
+                    logger.warning(" Experimental: re-computing energy using Force Field X");
+                    energy = currentFFXPE() - backboneEnergy - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk)
+                            - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(j, rj, k, rk);
+                }
+            }
         } finally {
             // Revert if the currentEnergy call throws an exception.
             turnOffResidue(residues[i]);

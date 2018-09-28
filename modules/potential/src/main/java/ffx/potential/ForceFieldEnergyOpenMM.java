@@ -3200,6 +3200,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Evaluates energy explicitly using the Java implementation backing this
+     * ForceFieldEnergyOpenMM.
+     *
+     * @param x       Coordinate array
+     * @param verbose Verbosity of energy call
+     * @return        Total energy calculated by reference FFX implementation.
+     */
+    public double ffxEnergy(double[] x, boolean verbose) {
+        return super.energy(x, verbose);
+    }
+
+    /**
      * Evaluates energy and gradients both with OpenMM and reference potential,
      * and returns the difference FFX-OpenMM.
      *
