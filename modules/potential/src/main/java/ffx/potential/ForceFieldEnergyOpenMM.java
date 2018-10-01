@@ -1624,7 +1624,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
             logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
             logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
-            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
+            logger.log(Level.SEVERE, " Unsupported van der Waals functional form.");
             return;
         }
 
