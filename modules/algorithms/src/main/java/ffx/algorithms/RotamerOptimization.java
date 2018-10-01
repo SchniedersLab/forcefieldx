@@ -991,11 +991,13 @@ public class RotamerOptimization implements Terminatable {
 
         prop = System.getProperty("ro-singularityThreshold");
         double singT = DEFAULT_SINGULARITY_THRESHOLD;
-        try {
-            singT = Double.parseDouble(prop);
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception in parsing ro-singularityThreshold: %s", ex));
-            singT = DEFAULT_SINGULARITY_THRESHOLD;
+        if (prop != null) {
+            try {
+                singT = Double.parseDouble(prop);
+            } catch (Exception ex) {
+                logger.warning(String.format(" Exception in parsing ro-singularityThreshold: %s", ex));
+                singT = DEFAULT_SINGULARITY_THRESHOLD;
+            }
         }
         singularityThreshold = singT;
         potentialIsOpenMM = potential instanceof ForceFieldEnergyOpenMM;
@@ -6749,18 +6751,15 @@ public class RotamerOptimization implements Terminatable {
     }
 
     private int eliminateRotamerPairs(Residue[] residues, int i, int ri, boolean verbose) {
-        int nres = residues.length;
+        int nNeighbors = resNeighbors[i].length;
         int eliminatedPairs = 0;
-        for (int j = 0; j < nres; j++) {
-            if (j == i) {
-                continue;
-            }
-            Residue residuej = residues[j];
-            Rotamer rotamersj[] = residuej.getRotamers(library);
-            int lenrj = rotamersj.length;
+        for (int indJ = 0; indJ < nNeighbors; indJ++) {
+            int j = resNeighbors[i][indJ];
+            Residue resj = residues[j];
+            int lenrj = resj.getRotamers(library).length;
             for (int rj = 0; rj < lenrj; rj++) {
                 if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
-                    eliminatedPairs++;
+                    ++eliminatedPairs;
                 }
             }
         }
