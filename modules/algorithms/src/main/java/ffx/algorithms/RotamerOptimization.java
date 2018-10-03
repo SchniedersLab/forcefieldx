@@ -6800,10 +6800,11 @@ public class RotamerOptimization implements Terminatable {
     }
 
     private int eliminateRotamerPairs(Residue[] residues, int i, int ri, boolean verbose) {
-        int nNeighbors = resNeighbors[i].length;
         int eliminatedPairs = 0;
-        for (int indJ = 0; indJ < nNeighbors; indJ++) {
-            int j = resNeighbors[i][indJ];
+        for (int j = 0; j < residues.length; j++) {
+            if (j == i) {
+                continue;
+            }
             Residue resj = residues[j];
             int lenrj = resj.getRotamers(library).length;
             for (int rj = 0; rj < lenrj; rj++) {
