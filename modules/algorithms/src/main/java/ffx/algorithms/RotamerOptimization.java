@@ -4272,7 +4272,7 @@ public class RotamerOptimization implements Terminatable {
                 readyFor3Body = false;
                 finished3Body = false;
                 energiesToWrite = Collections.synchronizedList(new ArrayList<String>());
-                receiveThread = new ReceiveThread(residuesList.toArray(new Residue[1]));
+                receiveThread = new ReceiveThread(residuesList.toArray(new Residue[residuesList.size()]));
                 receiveThread.start();
                 if (master && writeEnergyRestart && printFiles) {
                     if (energyWriterThread != null) {
@@ -6808,8 +6808,13 @@ public class RotamerOptimization implements Terminatable {
             Residue resj = residues[j];
             int lenrj = resj.getRotamers(library).length;
             for (int rj = 0; rj < lenrj; rj++) {
-                if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
-                    ++eliminatedPairs;
+                try {
+                    if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
+                        ++eliminatedPairs;
+                    }
+                } catch (ArrayIndexOutOfBoundsException aie) {
+                    logger.info(String.format(" Attempted to eliminate %s(%d)-%d %s(%d)-%d", residues[i], i, ri, residues[j], j, rj));
+                    throw aie;
                 }
             }
         }
@@ -7508,6 +7513,23 @@ public class RotamerOptimization implements Terminatable {
             ri = rj;
             j = ii;
             rj = iri;
+        }
+        if (i >= eliminatedPairs.length) {
+            logger.info(String.format(" i %d >= length %d", i, eliminatedPairs.length));
+        }
+        if (j >= eliminatedPairs.length) {
+            logger.info(String.format(" j %d >= length %d", j, eliminatedPairs.length));
+        }
+        if (eliminatedPairs[i] == null) {
+            logger.info(" elim pairs i == null");
+        } else if (ri >= eliminatedPairs[i].length) {
+            logger.info(String.format(" ri %d >= elimPairsI length %d", ri, eliminatedPairs[i].length));
+        } else if (eliminatedPairs[i][ri] == null) {
+            logger.info(" elim pairs i,ri == null");
+        } else if (eliminatedPairs[i][ri][j] == null) {
+            logger.info(" elim pairs i,ri,j == null");
+        } else if (rj >= eliminatedPairs[i][ri][j].length) {
+            logger.info(String.format(" rj %d >= elimPairsI,RI,J length %d", rj, eliminatedPairs[i][ri][j].length));
         }
         return eliminatedPairs[i][ri][j][rj];
     }
@@ -9181,8 +9203,6 @@ public class RotamerOptimization implements Terminatable {
 
             // Receive all singles energies.
             procsDone = 0;
-            Residue[] resArr = new Residue[residueList.size()];
-            resArr = residueList.toArray(resArr);
             while (alive) {
                 try {
                     CommStatus cs = world.receive(null, incSelfBuf);
@@ -9192,7 +9212,7 @@ public class RotamerOptimization implements Terminatable {
                         double energy = incSelf[2];
                         if (Double.isNaN(energy)) {
                             logger.info("Rotamer eliminated.");
-                            eliminateRotamer(resArr, resi, roti, false);
+                            eliminateRotamer(residues, resi, roti, false);
                         }
                         // check for "process finished" announcements
                         if (resi < 0 && roti < 0) {
@@ -9244,7 +9264,7 @@ public class RotamerOptimization implements Terminatable {
                         double energy = incPair[4];
                         if (Double.isNaN(energy)) {
                             logger.info("Rotamer pair eliminated.");
-                            eliminateRotamerPair(resArr, resi, roti, resj, rotj, false);
+                            eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                         }
                         // check for "process finished" announcements
                         if (resi < 0 && roti < 0 && resj < 0 && rotj < 0) {
