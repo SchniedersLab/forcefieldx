@@ -6808,13 +6808,8 @@ public class RotamerOptimization implements Terminatable {
             Residue resj = residues[j];
             int lenrj = resj.getRotamers(library).length;
             for (int rj = 0; rj < lenrj; rj++) {
-                try {
-                    if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
-                        ++eliminatedPairs;
-                    }
-                } catch (ArrayIndexOutOfBoundsException aie) {
-                    logger.info(String.format(" Attempted to eliminate %s(%d)-%d %s(%d)-%d", residues[i], i, ri, residues[j], j, rj));
-                    throw aie;
+                if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
+                    ++eliminatedPairs;
                 }
             }
         }
@@ -7513,23 +7508,6 @@ public class RotamerOptimization implements Terminatable {
             ri = rj;
             j = ii;
             rj = iri;
-        }
-        if (i >= eliminatedPairs.length) {
-            logger.info(String.format(" i %d >= length %d", i, eliminatedPairs.length));
-        }
-        if (j >= eliminatedPairs.length) {
-            logger.info(String.format(" j %d >= length %d", j, eliminatedPairs.length));
-        }
-        if (eliminatedPairs[i] == null) {
-            logger.info(" elim pairs i == null");
-        } else if (ri >= eliminatedPairs[i].length) {
-            logger.info(String.format(" ri %d >= elimPairsI length %d", ri, eliminatedPairs[i].length));
-        } else if (eliminatedPairs[i][ri] == null) {
-            logger.info(" elim pairs i,ri == null");
-        } else if (eliminatedPairs[i][ri][j] == null) {
-            logger.info(" elim pairs i,ri,j == null");
-        } else if (rj >= eliminatedPairs[i][ri][j].length) {
-            logger.info(String.format(" rj %d >= elimPairsI,RI,J length %d", rj, eliminatedPairs[i][ri][j].length));
         }
         return eliminatedPairs[i][ri][j][rj];
     }
