@@ -96,6 +96,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private long lambdaEvalTime = 0;
     private long biasAddTime = 0;
     private long lambdaMoveTime = 0;
+    private long mdMoveTime = 0;
 
     private LambdaMove lambdaMove;
 
@@ -242,7 +243,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
              * Run MD in an approximate potential U* (U star) that does not
              * include the OSRW bias.
              */
+            
+            mdMoveTime = -System.nanoTime();
             mdMove.move();
+            mdMoveTime += System.nanoTime();
+            logger.info(String.format(" Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
 
             // Get the starting and final kinetic energy for the MD move.
             double currentKineticEnergy = mdMove.getStartingKineticEnergy();
@@ -272,7 +277,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
              * currentEnergy));
              */
             
-            logger.info(String.format(" MCOSRW Round %d", imove + 1));
+            if (equilibration) {
+                logger.info(String.format(" MD Equilibration Round %d", imove + 1));
+            }
+            else {
+                logger.info(String.format(" MCOSRW Round %d", imove + 1));
+            }
+            
+            
             logger.info(format("  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
             logger.info(format("  Current  %12.3f %12.3f %12.3f %12.3f", currentKineticEnergy, currentOSRWEnergy, currentBias, currentEnergy));
             logger.info(format("  Proposed %12.3f %12.3f %12.3f %12.3f", proposedKineticEnergy, proposedOSRWEnergy, proposedBias, proposedEnergy));
