@@ -1624,7 +1624,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
             logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
             logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
-            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
+            logger.log(Level.SEVERE, " Unsupported van der Waals functional form.");
             return;
         }
 
@@ -3197,6 +3197,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double ffxE = super.energy(x, verbose);
         double thisE = energy(x, verbose);
         return ffxE - thisE;
+    }
+
+    /**
+     * Evaluates energy explicitly using the Java implementation backing this
+     * ForceFieldEnergyOpenMM.
+     *
+     * @param x       Coordinate array
+     * @param verbose Verbosity of energy call
+     * @return        Total energy calculated by reference FFX implementation.
+     */
+    public double ffxEnergy(double[] x, boolean verbose) {
+        return super.energy(x, verbose);
     }
 
     /**
