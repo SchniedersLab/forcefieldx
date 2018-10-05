@@ -579,7 +579,7 @@ public class RotamerOptimization implements Terminatable {
      * If a pair of residues have two atoms closer together than the
      * superposition threshold, the energy is set to NaN.
      */
-    private double superpositionThreshold = 0.1;
+    private double superpositionThreshold = 0.25;
     /**
      * Box index loaded during a restart.
      */
