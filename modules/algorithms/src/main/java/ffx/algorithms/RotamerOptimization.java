@@ -70,6 +70,8 @@ import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.utils.EnergyException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.commons.math3.util.FastMath;
@@ -577,7 +579,7 @@ public class RotamerOptimization implements Terminatable {
      * If a pair of residues have two atoms closer together than the
      * superposition threshold, the energy is set to NaN.
      */
-    private double superpositionThreshold = 0.1;
+    private double superpositionThreshold = 0.25;
     /**
      * Box index loaded during a restart.
      */
@@ -694,6 +696,31 @@ public class RotamerOptimization implements Terminatable {
      * CSV file.
      */
     public boolean outputFile[];
+
+    /**
+     * Default value for the ommRecalculateThreshold in kcal/mol.
+     */
+    private static final double DEFAULT_OMM_RECALCULATE_THRESHOLD = -200;
+    /**
+     * If OpenMM is in use, recalculate any suspiciously low self/pair/triple
+     * energies using the reference Java implementation.
+     */
+    private final double ommRecalculateThreshold;
+    /**
+     * Default value for the singularityThreshold in kcal/mol.
+     */
+    private static final double DEFAULT_SINGULARITY_THRESHOLD = -1000;
+    /**
+     * Reject any self, pair, or triple energy beneath singularityThreshold.
+     *
+     * This is meant to check for running into singularities in the energy function,
+     * where an energy is "too good to be true" and actually represents a poor conformation.
+     */
+    private final double singularityThreshold;
+    /**
+     * Indicates if the Potential is an OpenMMForceFieldEnergy.
+     */
+    private final boolean potentialIsOpenMM;
     /**
      * Stores eliminated residue and rotamer singles and pairs.
      */
@@ -971,6 +998,36 @@ public class RotamerOptimization implements Terminatable {
 
         prop = System.getProperty("revertUnfavorable", "false");
         revert = Boolean.parseBoolean(prop);
+
+        prop = System.getProperty("ro-singularityThreshold");
+        double singT = DEFAULT_SINGULARITY_THRESHOLD;
+        if (prop != null) {
+            try {
+                singT = Double.parseDouble(prop);
+            } catch (Exception ex) {
+                logger.warning(String.format(" Exception in parsing ro-singularityThreshold: %s", ex));
+                singT = DEFAULT_SINGULARITY_THRESHOLD;
+            }
+        }
+        singularityThreshold = singT;
+
+        potentialIsOpenMM = potential instanceof ForceFieldEnergyOpenMM;
+
+        if (potentialIsOpenMM) {
+            prop = System.getProperty("ro-ommRecalculateThreshold");
+            double ort = DEFAULT_OMM_RECALCULATE_THRESHOLD;
+            if (prop != null) {
+                try {
+                    ort = Double.parseDouble(prop);
+                } catch (Exception ex) {
+                    logger.warning(String.format(" Exception in parsing ro-ommRecalculateThreshold: %s", ex));
+                    ort = DEFAULT_OMM_RECALCULATE_THRESHOLD;
+                }
+            }
+            ommRecalculateThreshold = ort;
+        } else {
+            ommRecalculateThreshold = -1E200;
+        }
 
         allAssemblies = new ArrayList<>();
         allAssemblies.add(molecularAssembly);
@@ -4215,7 +4272,7 @@ public class RotamerOptimization implements Terminatable {
                 readyFor3Body = false;
                 finished3Body = false;
                 energiesToWrite = Collections.synchronizedList(new ArrayList<String>());
-                receiveThread = new ReceiveThread(residuesList.toArray(new Residue[1]));
+                receiveThread = new ReceiveThread(residuesList.toArray(new Residue[residuesList.size()]));
                 receiveThread.start();
                 if (master && writeEnergyRestart && printFiles) {
                     if (energyWriterThread != null) {
@@ -4736,6 +4793,16 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Forces the use of a ForceFieldEnergyOpenMM's underlying ForceFieldEnergy.
+     *
+     * @return Current potential energy as calculated by FFX reference platform.
+     */
+    private double currentFFXPE() {
+        potential.getCoordinates(x);
+        return ((ForceFieldEnergyOpenMM) potential).ffxEnergy(x, false);
+    }
+
+    /**
      * Wrapper intended for use with RotamerMatrixMC.
      *
      * @param resList
@@ -5116,6 +5183,16 @@ public class RotamerOptimization implements Terminatable {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
             energy = currentEnergy(residues) - backboneEnergy;
+            if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
+                logger.warning(String.format(" Experimental: re-computing self energy %s-%d using Force Field X", residues[i], ri));
+                energy = currentFFXPE() - backboneEnergy;
+            }
+            if (energy < singularityThreshold) {
+                String message = String.format(" Rejecting self energy for %s-%d is %10.5g << %10f, " +
+                        "likely in error.", residues[i], ri, energy, singularityThreshold);
+                logger.warning(message);
+                throw new EnergyException(message);
+            }
         } finally {
             turnOffResidue(residues[i]);
         }
@@ -5143,7 +5220,18 @@ public class RotamerOptimization implements Terminatable {
             if (algorithmListener != null) {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
-            energy = currentEnergy(residues) - backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
+            double subtract = -backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
+            energy = currentEnergy(residues) + subtract;
+            if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
+                logger.warning(String.format(" Experimental: re-computing pair energy %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj));
+                energy = currentFFXPE() + subtract;
+            }
+            if (energy < singularityThreshold) {
+                String message = String.format(" Rejecting pair energy for %s-%d %s-%d is %10.5g << %10f, " +
+                        "likely in error.", residues[i], ri, residues[j], rj, energy, singularityThreshold);
+                logger.warning(message);
+                throw new EnergyException(message);
+            }
         } finally {
             // Revert if the currentEnergy call throws an exception.
             turnOffResidue(residues[i]);
@@ -5177,8 +5265,19 @@ public class RotamerOptimization implements Terminatable {
             if (algorithmListener != null) {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
-            energy = currentEnergy(residues) - backboneEnergy - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk)
+            double subtract = -backboneEnergy - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk)
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(j, rj, k, rk);
+            energy = currentEnergy(residues) + subtract;
+            if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
+                logger.warning(String.format(" Experimental: re-computing triple energy %s-%d %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj, residues[k], rk));
+                energy = currentFFXPE() + subtract;
+            }
+            if (energy < singularityThreshold) {
+                String message = String.format(" Rejecting triple energy for %s-%d %s-%d %s-%d is %10.5g << %10f, " +
+                        "likely in error.", residues[i], ri, residues[j], rj, residues[k], rk, energy, singularityThreshold);
+                logger.warning(message);
+                throw new EnergyException(message);
+            }
         } finally {
             // Revert if the currentEnergy call throws an exception.
             turnOffResidue(residues[i]);
@@ -5215,11 +5314,23 @@ public class RotamerOptimization implements Terminatable {
             if (algorithmListener != null) {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
-            energy = currentEnergy(residues) - backboneEnergy
+            double subtract = -backboneEnergy
                     - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk) - getSelf(l, rl)
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(i, ri, l, rl)
                     - get2Body(j, rj, k, rk) - get2Body(j, rj, l, rl) - get2Body(k, rk, l, rl)
                     - get3Body(residues, i, ri, j, rj, k, rk) - get3Body(residues, i, ri, j, rj, l, rl) - get3Body(residues, i, ri, k, rk, l, rl) - get3Body(residues, j, rj, k, rk, l, rl);
+            energy = currentEnergy(residues) + subtract;
+
+            if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
+                logger.warning(String.format(" Experimental: re-computing quad energy %s-%d %s-%d %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl));
+                energy = currentFFXPE() + subtract;
+            }
+            if (energy < singularityThreshold) {
+                String message = String.format(" Rejecting quad energy for %s-%d %s-%d %s-%d %s-%d is %10.5g << %10f, " +
+                        "likely in error.", residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl, energy, singularityThreshold);
+                logger.warning(message);
+                throw new EnergyException(message);
+            }
 
         } finally {
             // Revert if the currentEnergy call throws an exception.
@@ -6689,18 +6800,16 @@ public class RotamerOptimization implements Terminatable {
     }
 
     private int eliminateRotamerPairs(Residue[] residues, int i, int ri, boolean verbose) {
-        int nres = residues.length;
         int eliminatedPairs = 0;
-        for (int j = 0; j < nres; j++) {
+        for (int j = 0; j < residues.length; j++) {
             if (j == i) {
                 continue;
             }
-            Residue residuej = residues[j];
-            Rotamer rotamersj[] = residuej.getRotamers(library);
-            int lenrj = rotamersj.length;
+            Residue resj = residues[j];
+            int lenrj = resj.getRotamers(library).length;
             for (int rj = 0; rj < lenrj; rj++) {
                 if (eliminateRotamerPair(residues, i, ri, j, rj, verbose)) {
-                    eliminatedPairs++;
+                    ++eliminatedPairs;
                 }
             }
         }
@@ -7592,6 +7701,34 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
         }
+    }
+
+    /**
+     * Writes only active Atoms to a file.
+     * @param suffix Suffix to put into the name. Example: suffix = _s, peptide.pdb becomes peptide_s.pdb
+     * @return Whether writing to file was successful.
+     */
+    private boolean writeOnlyActiveToFile(String suffix) {
+        Set<Atom> exclusions = allResiduesList.stream().
+                flatMap((Residue r) -> r.getAtomList().stream()).
+                filter(a -> !a.isActive()).
+                collect(Collectors.toSet());
+
+        if (suffix == null || suffix.isEmpty()) {
+            throw new IllegalArgumentException(" Must have a non-null, non-empty suffix!");
+        }
+        File origFile = molecularAssembly.getFile();
+        String fileName = FilenameUtils.removeExtension(origFile.getName());
+        fileName = fileName + suffix + ".pdb";
+        File file = new File(fileName);
+        PDBFilter pdbFilter = new PDBFilter(file, molecularAssembly, null, null);
+        boolean writeSuccess = false;
+        try {
+            writeSuccess = pdbFilter.writeFile(file, false, false, exclusions);
+        } finally {
+            molecularAssembly.setFile(origFile);
+        }
+        return writeSuccess;
     }
 
     /**
@@ -9072,8 +9209,6 @@ public class RotamerOptimization implements Terminatable {
 
             // Receive all singles energies.
             procsDone = 0;
-            Residue[] resArr = new Residue[residueList.size()];
-            resArr = residueList.toArray(resArr);
             while (alive) {
                 try {
                     CommStatus cs = world.receive(null, incSelfBuf);
@@ -9083,7 +9218,7 @@ public class RotamerOptimization implements Terminatable {
                         double energy = incSelf[2];
                         if (Double.isNaN(energy)) {
                             logger.info("Rotamer eliminated.");
-                            eliminateRotamer(resArr, resi, roti, false);
+                            eliminateRotamer(residues, resi, roti, false);
                         }
                         // check for "process finished" announcements
                         if (resi < 0 && roti < 0) {
@@ -9135,7 +9270,7 @@ public class RotamerOptimization implements Terminatable {
                         double energy = incPair[4];
                         if (Double.isNaN(energy)) {
                             logger.info("Rotamer pair eliminated.");
-                            eliminateRotamerPair(resArr, resi, roti, resj, rotj, false);
+                            eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                         }
                         // check for "process finished" announcements
                         if (resi < 0 && roti < 0 && resj < 0 && rotj < 0) {
