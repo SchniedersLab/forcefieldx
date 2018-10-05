@@ -1320,14 +1320,30 @@ public final class PDBFilter extends SystemFilter {
      * writeFile</p>
      *
      * @param saveFile a {@link java.io.File} object.
-     * @param append a {@link java.lang.StringBuilder} object.
-     * @param printLinear Whether to print atoms linearly or by element
+     * @param append Whether to append to saveFile (vs over-write).
+     * @param printLinear Whether to print atoms linearly or by element.
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear) {
+        return writeFile(saveFile, append, printLinear, Collections.emptySet());
+    }
+
+    /**
+     * <p>
+     * writeFile</p>
+     *
+     * @param saveFile a {@link java.io.File} object to save to.
+     * @param append Whether to append to saveFile (vs over-write).
+     * @param printLinear Whether to print atoms linearly or by element.
+     * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @return Success of writing.
+     */
+    public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude) {
         if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
             renameAtomsToPDBStandard(activeMolecularAssembly);
         }
+
+        final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
 
         if (saveFile == null) {
             return false;
@@ -1449,7 +1465,9 @@ public final class PDBFilter extends SystemFilter {
                     ArrayList<Residue> residues = polymer.getResidues();
                     for (Residue residue : residues) {
                         if (residue.getName().equalsIgnoreCase("CYS")) {
-                            List<Atom> cysAtoms = residue.getAtomList();
+                            List<Atom> cysAtoms = residue.getAtomList().stream().
+                                    filter(a -> !atomExclusions.contains(a)).
+                                    collect(Collectors.toList());
                             Atom SG1 = null;
                             for (Atom atom : cysAtoms) {
                                 String atName = atom.getName().toUpperCase();
@@ -1461,7 +1479,7 @@ public final class PDBFilter extends SystemFilter {
                             List<Bond> bonds = SG1.getBonds();
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
-                                if (SG2.getName().equalsIgnoreCase("SG")) {
+                                if (SG2.getName().equalsIgnoreCase("SG") && !atomExclusions.contains(SG2)) {
                                     if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
@@ -1524,8 +1542,14 @@ public final class PDBFilter extends SystemFilter {
                         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                         sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
                         // Loop over atoms
-                        ArrayList<Atom> residueAtoms = residue.getAtomList();
-                        ArrayList<Atom> backboneAtoms = residue.getBackboneAtoms();
+                        /*ArrayList<Atom> residueAtoms = residue.getAtomList();
+                        ArrayList<Atom> backboneAtoms = residue.getBackboneAtoms();*/
+                        List<Atom> residueAtoms = residue.getAtomList().stream().
+                                filter(a -> !atomExclusions.contains(a)).
+                                collect(Collectors.toList());
+                        List<Atom> backboneAtoms = residue.getBackboneAtoms().stream().
+                                filter(a -> !atomExclusions.contains(a)).
+                                collect(Collectors.toList());
                         boolean altLocFound = false;
                         for (Atom atom : backboneAtoms) {
                             writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -1608,7 +1632,10 @@ public final class PDBFilter extends SystemFilter {
                 }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
-                ArrayList<Atom> moleculeAtoms = molecule.getAtomList();
+                //ArrayList<Atom> moleculeAtoms = molecule.getAtomList();
+                List<Atom> moleculeAtoms = molecule.getAtomList().stream().
+                        filter(a -> !atomExclusions.contains(a)).
+                        collect(Collectors.toList());
                 boolean altLocFound = false;
                 for (Atom atom : moleculeAtoms) {
                     writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -1646,7 +1673,10 @@ public final class PDBFilter extends SystemFilter {
                 }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
-                ArrayList<Atom> ionAtoms = ion.getAtomList();
+                //ArrayList<Atom> ionAtoms = ion.getAtomList();
+                List<Atom> ionAtoms = ion.getAtomList().stream().
+                        filter(a -> !atomExclusions.contains(a)).
+                        collect(Collectors.toList());
                 boolean altLocFound = false;
                 for (Atom atom : ionAtoms) {
                     writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -1684,7 +1714,10 @@ public final class PDBFilter extends SystemFilter {
                 }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
-                ArrayList<Atom> waterAtoms = water.getAtomList();
+                //ArrayList<Atom> waterAtoms = water.getAtomList();
+                List<Atom> waterAtoms = water.getAtomList().stream().
+                        filter(a -> !atomExclusions.contains(a)).
+                        collect(Collectors.toList());
                 boolean altLocFound = false;
                 for (Atom atom : waterAtoms) {
                     writeAtom(atom, serial++, sb, anisouSB, bw);

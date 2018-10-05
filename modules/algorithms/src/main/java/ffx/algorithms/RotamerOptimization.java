@@ -7704,6 +7704,34 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Writes only active Atoms to a file.
+     * @param suffix Suffix to put into the name. Example: suffix = _s, peptide.pdb becomes peptide_s.pdb
+     * @return Whether writing to file was successful.
+     */
+    private boolean writeOnlyActiveToFile(String suffix) {
+        Set<Atom> exclusions = allResiduesList.stream().
+                flatMap((Residue r) -> r.getAtomList().stream()).
+                filter(a -> !a.isActive()).
+                collect(Collectors.toSet());
+
+        if (suffix == null || suffix.isEmpty()) {
+            throw new IllegalArgumentException(" Must have a non-null, non-empty suffix!");
+        }
+        File origFile = molecularAssembly.getFile();
+        String fileName = FilenameUtils.removeExtension(origFile.getName());
+        fileName = fileName + suffix + ".pdb";
+        File file = new File(fileName);
+        PDBFilter pdbFilter = new PDBFilter(file, molecularAssembly, null, null);
+        boolean writeSuccess = false;
+        try {
+            writeSuccess = pdbFilter.writeFile(file, false, false, exclusions);
+        } finally {
+            molecularAssembly.setFile(origFile);
+        }
+        return writeSuccess;
+    }
+
+    /**
      * <p>Setter for the field <code>energyRestartFile</code>.</p>
      *
      * @param file a {@link java.io.File} object.
