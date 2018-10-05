@@ -122,14 +122,30 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * is about 2 to 4 kT.
      */
     private double temperingFactor = 8.0;
-    private double deltaT = temperingFactor * R * temperature;
     /**
-     * The Dama et al. transition-tempering weight: temperingWeight =
-     * exp(-max(G(L,F_L))/deltaT)
+     * This deltaT is used to determine the tempering weight as described below for the temperingWeight variable.
+     *
+     * deltaT = temperingFactor * kB * T.
+     */
+    private double deltaT;
+    /**
+     * The Dama et al. transition-tempering weight:
+     * 
+     * temperingWeight = exp(-biasHeight/deltaT)
      */
     private double temperingWeight = 1.0;
     /**
-     * An offset applied to min(F_L) before recalculating tempering weight.
+     * An offset applied before calculating tempering weight.
+     *
+     * First, for every Lambda, we calculate the maximum bias at that lambda by searching all populated dU/dL bins:
+     * maxdUdL(L) = max[ G(L,F_L) ] where the max operator searches over all F_L bins.
+     *
+     * Then, the minimum bias coverage is determined by searching the maxdUdL(L) array over Lambda.
+     * minBias = min[ maxdUdL(L) ] where the min operator searches all entries in the array.
+     *
+     * Then the temperOffset is applied to the minBias:
+     *
+     * biasHeight = max[minBias - temperOffset, 0]
      */
     private double temperOffset = 1.0;
     /**
@@ -663,7 +679,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * Tempering will begin after a transition is detected.
      * <p>
      * The transition is defined as lambda 1) crossing the range 0.45 to 0.55
-     * and then encountering reaching both less than 0.05 and greater than 0.95.
+     * and then encountering lambda values both less than 0.05 and greater than 0.95.
      */
     private void detectTransition() {
         if (tempering) {
