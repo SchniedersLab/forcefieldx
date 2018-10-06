@@ -50,34 +50,30 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.VectorMath.b2u;
-import static ffx.numerics.VectorMath.determinant3;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.mat3Inverse;
-import static ffx.numerics.VectorMath.mat3Mat3;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.scalarMat3Mat3;
-import static ffx.numerics.VectorMath.u2b;
-import static ffx.numerics.VectorMath.vec3Mat3;
+import static ffx.numerics.math.VectorMath.b2u;
+import static ffx.numerics.math.VectorMath.determinant3;
+import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.mat3Inverse;
+import static ffx.numerics.math.VectorMath.mat3Mat3;
+import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.VectorMath.scalarMat3Mat3;
+import static ffx.numerics.math.VectorMath.u2b;
+import static ffx.numerics.math.VectorMath.vec3Mat3;
 
 /**
  * This implementation uses the coefficients from International Tables, Vol. C,
  * chapter 4.4.4.
  *
  * @author Timothy D. Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
  * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000600"
  * target="_blank"> B. T. M. Willis, Int. Tables Vol. C (2006). Chapter
  * 6.1.3</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
  * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
  * (2009). D65 952-965.</a>
- *
  * @since 1.0
  */
 public final class NeutronFormFactor implements FormFactor {
@@ -251,7 +247,7 @@ public final class NeutronFormFactor implements FormFactor {
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param badd a double.
-     * @param xyz an array of double.
+     * @param xyz  an array of double.
      */
     public NeutronFormFactor(Atom atom, double badd, double xyz[]) {
         this.atom = atom;
@@ -357,7 +353,9 @@ public final class NeutronFormFactor implements FormFactor {
         return occ * sum;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         diff(this.xyz, xyz, xyz);
@@ -369,7 +367,9 @@ public final class NeutronFormFactor implements FormFactor {
         return f + (lambda * occ * twopi32 * sum);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void rhoGrad(double xyz[], double dfc, RefinementMode refinementmode) {
         diff(this.xyz, xyz, dxyz);
@@ -474,13 +474,17 @@ public final class NeutronFormFactor implements FormFactor {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[]) {
         update(xyz, u2b(uadd));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

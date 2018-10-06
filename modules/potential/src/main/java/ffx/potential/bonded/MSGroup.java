@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
 
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.parameters.ForceField;
 
 /**

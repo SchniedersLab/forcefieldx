@@ -37,7 +37,7 @@
  */
 package ffx.potential.bonded;
 
-import ffx.numerics.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray;
 
 /**
  * The BondedTerm class is extended by all Valence Geometry classes (bond,
@@ -71,9 +71,9 @@ public interface BondedEnergy {
      *
      * @param gradient a boolean.
      * @param threadID a int.
-     * @param gradX    a {@link ffx.numerics.AtomicDoubleArray} object.
-     * @param gradY    a {@link ffx.numerics.AtomicDoubleArray} object.
-     * @param gradZ    a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param gradX    a {@link AtomicDoubleArray} object.
+     * @param gradY    a {@link AtomicDoubleArray} object.
+     * @param gradZ    a {@link AtomicDoubleArray} object.
      * @return a double.
      */
     default double energy(boolean gradient, int threadID,
@@ -90,12 +90,12 @@ public interface BondedEnergy {
      *
      * @param gradient    a boolean.
      * @param threadID    a int.
-     * @param gradX       a {@link ffx.numerics.AtomicDoubleArray} object.
-     * @param gradY       a {@link ffx.numerics.AtomicDoubleArray} object.
-     * @param gradZ       a {@link ffx.numerics.AtomicDoubleArray} object.
-     * @param lambdaGradX a {@link ffx.numerics.AtomicDoubleArray} object.
-     * @param lambdaGradY a {@link ffx.numerics.AtomicDoubleArray} object.
-     * @param lambdaGradZ a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param gradX       a {@link AtomicDoubleArray} object.
+     * @param gradY       a {@link AtomicDoubleArray} object.
+     * @param gradZ       a {@link AtomicDoubleArray} object.
+     * @param lambdaGradX a {@link AtomicDoubleArray} object.
+     * @param lambdaGradY a {@link AtomicDoubleArray} object.
+     * @param lambdaGradZ a {@link AtomicDoubleArray} object.
      * @return a double.
      */
     public abstract double energy(boolean gradient, int threadID,

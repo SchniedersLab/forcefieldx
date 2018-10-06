@@ -37,7 +37,7 @@
  */
 package ffx.xray;
 
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
@@ -59,7 +59,7 @@ public final class SolventBinaryFormFactor implements FormFactor {
      * <p>
      * Constructor for SolventBinaryFormFactor.</p>
      *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param atom     a {@link ffx.potential.bonded.Atom} object.
      * @param proberad a double.
      */
     public SolventBinaryFormFactor(Atom atom, double proberad) {
@@ -70,9 +70,9 @@ public final class SolventBinaryFormFactor implements FormFactor {
      * <p>
      * Constructor for SolventBinaryFormFactor.</p>
      *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param atom     a {@link ffx.potential.bonded.Atom} object.
      * @param proberad a double.
-     * @param xyz an array of double.
+     * @param xyz      an array of double.
      */
     public SolventBinaryFormFactor(Atom atom, double proberad, double xyz[]) {
         this.atom = atom;
@@ -81,7 +81,9 @@ public final class SolventBinaryFormFactor implements FormFactor {
         update(xyz);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
         VectorMath.diff(this.xyz, xyz, dxyz);
@@ -92,9 +94,9 @@ public final class SolventBinaryFormFactor implements FormFactor {
      * <p>
      * rho</p>
      *
-     * @param f a double.
+     * @param f      a double.
      * @param lambda a double.
-     * @param ri a double.
+     * @param ri     a double.
      * @return a double.
      */
     public double rho(double f, double lambda, double ri) {
@@ -107,20 +109,24 @@ public final class SolventBinaryFormFactor implements FormFactor {
 
     /**
      * Derivatives are zero or infinite for the binary model.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
     public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[]) {
         update(xyz, 0.0);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

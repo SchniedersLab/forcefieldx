@@ -43,9 +43,9 @@ import java.util.logging.Logger;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.numerics.LBFGS;
-import ffx.numerics.LineSearch.LineSearchResult;
-import ffx.numerics.OptimizationListener;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
@@ -53,11 +53,10 @@ import ffx.potential.bonded.Residue;
 import ffx.realspace.RealSpaceData;
 
 /**
- * Refinement minimization class using {@link ffx.numerics.OptimizationListener} interface,
+ * Refinement minimization class using {@link OptimizationListener} interface,
  * constructs a {@link ffx.xray.RefinementEnergy} object for this purpose
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {
@@ -143,7 +142,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * constructor for refinement, assumes coordinates and B factor optimization
      *
      * @param data input {@link ffx.xray.DataContainer} that will be used as the model,
-     * must contain a {@link ffx.xray.RefinementModel}
+     *             must contain a {@link ffx.xray.RefinementModel}
      */
     public RefinementMinimize(DataContainer data) {
         this(data, RefinementMode.COORDINATES_AND_BFACTORS, null);
@@ -152,11 +151,11 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     /**
      * constructor for refinement
      *
-     * @param data input {@link ffx.xray.DataContainer} that will be used as the model,
-     * must contain a {@link ffx.xray.RefinementModel} and either {@link ffx.xray.DiffractionData}
-     * or {@link ffx.realspace.RealSpaceData}
+     * @param data           input {@link ffx.xray.DataContainer} that will be used as the model,
+     *                       must contain a {@link ffx.xray.RefinementModel} and either {@link ffx.xray.DiffractionData}
+     *                       or {@link ffx.realspace.RealSpaceData}
      * @param refinementmode {@link ffx.xray.RefinementMinimize.RefinementMode} for
-     * refinement
+     *                       refinement
      */
     public RefinementMinimize(DataContainer data, RefinementMode refinementmode) {
         this(data, refinementmode, null);
@@ -165,12 +164,12 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     /**
      * constructor for refinement
      *
-     * @param data input {@link ffx.xray.DataContainer} that will be used as the model,
-     * must contain a {@link ffx.xray.RefinementModel} and either {@link ffx.xray.DiffractionData}
-     * or {@link ffx.realspace.RealSpaceData}
+     * @param data           input {@link ffx.xray.DataContainer} that will be used as the model,
+     *                       must contain a {@link ffx.xray.RefinementModel} and either {@link ffx.xray.DiffractionData}
+     *                       or {@link ffx.realspace.RealSpaceData}
      * @param refinementMode {@link ffx.xray.RefinementMinimize.RefinementMode} for
-     * refinement
-     * @param listener {@link ffx.algorithms.AlgorithmListener} a listener for updates
+     *                       refinement
+     * @param listener       {@link ffx.algorithms.AlgorithmListener} a listener for updates
      */
     public RefinementMinimize(DataContainer data, RefinementMode refinementMode,
                               AlgorithmListener listener) {
@@ -431,7 +430,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     /**
      * minimize with input eps and cycles
      *
-     * @param eps input gradient rms desired
+     * @param eps     input gradient rms desired
      * @param maxiter maximum iterations allowed
      * @return {@link ffx.xray.RefinementEnergy} result
      */
@@ -442,9 +441,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     /**
      * minimize with input cycles for matrix conditioning, eps and cycles
      *
-     * @param m number of cycles of matrix updates
+     * @param m       number of cycles of matrix updates
      * @param maxiter maximum iterations allowed
-     * @param eps input gradient rms desired
+     * @param eps     input gradient rms desired
      * @param maxiter maximum iterations allowed
      * @return {@link ffx.xray.RefinementEnergy} result
      */
@@ -520,7 +519,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         return refinementEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms,
                                       double xrms, double f, double df, double angle, LineSearchResult info) {
@@ -565,7 +566,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;

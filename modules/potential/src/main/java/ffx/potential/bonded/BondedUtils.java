@@ -53,10 +53,10 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.norm;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.norm;
+import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.VectorMath.scalar;
 
 /**
  * Utilities for placing atoms.

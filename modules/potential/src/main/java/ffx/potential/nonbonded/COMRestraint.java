@@ -48,13 +48,13 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.VectorMath.rsq;
+import static ffx.numerics.math.VectorMath.rsq;
 
 /**
  * Restrain molecules to their center of mass.
  *
  * @author Julia Park
- *
+ * @since 1.0
  */
 public class COMRestraint implements LambdaInterface {
 
@@ -90,11 +90,11 @@ public class COMRestraint implements LambdaInterface {
      * This COMRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms the Atom array to construct the restraint from.
-     * @param polymers the system Polymer array.
-     * @param molecules the system Molecule array.
-     * @param waters the system Water List.
-     * @param ions the system Ion List.
+     * @param atoms      the Atom array to construct the restraint from.
+     * @param polymers   the system Polymer array.
+     * @param molecules  the system Molecule array.
+     * @param waters     the system Water List.
+     * @param ions       the system Ion List.
      * @param forceField the ForceField to apply.
      */
     public COMRestraint(Atom atoms[], Polymer polymers[], List<MSNode> molecules,
@@ -132,7 +132,7 @@ public class COMRestraint implements LambdaInterface {
      * <p>residual.</p>
      *
      * @param gradient a boolean.
-     * @param print a boolean.
+     * @param print    a boolean.
      * @return a double.
      */
     public double residual(boolean gradient, boolean print) {
@@ -360,7 +360,9 @@ public class COMRestraint implements LambdaInterface {
         return count;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -407,13 +409,17 @@ public class COMRestraint implements LambdaInterface {
         setLambda(lambda);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -423,7 +429,9 @@ public class COMRestraint implements LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         if (lambdaTerm) {
@@ -433,7 +441,9 @@ public class COMRestraint implements LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {

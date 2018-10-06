@@ -55,6 +55,7 @@ import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.picking.PickIntersection;
 import com.sun.j3d.utils.picking.PickResult;
 
+import ffx.numerics.math.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedTerm;
@@ -69,7 +70,6 @@ import ffx.ui.behaviors.PickMouseBehavior;
  * The GraphicsPicking class is used to make selections and measurements.
  *
  * @author Michael J. Schnieders
- *
  */
 public class GraphicsPicking extends PickMouseBehavior {
 
@@ -119,10 +119,10 @@ public class GraphicsPicking extends PickMouseBehavior {
     /**
      * Constructor
      *
-     * @param base Base of the Scenegraph
+     * @param base   Base of the Scenegraph
      * @param bounds Behavior bounds
-     * @param g Scene Canvas3D
-     * @param f MainPanel
+     * @param g      Scene Canvas3D
+     * @param f      MainPanel
      */
     public GraphicsPicking(BranchGroup base, Bounds bounds, GraphicsCanvas g,
                            MainPanel f) {
@@ -211,7 +211,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                 a2 = atomCache.get(1);
                 distance(a1, a);
                 distance(a2, b);
-                value = ffx.numerics.VectorMath.dist(a, b);
+                value = VectorMath.dist(a, b);
                 measurement = "\nDistance\t" + a1.getIndex() + ", " + a2.getIndex()
                         + ":   \t" + String.format("%10.5f", value);
                 break;
@@ -225,7 +225,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                 distance(a1, a);
                 distance(a2, b);
                 distance(a3, c);
-                value = ffx.numerics.VectorMath.bondAngle(a, b, c);
+                value = VectorMath.bondAngle(a, b, c);
                 value = Math.toDegrees(value);
                 measurement = "\nAngle\t" + a1.getIndex() + ", " + a2.getIndex() + ", "
                         + a3.getIndex() + ":   \t" + String.format("%10.5f", value);
@@ -242,7 +242,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                 distance(a2, b);
                 distance(a3, c);
                 distance(a4, d);
-                value = ffx.numerics.VectorMath.dihedralAngle(a, b, c, d);
+                value = VectorMath.dihedralAngle(a, b, c, d);
                 value = Math.toDegrees(value);
                 measurement = "\nDihedral\t" + a1.getIndex() + ", " + a2.getIndex()
                         + ", " + a3.getIndex() + ", " + a4.getIndex() + ":\t"
@@ -292,7 +292,7 @@ public class GraphicsPicking extends PickMouseBehavior {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Called by Java3D when an atom is picked
      */
     public void updateScene(int xpos, int ypos) {

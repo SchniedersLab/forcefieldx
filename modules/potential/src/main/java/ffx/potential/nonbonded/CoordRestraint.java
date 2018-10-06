@@ -48,13 +48,13 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.VectorMath.rsq;
+import static ffx.numerics.math.VectorMath.rsq;
 
 /**
  * Restrain atoms to their initial coordinates.
  *
  * @author Michael J. Schnieders
- *
+ * @since 1.0
  */
 public class CoordRestraint implements LambdaInterface {
 
@@ -93,7 +93,7 @@ public class CoordRestraint implements LambdaInterface {
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms the Atom array to base this CoordRestraint on.
+     * @param atoms      the Atom array to base this CoordRestraint on.
      * @param forceField the ForceField to apply.
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField) {
@@ -104,9 +104,9 @@ public class CoordRestraint implements LambdaInterface {
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms the Atom array to base this CoordRestraint on.
+     * @param atoms      the Atom array to base this CoordRestraint on.
      * @param forceField the ForceField to apply.
-     * @param useLambda If false, do not apply lambda term to this restraint.
+     * @param useLambda  If false, do not apply lambda term to this restraint.
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField, boolean useLambda) {
         this(atoms, forceField, useLambda, forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0));
@@ -116,9 +116,9 @@ public class CoordRestraint implements LambdaInterface {
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms the Atom array to base this CoordRestraint on.
+     * @param atoms      the Atom array to base this CoordRestraint on.
      * @param forceField the ForceField to apply.
-     * @param useLambda If false, do not apply lambda term to this restraint.
+     * @param useLambda  If false, do not apply lambda term to this restraint.
      * @param forceConst Force constant to apply
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField, boolean useLambda, double forceConst) {
@@ -210,7 +210,7 @@ public class CoordRestraint implements LambdaInterface {
      * Calculates energy and gradients for this coordinate restraint.
      *
      * @param gradient Calculate gradients
-     * @param print Unused
+     * @param print    Unused
      * @return Energy in the coordinate restraint
      */
     public double residual(boolean gradient, boolean print) {
@@ -357,7 +357,9 @@ public class CoordRestraint implements LambdaInterface {
         return forceConstant * residual * lambdaPow;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -446,13 +448,17 @@ public class CoordRestraint implements LambdaInterface {
         return xyz;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -462,7 +468,9 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         if (lambdaTerm) {
@@ -472,7 +480,9 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {

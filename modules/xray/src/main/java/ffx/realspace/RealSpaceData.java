@@ -52,9 +52,9 @@ import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.AtomicDoubleArray;
-import ffx.numerics.MultiDoubleArray;
-import ffx.numerics.TriCubicSpline;
+import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.MultiDoubleArray;
+import ffx.numerics.spline.TriCubicSpline;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
@@ -72,7 +72,6 @@ import static ffx.crystal.Crystal.mod;
  * RealSpaceData class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class RealSpaceData implements DataContainer {

@@ -58,20 +58,20 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.MultipoleTensor;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DOpenCL;
 import ffx.numerics.fft.Complex3DParallel;
+import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtUtils;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import static ffx.crystal.Crystal.mod;
-import static ffx.numerics.UniformBSpline.bSpline;
-import static ffx.numerics.UniformBSpline.bSplineDerivatives;
 import static ffx.numerics.fft.Complex3D.iComplex3D;
+import static ffx.numerics.spline.UniformBSpline.bSpline;
+import static ffx.numerics.spline.UniformBSpline.bSplineDerivatives;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -112,7 +112,6 @@ import static ffx.potential.parameters.MultipoleType.t300;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class ReciprocalSpace {
 
@@ -291,13 +290,13 @@ public class ReciprocalSpace {
      * Reciprocal Space PME contribution.
      *
      * @param particleMeshEwald a
-     * {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param aewald the Ewald parameter.
-     * @param fftTeam a {@link edu.rit.pj.ParallelTeam} object.
-     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+     *                          {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+     * @param crystal           a {@link ffx.crystal.Crystal} object.
+     * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+     * @param atoms             an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param aewald            the Ewald parameter.
+     * @param fftTeam           a {@link edu.rit.pj.ParallelTeam} object.
+     * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
      */
     public ReciprocalSpace(ParticleMeshEwald particleMeshEwald,
                            Crystal crystal, ForceField forceField, Atom atoms[],
@@ -779,8 +778,8 @@ public class ReciprocalSpace {
      * atoms in use.
      *
      * @param globalMultipoles an array of double.
-     * @param use an array of boolean.
-     * @param mode a int.
+     * @param use              an array of boolean.
+     * @param mode             a int.
      */
     public void splinePermanentMultipoles(double globalMultipoles[][][],
                                           int mode, boolean use[]) {
@@ -922,14 +921,14 @@ public class ReciprocalSpace {
     /**
      * Place the induced dipoles onto the FFT grid for the atoms in use.
      *
-     * @param inducedDipole Induced dipoles.
+     * @param inducedDipole   Induced dipoles.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
-     * @param use The atoms in use.
+     * @param use             The atoms in use.
      */
     public void splineInducedDipoles(double inducedDipole[][][],
                                      double inducedDipoleCR[][][],
@@ -1028,7 +1027,7 @@ public class ReciprocalSpace {
      * <p>
      * computeInducedPhi</p>
      *
-     * @param cartInducedDipolePhi an array of double.
+     * @param cartInducedDipolePhi   an array of double.
      * @param cartInducedDipoleCRPhi an array of double.
      */
     public void computeInducedPhi(double cartInducedDipolePhi[][],
@@ -1048,9 +1047,9 @@ public class ReciprocalSpace {
     /**
      * <p>computeInducedPhi.</p>
      *
-     * @param cartInducedDipolePhi an array of {@link double} objects.
-     * @param cartInducedDipoleCRPhi an array of {@link double} objects.
-     * @param cartUnscaledDipolePhi an array of {@link double} objects.
+     * @param cartInducedDipolePhi    an array of {@link double} objects.
+     * @param cartInducedDipoleCRPhi  an array of {@link double} objects.
+     * @param cartUnscaledDipolePhi   an array of {@link double} objects.
      * @param cartUnscaledDipolePhiCR an array of {@link double} objects.
      * @param cartUnscaledDipolePhiCR an array of {@link double} objects.
      */
@@ -1082,7 +1081,7 @@ public class ReciprocalSpace {
      * <p>
      * cartToFracInducedDipoles</p>
      *
-     * @param inducedDipole an array of double.
+     * @param inducedDipole   an array of double.
      * @param inducedDipoleCR an array of double.
      * @param inducedDipoleCR an array of double.
      * @param inducedDipoleCR an array of double.
@@ -1222,18 +1221,17 @@ public class ReciprocalSpace {
      * are then used to obtain the reciprocal space potential and fields from
      * the PME grid. This class automatically updates itself to be consistent
      * with the current Crystal boundary conditions.
-     *
+     * <p>
      * An external ParallelRegion can be used as follows:
      *
      * <code>
      * start() {
-     *  bSplineRegion.start();
+     * bSplineRegion.start();
      * }
      * run() {
-     *  execute(0, nAtoms - 1, bSplineRegion.bSplineLoop[threadID]);
+     * execute(0, nAtoms - 1, bSplineRegion.bSplineLoop[threadID]);
      * }
      * </code>
-     *
      */
     public class BSplineRegion extends ParallelRegion {
 
@@ -2314,16 +2312,16 @@ public class ReciprocalSpace {
     /**
      * This class is used to obtain the reciprocal space potential and fields
      * due to permanent multipoles from the PME grid.
-     *
+     * <p>
      * An external ParallelRegion can be used as follows:
      *
      * <code>
      * start() {
-     *  permanentPhiRegion.setCartPermanentPhi(...);
+     * permanentPhiRegion.setCartPermanentPhi(...);
      * }
-     *
+     * <p>
      * run() {
-     *  execute(0, nAtoms - 1, permanentPhiLoops[threadID]);
+     * execute(0, nAtoms - 1, permanentPhiLoops[threadID]);
      * }
      * </code>
      */
@@ -2529,16 +2527,16 @@ public class ReciprocalSpace {
     /**
      * This class is used to obtain the reciprocal space potential and fields
      * due to induced dipoles from the PME grid.
-     *
+     * <p>
      * An external ParallelRegion can be used as follows:
      *
      * <code>
      * start() {
-     *  inducedPhiRegion.setCartInducedDipolePhi(...);
+     * inducedPhiRegion.setCartInducedDipolePhi(...);
      * }
-     *
+     * <p>
      * run() {
-     *  execute(0, nAtoms - 1, inducedPhiLoops[threadID]);
+     * execute(0, nAtoms - 1, inducedPhiLoops[threadID]);
      * }
      * </code>
      */

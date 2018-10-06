@@ -49,7 +49,7 @@ import static java.lang.String.format;
 
 import org.apache.commons.math3.util.FastMath;
 
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;

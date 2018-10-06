@@ -58,13 +58,12 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import static ffx.numerics.VectorMath.binomial;
+import static ffx.numerics.math.VectorMath.binomial;
 
 /**
  * Predict Mutual Induced Dipoles based on previous steps.
  *
  * @author Stephen LuCore
- *
  * @since 1.0
  */
 public class ScfPredictor {
@@ -75,6 +74,7 @@ public class ScfPredictor {
      * Number of atoms.
      */
     private int nAtoms;
+
     /**
      * Maps LambdaMode to array indices: OFF/CONDENSED=0, CONDENSED_NOLIGAND=1,
      * VAPOR=2
@@ -121,9 +121,9 @@ public class ScfPredictor {
     /**
      * <p>Constructor for ScfPredictor.</p>
      *
-     * @param mode a {@link ffx.potential.nonbonded.ScfPredictor.PredictorMode} object.
+     * @param mode  a {@link ffx.potential.nonbonded.ScfPredictor.PredictorMode} object.
      * @param order a int.
-     * @param ff a {@link ffx.potential.parameters.ForceField} object.
+     * @param ff    a {@link ffx.potential.parameters.ForceField} object.
      */
     public ScfPredictor(PredictorMode mode, int order, ForceField ff) {
         predictorMode = mode;
@@ -148,9 +148,9 @@ public class ScfPredictor {
      * To be called upon initialization and update of inducedDipole arrays in
      * parent.
      *
-     * @param inducedDipole an array of induced dipoles.
+     * @param inducedDipole   an array of induced dipoles.
      * @param inducedDipoleCR an array of induced dipoles chain rule terms.
-     * @param lambdaTerm a boolean.
+     * @param lambdaTerm      a boolean.
      */
     public void setInducedDipoleReferences(double[][][] inducedDipole, double[][][] inducedDipoleCR,
                                            boolean lambdaTerm) {
@@ -165,7 +165,9 @@ public class ScfPredictor {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return predictorMode.toString();
@@ -215,10 +217,10 @@ public class ScfPredictor {
     /**
      * Save the current converged mutual induced dipoles.
      *
-     * @param inducedDipole an array of induced dipoles.
+     * @param inducedDipole   an array of induced dipoles.
      * @param inducedDipoleCR an array of induced dipoles chain rule terms.
-     * @param directDipole an array of direct dipoles.
-     * @param directDipoleCR an array of direct dipoles chain rule terms.
+     * @param directDipole    an array of direct dipoles.
+     * @param directDipoleCR  an array of direct dipoles chain rule terms.
      */
     public void saveMutualInducedDipoles(
             double[][][] inducedDipole, double[][][] inducedDipoleCR,

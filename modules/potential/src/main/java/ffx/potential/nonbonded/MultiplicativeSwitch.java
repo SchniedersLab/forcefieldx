@@ -39,7 +39,7 @@ package ffx.potential.nonbonded;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
-import ffx.numerics.UnivariateSwitchingFunction;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
 
 /**
  * The 6 coefficients of the multiplicative polynomial switch are unique given

@@ -48,8 +48,8 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
-import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
+import ffx.numerics.math.ComplexNumber;
 
 /**
  * Fit structure factors using spline coefficients
@@ -57,7 +57,6 @@ import ffx.numerics.Potential;
  * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
- *
  * @since 1.0
  */
 public class SplineEnergy implements Potential {

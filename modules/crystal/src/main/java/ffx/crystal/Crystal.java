@@ -62,12 +62,12 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.utilities.HashCodeUtil;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.mat3Mat3;
-import static ffx.numerics.VectorMath.mat3SymVec6;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.transpose3;
+import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.mat3Mat3;
+import static ffx.numerics.math.VectorMath.mat3SymVec6;
+import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.VectorMath.transpose3;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -590,7 +590,6 @@ public class Crystal {
      * Strain the unit cell vectors.
      *
      * @param dStrain a 3x3 matrix of unitless Strain percentages.
-     *
      * @return True if the perturbation of cell vectors succeeds.
      */
     public boolean perturbCellVectors(double dStrain[][]) {

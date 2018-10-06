@@ -43,15 +43,15 @@ import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.numerics.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ImproperTorsionType;
-import static ffx.numerics.VectorMath.cross;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.r;
-import static ffx.numerics.VectorMath.scalar;
-import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.math.VectorMath.cross;
+import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.r;
+import static ffx.numerics.math.VectorMath.scalar;
+import static ffx.numerics.math.VectorMath.sum;
 
 /**
  * The ImproperTorsion class represents an Improper Torsion.

@@ -50,8 +50,8 @@ import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
-import ffx.numerics.PowerSwitch;
-import ffx.numerics.UnivariateSwitchingFunction;
+import ffx.numerics.switching.PowerSwitch;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
@@ -348,7 +348,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      * @param atoms1         an array of {@link ffx.potential.bonded.Atom} objects.
      * @param topology2      a {@link ffx.crystal.CrystalPotential} object.
      * @param atoms2         an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param switchFunction a {@link ffx.numerics.UnivariateSwitchingFunction} object.
+     * @param switchFunction a {@link UnivariateSwitchingFunction} object.
      */
     public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
                               CrystalPotential topology2, Atom atoms2[],
@@ -529,7 +529,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      *
      * @param topology1      a {@link ffx.potential.MolecularAssembly} object.
      * @param topology2      a {@link ffx.potential.MolecularAssembly} object.
-     * @param switchFunction a {@link ffx.numerics.UnivariateSwitchingFunction} object.
+     * @param switchFunction a {@link UnivariateSwitchingFunction} object.
      */
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2, UnivariateSwitchingFunction switchFunction) {
         forceFieldEnergy1 = topology1.getPotentialEnergy();

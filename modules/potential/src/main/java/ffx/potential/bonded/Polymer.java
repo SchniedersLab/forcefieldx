@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
 import static ffx.utilities.HashCodeUtil.SEED;

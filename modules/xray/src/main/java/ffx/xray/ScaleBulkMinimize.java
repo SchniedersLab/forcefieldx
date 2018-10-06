@@ -47,9 +47,9 @@ import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
-import ffx.numerics.LBFGS;
-import ffx.numerics.LineSearch.LineSearchResult;
-import ffx.numerics.OptimizationListener;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
@@ -57,7 +57,6 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * ScaleBulkMinimize class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
@@ -87,9 +86,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
-     * @param parallelTeam the ParallelTeam to execute the ScaleBulkMinimize.
+     *                       object.
+     * @param crs            a {@link ffx.xray.CrystalReciprocalSpace} object.
+     * @param parallelTeam   the ParallelTeam to execute the ScaleBulkMinimize.
      */
     public ScaleBulkMinimize(ReflectionList reflectionlist,
                              DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs, ParallelTeam parallelTeam) {
@@ -302,7 +301,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * <p>
      * minimize</p>
      *
-     * @param m a int.
+     * @param m   a int.
      * @param eps a double.
      * @return a {@link ffx.xray.ScaleBulkEnergy} object.
      */
@@ -355,7 +354,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         return bulkSolventEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -388,7 +389,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;

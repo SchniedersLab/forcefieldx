@@ -62,9 +62,9 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.crystal.SymOp;
-import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
+import ffx.numerics.math.ComplexNumber;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.RowLoop;
 import ffx.potential.nonbonded.RowRegion;
@@ -79,7 +79,6 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * Structure factor calculation (including bulk solvent structure factors)
  *
  * @author Timothy D. Fenn
-
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739477001211" target="_blank">
@@ -98,7 +97,6 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
  * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
  * 1024-1031.</a>
- *
  * @since 1.0
  */
 public class CrystalReciprocalSpace {

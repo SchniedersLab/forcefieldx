@@ -46,14 +46,13 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
-import ffx.numerics.ComplexNumber;
+import ffx.numerics.math.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
  * Crystal statistics output/logger
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class CrystalStats {
@@ -80,7 +79,7 @@ public class CrystalStats {
      *
      * @param reflectionlist {@link ffx.crystal.ReflectionList} to use for logging
      * @param refinementdata {@link ffx.xray.DiffractionRefinementData} to use for
-     * logging
+     *                       logging
      */
     public CrystalStats(ReflectionList reflectionlist,
                         DiffractionRefinementData refinementdata) {
@@ -362,7 +361,7 @@ public class CrystalStats {
     /**
      * output Cruickshank and Blow DPI indices
      *
-     * @param natoms number of atoms in the structure
+     * @param natoms     number of atoms in the structure
      * @param nnonhatoms number of non-H atoms in the structure
      * @see <a href="http://dx.doi.org/10.1107/S0907444998012645"
      * target="_blank"> D. W. J. Cruickshank, Acta Cryst. (1999). D55,

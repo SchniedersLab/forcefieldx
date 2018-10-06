@@ -80,7 +80,7 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Indexing;
 import ffx.potential.bonded.Bond;
@@ -501,7 +501,7 @@ public class MolecularAssembly extends MSGroup {
                     // Convert the fractional translation vector to Cartesian coordinates.
                     unitCell.toCartesianCoordinates(com, com);
 
-                    double r = ffx.numerics.VectorMath.r(com);
+                    double r = VectorMath.r(com);
                     /**
                      * Warn if an atom is moved more than 1 Angstrom.
                      */

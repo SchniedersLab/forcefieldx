@@ -47,9 +47,9 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import ffx.numerics.Potential;
-import ffx.numerics.PowerSwitch;
-import ffx.numerics.SquaredTrigSwitch;
-import ffx.numerics.UnivariateSwitchingFunction;
+import ffx.numerics.switching.PowerSwitch;
+import ffx.numerics.switching.SquaredTrigSwitch;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
@@ -370,30 +370,6 @@ public class TopologyOptions {
                 }
                 potential = qte;
                 break;
-            /*case 8: // DEPRECATED.
-                sb.append("oct-topology ");
-                ffx.potential.DualTopologyEnergy dtga = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
-                ffx.potential.DualTopologyEnergy dtgb = new ffx.potential.DualTopologyEnergy(topologies[3], topologies[2], sf);
-                ffx.potential.QuadTopologyEnergy qtg = new ffx.potential.QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-                ffx.potential.DualTopologyEnergy dtda = new ffx.potential.DualTopologyEnergy(topologies[4], topologies[5], sf);
-                ffx.potential.DualTopologyEnergy dtdb = new ffx.potential.DualTopologyEnergy(topologies[7], topologies[6], sf);
-                ffx.potential.QuadTopologyEnergy qtd = new ffx.potential.QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-                ffx.potential.OctTopologyEnergy ote = new ffx.potential.OctTopologyEnergy(qtg, qtd, true);
-                if (numParallel >= 2) {
-                    ote.setParallel(true);
-                    if (numParallel >= 4) {
-                        qtg.setParallel(true);
-                        qtd.setParallel(true);
-                        if (numParallel == 8) {
-                            dtga.setParallel(true);
-                            dtgb.setParallel(true);
-                            dtda.setParallel(true);
-                            dtdb.setParallel(true);
-                        }
-                    }
-                }
-                potential = ote;
-                break;*/
             default:
                 logger.severe(" Must have 2, 4, or 8 topologies!");
                 break;

@@ -42,10 +42,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import ffx.numerics.LBFGS;
-import ffx.numerics.LineSearch.LineSearchResult;
-import ffx.numerics.OptimizationListener;
 import ffx.numerics.Potential;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 

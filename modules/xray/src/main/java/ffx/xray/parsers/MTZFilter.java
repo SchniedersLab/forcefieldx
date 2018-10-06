@@ -67,7 +67,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroup;
-import ffx.numerics.ComplexNumber;
+import ffx.numerics.math.ComplexNumber;
 import ffx.xray.DiffractionRefinementData;
 import ffx.xray.parsers.MTZWriter.MTZType;
 

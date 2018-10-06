@@ -39,7 +39,7 @@ package ffx.xray;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
@@ -48,7 +48,6 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * SolventGaussFormFactor class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public final class SolventGaussFormFactor implements FormFactor {
@@ -64,7 +63,7 @@ public final class SolventGaussFormFactor implements FormFactor {
      * Constructor for SolventGaussFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param sd a double.
+     * @param sd   a double.
      */
     public SolventGaussFormFactor(Atom atom, double sd) {
         this(atom, sd, atom.getXYZ(null));
@@ -75,8 +74,8 @@ public final class SolventGaussFormFactor implements FormFactor {
      * Constructor for SolventGaussFormFactor.</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param sd a double.
-     * @param xyz an array of double.
+     * @param sd   a double.
+     * @param xyz  an array of double.
      */
     public SolventGaussFormFactor(Atom atom, double sd, double xyz[]) {
         this.atom = atom;
@@ -84,7 +83,9 @@ public final class SolventGaussFormFactor implements FormFactor {
         update(xyz);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         VectorMath.diff(this.xyz, xyz, dxyz);
@@ -95,16 +96,18 @@ public final class SolventGaussFormFactor implements FormFactor {
      * <p>
      * rho</p>
      *
-     * @param f a double.
+     * @param f      a double.
      * @param lambda a double.
-     * @param rsq a double.
+     * @param rsq    a double.
      * @return a double.
      */
     public double rho(double f, double lambda, double rsq) {
         return f + exp(-rsq * isd2);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
         if (refinementmode == RefinementMode.BFACTORS
@@ -122,13 +125,17 @@ public final class SolventGaussFormFactor implements FormFactor {
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[]) {
         update(xyz, 0.0);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

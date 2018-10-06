@@ -43,9 +43,9 @@ import java.util.logging.Logger;
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
-import ffx.numerics.LBFGS;
-import ffx.numerics.LineSearch.LineSearchResult;
-import ffx.numerics.OptimizationListener;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.xray.SplineEnergy.Type;
 
 /**
@@ -53,7 +53,6 @@ import ffx.xray.SplineEnergy.Type;
  * SplineMinimize class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class SplineMinimize implements OptimizationListener, Terminatable {
@@ -79,9 +78,9 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
      *
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
      * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param x an array of double.
-     * @param type a int.
+     *                       object.
+     * @param x              an array of double.
+     * @param type           a int.
      */
     public SplineMinimize(ReflectionList reflectionList,
                           DiffractionRefinementData refinementData, double x[], int type) {
@@ -163,7 +162,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
      * <p>
      * minimize</p>
      *
-     * @param m a int.
+     * @param m   a int.
      * @param eps a double.
      * @return a {@link ffx.xray.SplineEnergy} object.
      */
@@ -193,7 +192,9 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return splineEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -228,7 +229,9 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;

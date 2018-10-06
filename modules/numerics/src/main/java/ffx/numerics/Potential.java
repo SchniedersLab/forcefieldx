@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -49,10 +49,10 @@ public interface Potential {
     /**
      * Recognized variables currently include Cartesian coordinates and OTHER.
      */
-    public enum VARIABLE_TYPE {
+    enum VARIABLE_TYPE {
 
         X, Y, Z, OTHER
-    };
+    }
 
     /**
      * This method is called repeatedly to compute the function energy.
@@ -61,7 +61,7 @@ public interface Potential {
      * @return Function value at <code>x</code>.
      * @since 1.0
      */
-    public abstract double energy(double x[]);
+    double energy(double x[]);
 
     /**
      * This method is called repeatedly to compute the function energy and
@@ -72,7 +72,7 @@ public interface Potential {
      * @return Function value at <code>x</code>.
      * @since 1.0
      */
-    public abstract double energyAndGradient(double x[], double g[]);
+    double energyAndGradient(double x[], double g[]);
 
     /**
      * This method is called repeatedly to compute the function energy. The
@@ -82,7 +82,7 @@ public interface Potential {
      * @param verbose Display extra information.
      * @return Function value at <code>x</code>
      */
-    default public double energy(double[] x, boolean verbose) {
+    default double energy(double[] x, boolean verbose) {
         return energy(x);
     }
 
@@ -96,7 +96,7 @@ public interface Potential {
      * @return Function value at <code>x</code>.
      * @since 1.0
      */
-    default public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+    default double energyAndGradient(double[] x, double[] g, boolean verbose) {
         return energyAndGradient(x, g);
     }
 
@@ -107,7 +107,7 @@ public interface Potential {
      * @param scaling The scaling value to use for each variable.
      * @since 1.0
      */
-    public abstract void setScaling(double scaling[]);
+    void setScaling(double scaling[]);
 
     /**
      * Get the problem scaling.
@@ -115,7 +115,7 @@ public interface Potential {
      * @return The scaling value used for each variable.
      * @since 1.0
      */
-    public abstract double[] getScaling();
+    double[] getScaling();
 
     /**
      * Load the current value of the parameters. If the supplied array is null
@@ -125,7 +125,7 @@ public interface Potential {
      * @param parameters Supplied array.
      * @return The array filled with parameter values.
      */
-    public abstract double[] getCoordinates(double[] parameters);
+    double[] getCoordinates(double[] parameters);
 
     /**
      * Get the mass of each degree of freedom. This is required for molecular
@@ -133,49 +133,49 @@ public interface Potential {
      *
      * @return The mass of each degree of freedom.
      */
-    public abstract double[] getMass();
+    double[] getMass();
 
     /**
      * Get the total energy of the system
      *
      * @return the total energy
      */
-    public abstract double getTotalEnergy();
+    double getTotalEnergy();
 
     /**
      * Get the number of variables being operated on.
      *
      * @return Number of variables.
      */
-    public abstract int getNumberOfVariables();
+    int getNumberOfVariables();
 
     /**
      * Get the type of all variables.
      *
      * @return The VARIABLE_TYPE of each variable.
      */
-    public abstract VARIABLE_TYPE[] getVariableTypes();
+    VARIABLE_TYPE[] getVariableTypes();
 
     /**
      * <p>setVelocity.</p>
      *
      * @param velocity an array of {@link double} objects.
      */
-    public abstract void setVelocity(double velocity[]);
+    void setVelocity(double velocity[]);
 
     /**
      * <p>setAcceleration.</p>
      *
      * @param acceleration an array of {@link double} objects.
      */
-    public abstract void setAcceleration(double acceleration[]);
+    void setAcceleration(double acceleration[]);
 
     /**
      * <p>setPreviousAcceleration.</p>
      *
      * @param previousAcceleration an array of {@link double} objects.
      */
-    public abstract void setPreviousAcceleration(double previousAcceleration[]);
+    void setPreviousAcceleration(double previousAcceleration[]);
 
     /**
      * <p>getVelocity.</p>
@@ -183,7 +183,7 @@ public interface Potential {
      * @param velocity an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public abstract double[] getVelocity(double velocity[]);
+    double[] getVelocity(double velocity[]);
 
     /**
      * <p>getAcceleration.</p>
@@ -191,7 +191,7 @@ public interface Potential {
      * @param acceleration an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public abstract double[] getAcceleration(double acceleration[]);
+    double[] getAcceleration(double acceleration[]);
 
     /**
      * <p>getPreviousAcceleration.</p>
@@ -199,16 +199,16 @@ public interface Potential {
      * @param previousAcceleration an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public abstract double[] getPreviousAcceleration(double previousAcceleration[]);
+    double[] getPreviousAcceleration(double previousAcceleration[]);
 
     /**
      * Set the state of the Potential to include FAST varying energy terms, SLOW
      * varying energy terms or BOTH.
      */
-    public enum STATE {
+    enum STATE {
 
         FAST, SLOW, BOTH
-    };
+    }
 
     /**
      * Set the Potential Energy terms that should be active.
@@ -216,14 +216,14 @@ public interface Potential {
      * @param state include FAST varying energy terms, SLOW varying energy terms
      * or BOTH.
      */
-    public abstract void setEnergyTermState(STATE state);
+    void setEnergyTermState(STATE state);
 
     /**
      * Get the Potential Energy terms that is active.
      *
      * @return the STATE
      */
-    public abstract STATE getEnergyTermState();
+    STATE getEnergyTermState();
 
     /**
      * Destroys this Potential and frees up any associated resources, particularly worker Threads.
@@ -231,7 +231,7 @@ public interface Potential {
      *
      * @return If resource reclamation successful, or resources already reclaimed.
      */
-    public default boolean destroy() {
+    default boolean destroy() {
         return true;
     }
 

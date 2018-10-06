@@ -45,10 +45,10 @@ import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.LBFGS;
-import ffx.numerics.LineSearch.LineSearchResult;
-import ffx.numerics.OptimizationListener;
 import ffx.numerics.Potential;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.MolecularAssembly.FractionalMode;

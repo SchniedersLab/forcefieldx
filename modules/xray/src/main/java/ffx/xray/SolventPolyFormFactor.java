@@ -39,17 +39,16 @@ package ffx.xray;
 
 import static java.lang.Math.sqrt;
 
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.diff;
 
 /**
  * <p>
  * SolventPolyFormFactor class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public final class SolventPolyFormFactor implements FormFactor {
@@ -69,7 +68,7 @@ public final class SolventPolyFormFactor implements FormFactor {
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param arad a double.
-     * @param w a double.
+     * @param w    a double.
      */
     public SolventPolyFormFactor(Atom atom, double arad, double w) {
         this(atom, arad, w, atom.getXYZ(null));
@@ -81,8 +80,8 @@ public final class SolventPolyFormFactor implements FormFactor {
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param arad a double.
-     * @param w a double.
-     * @param xyz an array of double.
+     * @param w    a double.
+     * @param xyz  an array of double.
      */
     public SolventPolyFormFactor(Atom atom, double arad, double w, double xyz[]) {
         this.atom = atom;
@@ -95,7 +94,9 @@ public final class SolventPolyFormFactor implements FormFactor {
         update(xyz);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
         VectorMath.diff(this.xyz, xyz, dxyz);
@@ -113,9 +114,9 @@ public final class SolventPolyFormFactor implements FormFactor {
      * <p>
      * rho</p>
      *
-     * @param f a double.
+     * @param f      a double.
      * @param lambda a double.
-     * @param ri a double.
+     * @param ri     a double.
      * @return a double.
      */
     public double rho(double f, double lambda, double ri) {
@@ -131,7 +132,9 @@ public final class SolventPolyFormFactor implements FormFactor {
         return f * (0.75 - 0.25 * dw) * dw2;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
         if (refinementmode == RefinementMode.BFACTORS
@@ -158,13 +161,17 @@ public final class SolventPolyFormFactor implements FormFactor {
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[]) {
         update(xyz, 0.0);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

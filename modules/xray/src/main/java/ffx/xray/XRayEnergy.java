@@ -55,9 +55,9 @@ import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import static ffx.algorithms.thermostats.Thermostat.convert;
 import static ffx.algorithms.thermostats.Thermostat.kB;
-import static ffx.numerics.VectorMath.b2u;
-import static ffx.numerics.VectorMath.determinant3;
-import static ffx.numerics.VectorMath.u2b;
+import static ffx.numerics.math.VectorMath.b2u;
+import static ffx.numerics.math.VectorMath.determinant3;
+import static ffx.numerics.math.VectorMath.u2b;
 
 /**
  * Combine the X-ray target and chemical potential energy.

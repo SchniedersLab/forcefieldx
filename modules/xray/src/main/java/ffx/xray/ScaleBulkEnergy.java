@@ -53,14 +53,14 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
-import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
+import ffx.numerics.math.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.mat3Mat3;
-import static ffx.numerics.VectorMath.mat3SymVec6;
-import static ffx.numerics.VectorMath.transpose3;
-import static ffx.numerics.VectorMath.vec3Mat3;
+import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.mat3Mat3;
+import static ffx.numerics.math.VectorMath.mat3SymVec6;
+import static ffx.numerics.math.VectorMath.transpose3;
+import static ffx.numerics.math.VectorMath.vec3Mat3;
 
 /**
  * Fit bulk solvent and aniso B scaling terms to correct calculated structure

@@ -65,7 +65,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
-import ffx.numerics.VectorMath;
+import ffx.numerics.math.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.Utilities.FileType;
@@ -87,8 +87,8 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.bonded.AminoAcidUtils.renameArginineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameAsparagineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameBetaHydrogens;
@@ -114,11 +114,10 @@ import static ffx.utilities.StringUtils.padRight;
  * following records are recognized: ANISOU, ATOM, CONECT, CRYST1, END, HELIX,
  * HETATM, LINK, SHEET, SSBOND, REMARK. The rest are currently ignored.
  *
+ * @author Michael J. Schnieders
  * @see <a href="http://www.wwpdb.org/documentation/format32/v3.2.html"> PDB
  * format 3.2</a>
- * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class PDBFilter extends SystemFilter {
 
@@ -142,11 +141,11 @@ public final class PDBFilter extends SystemFilter {
     private Character currentAltLoc = 'A';
     /**
      * List of segIDs defined for the PDB file.
-     *
+     * <p>
      * The expectation is for chain naming from A-Z, then from 0-9. For large
      * systems, chain names are sometimes reused due to limitations in the PDB
      * format.
-     *
+     * <p>
      * However, we define segIDs to always be unique. For the first A-Z,0-9
      * series chainID == segID. Then, for second A-Z,0-9 series, the segID =
      * 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29, and so on.
@@ -237,12 +236,12 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * Constructor for PDBFilter.</p>
      *
-     * @param files a {@link java.util.List} object.
+     * @param files             a {@link java.util.List} object.
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                          object.
+     * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties        a
+     *                          {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -254,12 +253,12 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Parse the PDB File from a URL.
      *
-     * @param file a {@link java.io.File} object.
+     * @param file              a {@link java.io.File} object.
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                          object.
+     * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties        a
+     *                          {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -271,11 +270,11 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Parse the PDB File from a URL.
      *
-     * @param file a {@link java.io.File} object.
+     * @param file                a {@link java.io.File} object.
      * @param molecularAssemblies a {@link java.util.List} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param forceField          a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties          a
+     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -288,8 +287,8 @@ public final class PDBFilter extends SystemFilter {
      * Mutate a residue at the PDB file is being parsed.
      *
      * @param chainID the Chain ID of the residue to mutate.
-     * @param resID the Residue ID of the residue to mutate.
-     * @param name the 3-letter code of the amino acid to mutate to.
+     * @param resID   the Residue ID of the residue to mutate.
+     * @param name    the 3-letter code of the amino acid to mutate to.
      */
     public void mutate(Character chainID, int resID, String name) {
         logger.info(String.format(" Mutating chain %c residue %d to %s.", chainID, resID, name));
@@ -330,7 +329,7 @@ public final class PDBFilter extends SystemFilter {
      * Specify the alternate location.
      *
      * @param molecularAssembly The MolecularAssembly to populate.
-     * @param altLoc The alternate location to use.
+     * @param altLoc            The alternate location to use.
      */
     public void setAltID(MolecularAssembly molecularAssembly, Character altLoc) {
         setMolecularSystem(molecularAssembly);
@@ -401,7 +400,7 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Parse the PDB File
      */
     @Override
@@ -1259,8 +1258,8 @@ public final class PDBFilter extends SystemFilter {
      * <p>writeFileWithHeader.</p>
      *
      * @param saveFile a {@link java.io.File} object.
-     * @param header a {@link java.lang.String} object.
-     * @param append a boolean.
+     * @param header   a {@link java.lang.String} object.
+     * @param append   a boolean.
      * @return a boolean.
      */
     public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
@@ -1297,7 +1296,7 @@ public final class PDBFilter extends SystemFilter {
      * <p>writeFileWithHeader.</p>
      *
      * @param saveFile a {@link java.io.File} object.
-     * @param header a {@link java.lang.String} object.
+     * @param header   a {@link java.lang.String} object.
      * @return a boolean.
      */
     public boolean writeFileWithHeader(File saveFile, String header) {
@@ -1308,7 +1307,7 @@ public final class PDBFilter extends SystemFilter {
      * <p>writeFileWithHeader.</p>
      *
      * @param saveFile a {@link java.io.File} object.
-     * @param header a {@link java.lang.StringBuilder} object.
+     * @param header   a {@link java.lang.StringBuilder} object.
      * @return a boolean.
      */
     public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
@@ -1319,8 +1318,8 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * writeFile</p>
      *
-     * @param saveFile a {@link java.io.File} object.
-     * @param append Whether to append to saveFile (vs over-write).
+     * @param saveFile    a {@link java.io.File} object.
+     * @param append      Whether to append to saveFile (vs over-write).
      * @param printLinear Whether to print atoms linearly or by element.
      * @return Success of writing.
      */
@@ -1332,10 +1331,10 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * writeFile</p>
      *
-     * @param saveFile a {@link java.io.File} object to save to.
-     * @param append Whether to append to saveFile (vs over-write).
+     * @param saveFile    a {@link java.io.File} object to save to.
+     * @param append      Whether to append to saveFile (vs over-write).
      * @param printLinear Whether to print atoms linearly or by element.
-     * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude) {
@@ -1763,8 +1762,8 @@ public final class PDBFilter extends SystemFilter {
     /**
      * <p>writeSIFTFile.</p>
      *
-     * @param saveFile a {@link java.io.File} object.
-     * @param append a boolean.
+     * @param saveFile    a {@link java.io.File} object.
+     * @param append      a boolean.
      * @param resAndScore an array of {@link java.lang.String} objects.
      * @return a boolean.
      */
@@ -2145,7 +2144,7 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Write out the Atomic information in PDB format.
      */
     @Override
@@ -2157,7 +2156,6 @@ public final class PDBFilter extends SystemFilter {
      * Locate disulfide bonds based on SSBOND records.
      *
      * @param ssbonds
-     *
      * @return An ArrayList of Bond instances for SS-Bonds.
      */
     private List<Bond> locateDisulfideBonds(List<String> ssbonds) {
@@ -2300,13 +2298,12 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Currently builds missing internal loops based on information in DBREF and
      * SEQRES records.
-     *
+     * <p>
      * Known limitations include: 1) No building n- and c-terminal loops. 2) No
      * support for DBREF1 or DBREF2 records. 3) Incomplete optimization scheme
      * to position the loops.
      *
      * @param xyzIndex
-     *
      * @return xyzIndex updated based on built atoms.
      */
     private int buildMissingResidues(int xyzIndex) {
@@ -3050,9 +3047,7 @@ public final class PDBFilter extends SystemFilter {
      * Assign atom types to an amino acid polymer.
      *
      * @param residues The residues to assign atom types to.
-     *
      * @throws MissingHeavyAtomException
-     *
      * @since 1.0
      */
     private void assignAminoAcidAtomTypes(List<Residue> residues)
@@ -3079,11 +3074,11 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * writeAtom</p>
      *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param serial a int.
-     * @param sb a {@link java.lang.StringBuilder} object.
+     * @param atom     a {@link ffx.potential.bonded.Atom} object.
+     * @param serial   a int.
+     * @param sb       a {@link java.lang.StringBuilder} object.
      * @param anisouSB a {@link java.lang.StringBuilder} object.
-     * @param bw a {@link java.io.BufferedWriter} object.
+     * @param bw       a {@link java.io.BufferedWriter} object.
      * @throws java.io.IOException if any.
      */
     private void writeAtom(Atom atom, int serial, StringBuilder sb,
@@ -3293,13 +3288,17 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readNext() {
         return readNext(false);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readNext(boolean resetPosition) {
         // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
@@ -3468,7 +3467,9 @@ public final class PDBFilter extends SystemFilter {
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void closeReader() {
         // Java 8 stuff that Netbeans suggested. Faster than for loop?
@@ -4053,7 +4054,7 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Finds Atoms bonded to a given Atom that match a certain atomic number.
      *
-     * @param atom Atom to search from.
+     * @param atom    Atom to search from.
      * @param element Atomic number to search for.
      * @return Bonded atoms of an element.
      */
@@ -4064,9 +4065,9 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Finds Atoms bonded to a given Atom that match a certain atomic number that do not match an excluded atom.
      *
-     * @param atom Atom to search from.
+     * @param atom      Atom to search from.
      * @param toExclude Atom to exclude from search.
-     * @param element Atomic number to search for.
+     * @param element   Atomic number to search for.
      * @return Bonded atoms of an element.
      */
     private static List<Atom> findBondedAtoms(Atom atom, Atom toExclude, int element) {
@@ -4080,7 +4081,7 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Checks if there is an Atom of a given atomic number bonded to the provided Atom.
      *
-     * @param atom Atom to search from.
+     * @param atom    Atom to search from.
      * @param element Atomic number to search for.
      * @return If bonded atoms of given element exist.
      */
@@ -4118,9 +4119,9 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Renames Atoms to PDB standard using bonding patterns, atomic numbers, and residue types.
-     *
+     * <p>
      * Will not work if a force field definition botches its atomic numbers.
-     *
+     * <p>
      * Only implemented for amino acids at this time.
      *
      * @param assembly MolecularAssembly to fix.
@@ -4148,7 +4149,7 @@ public final class PDBFilter extends SystemFilter {
      * Finds the alpha carbon of a residue, and handles any C-terminal ACE caps while at it.
      *
      * @param residue Find the alpha carbon of.
-     * @param N The residue's backbone nitrogen.
+     * @param N       The residue's backbone nitrogen.
      * @return The alpha carbon.
      */
     private static Atom getAlphaCarbon(Residue residue, Atom N) {
@@ -4205,8 +4206,9 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Names the atoms in an N-terminal acetyl ACE capping group.
+     *
      * @param residue Residue containing an acetyl cap.
-     * @param aceC The acetyl group's C atom.
+     * @param aceC    The acetyl group's C atom.
      */
     private static void nameAcetylCap(Residue residue, Atom aceC) {
         logger.warning(String.format(" Probable ACE cap attached to residue %s; duplicate atom names may result!", residue));
@@ -4335,9 +4337,9 @@ public final class PDBFilter extends SystemFilter {
      * Renames atoms in common amino acids to PDB standard.
      *
      * @param residue Residue to perform renaming for.
-     * @param aa3 Its AA3 code.
-     * @param CA Its alpha carbon.
-     * @param CB Its beta carbon.
+     * @param aa3     Its AA3 code.
+     * @param CA      Its alpha carbon.
+     * @param CB      Its beta carbon.
      */
     private static void renameCommonAminoAcids(Residue residue, AminoAcid3 aa3, Atom CA, Atom CB) {
         switch (aa3) {
@@ -4693,13 +4695,13 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Renames an atom, its bonded hydrogens, and returns the next atom in the chain.
-     *
+     * <p>
      * If applied to an atom that is not a carbon, it will be misnamed as a carbon, so fix that afterwards.
      *
-     * @param carbon Alkyl carbon to rename.
-     * @param priorAtom Prior atom in the chain.
+     * @param carbon       Alkyl carbon to rename.
+     * @param priorAtom    Prior atom in the chain.
      * @param protonOffset Number of the first hydrogen (such as 2 for HB2-3).
-     * @param posName Name of the position (such as B for CB).
+     * @param posName      Name of the position (such as B for CB).
      * @return Next atom in the chain if present.
      */
     private static Optional<Atom> renameAlkyl(Atom carbon, Atom priorAtom, int protonOffset, char posName) {
@@ -4723,16 +4725,16 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Renames a numbered carbon, its bonded hydrogens, and returns the next atom in the chain.
-     *
+     * <p>
      * If applied to an atom that is not a carbon, it will be misnamed as a carbon, so fix that afterwards.
-     *
+     * <p>
      * This is for carbons like PHE CD1 and CD2.
      *
-     * @param carbon Alkyl carbon to rename.
-     * @param priorAtom Prior atom in the chain.
+     * @param carbon       Alkyl carbon to rename.
+     * @param priorAtom    Prior atom in the chain.
      * @param protonOffset Number of the first hydrogen (such as 2 for HB2-3).
-     * @param branchNum Index of the branch.
-     * @param posName Name of the position (such as B for CB).
+     * @param branchNum    Index of the branch.
+     * @param posName      Name of the position (such as B for CB).
      * @return Next atom in the chain if present.
      */
     private static Optional<Atom> renameBranchedAlkyl(Atom carbon, Atom priorAtom, int protonOffset, int branchNum, char posName) {
@@ -5042,16 +5044,16 @@ public final class PDBFilter extends SystemFilter {
                     double twoPiOver3 = 2.0 * Math.PI / 3.0;
                     double target = Crystal.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
                     List<Atom> otherO = bondedO.stream().
-                        filter(o -> o != OP1).
-                        sorted(Comparator.comparingDouble((Atom o) -> {
-                            double[] xyzO = o.getXYZ(new double[3]);
-                            double dihedO = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
-                            double diff = dihedO - target;
-                            double twoPi = 2 * Math.PI;
-                            diff = Crystal.modToRange(diff, 0, twoPi);
-                            diff = diff < Math.PI ? diff : twoPi - diff;
-                            return diff;
-                        })).collect(Collectors.toList());
+                            filter(o -> o != OP1).
+                            sorted(Comparator.comparingDouble((Atom o) -> {
+                                double[] xyzO = o.getXYZ(new double[3]);
+                                double dihedO = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
+                                double diff = dihedO - target;
+                                double twoPi = 2 * Math.PI;
+                                diff = Crystal.modToRange(diff, 0, twoPi);
+                                diff = diff < Math.PI ? diff : twoPi - diff;
+                                return diff;
+                            })).collect(Collectors.toList());
                     for (int i = 0; i < otherO.size(); i++) {
                         otherO.get(i).setName(String.format("OP%d", i + 2));
                     }
@@ -5099,7 +5101,8 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Renames atoms common to all standard pyrimidines (C, T, U)
-     * @param N1 The N1 atom.
+     *
+     * @param N1  The N1 atom.
      * @param C1s The C1' atom.
      * @return A Map containing Atoms important to finding and naming base-unique atoms.
      */
@@ -5135,7 +5138,8 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Renames atoms common to all standard purines (A, G)
-     * @param N9 The N9 atom.
+     *
+     * @param N9  The N9 atom.
      * @param C1s The C1' atom.
      * @return A Map containing Atoms important to finding and naming base-unique atoms.
      */
@@ -5178,15 +5182,14 @@ public final class PDBFilter extends SystemFilter {
      * Renames the atoms of the common nucleobases (A, C, G, T, U, and deoxy variants).
      *
      * @param residue Nucleic acid to fix atom names of.
-     * @param N19 N1 of pyrimidines, N9 of purines.
-     * @param C1s C1' of the ribose sugar.
-     * @param na3 Identity of the nucleic acid.
+     * @param N19     N1 of pyrimidines, N9 of purines.
+     * @param C1s     C1' of the ribose sugar.
+     * @param na3     Identity of the nucleic acid.
      */
     private static void renameCommonNucleobase(Residue residue, Atom N19, Atom C1s, NucleicAcid3 na3) {
         switch (na3) {
             case ADE:
-            case DAD:
-            {
+            case DAD: {
                 Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
                 // Unique to A: H2, N6, H6[12]
                 findBondedAtoms(purineBase.get("C2"), 1).get(0).setName("H2");
@@ -5201,8 +5204,7 @@ public final class PDBFilter extends SystemFilter {
             }
             break;
             case CYT:
-            case DCY:
-            {
+            case DCY: {
                 Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
                 // Unique to C: N4, H4[12]
                 Atom C4 = pyrimidineBase.get("C4");
@@ -5215,8 +5217,7 @@ public final class PDBFilter extends SystemFilter {
             }
             break;
             case GUA:
-            case DGU:
-            {
+            case DGU: {
                 Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
                 // Unique to G: H1, N2, H2[12], O6
                 Atom N1 = purineBase.get("N1");
@@ -5234,8 +5235,7 @@ public final class PDBFilter extends SystemFilter {
                 findBondedAtoms(C6, 8).get(0).setName("O6");
             }
             break;
-            case URI:
-            {
+            case URI: {
                 Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
                 // Unique to U: H3, O4
                 findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
@@ -5243,8 +5243,7 @@ public final class PDBFilter extends SystemFilter {
             }
             break;
             case THY:
-            case DTY:
-            {
+            case DTY: {
                 Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
                 // Unique to T: H3, O4, C7
                 findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
@@ -5255,7 +5254,7 @@ public final class PDBFilter extends SystemFilter {
                     if (bondedH != null && bondedH.size() == 3) {
                         c.setName("C7");
                         for (int i = 0; i < 3; i++) {
-                            bondedH.get(i).setName(String.format("H7%d", i+1));
+                            bondedH.get(i).setName(String.format("H7%d", i + 1));
                         }
                         break;
                     }
@@ -5268,6 +5267,7 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Find the O4' of a nucleic acid Residue. This is fairly unique in standard nucleotides,
      * as O4' is the only ether oxygen (bonded to two carbons).
+     *
      * @param residue Residue to find O4' of.
      * @return O4'.
      */

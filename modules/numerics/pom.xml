@@ -52,7 +52,7 @@
                         <argument>-Djava.library.path=/Data/ffx-project/ffx/bin/64-bit</argument>
                         <argument>-classpath</argument>
                         <classpath/>
-                        <argument>ffx.numerics.MultipoleTensor</argument>
+                        <argument>ffx.numerics.multipole.MultipoleTensor</argument>
                         <argument>6</argument>
                         <argument>1.1</argument>
                         <argument>1.2</argument>

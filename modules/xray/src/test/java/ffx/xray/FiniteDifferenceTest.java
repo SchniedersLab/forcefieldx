@@ -62,7 +62,7 @@ import ffx.potential.utils.PotentialsUtils;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.MTZFilter;
-import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.math.VectorMath.b2u;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
 
 /**

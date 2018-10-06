@@ -46,9 +46,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import ffx.numerics.PowerSwitch;
-import ffx.numerics.SquaredTrigSwitch;
-import ffx.numerics.UnivariateSwitchingFunction;
+import ffx.numerics.switching.PowerSwitch;
+import ffx.numerics.switching.SquaredTrigSwitch;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
 
 /**

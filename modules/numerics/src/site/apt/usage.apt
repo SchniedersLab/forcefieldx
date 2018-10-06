@@ -43,7 +43,7 @@ Usage
   Shown below is an example of using the ffx.numerics Erf class.
 
 +-----+
-import static ffx.numerics.Erf.erf;
+import static ffx.numerics.special.Erf.erf;
 ...
 double x = 2.0;
 double erfx = erf(x);

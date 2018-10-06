@@ -50,7 +50,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.numerics.ComplexNumber;
+import ffx.numerics.math.ComplexNumber;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;

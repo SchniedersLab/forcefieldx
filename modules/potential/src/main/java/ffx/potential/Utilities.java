@@ -52,7 +52,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.diff;
 
 /**
  * The Utilities class provides methods to locate functional units of an organic

@@ -54,8 +54,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.tan;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
-import static ffx.numerics.VectorMath.cross;
-import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.cross;
+import static ffx.numerics.math.VectorMath.dot;
 
 /**
  * <p>LoopClosure class.</p>

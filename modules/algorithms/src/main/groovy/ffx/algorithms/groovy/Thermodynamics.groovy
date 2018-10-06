@@ -19,13 +19,13 @@ import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.crystal.SymOp
 import ffx.numerics.Potential
-import ffx.numerics.PowerSwitch
-import ffx.numerics.SquaredTrigSwitch
-import ffx.numerics.UnivariateSwitchingFunction
+import ffx.numerics.switching.PowerSwitch
+import ffx.numerics.switching.SquaredTrigSwitch
+import ffx.numerics.switching.UnivariateSwitchingFunction
 import ffx.potential.DualTopologyEnergy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.OctTopologyEnergy
+
 import ffx.potential.QuadTopologyEnergy
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
@@ -921,42 +921,11 @@ class Thermodynamics extends Script {
                     }
                 }
                 potential = qte;
-                dualTopologies[0] = dta;
-                dualTopologies[1] = dtb;
-                break;
-            case 8:
-                sb.append("oct-topology ");
-
-                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-                QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-
-                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
-                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
-                QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-
-                OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
-                if (numParallel >= 2) {
-                    ote.setParallel(true);
-                    if (numParallel >= 4) {
-                        qtg.setParallel(true);
-                        qtd.setParallel(true);
-                        if (numParallel == 8) {
-                            dtga.setParallel(true);
-                            dtgb.setParallel(true);
-                            dtda.setParallel(true);
-                            dtdb.setParallel(true);
-                        }
-                    }
-                }
-                potential = ote;
-                dualTopologies[0] = dtga;
-                dualTopologies[1] = dtgb;
-                dualTopologies[2] = dtda;
-                dualTopologies[3] = dtdb;
-                break;
+                dualTopologies[0] = dta
+                dualTopologies[1] = dtb
+                break
             default:
-                logger.severe(" Must have 1, 2, 4, or 8 topologies!");
+                logger.severe(" Must have 1, 2 or 4 topologies!");
                 break;
         }
         sb.append(topologies.stream().map { t -> t.getFile().getName() }.collect(Collectors.joining(",", "[", "]")));

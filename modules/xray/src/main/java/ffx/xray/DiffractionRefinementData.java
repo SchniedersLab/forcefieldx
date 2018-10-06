@@ -47,14 +47,13 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.ReflectionList;
-import ffx.numerics.ComplexNumber;
+import ffx.numerics.math.ComplexNumber;
 
 /**
  * <p>
  * DiffractionRefinementData class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class DiffractionRefinementData {
@@ -172,7 +171,7 @@ public class DiffractionRefinementData {
     /**
      * allocate data given a {@link ffx.crystal.ReflectionList}
      *
-     * @param properties configuration properties
+     * @param properties     configuration properties
      * @param reflectionlist {@link ffx.crystal.ReflectionList} to use to allocate data
      */
     public DiffractionRefinementData(CompositeConfiguration properties,
@@ -362,7 +361,7 @@ public class DiffractionRefinementData {
     /**
      * set amplitude sigma, sigF
      *
-     * @param i reflection to set
+     * @param i    reflection to set
      * @param sigf value of sigF desired
      */
     public void setSigF(int i, double sigf) {
@@ -383,8 +382,8 @@ public class DiffractionRefinementData {
     /**
      * set amplitude and sigF
      *
-     * @param i reflection to set
-     * @param f value of F desired
+     * @param i    reflection to set
+     * @param f    value of F desired
      * @param sigf value of sigF desired
      */
     public void setFSigF(int i, double f, double sigf) {
@@ -460,7 +459,7 @@ public class DiffractionRefinementData {
      * set complex Fc
      *
      * @param i reflection to set
-     * @param c {@link ffx.numerics.ComplexNumber} to set reflection to
+     * @param c {@link ComplexNumber} to set reflection to
      */
     public void setFc(int i, ComplexNumber c) {
         fc[i][0] = c.re();
@@ -471,7 +470,7 @@ public class DiffractionRefinementData {
      * get the complex number for a Fc reflection
      *
      * @param i reflection to get
-     * @return newly allocated {@link ffx.numerics.ComplexNumber}
+     * @return newly allocated {@link ComplexNumber}
      */
     public ComplexNumber getFc(int i) {
         return new ComplexNumber(fc[i][0], fc[i][1]);
@@ -481,7 +480,7 @@ public class DiffractionRefinementData {
      * get the complex number for a Fc reflection
      *
      * @param i reflection to get
-     * @param c {@link ffx.numerics.ComplexNumber} to fill
+     * @param c {@link ComplexNumber} to fill
      */
     public void getFcIP(int i, ComplexNumber c) {
         c.re(fc[i][0]);
@@ -517,7 +516,7 @@ public class DiffractionRefinementData {
      * setFs</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void setFs(int i, ComplexNumber c) {
         fs[i][0] = c.re();
@@ -529,7 +528,7 @@ public class DiffractionRefinementData {
      * getFs</p>
      *
      * @param i a int.
-     * @return a {@link ffx.numerics.ComplexNumber} object.
+     * @return a {@link ComplexNumber} object.
      */
     public ComplexNumber getFs(int i) {
         return new ComplexNumber(fs[i][0], fs[i][1]);
@@ -540,7 +539,7 @@ public class DiffractionRefinementData {
      * getFsIP</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void getFsIP(int i, ComplexNumber c) {
         c.re(fs[i][0]);
@@ -578,7 +577,7 @@ public class DiffractionRefinementData {
      * setFcTot</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void setFcTot(int i, ComplexNumber c) {
         fctot[i][0] = c.re();
@@ -590,7 +589,7 @@ public class DiffractionRefinementData {
      * getFcTot</p>
      *
      * @param i a int.
-     * @return a {@link ffx.numerics.ComplexNumber} object.
+     * @return a {@link ComplexNumber} object.
      */
     public ComplexNumber getFcTot(int i) {
         return new ComplexNumber(fctot[i][0], fctot[i][1]);
@@ -601,7 +600,7 @@ public class DiffractionRefinementData {
      * getFcTotIP</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void getFcTotIP(int i, ComplexNumber c) {
         c.re(fctot[i][0]);
@@ -639,7 +638,7 @@ public class DiffractionRefinementData {
      * setFoFc2</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void setFoFc2(int i, ComplexNumber c) {
         fofc2[i][0] = c.re();
@@ -651,7 +650,7 @@ public class DiffractionRefinementData {
      * getFoFc2</p>
      *
      * @param i a int.
-     * @return a {@link ffx.numerics.ComplexNumber} object.
+     * @return a {@link ComplexNumber} object.
      */
     public ComplexNumber getFoFc2(int i) {
         return new ComplexNumber(fofc2[i][0], fofc2[i][1]);
@@ -662,7 +661,7 @@ public class DiffractionRefinementData {
      * getFoFc2IP</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void getFoFc2IP(int i, ComplexNumber c) {
         c.re(fofc2[i][0]);
@@ -700,7 +699,7 @@ public class DiffractionRefinementData {
      * setFoFc1</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void setFoFc1(int i, ComplexNumber c) {
         fofc1[i][0] = c.re();
@@ -712,7 +711,7 @@ public class DiffractionRefinementData {
      * getFoFc1</p>
      *
      * @param i a int.
-     * @return a {@link ffx.numerics.ComplexNumber} object.
+     * @return a {@link ComplexNumber} object.
      */
     public ComplexNumber getFoFc1(int i) {
         return new ComplexNumber(fofc1[i][0], fofc1[i][1]);
@@ -723,7 +722,7 @@ public class DiffractionRefinementData {
      * getFoFc1IP</p>
      *
      * @param i a int.
-     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     * @param c a {@link ComplexNumber} object.
      */
     public void getFoFc1IP(int i, ComplexNumber c) {
         c.re(fofc1[i][0]);

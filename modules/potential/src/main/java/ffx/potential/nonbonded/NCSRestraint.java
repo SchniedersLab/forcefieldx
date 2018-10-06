@@ -48,7 +48,7 @@ import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
-import static ffx.numerics.VectorMath.rsq;
+import static ffx.numerics.math.VectorMath.rsq;
 
 /**
  * Given unit cell parameters and symmetry operators, NCS copies are restrained
@@ -56,6 +56,7 @@ import static ffx.numerics.VectorMath.rsq;
  *
  * @author Michael J. Schnieders
  *
+ * @since 1.0
  */
 public class NCSRestraint implements LambdaInterface {
 
@@ -85,9 +86,9 @@ public class NCSRestraint implements LambdaInterface {
      * This NCSRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
      *
-     * @param atoms the Atom array to construct this NCSRestraint from.
+     * @param atoms      the Atom array to construct this NCSRestraint from.
      * @param forceField the ForceField parameters
-     * @param crystal the Crystal specifies symmetry and PBCs.
+     * @param crystal    the Crystal specifies symmetry and PBCs.
      */
     public NCSRestraint(Atom atoms[], ForceField forceField, Crystal crystal) {
         this.ncsCrystal = crystal;
@@ -115,7 +116,7 @@ public class NCSRestraint implements LambdaInterface {
      * <p>residual.</p>
      *
      * @param gradient a boolean.
-     * @param print a boolean.
+     * @param print    a boolean.
      * @return a double.
      */
     public double residual(boolean gradient, boolean print) {
@@ -200,7 +201,9 @@ public class NCSRestraint implements LambdaInterface {
         return forceConstant * residual * lambdaPow;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -237,13 +240,17 @@ public class NCSRestraint implements LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -253,7 +260,9 @@ public class NCSRestraint implements LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         if (lambdaTerm) {
@@ -263,7 +272,9 @@ public class NCSRestraint implements LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {

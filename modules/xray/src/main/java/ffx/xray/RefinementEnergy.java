@@ -61,7 +61,7 @@ import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.math.VectorMath.b2u;
 
 /**
  * Combine the X-ray target and chemical potential energy using the

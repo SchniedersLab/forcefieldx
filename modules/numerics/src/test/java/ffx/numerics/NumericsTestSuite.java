@@ -41,6 +41,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import ffx.numerics.math.SquareRootTest;
+import ffx.numerics.multipole.MultipoleTensorTest;
+import ffx.numerics.special.ErfTest;
+import ffx.numerics.spline.UniformBSplineTest;
+
 /**
  * NumericsTestSuite collects all Unit tests from the ffx.numerics package.
  */

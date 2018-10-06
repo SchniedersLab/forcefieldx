@@ -51,16 +51,16 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.numerics.VectorMath.b2u;
-import static ffx.numerics.VectorMath.determinant3;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.mat3Inverse;
-import static ffx.numerics.VectorMath.mat3Mat3;
-import static ffx.numerics.VectorMath.rsq;
-import static ffx.numerics.VectorMath.scalarMat3Mat3;
-import static ffx.numerics.VectorMath.u2b;
-import static ffx.numerics.VectorMath.vec3Mat3;
+import static ffx.numerics.math.VectorMath.b2u;
+import static ffx.numerics.math.VectorMath.determinant3;
+import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.mat3Inverse;
+import static ffx.numerics.math.VectorMath.mat3Mat3;
+import static ffx.numerics.math.VectorMath.rsq;
+import static ffx.numerics.math.VectorMath.scalarMat3Mat3;
+import static ffx.numerics.math.VectorMath.u2b;
+import static ffx.numerics.math.VectorMath.vec3Mat3;
 
 /**
  * This implementation uses the coefficients from Su and Coppens and 3
