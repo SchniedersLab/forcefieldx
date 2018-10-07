@@ -28,16 +28,21 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <type>jar</type>
+            <version>${commons-configuration2.version}</version>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>
             <version>${commons-io.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration2</artifactId>
-            <type>jar</type>
-            <version>${commons-configuration2.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -45,11 +50,7 @@
             <version>${junit.version}</version>
             <type>jar</type>
         </dependency>
-        <dependency>
-            <groupId>commons-math</groupId>
-            <artifactId>commons-math3</artifactId>
-            <version>${commons-math3.version}</version>
-        </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>pj</artifactId>

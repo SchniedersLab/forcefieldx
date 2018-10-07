@@ -146,7 +146,7 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
             <type>jar</type>
             <version>${commons-configuration2.version}</version>
@@ -158,13 +158,13 @@
             <version>${commons-io.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-lang</groupId>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <type>jar</type>
             <version>${commons-lang3.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-math</groupId>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
             <version>${commons-math3.version}</version>

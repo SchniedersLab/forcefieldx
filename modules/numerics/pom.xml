@@ -64,7 +64,7 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>commons-math</groupId>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <type>jar</type>
             <version>${commons-math3.version}</version>

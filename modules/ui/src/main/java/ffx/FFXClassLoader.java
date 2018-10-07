@@ -148,13 +148,13 @@ public class FFXClassLoader extends URLClassLoader {
                 "org.jogamp/jogamp-fat.jar",
                 // Apache Commons
                 "commons-beanutils/commons-beanutils.jar",
-                "commons-collections/commons-collections4.jar",
-                "commons-configuration/commons-configuration2.jar",
                 "commons-digester/commons-digester.jar",
                 "commons-io/commons-io.jar",
-                "commons-lang/commons-lang3.jar",
                 "commons-logging/commons-logging.jar",
-                "commons-math/commons-math3.jar",
+                "org.apache.commons/commons-collections4.jar",
+                "org.apache.commons/commons-configuration2.jar",
+                "org.apache.commons/commons-lang3.jar",
+                "org.apache.commons/commons-math3.jar",
                 // CDK Libraries
                 "org.openscience.cdk/cdk-interfaces.jar",
                 "org.openscience.cdk/cdk-ioformats.jar",
