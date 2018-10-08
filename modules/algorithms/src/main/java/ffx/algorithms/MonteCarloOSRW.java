@@ -306,53 +306,51 @@ public class MonteCarloOSRW extends BoltzmannMC {
              * During equilibration, do not change Lambda or contribute to the
              * OSRW bias.
              */
-            if (equilibration) {
-                continue;
+            if (!equilibration) {
+                /**
+                 * Update Lambda.
+                 */
+                lambdaMoveTime = -System.nanoTime();
+                // ToDo: can remove this Energy / Gradient call by using the values from above.
+                // currentEnergy = osrw.energyAndGradient(newCoordinates, gradient);
+                // currentdUdL = osrw.getForceFielddEdL();
+                double currentLambda = osrw.getLambda();
+                lambdaMove.move();
+
+                proposedEnergy = osrw.energyAndGradient(newCoordinates, gradient);
+                proposeddUdL = osrw.getForceFielddEdL();
+                double proposedLambda = osrw.getLambda();
+
+                logger.info(format("\n Current  OSRW     %12.3f at L=%5.3f.", currentEnergy, currentLambda));
+                logger.info(format(" Proposed OSRW     %12.3f at L=%5.3f.", proposedEnergy, proposedLambda));
+                logger.info(format(" MC Energy change: %12.3f (kcal/mol).", proposedEnergy - currentEnergy));
+
+                if (evaluateMove(currentEnergy, proposedEnergy)) {
+                    acceptLambda++;
+                    double percent = (acceptLambda * 100.0) / (imove + 1);
+                    logger.info(String.format(" MC Lambda step   : Accepted [ L=%8.3f,E=%12.4f] -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
+                            currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
+                    currentdUdL = proposeddUdL;
+                } else {
+                    double percent = (acceptLambda * 100.0) / (imove + 1);
+                    logger.info(String.format(" MC Lambda step   : Rejected [ L=%8.3f,E=%12.4f] -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
+                            currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
+                    lambdaMove.revertMove();
+                    potential.getCoordinates(coordinates);
+                }
+                lambdaMoveTime += System.nanoTime();
+                logger.info(String.format(" Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
+
+                lambda = osrw.getLambda();
+
+                /**
+                 * Update time dependent bias.
+                 */
+                biasAddTime = -System.nanoTime();
+                osrw.addBias(currentdUdL, coordinates, gradient);
+                biasAddTime += System.nanoTime();
+                logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f] in %6.3 sec.", lambda, currentdUdL, biasAddTime * NS2SEC));
             }
-
-            /**
-             * Update Lambda.
-             */
-            lambdaMoveTime = -System.nanoTime();
-            // ToDo: can remove this Energy / Gradient call by using the values from above.
-            // currentEnergy = osrw.energyAndGradient(newCoordinates, gradient);
-            // currentdUdL = osrw.getForceFielddEdL();
-            double currentLambda = osrw.getLambda();
-            lambdaMove.move();
-
-            proposedEnergy = osrw.energyAndGradient(newCoordinates, gradient);
-            proposeddUdL = osrw.getForceFielddEdL();
-            double proposedLambda = osrw.getLambda();
-
-            logger.info(format("\n Current  OSRW     %12.3f at L=%5.3f.", currentEnergy, currentLambda));
-            logger.info(format(" Proposed OSRW     %12.3f at L=%5.3f.", proposedEnergy, proposedLambda));
-            logger.info(format(" MC Energy change: %12.3f (kcal/mol).", proposedEnergy - currentEnergy));
-
-            if (evaluateMove(currentEnergy, proposedEnergy)) {
-                acceptLambda++;
-                double percent = (acceptLambda * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step   : Accepted [ L=%8.3f,E=%12.4f] -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
-                        currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
-                currentdUdL = proposeddUdL;
-            } else {
-                double percent = (acceptLambda * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step   : Rejected [ L=%8.3f,E=%12.4f] -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
-                        currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
-                lambdaMove.revertMove();
-                potential.getCoordinates(coordinates);
-            }
-            lambdaMoveTime += System.nanoTime();
-            logger.info(String.format(" Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
-
-            lambda = osrw.getLambda();
-
-            /**
-             * Update time dependent bias.
-             */
-            biasAddTime = -System.nanoTime();
-            osrw.addBias(currentdUdL, coordinates, gradient);
-            biasAddTime += System.nanoTime();
-            logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f] in %6.3 sec.", lambda, currentdUdL, biasAddTime * NS2SEC));
 
             totalMoveTime += System.nanoTime();
             logger.info(format(" Total MC-OSRW Round Time: %6.3f sec.", totalMoveTime * NS2SEC));
