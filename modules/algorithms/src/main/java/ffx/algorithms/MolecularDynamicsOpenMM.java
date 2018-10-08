@@ -142,6 +142,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     private long mdTime = 0;
 
+    private long initTime = 0;
+
+    private long firstUpdateTime = 0;
+
+    private long takeStepsTime = 0;
+
+    private long secondUpdateTime = 0;
+
+    private long endLoopTime = 0;
+
     private double endTotalEnergy;
 
     private int natoms;
@@ -349,7 +359,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         //logger.info(String.format(" Target Temperature %f", targetTemperature));
         // Uncomment this to get code back to normal
         //updateContext();
-
         switch (thermostatType) {
             case BUSSI:
             case BERENDSEN:
@@ -359,8 +368,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     if (NPT) {
                         setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
                     }
-                }
-                else {
+                } else {
                     logger.info(" Langevin/Stochastic dynamics already has temperature control, will not be adding thermostat!");
                 }
 
@@ -388,8 +396,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
          * Convert save interval to a save frequency.
          */
         saveSnapshotFrequency = 1000;
-        if (saveInterval >= this.dt) {
-            saveSnapshotFrequency = (int) (saveInterval / this.dt);
+        saveInterval *= 1000; // Time step is in fsec, so convert saveInterval to fsec.
+        if (saveInterval >= dt) {
+            saveSnapshotFrequency = (int) (saveInterval / dt);
         }
 
         done = false;
@@ -498,21 +507,13 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
 
-        long initTime = -System.nanoTime();
-        
+        initTime = -System.nanoTime();
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
-
         initTime += System.nanoTime();
-        
+
         logger.info(String.format("\n Initialized system in %6.3f sec.", initTime * NS2SEC));
-        
-        long storeTime = -System.nanoTime();
-        
+
         storeState();
-        
-        storeTime += System.nanoTime();
-        
-        logger.info(String.format(" \n Stored state in %6.3f sec.", storeTime * NS2SEC));
 
         if (intervalSteps == 0 || intervalSteps > numSteps) {
             intervalSteps = numSteps;
@@ -520,26 +521,20 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         running = true;
 
         // Update the time step in Picoseconds.
-        
-        long integratorSetTime = -System.nanoTime();
-        
         OpenMM_Integrator_setStepSize(integrator, dt * 1.0e-3);
 
-        integratorSetTime += System.nanoTime();
-        
-        logger.info(String.format("\n Set integrator in %6.3f", integratorSetTime * NS2SEC));
-        
         int i = 0;
         time = -System.nanoTime();
+        endLoopTime = time;
         while (i < numSteps) {
             // Get an update from OpenMM.
-            long firstUpdateTime = -System.nanoTime();
+            firstUpdateTime = -System.nanoTime();
             updateFromOpenMM(i, running);
             firstUpdateTime += System.nanoTime();
             logger.info(String.format("\n First update finished in %6.3f", firstUpdateTime * NS2SEC));
 
             // Take MD steps in OpenMM.
-            long takeStepsTime = -System.nanoTime();
+            takeStepsTime = -System.nanoTime();
             takeOpenMMSteps(intervalSteps);
             takeStepsTime += System.nanoTime();
             logger.info(String.format("\n Took steps in %6.3f", takeStepsTime * NS2SEC));
@@ -547,11 +542,13 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             // Update the total step count.
             i += intervalSteps;
         }
-        
-        long secondUpdateTime = -System.nanoTime();
+
+        secondUpdateTime = -System.nanoTime();
         updateFromOpenMM(i, running);
         secondUpdateTime += System.nanoTime();
+        endLoopTime += System.nanoTime();
         logger.info(String.format("\n Second update finished in %6.3f", secondUpdateTime * NS2SEC));
+        logger.info(String.format("\n Time from beginning of loop to end of method is %6.3f", endLoopTime * NS2SEC));
     }
 
     /**
