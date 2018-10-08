@@ -128,6 +128,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     private long mdMoveTime = 0;
     /**
+     * Total time required to run and evaluate MD move.
+     */
+    private long mdMoveAndEvalTime = 0;
+    /**
      * Lambda move object for completing MC-OSRW lambda moves.
      */
     private LambdaMove lambdaMove;
@@ -265,6 +269,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
          */
         for (int imove = 0; imove < numMoves; imove++) {
             totalMoveTime = -System.nanoTime();
+            mdMoveAndEvalTime = totalMoveTime;
 
             if (equilibration) {
                 logger.info(String.format("\n MD Equilibration Round %d", imove + 1));
@@ -334,6 +339,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 mdMove.revertMove();
                 newCoordinates = coordinates;
             }
+            mdMoveAndEvalTime += System.nanoTime();
+            logger.info(String.format("\n Total time to run and evaluate MD move: %6.3f", mdMoveAndEvalTime * NS2SEC));
 
             /**
              * During equilibration, do not change Lambda or contribute to the
