@@ -79,30 +79,61 @@ import static ffx.algorithms.MolecularDynamics.NS2SEC;
  */
 public class MonteCarloOSRW extends BoltzmannMC {
 
+    /**
+     * Logger object to print out information for this class.
+     */
     private static final Logger logger = Logger.getLogger(MonteCarloOSRW.class.getName());
-
+    /**
+     * Potential object used to retrieve the coordinates for the system.
+     */
     private final Potential potential;
+    /**
+     * OSRW object used to retrieve OSRW energy throughout the simulation.
+     */
     private final AbstractOSRW osrw;
+    /**
+     * Double that keeps track of our lambda value.
+     */
     private double lambda = 0.0;
-
+    /**
+     * Keeps track of th percentage of lambda moves accepted.
+     */
     private int acceptLambda = 0;
+    /**
+     * Keeps track of the percentage of MD moves accepted.
+     */
     private int acceptMD = 0;
-
     /**
      * MDMove object for completing MC-OSRW molecular dynamics moves.
      */
     private MDMove mdMove;
+    /**
+     * Total number of steps to take for MC-OSRW sampling.
+     */
     private int totalSteps = 10000000;
+    /**
+     * Number of steps to take per MC-OSRW round.
+     */
     private int stepsPerMove = 50;
+    /**
+     * Total time required to complete one MC-OSRW round.
+     */
     private long totalMoveTime = 0;
-    private long mdEvalTime = 0;
-    private long lambdaEvalTime = 0;
-    private long biasAddTime = 0;
+    /**
+     * Total time required to complete a lambda move.
+     */
     private long lambdaMoveTime = 0;
+    /**
+     * Total time required to complete and MD move.
+     */
     private long mdMoveTime = 0;
-
+    /**
+     * Lambda move object for completing MC-OSRW lambda moves.
+     */
     private LambdaMove lambdaMove;
-
+    /**
+     * Boolean that tells algorithm that we are in the equilibration phase of MC-OSRW.
+     */
     private boolean equilibration = false;
 
     /**
@@ -350,12 +381,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 /**
                  * Update time dependent bias.
                  */
-                biasAddTime = -System.nanoTime();
                 osrw.addBias(currentdUdL, coordinates, gradient);
-                biasAddTime += System.nanoTime();
 
                 // ToDo: Update Bias Energy (i.e. without re-calling force field energy and gradient).
-                logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f] in %6.3f sec.", lambda, currentdUdL, biasAddTime * NS2SEC));
+                logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
             }
 
             totalMoveTime += System.nanoTime();

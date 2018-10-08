@@ -498,9 +498,21 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
 
+        long initTime = -System.nanoTime();
+        
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
 
+        initTime += System.nanoTime();
+        
+        logger.info(String.format("\n Initialized system in %6.3f sec.", initTime * NS2SEC));
+        
+        long storeTime = -System.nanoTime();
+        
         storeState();
+        
+        storeTime += System.nanoTime();
+        
+        logger.info(String.format(" \n Stored state in %6.3f sec.", storeTime * NS2SEC));
 
         if (intervalSteps == 0 || intervalSteps > numSteps) {
             intervalSteps = numSteps;
@@ -508,21 +520,38 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         running = true;
 
         // Update the time step in Picoseconds.
+        
+        long integratorSetTime = -System.nanoTime();
+        
         OpenMM_Integrator_setStepSize(integrator, dt * 1.0e-3);
 
+        integratorSetTime += System.nanoTime();
+        
+        logger.info(String.format("\n Set integrator in %6.3f", integratorSetTime * NS2SEC));
+        
         int i = 0;
         time = -System.nanoTime();
         while (i < numSteps) {
             // Get an update from OpenMM.
+            long firstUpdateTime = -System.nanoTime();
             updateFromOpenMM(i, running);
+            firstUpdateTime += System.nanoTime();
+            logger.info(String.format("\n First update finished in %6.3f", firstUpdateTime * NS2SEC));
 
             // Take MD steps in OpenMM.
+            long takeStepsTime = -System.nanoTime();
             takeOpenMMSteps(intervalSteps);
+            takeStepsTime += System.nanoTime();
+            logger.info(String.format("\n Took steps in %6.3f", takeStepsTime * NS2SEC));
 
             // Update the total step count.
             i += intervalSteps;
         }
+        
+        long secondUpdateTime = -System.nanoTime();
         updateFromOpenMM(i, running);
+        secondUpdateTime += System.nanoTime();
+        logger.info(String.format("\n Second update finished in %6.3f", secondUpdateTime * NS2SEC));
     }
 
     /**
