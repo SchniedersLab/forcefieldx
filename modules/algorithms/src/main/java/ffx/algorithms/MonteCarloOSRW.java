@@ -349,7 +349,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 biasAddTime = -System.nanoTime();
                 osrw.addBias(currentdUdL, coordinates, gradient);
                 biasAddTime += System.nanoTime();
-                logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f] in %6.3 sec.", lambda, currentdUdL, biasAddTime * NS2SEC));
+                logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f] in %6.3f sec.", lambda, currentdUdL, biasAddTime * NS2SEC));
             }
 
             totalMoveTime += System.nanoTime();
