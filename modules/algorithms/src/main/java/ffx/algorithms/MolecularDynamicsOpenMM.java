@@ -334,7 +334,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             /**
              * Write out restart files every saveRestartFileFrequency steps.
              */
-            if (restartFrequency > 0 && i % (restartFrequency * 1000) == 0 && i != 0) {
+            if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000) == 0 && i != 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
                     logger.info(format(" Wrote dynamics restart file to " + restartFile.getName()));
                 } else {
@@ -382,7 +382,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             // No thermostat.
         }
 
+        long contextUpdateTime = 0;
+        contextUpdateTime = - System.nanoTime();
         updateContext();
+        contextUpdateTime += System.nanoTime();
+        logger.info(String.format("\n Updated context in %6.3f sec", contextUpdateTime * NS2SEC));
         /**
          * Convert the print interval to a print frequency.
          */
@@ -400,6 +404,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         if (saveInterval >= dt) {
             saveSnapshotFrequency = (int) (saveInterval / dt);
         }
+        
+        /**
+         * Convert restart interval to frequency.
+         */
+        saveRestartFileFrequency = 1000;
+        restartFrequency *= 1000; // Time step is in fsec, so converting restartFrequency
+        if (restartFrequency >= dt){
+            saveRestartFileFrequency = (int) (restartFrequency / dt);
+        }
+        
 
         done = false;
 
@@ -421,6 +435,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         dof = forceFieldEnergyOpenMM.calculateDegreesOfFreedom();
 
+        long initVelocityTime = 0;
+        initVelocityTime = -System.nanoTime();
         if (!initialized) {
             if (loadRestart) {
                 Crystal crystal = molecularAssembly.getCrystal();
@@ -476,6 +492,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             getOpenMMState();
             startingKineticEnergy = currentKineticEnergy;
         }
+        initVelocityTime += System.nanoTime();
+        logger.info(String.format("\n Initialized velocities in %6.3f sec", initVelocityTime * NS2SEC));
 
         saveSnapshotAsPDB = true;
         if (fileType.equalsIgnoreCase("XYZ")) {
@@ -484,14 +502,22 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             logger.warning(" Snapshot file type unrecognized; saving snaphshots as PDB.\n");
         }
 
+        long atomArrayTime = 0;
+        atomArrayTime = -System.nanoTime();
         Atom[] atoms = molecularAssembly.getAtomArray();
         natoms = atoms.length;
+        atomArrayTime += System.nanoTime();
+        logger.info(String.format("\n Atom array retrieval took %6.3f sec", atomArrayTime * NS2SEC));
 
         int i = 0;
         running = false;
 
         // logger.info(" Calling OpenMM Update from MD Init.");
+        long updateTime = 0;
+        updateTime = -System.nanoTime();
         updateFromOpenMM(i, running);
+        updateTime += System.nanoTime();
+        logger.info(String.format("\n Updated from within initializer in %6.3f sec", updateTime * NS2SEC));
     }
 
     /**
