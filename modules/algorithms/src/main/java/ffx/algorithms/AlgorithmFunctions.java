@@ -67,7 +67,7 @@ public interface AlgorithmFunctions extends PotentialsFunctions {
      * @param initVelocities Initialize velocities from Maxwell-Boltzmann distribution
      * @param dyn            Dynamics file
      */
-    abstract public void md(MolecularAssembly assembly, int nStep, double timeStep,
+    public void md(MolecularAssembly assembly, int nStep, double timeStep,
                             double printInterval, double saveInterval, double temperature,
                             boolean initVelocities, File dyn);
 
@@ -78,7 +78,7 @@ public interface AlgorithmFunctions extends PotentialsFunctions {
      * @param eps      RMS gradient convergence criteria
      * @return A <code>Potential</code>
      */
-    abstract public Potential minimize(MolecularAssembly assembly, double eps);
+    public Potential minimize(MolecularAssembly assembly, double eps);
 
     /**
      * Returns a default Listener if available (null by default).

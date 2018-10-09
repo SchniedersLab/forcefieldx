@@ -98,7 +98,7 @@ public interface BondedEnergy {
      * @param lambdaGradZ a {@link AtomicDoubleArray} object.
      * @return a double.
      */
-    public abstract double energy(boolean gradient, int threadID,
+    double energy(boolean gradient, int threadID,
                                   AtomicDoubleArray gradX,
                                   AtomicDoubleArray gradY,
                                   AtomicDoubleArray gradZ,

@@ -60,7 +60,7 @@ public interface DataContainer {
      *
      * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public Atom[] getAtomArray();
+    Atom[] getAtomArray();
 
     /**
      * <p>
@@ -68,7 +68,7 @@ public interface DataContainer {
      *
      * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public Atom[] getActiveAtomArray();
+    Atom[] getActiveAtomArray();
 
     /**
      * <p>
@@ -76,7 +76,7 @@ public interface DataContainer {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ArrayList<Residue>> getAltResidues();
+    ArrayList<ArrayList<Residue>> getAltResidues();
 
     /**
      * <p>
@@ -84,7 +84,7 @@ public interface DataContainer {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ArrayList<Molecule>> getAltMolecules();
+    ArrayList<ArrayList<Molecule>> getAltMolecules();
 
     /**
      * <p>
@@ -92,7 +92,7 @@ public interface DataContainer {
      *
      * @return an array of {@link ffx.potential.MolecularAssembly} objects.
      */
-    public MolecularAssembly[] getMolecularAssemblies();
+    MolecularAssembly[] getMolecularAssemblies();
 
     /**
      * <p>
@@ -100,7 +100,7 @@ public interface DataContainer {
      *
      * @return a {@link ffx.xray.RefinementModel} object.
      */
-    public RefinementModel getRefinementModel();
+    RefinementModel getRefinementModel();
 
     /**
      * <p>
@@ -108,7 +108,7 @@ public interface DataContainer {
      *
      * @return the current data weight.
      */
-    public double getWeight();
+    double getWeight();
 
     /**
      * <p>
@@ -116,7 +116,7 @@ public interface DataContainer {
      *
      * @param weight set the overall weight of the data.
      */
-    public void setWeight(double weight);
+    void setWeight(double weight);
 
     /**
      * <p>
@@ -124,7 +124,7 @@ public interface DataContainer {
      *
      * @return a {@link java.lang.String} object.
      */
-    public String printOptimizationHeader();
+    String printOptimizationHeader();
 
     /**
      * <p>
@@ -132,7 +132,7 @@ public interface DataContainer {
      *
      * @return a {@link java.lang.String} object.
      */
-    public String printOptimizationUpdate();
+    String printOptimizationUpdate();
 
     /**
      * <p>
@@ -140,5 +140,5 @@ public interface DataContainer {
      *
      * @return a {@link java.lang.String} object.
      */
-    public String printEnergyUpdate();
+    String printEnergyUpdate();
 }

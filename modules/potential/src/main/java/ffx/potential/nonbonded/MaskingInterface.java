@@ -59,7 +59,7 @@ public interface MaskingInterface {
      * @param i The atom whose masking rules should be applied.
      * @since 1.0
      */
-    public void applyMask(final double mask[], final int i);
+    void applyMask(final double mask[], final int i);
 
     /**
      * After calling removeMask, all entries in the mask array should be 1.
@@ -68,5 +68,5 @@ public interface MaskingInterface {
      * @param i The atom whose masking rules should be removed.
      * @since 1.0
      */
-    public void removeMask(final double mask[], final int i);
+    void removeMask(final double mask[], final int i);
 }

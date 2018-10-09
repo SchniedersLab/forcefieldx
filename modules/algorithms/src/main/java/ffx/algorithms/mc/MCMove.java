@@ -50,12 +50,12 @@ public interface MCMove {
     /**
      * Performs the move associated with this MCMove.
      */
-    public void move();
+    void move();
 
     /**
      * Reverts the last applied move() call. Returns the same energy change as
      * described above (with the same sign).
      */
-    public void revertMove();
+    void revertMove();
 
 }

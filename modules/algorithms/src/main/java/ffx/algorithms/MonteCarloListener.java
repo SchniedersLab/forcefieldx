@@ -56,6 +56,6 @@ public interface MonteCarloListener {
      * @param temperature The Metropolis Monte Carlo temperature.
      * @return A return of <code>true</code> indicates the algorithm continues.
      */
-    public abstract boolean mcUpdate(double temperature);
+    boolean mcUpdate(double temperature);
 
 }

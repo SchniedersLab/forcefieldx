@@ -50,49 +50,49 @@ public interface DataSet {
      *
      * @return a double.
      */
-    public abstract double lowerBound();
+    double lowerBound();
     /**
      * Upper bound of the points along x.
      *
      * @return a double.
      */
-    public abstract double upperBound();
+    double upperBound();
     /**
      * Number of points along x.
      *
      * @return a int.
      */
-    public abstract int numPoints();
+    int numPoints();
     /**
      * Separation between points along x; should be uniform.
      *
      * @return a double.
      */
-    public abstract double binWidth();
+    double binWidth();
     /**
      * Point f(x) at index.
      *
      * @param index a int.
      * @return a double.
      */
-    public abstract double getFxPoint(int index);
+    double getFxPoint(int index);
     /**
      * Returns copy of the array of points f(x) to integrate (y-axis).
      *
      * @return an array of {@link double} objects.
      */
-    public abstract double[] getAllFxPoints();
+    double[] getAllFxPoints();
     /**
      * Returns copy of the array of points x (x-axis).
      *
      * @return an array of {@link double} objects.
      */
-    public abstract double[] getX();
+    double[] getX();
     /**
      * Does this data set have half-width start/end bins. Intended for OSRW,
      * where the first and last bins are half the regular width.
      *
      * @return a boolean.
      */
-    public abstract boolean halfWidthEnds();
+    boolean halfWidthEnds();
 }
