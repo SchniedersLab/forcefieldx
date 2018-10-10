@@ -37,9 +37,11 @@
  */
 package ffx.potential;
 
+import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.util.Arrays.fill;
 
 import org.apache.commons.math3.util.FastMath;
@@ -766,6 +768,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+        assert Arrays.stream(x).allMatch(Double::isFinite);
         try {
             region.setX(x);
             region.setG(g);
