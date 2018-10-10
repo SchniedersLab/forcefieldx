@@ -115,6 +115,16 @@ JLP=modules/numerics/src/main/java/ffx/numerics/fft
 
 EXTRA_JVM_ARGUMENTS="-Xms4G -Xmx4G -Xss1M"
 
+if [ -z $TMPDIR ]; then
+    if [ -z $TMP ]; then
+        :
+    else
+        EXTRA_JVM_ARGUMENTS="-Djava.io.tmpdir=${TMP} ${EXTRA_JVM_ARGUMENTS}"
+    fi
+else
+    EXTRA_JVM_ARGUMENTS="-Djava.io.tmpdir=${TMPDIR} ${EXTRA_JVM_ARGUMENTS}"
+fi
+
 awkCmd=`which awk`
 sedCmd=`which sed`
 hasAwkSed=''
