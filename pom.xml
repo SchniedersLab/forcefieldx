@@ -390,6 +390,9 @@
                             <version>${surefire.version}</version>
                         </dependency>
                     </dependencies>
+                    <configuration>
+                        <trimStackTrace>false</trimStackTrace>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-report-plugin</artifactId>
@@ -1086,6 +1089,7 @@
         <pmd.skip>false</pmd.skip>
         <skipSurefireReport>false</skipSurefireReport>
         <skipTests>true</skipTests>
+        <failIfNoTests>false</failIfNoTests>
         <!-- Specify versions of Dependencies to Use -->
         <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>

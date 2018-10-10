@@ -443,6 +443,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g, boolean verbose) {
+        assert Arrays.stream(x).allMatch(Double::isFinite);
         region.setX(x);
         region.setG(g);
         region.setVerbose(verbose);

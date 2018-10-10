@@ -37,8 +37,8 @@
  */
 package ffx.potential.cli;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -241,17 +241,16 @@ public class TopologyOptions {
     }
 
     /**
-     * Collect unique atoms for a dual-topology.
+     * Collect unique atoms for a dual-topology. List MUST be sorted at the end.
      *
      * @param assembly A MolecularAssembly from the dual topology.
      * @param label    Either 'A' or 'B'.
      * @param unshared Atoms this dual topology isn't sharing.
-     * @return A List of Integers.
+     * @return A sorted List of Integers.
      */
     public List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label, String unshared) {
-        List<Integer> unique = new ArrayList<>();
-
-        if (unshared != null) {
+        if (unshared != null && !unshared.isEmpty()) {
+            logger.info(" Finding unique atoms for dual topology " + label);
             Set<Integer> indices = new HashSet<>();
             String[] toks = unshared.split("\\.");
             Atom[] atoms1 = assembly.getAtomArray();
@@ -264,9 +263,9 @@ public class TopologyOptions {
                         logger.severe(String.format(" Range %s was invalid start was greater than end", range));
                     }
                     logger.info(String.format(" Range %s for %s, start %d end %d", range, label, rangeStart, rangeEnd));
-                    logger.info(String.format(" First atom in range: %s", atoms1[rangeStart - 1]));
+                    logger.fine(String.format(" First atom in range: %s", atoms1[rangeStart - 1]));
                     if (rangeEnd > rangeStart) {
-                        logger.info(String.format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
+                        logger.fine(String.format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
                     }
                     for (int i = rangeStart; i <= rangeEnd; i++) {
                         indices.add(i - 1);
@@ -284,7 +283,7 @@ public class TopologyOptions {
                     } else {
                         logger.fine(String.format(" Unshared %s: %d variables %d-%d", label, i, counter, counter + 2));
                         for (int j = 0; j < 3; j++) {
-                            adjustedIndices.add(Integer.valueOf(counter + j));
+                            adjustedIndices.add(counter + j);
                         }
                     }
                 }
@@ -292,10 +291,10 @@ public class TopologyOptions {
                     counter += 3;
                 }
             }
-            unique.addAll(adjustedIndices);
+            return adjustedIndices.stream().sorted().collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
         }
-
-        return unique;
     }
 
     /**
@@ -315,12 +314,12 @@ public class TopologyOptions {
         UnivariateSwitchingFunction sf = nargs > 1 ? getSwitchingFunction() : null;
         List<Integer> uniqueA;
         List<Integer> uniqueB;
-        if (nargs >= 4) {
+        if (assemblies.length >= 4) {
             uniqueA = getUniqueAtomsA(assemblies[0]);
             uniqueB = getUniqueAtomsB(assemblies[2]);
         } else {
-            uniqueA = new ArrayList<>(1);
-            uniqueB = new ArrayList<>(1);
+            uniqueA = Collections.emptyList();
+            uniqueB = Collections.emptyList();
         }
 
         return getTopology(assemblies, sf, uniqueA, uniqueB, numPar, sb);

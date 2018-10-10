@@ -1617,6 +1617,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param c a double.
      */
     public void moveTo(double a, double b, double c) {
+        assert Double.isFinite(a) && Double.isFinite(b) && Double.isFinite(c);
         if (active) {
             xyz[0] = a;
             xyz[1] = b;
@@ -1632,6 +1633,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param xyz an array of double.
      */
     public void setXYZ(double xyz[]) {
+        assert Arrays.stream(xyz).allMatch(Double::isFinite);
         if (active && xyz != null) {
             System.arraycopy(xyz, 0, this.xyz, 0, 3);
         }
