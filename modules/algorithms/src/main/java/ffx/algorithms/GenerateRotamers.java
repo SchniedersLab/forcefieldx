@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -267,7 +268,7 @@ public class GenerateRotamers {
                     for (int i = begin; i <= end; i++) {
                         Atom ai = atoms[i - 1];
                         ai.setElectrostatics(false);
-                        ai.print();
+                        ai.print(Level.FINE);
                     }
                 } else {
                     logger.info(String.format(" Discarding electrostatics input %s", tok));
@@ -294,7 +295,7 @@ public class GenerateRotamers {
                     for (int i = begin; i <= end; i++) {
                         Atom ai = atoms[i - 1];
                         ai.setUse(false);
-                        ai.print();
+                        ai.print(Level.FINE);
                     }
                 } else {
                     logger.info(String.format(" Discarding inactive atoms input %s", tok));

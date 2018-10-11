@@ -51,6 +51,9 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -296,6 +299,36 @@ public class StringUtils {
         }
 
         return tmpFile.toString();
+    }
+
+    /**
+     * Finds consecutive subranges in an array of ints, and returns their mins
+     * and maxes. This can include singletons.
+     *
+     * Example: [4, 5, 6, 1, 1, 2, 5, 6, 7] would become [4,6],[1,1],[1,2],[5,7]
+     *
+     * @param set Array of ints to split into consecutive subranges.
+     * @return Consecutive subrange mins, maxes
+     */
+    public static List<int[]> consecutiveInts(int[] set) {
+        if (set == null || set.length == 0) {
+            return Collections.emptyList();
+        }
+        List<int[]> allRanges = new ArrayList<>();
+
+        int rangeStart = set[0];
+        int rangeEnd = rangeStart;
+        for (int i = 1; i < set.length; i++) {
+            if (set[i] == rangeEnd + 1) {
+                rangeEnd = set[i];
+            } else {
+                allRanges.add(new int[]{rangeStart, rangeEnd});
+                rangeStart = set[i];
+                rangeEnd = rangeStart;
+            }
+        }
+        allRanges.add(new int[]{rangeStart, rangeEnd});
+        return allRanges;
     }
 
 }
