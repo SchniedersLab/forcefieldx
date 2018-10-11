@@ -354,7 +354,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Clash energy threshold (kcal/mole).
      */
-    private double clashThreshold = 10.0;
+    private double clashThreshold = 25.0;
     /**
      * Clash energy threshold (kcal/mol) for MultiResidues, which can have much
      * more variation in self and 2-Body energies.
@@ -363,7 +363,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Clash energy threshold (kcal/mole).
      */
-    private double pairClashThreshold = 10.0;
+    private double pairClashThreshold = 25.0;
     /**
      * Pair clash energy threshold (kcal/mol) for MultiResidues.
      */
@@ -4617,6 +4617,9 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
+        Crystal crystal = molecularAssembly.getCrystal();
+        computeBackboneRotamerClashes(atoms, crystal, residues);
+
         long energyStartTime = System.nanoTime();
         SelfEnergyRegion singlesRegion = new SelfEnergyRegion(residues);
         TwoBodyEnergyRegion pairsRegion = new TwoBodyEnergyRegion(residues);
@@ -5274,9 +5277,10 @@ public class RotamerOptimization implements Terminatable {
      * @param residues  The residue being optimized.
      */
     private void computeBackboneRotamerClashes(Atom atoms[], Crystal crystal, Residue residues[]) {
-        // Create a NeighborList with a short cut-off.
+        // Create a NeighborList with a short cut-off
         double cutoff = superpositionThreshold;
         double buffer = 0.0;
+        ParallelTeam parallelTeam = new ParallelTeam(5);
         NeighborList backboneNeighborList = new NeighborList(null, crystal,
                 atoms, cutoff, buffer, parallelTeam);
 
@@ -5292,7 +5296,7 @@ public class RotamerOptimization implements Terminatable {
 
         // Fill in the coordinate array for SymOp 0 (i.e. the identity operator).
         int index = 0;
-        int atomIndex = 0;
+        int atomIndex = 1;
         for (Atom atom : atoms) {
             int xyzIndex = atom.getXyzIndex();
             if (atomIndex != xyzIndex) {
@@ -5309,8 +5313,8 @@ public class RotamerOptimization implements Terminatable {
 
 
         // Loop over all residues
-        for (Residue residue : residues) {
-
+        for (int resIndex = 0; resIndex < residues.length; resIndex++) {
+            Residue residue = residues[resIndex];
             // Collect rotamers for this residue.
             Rotamer[] rotamers = residue.getRotamers(library);
             int nrot = rotamers.length;
@@ -5385,9 +5389,9 @@ public class RotamerOptimization implements Terminatable {
                 }
 
                 if (clash) {
-                    // ToDo: If there is a clash, eliminate the rotamer.
+                    eliminateRotamer(residues, resIndex, ri, verbose);
+                    logger.info(format("Eliminated rotamer due to backbone clash."));
                 }
-
             }
 
             // Turn off per atom "use" flags for the current residue.
@@ -5395,8 +5399,6 @@ public class RotamerOptimization implements Terminatable {
                 use[integer] = false;
             }
         }
-
-
     }
 
     /**
@@ -6538,7 +6540,7 @@ public class RotamerOptimization implements Terminatable {
      * alternate rotamers for residue i, or if i-ri is already eliminated.
      *
      * @param residues Residues under consideration.
-     * @param i        A residue index.
+     * @param i        A residue index based on the current residue list.
      * @param ri       A rotamer to attempt elimination of.
      * @param verbose
      * @return If the rotamer was eliminated.
