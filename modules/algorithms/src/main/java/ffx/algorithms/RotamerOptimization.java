@@ -127,6 +127,7 @@ import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @author Stephen D. LuCore
+ * @author Mallory R. Tollefson
  * @since 1.0
  */
 public class RotamerOptimization implements Terminatable {
@@ -4617,8 +4618,8 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
-        Crystal crystal = molecularAssembly.getCrystal();
-        computeBackboneRotamerClashes(atoms, crystal, residues);
+        //Crystal crystal = molecularAssembly.getCrystal();
+        //computeBackboneRotamerClashes(atoms, crystal, residues);
 
         long energyStartTime = System.nanoTime();
         SelfEnergyRegion singlesRegion = new SelfEnergyRegion(residues);
