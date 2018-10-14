@@ -111,6 +111,16 @@ CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
 # These flags for for JDK 8.
 EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M"
 
+if [ -z $TMPDIR ]; then
+    if [ -z $TMP ]; then
+        :
+    else
+        EXTRA_JVM_ARGUMENTS="-Djava.io.tmpdir=${TMP} ${EXTRA_JVM_ARGUMENTS}"
+    fi
+else
+    EXTRA_JVM_ARGUMENTS="-Djava.io.tmpdir=${TMPDIR} ${EXTRA_JVM_ARGUMENTS}"
+fi
+
 awkCmd=`which awk`
 sedCmd=`which sed`
 hasAwkSed=''

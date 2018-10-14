@@ -171,10 +171,11 @@ public class AlchemicalOptions {
     public static void setAlchemicalAtoms(MolecularAssembly assembly, int start, int fin, String ligAt) {
         Atom[] atoms = assembly.getAtomArray();
         if (start > 0) {
+            logger.info(String.format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
             for (int i = start; i <= fin; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setApplyLambda(true);
-                ai.print();
+                ai.print(Level.FINE);
             }
         }
         if (ligAt != null) {
@@ -187,11 +188,12 @@ public class AlchemicalOptions {
                     if (rangeStart > rangeEnd) {
                         logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                     }
+                    logger.info(String.format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
                     // Don't need to worry about negative numbers; rangeregex just won't match.
                     for (int i = rangeStart; i <= rangeEnd; i++) {
                         Atom ai = atoms[i - 1];
                         ai.setApplyLambda(true);
-                        ai.print();
+                        ai.print(Level.FINE);
                     }
                 } else {
                     logger.warning(String.format(" Could not recognize %s as a valid range; skipping", range));

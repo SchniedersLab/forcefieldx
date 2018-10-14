@@ -82,10 +82,13 @@ class Energy extends PotentialScript {
         int noElecStop = ef1
         noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop
 
+        if (noElecStart <= noElecStop) {
+            logger.info(String.format(" Disabling electrostatics for atoms %d (%s) to %d (%s).", noElecStart, atoms[noElecStart - 1], noElecStop, atoms[noElecStop - 1]))
+        }
         for (int i = noElecStart; i <= noElecStop; i++) {
             Atom ai = atoms[i - 1]
             ai.setElectrostatics(false)
-            ai.print()
+            ai.print(java.util.logging.Level.FINE)
         }
 
         int nVars = forceFieldEnergy.getNumberOfVariables()
