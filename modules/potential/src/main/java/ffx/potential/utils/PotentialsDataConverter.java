@@ -46,7 +46,7 @@ import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
-import org.biojava.bio.structure.Structure;
+import org.biojava.nbio.structure.Structure;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -161,7 +161,7 @@ public class PotentialsDataConverter implements FileOpener {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Converts the data structure to MolecularAssembly(s).
      */
     @Override
@@ -242,7 +242,7 @@ public class PotentialsDataConverter implements FileOpener {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the first MolecularAssembly created by the run() function.
      */
     @Override
@@ -262,7 +262,7 @@ public class PotentialsDataConverter implements FileOpener {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns all MolecularAssembly objects created by this converter.
      */
     @Override
@@ -272,7 +272,7 @@ public class PotentialsDataConverter implements FileOpener {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the properties associated with the first MolecularAssembly.
      */
     @Override
@@ -292,7 +292,7 @@ public class PotentialsDataConverter implements FileOpener {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the properties of all MolecularAssembly objects created by this
      * converter.
      */

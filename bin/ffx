@@ -121,22 +121,24 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JVM version; disallow 1.7 or below, warn for JDK 9+ that experimental flags are in use.
+# Detect JDK version; disallow JDKs below 1.8 and 11.
 if [ $hasAwkSed ]; then
     JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
     JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"
     JVSEC="`echo "$JVERS" | awk 'BEGIN { FS = "."; } { print $2 }'`"
 
     USE_EXPTL_FLAGS=''
-    if [ $JVFIRST -gt 10 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JRE 1.8, JDK 9 or JDK 10." 1>&2
-        exit 1
+    if [ $JVFIRST -gt 11 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8, JDK 9, JDK 10 or JDK 11." 1>&2
+#       exit 1
     elif [ $JVFIRST -eq 9 ]; then
         USE_EXPTL_FLAGS='1'
     elif [ $JVFIRST -eq 10 ]; then
         USE_EXPTL_FLAGS='1'
+    elif [ $JVFIRST -eq 11 ]; then
+        USE_EXPTL_FLAGS='1'
     elif [ $JVSEC -lt 8 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JRE 1.8, JDK 9 or JDK 10." 1>&2
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 1.8, JDK 9, JDK 10 or JDK 11." 1>&2
         exit 1
     fi
 
@@ -144,8 +146,9 @@ if [ $hasAwkSed ]; then
         EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
     fi
 else
-    echo " The JRE version could not be autodetected. Please use JRE 1.8, JDK 9 or JDK 10."
+    echo " The JRE version could not be autodetected. Please use JDK 1.8, JDK 9, JDK 10 or JDK 11."
 fi
+
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
@@ -161,7 +164,6 @@ if $darwin; then
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
   -splash:"$BASEDIR/bin/splash.png" \
-  -Djava.system.class.loader="ffx.FFXClassLoader" \
   -Xdock:name="Force Field X" \
   -Xdock:icon="$BASEDIR/bin/icon.icns" \
   -Dapp.name="Force Field X" \
@@ -175,7 +177,6 @@ else
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
   -splash:"$BASEDIR/bin/splash.png" \
-  -Djava.system.class.loader="ffx.FFXClassLoader" \
   -Dapp.name="Force Field X" \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \

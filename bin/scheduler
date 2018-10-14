@@ -122,7 +122,6 @@ fi
 exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
-  -Djava.system.class.loader="ffx.FFXClassLoader" \
   -Dapp.name="FFX Job Scheduler" \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \

@@ -21,28 +21,61 @@
     </description>
     <build>
         <plugins>
-            <!-- Make an assembly for Webstart -->
+
+            <!-- Create a shaded jar with all FFX dependencies -->
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${assembly.version}</version>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${shade.version}</version>
                 <configuration>
-                    <attach>false</attach>
-                    <finalName>ffx</finalName>
-                    <descriptors>
-                        <descriptor>src/assemble/all.xml</descriptor>
-                    </descriptors>
-                    <outputDirectory>target/site</outputDirectory>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                    <finalName>ffx-all</finalName>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-webstart-jar</id>
-                        <phase>deploy</phase>
+                        <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Copy shaded FFX jar to the bin directory. -->
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${resources.version}</version>
+                <executions>
+                    <execution>
+                        <id>copy-jar</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/../../bin</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>target</directory>
+                                    <includes>
+                                        <include>ffx-all.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>appassembler-maven-plugin</artifactId>
@@ -73,32 +106,8 @@
                     </programs>
                 </configuration>
             </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>${resources.version}</version>
-                <executions>
-                    <execution>
-                        <id>copy-jar</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/../../bin</outputDirectory>
-                            <overwrite>true</overwrite>
-                            <resources>
-                                <resource>
-                                    <directory>target/site</directory>
-                                    <includes>
-                                        <include>ffx-all.jar</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
+
+            <!-- plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${jar.version}</version>
                 <configuration>
@@ -113,7 +122,8 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
-            </plugin>
+            </plugin -->
+
         </plugins>
         <resources>
             <resource>
@@ -164,7 +174,9 @@
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>cd ${project.parent.basedir}/../ffx-ext; mvn -DskipTests=${skipTests} deploy; cd ${project.basedir};</argument>
+                                        <argument>cd ${project.parent.basedir}/../ffx-ext; mvn -DskipTests=${skipTests}
+                                            deploy; cd ${project.basedir};
+                                        </argument>
                                     </arguments>
                                     <skip>false</skip>
                                 </configuration>
@@ -265,7 +277,7 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava3-structure</artifactId>
+            <artifactId>biojava-structure</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>

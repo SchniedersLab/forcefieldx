@@ -124,7 +124,7 @@ class Scheduler extends AlgorithmsScript {
 
         String java = javaHome + "/bin/java"
         String ffx = ffxHome + "/bin/ffx-all.jar"
-        args = "-Xmx" + memory + " -Djava.system.class.loader='ffx.FFXClassLoader'"
+        args = "-Xmx" + memory
 
         if (v) {
             args = args + " -Dpj.log='true'"

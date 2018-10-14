@@ -123,7 +123,7 @@
         </dependency>
         <dependency>
             <groupId>org.biojava</groupId>
-            <artifactId>biojava3-structure</artifactId>
+            <artifactId>biojava-structure</artifactId>
             <version>${biojava.version}</version>
             <type>jar</type>
         </dependency>

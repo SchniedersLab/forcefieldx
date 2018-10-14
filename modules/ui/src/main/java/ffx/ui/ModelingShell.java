@@ -338,6 +338,9 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * @param file a {@link java.io.File} object.
      */
     public void runFFXScript(File file) {
+
+        logger.info( " Executing script: " + file.getAbsolutePath());
+
         try {
             before();
             try {

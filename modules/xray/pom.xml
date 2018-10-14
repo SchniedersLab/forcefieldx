@@ -170,11 +170,6 @@
             <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.biojava</groupId>
-            <artifactId>biojava3-structure</artifactId>
-            <version>${biojava.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.apporiented</groupId>
             <artifactId>hierarchical-clustering</artifactId>
             <version>${clustering.version}</version>

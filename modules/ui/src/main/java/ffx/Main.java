@@ -46,19 +46,32 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
 import static java.lang.String.format;
 
 import org.apache.commons.io.FilenameUtils;
@@ -152,9 +165,8 @@ public final class Main extends JFrame {
             }
             if (embeddedScript != null) {
                 try {
-                    commandLineFile = new File(
-                            FFXClassLoader.copyInputStreamToTmpFile(
-                                    embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
+                    commandLineFile = new File(copyInputStreamToTmpFile(
+                                    embeddedScript.openStream(), commandLineFile.getName(), ".groovy"));
                 } catch (Exception e) {
                     logger.info(String.format(" The embedded script %s could not be extracted.", embeddedScript));
                 }
@@ -340,14 +352,21 @@ public final class Main extends JFrame {
     private static void commandLineInterfaceHelp(boolean listTestScripts) {
         logger.info("\n usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
         logger.info("\n where commands include:\n");
-        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (listTestScripts) {
-            classLoader.getResource("List test scripts");
-            logger.info("\n For help on an experimental or test command use:  ffxc command -h\n");
+            try {
+                Main.listGroovyScripts(false, true);
+            } catch (IOException e) {
+                logger.log(Level.INFO, " Exception listing scripts.", e);
+            }
+            logger.info("\n For help on an experimental or test command use:  ffxc <command> -h\n");
         } else {
-            classLoader.getResource("List scripts");
+            try {
+                Main.listGroovyScripts(true, false);
+            } catch (IOException e) {
+                logger.log(Level.INFO, " Exception listing scripts.", e);
+            }
             logger.info("\n To list experimental & test scripts: ffxc --test");
-            logger.info(" For help on a specific command use:  ffxc command -h\n");
+            logger.info(" For help on a specific command use:  ffxc <command> -h\n");
         }
         System.exit(0);
     }
@@ -536,4 +555,104 @@ public final class Main extends JFrame {
                 "Up Time: " + stopWatch).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
+
+    public static Map<String, List<String>> listGroovyScripts(
+            boolean logScripts, boolean logTestScripts) throws IOException {
+
+        // Find the location of ffx-all.jar
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        URL scriptURL = classLoader.getResource("ffx/scripts");
+        String ffx = scriptURL.getPath().substring(5, scriptURL.getPath().indexOf("!"));
+
+        JarFile jar = new JarFile(URLDecoder.decode(ffx, "UTF-8"));
+
+        Map<String, List<String>> classes = new HashMap<>();
+        List<String> scripts = new ArrayList<>();
+        List<String> testScripts = new ArrayList<>();
+        classes.put("scripts", scripts);
+        classes.put("testScripts", testScripts);
+
+        // Getting the files into the jar
+        Enumeration<? extends JarEntry> enumeration = jar.entries();
+
+        // Iterates into the files in the jar file
+        while (enumeration.hasMoreElements()) {
+            ZipEntry zipEntry = enumeration.nextElement();
+            String className = zipEntry.getName();
+
+            // Find FFX groovy scripts.
+            if (className.startsWith("ffx") && className.endsWith(".groovy")) {
+                className = className.replace(".groovy", "").replace("/", ".");
+                className = className.replace("ffx.scripts.", "");
+                if (className.toUpperCase().contains("TEST")) {
+                    testScripts.add(className);
+                } else {
+                    scripts.add(className);
+                }
+            }
+        }
+
+        // Sort the scripts alphabetically.
+        Collections.sort(scripts);
+        Collections.sort(testScripts);
+
+        // Log the script names.
+        if (logTestScripts) {
+            for (String script : testScripts) {
+                logger.info(" " + script);
+            }
+        }
+        if (logScripts) {
+            for (String script : scripts) {
+                logger.info(" " + script);
+            }
+        }
+
+        return classes;
+    }
+
+    /**
+     * Returns the file name of a temporary copy of <code>input</code> content.
+     *
+     * @param input  a {@link java.io.InputStream} object.
+     * @param name   a {@link java.lang.String} object.
+     * @param suffix a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
+    public static String copyInputStreamToTmpFile(final InputStream input,
+                                                  String name, final String suffix) throws IOException {
+        File tmpFile = null;
+
+        try {
+            name = "ffx." + name + ".";
+            tmpFile = File.createTempFile(name, suffix);
+        } catch (IOException e) {
+            System.out.println(" Could not extract a Force Field X library.");
+            System.err.println(e.toString());
+            System.exit(-1);
+        }
+
+        tmpFile.deleteOnExit();
+
+        OutputStream output = null;
+        try {
+            output = new BufferedOutputStream(new FileOutputStream(tmpFile));
+            byte[] buffer = new byte[8192];
+            int size;
+            while ((size = input.read(buffer)) != -1) {
+                output.write(buffer, 0, size);
+            }
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+        }
+
+        return tmpFile.toString();
+    }
 }
+

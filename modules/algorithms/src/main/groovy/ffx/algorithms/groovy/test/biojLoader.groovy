@@ -39,8 +39,8 @@
 package ffx.algorithms.groovy.test;
 
 import org.apache.commons.io.FilenameUtils
-import org.biojava.bio.structure.Structure
-import org.biojava.bio.structure.io.PDBFileReader
+import org.biojava.nbio.structure.Structure
+import org.biojava.nbio.structure.io.PDBFileReader
 
 import groovy.cli.picocli.CliBuilder
 

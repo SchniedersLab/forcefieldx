@@ -106,9 +106,8 @@ public class HeadlessMain {
 
                 if (embeddedScript != null) {
                     try {
-                        commandLineFile = new File(
-                                FFXClassLoader.copyInputStreamToTmpFile(
-                                        embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
+                        commandLineFile = new File(Main.copyInputStreamToTmpFile(
+                                        embeddedScript.openStream(), commandLineFile.getName(), ".groovy"));
                     } catch (Exception e) {
                         logger.warning("Exception extracting embedded script "
                                 + embeddedScript.toString() + "\n" + e.toString());

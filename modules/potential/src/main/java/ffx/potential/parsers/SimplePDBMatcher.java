@@ -41,11 +41,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureException;
-import org.biojava.bio.structure.align.StructurePairAligner;
-import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
-import org.biojava.bio.structure.io.PDBFileReader;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureException;
+import org.biojava.nbio.structure.align.StructurePairAligner;
+import org.biojava.nbio.structure.align.pairwise.AlternativeAlignment;
+import org.biojava.nbio.structure.io.PDBFileReader;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -55,7 +55,6 @@ import edu.rit.pj.ParallelTeam;
  * <p>SimplePDBMatcher class.</p>
  *
  * @author Jacob Litman
- *
  */
 public class SimplePDBMatcher {
 
@@ -67,7 +66,7 @@ public class SimplePDBMatcher {
     /**
      * <p>Constructor for SimplePDBMatcher.</p>
      *
-     * @param matchFiles an array of {@link java.io.File} objects.
+     * @param matchFiles  an array of {@link java.io.File} objects.
      * @param sourceFiles an array of {@link java.io.File} objects.
      */
     public SimplePDBMatcher(File[] matchFiles, File[] sourceFiles) {
