@@ -129,7 +129,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
             forceFieldEnergyOpenMM = molDynOpenMM.getForceFieldEnergyOpenMM();
             forceFieldEnergyOpenMM.setCoeffOfFriction(coeffOfFriction)
             forceFieldEnergyOpenMM.setCollisionFreq(collisionFreq)
-            molDynOpenMM.setRestartFrequency(dynamics.write)
+            molDynOpenMM.setRestartFrequency(dynamics.checkpoint)
             molDynOpenMM.setFileType(writeout.getFileType())
             molDynOpenMM.setIntervalSteps(trajSteps)
             boolean initVelocities = true

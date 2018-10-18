@@ -256,12 +256,19 @@ public class MonteCarloOSRW extends BoltzmannMC {
     public void sample() {
 
         int n = potential.getNumberOfVariables();
-        double[] coordinates = new double[n];
+        double[] currentCoordinates = new double[n];
         double[] proposedCoordinates = new double[n];
-        double[] newCoordinates;
         int numMoves = totalSteps / stepsPerMove;
         acceptLambda = 0;
         acceptMD = 0;
+
+        // Initialize the current Force Field Energy, Bias Energy, Total OSRW Energy and dU/dL.
+
+        potential.getCoordinates(currentCoordinates);
+        double currentOSRWEnergy = osrw.energy(currentCoordinates);
+        double currentdUdL = osrw.getForceFielddEdL();
+        double currentForceFieldEnergy = osrw.getForceFieldEnergy();
+        double currentBiasEnergy = osrw.getBiasEnergy();
 
         /**
          * Initialize MC move instances.
@@ -276,15 +283,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.info(String.format("\n MCOSRW Round %d", imove + 1));
             }
 
-            potential.getCoordinates(coordinates);
-
-            // ToDO: Initialize the quantities below outside the loop, then re-use the final values from the previous loop iteration.
-
-            double currentOSRWEnergy = osrw.energy(coordinates);
-            double currentdUdL = osrw.getForceFielddEdL();
-            double currentForceFieldEnergy = osrw.getForceFieldEnergy();
-            double currentBiasEnergy = osrw.getBiasEnergy();
-
             /**
              * Run MD in an approximate potential U* (U star) that does not include the OSRW bias.
              */
@@ -298,11 +296,20 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedKineticEnergy = mdMove.getKineticEnergy();
 
             // Get the new coordinates.
+            long updateCoordsAndEnergy = 0;
+            updateCoordsAndEnergy = -System.nanoTime();
+
             potential.getCoordinates(proposedCoordinates);
+
+            // ToDo: Get rid of redundant call to OpenMM in "osrw.energy" to compute the force field energy we already have from MD.
+            // ToDo: Instead, refactor OSRW to compute only the Bias energy (i.e. not re-compute the force field energy).
             double proposedOSRWEnergy = osrw.energy(proposedCoordinates);
             double proposeddUdL = osrw.getForceFielddEdL();
             double proposedForceFieldEnergy = osrw.getForceFieldEnergy();
             double proposedBiasEnergy = osrw.getBiasEnergy();
+
+            updateCoordsAndEnergy += System.nanoTime();
+            logger.info(String.format(" Updated coordinates and energies in %6.3f", updateCoordsAndEnergy * NS2SEC));
 
             double currentTotalEnergy = currentOSRWEnergy + currentKineticEnergy;
             double proposedTotalEnergy = proposedOSRWEnergy + proposedKineticEnergy;
@@ -317,8 +324,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
                     proposedTotalEnergy - currentTotalEnergy));
-
+            
+            long evalTime = 0;
+            evalTime = -System.nanoTime();
             if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
+                evalTime += System.nanoTime();
+                logger.info(String.format(" Evaluated MD move in %6.3f", evalTime * NS2SEC));
                 /**
                  * Accept MD move.
                  */
@@ -329,14 +340,18 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 currentTotalEnergy = proposedTotalEnergy;
                 currentdUdL = proposeddUdL;
                 currentForceFieldEnergy = proposedForceFieldEnergy;
-                newCoordinates = proposedCoordinates;
-
+                currentBiasEnergy = proposedBiasEnergy;
+                System.arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
             } else {
+                logger.info(String.format(" Evaluated MD move in %6.3f", evalTime * NS2SEC));
                 double percent = (acceptMD * 100.0) / (imove + 1);
                 logger.info(String.format(" MCMD step   :      Rejected [FL=%8.3f,E=%12.4f] -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
                         currentdUdL, currentOSRWEnergy, proposeddUdL, proposedOSRWEnergy, percent));
+                long revertTime = 0;
+                revertTime = -System.nanoTime();
                 mdMove.revertMove();
-                newCoordinates = coordinates;
+                revertTime += System.nanoTime();
+                logger.info(String.format(" Reverted move in %6.3f", revertTime * NS2SEC));
             }
             mdMoveAndEvalTime += System.nanoTime();
             logger.info(String.format("\n Total time to run and evaluate MD move: %6.3f", mdMoveAndEvalTime * NS2SEC));
@@ -352,12 +367,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 lambdaMoveTime = -System.nanoTime();
                 double currentLambda = osrw.getLambda();
                 lambdaMove.move();
+                double proposedLambda = osrw.getLambda();
 
-                proposedOSRWEnergy = osrw.energy(newCoordinates);
+                proposedOSRWEnergy = osrw.energy(currentCoordinates);
                 proposedForceFieldEnergy = osrw.getForceFieldEnergy();
                 proposedBiasEnergy = osrw.getBiasEnergy();
                 proposeddUdL = osrw.getForceFielddEdL();
-                double proposedLambda = osrw.getLambda();
 
                 logger.info(format("\n Current  OSRW     %12.3f at L=%5.3f.", currentOSRWEnergy, currentLambda));
                 logger.info(format(" Proposed OSRW     %12.3f at L=%5.3f.", proposedOSRWEnergy, proposedLambda));
@@ -368,28 +383,25 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     double percent = (acceptLambda * 100.0) / (imove + 1);
                     logger.info(String.format(" MC Lambda step   : Accepted [ L=%8.3f,E=%12.4f] -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
                             currentLambda, currentOSRWEnergy, proposedLambda, proposedOSRWEnergy, percent));
-                    currentdUdL = proposeddUdL;
                     currentOSRWEnergy = proposedOSRWEnergy;
                     currentForceFieldEnergy = proposedForceFieldEnergy;
                     currentBiasEnergy = proposedBiasEnergy;
+                    currentdUdL = proposeddUdL;
+                    lambda = proposedLambda;
                 } else {
                     double percent = (acceptLambda * 100.0) / (imove + 1);
                     logger.info(String.format(" MC Lambda step   : Rejected [ L=%8.3f,E=%12.4f] -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
                             currentLambda, currentTotalEnergy, proposedLambda, proposedTotalEnergy, percent));
                     lambdaMove.revertMove();
-                    potential.getCoordinates(coordinates);
+                    lambda = currentLambda;
                 }
                 lambdaMoveTime += System.nanoTime();
                 logger.info(String.format(" Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
 
-                lambda = osrw.getLambda();
-
                 /**
                  * Update time dependent bias.
                  */
-                osrw.addBias(currentdUdL, coordinates, null);
-
-                // ToDo: Update Bias Energy (i.e. without re-calling force field energy and gradient).
+                osrw.addBias(currentdUdL, currentCoordinates, null);
                 logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
             }
 

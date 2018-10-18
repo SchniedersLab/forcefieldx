@@ -133,7 +133,7 @@ class Dynamics extends AlgorithmsScript {
             }
 
             molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
-
+            
             molDyn.dynamic(dynamics.steps, dynamics.dt,
                     dynamics.report, dynamics.write, dynamics.temp, true, dyn)
 
