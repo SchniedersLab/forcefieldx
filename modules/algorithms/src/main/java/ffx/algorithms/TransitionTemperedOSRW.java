@@ -329,6 +329,123 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * {@inheritDoc}
      */
     @Override
+    public double energy(double[] x) {
+
+        forceFieldEnergy = potential.energy(x);
+
+        /**
+         * OSRW is propagated with the slowly varying terms.
+         */
+        if (state == STATE.FAST) {
+            return forceFieldEnergy;
+        }
+
+        gLdEdL = 0.0;
+        dUdLambda = lambdaInterface.getdEdL();
+        d2UdL2 = lambdaInterface.getd2EdL2();
+        int lambdaBin = binForLambda(lambda);
+        int FLambdaBin = binForFLambda(dUdLambda);
+        dForceFieldEnergydL = dUdLambda;
+
+        /**
+         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
+         * to L and F_L.
+         */
+        double dGdLambda = 0.0;
+        double dGdFLambda = 0.0;
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = lambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                gLdEdL += bias;
+                dGdLambda -= deltaL / ls2 * bias;
+                dGdFLambda -= deltaFL / FLs2 * bias;
+            }
+        }
+
+        /**
+         * Lambda gradient due to recursion kernel G(L, F_L).
+         */
+        dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
+
+        /**
+         * Compute the energy and gradient for the recursion slave at F(L) using
+         * interpolation.
+         */
+        biasEnergy = current1DBiasEnergy() + gLdEdL;
+
+        if (print) {
+            logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
+            logger.info(String.format(" %s %16.8f  %s",
+                    "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
+        }
+
+        if (propagateLambda) {
+            energyCount++;
+
+            /**
+             * Log the current Lambda state.
+             */
+            if (energyCount % printFrequency == 0) {
+                double dBdL = dUdLambda - dForceFieldEnergydL;
+                if (lambdaBins < 1000) {
+                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                } else {
+                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                }
+            }
+
+            /**
+             * Metadynamics grid counts (every 'countInterval' steps).
+             */
+            if (energyCount % countInterval == 0) {
+                addBias(dForceFieldEnergydL, x, null);
+            }
+
+            langevin();
+        }
+
+        totalEnergy = forceFieldEnergy + biasEnergy;
+
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
         forceFieldEnergy = potential.energyAndGradient(x, gradient);
@@ -450,6 +567,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         return totalEnergy;
     }
+
+
+
 
     /**
      * {@inheritDoc}

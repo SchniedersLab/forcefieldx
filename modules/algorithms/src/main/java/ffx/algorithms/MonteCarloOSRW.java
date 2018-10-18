@@ -259,7 +259,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
         double[] coordinates = new double[n];
         double[] proposedCoordinates = new double[n];
         double[] newCoordinates;
-        double[] gradient = new double[n];
         int numMoves = totalSteps / stepsPerMove;
         acceptLambda = 0;
         acceptMD = 0;
@@ -281,7 +280,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
             // ToDO: Initialize the quantities below outside the loop, then re-use the final values from the previous loop iteration.
 
-            double currentOSRWEnergy = osrw.energyAndGradient(coordinates, gradient);
+            double currentOSRWEnergy = osrw.energy(coordinates);
             double currentdUdL = osrw.getForceFielddEdL();
             double currentForceFieldEnergy = osrw.getForceFieldEnergy();
             double currentBiasEnergy = osrw.getBiasEnergy();
@@ -300,7 +299,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
             // Get the new coordinates.
             potential.getCoordinates(proposedCoordinates);
-            double proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
+            double proposedOSRWEnergy = osrw.energy(proposedCoordinates);
             double proposeddUdL = osrw.getForceFielddEdL();
             double proposedForceFieldEnergy = osrw.getForceFieldEnergy();
             double proposedBiasEnergy = osrw.getBiasEnergy();
@@ -354,7 +353,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 double currentLambda = osrw.getLambda();
                 lambdaMove.move();
 
-                proposedOSRWEnergy = osrw.energyAndGradient(newCoordinates, gradient);
+                proposedOSRWEnergy = osrw.energy(newCoordinates);
                 proposedForceFieldEnergy = osrw.getForceFieldEnergy();
                 proposedBiasEnergy = osrw.getBiasEnergy();
                 proposeddUdL = osrw.getForceFielddEdL();
@@ -388,7 +387,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 /**
                  * Update time dependent bias.
                  */
-                osrw.addBias(currentdUdL, coordinates, gradient);
+                osrw.addBias(currentdUdL, coordinates, null);
 
                 // ToDo: Update Bias Energy (i.e. without re-calling force field energy and gradient).
                 logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
