@@ -160,7 +160,7 @@ public class NeighborList extends ParallelRegion {
      */
     private int symmetryMateCount;
     /**
-     * Number of atoms in the asymmetry unit with interactions lists greater
+     * Number of atoms in the asymmetric unit with interactions lists greater
      * than 0.
      */
     private int atomsWithIteractions;

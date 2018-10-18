@@ -50,8 +50,8 @@ import ffx.numerics.Potential;
  */
 public interface CrystalPotential extends Potential {
 
-    public abstract Crystal getCrystal();
+    Crystal getCrystal();
 
-    public abstract void setCrystal(Crystal crystal);
+    void setCrystal(Crystal crystal);
 
 }

@@ -61,33 +61,33 @@ public interface FileOpener extends Runnable {
 
     /** {@inheritDoc} */
     @Override
-    public void run();
+    void run();
 
     /**
      * <p>getAssembly.</p>
      *
      * @return a {@link ffx.potential.MolecularAssembly} object.
      */
-    public MolecularAssembly getAssembly();
+    MolecularAssembly getAssembly();
 
     /**
      * <p>getAllAssemblies.</p>
      *
      * @return an array of {@link ffx.potential.MolecularAssembly} objects.
      */
-    public MolecularAssembly[] getAllAssemblies();
+    MolecularAssembly[] getAllAssemblies();
 
     /**
      * <p>getProperties.</p>
      *
      * @return a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
-    public CompositeConfiguration getProperties();
+    CompositeConfiguration getProperties();
 
     /**
      * <p>getAllProperties.</p>
      *
      * @return an array of {@link org.apache.commons.configuration2.CompositeConfiguration} objects.
      */
-    public CompositeConfiguration[] getAllProperties();
+    CompositeConfiguration[] getAllProperties();
 }

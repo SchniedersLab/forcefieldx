@@ -49,16 +49,14 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.biojava.bio.structure.Chain;
-import org.biojava.bio.structure.Group;
-import org.biojava.bio.structure.PDBCrystallographicInfo;
-import org.biojava.bio.structure.ResidueNumber;
-import org.biojava.bio.structure.SSBond;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureTools;
+import org.biojava.nbio.structure.Chain;
+import org.biojava.nbio.structure.Group;
+import org.biojava.nbio.structure.PDBCrystallographicInfo;
+import org.biojava.nbio.structure.ResidueNumber;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureTools;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.SpaceGroup;
 import ffx.numerics.math.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
@@ -201,22 +199,17 @@ public class BiojavaFilter extends ConversionFilter {
     private int mutateResID = 0;
     private String mutateToResname = null;
     private Character mutateChainID = null;
-    private boolean print = true;
     private PDBFilter.PDBFileStandard fileStandard = VERSION3_3; // Assume current standard.
     /**
      * If true, output is directed into arrayOutput instead of the file.
      */
     private boolean listMode = false;
     private ArrayList<String> listOutput = new ArrayList<>();
-    /**
-     * Don't output atoms which fail Atom.getUse().
-     */
-    private boolean ignoreInactiveAtoms = false;
 
     /**
      * <p>Constructor for BiojavaFilter.</p>
      *
-     * @param structure         a {@link org.biojava.bio.structure.Structure} object.
+     * @param structure         a {@link org.biojava.nbio.structure.Structure} object.
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param forcefield        a {@link ffx.potential.parameters.ForceField} object.
      * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
@@ -250,7 +243,7 @@ public class BiojavaFilter extends ConversionFilter {
     /**
      * <p>Constructor for BiojavaFilter.</p>
      *
-     * @param structure           a {@link org.biojava.bio.structure.Structure} object.
+     * @param structure           a {@link org.biojava.nbio.structure.Structure} object.
      * @param molecularAssemblies a {@link java.util.List} object.
      * @param forcefield          a {@link ffx.potential.parameters.ForceField} object.
      * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
@@ -394,7 +387,7 @@ public class BiojavaFilter extends ConversionFilter {
                     structure.getName(), currentAltLoc));
         }
 
-        org.biojava.bio.structure.Atom[] bjAtoms = StructureTools.getAllAtomArray(structure);
+        org.biojava.nbio.structure.Atom[] bjAtoms = StructureTools.getAllAtomArray(structure);
         int nAtoms = bjAtoms.length;
         Atom[] ffxAtoms = new Atom[nAtoms];
         /**
@@ -404,7 +397,7 @@ public class BiojavaFilter extends ConversionFilter {
         currentSegID = null;
         PDBCrystallographicInfo cInfo = structure.getCrystallographicInfo();
 
-        if (cInfo.isCrystallographic()) {
+        if (cInfo != null) {
             // I do not think we need to check if it already has these properties,
             // but it can be done.
             properties.addProperty("a-axis", cInfo.getA());
@@ -413,10 +406,10 @@ public class BiojavaFilter extends ConversionFilter {
             properties.addProperty("alpha", cInfo.getAlpha());
             properties.addProperty("beta", cInfo.getBeta());
             properties.addProperty("gamma", cInfo.getGamma());
-            properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(cInfo.getSpaceGroup()));
+            properties.addProperty("spacegroup", cInfo.getSpaceGroup().getShortSymbol());
         }
 
-        for (org.biojava.bio.structure.Atom atom : bjAtoms) {
+        for (org.biojava.nbio.structure.Atom atom : bjAtoms) {
             String name = atom.getName().toUpperCase().trim();
             double[] xyz = new double[3];
             xyz[0] = atom.getX();
@@ -492,94 +485,94 @@ public class BiojavaFilter extends ConversionFilter {
             }
         }
 
-        List<Bond> ssBondList = new ArrayList<>();
-        for (SSBond ssBond : structure.getSSBonds()) {
-            Polymer c1 = activeMolecularAssembly.getChain(ssBond.getChainID1());
-            Polymer c2 = activeMolecularAssembly.getChain(ssBond.getChainID2());
-            int rn1;
-            int rn2;
-            try {
-                rn1 = Integer.parseInt(ssBond.getResnum1());
-                rn2 = Integer.parseInt(ssBond.getResnum1());
-            } catch (NumberFormatException ex) {
-                logger.warning(String.format(" Could not parse SSbond %d", ssBond.getSerNum()));
-                continue;
-            }
-            Residue r1 = c1.getResidue(rn1);
-            Residue r2 = c2.getResidue(rn2);
-            List<Atom> atoms1 = r1.getAtomList();
-            List<Atom> atoms2 = r2.getAtomList();
-            Atom SG1 = null;
-            Atom SG2 = null;
-
-            for (Atom atom : atoms1) {
-                if (atom.getName().equalsIgnoreCase("SG")) {
-                    SG1 = atom;
-                    break;
-                }
-            }
-            for (Atom atom : atoms2) {
-                if (atom.getName().equalsIgnoreCase("SG")) {
-                    SG2 = atom;
-                    break;
-                }
-            }
-            if (SG1 == null) {
-                logger.warning(String.format(" SG atom 1 of SS-bond %s is null", ssBond.toString()));
-            }
-            if (SG2 == null) {
-                logger.warning(String.format(" SG atom 2 of SS-bond %s is null", ssBond.toString()));
-            }
-            if (SG1 == null || SG2 == null) {
-                continue;
-            }
-
-            double d = VectorMath.dist(SG1.getXYZ(null), SG2.getXYZ(null));
-            if (d < 3.0) {
-                r1.setName("CYX");
-                r2.setName("CYX");
-                for (Atom atom : atoms1) {
-                    atom.setResName("CYX");
-                }
-                for (Atom atom : atoms2) {
-                    atom.setResName("CYX");
-                }
-                Bond bond = new Bond(SG1, SG2);
-                ssBondList.add(bond);
-            } else {
-                String message = String.format("Ignoring [%s]\n due to distance %8.3f A.", ssBond.toString(), d);
-                logger.log(Level.WARNING, message);
-            }
-        }
+//        List<Bond> ssBondList = new ArrayList<>();
+//        for (SSBond ssBond : structure.getSSBonds()) {
+//            Polymer c1 = activeMolecularAssembly.getChain(ssBond.getChainID1());
+//            Polymer c2 = activeMolecularAssembly.getChain(ssBond.getChainID2());
+//            int rn1;
+//            int rn2;
+//            try {
+//                rn1 = Integer.parseInt(ssBond.getResnum1());
+//                rn2 = Integer.parseInt(ssBond.getResnum1());
+//            } catch (NumberFormatException ex) {
+//                logger.warning(String.format(" Could not parse SSbond %d", ssBond.getSerNum()));
+//                continue;
+//            }
+//            Residue r1 = c1.getResidue(rn1);
+//            Residue r2 = c2.getResidue(rn2);
+//            List<Atom> atoms1 = r1.getAtomList();
+//            List<Atom> atoms2 = r2.getAtomList();
+//            Atom SG1 = null;
+//            Atom SG2 = null;
+//
+//            for (Atom atom : atoms1) {
+//                if (atom.getName().equalsIgnoreCase("SG")) {
+//                    SG1 = atom;
+//                    break;
+//                }
+//            }
+//            for (Atom atom : atoms2) {
+//                if (atom.getName().equalsIgnoreCase("SG")) {
+//                    SG2 = atom;
+//                    break;
+//                }
+//            }
+//            if (SG1 == null) {
+//                logger.warning(String.format(" SG atom 1 of SS-bond %s is null", ssBond.toString()));
+//            }
+//            if (SG2 == null) {
+//                logger.warning(String.format(" SG atom 2 of SS-bond %s is null", ssBond.toString()));
+//            }
+//            if (SG1 == null || SG2 == null) {
+//                continue;
+//            }
+//
+//            double d = VectorMath.dist(SG1.getXYZ(null), SG2.getXYZ(null));
+//            if (d < 3.0) {
+//                r1.setName("CYX");
+//                r2.setName("CYX");
+//                for (Atom atom : atoms1) {
+//                    atom.setResName("CYX");
+//                }
+//                for (Atom atom : atoms2) {
+//                    atom.setResName("CYX");
+//                }
+//                Bond bond = new Bond(SG1, SG2);
+//                ssBondList.add(bond);
+//            } else {
+//                String message = String.format("Ignoring [%s]\n due to distance %8.3f A.", ssBond.toString(), d);
+//                logger.log(Level.WARNING, message);
+//            }
+//        }
 
         int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
         assignAtomTypes();
 
-        StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
-        for (Bond bond : ssBondList) {
-            Atom a1 = bond.getAtom(0);
-            Atom a2 = bond.getAtom(1);
-            int c[] = new int[2];
-            c[0] = a1.getAtomType().atomClass;
-            c[1] = a2.getAtomType().atomClass;
-            String key = ffx.potential.parameters.BondType.sortKey(c);
-            ffx.potential.parameters.BondType bondType = forceField.getBondType(key);
-            if (bondType == null) {
-                logger.severe(String.format("No BondType for key: %s\n %s\n %s", key, a1, a2));
-            } else {
-                bond.setBondType(bondType);
-            }
-            double d = VectorMath.dist(a1.getXYZ(null), a2.getXYZ(null));
-            Polymer c1 = activeMolecularAssembly.getChain(a1.getSegID());
-            Polymer c2 = activeMolecularAssembly.getChain(a2.getSegID());
-            Residue r1 = c1.getResidue(a1.getResidueNumber());
-            Residue r2 = c2.getResidue(a2.getResidueNumber());
-            sb.append(String.format("\n S-S distance of %6.2f for %s and %s.", d, r1.toString(), r2.toString()));
-            bondList.add(bond);
-        }
-        if (ssBondList.size() > 0) {
-            logger.info(sb.toString());
-        }
+//        StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
+//        for (Bond bond : ssBondList) {
+//            Atom a1 = bond.getAtom(0);
+//            Atom a2 = bond.getAtom(1);
+//            int c[] = new int[2];
+//            c[0] = a1.getAtomType().atomClass;
+//            c[1] = a2.getAtomType().atomClass;
+//            String key = ffx.potential.parameters.BondType.sortKey(c);
+//            ffx.potential.parameters.BondType bondType = forceField.getBondType(key);
+//            if (bondType == null) {
+//                logger.severe(String.format("No BondType for key: %s\n %s\n %s", key, a1, a2));
+//            } else {
+//                bond.setBondType(bondType);
+//            }
+//            double d = VectorMath.dist(a1.getXYZ(null), a2.getXYZ(null));
+//            Polymer c1 = activeMolecularAssembly.getChain(a1.getSegID());
+//            Polymer c2 = activeMolecularAssembly.getChain(a2.getSegID());
+//            Residue r1 = c1.getResidue(a1.getResidueNumber());
+//            Residue r2 = c2.getResidue(a2.getResidueNumber());
+//            sb.append(String.format("\n S-S distance of %6.2f for %s and %s.", d, r1.toString(), r2.toString()));
+//            bondList.add(bond);
+//        }
+//        if (ssBondList.size() > 0) {
+//            logger.info(sb.toString());
+//        }
 
         /**
          * Finally, re-number the atoms if missing atoms were created.
@@ -2650,43 +2643,6 @@ public class BiojavaFilter extends ConversionFilter {
         }
         return true;
     }
-
-    /*public Structure writeToStructure(String header) {
-     return writeToStructure(activeMolecularAssembly, header);
-     }
-
-     public static Structure writeToStructure(MolecularAssembly assembly, String header) {
-     Structure structure = new StructureImpl();
-     for (Polymer polymer : assembly.getChains()) {
-     Chain chain = new ChainImpl();
-     for (Residue residue : polymer.getResidues()) {
-     Group group;
-     switch (residue.getResidueType()) {
-     case AA:
-     group = new AminoAcidImpl();
-     break;
-     case NA:
-     group = new NucleotideImpl();
-     break;
-     default:
-     group = new HetatomImpl();
-     break;
-     }
-     for (Atom atom : residue.getAtomList()) {
-     org.biojava.bio.structure.Atom bjAtom = new AtomImpl();
-     group.addAtom(bjAtom);
-     }
-     chain.addGroup(group);
-     }
-     structure.addChain(chain);
-     }
-
-     for (Molecule molecule : assembly.getMolecules()) {
-     for (Atom atom : molecule.getAtomList()) {
-
-     }
-     }
-     }*/
 
     /**
      * <p>writeSIFTFile.</p>

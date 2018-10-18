@@ -52,5 +52,5 @@ public interface Terminatable {
      * termination point. For example, between minimize or molecular dynamics
      * steps.
      */
-    public abstract void terminate();
+    void terminate();
 }

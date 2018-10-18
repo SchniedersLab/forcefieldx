@@ -92,7 +92,7 @@ public interface PickingCallback {
      * @param type a int.
      * @param tg a {@link javax.media.j3d.TransformGroup} object.
      */
-    public void transformChanged(int type, TransformGroup tg);
+    void transformChanged(int type, TransformGroup tg);
 
     /**
      * <p>
@@ -101,7 +101,7 @@ public interface PickingCallback {
      * @param type a int.
      * @param tg a {@link javax.media.j3d.TransformGroup} object.
      */
-    public void transformClicked(int type, TransformGroup tg);
+    void transformClicked(int type, TransformGroup tg);
 
     /**
      * <p>
@@ -110,7 +110,7 @@ public interface PickingCallback {
      * @param type a int.
      * @param tg a {@link javax.media.j3d.TransformGroup} object.
      */
-    public void transformDoubleClicked(int type, TransformGroup tg);
+    void transformDoubleClicked(int type, TransformGroup tg);
 }
 /*
  * Copyright (c) 1996-1998 Sun MicroFSystems, Inc. All Rights Reserved. Sun

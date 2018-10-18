@@ -60,28 +60,28 @@ public interface MetropolisMC {
      * @param e2 Trial energy
      * @return If move accepted
      */
-    public boolean evaluateMove(double e1, double e2);
+    boolean evaluateMove(double e1, double e2);
 
     /**
      * Sets temperature of Monte Carlo criterion.
      *
      * @param temp a double.
      */
-    public void setTemperature(double temp);
+    void setTemperature(double temp);
 
     /**
      * Returns temperature of the Monte Carlo criterion.
      *
      * @return temperature
      */
-    public double getTemperature();
+    double getTemperature();
 
     /**
      * Sets whether the implementation prints its own messages.
      *
      * @param print Print energies, accept/reject, etc.
      */
-    public void setPrint(boolean print);
+    void setPrint(boolean print);
     // Might want to set false for non-master nodes in certain algorithms.
 
     /**
@@ -89,14 +89,14 @@ public interface MetropolisMC {
      *
      * @return e1
      */
-    public double getE1();
+    double getE1();
 
     /**
      * Return trial energy from last attempted step.
      *
      * @return e2
      */
-    public double getE2();
+    double getE2();
 
     /**
      * Returns the energy as of the last step taken (not including any extra-
@@ -104,12 +104,12 @@ public interface MetropolisMC {
      *
      * @return Last step's energy
      */
-    public double lastEnergy();
+    double lastEnergy();
 
     /**
      * If possible, reverts the last successful Monte Carlo step taken.
      */
-    public void revertStep();
+    void revertStep();
 
     // The easiest way to implement the next three methods is to follow the
     // pattern of BoltzmannMC; calculate en1 via currentEnergy() if necessary,
@@ -122,7 +122,7 @@ public interface MetropolisMC {
      * @param move MCMove to perform
      * @return If move accepted
      */
-    public boolean mcStep(MCMove move);
+    boolean mcStep(MCMove move);
 
     /**
      * Performs an MCMove.
@@ -131,7 +131,7 @@ public interface MetropolisMC {
      * @param en1  Initial energy
      * @return If move accepted
      */
-    public boolean mcStep(MCMove move, double en1);
+    boolean mcStep(MCMove move, double en1);
 
     /**
      * Calculates the current system energy and performs a series of moves
@@ -140,7 +140,7 @@ public interface MetropolisMC {
      * @param moves MCMoves to perform
      * @return If move/moves accepted
      */
-    public boolean mcStep(List<MCMove> moves);
+    boolean mcStep(List<MCMove> moves);
 
     /**
      * Performs a series of moves sequentially, as a single hybrid step. Should
@@ -150,13 +150,13 @@ public interface MetropolisMC {
      * @param en1   Initial energy
      * @return If move/moves accepted.
      */
-    public boolean mcStep(List<MCMove> moves, double en1);
+    boolean mcStep(List<MCMove> moves, double en1);
 
     /**
      * If last step taken was a success.
      *
      * @return Acceptance of last move
      */
-    public boolean getAccept();
+    boolean getAccept();
 
 }

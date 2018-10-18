@@ -51,12 +51,12 @@ public interface DataFilter {
      * @param ob a {@link java.lang.Object} object.
      * @return a boolean.
      */
-    public boolean accept(Object ob);
+    boolean accept(Object ob);
 
     /**
      * <p>getDescription.</p>
      *
      * @return a {@link java.lang.String} object.
      */
-    public String getDescription();
+    String getDescription();
 }

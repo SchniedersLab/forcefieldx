@@ -86,7 +86,7 @@ public interface MouseBehaviorCallback {
      * @param type a int.
      * @param transform a {@link javax.media.j3d.Transform3D} object.
      */
-    public void transformChanged(int type, Transform3D transform);
+    void transformChanged(int type, Transform3D transform);
 
     /**
      * <p>
@@ -95,7 +95,7 @@ public interface MouseBehaviorCallback {
      * @param type a int.
      * @param transform a {@link javax.media.j3d.Transform3D} object.
      */
-    public void transformClicked(int type, Transform3D transform);
+    void transformClicked(int type, Transform3D transform);
 
     /**
      * <p>
@@ -104,7 +104,7 @@ public interface MouseBehaviorCallback {
      * @param type a int.
      * @param transform a {@link javax.media.j3d.Transform3D} object.
      */
-    public void transformDoubleClicked(int type, Transform3D transform);
+    void transformDoubleClicked(int type, Transform3D transform);
 }
 /*
  * Copyright (c) 1996-1998 Sun Microsystems, Inc. All Rights Reserved. Sun

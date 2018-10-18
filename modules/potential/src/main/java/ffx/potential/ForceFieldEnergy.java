@@ -2592,6 +2592,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public double energy(double[] x, boolean verbose) {
+        assert Arrays.stream(x).allMatch(Double::isFinite);
         /**
          * Unscale the coordinates.
          */
@@ -2628,6 +2629,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public double energyAndGradient(double x[], double g[], boolean verbose) {
+        assert Arrays.stream(x).allMatch(Double::isFinite);
         /**
          * Un-scale the coordinates.
          */

@@ -53,7 +53,7 @@ public interface LambdaInterface {
      * @param lambda a double.
      * @since 1.0
      */
-    public void setLambda(double lambda);
+    void setLambda(double lambda);
 
     /**
      * Get the current value of the state variable.
@@ -61,7 +61,7 @@ public interface LambdaInterface {
      * @return state
      * @since 1.0
      */
-    public double getLambda();
+    double getLambda();
 
     /**
      * Get the partial derivative of the energy with respect to lambda.
@@ -69,7 +69,7 @@ public interface LambdaInterface {
      * @return dEdL
      * @since 1.0
      */
-    public double getdEdL();
+    double getdEdL();
 
     /**
      * Get the 2nd partial derivative of the energy with respect to lambda.
@@ -77,7 +77,7 @@ public interface LambdaInterface {
      * @return d2EdL2
      * @since 1.0
      */
-    public double getd2EdL2();
+    double getd2EdL2();
 
     /**
      * Get the gradient of dEdL with respect to each parameter.
@@ -86,7 +86,7 @@ public interface LambdaInterface {
      *                 the model (commonly 3 * number of atoms).
      * @since 1.0
      */
-    public void getdEdXdL(double gradient[]);
+    void getdEdXdL(double gradient[]);
 
     /**
      * Returns true if dUdL is guaranteed to be zero at 0 and 1. Default
@@ -94,7 +94,7 @@ public interface LambdaInterface {
      *
      * @return True if dUdL is guaranteed 0 at endpoints.
      */
-    public default boolean dEdLZeroAtEnds() {
+    default boolean dEdLZeroAtEnds() {
         return false;
     }
 }

@@ -152,9 +152,9 @@ public class ManyBodyOptions {
      * --pr or --prune Prune no clashes (0), only single clashes (1), or all
      * clashes (2).
      */
-    @Option(names = {"--pr", "--prune"}, paramLabel = "2",
+    @Option(names = {"--pr", "--prune"}, paramLabel = "1",
             description = "Prune no clashes (0), only single clashes (1), or all clashes (2)")
-    int prune = 2;
+    int prune = 1;
 
     /**
      * -x or --all Optimize all residues beginning from the passed value

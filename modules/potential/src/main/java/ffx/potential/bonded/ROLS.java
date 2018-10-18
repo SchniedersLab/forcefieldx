@@ -75,7 +75,7 @@ public interface ROLS {
      * @param g2d      a {@link javax.media.j3d.J3DGraphics2D} object.
      * @param node     a {@link javax.media.j3d.Node} object.
      */
-    public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node);
+    void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node);
 
     /**
      * <p>
@@ -84,7 +84,7 @@ public interface ROLS {
      * @param w a boolean.
      * @return an array of double.
      */
-    public double[] getCenter(boolean w);
+    double[] getCenter(boolean w);
 
     /**
      * <p>
@@ -94,7 +94,7 @@ public interface ROLS {
      * @param nodes a {@link java.util.ArrayList} object.
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getList(Class<?> c, ArrayList<ROLS> nodes);
+    ArrayList<ROLS> getList(Class<?> c, ArrayList<ROLS> nodes);
 
     /**
      * <p>
@@ -109,7 +109,7 @@ public interface ROLS {
      * @param count a long.
      * @return a long.
      */
-    public long getMSCount(Class<?> c, long count);
+    long getMSCount(Class<?> c, long count);
 
     /**
      * <p>
@@ -118,7 +118,7 @@ public interface ROLS {
      * @param c a {@link java.lang.Class} object.
      * @return a {@link ffx.potential.bonded.ROLS} object.
      */
-    public ROLS getMSNode(Class<?> c);
+    ROLS getMSNode(Class<?> c);
 
     /**
      * <p>
@@ -126,7 +126,7 @@ public interface ROLS {
      *
      * @return a double.
      */
-    public double getMW();
+    double getMW();
 
     /**
      * <p>
@@ -147,7 +147,7 @@ public interface ROLS {
      * @param color      a {@link javax.vecmath.Color3f} object.
      * @param mat        a {@link javax.media.j3d.Material} object.
      */
-    public void setColor(ColorModel colorModel, Color3f color, Material mat);
+    void setColor(ColorModel colorModel, Color3f color, Material mat);
 
     /**
      * <p>
@@ -157,11 +157,11 @@ public interface ROLS {
      *                  object.
      * @param newShapes a {@link java.util.List} object.
      */
-    public void setView(ViewModel viewModel, List<BranchGroup> newShapes);
+    void setView(ViewModel viewModel, List<BranchGroup> newShapes);
 
     /**
      * <p>
      * update</p>
      */
-    public void update();
+    void update();
 }

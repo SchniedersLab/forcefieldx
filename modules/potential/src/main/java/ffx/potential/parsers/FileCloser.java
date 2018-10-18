@@ -55,5 +55,5 @@ public interface FileCloser extends Runnable {
 
     /** {@inheritDoc} */
     @Override
-    public void run();
+    void run();
 }

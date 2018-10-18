@@ -57,7 +57,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -70,8 +69,6 @@ import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import ffx.potential.ForceFieldEnergyOpenMM;
-import ffx.potential.utils.EnergyException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.commons.math3.util.FastMath;
@@ -100,6 +97,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
@@ -113,7 +111,7 @@ import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parsers.PDBFilter;
-import ffx.utilities.DoubleIndexPair;
+import ffx.potential.utils.EnergyException;
 import ffx.utilities.ObjectPair;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
@@ -127,6 +125,7 @@ import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @author Stephen D. LuCore
+ * @author Mallory R. Tollefson
  * @since 1.0
  */
 public class RotamerOptimization implements Terminatable {
@@ -352,14 +351,9 @@ public class RotamerOptimization implements Terminatable {
      */
     private boolean lazyMatrix = false;
     /**
-     * Flag to prune individual pairs (and not just entire rotamers) on pair
-     * clashes. Presently set constitutively false.
-     */
-    private boolean pruneIndivPairs = false;
-    /**
      * Clash energy threshold (kcal/mole).
      */
-    private double clashThreshold = 10.0;
+    private double clashThreshold = 25.0;
     /**
      * Clash energy threshold (kcal/mol) for MultiResidues, which can have much
      * more variation in self and 2-Body energies.
@@ -368,7 +362,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Clash energy threshold (kcal/mole).
      */
-    private double pairClashThreshold = 10.0;
+    private double pairClashThreshold = 25.0;
     /**
      * Pair clash energy threshold (kcal/mol) for MultiResidues.
      */
@@ -663,7 +657,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Maximum depth to check if a rotamer can be eliminated.
      */
-    private int maxRotCheckDepth = defaultMaxRotCheckDepth;
+    private int maxRotCheckDepth;
     /**
      * Test Self-Energy Elimination.
      */
@@ -686,16 +680,6 @@ public class RotamerOptimization implements Terminatable {
      * If greater than or equal to 0, test the specified residues.
      */
     private int testTripleEnergyEliminations2 = -1;
-    /**
-     * Holds onto the "default" low-correction-vector Rotamer for a nucleic acid
-     * Residue.
-     */
-    private Map<Residue, Rotamer> defaultNucleicRotamers;
-    /**
-     * Writes residue and rotamer numbers of eliminated singles and pairs to a
-     * CSV file.
-     */
-    public boolean outputFile[];
 
     /**
      * Default value for the ommRecalculateThreshold in kcal/mol.
@@ -712,7 +696,7 @@ public class RotamerOptimization implements Terminatable {
     private static final double DEFAULT_SINGULARITY_THRESHOLD = -1000;
     /**
      * Reject any self, pair, or triple energy beneath singularityThreshold.
-     *
+     * <p>
      * This is meant to check for running into singularities in the energy function,
      * where an energy is "too good to be true" and actually represents a poor conformation.
      */
@@ -724,17 +708,17 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Stores eliminated residue and rotamer singles and pairs.
      */
-    public List<Integer> eliminatedResidue = new ArrayList<Integer>();
-    public List<Integer> eliminatedRotamer = new ArrayList<Integer>();
-    public List<Integer> eliminatedResidue1 = new ArrayList<Integer>();
-    public List<Integer> eliminatedRotamer1 = new ArrayList<Integer>();
-    public List<Integer> eliminatedResidue2 = new ArrayList<Integer>();
-    public List<Integer> eliminatedRotamer2 = new ArrayList<Integer>();
+    public List<Integer> eliminatedResidue = new ArrayList<>();
+    public List<Integer> eliminatedRotamer = new ArrayList<>();
+    public List<Integer> eliminatedResidue1 = new ArrayList<>();
+    public List<Integer> eliminatedRotamer1 = new ArrayList<>();
+    public List<Integer> eliminatedResidue2 = new ArrayList<>();
+    public List<Integer> eliminatedRotamer2 = new ArrayList<>();
     /**
      * Stores the number of box iterations for single and pair elimination.
      */
-    public List<Integer> singlesIterations = new ArrayList<Integer>();
-    public List<Integer> pairsIterations = new ArrayList<Integer>();
+    public List<Integer> singlesIterations = new ArrayList<>();
+    public List<Integer> pairsIterations = new ArrayList<>();
 
     /**
      * RotamerOptimization constructor.
@@ -1087,15 +1071,6 @@ public class RotamerOptimization implements Terminatable {
      */
     public void setMaxRotCheckDepth(int maxRotCheckDepth) {
         this.maxRotCheckDepth = maxRotCheckDepth;
-    }
-
-    /**
-     * Add an additional molecular assembly to the internal list.
-     *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void addAdditionalAssembly(MolecularAssembly assembly) {
-        allAssemblies.add(assembly);
     }
 
     /**
@@ -1992,187 +1967,6 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Prints based on a molecule-based decomposition of original energies.
-     * Would need to be re-implemented.
-     *
-     * @param residues
-     * @param totalEnergy
-     * @param backbone
-     * @param residueEnergy
-     */
-    private void decomposePrint(Residue residues[], double totalEnergy, double backbone, double residueEnergy[][]) {
-        if (residues == null || residueEnergy == null) {
-            return;
-        }
-
-        int molecule[] = molecularAssembly.getMoleculeNumbers();
-
-        // Internal Molecule ID to Reduced Set of Molecule IDs
-        HashMap<Integer, Integer> nMolecules = new HashMap<>();
-        // Internal Molecule ID to Molecule Names
-        HashMap<Integer, String> molNames = new HashMap<>();
-        // Residue ID to Reduced Set of Molecule IDs
-        HashMap<Residue, Integer> moleculeMap = new HashMap<>();
-
-        /**
-         * Sum self, 2-Body and 3-Body energies.
-         */
-        int nRes = residues.length;
-        double sumSelf = 0;
-        double sumPair = 0;
-        double sumTri = 0;
-        int molPointer = 0;
-        int reducedIndex = 0;
-        for (int i = 0; i < nRes; i++) {
-            sumSelf += residueEnergy[0][i];
-            sumPair += residueEnergy[1][i];
-            sumTri += residueEnergy[2][i];
-
-            // Count the number of molecules.
-            Residue r = residues[i];
-            Atom a0 = (Atom) r.getAtomNode(0);
-            int atomIndex = a0.getIndex();
-            Integer moleculeIndex = molecule[atomIndex];
-            if (!nMolecules.containsKey(moleculeIndex)) {
-                nMolecules.put(moleculeIndex, molPointer);
-                molNames.put(moleculeIndex, r.getSegID());
-                reducedIndex = molPointer;
-                molPointer++;
-            } else {
-                reducedIndex = nMolecules.get(moleculeIndex);
-            }
-            moleculeMap.put(r, reducedIndex);
-        }
-
-        int nMol = nMolecules.size();
-        if (nMol > 1) {
-            logger.info(format("\n"));
-            logger.info(format(" Molecule-Based Many-Body Energy Summation\n "));
-            double moleculeEnergy[][] = new double[3][nMol];
-            for (int i = 0; i < nRes; i++) {
-                int iMolecule = moleculeMap.get(residues[i]);
-                moleculeEnergy[0][iMolecule] += residueEnergy[0][i];
-                moleculeEnergy[1][iMolecule] += residueEnergy[1][i];
-                moleculeEnergy[2][iMolecule] += residueEnergy[2][i];
-            }
-            logger.info(format(" %9s %9s %9s %9s %9s", "Molecule", "Self", "Pair", "3-Body", "Total"));
-            for (int i = 0; i < nMol; i++) {
-                String molName = molNames.get(i);
-                double total = moleculeEnergy[0][i] + moleculeEnergy[1][i] + moleculeEnergy[2][i];
-                logger.info(format(" %9s %9.3f %9.3f %9.3f %9.3f",
-                        molName, moleculeEnergy[0][i], moleculeEnergy[1][i], moleculeEnergy[2][i], total));
-            }
-            logger.info(format(" %9s %9.3f %9.3f %9.3f %9.3f",
-                    "Sum", sumSelf, sumPair, sumTri, sumSelf + sumPair + sumTri));
-        }
-
-        logger.info(format("\n"));
-        logger.info(format(" Residue-Based Many-Body Energy Summation\n "));
-        logger.info(format(" %9s %9s %9s %9s %9s", "Residue", "Self", "Pair", "3-Body", "Total"));
-
-        for (int i = 0; i < nRes; i++) {
-            double total = residueEnergy[0][i] + residueEnergy[1][i] + residueEnergy[2][i];
-            logger.info(format(" %9s %9.3f %9.3f %9.3f %9.3f",
-                    residues[i].toFormattedString(false, true), residueEnergy[0][i], residueEnergy[1][i], residueEnergy[2][i], total));
-        }
-        logger.info(format(" %9s %9.3f %9.3f %9.3f %9.3f",
-                "Sum", sumSelf, sumPair, sumTri, sumSelf + sumPair + sumTri));
-        logger.info(format(" Backbone:        %9.3f", backbone));
-        double target = sumSelf + sumPair + sumTri + backbone;
-        logger.info(format(" Expansion Total: %9.3f", target));
-        logger.info(format(" True Total:      %9.3f", totalEnergy));
-        logger.info(format(" Neglected:       %9.3f\n", totalEnergy - target));
-    }
-
-    /**
-     * Prints a summary of pair and trimer energies above [cutoff] kcal/mol.
-     *
-     * @param pairCutoff   a double.
-     * @param trimerCutoff a double.
-     * @param dOMode       a boolean.
-     */
-    public void printLargeInteractions(double pairCutoff, double trimerCutoff, boolean dOMode) {
-        Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
-        int nRes = residues.length;
-
-        if (dOMode) {
-            logger.info(format(" Large pair interactions (>%.2f):", pairCutoff));
-            for (int i = 0; i < nRes; i++) {
-                for (int j = i + 1; j < nRes; j++) {
-                    double thePair = get2Body(i, 0, j, 0);
-                    if (Math.abs(thePair) >= pairCutoff) {
-                        logger.info(format(" Large Pair %s %s:       %16.5f",
-                                residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), thePair));
-                    }
-                }
-            }
-            logger.info(format("\n Large trimer interactions (>%.2f):", trimerCutoff));
-            for (int i = 0; i < nRes; i++) {
-                for (int j = i + 1; j < nRes; j++) {
-                    for (int k = j + 1; k < nRes; k++) {
-                        if (Math.abs(get3Body(residues, i, 0, j, 0, k, 0)) >= trimerCutoff) {
-                            logger.info(format(" Large Trimer  %s %s %s:    %16.5f",
-                                    residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), residues[k].toFormattedString(false, true), get3Body(residues, i, 0, j, 0, k, 0)));
-                        }
-                    }
-                }
-            }
-            return;
-        }
-
-        logger.info(format(" Large pair interactions (>%.2f):", pairCutoff));
-        for (int i = 0; i < nRes; i++) {
-            Residue resi = residues[i];
-            Rotamer roti[] = resi.getRotamers(library);
-            for (int ri = 0; ri < roti.length; ri++) {
-                for (int j = i + 1; j < nRes; j++) {
-                    Residue resj = residues[j];
-                    Rotamer rotj[] = resj.getRotamers(library);
-                    for (int rj = 0; rj < rotj.length; rj++) {
-                        try {
-                            double thePair = get2Body(i, ri, j, rj);
-                            if (Math.abs(thePair) >= pairCutoff) {
-                                logger.info(format(" Large Pair %8s %-2d, %8s %-2d: %s",
-                                        resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj,
-                                        formatEnergy(thePair)));
-                            }
-                        } catch (Exception ex) {
-                        }
-                    }
-                }
-            }
-        }
-
-        logger.info(format("\n Large trimer interactions (>%.2f):", trimerCutoff));
-        for (int i = 0; i < nRes; i++) {
-            Residue resi = residues[i];
-            Rotamer roti[] = resi.getRotamers(library);
-            for (int ri = 0; ri < roti.length; ri++) {
-                for (int j = i + 1; j < nRes; j++) {
-                    Residue resj = residues[j];
-                    Rotamer rotj[] = resj.getRotamers(library);
-                    for (int rj = 0; rj < rotj.length; rj++) {
-                        for (int k = j + 1; k < nRes; k++) {
-                            Residue resk = residues[k];
-                            Rotamer rotk[] = resk.getRotamers(library);
-                            for (int rk = 0; rk < rotk.length; rk++) {
-                                try {
-                                    if (Math.abs(get3Body(residues, i, ri, j, rj, k, rk)) >= trimerCutoff) {
-                                        logger.info(format(" Large Trimer %8s %-2d, %8s %-2d, %8s %-2d: %s",
-                                                resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk,
-                                                formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
-                                    }
-                                } catch (Exception ex) {
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Set a contiguous block of residues to optimize in a specific chain.
      *
      * @param chain      a {@link java.lang.String} object.
@@ -2457,129 +2251,6 @@ public class RotamerOptimization implements Terminatable {
             done = true;
         }
         return e;
-    }
-
-    /**
-     * Eliminates NA backbone rotamers with corrections greater than threshold,
-     * and sets the "default" rotamer with the minimal correction.
-     * <p>
-     * A nucleic correction threshold <= 0 will cause
-     *
-     * @param residues Residues to eliminate bad backbone rotamers over.
-     */
-    private void eliminateNABackboneRotamers(Residue[] residues) {
-        double eliminateBy = Double.MAX_VALUE;
-        if (nucleicCorrectionThreshold > 0) {
-            eliminateBy = nucleicCorrectionThreshold;
-            logIfMaster(format(" Eliminating nucleic acid rotamers with correction vectors larger than %5.3f A", nucleicCorrectionThreshold));
-            logIfMaster(format(" A minimum of %d rotamers per NA residue will carry through to energy calculations.", minNumberAcceptedNARotamers));
-        }
-        ArrayList<Residue> resList = new ArrayList<>();
-        resList.addAll(Arrays.asList(residues));
-        int numR = residues.length;
-        defaultNucleicRotamers = new HashMap<>(numR);
-
-        for (int i = 0; i < numR; i++) {
-            Residue residue = residues[i];
-            Rotamer[] rotamers = residue.getRotamers(library);
-            if (residue.getResidueType() == NA && rotamers != null) {
-                int lenri = rotamers.length;
-                DoubleIndexPair[] sortedCorrections = new DoubleIndexPair[lenri];
-
-                for (int ri = 0; ri < lenri; ri++) {
-                    Rotamer rotamer = rotamers[ri];
-                    sortedCorrections[ri] = new DoubleIndexPair(ri, RotamerLibrary.applyNARotamer(residue, rotamer, false));
-                }
-
-                Arrays.sort(sortedCorrections);
-                int numAccepted = 0;
-                for (int indRI = 0; indRI < lenri; indRI++) {
-                    DoubleIndexPair correction = sortedCorrections[indRI];
-                    int ri = correction.getIndex();
-                    double corrMag = correction.getDoubleValue();
-
-                    if (check(i, ri)) {
-                        continue;
-                    }
-                    if (corrMag < eliminateBy || numAccepted < minNumberAcceptedNARotamers) {
-                        if (numAccepted++ == 0) {
-                            defaultNucleicRotamers.put(residue, rotamers[ri]);
-                            logger.info(String.format(" Setting the default rotamer for residue %s to %d",
-                                    residue.toFormattedString(true, true), ri));
-                            assert ri == 0 || !library.getUsingOrigCoordsRotamer();
-                        }
-                    } else {
-                        eliminateRotamer(residues, i, ri, print);
-                        logIfMaster(String.format(" Eliminated nucleic acid rotamer %s-%d that required a "
-                                        + "linking correction %6.4f A > %6.4f A", residue.toFormattedString(false, true),
-                                ri, corrMag, eliminateBy));
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * For NA residues inside some optimization window, prune any rotamers which
-     * would be incompatible with the established rotamers of upstream NA
-     * residues. Could in theory be done by self energies, but every rotamer
-     * which can be eliminated without calculating a self energy makes the
-     * optimization significantly faster.
-     *
-     * @param residues Residues to check for incompatible rotamers.
-     */
-    private void reconcileNARotamersWithPriorResidues(Residue[] residues) {
-        for (int i = 0; i < residues.length; i++) {
-            Residue residuei = residues[i];
-            Rotamer[] rotamers = residuei.getRotamers(library);
-            if (rotamers == null || residuei.getResidueType() != NA) {
-                continue;
-            }
-            Residue prevResidue = residuei.getPreviousResidue();
-            if (prevResidue == null || prevResidue.getResidueType() != NA) {
-                continue;
-            }
-            boolean isInList = false;
-            for (Residue residue : residues) {
-                if (prevResidue.equals(residue)) {
-                    isInList = true;
-                    break;
-                }
-            }
-            if (isInList) {
-                continue;
-            }
-            boolean deoxy = prevResidue.getAtomNode("O2\'") == null;
-            double prevDelta = RotamerLibrary.measureDelta(prevResidue);
-            // If between 50 and 110, assume a North pucker.
-            if (RotamerLibrary.NucleicSugarPucker.checkPucker(prevDelta, deoxy) == RotamerLibrary.NucleicSugarPucker.C3_ENDO) {
-                for (int ri = 0; ri < rotamers.length; ri++) {
-                    Rotamer roti = rotamers[ri];
-                    if (!roti.isState && RotamerLibrary.NucleicSugarPucker.checkPucker(roti.chi1, deoxy) != RotamerLibrary.NucleicSugarPucker.C3_ENDO) {
-                        if (print) {
-                            logIfMaster(format(" Rotamer %d of residue %s eliminated "
-                                            + "for incompatibility with the sugar pucker of previous "
-                                            + "residue %s outside the window.", ri, residuei.toFormattedString(false, true),
-                                    prevResidue.toString()));
-                        }
-                        eliminateRotamer(residues, i, ri, print);
-                    }
-                }
-            } else {
-                for (int ri = 0; ri < rotamers.length; ri++) {
-                    Rotamer roti = rotamers[ri];
-                    if (!roti.isState && RotamerLibrary.NucleicSugarPucker.checkPucker(roti.chi1, deoxy) != RotamerLibrary.NucleicSugarPucker.C2_ENDO) {
-                        if (print) {
-                            logIfMaster(format(" Rotamer %d of residue %s eliminated "
-                                            + "for incompatibility with the sugar pucker of previous "
-                                            + "residue %s outside the window.", ri, residuei.toFormattedString(false, true),
-                                    prevResidue.toString()));
-                        }
-                        eliminateRotamer(residues, i, ri, print);
-                    }
-                }
-            } // TODO: Implement support for the DNA C3'-exo pucker.
-        }
     }
 
     /**
@@ -3533,8 +3204,6 @@ public class RotamerOptimization implements Terminatable {
         ROTAMER, RESIDUE
     }
 
-    ;
-
     /**
      * Checks the distance matrix, finding the shortest distance between two
      * residues' rotamers or any rotamers from two residues under any symmetry
@@ -4360,7 +4029,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         firstCellSaved = true;
                     } catch (Exception e) {
-                       logger.warning(format("Exception writing to file."));
+                        logger.warning(format("Exception writing to file."));
                     }
                 }
             } else {
@@ -4946,6 +4615,9 @@ public class RotamerOptimization implements Terminatable {
                 loaded = loadEnergyRestart(energyRestartFile, residues);
             }
         }
+
+        //Crystal crystal = molecularAssembly.getCrystal();
+        //computeBackboneRotamerClashes(atoms, crystal, residues);
 
         long energyStartTime = System.nanoTime();
         SelfEnergyRegion singlesRegion = new SelfEnergyRegion(residues);
@@ -5597,6 +5269,129 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Find clashes between side-chain rotamers and environment atoms.
+     *
+     * @param atoms All atoms in the system.
+     * @param crystal The crystal contain PBC and SymOp info.
+     * @param residues  The residue being optimized.
+     */
+    private void computeBackboneRotamerClashes(Atom atoms[], Crystal crystal, Residue residues[]) {
+        // Create a NeighborList with a short cut-off
+        double cutoff = superpositionThreshold;
+        double buffer = 0.0;
+        parallelTeam = (parallelTeam == null) ? new ParallelTeam() : parallelTeam;
+        NeighborList backboneNeighborList = new NeighborList(null, crystal,
+                atoms, cutoff, buffer, parallelTeam);
+
+        int nAtoms = atoms.length;
+        boolean use[] = new boolean[nAtoms];
+
+        int nSymm = crystal.spaceGroup.getNumberOfSymOps();
+        double xyz[][] = new double[nSymm][nAtoms * 3];
+        int lists[][][] = new int[nSymm][nAtoms][];
+
+        // Turn off all residues.
+        turnOffAllResidues(residues);
+
+        // Fill in the coordinate array for SymOp 0 (i.e. the identity operator).
+        int index = 0;
+        int atomIndex = 1;
+        for (Atom atom : atoms) {
+            int xyzIndex = atom.getXyzIndex();
+            if (atomIndex != xyzIndex) {
+                // ToDo: make this compatible with MultiResidues, or make MultiResidues behave better.
+                logger.severe(
+                        format(" Unexpected atom ordering in RotamerOptimization (Expected: %d, Actual: %d).",
+                                xyzIndex, atomIndex));
+            }
+            atomIndex++;
+
+            xyz[0][index++] = atom.getX();
+            xyz[0][index++] = atom.getY();
+            xyz[0][index++] = atom.getZ();
+        }
+
+
+        // Loop over all residues
+        for (int resIndex = 0; resIndex < residues.length; resIndex++) {
+            Residue residue = residues[resIndex];
+            // Collect rotamers for this residue.
+            Rotamer[] rotamers = residue.getRotamers(library);
+            int nrot = rotamers.length;
+
+            // Turn on this residue to its 0th rotamer.
+            turnOnResidue(residue, 0);
+
+            List<Atom> resAtoms = residue.getSideChainAtoms();
+            Set<Integer> sideChainAtomIndices = new HashSet<>();
+
+            // Configure the per atom "use" flag. Atoms not being used will not be included in the NeighborList.
+            for (Atom resAtom : resAtoms) {
+                // Stored XYZ index is 1+ its index in the standard Atom arrays.
+                int xyzIndex = resAtom.getXyzIndex() - 1;
+                use[xyzIndex] = true;
+                sideChainAtomIndices.add(xyzIndex);
+            }
+
+            // Loop over all rotamers
+            for (int ri = 0; ri < nrot; ri++) {
+                // Apply the rotamer.
+                RotamerLibrary.applyRotamer(residue, rotamers[ri]);
+
+                // Update the coordinate array for SymOp 0 (i.e. the identity operator).
+                for (Atom resAtom : resAtoms) {
+                    index =  (resAtom.getXyzIndex() - 1) * 3;
+                    xyz[0][index++] = resAtom.getX();
+                    xyz[0][index++] = resAtom.getY();
+                    xyz[0][index] = resAtom.getZ();
+                }
+
+                // Expand the coordinate array.
+                if (nSymm > 1) {
+                    // ToDo: refactor coordinate expansion.
+                    logger.severe(
+                            format(" Backbone clashes with rotamers is not yet supported for symmetry operators."));
+                }
+
+                // Build the neighbor list.
+                backboneNeighborList.buildList(xyz, lists, use, true, false);
+
+                // Search for a rotamer -> environment clash.
+                boolean clash = false;
+                clashBreak: for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    for (int i = 0; i < nAtoms; i++) {
+                        // Case 1: check the neighbor list for a side chain atom.
+                        if (sideChainAtomIndices.contains(i)) {
+                            if (lists[iSymm][i] != null && lists[iSymm][i].length > 0) {
+                                clash = true;
+                                break clashBreak;
+                            }
+                        } else if (lists[iSymm][i] != null && lists[iSymm][i].length > 0) {
+                            int n = lists[iSymm][i].length;
+                            for (int k = 0; k < n; k++) {
+                                if (sideChainAtomIndices.contains(lists[iSymm][i][k])) {
+                                    clash = true;
+                                    break clashBreak;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (clash) {
+                    eliminateRotamer(residues, resIndex, ri, verbose);
+                    logger.info(format("Eliminated rotamer %s-%d due to backbone clash.", residue, ri));
+                }
+            }
+
+            // Turn off per atom "use" flags for the current residue.
+            for (Integer integer : sideChainAtomIndices) {
+                use[integer] = false;
+            }
+        }
+    }
+
+    /**
      * <p>allocateEliminationMemory.</p>
      *
      * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
@@ -5926,26 +5721,6 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
-        return eliminated;
-    }
-
-    /**
-     * Checks all i,j to see if for some ri, all rj are eliminated or
-     * vice-versa.
-     *
-     * @param residues Residues under consideration.
-     * @return If any singles wereeliminated by pairs.
-     */
-    private boolean allPairsToSingleEliminations(Residue[] residues) {
-        int nRes = residues.length;
-        boolean eliminated = false;
-        for (int i = 0; i < nRes - 1; i++) {
-            for (int j = i + 1; j < nRes; j++) {
-                if (pairsToSingleElimination(residues, i, j)) {
-                    eliminated = true;
-                }
-            }
-        }
         return eliminated;
     }
 
@@ -6457,12 +6232,12 @@ public class RotamerOptimization implements Terminatable {
                         double minForResK = Double.MAX_VALUE;
                         for (int rk = 0; rk < nrk; rk++) {
                             /**
-                            * If k,rk or j,rj-k,rk are not a part of valid
+                             * If k,rk or j,rj-k,rk are not a part of valid
                              * configuration space, continue. If i,riA-k,rk or
                              * i,riA-j,rj-k,rk are not valid for riA, continue.
                              */
                             if (check(k, rk) || check(j, rj, k, rk) || check(i, riA, k, rk)) {
-                               //Not yet implemented: check(i, riA, j, rj, k, rk) because no triples get eliminated.
+                                //Not yet implemented: check(i, riA, j, rj, k, rk) because no triples get eliminated.
                                 continue;
                             }
                             /**
@@ -6491,7 +6266,6 @@ public class RotamerOptimization implements Terminatable {
                         tripleDiff += minForResK;
                     }
                 }
-
 
 
                 double sumOverK = pairDiff + tripleDiff;
@@ -6756,7 +6530,7 @@ public class RotamerOptimization implements Terminatable {
      * alternate rotamers for residue i, or if i-ri is already eliminated.
      *
      * @param residues Residues under consideration.
-     * @param i        A residue index.
+     * @param i        A residue index based on the current residue list.
      * @param ri       A rotamer to attempt elimination of.
      * @param verbose
      * @return If the rotamer was eliminated.
@@ -7334,23 +7108,6 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * TODO: Implement Quad energy.
-     *
-     * @param i  Residue i.
-     * @param ri Rotamer ri of residue i.
-     * @param j  Residue j.
-     * @param rj Rotamer rj of residue j.
-     * @param k  Residue k.
-     * @param rk Rotamer rk of residue k.
-     * @param l  Residue l.
-     * @param rl Rotamer rl of residue l.
-     * @return The 4-Body energy.
-     */
-    private double get4Body(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
-        return 0.0;
-    }
-
-    /**
      * <p>Setter for the field <code>threeBodyCutoffDist</code>.</p>
      *
      * @param dist a double.
@@ -7378,24 +7135,6 @@ public class RotamerOptimization implements Terminatable {
      */
     public void setGoldstein(boolean set) {
         this.useGoldstein = set;
-    }
-
-    /**
-     * <p>getPruning.</p>
-     *
-     * @return a int.
-     */
-    public int getPruning() {
-        if (pruneClashes && prunePairClashes) {
-            return 2;
-        } else if (pruneClashes && !prunePairClashes) {
-            return 1;
-        } else if (!pruneClashes && !prunePairClashes) {
-            return 0;
-        } else {
-            logger.warning(" Invalid pruning state.");
-            return -1;
-        }
     }
 
     /**
@@ -7461,15 +7200,6 @@ public class RotamerOptimization implements Terminatable {
         if (ensemble > 1) {
             setPruning(0);
         }
-    }
-
-    /**
-     * <p>setEnsembleTarget.</p>
-     *
-     * @param ensembleTarget a double.
-     */
-    public void setEnsembleTarget(double ensembleTarget) {
-        this.ensembleEnergy = ensembleTarget;
     }
 
     /**
@@ -7705,6 +7435,7 @@ public class RotamerOptimization implements Terminatable {
 
     /**
      * Writes only active Atoms to a file.
+     *
      * @param suffix Suffix to put into the name. Example: suffix = _s, peptide.pdb becomes peptide_s.pdb
      * @return Whether writing to file was successful.
      */
@@ -10270,46 +10001,6 @@ public class RotamerOptimization implements Terminatable {
         @Override
         public String toString() {
             return "Rotamer moves utilizing a rotamer energy matrix";
-        }
-    }
-
-    /**
-     * Class contains an integer array, comparing and hashing based on the
-     * integer values.
-     */
-    private class IntegerKeyset {
-
-        private final int[] keys;
-
-        public IntegerKeyset(int... keySet) {
-            this.keys = Arrays.copyOf(keySet, keySet.length);
-        }
-
-        public int getSize() {
-            return keys.length;
-        }
-
-        public int[] getKeys() {
-            return Arrays.copyOf(keys, keys.length);
-        }
-
-        /**
-         * Equality based on shallow value equality.
-         *
-         * @param other
-         * @return
-         */
-        @Override
-        public boolean equals(Object other) {
-            if (other instanceof IntegerKeyset) {
-                return Arrays.equals(keys, ((IntegerKeyset) other).getKeys());
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(keys);
         }
     }
 

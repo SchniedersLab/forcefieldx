@@ -47,19 +47,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FilenameUtils;
-import org.biojava.bio.structure.Atom;
-import org.biojava.bio.structure.Chain;
-import org.biojava.bio.structure.Group;
-import org.biojava.bio.structure.GroupType;
-import org.biojava.bio.structure.PDBCrystallographicInfo;
-import org.biojava.bio.structure.ResidueNumber;
-import org.biojava.bio.structure.SSBond;
-import org.biojava.bio.structure.Structure;
-import org.biojava.bio.structure.StructureException;
-import org.biojava.bio.structure.StructureTools;
-import org.biojava.bio.structure.align.StructurePairAligner;
-import org.biojava.bio.structure.align.pairwise.AlternativeAlignment;
-import org.biojava.bio.structure.io.PDBFileReader;
+import org.biojava.nbio.structure.Atom;
+import org.biojava.nbio.structure.Chain;
+import org.biojava.nbio.structure.Group;
+import org.biojava.nbio.structure.GroupType;
+import org.biojava.nbio.structure.PDBCrystallographicInfo;
+import org.biojava.nbio.structure.ResidueNumber;
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureException;
+import org.biojava.nbio.structure.StructureTools;
+import org.biojava.nbio.structure.align.StructurePairAligner;
+import org.biojava.nbio.structure.align.pairwise.AlternativeAlignment;
+import org.biojava.nbio.structure.io.PDBFileReader;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -477,14 +476,13 @@ public class PDBFileMatcher {
      */
     private Atom getMatchingAtom(Atom atom1, Structure structure2, boolean searchAll) throws IllegalArgumentException {
         ResidueNumber res1 = atom1.getGroup().getResidueNumber();
-        String chainID = res1.getChainId();
+        String chainID = res1.getChainName();
         Atom atom2 = null;
         try {
             Chain chain2 = structure2.getChainByPDB(chainID);
             Group group2 = chain2.getGroupByPDB(res1);
-            try {
-                atom2 = group2.getAtom(atom1.getName());
-            } catch (StructureException ex) {
+            atom2 = group2.getAtom(atom1.getName());
+            if (atom2 == null) {
                 if (atom1.getName().equalsIgnoreCase("H")) {
                     atom2 = group2.getAtom("H1");
                 } else if (atom1.getName().equalsIgnoreCase("H1")) {
@@ -585,15 +583,14 @@ public class PDBFileMatcher {
      */
     private Atom getReferenceAtom(Group group) throws StructureException {
         switch (group.getType()) {
-            case GroupType.AMINOACID:
-                return group.getAtomByPDBname("CA");
-            case GroupType.NUCLEOTIDE:
-                Atom retAtom;
-                try {
-                    retAtom = group.getAtomByPDBname("N1");
+            case AMINOACID:
+                return group.getAtom("CA");
+            case NUCLEOTIDE:
+                Atom retAtom = group.getAtom("N1");
+                if (retAtom == null) {
+                    return group.getAtom("N9");
+                } else {
                     return retAtom;
-                } catch (StructureException ex) {
-                    return group.getAtomByPDBname("N9");
                 }
             default:
                 return group.getAtoms().get(0);
@@ -629,44 +626,44 @@ public class PDBFileMatcher {
      * @param bond2
      * @return If bond1 and bond2 are equivalent.
      */
-    private boolean compareSSBonds(SSBond bond1, SSBond bond2) {
-        List<String> bond1ChainIDs = new ArrayList<>(2);
-        bond1ChainIDs.add(bond1.getChainID1());
-        bond1ChainIDs.add(bond1.getChainID2());
-        List<String> bond2ChainIDs = new ArrayList<>(2);
-        bond2ChainIDs.add(bond2.getChainID1());
-        bond2ChainIDs.add(bond2.getChainID2());
-        for (String resID : bond1ChainIDs) {
-            if (!bond2ChainIDs.contains(resID)) {
-                return false;
-            }
-        }
-
-        List<String> bond1InsCodes = new ArrayList<>(2);
-        bond1InsCodes.add(bond1.getInsCode1());
-        bond1InsCodes.add(bond1.getInsCode2());
-        List<String> bond2InsCodes = new ArrayList<>(2);
-        bond2InsCodes.add(bond2.getInsCode1());
-        bond2InsCodes.add(bond2.getInsCode2());
-        for (String resID : bond1InsCodes) {
-            if (!bond2InsCodes.contains(resID)) {
-                return false;
-            }
-        }
-
-        List<String> bond1ResNums = new ArrayList<>(2);
-        bond1ResNums.add(bond1.getResnum1());
-        bond1ResNums.add(bond1.getResnum2());
-        List<String> bond2ResNums = new ArrayList<>(2);
-        bond2ResNums.add(bond2.getResnum1());
-        bond2ResNums.add(bond2.getResnum2());
-        for (String resID : bond1ResNums) {
-            if (!bond2ResNums.contains(resID)) {
-                return false;
-            }
-        }
-        return true;
-    }
+//    private boolean compareSSBonds(SSBond bond1, SSBond bond2) {
+//        List<String> bond1ChainIDs = new ArrayList<>(2);
+//        bond1ChainIDs.add(bond1.getChainID1());
+//        bond1ChainIDs.add(bond1.getChainID2());
+//        List<String> bond2ChainIDs = new ArrayList<>(2);
+//        bond2ChainIDs.add(bond2.getChainID1());
+//        bond2ChainIDs.add(bond2.getChainID2());
+//        for (String resID : bond1ChainIDs) {
+//            if (!bond2ChainIDs.contains(resID)) {
+//                return false;
+//            }
+//        }
+//
+//        List<String> bond1InsCodes = new ArrayList<>(2);
+//        bond1InsCodes.add(bond1.getInsCode1());
+//        bond1InsCodes.add(bond1.getInsCode2());
+//        List<String> bond2InsCodes = new ArrayList<>(2);
+//        bond2InsCodes.add(bond2.getInsCode1());
+//        bond2InsCodes.add(bond2.getInsCode2());
+//        for (String resID : bond1InsCodes) {
+//            if (!bond2InsCodes.contains(resID)) {
+//                return false;
+//            }
+//        }
+//
+//        List<String> bond1ResNums = new ArrayList<>(2);
+//        bond1ResNums.add(bond1.getResnum1());
+//        bond1ResNums.add(bond1.getResnum2());
+//        List<String> bond2ResNums = new ArrayList<>(2);
+//        bond2ResNums.add(bond2.getResnum1());
+//        bond2ResNums.add(bond2.getResnum2());
+//        for (String resID : bond1ResNums) {
+//            if (!bond2ResNums.contains(resID)) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
     /**
      * Creates a duplicate PDBCrystallographicInfo object.
@@ -677,23 +674,15 @@ public class PDBFileMatcher {
      */
     private PDBCrystallographicInfo cloneCrystalInfo(PDBCrystallographicInfo sourceInfo)
             throws IllegalArgumentException {
-        if (!sourceInfo.isCrystallographic()) {
+
+        if (sourceInfo == null) {
             throw new IllegalArgumentException(" Source structure has no meaningful "
                     + "crystallographic information.");
         }
 
         PDBCrystallographicInfo retInfo = new PDBCrystallographicInfo();
+        retInfo.setCrystalCell(sourceInfo.getCrystalCell());
         retInfo.setSpaceGroup(sourceInfo.getSpaceGroup());
-
-        // Newer versions of BioJava can use the CrystalCell object.
-        retInfo.setA(sourceInfo.getA());
-        retInfo.setAlpha(sourceInfo.getAlpha());
-        retInfo.setB(sourceInfo.getB());
-        retInfo.setBeta(sourceInfo.getBeta());
-        retInfo.setC(sourceInfo.getC());
-        retInfo.setGamma(sourceInfo.getGamma());
-        retInfo.setZ(sourceInfo.getZ());
-
         return retInfo;
     }
 
@@ -749,23 +738,23 @@ public class PDBFileMatcher {
             // Other methods can go here.
         }
         if (fixSSBonds) {
-            if (sourceStructure == null) {
-                sourceStructure = filereader.getStructure(sourceFile);
-            }
-            List<SSBond> sourceBonds = sourceStructure.getSSBonds();
-            List<SSBond> matchBonds = matchStructure.getSSBonds();
-            for (SSBond sourceBond : sourceBonds) {
-                boolean isContained = false;
-                for (SSBond matchBond : matchBonds) {
-                    if (compareSSBonds(matchBond, sourceBond)) {
-                        isContained = true;
-                        break;
-                    }
-                }
-                if (!isContained) {
-                    matchStructure.addSSBond(sourceBond.clone());
-                }
-            }
+//            if (sourceStructure == null) {
+//                sourceStructure = filereader.getStructure(sourceFile);
+//            }
+//            List<SSBond> sourceBonds = sourceStructure.getSSBonds();
+//            List<SSBond> matchBonds = matchStructure.getSSBonds();
+//            for (SSBond sourceBond : sourceBonds) {
+//                boolean isContained = false;
+//                for (SSBond matchBond : matchBonds) {
+//                    if (compareSSBonds(matchBond, sourceBond)) {
+//                        isContained = true;
+//                        break;
+//                    }
+//                }
+//                if (!isContained) {
+//                    matchStructure.addSSBond(sourceBond.clone());
+//                }
+//            }
         }
         if (fixCryst) {
             if (sourceStructure == null) {

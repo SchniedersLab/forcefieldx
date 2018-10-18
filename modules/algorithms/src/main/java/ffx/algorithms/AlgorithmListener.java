@@ -56,5 +56,5 @@ public interface AlgorithmListener {
      * @param active The system the algorithm is operating on.
      * @return A return of <code>true</code> indicates the algorithm continues.
      */
-    public abstract boolean algorithmUpdate(MolecularAssembly active);
+    boolean algorithmUpdate(MolecularAssembly active);
 }
