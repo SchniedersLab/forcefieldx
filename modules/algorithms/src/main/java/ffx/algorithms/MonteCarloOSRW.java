@@ -299,11 +299,15 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedKineticEnergy = mdMove.getKineticEnergy();
 
             // Get the new coordinates.
+            long updateCoordsAndEnergy = 0;
+            updateCoordsAndEnergy = -System.nanoTime();
             potential.getCoordinates(proposedCoordinates);
             double proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
             double proposedForceFieldEnergy = osrw.getForceFieldEnergy();
             double proposedBiasEnergy = osrw.getBiasEnergy();
+            updateCoordsAndEnergy += System.nanoTime();
+            logger.info(String.format(" Updated coordinates and energies in %6.3f", updateCoordsAndEnergy * NS2SEC));
 
             double currentTotalEnergy = currentOSRWEnergy + currentKineticEnergy;
             double proposedTotalEnergy = proposedOSRWEnergy + proposedKineticEnergy;
@@ -318,8 +322,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
                     proposedTotalEnergy - currentTotalEnergy));
-
+            
+            long evalTime = 0;
+            evalTime = -System.nanoTime();
             if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
+                evalTime += System.nanoTime();
+                logger.info(String.format(" Evaluated MD move in %6.3f", evalTime * NS2SEC));
                 /**
                  * Accept MD move.
                  */
@@ -330,14 +338,28 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 currentTotalEnergy = proposedTotalEnergy;
                 currentdUdL = proposeddUdL;
                 currentForceFieldEnergy = proposedForceFieldEnergy;
+                
+                long coordTime = 0;
+                coordTime = -System.nanoTime();
                 newCoordinates = proposedCoordinates;
+                coordTime += System.nanoTime();
+                logger.info(String.format(" Coordinates updated in %6.3f", coordTime * NS2SEC));
 
             } else {
+                logger.info(String.format(" Evaluated MD move in %6.3f", evalTime * NS2SEC));
                 double percent = (acceptMD * 100.0) / (imove + 1);
                 logger.info(String.format(" MCMD step   :      Rejected [FL=%8.3f,E=%12.4f] -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
                         currentdUdL, currentOSRWEnergy, proposeddUdL, proposedOSRWEnergy, percent));
+                long revertTime = 0;
+                revertTime = -System.nanoTime();
                 mdMove.revertMove();
+                revertTime += System.nanoTime();
+                logger.info(String.format(" Reverted move in %6.3f", revertTime * NS2SEC));
+                long coordTime = 0;
+                coordTime = -System.nanoTime();
                 newCoordinates = coordinates;
+                coordTime += System.nanoTime();
+                logger.info(String.format(" Coordinates updated in %6.3f", coordTime * NS2SEC));
             }
             mdMoveAndEvalTime += System.nanoTime();
             logger.info(String.format("\n Total time to run and evaluate MD move: %6.3f", mdMoveAndEvalTime * NS2SEC));

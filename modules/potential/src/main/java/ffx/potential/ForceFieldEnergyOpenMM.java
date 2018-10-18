@@ -363,20 +363,37 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private PointerByReference angleTorsionForce = null;
     /**
-     * Fixed charge softcore vdW force.
+     * Fixed charge softcore vdW force boolean.
      */
     boolean softcoreCreated = false;
+    /**
+     * Fixed charge softcore force.
+     */
     private PointerByReference fixedChargeSoftcore = null;
-
+    /**
+     * Sterics force between alchemical atoms.
+     */
     private PointerByReference alchemicalAlchemicalStericsForce = null;
-
+    /**
+     * Sterics force between alchemical and non alchemical atoms.
+     */
     private PointerByReference nonAlchemicalAlchemicalStericsForce = null;
-
+    /**
+     * Boolean array, holds charge exclusion list.
+     */
     private boolean chargeExclusion[];
+    /**
+     * Boolean array, holds van Der Waals exclusion list.
+     */
     private boolean vdWExclusion[];
+    /**
+     * Double array, holds charge quantity value for exceptions.
+     */
     private double exceptionChargeProd[];
+    /**
+     * Double array, holds epsilon quantity value for exceptions.
+     */
     private double exceptionEps[];
-
     /**
      * OpenMM Custom GB Force.
      */
@@ -396,13 +413,21 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double collisionFreq = 91.0;
     /**
-     * Value of the state variable Lambda.
+     * Value of the state variable Lambda, controls electrostatic scaling.
      */
     private boolean pmeLambdaTerm = false;
+    /**
+     * Value of the state variable lambda, controls van Der Waals scaling.
+     */
     private boolean vdwLambdaTerm = false;
+    /**
+     * Lambda value, scales specified property.
+     */
     private double lambda = 1.0;
+    /**
+     * Derivative of van Der Waals contribution to the potential energy with respect to lambda.
+     */
     private double vdwdUdL = 0.0;
-
     /**
      * Lambda step size for finite difference dU/dL.
      */
@@ -419,11 +444,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private boolean doOpenMMdEdL = false;
     private boolean doFFXdEdL = true;
     private boolean testdEdL = true;
-
+    /**
+     * Boolean to control logging statements to the screen, typically used when an integrator other than the default is chosen for dynamics.
+     */
     private boolean quiet = true;
-
+    /**
+     * Integer that controls the value of the quiet boolean.
+     */
     private int quietInt = 0;
-
+    /**
+     * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
+     */
     private PointerByReference ommBarostat = null;
 
     private final Platform ffxPlatform;
