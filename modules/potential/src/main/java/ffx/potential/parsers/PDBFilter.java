@@ -4127,22 +4127,24 @@ public final class PDBFilter extends SystemFilter {
      * @param assembly MolecularAssembly to fix.
      */
     private static void renameAtomsToPDBStandard(MolecularAssembly assembly) {
-        for (Polymer polymer : assembly.getChains()) {
-            for (Residue residue : polymer.getResidues()) {
-                switch (residue.getResidueType()) {
-                    case AA:
-                        renameAminoAcidToPDBStandard(residue);
-                        break;
-                    case NA:
-                        renameNucleicAcidToPDBStandard(residue);
-                        break;
-                    case UNK:
-                    default:
-                        break;
+        Polymer[] polys = assembly.getChains();
+        if (polys != null && polys.length > 0) {
+            for (Polymer polymer : polys) {
+                for (Residue residue : polymer.getResidues()) {
+                    switch (residue.getResidueType()) {
+                        case AA:
+                            renameAminoAcidToPDBStandard(residue);
+                            break;
+                        case NA:
+                            renameNucleicAcidToPDBStandard(residue);
+                            break;
+                        case UNK:
+                        default:
+                            break;
+                    }
                 }
             }
         }
-
     }
 
     /**
