@@ -328,7 +328,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * {@inheritDoc}
      */
-    @Override
+  
     public double energy(double[] x) {
 
         forceFieldEnergy = potential.energy(x);
