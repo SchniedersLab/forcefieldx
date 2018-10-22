@@ -1098,7 +1098,7 @@
         <commons-collections4.version>4.2</commons-collections4.version>
         <commons-configuration2.version>2.3</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
-        <commons-lang3.version>3.8.1</commons-lang3.version>
+        <commons-lang3.version>3.7</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <groovy-all.version>2.5.3.1</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
