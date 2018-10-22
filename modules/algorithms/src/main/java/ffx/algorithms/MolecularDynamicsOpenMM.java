@@ -169,12 +169,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private long secondUpdateTime = 0;
     /**
-     * Time elapsed, in the dynamic method, from the beginning of the for loop
-     * to the end of the method (will probably be removed once testing is
-     * complete).
-     */
-    private long endLoopTime = 0;
-    /**
      * Total energy at the end of a molecular dynamics move.
      */
     private double endTotalEnergy;
@@ -229,11 +223,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private Random random;
     /**
-     * Boolean to signify whether we are using the MolecularDynamicsOpenMM
-     * object for MC-OSRW.
-     */
-    private boolean mc = false;
-    /**
      * Boolean to signify that we are updating the system
      * (post-MD move).
      */
@@ -278,10 +267,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             random.setSeed(0);
         }
         
-        if (properties.containsKey("MonteCarlo")){
-            mc = true;
-            logger.info(" Monte Carlo flag has been set to true");
-        }
 
         updateContext();
     }
@@ -408,11 +393,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 x[index + 1] = atom.getY();
                 x[index + 2] = atom.getZ();
             }
-            long setPosTime = 0;
-            setPosTime = -System.nanoTime();
             forceFieldEnergyOpenMM.setOpenMMPositions(x, numberOfVariables);
-            setPosTime += System.nanoTime();
-            logger.info(String.format(" returned from setOpenMMPositions method call in %6.3f", setPosTime * NS2SEC));
         }
 
         if (setVelocities) {
@@ -425,11 +406,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 v[index + 1] = velocity[1];
                 v[index + 2] = velocity[2];
             }
-            long setVelTime = 0;
-            setVelTime = -System.nanoTime();
             forceFieldEnergyOpenMM.setOpenMMVelocities(v, numberOfVariables);
-            setVelTime += System.nanoTime();
-            logger.info(String.format(" returned from setOpenMMVelocities method call in %6.3f", setVelTime * NS2SEC));
         }
     }
 
@@ -443,7 +420,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         double priorPE = currentPotentialEnergy;
 
-        if (mc && update) {
+        if (update) {
             getOpenMMEnergiesAndPositions();
         } /*else {
             getOpenMMState();
@@ -660,12 +637,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
             setOpenMMState(setPositions, setVelocities);
 
-            // Get the OpenMM State (for pure MD) or OpenMM Energies (for MC-OSRW) and then set the starting kinetic energy.
-            if (mc) {
-                getOpenMMEnergies();
-            } else {
-                getOpenMMState();
-            }
+            // Call to retrieve the starting kinetic energy for the system.
+           getOpenMMEnergies();
             startingKineticEnergy = currentKineticEnergy;
         }
 
@@ -717,7 +690,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         int i = 0;
         time = -System.nanoTime();
-        endLoopTime = time;
         while (i < numSteps) {
             // Get an update from OpenMM.
             /**
@@ -742,9 +714,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             secondUpdateTime = -System.nanoTime();
             updateFromOpenMM(i, running);
             secondUpdateTime += System.nanoTime();
-            endLoopTime += System.nanoTime();
             logger.info(String.format("\n Update finished in %6.3f", secondUpdateTime * NS2SEC));
-            logger.info(String.format("\n Time from beginning of loop to end of method is %6.3f", endLoopTime * NS2SEC));
             update = false;
         }
         /**
