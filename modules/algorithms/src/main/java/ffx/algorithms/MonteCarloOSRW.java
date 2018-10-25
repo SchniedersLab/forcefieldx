@@ -299,9 +299,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedKineticEnergy = mdMove.getKineticEnergy();
 
             // Get the new coordinates.
-            long updateCoordsAndEnergy = 0;
-            updateCoordsAndEnergy = -System.nanoTime();
-
             potential.getCoordinates(proposedCoordinates);
 
             // ToDo: Get rid of redundant call to OpenMM in "osrw.energy" to compute the force field energy we already have from MD.
@@ -314,9 +311,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposeddUdL = osrw.getForceFielddEdL();
             double proposedForceFieldEnergy = osrw.getForceFieldEnergy();
             double proposedBiasEnergy = osrw.getBiasEnergy();
-
-            updateCoordsAndEnergy += System.nanoTime();
-            logger.info(String.format(" Updated coordinates and energies in %6.3f", updateCoordsAndEnergy * NS2SEC));
 
             double currentTotalEnergy = currentOSRWEnergy + currentKineticEnergy;
             double proposedTotalEnergy = proposedOSRWEnergy + proposedKineticEnergy;
@@ -332,11 +326,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     proposedBiasEnergy - currentBiasEnergy,
                     proposedTotalEnergy - currentTotalEnergy));
             
-            long evalTime = 0;
-            evalTime = -System.nanoTime();
             if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
-                evalTime += System.nanoTime();
-                logger.info(String.format(" Evaluated MD move in %6.3f", evalTime * NS2SEC));
                 /**
                  * Accept MD move.
                  */
@@ -351,8 +341,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 currentBiasEnergy = proposedBiasEnergy;
                 System.arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
             } else {
-                evalTime += System.nanoTime();
-                logger.info(String.format(" Evaluated MD move in %6.3f", evalTime * NS2SEC));
                 double percent = (acceptMD * 100.0) / (imove + 1);
                 logger.info(String.format(" MCMD step   :      Rejected [FL=%8.3f,E=%12.4f] -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
                         currentdUdL, currentOSRWEnergy, proposeddUdL, proposedOSRWEnergy, percent));

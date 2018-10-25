@@ -76,6 +76,8 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.EnergyException;
 import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
 
+import static ffx.algorithms.MolecularDynamics.NS2SEC;
+
 /**
  * An implementation of Transition-Tempered Orthogonal Space Random Walk
  * algorithm.
@@ -448,7 +450,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
+        long potentialEnergyAndGradientCall = 0;
+        potentialEnergyAndGradientCall = -System.nanoTime();
         forceFieldEnergy = potential.energyAndGradient(x, gradient);
+        potentialEnergyAndGradientCall += System.nanoTime();
+        logger.info(String.format(" Energy and Gradient call from potential accomplished in %6.3f", potentialEnergyAndGradientCall * NS2SEC));
 
         /**
          * OSRW is propagated with the slowly varying terms.
@@ -458,7 +464,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
 
         gLdEdL = 0.0;
+        long retrieveDer1Time = 0;
+        retrieveDer1Time = -System.nanoTime();
         dUdLambda = lambdaInterface.getdEdL();
+        retrieveDer1Time += System.nanoTime();
+        logger.info(String.format(" Retrieved first derivative in %6.3f", retrieveDer1Time * NS2SEC));
         d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dUdLambda);
@@ -471,7 +481,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         double dGdLambda = 0.0;
         double dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
-        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);       
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int lcenter = lambdaBin + iL;
             double deltaL = lambda - (lcenter * dL);

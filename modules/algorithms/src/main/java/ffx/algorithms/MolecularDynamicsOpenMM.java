@@ -638,7 +638,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             setOpenMMState(setPositions, setVelocities);
 
             // Call to retrieve the starting kinetic energy for the system.
-           getOpenMMEnergies();
+            getOpenMMEnergies();
             startingKineticEnergy = currentKineticEnergy;
         }
 

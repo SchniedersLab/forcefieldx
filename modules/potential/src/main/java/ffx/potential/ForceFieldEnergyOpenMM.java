@@ -613,6 +613,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (pmeLambdaTerm || vdwLambdaTerm) {
             lambdaTerm = true;
         }
+        
+        CompositeConfiguration properties = molecularAssembly.getProperties();
+        if (properties.containsKey("openMMdEdL")){
+            doOpenMMdEdL = true;
+            doFFXdEdL = false;
+        }
 
         /**
          * logger.info(format(" vdwLambdaTerm %s", vdwLambdaTerm));
@@ -3733,6 +3739,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         getCoordinates(x);
 
         if (doOpenMMdEdL) {
+            // logger.info(String.format(" Calculating lambda with OpenMM"));
             width = fdDLambda;
             if (currentLambda + fdDLambda > 1.0) {
                 logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
@@ -3760,6 +3767,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         if (doFFXdEdL || !doOpenMMdEdL) {
+            // logger.info(String.format(" Calculating lambda with FFX"));
             width = fdDLambda;
             // This section technically not robust to the case that fdDLambda > 0.5.
             // However, that should be an error case checked when fdDLambda is set.
