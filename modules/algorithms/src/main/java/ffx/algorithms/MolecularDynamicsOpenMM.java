@@ -223,8 +223,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private Random random;
     /**
-     * Boolean to signify that we are updating the system
-     * (post-MD move).
+     * Boolean to signify that we are updating the system (post-MD move).
      */
     private boolean update = false;
 
@@ -266,7 +265,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         } else {
             random.setSeed(0);
         }
-        
 
         updateContext();
     }
@@ -422,7 +420,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         if (update) {
             getOpenMMEnergiesAndPositions();
-        } /*else {
+        }
+        /*else {
             getOpenMMState();
         } */
         //getOpenMMState();
@@ -503,6 +502,17 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
                     if (NPT) {
                         setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
+                        long updateContextTime = 0;
+                        updateContextTime = -System.nanoTime();
+                        updateContext();
+                        updateContextTime += System.nanoTime();
+                        logger.info(String.format(" Updated context in %6.3f seconds", updateContextTime * NS2SEC));
+                    } else {
+                        long updateContextTime = 0;
+                        updateContextTime = -System.nanoTime();
+                        updateContext();
+                        updateContextTime += System.nanoTime();
+                        logger.info(String.format(" Updated context in %6.3f seconds", updateContextTime * NS2SEC));
                     }
                 } else {
                     logger.info(" Langevin/Stochastic dynamics already has temperature control, will not be adding thermostat!");
@@ -512,13 +522,21 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             case ADIABATIC:
                 if (integratorString.equalsIgnoreCase("LANGEVIN") && NPT) {
                     setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
+                    long updateContextTime = 0;
+                    updateContextTime = -System.nanoTime();
+                    updateContext();
+                    updateContextTime += System.nanoTime();
+                    logger.info(String.format(" Updated context in %6.3f seconds", updateContextTime * NS2SEC));
                 }
             default:
                 break;
             // No thermostat.
         }
 
-        updateContext();
+        // Code used to have the updateContext method call here to ensure the context is updated if the user wished to add
+        // a thermostat or a barostat. It has been moved inside the different cases of the switch statement to help the 
+        // performance of the the MCOSRW algorithm which does not require a thermostat
+        
         /**
          * Convert the print interval to a print frequency.
          */
@@ -635,10 +653,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 }
             }
 
+            long setPosVel = 0;
+            setPosVel = -System.nanoTime();
             setOpenMMState(setPositions, setVelocities);
+            setPosVel += System.nanoTime();
+            logger.info(String.format(" Set positions and velocities in %6.3f seconds", setPosVel * NS2SEC));
 
             // Call to retrieve the starting kinetic energy for the system.
+            long retrieveEnergyTime = 0;
+            retrieveEnergyTime = -System.nanoTime();
             getOpenMMEnergies();
+            retrieveEnergyTime += System.nanoTime();
+            logger.info(String.format(" Retrieved energies in %6.3f seconds", retrieveEnergyTime * NS2SEC));
             startingKineticEnergy = currentKineticEnergy;
         }
 
@@ -698,7 +724,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
              * logger.info(String.format("\n First update finished in %6.3f",
              * firstUpdateTime * NS2SEC));
              */
-            
+
             updateFromOpenMM(i, running);
 
             // Take MD steps in OpenMM.

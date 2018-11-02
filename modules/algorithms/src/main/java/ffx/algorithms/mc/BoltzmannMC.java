@@ -219,9 +219,8 @@ public abstract class BoltzmannMC implements MetropolisMC {
     public boolean getAccept() {
         return lastAccept;
     }
-    
-    
-    public void setRandomSeed(int randomseed){
+
+    public void setRandomSeed(int randomseed) {
         random.setSeed(randomseed);
     }
 

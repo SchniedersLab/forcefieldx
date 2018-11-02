@@ -341,6 +341,9 @@ class Thermodynamics extends Script {
         @Option(shortName = 'sf', longName = 'switchingFunction', defaultValue = '1.0',
                 description = 'Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)')
         String lambdaFunction;
+        @Option(shortName = 'sp', longName = 'simpleSampling', defaultValue = 'false',
+                description = 'Allows for simplified MCOSRW sampling where the lambda and MD move evaluations are done in a single step (at this point it is experimental)')
+        boolean simplified;
 
         /**
          * The final argument(s) should be one or more filenames.
@@ -1036,7 +1039,12 @@ class Thermodynamics extends Script {
                 logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
                 mcOSRW.setEquilibration(true)
                 mcOSRW.setMDMoveParameters(options.nEquil, options.mcMD, options.dt)
-                mcOSRW.sample()
+                if(options.simplified){
+                    logger.info("\n Using simplified MCOSRW sampling")
+                    mcOSRW.simplifiedSample()
+                } else{
+                    mcOSRW.sample()
+                }
                 mcOSRW.setEquilibration(false)
                 logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
             }
@@ -1044,7 +1052,11 @@ class Thermodynamics extends Script {
             logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
             mcOSRW.setLambdaStdDev(options.mcL)
             mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
-            mcOSRW.sample()
+            if(options.simplified){
+                mcOSRW.simplifiedSample()
+            } else {
+                mcOSRW.sample()
+            }
         } else {
             // Create the MolecularDynamics instance.
             // If we switch over to using the factory method, request the FFX Dynamics engine.

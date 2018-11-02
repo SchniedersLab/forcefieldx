@@ -473,6 +473,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dUdLambda);
         dForceFieldEnergydL = dUdLambda;
+        
+        logger.info(String.format(" ForceField dUdL in energy and gradient method is %f", dForceFieldEnergydL));
 
         /**
          * Calculate recursion kernel G(L, F_L) and its derivatives with respect
@@ -524,6 +526,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Lambda gradient due to recursion kernel G(L, F_L).
          */
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
+        
+        logger.info(String.format(" dUdLambda from inside the energy and gradient method is %f", dUdLambda));
 
         /**
          * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
@@ -539,6 +543,15 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * interpolation.
          */
         biasEnergy = current1DBiasEnergy() + gLdEdL;
+        
+        double oneDBiasEnergy = biasEnergy - gLdEdL;
+        
+        logger.info(String.format(" Lambda in energy and gradient method is %f", lambda));
+        
+        logger.info(String.format(" One dimensional bias energy for move is %f", oneDBiasEnergy));
+        
+        logger.info(String.format(" Two dimensional bias energy for move is %f", gLdEdL));
+        
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
