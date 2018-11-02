@@ -61,7 +61,7 @@ public interface MetropolisMC {
      * @return If move accepted
      */
     boolean evaluateMove(double e1, double e2);
-
+    
     /**
      * Sets temperature of Monte Carlo criterion.
      *

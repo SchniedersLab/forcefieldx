@@ -107,7 +107,7 @@ public class LambdaMove implements MCMove{
         double dL = random.nextGaussian() * stdDev;
         
         double newLambda = currentLambda + dL;
-
+        
         // Map values into the range 0.0 .. 1.0 using mirror boundary conditions.
         if (newLambda > 1.0) {
             newLambda = (2.0 - newLambda);
