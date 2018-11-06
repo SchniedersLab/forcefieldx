@@ -404,7 +404,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
+        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -450,11 +450,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
-        long potentialEnergyAndGradientCall = 0;
-        potentialEnergyAndGradientCall = -System.nanoTime();
         forceFieldEnergy = potential.energyAndGradient(x, gradient);
-        potentialEnergyAndGradientCall += System.nanoTime();
-        logger.info(String.format(" Energy and Gradient call from potential accomplished in %6.3f", potentialEnergyAndGradientCall * NS2SEC));
 
         /**
          * OSRW is propagated with the slowly varying terms.
@@ -464,24 +460,19 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
 
         gLdEdL = 0.0;
-        long retrieveDer1Time = 0;
-        retrieveDer1Time = -System.nanoTime();
-        dUdLambda = lambdaInterface.getdEdL();
-        retrieveDer1Time += System.nanoTime();
-        logger.info(String.format(" Retrieved first derivative in %6.3f", retrieveDer1Time * NS2SEC));
+        dForceFieldEnergydL = lambdaInterface.getdEdL();
+        dUdLambda = dForceFieldEnergydL;
+
         d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dUdLambda);
-        dForceFieldEnergydL = dUdLambda;
-        
-        logger.info(String.format(" ForceField dUdL in energy and gradient method is %f", dForceFieldEnergydL));
 
         /**
          * Calculate recursion kernel G(L, F_L) and its derivatives with respect
          * to L and F_L.
          */
-        double dGdLambda = 0.0;
-        double dGdFLambda = 0.0;
+        dGdLambda = 0.0;
+        dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
         double FLs2 = (2.0 * dFL) * (2.0 * dFL);       
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
@@ -526,8 +517,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Lambda gradient due to recursion kernel G(L, F_L).
          */
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
-        
-        logger.info(String.format(" dUdLambda from inside the energy and gradient method is %f", dUdLambda));
 
         /**
          * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
@@ -542,16 +531,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
-        
-        double oneDBiasEnergy = biasEnergy - gLdEdL;
-        
-        logger.info(String.format(" Lambda in energy and gradient method is %f", lambda));
-        
-        logger.info(String.format(" One dimensional bias energy for move is %f", oneDBiasEnergy));
-        
-        logger.info(String.format(" Two dimensional bias energy for move is %f", gLdEdL));
-        
+        biasEnergy = current1DBiasEnergy(lambda,true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -590,9 +570,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         return totalEnergy;
     }
-
-
-
 
     /**
      * {@inheritDoc}
@@ -683,6 +660,58 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             writeTraversal();
         }
 
+    }
+
+    public double computeBiasEnergy(double currentLambda, double currentdUdL) {
+
+        int lambdaBin = binForLambda(currentLambda);
+        int FLambdaBin = binForFLambda(currentdUdL);
+
+        double gLdEdL = 0.0;
+
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = currentLambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                gLdEdL += bias;
+            }
+        }
+
+        /**
+         * Compute the energy and gradient for the recursion slave at F(L) using
+         * interpolation.
+         */
+        return current1DBiasEnergy(currentLambda,false) + gLdEdL;
     }
 
     private void writeTraversal() {
