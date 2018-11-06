@@ -716,6 +716,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         int i = 0;
         time = -System.nanoTime();
+        
+        // Initial update from OpenMM moved to outside the while loop to avoid writing out to .dyn, .pdb and .arc files
+        // more often than necessary. 
+        updateFromOpenMM(i, running);
         while (i < numSteps) {
             // Get an update from OpenMM.
             /**
@@ -725,7 +729,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
              * firstUpdateTime * NS2SEC));
              */
 
-            updateFromOpenMM(i, running);
+            // updateFromOpenMM(i, running);
 
             // Take MD steps in OpenMM.
             takeStepsTime = -System.nanoTime();
