@@ -260,8 +260,8 @@ public class OSRW extends AbstractOSRW {
          * to L and F_L.
          */
         gLdEdL = 0.0;
-        double dGdLambda = 0.0;
-        double dGdFLambda = 0.0;
+        dGdLambda = 0.0;
+        dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
         double FLs2 = (2.0 * dFL) * (2.0 * dFL);
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
@@ -378,7 +378,7 @@ public class OSRW extends AbstractOSRW {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
+        biasEnergy = current1DBiasEnergy(lambda,true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -427,6 +427,58 @@ public class OSRW extends AbstractOSRW {
         totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
+    }
+
+    public double computeBiasEnergy(double currentLambda, double currentdUdL) {
+
+        int lambdaBin = binForLambda(currentLambda);
+        int FLambdaBin = binForFLambda(currentdUdL);
+
+        double gLdEdL = 0.0;
+
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = currentLambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                gLdEdL += bias;
+            }
+        }
+
+        /**
+         * Compute the energy and gradient for the recursion slave at F(L) using
+         * interpolation.
+         */
+        return current1DBiasEnergy(currentLambda,false) + gLdEdL;
     }
 
     /**
@@ -596,7 +648,7 @@ public class OSRW extends AbstractOSRW {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
+        biasEnergy = current1DBiasEnergy(lambda,true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));

@@ -46,6 +46,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.asin;
+import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -219,6 +220,15 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
      */
     protected double gLdEdL = 0.0;
+    /**
+     * First derivative of the 2D bias with respect to Lambda.
+     */
+    protected double dGdLambda;
+    /**
+     * First derivative of the 2D bias with respect to  dU/dL.
+     */
+    protected double dGdFLambda;
+
 
     /**
      * Gas constant (in Kcal/mol/Kelvin).
@@ -544,6 +554,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
 
+    public abstract double computeBiasEnergy(double currentLambda, double currentdUdL);
+
     /**
      * <p>checkRecursionKernelSize.</p>
      */
@@ -657,7 +669,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      *
      * @return a double.
      */
-    protected double current1DBiasEnergy() {
+    protected double current1DBiasEnergy(double currentLambda, boolean gradient) {
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
@@ -676,9 +688,9 @@ public abstract class AbstractOSRW implements CrystalPotential {
              * derivative and break.
              */
             boolean done = false;
-            if (lambda <= L1) {
+            if (currentLambda <= L1) {
                 done = true;
-                L1 = lambda;
+                L1 = currentLambda;
             }
             /**
              * Upper limit - lower limit of the integral of the extrapolation /
@@ -690,7 +702,9 @@ public abstract class AbstractOSRW implements CrystalPotential {
                 /**
                  * Compute the gradient d F(L) / dL at L.
                  */
-                dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
+                if (gradient) {
+                    dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
+                }
                 break;
             }
         }
