@@ -8,14 +8,19 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.ResidueEnumerations
+import ffx.potential.bonded.ResidueState
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import java.lang.reflect.Array
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -70,13 +75,156 @@ class ManyBody extends AlgorithmsScript {
         potentialEnergy = activeAssembly.getPotentialEnergy();
 
         // TODO: Check if a "rot" file exists; if so read it in and assign save rotamers to their respective residue.
-//        String chainName = "";
-//        int resID = 0;
-//        Polymer polymer = activeAssembly.getChain(chainName);
-//        Residue residue = polymer.getResidue(resID);
-//        Rotamer rotamer = null;
-//        residue.addRotamer(rotamer);
+        // Make sure file exists and is read in correctly
+        int lenOfFile = modelFileName.length()
+        int stop = lenOfFile-4
 
+        String rotFileName = modelFileName.substring(0,stop)
+        rotFileName = rotFileName.concat(".rot")
+
+        // Try to open file
+        File rotFile = new File(rotFileName)
+        if(rotFile.canRead()){
+            // Process file and assign useful variables (chainName/segID, resID/resNum, rotamer/rotamerName)
+            println("Successfully read in rotamer file: "+rotFileName)
+            String line
+            ArrayList<String[]> rotFileContents = new ArrayList<>();
+            try {
+                rotFile.withReader { reader ->
+                    while ((line = reader.readLine()) != null) {
+                        logger.info("Inside line reader while loop")
+                        // Split lines based on separator dictated in CreateRotamers
+                        String[] lineArr = line.split(':')
+                        logger.info("")
+
+                        // Read into an Array List, for now
+                        rotFileContents.add(lineArr)
+                    }
+                }
+            } catch(Exception e){
+                logger.warning("Exception caught: "+e.toString()+"\n")
+                e.printStackTrace()
+            } // End reading rot file reader try-catch block
+            // TODO: Process the rotFileContents ArrayList to assign rotamers
+            int rotFileContentsCounter = 0;
+            while(rotFileContentsCounter < rotFileContents.size()){
+                // Get a line
+                String[] currentLine = rotFileContents.get(rotFileContentsCounter)
+                /*for(int i = 0; i < currentLine.length; i++){
+                    System.out.print(currentLine[i]+","+i+"\n")
+                }*/
+
+                // Assign Properties
+                Character chainID = currentLine[3].toCharacter();
+                String chainName = currentLine[4]
+                int resID = currentLine[6].toInteger()
+                String resName = currentLine[5]
+                int rotNum = currentLine[9].toInteger()
+                Polymer polymer = activeAssembly.getChain(chainName)
+                Residue residue = polymer.getResidue(resID)
+
+                String currentResName = resName
+                int currentRotNum = rotNum
+
+                // While the residue name remains the same, iterate through the associated rotamers
+                while(currentResName.equals(resName)){
+                    ArrayList<String[]> atomsInRotamer = new ArrayList<>();
+                    System.out.println("Residue: "+currentResName)
+                    // While the rotamer number remains the same, iterate through the associated atoms
+                    while(rotNum == currentRotNum){
+                        System.out.println("Rotamer Number: "+currentRotNum)
+                        String atomName = currentLine[10]
+                        String x = currentLine[12]
+                        String y = currentLine[13]
+                        String z = currentLine[14]
+                        String[] singleAtomCoords = [atomName, x, y, z]
+                        atomsInRotamer.add(singleAtomCoords)
+
+                        // Update line counter
+                        rotFileContentsCounter++
+                        // Set new 'current' variables
+                        if(rotFileContentsCounter < rotFileContents.size()) {
+                            currentLine = rotFileContents.get(rotFileContentsCounter)
+                            currentResName = currentLine[5]
+                            currentRotNum = currentLine[9].toInteger()
+                        } else{
+                            currentResName = "end"
+                            currentRotNum = 0
+                        }
+                    }
+                    rotNum = currentRotNum
+                }
+                resName = currentResName
+            }
+            /*// Create variables for various parameters of interest
+                        Character chainID = lineArr[3].toCharacter()
+                        String chainName = lineArr[4]
+                        int resID = lineArr[6].toInteger()
+                        String resName = lineArr[5]
+                        int rotNum = lineArr[9].toInteger()
+                        Polymer polymer = activeAssembly.getChain(chainName)
+                        Residue residue = polymer.getResidue(resID)
+
+                        String currentResName = resName
+                        int currentRotNum = rotNum
+                        // While residue name remains the same
+                        while(currentResName.equals(resName)){
+                            ArrayList<String[]> atomsInRotamer = new ArrayList()
+                            while(currentRotNum == rotNum){
+                                String atomName = lineArr[10]
+                                String x = lineArr[12]
+                                String y = lineArr[13]
+                                String z = lineArr[14]
+                                String[] singleAtomCoords = [atomName, x, y, z]
+                                atomsInRotamer.add(singleAtomCoords)
+
+                                // read in next line and set new "current" variables
+                                if(reader.readLine() != null){
+                                    line = reader.readLine()
+                                    lineArr = line.split(':')
+                                    currentRotNum = lineArr[9].toInteger()
+                                    currentResName = lineArr[5]
+                                }
+                            }
+                            ArrayList<Atom> sideChainAtoms = residue.getSideChainAtoms()
+                            logger.info("Got side chain atoms for residue "+currentResName) // Here for Val
+
+                            // Loop over side chain atoms
+                            for(Atom atom : sideChainAtoms){
+                                String resAtomName = atom.getName()
+
+                                // Match side chain atoms to atoms in rotamer coords array based on name
+                                for(String[] coordsArray : atomsInRotamer){
+                                    String coordsArrayAtomName = coordsArray[0]
+
+                                    // If atom names match, set new coordinates based on coordinates in rotamer coords array
+                                    if(coordsArrayAtomName.equals(resAtomName)){
+                                        double x = Double.parseDouble(coordsArray[1])
+                                        double y = Double.parseDouble(coordsArray[2])
+                                        double z = Double.parseDouble(coordsArray[3])
+
+                                        double[] xyz = [x,y,z] as double[]
+                                        atom.setXYZ(xyz)
+                                        logger.info("Added atom coordinates for "+atom.getName()+" in residue "+currentResName)
+                                        // Store residue state with new coordinates for matched atom
+                                        residue.storeState()
+                                    }
+                                }
+                            } // End side chain atoms loop
+
+                            // Create and set new rotamer for this residue
+                            // Rotamer constructor wants an AminoAcid3 or NucleicAcid3 object
+                            ResidueEnumerations.AminoAcid3 aminoAcid = residue.getAminoAcid3()
+                            Rotamer rotamer = new Rotamer(aminoAcid)
+                            residue.addRotamer(rotamer)
+                            logger.info("Added rotamer for residue "+residue.getName()) // Here for Val
+                        }*/
+
+        } else{
+            logger.warning("Could not read file")
+        }
+
+        // End rotamer adding code
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
                 activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
