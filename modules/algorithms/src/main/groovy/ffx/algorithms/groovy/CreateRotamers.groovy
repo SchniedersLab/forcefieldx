@@ -74,15 +74,15 @@ class CreateRotamers extends AlgorithmsScript {
         }
 
         // For now, always use the original coordinates as a (fixed) rotamer.
-        boolean useOriginalRotamers = true
+        boolean useOriginalRotamers = true;
 
         // TODO: handle getting AA vs. NA libraries.
         RotamerLibrary rotamerLibrary = new RotamerLibrary(ProteinLibrary.intToProteinLibrary(library), useOriginalRotamers)
 
         // Get the residue list.
-        List<Residue> residues = activeAssembly.getResidueList();/*.stream().
+        List<Residue> residues = activeAssembly.getResidueList().stream().
                 filter({ Residue r -> Rotamer[] rots = r.getRotamers(rotamerLibrary); return rots != null && rots.length > 1;}).
-                collect(Collectors.toList());*/
+                collect(Collectors.toList());
 
         logger.info(String.format(" Number of residues: %d\n", residues.size()));
 
@@ -100,53 +100,63 @@ class CreateRotamers extends AlgorithmsScript {
         try {
             bw = new BufferedWriter(new FileWriter(new File(rotFileName)));
 
+            // TODO: Make this ALGORITHM:[ALGORITHM]:[box/window number] instead of assuming global:1.
+            bw.write("ALGORITHM:GLOBAL:1");
+            bw.newLine();
+
             // Loop over Residues
             for (Residue residue : residues) {
+
+                StringBuilder resLine = new StringBuilder(" RES:");
+                resLine.append(residue.getChainID()).append(":");
+                resLine.append(residue.getSegID()).append(":");
+                resLine.append(residue.getName()).append(":");
+                resLine.append(residue.getResidueNumber()).append("\n");
+                bw.write(resLine.toString());
 
                 // Get this residue's rotamers.
                 Rotamer[] rotamers = residue.getRotamers(rotamerLibrary);
 
-                if (rotamers == null || rotamers.length < 2) {
-                    continue;
-                }
+                assert rotamers != null && rotamers.length > 1;
 
                 // Configure "active" and "use" flags.
-                List<Atom> sideChainAtoms = residue.getSideChainAtoms()
+                List<Atom> sideChainAtoms = residue.getVariableAtoms();
                 for (Atom atom : sideChainAtoms) {
                     atom.setActive(true)
                     atom.setUse(true)
                 }
 
                 // Loop over rotamers for this Residue.
-                for (int i=1; i< rotamers.length; i++) {
-                    Rotamer rotamer = rotamers[i]
+                for (int i = 0; i < rotamers.length; i++) {
+                    Rotamer rotamer = rotamers[i];
 
                     // Apply the rotamer (i.e. amino acid side-chain or nucleic acid suite).
-                    RotamerLibrary.applyRotamer(residue, rotamer)
+                    RotamerLibrary.applyRotamer(residue, rotamer);
 
-                    // Locally minimize.
-                    Minimize minimize = new Minimize(activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
-                    minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                    bw.write(String.format("  ROT:%d\n", i));
+
+                    if (i > 0 || !useOriginalRotamers) {
+                        // Locally minimize.
+                        Minimize minimize = new Minimize(activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
+                        minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                    } else {
+                        logger.info(" Skipping minimization of original-coordinates rotamer.");
+                    }
 
                     // Save out coordinates to a rotamer file.
                     for (Atom atom : sideChainAtoms) {
-                        double x = atom.getX()
-                        double y = atom.getY()
-                        double z = atom.getZ()
+                        double x = atom.getX();
+                        double y = atom.getY();
+                        double z = atom.getZ();
                         logger.info(String.format(" %s %16.8f %16.8f %16.8f", atom.toString(), x, y, z));
-
-                        try{
-                            /*chainID, chainName (segID),resName, resNum, rotamerNum, atomName, coordinates <x,y,z>*/
-                            bw.write("[GLOBAL]:1:<residue>:"+residue.chainID+":"+residue.segID+":"+residue.name+":"+residue.getResidueNumber()+
-                                    ":<rotamer>:"+rotamer.name+":"+i+":"+atom.name+
-                                    ":<coordinates>:"+x+":"+y+":"+z+"\n")
-                        } catch (Exception e){
-                            String message = "Exception writing to file"
-                            logger.log(Level.WARNING, message, e)
-                            throw e
-                        }
-
+                        StringBuilder atomLine = new StringBuilder("   ATOM:");
+                        atomLine.append(atom.getName()).append(":");
+                        atomLine.append(x).append(":");
+                        atomLine.append(y).append(":");
+                        atomLine.append(z).append("\n");
+                        bw.write(atomLine.toString());
                     }
+                    bw.write("  ENDROT\n");
                 }
 
                 // Set the Residue conformation back to rotamer 0.

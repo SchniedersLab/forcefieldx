@@ -51,6 +51,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
@@ -4063,6 +4064,68 @@ public class RotamerLibrary {
             logger.warning(String.format(" Exception in parsing rotamer patch "
                     + "file %s: %s", rpatchFile.getName(), ex.toString()));
             return false;
+        }
+    }
+
+    public static void readRotFile(File rotamerFile, MolecularAssembly assembly) throws IOException {
+        readRotFile(rotamerFile, assembly, 1);
+    }
+
+    public static void readRotFile(File rotamerFile, MolecularAssembly assembly, int boxWindowIndex) throws IOException {
+        try (BufferedReader br = new BufferedReader(new FileReader(rotamerFile))) {
+            Polymer[] polys = assembly.getChains();
+            Residue currentRes = null;
+            ResidueState origState = null;
+
+            String line = br.readLine();
+            boolean doRead = false;
+            while (line != null) {
+                String[] toks = line.trim().split(":");
+                if (toks[0].equals("ALGORITHM")) {
+                    doRead = Integer.parseInt(toks[2]) == boxWindowIndex;
+                    logger.info(String.format(" Readabilifications %b with %s", doRead, line));
+                } else if (doRead && !toks[0].startsWith("#")) {
+                    switch (toks[0]) {
+                        case "RES": {
+                            String segID = toks[2];
+                            int resnum = Integer.parseInt(toks[4]);
+                            for (Polymer poly : polys) {
+                                if (poly.getName().equals(segID)) {
+                                    currentRes = poly.getResidue(resnum);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                        case "ENDROT": {
+                            // TODO: Publish rotamer & revert coordinates.
+                            ResidueState rotamerState = currentRes.storeState();
+                            currentRes.addRotamer(Rotamer.stateToRotamer(rotamerState));
+                            currentRes.revertState(origState);
+                            logger.info(String.format(" Adding a rotamer to %s", currentRes));
+                        }
+                        break;
+                        case "ROT": {
+                            origState = currentRes.storeState();
+                        }
+                        break;
+                        case "ATOM": {
+                            String name = toks[1];
+                            Atom atom = (Atom) currentRes.getAtomNode(name);
+                            double[] xyz = new double[3];
+                            for (int i = 0; i < 3; i++) {
+                                xyz[i] = Double.parseDouble(toks[i+2]);
+                            }
+                            atom.setXYZ(xyz);
+                        }
+                        break;
+                        default: {
+                            logger.warning(" Unrecognized line! " + line);
+                        }
+                    }
+                }
+                line = br.readLine();
+            }
         }
     }
 

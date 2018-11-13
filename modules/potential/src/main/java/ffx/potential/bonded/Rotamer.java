@@ -254,6 +254,26 @@ public class Rotamer {
     }
 
     /**
+     * Constructs a Rotamer from a ResidueState.
+     *
+     * @param resState Residue state to be represented by this Rotamer.
+     * @return A Rotamer wrapping a ResidueState.
+     */
+    public static Rotamer stateToRotamer(ResidueState resState) {
+        Residue res = resState.getStateResidue();
+        double[] vals = RotamerLibrary.measureRotamer(res, false);
+        switch (res.getResidueType()) {
+            case AA:
+                return new Rotamer(res.getAminoAcid3(), resState, vals);
+            case NA:
+                return new Rotamer(res.getNucleicAcid3(), resState, vals);
+            case UNK:
+            default:
+                return new Rotamer(resState, vals);
+        }
+    }
+
+    /**
      * <p>Constructor for Rotamer.</p>
      *
      * @param name         a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
