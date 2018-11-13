@@ -15,12 +15,13 @@ import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.bonded.ResidueState
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import java.lang.reflect.Array
+import java.util.stream.Collectors
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -76,85 +77,72 @@ class ManyBody extends AlgorithmsScript {
 
         // TODO: Check if a "rot" file exists; if so read it in and assign save rotamers to their respective residue.
         // Make sure file exists and is read in correctly
-        int lenOfFile = modelFileName.length()
-        int stop = lenOfFile-4
-
-        String rotFileName = modelFileName.substring(0,stop)
-        rotFileName = rotFileName.concat(".rot")
+        String rotFileName = String.format("%s.rot", FilenameUtils.removeExtension(modelFileName));
 
         // Try to open file
-        File rotFile = new File(rotFileName)
-        if(rotFile.canRead()){
-            // Process file and assign useful variables (chainName/segID, resID/resNum, rotamer/rotamerName)
-            println("Successfully read in rotamer file: "+rotFileName)
-            String line
-            ArrayList<String[]> rotFileContents = new ArrayList<>();
-            try {
-                rotFile.withReader { reader ->
-                    while ((line = reader.readLine()) != null) {
-                        logger.info("Inside line reader while loop")
-                        // Split lines based on separator dictated in CreateRotamers
-                        String[] lineArr = line.split(':')
-                        logger.info("")
+        File rotFile = new File(rotFileName);
+        if (rotFile.exists()) {
+            if (rotFile.canRead()) {
+                // Process file and assign useful variables (chainName/segID, resID/resNum, rotamer/rotamerName)
+                logger.info(" Reading rotamer file: " + rotFileName);
 
-                        // Read into an Array List, for now
-                        rotFileContents.add(lineArr)
-                    }
-                }
-            } catch(Exception e){
-                logger.warning("Exception caught: "+e.toString()+"\n")
-                e.printStackTrace()
-            } // End reading rot file reader try-catch block
-            // TODO: Process the rotFileContents ArrayList to assign rotamers
-            int rotFileContentsCounter = 0;
-            while(rotFileContentsCounter < rotFileContents.size()){
-                // Get a line
-                String[] currentLine = rotFileContents.get(rotFileContentsCounter)
-                /*for(int i = 0; i < currentLine.length; i++){
-                    System.out.print(currentLine[i]+","+i+"\n")
-                }*/
+                List<String[]> rotFileContents = rotFile.readLines().stream().
+                        map({ l -> l.split(":");}).
+                        collect(Collectors.toList());
 
-                // Assign Properties
-                Character chainID = currentLine[3].toCharacter();
-                String chainName = currentLine[4]
-                int resID = currentLine[6].toInteger()
-                String resName = currentLine[5]
-                int rotNum = currentLine[9].toInteger()
-                Polymer polymer = activeAssembly.getChain(chainName)
-                Residue residue = polymer.getResidue(resID)
+                // TODO: Process the rotFileContents List to assign rotamers
+                int rotFileContentsCounter = 0;
+                while(rotFileContentsCounter < rotFileContents.size()){
+                    // Get a line
+                    String[] currentLine = rotFileContents.get(rotFileContentsCounter)
+                    /*for(int i = 0; i < currentLine.length; i++){
+                        System.out.print(currentLine[i]+","+i+"\n")
+                    }*/
 
-                String currentResName = resName
-                int currentRotNum = rotNum
+                    // Assign Properties
+                    Character chainID = currentLine[3].toCharacter();
+                    String chainName = currentLine[4]
+                    int resID = currentLine[6].toInteger()
+                    String resName = currentLine[5]
+                    int rotNum = currentLine[9].toInteger()
+                    Polymer polymer = activeAssembly.getChain(chainName)
+                    Residue residue = polymer.getResidue(resID)
 
-                // While the residue name remains the same, iterate through the associated rotamers
-                while(currentResName.equals(resName)){
-                    ArrayList<String[]> atomsInRotamer = new ArrayList<>();
-                    System.out.println("Residue: "+currentResName)
-                    // While the rotamer number remains the same, iterate through the associated atoms
-                    while(rotNum == currentRotNum){
-                        System.out.println("Rotamer Number: "+currentRotNum)
-                        String atomName = currentLine[10]
-                        String x = currentLine[12]
-                        String y = currentLine[13]
-                        String z = currentLine[14]
-                        String[] singleAtomCoords = [atomName, x, y, z]
-                        atomsInRotamer.add(singleAtomCoords)
+                    String currentResName = resName
+                    int currentRotNum = rotNum
 
-                        // Update line counter
-                        rotFileContentsCounter++
-                        // Set new 'current' variables
-                        if(rotFileContentsCounter < rotFileContents.size()) {
-                            currentLine = rotFileContents.get(rotFileContentsCounter)
-                            currentResName = currentLine[5]
-                            currentRotNum = currentLine[9].toInteger()
-                        } else{
-                            currentResName = "end"
-                            currentRotNum = 0
+                    // While the residue name remains the same, iterate through the associated rotamers
+                    while(currentResName.equals(resName)){
+                        List<String[]> atomsInRotamer = new ArrayList<>();
+                        System.out.println("Residue: "+currentResName)
+                        // While the rotamer number remains the same, iterate through the associated atoms
+                        while(rotNum == currentRotNum){
+                            System.out.println("Rotamer Number: "+currentRotNum)
+                            String atomName = currentLine[10]
+                            String x = currentLine[12]
+                            String y = currentLine[13]
+                            String z = currentLine[14]
+                            String[] singleAtomCoords = [atomName, x, y, z]
+                            atomsInRotamer.add(singleAtomCoords)
+
+                            // Update line counter
+                            rotFileContentsCounter++
+                            // Set new 'current' variables
+                            if(rotFileContentsCounter < rotFileContents.size()) {
+                                currentLine = rotFileContents.get(rotFileContentsCounter)
+                                currentResName = currentLine[5]
+                                currentRotNum = currentLine[9].toInteger()
+                            } else{
+                                currentResName = "end"
+                                currentRotNum = 0
+                            }
                         }
+                        rotNum = currentRotNum
                     }
-                    rotNum = currentRotNum
+                    resName = currentResName
                 }
-                resName = currentResName
+            } else{
+                logger.severe("Could not read rotamers file " + rotFileName);
             }
             /*// Create variables for various parameters of interest
                         Character chainID = lineArr[3].toCharacter()
@@ -219,9 +207,6 @@ class ManyBody extends AlgorithmsScript {
                             residue.addRotamer(rotamer)
                             logger.info("Added rotamer for residue "+residue.getName()) // Here for Val
                         }*/
-
-        } else{
-            logger.warning("Could not read file")
         }
 
         // End rotamer adding code
