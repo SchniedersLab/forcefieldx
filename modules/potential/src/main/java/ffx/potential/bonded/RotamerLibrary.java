@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -261,6 +262,35 @@ public class RotamerLibrary {
         switch (residue.getResidueType()) {
             case AA:
                 AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
+                // Now check for cysteines in a disulfide bond.
+                switch (aa) {
+                    case CYS:
+                    case CYX:
+                    case CYD:
+                    {
+                        List<Atom> cysAtoms = residue.getAtomList();
+                        // First find the sulfur on atomic number, then on starting with S.
+                        Optional<Atom> s = cysAtoms.stream().
+                                filter(a -> a.getAtomType().atomicNumber == 16).
+                                findAny();
+                        if (!s.isPresent()) {
+                            s = cysAtoms.stream().filter(a -> a.getName().startsWith("S")).findAny();
+                        }
+                        if (s.isPresent()) {
+                            Atom theS = s.get();
+                            boolean attachedS = theS.getBonds().stream().
+                                    map(b -> b.get1_2(theS)).
+                                    anyMatch(a -> a.getAtomType().atomicNumber == 16 || a.getName().startsWith("S"));
+                            if (attachedS) {
+                                // Return a null rotamer array if it's disulfide-bonded.
+                                return null;
+                            }
+                        } else {
+                            logger.warning(String.format(" No sulfur atom found attached to %s residue %s!", aa, residue));
+                        }
+                    }
+                    break;
+                }
                 return getRotamers(aa);
             case NA:
                 NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
@@ -393,10 +423,10 @@ public class RotamerLibrary {
             case CYS:
             case CYD:
                 aminoAcidRotamerCache[n] = null;
-//                rotamerCache[n] = new Rotamer[3];
-//                rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
-//                rotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
-//                rotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
                 break;
             /*
              * TODO: Figure out proline rotamers.  I have dihedrals from
@@ -664,10 +694,10 @@ public class RotamerLibrary {
             case CYS:
             case CYD:
                 aminoAcidRotamerCache[n] = null;
-//                rotamerCache[n] = new Rotamer[3];
-//                rotamerCache[n][0] = new Rotamer(name, 62, 0);
-//                rotamerCache[n][1] = new Rotamer(name, -177, 0);
-//                rotamerCache[n][2] = new Rotamer(name, -65, 0);
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0);
                 break;
             case PHE:
                 aminoAcidRotamerCache[n] = new Rotamer[4];
