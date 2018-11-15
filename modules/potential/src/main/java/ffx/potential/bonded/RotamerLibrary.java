@@ -47,10 +47,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
@@ -260,6 +262,35 @@ public class RotamerLibrary {
         switch (residue.getResidueType()) {
             case AA:
                 AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
+                // Now check for cysteines in a disulfide bond.
+                switch (aa) {
+                    case CYS:
+                    case CYX:
+                    case CYD:
+                    {
+                        List<Atom> cysAtoms = residue.getAtomList();
+                        // First find the sulfur on atomic number, then on starting with S.
+                        Optional<Atom> s = cysAtoms.stream().
+                                filter(a -> a.getAtomType().atomicNumber == 16).
+                                findAny();
+                        if (!s.isPresent()) {
+                            s = cysAtoms.stream().filter(a -> a.getName().startsWith("S")).findAny();
+                        }
+                        if (s.isPresent()) {
+                            Atom theS = s.get();
+                            boolean attachedS = theS.getBonds().stream().
+                                    map(b -> b.get1_2(theS)).
+                                    anyMatch(a -> a.getAtomType().atomicNumber == 16 || a.getName().startsWith("S"));
+                            if (attachedS) {
+                                // Return a null rotamer array if it's disulfide-bonded.
+                                return null;
+                            }
+                        } else {
+                            logger.warning(String.format(" No sulfur atom found attached to %s residue %s!", aa, residue));
+                        }
+                    }
+                    break;
+                }
                 return getRotamers(aa);
             case NA:
                 NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
@@ -392,10 +423,10 @@ public class RotamerLibrary {
             case CYS:
             case CYD:
                 aminoAcidRotamerCache[n] = null;
-//                rotamerCache[n] = new Rotamer[3];
-//                rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
-//                rotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
-//                rotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
                 break;
             /*
              * TODO: Figure out proline rotamers.  I have dihedrals from
@@ -663,10 +694,10 @@ public class RotamerLibrary {
             case CYS:
             case CYD:
                 aminoAcidRotamerCache[n] = null;
-//                rotamerCache[n] = new Rotamer[3];
-//                rotamerCache[n][0] = new Rotamer(name, 62, 0);
-//                rotamerCache[n][1] = new Rotamer(name, -177, 0);
-//                rotamerCache[n][2] = new Rotamer(name, -65, 0);
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0);
                 break;
             case PHE:
                 aminoAcidRotamerCache[n] = new Rotamer[4];
@@ -4063,6 +4094,68 @@ public class RotamerLibrary {
             logger.warning(String.format(" Exception in parsing rotamer patch "
                     + "file %s: %s", rpatchFile.getName(), ex.toString()));
             return false;
+        }
+    }
+
+    public static void readRotFile(File rotamerFile, MolecularAssembly assembly) throws IOException {
+        readRotFile(rotamerFile, assembly, 1);
+    }
+
+    public static void readRotFile(File rotamerFile, MolecularAssembly assembly, int boxWindowIndex) throws IOException {
+        try (BufferedReader br = new BufferedReader(new FileReader(rotamerFile))) {
+            Polymer[] polys = assembly.getChains();
+            Residue currentRes = null;
+            ResidueState origState = null;
+
+            String line = br.readLine();
+            boolean doRead = false;
+            while (line != null) {
+                String[] toks = line.trim().split(":");
+                if (toks[0].equals("ALGORITHM")) {
+                    doRead = Integer.parseInt(toks[2]) == boxWindowIndex;
+                    logger.info(String.format(" Readabilifications %b with %s", doRead, line));
+                } else if (doRead && !toks[0].startsWith("#")) {
+                    switch (toks[0]) {
+                        case "RES": {
+                            String segID = toks[2];
+                            int resnum = Integer.parseInt(toks[4]);
+                            for (Polymer poly : polys) {
+                                if (poly.getName().equals(segID)) {
+                                    currentRes = poly.getResidue(resnum);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                        case "ENDROT": {
+                            // TODO: Publish rotamer & revert coordinates.
+                            ResidueState rotamerState = currentRes.storeState();
+                            currentRes.addRotamer(Rotamer.stateToRotamer(rotamerState));
+                            currentRes.revertState(origState);
+                            logger.info(String.format(" Adding a rotamer to %s", currentRes));
+                        }
+                        break;
+                        case "ROT": {
+                            origState = currentRes.storeState();
+                        }
+                        break;
+                        case "ATOM": {
+                            String name = toks[1];
+                            Atom atom = (Atom) currentRes.getAtomNode(name);
+                            double[] xyz = new double[3];
+                            for (int i = 0; i < 3; i++) {
+                                xyz[i] = Double.parseDouble(toks[i+2]);
+                            }
+                            atom.setXYZ(xyz);
+                        }
+                        break;
+                        default: {
+                            logger.warning(" Unrecognized line! " + line);
+                        }
+                    }
+                }
+                line = br.readLine();
+            }
         }
     }
 
