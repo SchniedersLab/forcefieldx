@@ -290,6 +290,7 @@ public class RotamerLibrary {
                         }
                     }
                     break;
+                    // Default: no-op (we are checking for cysteine disulfide bonds).
                 }
                 return getRotamers(aa);
             case NA:
