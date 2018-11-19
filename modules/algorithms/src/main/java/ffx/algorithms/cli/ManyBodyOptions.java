@@ -46,12 +46,14 @@ import java.util.logging.Logger;
 
 import ffx.algorithms.RotamerOptimization;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 
+import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Option;
 
 /**
@@ -324,21 +326,28 @@ public class ManyBodyOptions {
     public void initRotamerOptimization(RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
         this.rotamerOptimization = rotamerOptimization;
 
-        /**
-         * Fully initialize the Rotamer Library.
-         */
-        rLib = RotamerLibrary.getDefaultLibrary();
-        if (library == 1) {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
-        } else {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        }
-
         boolean useOrigCoordsRotamer = !noOriginal;
         if (decompose) {
             useOrigCoordsRotamer = true;
         }
-        rLib.setUseOrigCoordsRotamer(useOrigCoordsRotamer);
+
+        String rotamerFileName = activeAssembly.getFile().getName();
+        rotamerFileName = FilenameUtils.removeExtension(rotamerFileName);
+        rotamerFileName = rotamerFileName + ".rot";
+        File rotFile = new File(rotamerFileName);
+
+        if (rotFile.exists()) {
+            logger.info(" EXPERIMENTAL: Using rotamer file " + rotamerFileName);
+            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.None, false);
+            try {
+                RotamerLibrary.readRotFile(rotFile, activeAssembly);
+            } catch (IOException iox) {
+                logger.severe(String.format(" Exception in parsing rotamer file: %s\n%s", iox, Utilities.stackTraceToString(iox)));
+            }
+        } else {
+            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), useOrigCoordsRotamer);
+        }
+
         rotamerOptimization.setDecomposeOriginal(decompose);
 
         if (algorithm == 0) {

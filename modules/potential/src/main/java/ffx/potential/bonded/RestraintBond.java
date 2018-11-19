@@ -741,5 +741,10 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
                 "Restraint-Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
                 atoms[1].getIndex(), atoms[1].getAtomType().name,
                 bondType.distance, value, energy));
+        // Below would print atom name instead of atom type name (sometimes more informative), and maintain more consistent columns.
+        /*logger.info(String.format(" %s %6d-%-4s %6d-%-4s %6.4f  %6.4f  %10.4f",
+                "Restraint-Bond", atoms[0].getIndex(), atoms[0].getName(),
+                atoms[1].getIndex(), atoms[1].getName(),
+                bondType.distance, value, energy));*/
     }
 }

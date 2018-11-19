@@ -8,14 +8,20 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.ResidueEnumerations
+import ffx.potential.bonded.ResidueState
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import java.lang.reflect.Array
+import java.util.stream.Collectors
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -69,14 +75,7 @@ class ManyBody extends AlgorithmsScript {
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
         potentialEnergy = activeAssembly.getPotentialEnergy();
 
-        // TODO: Check if a "rot" file exists; if so read it in and assign save rotamers to their respective residue.
-//        String chainName = "";
-//        int resID = 0;
-//        Polymer polymer = activeAssembly.getChain(chainName);
-//        Residue residue = polymer.getResidue(resID);
-//        Rotamer rotamer = null;
-//        residue.addRotamer(rotamer);
-
+        // End rotamer adding code
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
                 activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
