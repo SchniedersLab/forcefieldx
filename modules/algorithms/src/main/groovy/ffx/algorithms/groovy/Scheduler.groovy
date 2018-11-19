@@ -158,7 +158,7 @@ class Scheduler extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
-        return new ArrayList<>();
+    List<Potential> getPotentials() {
+        return new ArrayList<>()
     }
 }
