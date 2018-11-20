@@ -6,12 +6,12 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.TransitionTemperedOSRW
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.osrw.AbstractOSRW
+import ffx.algorithms.osrw.TransitionTemperedOSRW
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy

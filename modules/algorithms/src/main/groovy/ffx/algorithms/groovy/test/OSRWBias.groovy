@@ -1,4 +1,4 @@
-package ffx.algorithms.groovy.test;
+package ffx.algorithms.groovy.test
 
 import org.apache.commons.io.FilenameUtils
 
@@ -6,6 +6,9 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 
+import ffx.algorithms.osrw.AbstractOSRW
+import ffx.algorithms.osrw.OSRW
+import ffx.algorithms.osrw.TransitionTemperedOSRW
 import ffx.potential.DualTopologyEnergy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
@@ -195,17 +198,17 @@ class OSRWBias extends Script {
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
         energy.getCrystal().setSpecialPositionCutoff(0.0);
         // OSRW will be configured for either single or dual topology.
-        ffx.algorithms.AbstractOSRW osrw = null;
+        AbstractOSRW osrw = null;
         // Save a reference to the first topology.
         topology1 = active;
 
         if (arguments.size() == 1) {
             // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
             if (temper) {
-                osrw = new ffx.algorithms.TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+                osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                         active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
             } else {
-                osrw = new ffx.algorithms.OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+                osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
                         298.15, 1.0, 1.0, 1.0, false, sh);
             }
         } else {
@@ -242,11 +245,11 @@ class OSRWBias extends Script {
             DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
 
             if (temper) {
-                osrw = new ffx.algorithms.TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+                osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                         active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
             } else {
                 // Wrap the DualTopology potential energy inside an OSRW instance.
-                osrw = new ffx.algorithms.OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+                osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
                         298.15, 1.0, 1.0, 1.0, false, sh);
             }
         }

@@ -10,9 +10,16 @@ import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 
 import edu.rit.pj.Comm
+import edu.rit.pj.ParallelTeam
 
+import ffx.algorithms.AlgorithmFunctions
+import ffx.algorithms.AlgorithmUtils
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.Barostat
 import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.osrw.MonteCarloOSRW
+import ffx.algorithms.osrw.TransitionTemperedOSRW
 import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.crystal.Crystal
@@ -25,7 +32,6 @@ import ffx.numerics.switching.UnivariateSwitchingFunction
 import ffx.potential.DualTopologyEnergy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-
 import ffx.potential.QuadTopologyEnergy
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
@@ -262,12 +268,6 @@ class Thermodynamics extends Script {
         int meanInterval;
 
         /**
-         * -W or --traversals sets writing lambda traversal snapshots.
-         */
-        @Option(shortName = 'W', longName = 'traversals', defaultValue = 'false',
-                description = 'Write out lambda-traversal snapshots.')
-        boolean traversals;
-        /**
          * -rt or --reset resets the OSRW histogram once, at lambda 0.99.
          */
         @Option(shortName = 'rt', longName = 'reset', defaultValue = 'false',
@@ -355,9 +355,9 @@ class Thermodynamics extends Script {
     private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
     private static double maxdUdL = 1000.0;
 
-    private int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
+    private int threadsAvail = ParallelTeam.getDefaultThreadCount();
     private int threadsPer = threadsAvail;
-    private ffx.algorithms.AlgorithmFunctions aFuncts;
+    private AlgorithmFunctions aFuncts;
     def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
     def ranges2 = [];
     def rangesA = [];
@@ -620,7 +620,7 @@ class Thermodynamics extends Script {
         try {
             aFuncts = getAlgorithmUtils();
         } catch (MissingMethodException ex) {
-            aFuncts = new ffx.algorithms.AlgorithmUtils();
+            aFuncts = new AlgorithmUtils();
         }
 
         if (options.distWalksString) {
@@ -699,8 +699,6 @@ class Thermodynamics extends Script {
         structureFile = new File(structureFile.getAbsolutePath());
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
         File histogramRestart = new File(baseFilename + ".his");
-        File lambdaOneFile = null;
-        File lambdaZeroFile = null;
         File lambdaRestart = null;
         File dyn = null;
 
@@ -723,8 +721,6 @@ class Thermodynamics extends Script {
 
         lambdaRestart = new File(withRankName + ".lam");
         dyn = new File(withRankName + ".dyn");
-        lambdaOneFile = new File(withRankName + ".lam1");
-        lambdaZeroFile = new File(withRankName + ".lam0");
 
         if (!dyn.exists()) {
             dyn = null;
@@ -872,7 +868,7 @@ class Thermodynamics extends Script {
             }
         }
 
-        ffx.algorithms.TransitionTemperedOSRW osrw = null;
+        TransitionTemperedOSRW osrw = null;
         def dualTopologies = []; // Used for distResidues on quad/oct topologies
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ");
         switch (nArgs) {
@@ -983,18 +979,12 @@ class Thermodynamics extends Script {
             }
         }
 
-        osrw = new ffx.algorithms.TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
+        osrw = new TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
                 topologies[0].getProperties(), options.temp, options.dt, options.report,
                 options.checkpoint, options.async, resetNumSteps, aFuncts.getDefaultListener());
 
         osrw.setResetStatistics(options.reset);
-        if (options.traversals) {
-            if (nArgs == 1) {
-                osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
-            } else if (nArgs == 2) {
-                osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[1]);
-            }
-        }
+
         osrw.setTemperingParameter(options.temperParam);
 
         if (options.optimize) {
@@ -1015,7 +1005,7 @@ class Thermodynamics extends Script {
         }
 
         if (options.pressure) {
-            ffx.algorithms.Barostat barostat = new ffx.algorithms.Barostat(topologies[0], osrw);
+            Barostat barostat = new Barostat(topologies[0], osrw);
             barostat.setPressure(options.pressure);
             barostat.setMaxDensity(options.maxDensity);
             barostat.setMinDensity(options.minDensity);
@@ -1032,18 +1022,18 @@ class Thermodynamics extends Script {
         }
 
         if (options.mc) {
-            ffx.algorithms.MonteCarloOSRW mcOSRW = new ffx.algorithms.MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
+            MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
                     topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, options.integrator);
 
             if (options.nEquil > 0) {
                 logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
                 mcOSRW.setEquilibration(true)
                 mcOSRW.setMDMoveParameters(options.nEquil, options.mcMD, options.dt)
-                if(options.simplified){
+                if (options.simplified) {
                     logger.info("\n Using simplified MCOSRW sampling")
-                    mcOSRW.simplifiedSample()
-                } else{
-                    mcOSRW.sample()
+                    mcOSRW.sampleOneStep()
+                } else {
+                    mcOSRW.sampleTwoStep()
                 }
                 mcOSRW.setEquilibration(false)
                 logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
@@ -1052,15 +1042,15 @@ class Thermodynamics extends Script {
             logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
             mcOSRW.setLambdaStdDev(options.mcL)
             mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
-            if(options.simplified){
-                mcOSRW.simplifiedSample()
+            if (options.simplified) {
+                mcOSRW.sampleOneStep()
             } else {
-                mcOSRW.sample()
+                mcOSRW.sampleTwoStep()
             }
         } else {
             // Create the MolecularDynamics instance.
             // If we switch over to using the factory method, request the FFX Dynamics engine.
-            ffx.algorithms.MolecularDynamics molDyn = new ffx.algorithms.MolecularDynamics(topologies[0], potential,
+            MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
                     topologies[0].getProperties(), null, options.tstat, options.integrator);
             for (int i = 1; i < topologies.size(); i++) {
                 molDyn.addAssembly(topologies.get(i), properties.get(i));

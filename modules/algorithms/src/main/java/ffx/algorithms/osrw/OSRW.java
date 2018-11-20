@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.osrw;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -50,7 +50,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -59,10 +58,11 @@ import static org.apache.commons.math3.util.FastMath.exp;
 
 import edu.rit.mp.DoubleBuf;
 
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Minimize;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.parsers.PDBFilter;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -260,8 +260,8 @@ public class OSRW extends AbstractOSRW {
          * to L and F_L.
          */
         gLdEdL = 0.0;
-        double dGdLambda = 0.0;
-        double dGdFLambda = 0.0;
+        dGdLambda = 0.0;
+        dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
         double FLs2 = (2.0 * dFL) * (2.0 * dFL);
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
@@ -334,7 +334,7 @@ public class OSRW extends AbstractOSRW {
             }
             if (energyCount % saveFrequency == 0) {
                 if (algorithmListener != null) {
-                    algorithmListener.algorithmUpdate(lambdaOneAssembly);
+                    algorithmListener.algorithmUpdate(molecularAssembly);
                 }
                 /**
                  * Only the rank 0 process writes the histogram restart file.
@@ -366,19 +366,13 @@ public class OSRW extends AbstractOSRW {
                     logger.log(Level.INFO, message, ex);
                 }
             }
-            /**
-             * Write out snapshot upon each full lambda traversal.
-             */
-            if (writeTraversalSnapshots) {
-                writeTraversal();
-            }
         }
 
         /**
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
+        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -427,6 +421,58 @@ public class OSRW extends AbstractOSRW {
         totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
+    }
+
+    public double computeBiasEnergy(double currentLambda, double currentdUdL) {
+
+        int lambdaBin = binForLambda(currentLambda);
+        int FLambdaBin = binForFLambda(currentdUdL);
+
+        double gLdEdL = 0.0;
+
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = currentLambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                gLdEdL += bias;
+            }
+        }
+
+        /**
+         * Compute the energy and gradient for the recursion slave at F(L) using
+         * interpolation.
+         */
+        return current1DBiasEnergy(currentLambda, false) + gLdEdL;
     }
 
     /**
@@ -552,7 +598,7 @@ public class OSRW extends AbstractOSRW {
             }
             if (energyCount % saveFrequency == 0) {
                 if (algorithmListener != null) {
-                    algorithmListener.algorithmUpdate(lambdaOneAssembly);
+                    algorithmListener.algorithmUpdate(molecularAssembly);
                 }
                 /**
                  * Only the rank 0 process writes the histogram restart file.
@@ -584,19 +630,13 @@ public class OSRW extends AbstractOSRW {
                     logger.log(Level.INFO, message, ex);
                 }
             }
-            /**
-             * Write out snapshot upon each full lambda traversal.
-             */
-            if (writeTraversalSnapshots) {
-                writeTraversal();
-            }
         }
 
         /**
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
+        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -713,76 +753,6 @@ public class OSRW extends AbstractOSRW {
     }
 
     /**
-     * Save snapshots for each traversal of lambda.
-     */
-    private void writeTraversal() {
-        double heldTraversalLambda = 0.5;
-        if (!traversalInHand.isEmpty()) {
-            heldTraversalLambda = Double.parseDouble(traversalInHand.get(0).split(",")[0]);
-            if ((lambda > 0.2 && traversalSnapshotTarget == 0)
-                    || (lambda < 0.8 && traversalSnapshotTarget == 1)) {
-                int snapshotCounts = Integer.parseInt(traversalInHand.get(0).split(",")[1]);
-                traversalInHand.remove(0);
-                File fileToWrite;
-                int numStructures;
-                if (traversalSnapshotTarget == 0) {
-                    fileToWrite = lambdaZeroFile;
-                    numStructures = ++lambdaZeroStructures;
-                } else {
-                    fileToWrite = lambdaOneFile;
-                    numStructures = ++lambdaOneStructures;
-                }
-                try {
-                    FileWriter fw = new FileWriter(fileToWrite, true);
-                    BufferedWriter bw = new BufferedWriter(fw);
-                    bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", numStructures, heldTraversalLambda, snapshotCounts));
-                    for (int i = 0; i < 50; i++) {
-                        bw.write(" ");
-                    }
-                    bw.newLine();
-                    for (int i = 0; i < traversalInHand.size(); i++) {
-                        bw.write(traversalInHand.get(i));
-                        bw.newLine();
-                    }
-                    bw.write(String.format("ENDMDL"));
-                    for (int i = 0; i < 75; i++) {
-                        bw.write(" ");
-                    }
-                    bw.newLine();
-                    bw.close();
-                    logger.info(String.format(" Wrote traversal structure L=%.4f", heldTraversalLambda));
-                } catch (Exception exception) {
-                    logger.warning(String.format("Exception writing to file: %s", fileToWrite.getName()));
-                }
-                heldTraversalLambda = 0.5;
-                traversalInHand.clear();
-                traversalSnapshotTarget = 1 - traversalSnapshotTarget;
-            }
-        }
-        if (((lambda < 0.1 && traversalInHand.isEmpty()) || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
-                && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
-            if (lambdaZeroFilter == null) {
-                lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
-                lambdaZeroFilter.setListMode(true);
-            }
-            lambdaZeroFilter.clearListOutput();
-            lambdaZeroFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d,", lambda, totalCounts));
-            traversalInHand = lambdaZeroFilter.getListOutput();
-            traversalSnapshotTarget = 0;
-        } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
-                && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
-            if (lambdaOneFilter == null) {
-                lambdaOneFilter = new PDBFilter(lambdaOneFile, lambdaOneAssembly, null, null);
-                lambdaOneFilter.setListMode(true);
-            }
-            lambdaOneFilter.clearListOutput();
-            lambdaOneFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d,", lambda, totalCounts));
-            traversalInHand = lambdaOneFilter.getListOutput();
-            traversalSnapshotTarget = 1;
-        }
-    }
-
-    /**
      * Send an OSRW count to all other processes while also receiving an OSRW
      * count from all other processes.
      *
@@ -853,24 +823,6 @@ public class OSRW extends AbstractOSRW {
                 logger.log(Level.SEVERE, message, ex);
             }
         }
-    }
-
-    /**
-     * <p>Getter for the field <code>recursionKernel</code>.</p>
-     *
-     * @return an array of {@link int} objects.
-     */
-    public int[][] getRecursionKernel() {
-        return recursionKernel;
-    }
-
-    /**
-     * <p>Setter for the field <code>recursionKernel</code>.</p>
-     *
-     * @param recursionKernel an array of {@link int} objects.
-     */
-    public void setRecursionKernel(int[][] recursionKernel) {
-        this.recursionKernel = recursionKernel;
     }
 
     /**
@@ -1093,14 +1045,6 @@ public class OSRW extends AbstractOSRW {
             }
         }
         return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getCountsReceived() {
-        return receiveThread.getCountsReceived();
     }
 
     private class ReceiveThread extends Thread {

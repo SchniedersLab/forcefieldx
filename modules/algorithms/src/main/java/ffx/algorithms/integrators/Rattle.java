@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.integrators;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,6 +76,8 @@ public class Rattle {
         Atom[] tempArray = molAss.getAtomArray();
         int size = tempArray.length;
         this.nVariables = nVariables;
+
+
 
         //get velocities prior to integrator
         for (i = 0; i < v.length; i = i + 3) {

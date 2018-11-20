@@ -1,4 +1,7 @@
 package ffx.xray.groovy.test
+
+import org.apache.commons.io.FilenameUtils
+
 /**
  * Title: Force Field X.
  *
@@ -37,20 +40,17 @@ package ffx.xray.groovy.test
  * exception statement from your version.
  */
 
-
-import org.apache.commons.io.FilenameUtils
-
 import groovy.cli.picocli.CliBuilder
 
 import edu.rit.mp.DoubleBuf
 import edu.rit.pj.Comm
 
-import ffx.algorithms.MCLoop
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.OSRW
 import ffx.algorithms.SimulatedAnnealing
-import ffx.algorithms.TransitionTemperedOSRW
 import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.mc.MCLoop
+import ffx.algorithms.osrw.OSRW
+import ffx.algorithms.osrw.TransitionTemperedOSRW
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
