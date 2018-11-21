@@ -37,6 +37,7 @@
  */
 package ffx.algorithms.osrw;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
@@ -291,7 +292,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
             long mdMoveTime = -System.nanoTime();
             mdMove.move();
             mdMoveTime += System.nanoTime();
-            logger.info(String.format(" Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
+            }
 
             // Get the starting and final kinetic energy for the MD move.
             double currentKineticEnergy = mdMove.getStartingKineticEnergy();
@@ -304,7 +307,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
             long proposedOSRWEnergyTime = -System.nanoTime();
             double proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             proposedOSRWEnergyTime += System.nanoTime();
-            logger.info(String.format(" Time to complete MD OSRW energy method call %6.3f", proposedOSRWEnergyTime * NS2SEC));
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Time to complete MD OSRW energy method call %6.3f", proposedOSRWEnergyTime * NS2SEC));
+            }
 
             // Retrieve the proposed dU/dL, Force Field Energy and Bias Energy.
             double proposeddUdL = osrw.getForceFielddEdL();
@@ -390,14 +396,20 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     lambdaMove.revertMove();
                     lambda = currentLambda;
                 }
+
                 lambdaMoveTime += System.nanoTime();
-                logger.info(String.format(" Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format(" Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
+                }
 
                 /**
                  * Update time dependent bias.
                  */
                 osrw.addBias(currentdUdL, currentCoordinates, null);
-                logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
+
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(format(" Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
+                }
 
                 // Compute the updated OSRW bias.
                 currentBiasEnergy = osrw.computeBiasEnergy(currentLambda, currentdUdL);
@@ -407,7 +419,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             }
 
             totalMoveTime += System.nanoTime();
-            logger.info(format(" Total MC-OSRW Round Time: %6.3f sec.", totalMoveTime * NS2SEC));
+            logger.info(format(" MC-OSRW round in %6.3f sec.", totalMoveTime * NS2SEC));
         }
     }
 
@@ -446,7 +458,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 proposedLambda = osrw.getLambda();
             }
 
-            logger.info(String.format(" Starting force field energy for move %f", currentForceFieldEnergy));
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Starting force field energy for move %f", currentForceFieldEnergy));
+            }
 
             /**
              * Run MD in an approximate potential U* (U star) that does not
@@ -535,7 +549,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
                  * Update time-dependent bias.
                  */
                 osrw.addBias(currentdUdL, currentCoordinates, null);
-                logger.info(format(" Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
+
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(format(" Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
+                }
 
                 // Compute the updated OSRW bias.
                 currentBiasEnergy = osrw.computeBiasEnergy(currentLambda, currentdUdL);
@@ -546,7 +563,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             }
 
             totalMoveTime += System.nanoTime();
-            logger.info(format(" Total MC-OSRW Round Time: %6.3f sec.", totalMoveTime * NS2SEC));
+            logger.info(format(" MC-OSRW round in %6.3f sec.", totalMoveTime * NS2SEC));
         }
     }
 
