@@ -498,8 +498,8 @@ if (runOSRW) {
             fileType, restartInterval, dyn);
 
     logger.info("Obtaining low energy coordinates");
-    double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
-    double currentOSRWOptimum = osrw.getOSRWOptimum();
+    double[] lowEnergyCoordinates = osrw.getOSRWOptimumCoordinates();
+    double currentOSRWOptimum = osrw.getOSRWOptimumEnergy();
     if (lowEnergyCoordinates != null) {
         forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
     } else {

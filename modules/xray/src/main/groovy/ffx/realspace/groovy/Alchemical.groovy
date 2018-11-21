@@ -277,8 +277,8 @@ class Alchemical extends AlgorithmsScript {
         molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, true,
                 fileType, dynamicsOptions.write, dyn)
         logger.info(" Searching for low energy coordinates")
-        double[] lowEnergyCoordinates = osrw.getLowEnergyLoop()
-        double currentOSRWOptimum = osrw.getOSRWOptimum()
+        double[] lowEnergyCoordinates = osrw.getOSRWOptimumCoordinates()
+        double currentOSRWOptimum = osrw.getOSRWOptimumEnergy()
         if (lowEnergyCoordinates != null) {
             forceFieldEnergy.setCoordinates(lowEnergyCoordinates)
             logger.info("\n Minimum coordinates found: " + lowEnergyCoordinates)

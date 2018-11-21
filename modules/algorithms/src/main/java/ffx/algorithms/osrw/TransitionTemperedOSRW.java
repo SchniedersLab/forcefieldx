@@ -720,7 +720,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                     double mass = molecularAssembly.getMass();
                     Crystal crystal = molecularAssembly.getCrystal();
                     double density = crystal.getDensity(mass);
-                    systemFilter.writeFile(optFile, false);
+                    osrwOptimizationFilter.writeFile(osrwOptimizationFile, false);
                     Crystal uc = crystal.getUnitCell();
                     logger.info(String.format(" Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
                             minEnergy, uc.toShortString(), density, startingEnergy, energyCount));

@@ -731,8 +731,8 @@ public class OSRW extends AbstractOSRW {
                 int n = potential.getNumberOfVariables();
                 osrwOptimumCoords = new double[n];
                 osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
-                if (systemFilter.writeFile(optFile, false)) {
-                    logger.info(String.format(" Wrote PDB file to " + optFile.getName()));
+                if (osrwOptimizationFilter.writeFile(osrwOptimizationFile, false)) {
+                    logger.info(String.format(" Wrote PDB file to " + osrwOptimizationFile.getName()));
                 }
             }
 

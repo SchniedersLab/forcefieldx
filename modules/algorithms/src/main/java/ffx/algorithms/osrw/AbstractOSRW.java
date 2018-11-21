@@ -54,6 +54,7 @@ import edu.rit.pj.cluster.JobBackend;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Barostat;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
@@ -76,7 +77,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * The MolecularAssembly being simulated.
      */
     protected MolecularAssembly molecularAssembly;
-    protected SystemFilter systemFilter;
     /**
      * A potential energy that implements the LambdaInterface.
      */
@@ -254,27 +254,25 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double dGdFLambda;
 
-    /**
-     * Gas constant (in Kcal/mol/Kelvin).
-     */
-    public static final double R = 1.9872066e-3;
     private double theta;
     /**
-     * Reasonable thetaFriction is 60 1/ps.
+     * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
      */
     protected double thetaFriction = 1.0e-19;
     /**
-     * Reasonable thetaMass is 100 a.m.u.
+     * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
      */
     protected double thetaMass = 1.0e-18;
     protected double halfThetaVelocity = 0.0;
     private final Random stochasticRandom;
     /**
      * Random force conversion to kcal/mol/A;
+     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
      */
     private static final double randomConvert = sqrt(4.184) / 10e9;
     /**
      * randomConvert squared.
+     * Units: Joule per calorie / (nanometer per meter)^2
      */
     private static final double randomConvert2 = randomConvert * randomConvert;
     /**
@@ -351,7 +349,14 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * The OSRW optimization energy window.
      */
     protected double osrwOptimizationEnergyWindow = 2.0;
-    protected File optFile;
+    /**
+     * File instance used for saving optimized structures.
+     */
+    protected File osrwOptimizationFile;
+    /**
+     * SystemFilter used to save optimized structures.
+     */
+    protected SystemFilter osrwOptimizationFilter;
 
     /**
      * Interval between how often the 1D histogram is printed to screen versus
@@ -865,22 +870,51 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Propagate Lambda using Langevin dynamics.
      */
     protected void langevin() {
-        double rt2 = 2.0 * ffx.algorithms.thermostats.Thermostat.R * temperature * thetaFriction / dt;
+        /**
+         * Compute the random force pre-factor (kcal/mol * psec^-2).
+         */
+        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
+
+        /**
+         * Compute the random force.
+         */
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
-        //double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() * invRandomConvert;
+
+        /**
+         * Compute dEdL (kcal/mol).
+         */
         double dEdL = -dUdLambda * sin(2.0 * theta);
-        halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
-                + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
-                / (2.0 * thetaMass + thetaFriction * dt);
+
+        /**
+         * Update halfThetaVelocity (ps-1).
+         */
+        halfThetaVelocity =
+                (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
+                        + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
+                        / (2.0 * thetaMass + thetaFriction * dt);
+
+        /**
+         * Update theta.
+         */
         theta = theta + dt * halfThetaVelocity;
 
+        /**
+         * Maintain theta in the interval PI to -PI.
+         */
         if (theta > PI) {
             theta -= 2.0 * PI;
         } else if (theta <= -PI) {
             theta += 2.0 * PI;
         }
 
+        /**
+         * Compute the sin(theta).
+         */
         double sinTheta = sin(theta);
+
+        /**
+         * Compute lambda as sin(theta)^2.
+         */
         lambda = sinTheta * sinTheta;
         lambdaInterface.setLambda(lambda);
     }
@@ -910,24 +944,27 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * <p>getOSRWOptimum.</p>
+     * <p>getOSRWOptimumEnergy.</p>
      *
      * @return a double.
      */
-    public double getOSRWOptimum() {
+    public double getOSRWOptimumEnergy() {
+        if (osrwOptimum == Double.MAX_VALUE) {
+            logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
+        }
         return osrwOptimum;
     }
 
     /**
-     * <p>getLowEnergyLoop.</p>
+     * <p>getOSRWOptimumCoordinates.</p>
      *
      * @return an array of {@link double} objects.
      */
-    public double[] getLowEnergyLoop() {
+    public double[] getOSRWOptimumCoordinates() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;
         } else {
-            logger.info("Lambda > 0.9 was not reached. Try increasing number of timesteps.");
+            logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
             return null;
         }
     }
@@ -935,24 +972,24 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * <p>setOptimization.</p>
      *
-     * @param osrwOptimization a boolean.
-     * @param molAss           a {@link ffx.potential.MolecularAssembly} object.
+     * @param osrwOptimization  a boolean.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      */
-    public void setOptimization(boolean osrwOptimization, MolecularAssembly molAss) {
+    public void setOptimization(boolean osrwOptimization, MolecularAssembly molecularAssembly) {
         this.osrwOptimization = osrwOptimization;
-        this.molecularAssembly = molAss;
-        File file = molecularAssembly.getFile();
+        this.molecularAssembly = molecularAssembly;
+        File file = this.molecularAssembly.getFile();
 
         String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
         String ext = FilenameUtils.getExtension(file.getAbsolutePath());
 
-        if (systemFilter == null) {
+        if (osrwOptimizationFilter == null) {
             if (ext.toUpperCase().contains("XYZ")) {
-                optFile = new File(fileName + "_opt.xyz");
-                systemFilter = new XYZFilter(optFile, molecularAssembly, null, null);
+                osrwOptimizationFile = new File(fileName + "_opt.xyz");
+                osrwOptimizationFilter = new XYZFilter(osrwOptimizationFile, this.molecularAssembly, null, null);
             } else {
-                optFile = new File(fileName + "_opt.pdb");
-                systemFilter = new PDBFilter(optFile, molecularAssembly, null, null);
+                osrwOptimizationFile = new File(fileName + "_opt.pdb");
+                osrwOptimizationFilter = new PDBFilter(osrwOptimizationFile, this.molecularAssembly, null, null);
             }
         }
     }

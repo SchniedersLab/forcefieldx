@@ -42,6 +42,7 @@ import java.util.Random;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
 
 /**
@@ -201,7 +202,7 @@ public class Stochastic extends Integrator {
                 /**
                  * Compute random terms to thermostat the nonzero friction case.
                  */
-                double ktm = ffx.algorithms.thermostats.Thermostat.kB * temperature / m;
+                double ktm = Thermostat.kB * temperature / m;
                 double psig = sqrt(ktm * pterm) / friction;
                 double vsig = sqrt(ktm * vterm);
                 double rhoc = sqrt(1.0 - rho * rho);
@@ -233,7 +234,7 @@ public class Stochastic extends Integrator {
         }
         System.arraycopy(a, 0, aPrevious, 0, nVariables);
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
         }
     }
