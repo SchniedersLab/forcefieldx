@@ -67,15 +67,16 @@ class SaveAsPDB extends PotentialScript {
         String fileName = FilenameUtils.getName(modelFilename)
         fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
         File modelFile = new File(dirName + fileName)
+        File saveFile = potentialFunctions.versionFile(modelFile);
 
-        potentialFunctions.saveAsPDB(activeAssembly, modelFile)
+        potentialFunctions.saveAsPDB(activeAssembly, saveFile)
         PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
         saveFilter.setModelNumbering(true)
 
         if (openFilter != null) {
             try {
                 while (openFilter.readNext(false)) {
-                    saveFilter.writeFile(modelFile, true)
+                    saveFilter.writeFile(saveFile, true)
                 }
             } catch (Exception e) {
                 // Do nothing.

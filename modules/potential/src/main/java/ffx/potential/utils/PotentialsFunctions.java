@@ -301,14 +301,6 @@ public interface PotentialsFunctions {
         throw new UnsupportedOperationException();
     }
 
-    //default public String[]
-    // Subsequent methods were when I was duplicating MainPanel's open() methods,
-    // instead of its openWait() methods.
-    /*abstract public FileOpener open(String file);
-     public FileOpener open(String[] files);
-     public FileOpener open(File file, String commandDescription);
-     public FileOpener open(File[] files, String commandDescription);*/
-
     /**
      * Versions a file, attempting to find an unused filename in the set
      * filename, and filename_1 to filename_999.
