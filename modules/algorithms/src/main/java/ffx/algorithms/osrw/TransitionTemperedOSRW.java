@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.osrw;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -64,6 +64,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Minimize;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
@@ -72,11 +74,8 @@ import ffx.numerics.integrate.DoublesDataSet;
 import ffx.numerics.integrate.Integrate1DNumeric;
 import ffx.numerics.integrate.Integrate1DNumeric.IntegrationType;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.EnergyException;
 import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
-
-import static ffx.algorithms.MolecularDynamics.NS2SEC;
 
 /**
  * An implementation of Transition-Tempered Orthogonal Space Random Walk
@@ -98,8 +97,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     private double recursionKernel[][];
     /**
      * The recursionWeights stores the [Lambda, FLambda] weight for each
-     * process. Therefore the array is of size [number of Processes][2]. Each 2
-     * entry array must be wrapped inside a Parallel Java IntegerBuf for the
+     * process. Therefore the array is of size [number of Processes][2].
+     * <p>
+     * Each 2 entry array must be wrapped inside a Parallel Java IntegerBuf for the
      * All-Gather communication calls.
      */
     private final double recursionWeights[][];
@@ -111,64 +111,51 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     private final DoubleBuf myRecursionWeightBuf;
 
     /**
-     * Total histogram weight.
-     */
-    private double totalWeight;
-    /**
      * A flag to indicate if the transition has been crossed and Dama et al.
      * transition-tempering should begin.
+     * <p>
+     * Currently "tempering" is always true, but a temperOffset (default 1.0 kcal/mol) prevents tempering
+     * prior to there being a bias everywhere along the lambda path of at least temperOffset.
      */
     private boolean tempering = true;
     /**
      * The Dama et al. transition-tempering rate parameter. A reasonable value
-     * is about 2 to 4 kT.
+     * is about 2 to 8 kT, with larger values being more conservative (slower decay).
+     * <p>
+     * The default temperingFactor = 8.0.
      */
     private double temperingFactor = 8.0;
     /**
      * This deltaT is used to determine the tempering weight as described below for the temperingWeight variable.
-     *
+     * <p>
      * deltaT = temperingFactor * kB * T.
      */
     private double deltaT;
     /**
-     * The Dama et al. transition-tempering weight:
-     * 
-     * temperingWeight = exp(-biasHeight/deltaT)
+     * The Dama et al. transition-tempering weight.
+     * <p>
+     * The initial temperingWeight = 1.0, and more generally temperingWeight = exp(-biasHeight/deltaT)
      */
     private double temperingWeight = 1.0;
     /**
      * An offset applied before calculating tempering weight.
-     *
+     * <p>
      * First, for every Lambda, we calculate the maximum bias at that lambda by searching all populated dU/dL bins:
      * maxdUdL(L) = max[ G(L,F_L) ] where the max operator searches over all F_L bins.
-     *
+     * <p>
      * Then, the minimum bias coverage is determined by searching the maxdUdL(L) array over Lambda.
      * minBias = min[ maxdUdL(L) ] where the min operator searches all entries in the array.
-     *
-     * Then the temperOffset is applied to the minBias:
-     *
-     * biasHeight = max[minBias - temperOffset, 0]
-     */
-    private double temperOffset = 1.0;
-    /**
-     * Transition detection flags. The transition is currently defined using the
-     * following logic: First, the simulation needs to pass through mid-range
-     * [0.45 to 0.55] lambda values. Second, the simulation needs to pass
-     * through both low [below 0.05] & high values [above 0.95].
      * <p>
-     * The goal is to delay tempering for a landscape that is monotonic. For
-     * example, if the simulation starts at the top of the hill (i.e. lambda =
-     * 0) and move quickly to the basin (i.e. lambda = 1) this will not count as
-     * having found the transition. The transition will not be achieved until
-     * the basin is full and lambda = 0 is sampled again.
+     * Then the temperOffset is applied to the minBias:
+     * <p>
+     * biasHeight = max[minBias - temperOffset, 0]
+     * <p>
+     * The default temperOffset = 1.0.
      */
-    private boolean midLambda = false;
-    private boolean lowLambda = false;
-    private boolean highLambda = false;
+    private double temperOffset;
 
     /**
-     * The ReceiveThread accumulates OSRW statistics from multiple asynchronous
-     * walkers.
+     * The ReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
      */
     private final ReceiveThread receiveThread;
 
@@ -266,7 +253,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             /**
              * Use asynchronous communication.
              */
-
             myRecursionWeight = new double[3];
             myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
 
@@ -330,7 +316,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * {@inheritDoc}
      */
-  
     public double energy(double[] x) {
 
         forceFieldEnergy = potential.energy(x);
@@ -404,7 +389,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
+        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -450,11 +435,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
-        // long potentialEnergyAndGradientCall = 0;
-        // potentialEnergyAndGradientCall = -System.nanoTime();
         forceFieldEnergy = potential.energyAndGradient(x, gradient);
-        // potentialEnergyAndGradientCall += System.nanoTime();
-        // logger.info(String.format(" Energy and Gradient call from potential accomplished in %6.3f", potentialEnergyAndGradientCall * NS2SEC));
 
         /**
          * OSRW is propagated with the slowly varying terms.
@@ -464,28 +445,21 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
 
         gLdEdL = 0.0;
-
-        // long retrieveDer1Time = 0;
-        // retrieveDer1Time = -System.nanoTime();
-        dUdLambda = lambdaInterface.getdEdL();
-        // retrieveDer1Time += System.nanoTime();
-        // logger.info(String.format(" Retrieved first derivative in %6.3f", retrieveDer1Time * NS2SEC));
+        dForceFieldEnergydL = lambdaInterface.getdEdL();
+        dUdLambda = dForceFieldEnergydL;
 
         d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dUdLambda);
-        dForceFieldEnergydL = dUdLambda;
-        
-        // logger.info(String.format(" ForceField dUdL in energy and gradient method is %f", dForceFieldEnergydL));
 
         /**
          * Calculate recursion kernel G(L, F_L) and its derivatives with respect
          * to L and F_L.
          */
-        double dGdLambda = 0.0;
-        double dGdFLambda = 0.0;
+        dGdLambda = 0.0;
+        dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
-        double FLs2 = (2.0 * dFL) * (2.0 * dFL);       
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int lcenter = lambdaBin + iL;
             double deltaL = lambda - (lcenter * dL);
@@ -528,8 +502,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Lambda gradient due to recursion kernel G(L, F_L).
          */
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
-        
-        // logger.info(String.format(" dUdLambda from inside the energy and gradient method is %f", dUdLambda));
 
         /**
          * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
@@ -544,12 +516,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy() + gLdEdL;
-        
-        // double oneDBiasEnergy = biasEnergy - gLdEdL;
-        // logger.info(String.format(" Lambda in energy and gradient method is %f", lambda));
-        // logger.info(String.format(" One dimensional bias energy for move is %f", oneDBiasEnergy));
-        // logger.info(String.format(" Two dimensional bias energy for move is %f", gLdEdL));
+        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -589,16 +556,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return totalEnergy;
     }
 
-
-
-
     /**
      * {@inheritDoc}
      */
     @Override
     public void addBias(double dEdU, double[] x, double[] gradient) {
-
-        detectTransition();
 
         if (asynchronous) {
             asynchronousSend(lambda, dEdU);
@@ -623,7 +585,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         periodCount++;
         if (periodCount == window - 1) {
             lastAverage = totalAverage / window;
-            //lastStdDev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
             lastStdDev = sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
             logger.info(format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.", lastAverage, lastStdDev));
             totalAverage = 0;
@@ -638,10 +599,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         /**
          * Write out restart files.
          */
-        //if (fLambdaUpdates % saveFrequency == 0) {
         if (energyCount > 0 && energyCount % saveFrequency == 0) {
             if (algorithmListener != null) {
-                algorithmListener.algorithmUpdate(lambdaOneAssembly);
+                algorithmListener.algorithmUpdate(molecularAssembly);
             }
             /**
              * Only the rank 0 process writes the histogram restart file.
@@ -673,82 +633,58 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 logger.log(Level.INFO, message, ex);
             }
         }
-
-        /**
-         * Write out snapshot upon each full lambda traversal.
-         */
-        if (writeTraversalSnapshots) {
-            writeTraversal();
-        }
-
     }
 
-    private void writeTraversal() {
-        double heldTraversalLambda = 0.5;
-        if (!traversalInHand.isEmpty()) {
-            heldTraversalLambda = Double.parseDouble(traversalInHand.get(0).split(",")[0]);
-            if ((lambda > 0.2 && traversalSnapshotTarget == 0)
-                    || (lambda < 0.8 && traversalSnapshotTarget == 1)) {
-                int snapshotCounts = Integer.parseInt(traversalInHand.get(0).split(",")[1]);
-                traversalInHand.remove(0);
-                File fileToWrite;
-                int numStructures;
-                if (traversalSnapshotTarget == 0) {
-                    fileToWrite = lambdaZeroFile;
-                    numStructures = ++lambdaZeroStructures;
-                } else {
-                    fileToWrite = lambdaOneFile;
-                    numStructures = ++lambdaOneStructures;
+    public double computeBiasEnergy(double currentLambda, double currentdUdL) {
+
+        int lambdaBin = binForLambda(currentLambda);
+        int FLambdaBin = binForFLambda(currentdUdL);
+
+        double gLdEdL = 0.0;
+
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = currentLambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
                 }
-                try {
-                    FileWriter fw = new FileWriter(fileToWrite, true);
-                    BufferedWriter bw = new BufferedWriter(fw);
-                    bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", numStructures, heldTraversalLambda, snapshotCounts));
-                    for (int i = 0; i < 50; i++) {
-                        bw.write(" ");
-                    }
-                    bw.newLine();
-                    for (int i = 0; i < traversalInHand.size(); i++) {
-                        bw.write(traversalInHand.get(i));
-                        bw.newLine();
-                    }
-                    bw.write(String.format("ENDMDL"));
-                    for (int i = 0; i < 75; i++) {
-                        bw.write(" ");
-                    }
-                    bw.newLine();
-                    bw.close();
-                    logger.info(String.format(" Wrote traversal structure L=%.4f", heldTraversalLambda));
-                } catch (Exception exception) {
-                    logger.warning(String.format("Exception writing to file: %s", fileToWrite.getName()));
-                }
-                heldTraversalLambda = 0.5;
-                traversalInHand.clear();
-                traversalSnapshotTarget = 1 - traversalSnapshotTarget;
+                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                gLdEdL += bias;
             }
         }
-        if (((lambda < 0.1 && traversalInHand.isEmpty())
-                || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
-                && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
-            if (lambdaZeroFilter == null) {
-                lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
-                lambdaZeroFilter.setListMode(true);
-            }
-            lambdaZeroFilter.clearListOutput();
-            lambdaZeroFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d", lambda, totalWeight));
-            traversalInHand = lambdaZeroFilter.getListOutput();
-            traversalSnapshotTarget = 0;
-        } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
-                && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
-            if (lambdaOneFilter == null) {
-                lambdaOneFilter = new PDBFilter(lambdaOneFile, lambdaOneAssembly, null, null);
-                lambdaOneFilter.setListMode(true);
-            }
-            lambdaOneFilter.clearListOutput();
-            lambdaOneFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d", lambda, totalWeight));
-            traversalInHand = lambdaOneFilter.getListOutput();
-            traversalSnapshotTarget = 1;
-        }
+
+        /**
+         * Compute the energy and gradient for the recursion slave at F(L) using
+         * interpolation.
+         */
+        return current1DBiasEnergy(currentLambda, false) + gLdEdL;
     }
 
     private void optimization(double e, double x[], double gradient[]) {
@@ -814,43 +750,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                         " TT-OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
             }
         }
-    }
-
-    /**
-     * Tempering will begin after a transition is detected.
-     * <p>
-     * The transition is defined as lambda 1) crossing the range 0.45 to 0.55
-     * and then encountering lambda values both less than 0.05 and greater than 0.95.
-     */
-    private void detectTransition() {
-        if (tempering) {
-            return;
-        }
-
-        /**
-         * Before detecting both lambda extremes, the simulation must pass
-         * through intermediate lambda values.
-         */
-        if (midLambda == false) {
-            if (lambda >= 0.45 && lambda <= 0.55) {
-                midLambda = true;
-            }
-        } else {
-            /**
-             * After passing through intermediate lambda values, detect both
-             * extreme values.
-             */
-            if (lambda >= 0.95) {
-                highLambda = true;
-            } else if (lambda <= 0.05) {
-                lowLambda = true;
-            }
-            if (lowLambda == true && highLambda == true) {
-                tempering = true;
-                logger.info(String.format(" Tempering activated at Lambda = %6.4f.", lambda));
-            }
-        }
-
     }
 
     /**
@@ -999,7 +898,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     protected double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         double minFL = Double.MAX_VALUE;
-        totalWeight = 0;
+
+        // Total histogram weight.
+        double totalWeight = 0;
         double beta = 1.0 / (R * temperature);
         StringBuilder stringBuilder = new StringBuilder();
         if (print) {
@@ -1329,24 +1230,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getCountsReceived() {
-        return receiveThread.getCountsReceived();
-    }
-
     private class ReceiveThread extends Thread {
 
         final double recursionCount[];
         final DoubleBuf recursionCountBuf;
-        private int countsReceived;
 
         public ReceiveThread() {
             recursionCount = new double[3];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
-            countsReceived = 0;
         }
 
         @Override
@@ -1354,7 +1245,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
-                    ++countsReceived;
                 } catch (InterruptedIOException ioe) {
                     logger.log(Level.WARNING, " ReceiveThread was interrupted at world.receive; " +
                             "future message passing may be in an error state!", ioe);
@@ -1413,14 +1303,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
         }
 
-        /**
-         * Return the counts received by this thread.
-         *
-         * @return
-         */
-        int getCountsReceived() {
-            return countsReceived;
-        }
     }
 
     /**

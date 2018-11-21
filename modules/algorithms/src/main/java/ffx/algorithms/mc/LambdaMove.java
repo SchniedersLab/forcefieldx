@@ -37,51 +37,39 @@
  */
 package ffx.algorithms.mc;
 
+import java.util.Random;
+import java.util.logging.Logger;
 import static java.lang.Math.abs;
 
-import org.apache.commons.math3.distribution.NormalDistribution;
-
-//import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.JDKRandomGenerator;
-
-import java.util.logging.Logger;
-
-import ffx.algorithms.AbstractOSRW;
-import java.util.Random;
+import ffx.algorithms.osrw.AbstractOSRW;
 
 /**
  * Define an MC move to update lambda.
  *
  * @author Mallory R. Tollefson
  */
-public class LambdaMove implements MCMove{
+public class LambdaMove implements MCMove {
 
     private static final Logger logger = Logger.getLogger(LambdaMove.class.getName());
-    
+
     private double currentLambda = 0.0;
     private final AbstractOSRW osrw;
-
     private Random random;
-    
-    private NormalDistribution dist;
     private double stdDev = 0.1;
-    // private JDKRandomGenerator random = new JDKRandomGenerator();
-    private int randomSeed;
 
     /**
      * <p>Constructor for LambdaMove.</p>
      *
      * @param currentLambda a double.
-     * @param osrw          a {@link ffx.algorithms.AbstractOSRW} object.
+     * @param osrw          a {@link AbstractOSRW} object.
      */
     public LambdaMove(double currentLambda, AbstractOSRW osrw) {
         this.osrw = osrw;
-        currentLambda = osrw.getLambda(); 
+        currentLambda = osrw.getLambda();
         random = new Random();
     }
-    
-    public LambdaMove(int randomSeed, double currentLambda, AbstractOSRW osrw){
-        this.randomSeed = randomSeed;
+
+    public LambdaMove(int randomSeed, double currentLambda, AbstractOSRW osrw) {
         this.osrw = osrw;
         currentLambda = osrw.getLambda();
         random = new Random(randomSeed);
@@ -105,9 +93,9 @@ public class LambdaMove implements MCMove{
 
         // Draw a trial move from the distribution.
         double dL = random.nextGaussian() * stdDev;
-        
+
         double newLambda = currentLambda + dL;
-        
+
         // Map values into the range 0.0 .. 1.0 using mirror boundary conditions.
         if (newLambda > 1.0) {
             newLambda = (2.0 - newLambda);
@@ -124,8 +112,8 @@ public class LambdaMove implements MCMove{
     public void revertMove() {
         osrw.setLambda(currentLambda);
     }
-    
-    public double getStandardDeviation(){
+
+    public double getStandardDeviation() {
         return stdDev;
     }
 }

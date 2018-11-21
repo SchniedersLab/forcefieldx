@@ -35,10 +35,9 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.osrw;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -53,6 +52,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.JobBackend;
 
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Barostat;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
@@ -70,6 +71,12 @@ import ffx.potential.parsers.XYZFilter;
 public abstract class AbstractOSRW implements CrystalPotential {
 
     private static final Logger logger = Logger.getLogger(AbstractOSRW.class.getName());
+
+    /**
+     * The MolecularAssembly being simulated.
+     */
+    protected MolecularAssembly molecularAssembly;
+    protected SystemFilter systemFilter;
     /**
      * A potential energy that implements the LambdaInterface.
      */
@@ -119,16 +126,21 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
      * <p>
      * With this scheme, the maximum of biasing Gaussians is at the edges.
+     * <p>
+     * The default lambdaBins = 201.
      */
-    protected int lambdaBins = 201;
+    protected int lambdaBins;
     /**
      * It is useful to have an odd number of bins, so that there is a bin from
      * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
-     * thermodynamic integration goes to zero. Otherwise a contribution of zero
-     * from a L bin can only result from equal sampling of the ranges -dFL to 0
-     * and 0 to dFL.
+     * thermodynamic integration goes to zero.
+     * <p>
+     * Otherwise a contribution of zero from a L bin can only result from equal
+     * sampling of the ranges -dFL to 0 and 0 to dFL.
+     * <p>
+     * The default FLambdaBins = 401.
      */
-    protected int FLambdaBins = 401;
+    protected int FLambdaBins;
     /**
      * Parallel Java world communicator.
      */
@@ -147,39 +159,51 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected final JobBackend jobBackend;
     /**
      * When evaluating the biasing potential, contributions from Gaussians
-     * centered more the "biasCutoff" away will be neglected.
+     * centered on bins more the "biasCutoff" away will be neglected.
+     * <p>
+     * The default biasCutoff = 5.
      */
-    protected int biasCutoff = 5;
+    protected int biasCutoff;
     /**
      * Width of the lambda bin.
+     * <p>
+     * The default dL = (1.0 / (lambdaBins - 1).
      */
-    protected double dL = 1.0 / (lambdaBins - 1);
+    protected double dL;
     /**
      * Half the width of a lambda bin.
      */
-    protected double dL_2 = dL / 2.0;
+    protected double dL_2;
     /**
-     * The width of the F_lambda bin.
+     * The width of the FLambda bin.
+     * <p>
+     * The default dFL = 2.0 (kcal/mol).
      */
-    protected double dFL = 2.0;
+    protected double dFL;
     /**
      * Half the width of the F_lambda bin.
      */
-    protected double dFL_2 = dFL / 2.0;
+    protected double dFL_2;
     /**
      * The minimum value of the first lambda bin.
+     * <p>
+     * minLambda = -dL_2.
      */
-    protected double minLambda = -dL_2;
+    protected double minLambda;
     /**
      * The minimum value of the first F_lambda bin.
+     * <p>
+     * minFLambda = -(dFL * FLambdaBins) / 2.0.
      */
-    protected double minFLambda = -(dFL * FLambdaBins) / 2.0;
+    protected double minFLambda;
     /**
      * The maximum value of the last F_lambda bin.
+     * <p>
+     * maxFLambda = minFLambda + FLambdaBins * dFL.
      */
-    protected double maxFLambda = minFLambda + FLambdaBins * dFL;
+    protected double maxFLambda;
     /**
-     * Atom gradient for use if "energy" is called.
+     * Atom gradient array for use if "energy" is called.
      */
     private double grad[] = null;
     /**
@@ -187,7 +211,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double forceFieldEnergy;
     /**
-     * Partial derivative of the force field energy w.r.t. lambda.
+     * Partial derivative of the force field energy with respect to lambda.
      */
     protected double dForceFieldEnergydL;
     /**
@@ -195,22 +219,24 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double biasEnergy;
     /**
-     * Total partial derivative of the potential (U) being sampled w.r.t.
-     * lambda.
+     * Total partial derivative of the potential (U) being sampled
+     * with respect to lambda.
      */
     protected double dUdLambda;
     /**
-     * 2nd partial derivative of the potential being sampled w.r.t lambda.
+     * Second partial derivative of the potential being sampled with respect to lambda.
      */
     protected double d2UdL2;
     /**
-     * Mixed partial derivative with respect to coordinates and lambda.
+     * Mixed second partial derivative with respect to coordinates and lambda.
      */
-    protected double dUdXdL[] = null;
+    protected double dUdXdL[];
     /**
-     * Magnitude of each hill (not including tempering) in (kcal/mol).
+     * Magnitude of each hill (not including tempering).
+     * <p>
+     * The default biasMag = 0.05 (kcal/mol).
      */
-    protected double biasMag = 0.05;
+    protected double biasMag;
     /**
      * 1D PMF with respect to lambda F(L).
      */
@@ -219,6 +245,14 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
      */
     protected double gLdEdL = 0.0;
+    /**
+     * First derivative of the 2D bias with respect to Lambda.
+     */
+    protected double dGdLambda;
+    /**
+     * First derivative of the 2D bias with respect to  dU/dL.
+     */
+    protected double dGdFLambda;
 
     /**
      * Gas constant (in Kcal/mol/Kelvin).
@@ -239,7 +273,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Random force conversion to kcal/mol/A;
      */
     private static final double randomConvert = sqrt(4.184) / 10e9;
-    //private static final double invRandomConvert = 1.0 / randomConvert;
     /**
      * randomConvert squared.
      */
@@ -250,36 +283,22 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected final double dt;
     /**
      * Temperature in Kelvin.
+     * <p>
+     * The default is 298.15.
      */
-    protected double temperature = 298.15;
+    protected double temperature;
     /**
      * Interval between adding a count to the Recursion kernel in steps.
+     * <p>
+     * The default countInterval = 10.
      */
     protected int countInterval = 10;
     /**
      * Interval between printing information on the lambda particle in steps.
+     * <p>
+     * The default printFrequency = 100.
      */
-    protected int printFrequency = 100;
-    /**
-     * Whether to write out lambda-traversal snapshots.
-     */
-    protected boolean writeTraversalSnapshots = false;
-    /**
-     * Keeps track of full lambda-traversals for snapshot output.
-     */
-    protected int traversalSnapshotTarget = -1;
-    /**
-     * Ensemble files containing full-traversal snapshots, plus an assembly,
-     * filter, and counter for each.
-     */
-    protected File lambdaOneFile;
-    protected int lambdaOneStructures = 0;
-    protected MolecularAssembly lambdaOneAssembly;
-    protected PDBFilter lambdaOneFilter;
-    protected File lambdaZeroFile;
-    protected int lambdaZeroStructures = 0;
-    protected MolecularAssembly lambdaZeroAssembly;
-    protected PDBFilter lambdaZeroFilter;
+    protected int printFrequency;
     /**
      * Once the lambda reset value is reached, Transition-Tempered OSRW
      * statistics are reset.
@@ -290,34 +309,67 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * lambdaResetValue.
      */
     protected boolean resetStatistics = false;
-    /**
-     * Stores a traversal snapshot that has not yet been written to file.
-     */
-    protected ArrayList<String> traversalInHand = new ArrayList<>();
-    /**
-     * Holds the lowest potential-energy parameters from among all visits to
-     * lambda < 0.1 and > 0.9
-     */
-    private double lowEnergyCoordsZero[], lowEnergyCoordsOne[];
-    private double lowEnergyZero = Double.MAX_VALUE, lowEnergyOne = Double.MAX_VALUE;
 
     /**
+     * Flag to turn on OSRW optimization.
+     * <p>
+     * The default osrwOptimization = false.
+     */
+    protected boolean osrwOptimization = false;
+    /**
+     * OSRW optimization only runs if Lambda is greater than the osrwOptimizationLambdaCutoff.
+     * <p>
+     * The default osrwOptimizationLambdaCutoff = 0.8.
+     */
+    protected double osrwOptimizationLambdaCutoff = 0.8;
+    /**
      * Holds the lowest potential-energy parameters for loopBuilder runs from
-     * all visits to lambda &gt; 0.9
+     * all visits to lambda &gt; osrwOptimizationLambdaCutoff.
      */
     protected double osrwOptimumCoords[];
+    /**
+     * The lowest energy found via optimizations.
+     * <p>
+     * The osrwOptimum is initially set to Double.MAX_VALUE.
+     */
     protected double osrwOptimum = Double.MAX_VALUE;
+    /**
+     * The OSRW optimization frequency.
+     */
+    protected int osrwOptimizationFrequency = 10000;
+    /**
+     * The OSRW optimization convergence criteria.
+     * <p>
+     * The default osrwOptimizationEps = 0.1.
+     */
+    protected double osrwOptimizationEps = 0.1;
+    /**
+     * The OSRW optimization tolerance.
+     */
+    protected double osrwOptimizationTolerance = 1.0e-8;
+    /**
+     * The OSRW optimization energy window.
+     */
+    protected double osrwOptimizationEnergyWindow = 2.0;
+    protected File optFile;
 
     /**
      * Interval between how often the 1D histogram is printed to screen versus
      * silently updated in background.
+     * <p>
+     * The fLambdaPrintInterval is 25.
      */
     protected final int fLambdaPrintInterval = 25;
+    /**
+     * A count of FLambdaUpdates.
+     */
     protected int fLambdaUpdates = 0;
     /**
      * Interval between writing an OSRW restart file in steps.
+     * <p>
+     * The default saveFrequency = 1000.
      */
-    protected int saveFrequency = 1000;
+    protected int saveFrequency;
     /**
      * Print detailed energy information.
      */
@@ -339,7 +391,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected double lastStdDev = 0.0;
 
     /**
-     * Equilibration counts
+     * Equilibration counts.
      */
     protected int equilibrationCounts = 0;
     /**
@@ -357,23 +409,12 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected final boolean asynchronous;
 
     /**
-     * Running average and standard deviation
+     * Running average and standard deviation.
      */
     protected double totalAverage = 0;
     protected double totalSquare = 0;
     protected int periodCount = 0;
     protected int window = 1000;
-
-    protected boolean osrwOptimization = false;
-    protected int osrwOptimizationFrequency = 10000;
-    protected double osrwOptimizationLambdaCutoff = 0.8;
-    protected double osrwOptimizationEps = 0.1;
-    protected double osrwOptimizationTolerance = 1.0e-8;
-    protected double osrwOptimizationEnergyWindow = 2.0;
-
-    protected MolecularAssembly molecularAssembly;
-    protected SystemFilter systemFilter;
-    protected File optFile;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -432,10 +473,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         this.temperature = temperature;
         this.asynchronous = asynchronous;
         this.algorithmListener = algorithmListener;
-
         nVariables = potential.getNumberOfVariables();
-        lowEnergyCoordsZero = new double[nVariables];
-        lowEnergyCoordsOne = new double[nVariables];
 
         if (potential instanceof Barostat) {
             barostat = (Barostat) potential;
@@ -544,6 +582,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
 
+    public abstract double computeBiasEnergy(double currentLambda, double currentdUdL);
+
     /**
      * <p>checkRecursionKernelSize.</p>
      */
@@ -642,22 +682,13 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * <p>getGofLdUdL.</p>
-     *
-     * @return a double.
-     */
-    public double getGofLdUdL() {
-        return gLdEdL;
-    }
-
-    /**
      * This calculates the 1D OSRW bias and its derivative with respect to Lambda.
-     *
+     * <p>
      * See Equation 8 in http://doi.org/10.1021/ct300035u.
      *
      * @return a double.
      */
-    protected double current1DBiasEnergy() {
+    protected double current1DBiasEnergy(double currentLambda, boolean gradient) {
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
@@ -676,9 +707,9 @@ public abstract class AbstractOSRW implements CrystalPotential {
              * derivative and break.
              */
             boolean done = false;
-            if (lambda <= L1) {
+            if (currentLambda <= L1) {
                 done = true;
-                L1 = lambda;
+                L1 = currentLambda;
             }
             /**
              * Upper limit - lower limit of the integral of the extrapolation /
@@ -690,7 +721,9 @@ public abstract class AbstractOSRW implements CrystalPotential {
                 /**
                  * Compute the gradient d F(L) / dL at L.
                  */
-                dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
+                if (gradient) {
+                    dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
+                }
                 break;
             }
         }
@@ -704,24 +737,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public double lastFreeEnergy() {
         return totalFreeEnergy;
-    }
-
-    /**
-     * <p>movingAverageEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double movingAverageEnergy() {
-        return lastAverage;
-    }
-
-    /**
-     * <p>movingAverageSD.</p>
-     *
-     * @return a double.
-     */
-    public double movingAverageSD() {
-        return lastStdDev;
     }
 
     /**
@@ -755,16 +770,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * @return a double.
      */
     protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
-
-    /**
-     * Evaluates current free energy of the OSRW; intended to be called before
-     * any dynamics have been run.
-     *
-     * @return a double.
-     */
-    public double evaluateEnergy() {
-        return updateFLambda(false);
-    }
 
     /**
      * <p>updateFLambda.</p>
@@ -801,22 +806,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public LambdaInterface getLambdaInterface() {
         return lambdaInterface;
-    }
-
-    /**
-     * <p>setTraversalOutput.</p>
-     *
-     * @param lambdaOneFile  a {@link java.io.File} object.
-     * @param topology1      a {@link ffx.potential.MolecularAssembly} object.
-     * @param lambdaZeroFile a {@link java.io.File} object.
-     * @param topology2      a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
-        this.writeTraversalSnapshots = true;
-        this.lambdaOneFile = lambdaOneFile;
-        this.lambdaOneAssembly = topology1;
-        this.lambdaZeroFile = lambdaZeroFile;
-        this.lambdaZeroAssembly = topology2;
     }
 
     /**
@@ -918,33 +907,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
     @Override
     public double[] getCoordinates(double[] doubles) {
         return potential.getCoordinates(doubles);
-    }
-
-    /**
-     * Return a copy of the parameter array containing lowest-energy parameters
-     * from amongst visits to the specified end state (either 0 or 1).
-     *
-     * @param endState a int.
-     * @return a double array of parameters
-     */
-    public double[] getLowEnergyCoordinates(int endState) {
-        if (endState == 0) {
-            return lowEnergyCoordsZero;
-        } else if (endState == 1) {
-            return lowEnergyCoordsOne;
-        } else {
-            logger.severe("Improper function call.");
-            return null;
-        }
-    }
-
-    /**
-     * <p>setOSRWOptimum.</p>
-     *
-     * @param prevOSRWOptimum a double.
-     */
-    public void setOSRWOptimum(double prevOSRWOptimum) {
-        osrwOptimum = prevOSRWOptimum;
     }
 
     /**
@@ -1141,10 +1103,4 @@ public abstract class AbstractOSRW implements CrystalPotential {
         return potential.getCrystal();
     }
 
-    /**
-     * Returns the counts received by the bias-recieve thread.
-     *
-     * @return Counts received.
-     */
-    public abstract int getCountsReceived();
 }

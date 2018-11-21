@@ -8,7 +8,6 @@ import org.apache.commons.io.FilenameUtils
 import edu.rit.pj.Comm
 import edu.rit.pj.ParallelTeam
 
-import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
@@ -18,6 +17,7 @@ import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
+import ffx.algorithms.osrw.AbstractOSRW
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -46,70 +46,69 @@ class NewThermodynamics extends AlgorithmsScript {
     private TopologyOptions topology
 
     @CommandLine.Mixin
-    private BarostatOptions barostat;
+    private BarostatOptions barostat
 
     @CommandLine.Mixin
-    private DynamicsOptions dynamics;
+    private DynamicsOptions dynamics
 
     @CommandLine.Mixin
-    private WriteoutOptions writeout;
+    private WriteoutOptions writeout
 
     @CommandLine.Mixin
-    private LambdaParticleOptions lambdaParticle;
+    private LambdaParticleOptions lambdaParticle
 
     @CommandLine.Mixin
-    private MultiDynamicsOptions multidynamics;
+    private MultiDynamicsOptions multidynamics
 
     @CommandLine.Mixin
-    private OSRWOptions osrwOptions;
+    private OSRWOptions osrwOptions
 
     @CommandLine.Mixin
-    private RandomSymopOptions randomSymop;
+    private RandomSymopOptions randomSymop
 
     @CommandLine.Mixin
-    private ThermodynamicsOptions thermodynamics;
+    private ThermodynamicsOptions thermodynamics
 
     /**
      * The final argument(s) should be one or more filenames.
      */
     @CommandLine.Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null;
+    List<String> filenames = null
 
-    private int threadsAvail = ParallelTeam.getDefaultThreadCount();
-    private int threadsPer = threadsAvail;
-    MolecularAssembly[] topologies;
+    private int threadsAvail = ParallelTeam.getDefaultThreadCount()
+    private int threadsPer = threadsAvail
+    MolecularAssembly[] topologies
 
-    CrystalPotential potential;
-    AbstractOSRW osrw;
+    CrystalPotential potential
+    AbstractOSRW osrw
 
-    private Configuration additionalProperties;
+    private Configuration additionalProperties
 
     /**
      * Sets an optional Configuration with additional properties.
      * @param additionalProps
      */
     void setProperties(Configuration additionalProps) {
-        this.additionalProperties = additionalProps;
+        this.additionalProperties = additionalProps
     }
 
     @Override
     NewThermodynamics run() {
 
         // Begin boilerplate "make a topology" code.
-
         if (!init()) {
-            return;
+            return
         }
 
-        List<String> arguments = filenames;
+        List<String> arguments = filenames
         // Check nArgs should either be number of arguments (min 1), else 1.
-        int nArgs = arguments ? arguments.size() : 1;
-        nArgs = (nArgs < 1) ? 1 : nArgs;
+        int nArgs = arguments ? arguments.size() : 1
+        nArgs = (nArgs < 1) ? 1 : nArgs
 
-        topologies = new MolecularAssembly[nArgs];
+        topologies = new MolecularAssembly[nArgs]
 
-        int numParallel = topology.getNumParallel(threadsAvail, nArgs);
-        threadsPer = threadsAvail / numParallel;
+        int numParallel = topology.getNumParallel(threadsAvail, nArgs)
+        threadsPer = threadsAvail / numParallel
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
         /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
@@ -130,45 +129,39 @@ class NewThermodynamics extends AlgorithmsScript {
             System.setProperty("ligand-vapor-elec", "false")
         }
 
-        List<MolecularAssembly> topologyList = new ArrayList<>(nArgs);
+        List<MolecularAssembly> topologyList = new ArrayList<>(nArgs)
 
-        Comm world = Comm.world();
-        int size = world.size();
-        int rank = (size > 1) ? world.rank() : 0;
+        Comm world = Comm.world()
+        int size = world.size()
+        int rank = (size > 1) ? world.rank() : 0
 
         // Segment of code for MultiDynamics and OSRW.
         List<File> structureFiles = arguments.stream().
                 map { fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath()) }.
                 collect(Collectors.toList())
 
-        File firstStructure = structureFiles.get(0);
-        String baseFilename = FilenameUtils.removeExtension(firstStructure.getPath());
-        File histogramRestart = new File(baseFilename + ".his");
+        File firstStructure = structureFiles.get(0)
+        String baseFilename = FilenameUtils.removeExtension(firstStructure.getPath())
+        File histogramRestart = new File(baseFilename + ".his")
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
-        String withRankName = baseFilename;
+        String withRankName = baseFilename
         if (size > 1) {
-            List<File> rankedFiles = new ArrayList<>(nArgs);
+            List<File> rankedFiles = new ArrayList<>(nArgs)
             for (File structureFile : structureFiles) {
                 File rankDirectory = new File(structureFile.getParent() + File.separator
-                        + Integer.toString(rank));
+                        + Integer.toString(rank))
                 if (!rankDirectory.exists()) {
-                    rankDirectory.mkdir();
+                    rankDirectory.mkdir()
                 }
                 withRankName = rankDirectory.getPath() + File.separator + baseFilename;
-                rankedFiles.add(new File(rankDirectory.getPath() + File.separator + structureFile.getName()));
+                rankedFiles.add(new File(rankDirectory.getPath() + File.separator + structureFile.getName()))
             }
-            structureFiles = rankedFiles;
+            structureFiles = rankedFiles
         }
 
-        File lambdaRestart = new File(withRankName + ".lam");
-        File dyn = new File(withRankName + ".dyn");
-        /**
-         * Used for the obsolete traversals option.
-         * File lambdaOneFile = new File(withRankName + ".lam1");
-         * File lambdaZeroFile = new File(withRankName + ".lam0");
-         */
-        // End multidynamics-relevant code.
+        File lambdaRestart = new File(withRankName + ".lam")
+        File dyn = new File(withRankName + ".dyn")
 
         /**
          * Read in files.
@@ -184,7 +177,8 @@ class NewThermodynamics extends AlgorithmsScript {
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology), threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank));
+                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology),
+                        threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank))
             }
         }
 
@@ -196,88 +190,62 @@ class NewThermodynamics extends AlgorithmsScript {
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ")
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
 
-        logger.info(sb.toString());
+        logger.info(sb.toString())
 
-        LambdaInterface linter = (LambdaInterface) potential;
+        LambdaInterface linter = (LambdaInterface) potential
 
         // End of boilerplate code.
 
         if (!dyn.exists()) {
-            dyn = null;
+            dyn = null
         }
-        boolean lamExists = lambdaRestart.exists();
-        boolean hisExists = histogramRestart.exists();
+        boolean lamExists = lambdaRestart.exists()
+        boolean hisExists = histogramRestart.exists()
 
         logger.info(" Starting energy (before .dyn restart loaded):");
         boolean updatesDisabled = topologies[0].getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
         }
-        double[] x = new double[potential.getNumberOfVariables()];
-        potential.getCoordinates(x);
-        linter.setLambda(initLambda);
-
-        potential.energy(x, true);
+        double[] x = new double[potential.getNumberOfVariables()]
+        potential.getCoordinates(x)
+        linter.setLambda(initLambda)
+        potential.energy(x, true)
 
         if (nArgs == 1) {
-            randomSymop.randomize(topologies[0], potential);
+            randomSymop.randomize(topologies[0], potential)
         }
 
-        multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size);
+        multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
 
-        osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0], additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener);
+        osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0],
+                additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
 
         // Can be either the TT-OSRW or a Barostat on top of it.
         // Cannot be the Potential underneath the TT-OSRW.
-        CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0], dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists);
-
-        // Old code for obsolete options.
-
-        /*osrw.setResetStatistics(options.reset);
-        if (options.traversals) {
-        if (nArgs == 1) {
-        osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
-        } else if (nArgs == 2) {
-        osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[1]);
-        }
-        }*/
-
-
+        CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0],
+                dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists)
 
         if (osrwOptions.mc) {
-            osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
-            /**
-             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-             topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator);
-
-             if (thermodynamics.nEquil > 0) {logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
-             mcOSRW.setEquilibration(true)
-             mcOSRW.setMDMoveParameters(thermodynamics.nEquil, options.mcMD, dynamics.dt)
-             mcOSRW.sample()
-             mcOSRW.setEquilibration(false)
-             logger.info("\n Finished MC Transition-Tempered OSRW equilibration");}logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
-             mcOSRW.setLambdaStdDev(options.mcL)
-             mcOSRW.setMDMoveParameters(dynamics.steps, options.mcMD, dynamics.dt)
-             mcOSRW.sample()
-             */
+            osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
         } else {
-            osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
+            osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
         }
 
-        return this;
+        return this
     }
 
     AbstractOSRW getOSRW() {
-        return osrw;
+        return osrw
     }
 
-    public CrystalPotential getPotential() {
-        return potential;
+    CrystalPotential getPotential() {
+        return potential
     }
 
     @Override
-    public List<Potential> getPotentials() {
-        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
+    List<Potential> getPotentials() {
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
     }
 }
 

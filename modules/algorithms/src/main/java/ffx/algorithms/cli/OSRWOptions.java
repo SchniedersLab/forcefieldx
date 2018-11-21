@@ -45,8 +45,8 @@ import org.apache.commons.configuration2.Configuration;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.MonteCarloOSRW;
-import ffx.algorithms.TransitionTemperedOSRW;
+import ffx.algorithms.osrw.MonteCarloOSRW;
+import ffx.algorithms.osrw.TransitionTemperedOSRW;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
@@ -126,7 +126,7 @@ public class OSRWOptions {
      * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
      * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
-     * @return a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     * @return a {@link TransitionTemperedOSRW} object.
      */
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                 MolecularAssembly firstAssembly, DynamicsOptions dynamics,
@@ -146,7 +146,7 @@ public class OSRWOptions {
      * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
      * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
-     * @return a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     * @return a {@link TransitionTemperedOSRW} object.
      */
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                 MolecularAssembly firstAssembly, Configuration addedProperties,
@@ -216,7 +216,7 @@ public class OSRWOptions {
     /**
      * <p>applyOSRWOptions.</p>
      *
-     * @param ttOSRW          a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     * @param ttOSRW          a {@link TransitionTemperedOSRW} object.
      * @param histogramExists a boolean.
      */
     public void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
@@ -284,7 +284,7 @@ public class OSRWOptions {
     /**
      * <p>beginMCOSRW.</p>
      *
-     * @param ttOSRW         a {@link ffx.algorithms.TransitionTemperedOSRW} object.
+     * @param ttOSRW         a {@link TransitionTemperedOSRW} object.
      * @param topologies     an array of {@link ffx.potential.MolecularAssembly} objects.
      * @param potential      a {@link ffx.crystal.CrystalPotential} object.
      * @param dynamics       a {@link ffx.algorithms.cli.DynamicsOptions} object.
@@ -305,7 +305,7 @@ public class OSRWOptions {
             logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
             mcOSRW.setEquilibration(true);
             mcOSRW.setMDMoveParameters(nEquil, mcMD, dynamics.dt);
-            mcOSRW.sample();
+            mcOSRW.sampleTwoStep();
             mcOSRW.setEquilibration(false);
             logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
         }
@@ -313,7 +313,7 @@ public class OSRWOptions {
         logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
         mcOSRW.setLambdaStdDev(mcL);
         mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt);
-        mcOSRW.sample();
+        mcOSRW.sampleTwoStep();
     }
 
     private void runDynamics(MolecularDynamics molDyn, int numSteps, DynamicsOptions dynamics, WriteoutOptions writeout, boolean initVelocities, File dyn) {

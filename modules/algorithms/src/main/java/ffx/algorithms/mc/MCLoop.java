@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.mc;
 
 import java.util.List;
 import java.util.Random;
@@ -45,6 +45,9 @@ import java.util.logging.Logger;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
+import ffx.algorithms.Minimize;
+import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.MonteCarloListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -158,19 +161,6 @@ public class MCLoop implements MonteCarloListener {
 
         loop = new Loop(molAss);
     }
-
-    /**
-     * Identify Random Portion of 3 residues from Loop and run KIC.
-     */
-    // private  List <double[]> generateLoops() {
-    //TODO: When general KIC is implemented
-    //int subLength = rng.nextInt ( end_res - stt_res - 1);
-    //int subLength = 3;
-    //int loopLength = end_res - stt_res;
-    //int offset = rng.nextInt( loopLength );
-    //  return loop.getSolutions().size();
-    //     return loop.generateLoops(stt_res, end_res);
-    //  }
 
     /**
      * {@inheritDoc}

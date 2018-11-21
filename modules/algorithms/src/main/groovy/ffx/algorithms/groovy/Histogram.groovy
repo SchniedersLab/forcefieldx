@@ -2,10 +2,10 @@ package ffx.algorithms.groovy
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.AbstractOSRW
-import ffx.algorithms.OSRW
-import ffx.algorithms.TransitionTemperedOSRW
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.osrw.AbstractOSRW
+import ffx.algorithms.osrw.OSRW
+import ffx.algorithms.osrw.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -105,8 +105,8 @@ class Histogram extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
-        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
+    List<Potential> getPotentials() {
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
     }
 }
 
