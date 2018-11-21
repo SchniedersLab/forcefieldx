@@ -60,6 +60,7 @@ import edu.rit.mp.DoubleBuf;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Minimize;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
@@ -933,7 +934,7 @@ public class OSRW extends AbstractOSRW {
                 double partitionFunction = 0.0;
                 for (int jFL = llFL; jFL <= ulFL; jFL++) {
                     double currentFLambda = minFLambda + jFL * dFL + dFL_2;
-                    double weight = exp(evaluateKernel(iL, jFL) / (R * temperature));
+                    double weight = exp(evaluateKernel(iL, jFL) / (Thermostat.R * temperature));
                     ensembleAverageFLambda += currentFLambda * weight;
                     partitionFunction += weight;
                     lambdaCount += recursionKernel[iL][jFL];

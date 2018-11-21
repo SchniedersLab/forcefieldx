@@ -66,6 +66,7 @@ import edu.rit.mp.DoubleBuf;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Minimize;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
@@ -214,7 +215,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         super(lambdaInterface, potential, lambdaFile, histogramFile, properties,
                 temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
 
-        deltaT = temperingFactor * R * this.temperature;
+        deltaT = temperingFactor * Thermostat.R * this.temperature;
 
         /**
          * Allocate space for the recursion kernel that stores weights.
@@ -901,7 +902,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         // Total histogram weight.
         double totalWeight = 0;
-        double beta = 1.0 / (R * temperature);
+        double beta = 1.0 / (Thermostat.R * temperature);
         StringBuilder stringBuilder = new StringBuilder();
         if (print) {
             stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
@@ -1076,7 +1077,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     public void setTemperingParameter(double temper) {
         temperingFactor = temper;
         if (temperingFactor > 0.0) {
-            deltaT = temperingFactor * R * temperature;
+            deltaT = temperingFactor * Thermostat.R * temperature;
         } else {
             deltaT = Double.MAX_VALUE;
         }
