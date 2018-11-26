@@ -142,6 +142,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected int FLambdaBins;
     /**
+     * Variable that dictates whether to use restart writing capabilites for Monte Carlo OSRW.
+     */
+    protected boolean mcRestart = false;
+    /**
      * Parallel Java world communicator.
      */
     protected final Comm world;
@@ -586,6 +590,12 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * @param gradient an array of {@link double} objects.
      */
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
+    
+    public abstract void writeRestart();
+    
+    public void setMCRestartWriter(boolean mcRestart){
+        this.mcRestart = mcRestart;
+    }
 
     public abstract double computeBiasEnergy(double currentLambda, double currentdUdL);
 

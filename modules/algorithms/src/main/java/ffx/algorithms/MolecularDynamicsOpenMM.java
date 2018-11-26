@@ -155,7 +155,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private int nAtoms;
     /**
-     * A change in potential energy exceeding 1E6 kcal/mol triggers a warning and snapshot dump.
+     * A change in potential energy exceeding 1E6 kcal/mol triggers a warning
+     * and snapshot dump.
      */
     private double defaultDeltaPEThresh = 1.0E6;
     /**
@@ -179,7 +180,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private int barostatFrequency;
     /**
      * Integer used to count the number of times the context has been set up,
-     * mainly used to add a thermostat to the default integrator (Velocity Verlet).
+     * mainly used to add a thermostat to the default integrator (Velocity
+     * Verlet).
      */
     private int contextCounter = 0;
     /**
@@ -483,7 +485,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         // Code used to have the updateContext method call here to ensure the context is updated if the user wished to add
         // a thermostat or a barostat. It has been moved inside the different cases of the switch statement to help the 
         // performance of the the MCOSRW algorithm which does not require a thermostat
-        
         /**
          * Convert the print interval to a print frequency.
          */
@@ -672,7 +673,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         int i = 0;
         time = -System.nanoTime();
-        
+
         // Initial update from OpenMM.
         updateFromOpenMM(i, running);
 

@@ -109,6 +109,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     private int stepsPerMove = 50;
     /**
+     * Time step to use for MD trajectory moves in femto seconds.
+     */
+    private double timeStep = 1.0;
+    /**
      * Lambda move object for completing MC-OSRW lambda moves.
      */
     private LambdaMove lambdaMove;
@@ -162,7 +166,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
          * as adding the time dependent bias.
          */
         osrw.setPropagateLambda(false);
-
+       
     }
 
     /**
@@ -177,6 +181,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
     public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
         this.totalSteps = totalSteps;
         this.stepsPerMove = stepsPerMove;
+        this.timeStep = timeStep;
         mdMove.setMDParameters(stepsPerMove, timeStep);
     }
 
@@ -408,6 +413,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
+                
+                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0){
+                    osrw.writeRestart();
+                    mdMove.writeRestart();
+                }
+                
             }
 
             totalMoveTime += System.nanoTime();
@@ -558,6 +569,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
+                
+                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0){
+                    osrw.writeRestart();
+                    mdMove.writeRestart();
+                }
 
             }
 

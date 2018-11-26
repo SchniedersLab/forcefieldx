@@ -397,6 +397,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" %s %16.8f  %s",
                     "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
+        
+        if(mcRestart){
+            energyCount++;
+        }
 
         if (propagateLambda) {
             energyCount++;
@@ -524,6 +528,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" %s %16.8f  %s",
                     "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
+        
+        if(mcRestart){
+            energyCount++;
+        }
 
         if (propagateLambda) {
             energyCount++;
@@ -596,6 +604,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
             optimization(forceFieldEnergy, x, gradient);
         }
+        
+        if(mcRestart){
+            return;
+        }
 
         /**
          * Write out restart files.
@@ -634,6 +646,42 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 logger.log(Level.INFO, message, ex);
             }
         }
+    }
+    
+    @Override
+    public void writeRestart(){
+        if (algorithmListener != null) {
+                algorithmListener.algorithmUpdate(molecularAssembly);
+            }
+            /**
+             * Only the rank 0 process writes the histogram restart file.
+             */
+            if (rank == 0) {
+                try {
+                    TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
+                            new BufferedWriter(new FileWriter(histogramFile)));
+                    ttOSRWHistogramRestart.writeHistogramFile();
+                    ttOSRWHistogramRestart.flush();
+                    ttOSRWHistogramRestart.close();
+                    logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
+                } catch (IOException ex) {
+                    String message = " Exception writing TTOSRW histogram restart file.";
+                    logger.log(Level.INFO, message, ex);
+                }
+            }
+            /**
+             * All ranks write a lambda restart file.
+             */
+            try {
+                TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+                ttOSRWLambdaRestart.writeLambdaFile();
+                ttOSRWLambdaRestart.flush();
+                ttOSRWLambdaRestart.close();
+                logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
+            } catch (IOException ex) {
+                String message = " Exception writing TTOSRW lambda restart file.";
+                logger.log(Level.INFO, message, ex);
+            }
     }
 
     public double computeBiasEnergy(double currentLambda, double currentdUdL) {

@@ -236,5 +236,12 @@ public class MDMove implements MCMove {
     public long getMDTime() {
         return molecularDynamics.getMDTime();
     }
+    
+    /**
+     * Write coordinate and velocity restart files out for MCOSRW.
+     */
+    public void writeRestart(){
+        molecularDynamics.writeRestart();
+    }
 
 }

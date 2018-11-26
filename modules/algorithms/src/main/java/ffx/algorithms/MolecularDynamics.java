@@ -1645,5 +1645,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public int getNumAtoms() {
         return 1;
     }
+    
+    public void writeRestart() {
+        for (AssemblyInfo ai : assemblies) {
+            if (ai.archiveFile != null && !saveSnapshotAsPDB) {
+                if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
+                    logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                } else {
+                    logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
+                }
+            } else if (saveSnapshotAsPDB) {
+                if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
+                    logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                } else {
+                    logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+                }
+            }
+        }
+
+        if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+            logger.info(format(" Wrote dynamics restart file to " + restartFile.getName()));
+        } else {
+            logger.info(format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+        }
+
+    }
 
 }

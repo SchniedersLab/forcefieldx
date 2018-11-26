@@ -1042,6 +1042,7 @@ class Thermodynamics extends Script {
             logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
             mcOSRW.setLambdaStdDev(options.mcL)
             mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
+            osrw.setMCRestartWriter(true)
             if (options.simplified) {
                 mcOSRW.sampleOneStep()
             } else {
