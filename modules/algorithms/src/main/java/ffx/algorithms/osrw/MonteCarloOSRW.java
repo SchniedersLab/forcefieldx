@@ -409,7 +409,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 }
 
                 // Compute the updated OSRW bias.
-                currentBiasEnergy = osrw.computeBiasEnergy(currentLambda, currentdUdL);
+                currentBiasEnergy = osrw.computeBiasEnergy(lambda, currentdUdL);
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
@@ -565,7 +565,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 }
 
                 // Compute the updated OSRW bias.
-                currentBiasEnergy = osrw.computeBiasEnergy(currentLambda, currentdUdL);
+                currentBiasEnergy = osrw.computeBiasEnergy(lambda, currentdUdL);
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
