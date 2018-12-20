@@ -2539,7 +2539,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 logger.warning(message);
             }
         } else {
-            logger.info(" Attempting to set a lambda value on a ForceFieldEnergy with lambdaterm false.");
+            logger.fine(" Attempting to set a lambda value on a ForceFieldEnergy with lambdaterm false.");
         }
     }
 
