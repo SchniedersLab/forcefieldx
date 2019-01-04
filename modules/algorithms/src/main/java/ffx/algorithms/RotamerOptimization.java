@@ -5271,9 +5271,9 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Find clashes between side-chain rotamers and environment atoms.
      *
-     * @param atoms All atoms in the system.
-     * @param crystal The crystal contain PBC and SymOp info.
-     * @param residues  The residue being optimized.
+     * @param atoms    All atoms in the system.
+     * @param crystal  The crystal contain PBC and SymOp info.
+     * @param residues The residue being optimized.
      */
     private void computeBackboneRotamerClashes(Atom atoms[], Crystal crystal, Residue residues[]) {
         // Create a NeighborList with a short cut-off
@@ -5340,7 +5340,7 @@ public class RotamerOptimization implements Terminatable {
 
                 // Update the coordinate array for SymOp 0 (i.e. the identity operator).
                 for (Atom resAtom : resAtoms) {
-                    index =  (resAtom.getXyzIndex() - 1) * 3;
+                    index = (resAtom.getXyzIndex() - 1) * 3;
                     xyz[0][index++] = resAtom.getX();
                     xyz[0][index++] = resAtom.getY();
                     xyz[0][index] = resAtom.getZ();
@@ -5358,7 +5358,8 @@ public class RotamerOptimization implements Terminatable {
 
                 // Search for a rotamer -> environment clash.
                 boolean clash = false;
-                clashBreak: for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                clashBreak:
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                     for (int i = 0; i < nAtoms; i++) {
                         // Case 1: check the neighbor list for a side chain atom.
                         if (sideChainAtomIndices.contains(i)) {
@@ -9189,8 +9190,7 @@ public class RotamerOptimization implements Terminatable {
 
             @Override
             public IntegerSchedule schedule() {
-                return IntegerSchedule.guided();
-                // /return IntegerSchedule.dynamic(1);
+                return IntegerSchedule.fixed();
             }
 
             @Override
@@ -9309,7 +9309,7 @@ public class RotamerOptimization implements Terminatable {
 
             @Override
             public IntegerSchedule schedule() {
-                return IntegerSchedule.guided();
+                return IntegerSchedule.fixed();
             }
 
             @Override
@@ -9466,7 +9466,7 @@ public class RotamerOptimization implements Terminatable {
 
             @Override
             public IntegerSchedule schedule() {
-                return IntegerSchedule.guided();
+                return IntegerSchedule.fixed();
             }
 
             @Override
@@ -9575,7 +9575,7 @@ public class RotamerOptimization implements Terminatable {
 
             @Override
             public IntegerSchedule schedule() {
-                return IntegerSchedule.guided();
+                return IntegerSchedule.fixed();
             }
 
             @Override
