@@ -47,6 +47,13 @@ import ffx.numerics.Potential;
 
 /**
  * Stochastic dynamics time step via a velocity Verlet integration algorithm.
+ * <p>
+ * M. P. Allen, "Brownian Dynamics Simulation of a Chemical Reaction in
+ * Solution", Molecular Physics, 40, 1073-1087 (1980)
+ * <p>
+ * F. Guarnieri and W. C. Still, "A Rapidly Convergent Simulation Method:
+ * Mixed Monte Carlo/Stochastic Dynamics", Journal of Computational Chemistry,
+ * 15, 1302-1310 (1994)
  *
  * @author Michael J. Schnieders
  * @since 1.0
