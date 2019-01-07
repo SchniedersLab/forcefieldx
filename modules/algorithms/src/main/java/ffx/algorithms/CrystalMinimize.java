@@ -44,6 +44,7 @@ import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
@@ -300,7 +301,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      *
      * @param verbose a boolean.
      */
-    public void computeStressTensor(boolean verbose) {
+    public void computeElasticityTensor(boolean verbose) {
 
         double xOrig[] = new double[forceFieldEnergy.getNumberOfVariables()];
         forceFieldEnergy.getCoordinates(xOrig);
@@ -570,6 +571,138 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         }
     }
 
+    public void computeStressTensor(boolean verbose) {
+
+        double x[] = new double[forceFieldEnergy.getNumberOfVariables()];
+        forceFieldEnergy.getCoordinates(x);
+
+        forceFieldEnergy.energy(x, verbose);
+
+        FractionalMode currentFractionalMode = molecularAssembly.getFractionalMode();
+
+        molecularAssembly.setFractionalMode(FractionalMode.ATOM);
+        molecularAssembly.computeFractionalCoordinates();
+
+        double delta = 1.0e-5;
+        double dEdV[][] = new double[3][3];
+
+        dEdV[0][0] = dEdA(0, 0, delta, x);
+        dEdV[0][1] = dEdA(0, 1, delta, x);
+        dEdV[0][2] = dEdA(0, 2, delta, x);
+        dEdV[1][1] = dEdA(1, 1, delta, x);
+        dEdV[1][2] = dEdA(1, 2, delta, x);
+        dEdV[2][2] = dEdA(2, 2, delta, x);
+
+        logger.info("\n The Stress Tensor code is under development.");
+
+        logger.info("\n dE/dLvec Derivatives: ");
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", dEdV[0][0], dEdV[0][1], dEdV[0][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", dEdV[1][0], dEdV[1][1], dEdV[1][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", dEdV[2][0], dEdV[2][1], dEdV[2][2]));
+
+        dEdV[1][0] = dEdV[0][1];
+        dEdV[2][0] = dEdV[0][2];
+        dEdV[2][1] = dEdV[1][2];
+
+        /**
+         * Compute a numerical virial.
+         */
+        double virial[][] = new double[3][3];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j <= i; j++) {
+                virial[j][i] = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    virial[j][i] = virial[j][i] + dEdV[k][j] * unitCell.Ai[i][k];
+                }
+                virial[i][j] = virial[j][i];
+            }
+        }
+
+        logger.info("\n Numerical Virial: ");
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", virial[0][0], virial[0][1], virial[0][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", virial[1][0], virial[1][1], virial[1][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", virial[2][0], virial[2][1], virial[2][2]));
+
+
+        double dedv = (virial[0][0] + virial[1][1] + virial[2][2]) / (3 * unitCell.volume);
+
+        /**
+         * Conversion from kcal/mol/Ang^3 to Atm.
+         */
+        double PRESCON = 6.85684112e4;
+        double temperature = 298.15;
+        int nAtoms = molecularAssembly.getAtomArray().length;
+        double pressure = PRESCON * (nAtoms * Thermostat.R * temperature / unitCell.volume - dedv);
+
+        logger.info(format("\n Pressure estimate (%6.2f Kelvin): %12.8f (atm)", temperature, pressure));
+
+        molecularAssembly.setFractionalMode(currentFractionalMode);
+    }
+
+    private double dEdA(int ii, int jj, double delta, double x[]) {
+
+        // Store current unit cell parameters.
+        double a = unitCell.a;
+        double b = unitCell.b;
+        double c = unitCell.c;
+        double alpha = unitCell.alpha;
+        double beta = unitCell.beta;
+        double gamma = unitCell.gamma;
+
+        double cellVectors[][] = new double[3][3];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                cellVectors[i][j] = unitCell.Ai[i][j];
+            }
+        }
+
+        cellVectors[ii][jj] += delta;
+        try {
+            if (!crystal.setCellVectors(cellVectors)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+
+        // Update the ForceFieldEnergy with the new boundary conditions.
+        forceFieldEnergy.setCrystal(crystal);
+
+        // Update and retrieve coordinates.
+        molecularAssembly.moveToFractionalCoordinates();
+        forceFieldEnergy.getCoordinates(x);
+
+        // Compute the energy.
+        double eplus = forceFieldEnergy.energy(x);
+
+        cellVectors[ii][jj] -= 2 * delta;
+        try {
+            if (!crystal.setCellVectors(cellVectors)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+
+        // Update the ForceFieldEnergy with the new boundary conditions.
+        forceFieldEnergy.setCrystal(crystal);
+
+        // Update and retrieve coordinates.
+        molecularAssembly.moveToFractionalCoordinates();
+        forceFieldEnergy.getCoordinates(x);
+
+        // Compute the energy.
+        double eminus = forceFieldEnergy.energy(x);
+
+        // Revert to the original boundary conditions.
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCoordinates();
+
+        return (eplus - eminus) / (2 * delta);
+    }
+
+
     private double dE2dA2(int voight1, int voight2, double delta, double x[], double eps) {
 
         // Store current unit cell parameters.
@@ -682,7 +815,6 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
 
         return (e11 - e1m1 - em11 + em1m1) / (4 * delta * delta);
     }
-
 
     /**
      * {@inheritDoc}

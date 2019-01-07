@@ -616,15 +616,26 @@ public class Crystal {
             }
         }
 
+        return setCellVectors(newAi);
+    }
+
+    /**
+     * Set the unit cell vectors.
+     *
+     * @param cellVectors 3x3 matrix of cell vectors.
+     * @return True if the perturbation of cell vectors succeeds.
+     */
+    public boolean setCellVectors(double cellVectors[][]) {
+
         // Update a-, b-, and c-axis lengths.
-        double aa = r(newAi[0]);
-        double bb = r(newAi[1]);
-        double cc = r(newAi[2]);
+        double aa = r(cellVectors[0]);
+        double bb = r(cellVectors[1]);
+        double cc = r(cellVectors[2]);
 
         // Update alpha, beta and gamma angles.
-        double aalpha = toDegrees(acos(dot(newAi[1], newAi[2]) / (bb * cc)));
-        double bbeta = toDegrees(acos(dot(newAi[0], newAi[2]) / (aa * cc)));
-        double ggamma = toDegrees(acos(dot(newAi[0], newAi[1]) / (aa * bb)));
+        double aalpha = toDegrees(acos(dot(cellVectors[1], cellVectors[2]) / (bb * cc)));
+        double bbeta = toDegrees(acos(dot(cellVectors[0], cellVectors[2]) / (aa * cc)));
+        double ggamma = toDegrees(acos(dot(cellVectors[0], cellVectors[1]) / (aa * bb)));
 
         return changeUnitCellParameters(aa, bb, cc, aalpha, bbeta, ggamma);
     }
