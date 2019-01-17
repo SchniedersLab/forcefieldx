@@ -203,7 +203,6 @@ public class Minimize implements OptimizationListener, Terminatable {
      * minimize</p>
      *
      * @param m             The number of previous steps used to estimate the Hessian.
-     * @param maxIterations The maximum number of iterations.
      * @param eps           The convergence criteria.
      * @param maxIterations The maximum number of iterations.
      * @return a {@link ffx.numerics.Potential} object.
