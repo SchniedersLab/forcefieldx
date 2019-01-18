@@ -377,7 +377,12 @@ public class RotamerLibrary {
     }
 
     /**
-     * TODO: Add reference to Ponder & Richard's original paper.
+     * Fills the idealized amino acid rotamer cache with the Ponder and Richards rotamers.
+     *
+     * Ponder, J. W.; Richards, F. M., Tertiary templates for proteins:
+     * Use of packing criteria in the enumeration of allowed sequences
+     * for different structural classes Journal of Molecular Biology
+     * 1987, 193 (4), 775-791
      *
      * @param name Type of amino acid.
      * @return Rotamer cache (double[] of torsions).
@@ -615,7 +620,11 @@ public class RotamerLibrary {
     }
 
     /**
-     * TODO: Add reference to Richardson et al.
+     * Fills the idealized amino acid rotamer cache with the Richardson rotamers.
+     *
+     *  Lovell, S. C.; Word, J. M.; Richardson, J. S.; Richardson, D. C.,
+     *  The penultimate rotamer library. Proteins-Structure, Function,
+     *  and Genetics 2000, 40 (3), 389-408.
      *
      * @param name Type of amino acid.
      * @return Rotamer cache (double[] of torsions).
