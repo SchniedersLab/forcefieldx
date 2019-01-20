@@ -71,7 +71,7 @@ public class EmptyObjectBuf
      *
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public Object get(int i) {
@@ -83,7 +83,7 @@ public class EmptyObjectBuf
      *
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public void put(int i,
@@ -95,11 +95,11 @@ public class EmptyObjectBuf
      * {@inheritDoc}
      *
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public void copy(Buf theSrc) {

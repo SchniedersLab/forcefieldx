@@ -176,7 +176,7 @@ public class FrontendFileReader {
         }
 
         /**
-         * Read bytes from the given input file. <TT>ffd</TT> = 1 refers to the
+         * Read bytes from the given input file. <code>ffd</code> = 1 refers to the
          * job's standard input stream; other values refer to a previously
          * opened file.
          *
@@ -373,7 +373,7 @@ public class FrontendFileReader {
     }
 
     /**
-     * Read bytes from the given input file. <TT>ffd</TT> = 1 refers to the
+     * Read bytes from the given input file. <code>ffd</code> = 1 refers to the
      * job's standard input stream; other values refer to a previously opened
      * file.
      *

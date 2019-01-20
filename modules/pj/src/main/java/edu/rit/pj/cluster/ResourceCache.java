@@ -83,7 +83,7 @@ public class ResourceCache {
      *
      * @param name Resource name.
      * @return True if this resource cache contains resource information for
-     * <TT>name</TT>, false otherwise.
+     * <code>name</code>, false otherwise.
      */
     public synchronized boolean contains(String name) {
         ResourceInfo info = myMap.get(name);
@@ -98,7 +98,7 @@ public class ResourceCache {
      *
      * @param name Resource name.
      * @return True if this resource cache contains the resource content for
-     * <TT>name</TT>, false otherwise.
+     * <code>name</code>, false otherwise.
      */
     public synchronized boolean containsContent(String name) {
         ResourceInfo info = myMap.get(name);
@@ -108,7 +108,7 @@ public class ResourceCache {
     /**
      * Obtain the resource content for the given resource name from this
      * resource cache (blocking). This method will block if necessary until this
-     * resource cache contains the content for <TT>name</TT> or until this
+     * resource cache contains the content for <code>name</code> or until this
      * resource cache knows the content was not found.
      *
      * @param name Resource name.
@@ -143,10 +143,10 @@ public class ResourceCache {
 
     /**
      * Store the given resource content under the given resource name in this
-     * resource cache. Any existing content for <TT>name</TT> is overwritten.
+     * resource cache. Any existing content for <code>name</code> is overwritten.
      * <P>
      * <I>Note:</I> The resource cache assumes that the contents of
-     * <TT>content</TT> are not changed after <TT>put()</TT> is called.
+     * <code>content</code> are not changed after <code>put()</code> is called.
      *
      * @param name Resource name.
      * @param content Resource content, or null if not found.
@@ -159,8 +159,8 @@ public class ResourceCache {
 
     /**
      * Remove the resource content for the given resource name from this
-     * resource cache. If there is no content for <TT>name</TT>, the
-     * <TT>remove()</TT> method does nothing.
+     * resource cache. If there is no content for <code>name</code>, the
+     * <code>remove()</code> method does nothing.
      *
      * @param name Resource name.
      */

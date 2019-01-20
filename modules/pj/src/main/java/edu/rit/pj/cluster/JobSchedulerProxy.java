@@ -61,7 +61,6 @@ public class JobSchedulerProxy
      * in the given channel group to send messages to the job scheduler process.
      *
      * @param theChannelGroup Channel group.
-     * @param theChannelGroup Channel group.
      * @param theChannel Channel.
      */
     public JobSchedulerProxy(ChannelGroup theChannelGroup,

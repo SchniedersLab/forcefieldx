@@ -51,7 +51,7 @@ import edu.rit.util.Range;
  * <P>
  * To execute a worker region, create a {@linkplain WorkerTeam} object; create
  * an instance of a concrete subclass of class WorkerRegion; and pass this
- * instance to the worker team's <TT>execute()</TT> method. You can do all this
+ * instance to the worker team's <code>execute()</code> method. You can do all this
  * using an anonymous inner class; for example:
  * <PRE>
  *     new WorkerTeam().execute (new WorkerRegion()
@@ -74,19 +74,19 @@ import edu.rit.util.Range;
  *         });
  * </PRE>
  * <P>
- * The worker team's <TT>execute()</TT> method does the following. In each
+ * The worker team's <code>execute()</code> method does the following. In each
  * process, the worker team has a certain number of <B>worker threads</B>
  * <I>K</I>, where <I>K</I> was specified when the worker team was constructed.
  * In the highest-ranked process of the communicator, there is a <B>master
  * thread</B> in addition to the worker threads. The <B>main thread</B> is the
- * thread calling the worker team's <TT>execute()</TT> method. The main thread
- * calls the worker region's <TT>start()</TT> method. When the <TT>start()</TT>
+ * thread calling the worker team's <code>execute()</code> method. The main thread
+ * calls the worker region's <code>start()</code> method. When the <code>start()</code>
  * method returns, all the worker threads, plus the master thread if any, call
- * the worker region's <TT>run()</TT> method concurrently. When all the team
- * threads have returned from the <TT>run()</TT> method, the main thread calls
- * the worker region's <TT>finish()</TT> method. When the <TT>finish()</TT>
+ * the worker region's <code>run()</code> method concurrently. When all the team
+ * threads have returned from the <code>run()</code> method, the main thread calls
+ * the worker region's <code>finish()</code> method. When the <code>finish()</code>
  * method returns, the main thread returns from the worker team's
- * <TT>execute()</TT> method.
+ * <code>execute()</code> method.
  * <P>
  * The chief purpose of a worker team is to execute a work-sharing parallel loop
  * in a cluster parallel program, partitioning the loop iterations among the
@@ -100,34 +100,34 @@ import edu.rit.util.Range;
  * <P>
  * Within each process, variables to be shared by all threads in the team may be
  * declared as fields of the WorkerRegion subclass. (Variables cannot be shared
- * between processes.) The <TT>start()</TT> method is intended for performing
+ * between processes.) The <code>start()</code> method is intended for performing
  * initialization in a single thread before parallel execution begins. If no
- * such initialization is needed, omit the <TT>start()</TT> method. The
- * <TT>run()</TT> method contains code to be executed in parallel by all threads
+ * such initialization is needed, omit the <code>start()</code> method. The
+ * <code>run()</code> method contains code to be executed in parallel by all threads
  * in the team. Variables that are private to each thread may be declared inside
- * the <TT>run()</TT> method. The <TT>finish()</TT> method is intended for
+ * the <code>run()</code> method. The <code>finish()</code> method is intended for
  * performing finalization in a single thread after parallel execution ends. If
- * no such finalization is needed, omit the <TT>finish()</TT> method.
+ * no such finalization is needed, omit the <code>finish()</code> method.
  * <P>
- * If the worker region's <TT>start()</TT> method throws an exception, the
- * worker team's <TT>execute()</TT> method throws that same exception, and the
- * <TT>run()</TT> method is not called.
+ * If the worker region's <code>start()</code> method throws an exception, the
+ * worker team's <code>execute()</code> method throws that same exception, and the
+ * <code>run()</code> method is not called.
  * <P>
- * If the worker region's <TT>run()</TT> method throws an exception in one of
+ * If the worker region's <code>run()</code> method throws an exception in one of
  * the team threads, the exception's stack trace is printed on the standard
  * error, the worker team waits until all the other team threads have returned
- * from the <TT>run()</TT> method, then the worker team's <TT>execute()</TT>
- * method throws that same exception, and the worker region's <TT>finish()</TT>
- * method is not called. If the worker region's <TT>run()</TT> method throws an
+ * from the <code>run()</code> method, then the worker team's <code>execute()</code>
+ * method throws that same exception, and the worker region's <code>finish()</code>
+ * method is not called. If the worker region's <code>run()</code> method throws an
  * exception in more than one of the team threads, each exception's stack trace
  * is printed on the standard error, the worker team waits until all the other
- * team threads have returned from the <TT>run()</TT> method, then the worker
- * team's <TT>execute()</TT> method throws a {@linkplain
+ * team threads have returned from the <code>run()</code> method, then the worker
+ * team's <code>execute()</code> method throws a {@linkplain
  * MultipleParallelException} wrapping all the thrown exceptions, and the worker
- * region's <TT>finish()</TT> method is not called.
+ * region's <code>finish()</code> method is not called.
  * <P>
- * If the worker region's <TT>finish()</TT> method throws an exception, the
- * worker team's <TT>execute()</TT> method throws that same exception.
+ * If the worker region's <code>finish()</code> method throws an exception, the
+ * worker team's <code>execute()</code> method throws that same exception.
  *
  * @author Alan Kaminsky
  * @version 07-Oct-2010
@@ -146,12 +146,12 @@ public abstract class WorkerRegion
 // Exported operations.
     /**
      * Perform initialization actions before parallel execution begins. Only one
-     * thread in each process calls the <TT>start()</TT> method.
+     * thread in each process calls the <code>start()</code> method.
      * <P>
-     * The <TT>start()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>start()</TT> method does nothing.
+     * The <code>start()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>start()</code> method does nothing.
      *
-     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @exception Exception The <code>start()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public void start()
@@ -160,11 +160,11 @@ public abstract class WorkerRegion
 
     /**
      * Execute parallel code. All threads of the worker team in each process
-     * call the <TT>run()</TT> method concurrently.
+     * call the <code>run()</code> method concurrently.
      * <P>
-     * The <TT>run()</TT> method must be implemented in a subclass.
+     * The <code>run()</code> method must be implemented in a subclass.
      *
-     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @exception Exception The <code>run()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run()
@@ -172,12 +172,12 @@ public abstract class WorkerRegion
 
     /**
      * Perform finalization actions after parallel execution ends. Only one
-     * thread in each process calls the <TT>finish()</TT> method.
+     * thread in each process calls the <code>finish()</code> method.
      * <P>
-     * The <TT>finish()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>finish()</TT> method does nothing.
+     * The <code>finish()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>finish()</code> method does nothing.
      *
-     * @exception Exception The <TT>finish()</TT> method may throw any
+     * @exception Exception The <code>finish()</code> method may throw any
      * exception.
      * @throws java.lang.Exception if any.
      */
@@ -188,22 +188,22 @@ public abstract class WorkerRegion
     /**
      * Execute a worker for loop within this worker region. For further
      * information, see class {@linkplain WorkerIntegerForLoop}. The loop index
-     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-     * steps of +1. If <TT>first</TT> is greater than <TT>last</TT>, then no
+     * goes from <code>first</code> (inclusive) to <code>last</code> (inclusive) in
+     * steps of +1. If <code>first</code> is greater than <code>last</code>, then no
      * loop iterations are performed.
      * <P>
      * <I>Note:</I> Either all threads in the worker team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Worker for loop.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -243,26 +243,26 @@ public abstract class WorkerRegion
     /**
      * Execute a worker for loop within this worker region. For further
      * information, see class {@linkplain WorkerIntegerStrideForLoop}. The loop
-     * index goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive)
-     * in steps of <TT>stride</TT>. The stride must be positive. If
-     * <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations are
+     * index goes from <code>first</code> (inclusive) to <code>last</code> (inclusive)
+     * in steps of <code>stride</code>. The stride must be positive. If
+     * <code>first</code> is greater than <code>last</code>, then no loop iterations are
      * performed.
      * <P>
      * <I>Note:</I> Either all threads in the worker team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Worker for loop.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>stride</TT> &lt; 1.
+     * <code>stride</code> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -306,22 +306,22 @@ public abstract class WorkerRegion
     /**
      * Execute a worker for loop within this worker region. For further
      * information, see class {@linkplain WorkerLongForLoop}. The loop index
-     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-     * steps of +1. If <TT>first</TT> is greater than <TT>last</TT>, then no
+     * goes from <code>first</code> (inclusive) to <code>last</code> (inclusive) in
+     * steps of +1. If <code>first</code> is greater than <code>last</code>, then no
      * loop iterations are performed.
      * <P>
      * <I>Note:</I> Either all threads in the worker team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Worker for loop.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -361,26 +361,26 @@ public abstract class WorkerRegion
     /**
      * Execute a worker for loop within this worker region. For further
      * information, see class {@linkplain WorkerLongStrideForLoop}. The loop
-     * index goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive)
-     * in steps of <TT>stride</TT>. The stride must be positive. If
-     * <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations are
+     * index goes from <code>first</code> (inclusive) to <code>last</code> (inclusive)
+     * in steps of <code>stride</code>. The stride must be positive. If
+     * <code>first</code> is greater than <code>last</code>, then no loop iterations are
      * performed.
      * <P>
      * <I>Note:</I> Either all threads in the worker team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Worker for loop.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>stride</TT> &lt; 1.
+     * <code>stride</code> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -428,18 +428,18 @@ public abstract class WorkerRegion
      * is from index 0 upwards.
      * <P>
      * <I>Note:</I> Either all threads in the worker team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theArray Array containing the items.
      * @param theIteration Worker iteration.
      * @exception NullPointerException (unchecked exception) Thrown if this is
      * the master process and
-     * <TT>theArray</TT> is null. Thrown if <TT>theIteration</TT> is null.
+     * <code>theArray</code> is null. Thrown if <code>theIteration</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -484,18 +484,18 @@ public abstract class WorkerRegion
      * iteration order is that of the given iterator.
      * <P>
      * <I>Note:</I> Either all threads in the worker team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theIterator Iterator over the items.
      * @param theIteration Worker iteration.
      * @exception NullPointerException (unchecked exception) Thrown if this is
      * the master process and
-     * <TT>theIterator</TT> is null. Thrown if <TT>theIteration</TT> is null.
+     * <code>theIterator</code> is null. Thrown if <code>theIteration</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -541,18 +541,18 @@ public abstract class WorkerRegion
      * collection's iterator.
      * <P>
      * <I>Note:</I> Either all threads in the worker team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theIterable Iterable collection containing the items.
      * @param theIteration Worker iteration.
      * @exception NullPointerException (unchecked exception) Thrown if this is
      * the master process and
-     * <TT>theIterable</TT> is null. Thrown if <TT>theIteration</TT> is null.
+     * <code>theIterable</code> is null. Thrown if <code>theIteration</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */

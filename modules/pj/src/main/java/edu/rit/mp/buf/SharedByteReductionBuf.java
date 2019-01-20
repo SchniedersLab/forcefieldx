@@ -66,7 +66,7 @@ class SharedByteReductionBuf
      * @param item SharedByte object that wraps the item.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public SharedByteReductionBuf(SharedByte item,
             ByteOp op) {
@@ -81,11 +81,11 @@ class SharedByteReductionBuf
     /**
      * {@inheritDoc}
      *
-     * Store the given item in this buffer. The item at index <TT>i</TT> in this
-     * buffer is combined with the given <TT>item</TT> using the binary
+     * Store the given item in this buffer. The item at index <code>i</code> in this
+     * buffer is combined with the given <code>item</code> using the binary
      * operation.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public void put(int i,
@@ -114,7 +114,7 @@ class SharedByteReductionBuf
      * buffer. As the items are received, they are combined with the items in
      * this buffer using the binary operation.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      */
     protected int receiveItems(int i,

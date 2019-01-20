@@ -130,14 +130,14 @@ public class JobInfo {
 
     /**
      * Array of backend nodes for each process assigned to the job in rank
-     * order. The array has <TT>Np</TT> total elements. The first <TT>count</TT>
+     * order. The array has <code>Np</code> total elements. The first <code>count</code>
      * elements have been assigned.
      */
     public BackendInfo[] backend;
 
     /**
      * Number of CPUs assigned to each process in the job in rank order. The
-     * array has <TT>Np</TT> total elements. The first <TT>count</TT> elements
+     * array has <code>Np</code> total elements. The first <code>count</code> elements
      * have been assigned.
      */
     public int[] cpus;
@@ -169,7 +169,7 @@ public class JobInfo {
 
     /**
      * Comment for each process in the job in rank order. The array has
-     * <TT>Np</TT> total elements. Initially, these are empty strings. The
+     * <code>Np</code> total elements. Initially, these are empty strings. The
      * process comments appear in the detailed job status display in the Job
      * Scheduler web interface.
      */
@@ -181,7 +181,6 @@ public class JobInfo {
      *
      * @param jobnum The job number.
      * @param state The job's state.
-     * @param stateTime The time when the job entered its current state.
      * @param stateTime The time when the job entered its current state.
      * @param username The job's user name.
      * @param Nn The number of backend nodes in the job.

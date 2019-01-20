@@ -84,11 +84,6 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * @param forceConstant a double.
      * @param angle an array of double.
      * @param angleFunction the AngleFunction to apply.
-     * @param angleFunction the AngleFunction to apply.
-     * @param angleFunction the AngleFunction to apply.
-     * @param angleFunction the AngleFunction to apply.
-     * @param angleFunction the AngleFunction to apply.
-     * @param angleFunction the AngleFunction to apply.
      */
     public AngleType(int atomClasses[], double forceConstant, double angle[], AngleFunction angleFunction) {
         super(ForceFieldType.ANGLE, sortKey(atomClasses));

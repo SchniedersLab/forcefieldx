@@ -624,8 +624,6 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * @param x     All parameters.
      * @param xChem The xChem parameters for the particular MolecularAssembly
      *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
-     * @param xChem The xChem parameters for the particular MolecularAssembly
-     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */
     public void getAssemblyi(int i, double x[], double xChem[]) {
         assert (x != null && xChem != null);
@@ -643,8 +641,6 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      *
      * @param i     the desired MolecularAssembly index for "setting" x.
      * @param x     All parameters.
-     * @param xChem The xChem parameters for the particular MolecularAssembly
-     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      * @param xChem The xChem parameters for the particular MolecularAssembly
      *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */

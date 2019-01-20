@@ -54,7 +54,7 @@ package edu.rit.pj;
  * </LI>
  * <LI>
  * When the {@linkplain ParallelTeam} threads call the {@linkplain
- * ParallelRegion}'s <TT>barrier()</TT> method explicitly.
+ * ParallelRegion}'s <code>barrier()</code> method explicitly.
  * </LI>
  * </UL>
  * As each thread finishes executing one of the above constructs, each thread
@@ -74,11 +74,11 @@ package edu.rit.pj;
  * </LI>
  * <LI>
  * If the barrier action is an instance of class BarrierAction with the
- * <TT>run()</TT> method overridden, each thread stops and waits at the barrier.
+ * <code>run()</code> method overridden, each thread stops and waits at the barrier.
  * When all threads have arrived at the barrier, <I>one</I> thread calls the
- * BarrierAction object's <TT>run()</TT> method. The particular thread that
- * calls the <TT>run()</TT> method is not specified. During this time the other
- * threads remain stopped. When the <TT>run()</TT> method returns, each thread
+ * BarrierAction object's <code>run()</code> method. The particular thread that
+ * calls the <code>run()</code> method is not specified. During this time the other
+ * threads remain stopped. When the <code>run()</code> method returns, each thread
  * resumes and proceeds to execute whatever comes after the construct.
  * </LI>
  * </UL>
@@ -104,12 +104,12 @@ public abstract class BarrierAction
 // Exported operations.
 
     /**
-     * Execute this barrier action. The <TT>run()</TT> method is called by a
+     * Execute this barrier action. The <code>run()</code> method is called by a
      * single thread after all threads have arrived at the barrier.
      * <p>
-     * The <TT>run()</TT> method must be implemented in a subclass.
+     * The <code>run()</code> method must be implemented in a subclass.
      *
-     * @throws Exception           The <TT>run()</TT> method may throw any exception.
+     * @throws Exception           The <code>run()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run()
@@ -120,8 +120,8 @@ public abstract class BarrierAction
     /**
      * Execute a barrier.
      *
-     * @param currentThread Parallel team thread calling <TT>doBarrier()</TT>.
-     * @throws Exception The <TT>run()</TT> method may throw any exception.
+     * @param currentThread Parallel team thread calling <code>doBarrier()</code>.
+     * @throws Exception The <code>run()</code> method may throw any exception.
      */
     void doBarrier(ParallelTeamThread currentThread)
             throws Exception {

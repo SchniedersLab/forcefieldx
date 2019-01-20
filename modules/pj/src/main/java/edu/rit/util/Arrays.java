@@ -63,6 +63,7 @@ public class Arrays {
      * (object) is created using the given class's no-argument constructor.
      *
      * @param <T> Array element data type.
+     * @param <ST> Array element data type that extends T.
      * @param array Array.
      * @param type Class for the objects to be created.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -86,13 +87,14 @@ public class Arrays {
      * no-argument constructor.
      *
      * @param <T> Array element data type.
+     * @param <ST> Array element data type that extends T.
      * @param array Array.
      * @param range Range of indexes to allocate.
      * @param type Class for the objects to be created.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>range</TT> is outside the bounds of the <TT>array</TT>.
+     * index in the <code>range</code> is outside the bounds of the <code>array</code>.
      * @exception InstantiationException Thrown if an instance of the given
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
@@ -119,7 +121,7 @@ public class Arrays {
 // Exported matrix allocation operations.
     /**
      * Allocate the elements in the given Boolean matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is allocated with the
+     * full row index range (0..<code>matrix.length</code>-1) is allocated with the
      * given number of columns.
      *
      * @param matrix Matrix.
@@ -127,7 +129,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(boolean[][] matrix,
             int ncols) {
@@ -145,10 +147,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(boolean[][] matrix,
             Range rowRange,
@@ -167,7 +169,7 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given byte matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is allocated with the
+     * full row index range (0..<code>matrix.length</code>-1) is allocated with the
      * given number of columns.
      *
      * @param matrix Matrix.
@@ -175,7 +177,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(byte[][] matrix,
             int ncols) {
@@ -193,10 +195,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(byte[][] matrix,
             Range rowRange,
@@ -215,7 +217,7 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given character matrix. Each matrix row in
-     * the full row index range (0..<TT>matrix.length</TT>-1) is allocated with
+     * the full row index range (0..<code>matrix.length</code>-1) is allocated with
      * the given number of columns.
      *
      * @param matrix Matrix.
@@ -223,7 +225,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(char[][] matrix,
             int ncols) {
@@ -241,10 +243,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(char[][] matrix,
             Range rowRange,
@@ -263,7 +265,7 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given double matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is allocated with the
+     * full row index range (0..<code>matrix.length</code>-1) is allocated with the
      * given number of columns.
      *
      * @param matrix Matrix.
@@ -271,7 +273,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(double[][] matrix,
             int ncols) {
@@ -289,10 +291,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(double[][] matrix,
             Range rowRange,
@@ -311,7 +313,7 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given float matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is allocated with the
+     * full row index range (0..<code>matrix.length</code>-1) is allocated with the
      * given number of columns.
      *
      * @param matrix Matrix.
@@ -319,7 +321,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(float[][] matrix,
             int ncols) {
@@ -337,10 +339,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(float[][] matrix,
             Range rowRange,
@@ -359,7 +361,7 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given integer matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is allocated with the
+     * full row index range (0..<code>matrix.length</code>-1) is allocated with the
      * given number of columns.
      *
      * @param matrix Matrix.
@@ -367,7 +369,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(int[][] matrix,
             int ncols) {
@@ -385,10 +387,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(int[][] matrix,
             Range rowRange,
@@ -407,7 +409,7 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given long matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is allocated with the
+     * full row index range (0..<code>matrix.length</code>-1) is allocated with the
      * given number of columns.
      *
      * @param matrix Matrix.
@@ -415,7 +417,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(long[][] matrix,
             int ncols) {
@@ -433,10 +435,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(long[][] matrix,
             Range rowRange,
@@ -455,7 +457,7 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given short matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is allocated with the
+     * full row index range (0..<code>matrix.length</code>-1) is allocated with the
      * given number of columns.
      *
      * @param matrix Matrix.
@@ -463,7 +465,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(short[][] matrix,
             int ncols) {
@@ -481,10 +483,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      */
     public static void allocate(short[][] matrix,
             Range rowRange,
@@ -503,19 +505,20 @@ public class Arrays {
 
     /**
      * Allocate the elements in the given object matrix. Each matrix row in the
-     * full row range (0..<TT>matrix.length</TT>-1) is allocated with the given
+     * full row range (0..<code>matrix.length</code>-1) is allocated with the given
      * number of columns. Within each row, the full column range
-     * (0..<TT>ncols</TT>-1) of elements is allocated. Each matrix element
+     * (0..<code>ncols</code>-1) of elements is allocated. Each matrix element
      * (object) is created using the given class's no-argument constructor.
      *
      * @param <T> Matrix element data type.
+     * @param <ST> Array element data type that extends T.
      * @param matrix Matrix.
      * @param ncols Number of columns in each row.
      * @param type Class for the objects to be created.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      * @exception InstantiationException Thrown if an instance of the given
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
@@ -538,10 +541,11 @@ public class Arrays {
      * Allocate the elements within the given row index range in the given
      * object matrix. Each matrix row in the given row index range is allocated
      * with the given number of columns. Within each row, the full column range
-     * (0..<TT>ncols</TT>-1) of elements is allocated. Each matrix element
+     * (0..<code>ncols</code>-1) of elements is allocated. Each matrix element
      * (object) is created using the given class's no-argument constructor.
      *
      * @param <T> Matrix element data type.
+     * @param <ST> Array element data type that extends T.
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
@@ -549,10 +553,10 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      * @exception InstantiationException Thrown if an instance of the given
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
@@ -579,6 +583,7 @@ public class Arrays {
      * class's no-argument constructor.
      *
      * @param <T> Matrix element data type.
+     * @param <ST> Array element data type that extends T.
      * @param matrix Matrix.
      * @param rowRange Range of row indexes to allocate.
      * @param ncols Number of columns in each row.
@@ -587,11 +592,11 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>. Thrown if any index in the <TT>colRange</TT> is outside
-     * the bounds 0 .. <TT>ncols</TT>-1.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>. Thrown if any index in the <code>colRange</code> is outside
+     * the bounds 0 .. <code>ncols</code>-1.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>ncols</TT> &lt; 0.
+     * <code>ncols</code> &lt; 0.
      * @exception InstantiationException Thrown if an instance of the given
      * class cannot be instantiated.
      * @exception IllegalAccessException Thrown if the given class or its
@@ -652,7 +657,7 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>range</TT> is outside the bounds of the <TT>array</TT>.
+     * index in the <code>range</code> is outside the bounds of the <code>array</code>.
      */
     public static <T> void deallocate(T[] array,
             Range range) {
@@ -671,7 +676,7 @@ public class Arrays {
 // Exported matrix deallocation operations.
     /**
      * Deallocate the elements in the given Boolean matrix. Each matrix row in
-     * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * the full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -691,8 +696,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(boolean[][] matrix,
             Range rowRange) {
@@ -710,7 +715,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given byte matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -729,8 +734,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(byte[][] matrix,
             Range rowRange) {
@@ -748,7 +753,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given character matrix. Each matrix row in
-     * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * the full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -768,8 +773,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(char[][] matrix,
             Range rowRange) {
@@ -787,7 +792,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given double matrix. Each matrix row in
-     * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * the full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -807,8 +812,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(double[][] matrix,
             Range rowRange) {
@@ -826,7 +831,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given float matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -846,8 +851,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(float[][] matrix,
             Range rowRange) {
@@ -865,7 +870,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given integer matrix. Each matrix row in
-     * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * the full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -885,8 +890,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(int[][] matrix,
             Range rowRange) {
@@ -904,7 +909,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given long matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -923,8 +928,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(long[][] matrix,
             Range rowRange) {
@@ -942,7 +947,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given short matrix. Each matrix row in the
-     * full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param matrix Matrix.
      * @exception NullPointerException (unchecked exception) Thrown if any
@@ -962,8 +967,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static void deallocate(short[][] matrix,
             Range rowRange) {
@@ -981,7 +986,7 @@ public class Arrays {
 
     /**
      * Deallocate the elements in the given object matrix. Each matrix row in
-     * the full row index range (0..<TT>matrix.length</TT>-1) is set to null.
+     * the full row index range (0..<code>matrix.length</code>-1) is set to null.
      *
      * @param <T> Matrix element data type.
      * @param matrix Matrix.
@@ -1003,8 +1008,8 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>.
      */
     public static <T> void deallocate(T[][] matrix,
             Range rowRange) {
@@ -1032,9 +1037,9 @@ public class Arrays {
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in the <TT>rowRange</TT> is outside the row bounds of the
-     * <TT>matrix</TT>. Thrown if any index in the <TT>colRange</TT> is outside
-     * the bounds 0 .. <TT>ncols</TT>-1.
+     * index in the <code>rowRange</code> is outside the row bounds of the
+     * <code>matrix</code>. Thrown if any index in the <code>colRange</code> is outside
+     * the bounds 0 .. <code>ncols</code>-1.
      */
     public static <T> void deallocate(T[][] matrix,
             Range rowRange,
@@ -1066,22 +1071,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one Boolean array to a range of elements in
      * another Boolean array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(boolean[] src,
             Range srcRange,
@@ -1130,22 +1133,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one byte array to a range of elements in
      * another byte array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(byte[] src,
             Range srcRange,
@@ -1194,22 +1195,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one character array to a range of elements
      * in another character array. The number of elements copied is the smaller
-     * of <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or
-     * both of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be
+     * of <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or
+     * both of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be
      * greater than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(char[] src,
             Range srcRange,
@@ -1258,22 +1257,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one double array to a range of elements in
      * another double array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(double[] src,
             Range srcRange,
@@ -1322,22 +1319,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one float array to a range of elements in
      * another float array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(float[] src,
             Range srcRange,
@@ -1386,22 +1381,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one integer array to a range of elements in
      * another integer array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(int[] src,
             Range srcRange,
@@ -1450,22 +1443,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one long array to a range of elements in
      * another long array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(long[] src,
             Range srcRange,
@@ -1514,22 +1505,20 @@ public class Arrays {
     /**
      * Copy a range of elements from one short array to a range of elements in
      * another short array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void copy(short[] src,
             Range srcRange,
@@ -1578,8 +1567,8 @@ public class Arrays {
     /**
      * Copy a range of elements from one object array to a range of elements in
      * another object array. The number of elements copied is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      * <P>
      * <I>Note:</I> This method does a <I>shallow copy.</I> Only the references
@@ -1587,18 +1576,17 @@ public class Arrays {
      * array.
      *
      * @param <DT> Destination array element data type.
+     * @param <ST> Array element data type that extends DT.
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static <DT, ST extends DT> void copy(ST[] src,
             Range srcRange,
@@ -1648,11 +1636,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one Boolean matrix to a range of elements
      * in another Boolean matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1660,22 +1648,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(boolean[][] src,
@@ -1720,11 +1704,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one byte matrix to a range of elements in
      * another byte matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1732,22 +1716,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(byte[][] src,
@@ -1792,11 +1772,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one character matrix to a range of elements
      * in another character matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1804,22 +1784,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(char[][] src,
@@ -1864,11 +1840,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one double matrix to a range of elements in
      * another double matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1876,22 +1852,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(double[][] src,
@@ -1936,11 +1908,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one float matrix to a range of elements in
      * another float matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1948,22 +1920,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(float[][] src,
@@ -2008,11 +1976,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one integer matrix to a range of elements
      * in another integer matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -2020,22 +1988,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(int[][] src,
@@ -2080,11 +2044,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one long matrix to a range of elements in
      * another long matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -2092,22 +2056,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(long[][] src,
@@ -2152,11 +2112,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one short matrix to a range of elements in
      * another short matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -2164,22 +2124,18 @@ public class Arrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void copy(short[][] src,
@@ -2224,11 +2180,11 @@ public class Arrays {
     /**
      * Copy a range of elements from one object matrix to a range of elements in
      * another object matrix. The number of rows copied is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns copied is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -2238,25 +2194,22 @@ public class Arrays {
      * destination matrix.
      *
      * @param <DT> Destination matrix element data type.
+     * @param <ST> Array element data type that extends DT.
      * @param src Source matrix.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static <DT, ST extends DT> void copy(ST[][] src,
@@ -2301,10 +2254,10 @@ public class Arrays {
 // Exported array length operations.
     /**
      * Determine the number of elements in the given Boolean array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(boolean[] array) {
         return array == null ? 0 : array.length;
@@ -2312,10 +2265,10 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given byte array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(byte[] array) {
         return array == null ? 0 : array.length;
@@ -2323,10 +2276,10 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given character array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(char[] array) {
         return array == null ? 0 : array.length;
@@ -2334,10 +2287,10 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given double array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(double[] array) {
         return array == null ? 0 : array.length;
@@ -2345,10 +2298,10 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given float array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(float[] array) {
         return array == null ? 0 : array.length;
@@ -2356,10 +2309,10 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given integer array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(int[] array) {
         return array == null ? 0 : array.length;
@@ -2367,10 +2320,10 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given long array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(long[] array) {
         return array == null ? 0 : array.length;
@@ -2378,10 +2331,10 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given short array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static int length(short[] array) {
         return array == null ? 0 : array.length;
@@ -2389,11 +2342,11 @@ public class Arrays {
 
     /**
      * Determine the number of elements in the given object array. If
-     * <TT>array</TT> is null, 0 is returned.
+     * <code>array</code> is null, 0 is returned.
      *
      * @param <T> Array element data type.
      * @param array Array.
-     * @return Number of elements in <TT>array</TT>.
+     * @return Number of elements in <code>array</code>.
      */
     public static <T> int length(T[] array) {
         return array == null ? 0 : array.length;
@@ -2402,10 +2355,10 @@ public class Arrays {
 // Exported matrix length operations.
     /**
      * Determine the number of rows in the given Boolean matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(boolean[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2413,10 +2366,10 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given byte matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(byte[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2424,10 +2377,10 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given character matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(char[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2435,10 +2388,10 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given double matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(double[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2446,10 +2399,10 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given float matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(float[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2457,10 +2410,10 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given integer matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(int[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2468,10 +2421,10 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given long matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(long[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2479,10 +2432,10 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given short matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static int rowLength(short[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2490,11 +2443,11 @@ public class Arrays {
 
     /**
      * Determine the number of rows in the given object matrix. If
-     * <TT>matrix</TT> is null, 0 is returned.
+     * <code>matrix</code> is null, 0 is returned.
      *
      * @param <T> Matrix element data type.
      * @param matrix Matrix.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      */
     public static <T> int rowLength(T[][] matrix) {
         return matrix == null ? 0 : matrix.length;
@@ -2502,14 +2455,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given Boolean
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(boolean[][] matrix,
             int i) {
@@ -2518,14 +2471,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given byte
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(byte[][] matrix,
             int i) {
@@ -2534,14 +2487,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given character
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(char[][] matrix,
             int i) {
@@ -2550,14 +2503,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given double
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(double[][] matrix,
             int i) {
@@ -2566,14 +2519,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given float
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(float[][] matrix,
             int i) {
@@ -2582,14 +2535,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given integer
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(int[][] matrix,
             int i) {
@@ -2598,14 +2551,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given long
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(long[][] matrix,
             int i) {
@@ -2614,14 +2567,14 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given short
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static int colLength(short[][] matrix,
             int i) {
@@ -2630,15 +2583,15 @@ public class Arrays {
 
     /**
      * Determine the number of columns in the given row of the given object
-     * matrix. If <TT>matrix</TT> is null or the given row is not allocated, 0
+     * matrix. If <code>matrix</code> is null or the given row is not allocated, 0
      * is returned.
      *
      * @param <T> Matrix element data type.
      * @param matrix Matrix.
      * @param i Row index.
-     * @return Number of rows in <TT>matrix</TT>.
+     * @return Number of rows in <code>matrix</code>.
      * @exception ArrayIndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>i</TT> is out of bounds.
+     * <code>i</code> is out of bounds.
      */
     public static <T> int colLength(T[][] matrix,
             int i) {

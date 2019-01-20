@@ -50,27 +50,27 @@ import java.util.NoSuchElementException;
  * <I>N</I>&minus;1 inclusive. The subset consists of integers chosen at random
  * without replacement from the original set; each member of the original set is
  * equally likely to be chosen. Class RandomSubset is an Iterator that visits
- * the elements of the original set in a random order; each <TT>next()</TT>
+ * the elements of the original set in a random order; each <code>next()</code>
  * method call returns another element of the subset.
  * <P>
- * Calling the <TT>remove(i)</TT> method one or more times removes the given
+ * Calling the <code>remove(i)</code> method one or more times removes the given
  * integers from the original set. Those integers will not be chosen for the
  * random subset.
  * <P>
  * Class RandomSubset is layered on top of a pseudorandom number generator
  * (PRNG), an instance of class {@linkplain edu.rit.util.Random Random}. Each
- * time the <TT>next()</TT> method is called, one random number is consumed from
+ * time the <code>next()</code> method is called, one random number is consumed from
  * the underlying PRNG.
  * <P>
  * Class RandomSubset has two different implementations with different storage
  * requirements. The implementation is specified with a constructor argument.
  * <UL>
- * <P>
+ *
  * <LI>
  * The <I>sparse</I> implementation requires less storage when the size of the
- * random subset (the number of <TT>next()</TT> method calls) is a small
+ * random subset (the number of <code>next()</code> method calls) is a small
  * fraction of the size of the original set (<I>N</I>).
- * <P>
+ *
  * <LI>
  * The <I>dense</I> implementation requires less storage when the size of the
  * random subset is a large fraction of the size of the original set.
@@ -232,7 +232,7 @@ public class RandomSubset
      * @param prng Underlying PRNG.
      * @param N Size of original set.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>prng</TT> is null.
+     * <code>prng</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>N</I> &lt; 0.
      */
@@ -243,8 +243,8 @@ public class RandomSubset
 
     /**
      * Construct a new random subset object for the original set consisting of
-     * the integers from 0 through <I>N</I>&minus;1 inclusive. If <TT>dense</TT>
-     * is false, the sparse implementation is used. If <TT>dense</TT> is true,
+     * the integers from 0 through <I>N</I>&minus;1 inclusive. If <code>dense</code>
+     * is false, the sparse implementation is used. If <code>dense</code> is true,
      * the dense implementation is used.
      *
      * @param prng Underlying PRNG.
@@ -252,7 +252,7 @@ public class RandomSubset
      * @param dense False to use the sparse implementation, true to use the
      * dense implementation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>prng</TT> is null.
+     * <code>prng</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>N</I> &lt; 0.
      */
@@ -310,14 +310,14 @@ public class RandomSubset
     /**
      * Remove the given integer from the original set.
      * <P>
-     * If <TT>i</TT> has already been removed from the original set, either by a
-     * <TT>remove(i)</TT> method call, or by a <TT>next()</TT> method call that
-     * returned <TT>i</TT>, then this method does nothing.
+     * If <code>i</code> has already been removed from the original set, either by a
+     * <code>remove(i)</code> method call, or by a <code>next()</code> method call that
+     * returned <code>i</code>, then this method does nothing.
      *
      * @param i Integer to remove.
      * @return This random subset object.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>i</TT> is not in the range 0 through <I>N</I>&minus;1 inclusive.
+     * <code>i</code> is not in the range 0 through <I>N</I>&minus;1 inclusive.
      */
     public RandomSubset remove(int i) {
         if (0 > i || i >= N) {
@@ -335,12 +335,12 @@ public class RandomSubset
      * Restart this random subset's iteration. The original set is reset to
      * contain all the integers from 0 through <I>N</I>&minus;1 inclusive. If
      * integers had been removed from the original set by calling the
-     * <TT>remove(i)</TT> method, those integers must be removed again by
-     * calling the <TT>remove(i)</TT> method again. The iteration is restarted,
-     * and calling the <TT>next()</TT> method will yield a different random
+     * <code>remove(i)</code> method, those integers must be removed again by
+     * calling the <code>remove(i)</code> method again. The iteration is restarted,
+     * and calling the <code>next()</code> method will yield a different random
      * subset.
      * <P>
-     * The <TT>restart()</TT> method lets you generate multiple random subsets
+     * The <code>restart()</code> method lets you generate multiple random subsets
      * from the same original set using the same RandomSubset object. This
      * avoids the multiple storage allocations that would take place when
      * creating multiple RandomSubset objects. This in turn can reduce the

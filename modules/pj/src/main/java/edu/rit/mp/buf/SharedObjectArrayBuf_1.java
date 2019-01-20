@@ -80,7 +80,7 @@ public class SharedObjectArrayBuf_1<T>
      *
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public T get(int i) {
@@ -90,12 +90,11 @@ public class SharedObjectArrayBuf_1<T>
     /**
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
-     * @param item Item to be stored at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @param item Item to be stored at index <code>i</code>.
      */
     public void put(int i,
             T item) {

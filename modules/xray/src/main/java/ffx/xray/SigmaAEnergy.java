@@ -613,7 +613,6 @@ public class SigmaAEnergy implements Potential {
      * @param x        an array of double.
      * @param g        an array of double.
      * @param gradient a boolean.
-     * @param gradient a boolean.
      * @param print    a boolean.
      * @return a double.
      */

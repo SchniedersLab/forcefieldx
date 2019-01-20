@@ -64,12 +64,12 @@ import edu.rit.util.Range;
  * When a hybrid team is constructed, the processes in the communicator send
  * messages amongst themselves to make every process aware of the number of
  * worker threads in each process. These messages use a tag of
- * <TT>Integer.MIN_VALUE</TT>. If an I/O error occurs during this message
+ * <code>Integer.MIN_VALUE</code>. If an I/O error occurs during this message
  * passing, the constructor throws an IOException.
  * <P>
  * To execute a worker region, create a HybridTeam object; create an instance of
  * a concrete subclass of class {@linkplain WorkerRegion}; and pass this
- * instance to the hybrid team's <TT>execute()</TT> method. For further
+ * instance to the hybrid team's <code>execute()</code> method. For further
  * information, see class {@linkplain WorkerRegion}.
  *
  * @author Alan Kaminsky
@@ -86,11 +86,11 @@ public class HybridTeam
     /**
      * Construct a new hybrid team with the default number of threads per
      * process and using the world communicator for message passing. If the
-     * <TT>"pj.nt"</TT> Java property is specified, that property gives the
+     * <code>"pj.nt"</code> Java property is specified, that property gives the
      * default number of threads per process, which must be an integer greater
-     * than or equal to 1. If the <TT>"pj.nt"</TT> Java property is not
+     * than or equal to 1. If the <code>"pj.nt"</code> Java property is not
      * specified, the default number of threads in each process is the value
-     * returned by the <TT>Runtime.availableProcessors()</TT> method. You can
+     * returned by the <code>Runtime.availableProcessors()</code> method. You can
      * specify the default number of threads per process on the Java command
      * line like this:
      * <PRE>
@@ -98,7 +98,7 @@ public class HybridTeam
      * </PRE>
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     * <code>"pj.nt"</code> property value is not an integer greater than or equal
      * to 1.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
@@ -126,11 +126,11 @@ public class HybridTeam
     /**
      * Construct a new hybrid team with the default number of threads per
      * process and using the given communicator for message passing. If the
-     * <TT>"pj.nt"</TT> Java property is specified, that property gives the
+     * <code>"pj.nt"</code> Java property is specified, that property gives the
      * default number of threads per process, which must be an integer greater
-     * than or equal to 1. If the <TT>"pj.nt"</TT> Java property is not
+     * than or equal to 1. If the <code>"pj.nt"</code> Java property is not
      * specified, the default number of threads in each process is the value
-     * returned by the <TT>Runtime.availableProcessors()</TT> method. You can
+     * returned by the <code>Runtime.availableProcessors()</code> method. You can
      * specify the default number of threads per process on the Java command
      * line like this:
      * <PRE>
@@ -139,10 +139,10 @@ public class HybridTeam
      *
      * @param comm Communicator to use for message passing.
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     * <code>"pj.nt"</code> property value is not an integer greater than or equal
      * to 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>comm</TT> is null.
+     * <code>comm</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -160,7 +160,7 @@ public class HybridTeam
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>K</I> is less than 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>comm</TT> is null.
+     * <code>comm</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -212,11 +212,11 @@ public class HybridTeam
 // Exported operations.
     /**
      * Determine the default number of threads per process for a hybrid team. If
-     * the <TT>"pj.nt"</TT> Java property is specified, that property gives the
+     * the <code>"pj.nt"</code> Java property is specified, that property gives the
      * default number of threads per process, which must be an integer greater
-     * than or equal to 1. If the <TT>"pj.nt"</TT> Java property is not
+     * than or equal to 1. If the <code>"pj.nt"</code> Java property is not
      * specified, the default number of threads in each process is the value
-     * returned by the <TT>Runtime.availableProcessors()</TT> method. You can
+     * returned by the <code>Runtime.availableProcessors()</code> method. You can
      * specify the default number of threads per process on the Java command
      * line like this:
      * <PRE>
@@ -225,7 +225,7 @@ public class HybridTeam
      *
      * @return Default number of threads per process for a hybrid team.
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     * <code>"pj.nt"</code> property value is not an integer greater than or equal
      * to 1.
      */
     public static int getDefaultThreadCount() {
@@ -243,8 +243,8 @@ public class HybridTeam
      * the given index.
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>w</TT> is not in the range 0 ..
-     * <TT>getTotalThreadCount()</TT>&minus;1.
+     * <code>w</code> is not in the range 0 ..
+     * <code>getTotalThreadCount()</code>&minus;1.
      */
     public int workerRank(int w) {
         // Verify preconditions.

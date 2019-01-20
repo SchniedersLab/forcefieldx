@@ -592,11 +592,6 @@ public class RendererCache {
      * @param canvas  a {@link javax.media.j3d.Canvas3D} object.
      * @param node    a {@link javax.media.j3d.Node} object.
      * @param point3d a {@link javax.vecmath.Point3d} object.
-     * @param point3d a {@link javax.vecmath.Point3d} object.
-     * @param point3d a {@link javax.vecmath.Point3d} object.
-     * @param point3d a {@link javax.vecmath.Point3d} object.
-     * @param point3d a {@link javax.vecmath.Point3d} object.
-     * @param point3d a {@link javax.vecmath.Point3d} object.
      * @param point   a {@link javax.vecmath.Point2d} object.
      */
     public static void getScreenCoordinate(Canvas3D canvas, Node node,

@@ -64,14 +64,14 @@ import java.util.Scanner;
  * To receive an HTTP request message:
  * <OL TYPE=1>
  * <LI>
- * Call the <TT>isValid()</TT> method.
+ * Call the <code>isValid()</code> method.
  * <BR>&nbsp;
  * <LI>
- * If <TT>isValid()</TT> returns false, send an HTTP response message indicating
+ * If <code>isValid()</code> returns false, send an HTTP response message indicating
  * the error.
  * <BR>&nbsp;
  * <LI>
- * If <TT>isValid()</TT> returns true, call the other methods to examine the
+ * If <code>isValid()</code> returns true, call the other methods to examine the
  * contents of the HTTP request message, and send an appropriate HTTP response
  * message.
  * </OL>
@@ -83,27 +83,27 @@ public class HttpRequest {
 
 // Exported constants.
     /**
-     * The GET method string, <TT>"GET"</TT>.
+     * The GET method string, <code>"GET"</code>.
      */
     public static final String GET_METHOD = "GET";
 
     /**
-     * The HEAD method string, <TT>"HEAD"</TT>.
+     * The HEAD method string, <code>"HEAD"</code>.
      */
     public static final String HEAD_METHOD = "HEAD";
 
     /**
-     * The POST method string, <TT>"POST"</TT>.
+     * The POST method string, <code>"POST"</code>.
      */
     public static final String POST_METHOD = "POST";
 
     /**
-     * The HTTP/1.0 version string <TT>"HTTP/1.0"</TT>.
+     * The HTTP/1.0 version string <code>"HTTP/1.0"</code>.
      */
     public static final String HTTP_1_0_VERSION = "HTTP/1.0";
 
     /**
-     * The HTTP/1.1 version string, <TT>"HTTP/1.1"</TT>.
+     * The HTTP/1.1 version string, <code>"HTTP/1.1"</code>.
      */
     public static final String HTTP_1_1_VERSION = "HTTP/1.1";
 
@@ -128,7 +128,7 @@ public class HttpRequest {
      *
      * @param theSocket Socket.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theSocket</TT> is null.
+     * <code>theSocket</code> is null.
      */
     public HttpRequest(Socket theSocket) {
         if (theSocket == null) {
@@ -155,7 +155,7 @@ public class HttpRequest {
     /**
      * Obtain this HTTP request's method.
      *
-     * @return Method string, e.g. <TT>"GET"</TT>, <TT>"POST"</TT>.
+     * @return Method string, e.g. <code>"GET"</code>, <code>"POST"</code>.
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */
@@ -183,8 +183,8 @@ public class HttpRequest {
     /**
      * Obtain this HTTP request's version.
      *
-     * @return HTTP version string, e.g. <TT>"HTTP/1.0"</TT>,
-     * <TT>"HTTP/1.1"</TT>.
+     * @return HTTP version string, e.g. <code>"HTTP/1.0"</code>,
+     * <code>"HTTP/1.1"</code>.
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */
@@ -200,7 +200,7 @@ public class HttpRequest {
      *
      * @param theHeaderName Header name.
      * @return Header value, or null if there is no header for
-     * <TT>theHeaderName</TT>.
+     * <code>theHeaderName</code>.
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * HTTP request is invalid.
      */

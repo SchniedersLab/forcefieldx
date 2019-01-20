@@ -45,7 +45,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 /**
- * Class Range provides a range of type <TT>int</TT>. A range object has the
+ * Class Range provides a range of type <code>int</code>. A range object has the
  * following attributes: <B>lower bound</B> <I>L</I>, <B>upper bound</B>
  * <I>U</I>, <B>stride</B> <I>S</I>, and <B>length</B> <I>N</I>. A range object
  * represents the following set of integers: {<I>L</I>, <I>L</I>+<I>S</I>,
@@ -64,11 +64,11 @@ import java.io.ObjectOutput;
  *     int ub = range.ub();
  *     for (int i = lb; i &lt;= ub; ++ i)
  *         . . .
- * </PRE> Note that the range is from <TT>lb()</TT> to <TT>ub()</TT> inclusive,
- * so the appropriate test in the for loop is <TT>i &lt;= ub</TT>. Also note
- * that it usually reduces the running time to call <TT>ub()</TT> once, store
+ * </PRE> Note that the range is from <code>lb()</code> to <code>ub()</code> inclusive,
+ * so the appropriate test in the for loop is <code>i &lt;= ub</code>. Also note
+ * that it usually reduces the running time to call <code>ub()</code> once, store
  * the result in a local variable, and use the local variable in the for loop
- * test, than to call <TT>ub()</TT> directly in the for loop test.
+ * test, than to call <code>ub()</code> directly in the for loop test.
  * <P>
  * You can use a range object with a stride greater than 1 to control a for loop
  * like this:
@@ -208,11 +208,11 @@ public class Range
 
     /**
      * Determine if this range contains the given value. This range contains the
-     * given value if <TT>this.lb()</TT> &lt;= <TT>val</TT> &lt;=
-     * <TT>this.ub()</TT>. (The stride does not affect the outcome.)
+     * given value if <code>this.lb()</code> &lt;= <code>val</code> &lt;=
+     * <code>this.ub()</code>. (The stride does not affect the outcome.)
      *
      * @param value Value to test.
-     * @return True if this range contains the given <TT>value</TT>, false
+     * @return True if this range contains the given <code>value</code>, false
      * otherwise.
      */
     public boolean contains(int value) {
@@ -221,12 +221,12 @@ public class Range
 
     /**
      * Determine if this range contains the given range. This range contains the
-     * given range if <TT>this.lb()</TT> &lt;= <TT>range.lb()</TT> and
-     * <TT>range.ub()</TT> &lt;= <TT>this.ub()</TT>. (The strides do not affect
+     * given range if <code>this.lb()</code> &lt;= <code>range.lb()</code> and
+     * <code>range.ub()</code> &lt;= <code>this.ub()</code>. (The strides do not affect
      * the outcome.)
      *
      * @param range Range to test.
-     * @return True if this range contains the given <TT>range</TT>, false
+     * @return True if this range contains the given <code>range</code>, false
      * otherwise.
      */
     public boolean contains(Range range) {
@@ -235,21 +235,21 @@ public class Range
 
     /**
      * Partition this range and return one subrange. This range is split up into
-     * subranges; the <TT>size</TT> argument specifies the number of subranges.
+     * subranges; the <code>size</code> argument specifies the number of subranges.
      * This range is divided as equally as possible among the subranges; the
      * lengths of the subranges differ by at most 1. The subranges are numbered
-     * 0, 1, . . . <TT>size-1</TT>. This method returns the subrange whose
-     * number is <TT>rank</TT>.
+     * 0, 1, . . . <code>size-1</code>. This method returns the subrange whose
+     * number is <code>rank</code>.
      * <P>
-     * Note that if <TT>size</TT> is greater than the length of this range, the
+     * Note that if <code>size</code> is greater than the length of this range, the
      * returned subrange may be empty.
      *
-     * @param size Number of subranges, <TT>size</TT> &gt;= 1.
-     * @param rank Rank of the desired subrange, 0 &lt;= <TT>rank</TT> &lt;
-     * <TT>size</TT>.
+     * @param size Number of subranges, <code>size</code> &gt;= 1.
+     * @param rank Rank of the desired subrange, 0 &lt;= <code>rank</code> &lt;
+     * <code>size</code>.
      * @return Subrange.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>size</TT> or <TT>rank</TT> is out of bounds.
+     * <code>size</code> or <code>rank</code> is out of bounds.
      */
     public Range subrange(int size,
             int rank) {
@@ -279,19 +279,19 @@ public class Range
 
     /**
      * Partition this range and return all the subranges. This range is split up
-     * into subranges; the <TT>size</TT> argument specifies the number of
+     * into subranges; the <code>size</code> argument specifies the number of
      * subranges. This range is divided as equally as possible among the
      * subranges; the lengths of the subranges differ by at most 1. The
      * subranges are returned in an array with indexes 0, 1, . . .
-     * <TT>size-1</TT>.
+     * <code>size-1</code>.
      * <P>
-     * Note that if <TT>size</TT> is greater than the length of this range, some
+     * Note that if <code>size</code> is greater than the length of this range, some
      * of the returned subranges may be empty.
      *
      * @param size Number of subranges, size &gt;= 1.
      * @return Array of subranges.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>size</TT> is out of bounds.
+     * <code>size</code> is out of bounds.
      */
     public Range[] subranges(int size) {
         // Verify preconditions.
@@ -333,17 +333,17 @@ public class Range
     /**
      * Slice off a chunk of this range and return the chunk. Considering this
      * range as a set of integers from the lower bound to the upper bound, the
-     * first <TT>N1</TT> integers are sliced off and discarded, then the next
-     * <TT>N2</TT> integers are sliced off to form a chunk, and the chunk is
-     * returned. If after removing the first <TT>N1</TT> integers there are
-     * fewer than <TT>N2</TT> integers left, a chunk consisting of all the
+     * first <code>N1</code> integers are sliced off and discarded, then the next
+     * <code>N2</code> integers are sliced off to form a chunk, and the chunk is
+     * returned. If after removing the first <code>N1</code> integers there are
+     * fewer than <code>N2</code> integers left, a chunk consisting of all the
      * remaining integers is returned; this may be an empty chunk.
      *
      * @param N1 Number of integers to discard (must be &gt;= 0).
      * @param N2 Number of integers to include in the chunk (must be &gt;= 0).
      * @return Chunk.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>N1</TT> or <TT>N2</TT> is out of bounds.
+     * <code>N1</code> or <code>N2</code> is out of bounds.
      */
     public Range chunk(int N1,
             int N2) {
@@ -387,9 +387,9 @@ public class Range
 
     /**
      * Returns a string version of this range. If the stride is 1, the format is
-     * <TT>"<I>L</I>..<I>U</I>"</TT>, where <I>L</I> is the lower bound and
+     * <code>"<I>L</I>..<I>U</I>"</code>, where <I>L</I> is the lower bound and
      * <I>U</I> is the upper bound. If the stride is greater than 1, the format
-     * is <TT>"<I>L</I>..<I>U</I>;<I>S</I>"</TT>, where <I>L</I> is the lower
+     * is <code>"<I>L</I>..<I>U</I>;<I>S</I>"</code>, where <I>L</I> is the lower
      * bound, <I>U</I> is the upper bound, and <I>S</I> is the stride.
      *
      * @return a {@link java.lang.String} object.

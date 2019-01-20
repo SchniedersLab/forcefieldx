@@ -47,10 +47,10 @@ import java.io.OutputStream;
 /**
  * Class LineBufferedOutputStream provides a line buffer layered on top of an
  * underlying output stream. All writes to the line buffered output stream are
- * accumulated in an internal buffer. Calling <TT>flush()</TT> on the line
+ * accumulated in an internal buffer. Calling <code>flush()</code> on the line
  * buffered output stream does nothing. The only times the internal buffer is
  * flushed to the underlying output stream are when a newline byte
- * (<TT>'\n'</TT>) is written and when the line buffered output stream is
+ * (<code>'\n'</code>) is written and when the line buffered output stream is
  * closed.
  *
  * @author Alan Kaminsky
@@ -75,7 +75,7 @@ public class LineBufferedOutputStream
 // Exported operations.
     /**
      * Write the given byte to this line buffered output stream. Only the least
-     * significant 8 bits of <TT>b</TT> are written.
+     * significant 8 bits of <code>b</code> are written.
      *
      * @param b Byte.
      * @exception IOException Thrown if an I/O error occurred.
@@ -94,7 +94,7 @@ public class LineBufferedOutputStream
      *
      * @param buf Byte array.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
+     * <code>buf</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -109,10 +109,10 @@ public class LineBufferedOutputStream
      * Write a portion of the given byte array to this line buffered output
      * stream.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
+     * <code>buf</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>off</TT> &lt; 0, <TT>len</TT>
-     * &lt; 0, or <TT>off+len</TT> &gt; <TT>buf.length</TT>.
+     * <code>off</code> &lt; 0, <code>len</code>
+     * &lt; 0, or <code>off+len</code> &gt; <code>buf.length</code>.
      * @exception IOException Thrown if an I/O error occurred.
      */
     public void write(byte[] buf,
@@ -139,7 +139,7 @@ public class LineBufferedOutputStream
     }
 
     /**
-     * Flush this line buffered output stream. The <TT>flush()</TT> method does
+     * Flush this line buffered output stream. The <code>flush()</code> method does
      * nothing.
      *
      * @exception IOException Thrown if an I/O error occurred.
@@ -185,8 +185,8 @@ public class LineBufferedOutputStream
      * @param off Index of first byte to look at.
      * @param len Number of bytes to look at.
      *
-     * @return Index of first newline at or after index <TT>off</TT>, or
-     * <TT>off+len</TT> if there is no newline.
+     * @return Index of first newline at or after index <code>off</code>, or
+     * <code>off+len</code> if there is no newline.
      */
     private int findNewlineIndex(byte[] buf,
             int off,

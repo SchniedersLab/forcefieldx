@@ -45,28 +45,28 @@ package edu.rit.util;
  * <P>
  * When a timer is created, it is associated with a timer task. When the timer
  * becomes triggered -- that is, when the time comes to do the timed actions --
- * the timer calls the timer task's <TT>action()</TT> method. The timer passes a
- * reference to itself as an argument to the timer task's <TT>action()</TT>
+ * the timer calls the timer task's <code>action()</code> method. The timer passes a
+ * reference to itself as an argument to the timer task's <code>action()</code>
  * method.
  * <P>
- * The first thing the timer task must do in the <TT>action()</TT> method is
- * check whether the timer is still triggered. If it is, the <TT>action()</TT>
+ * The first thing the timer task must do in the <code>action()</code> method is
+ * check whether the timer is still triggered. If it is, the <code>action()</code>
  * method can perform its processing. But if the timer is no longer triggered,
- * the <TT>action()</TT> method must return without doing anything.
+ * the <code>action()</code> method must return without doing anything.
  * <P>
  * This is to deal with a race condition that can arise when multiple threads
  * are involved. Suppose the timer thread triggers the timer, the timer calls
- * the timer task's <TT>action()</TT> method, and the <TT>action()</TT> method
+ * the timer task's <code>action()</code> method, and the <code>action()</code> method
  * synchronizes on the object that will perform the action. Suppose the
- * <TT>action()</TT> method blocks because some other thread is already
+ * <code>action()</code> method blocks because some other thread is already
  * executing a synchronized method on this object. Suppose the other thread
  * cancels the timer. Here is the race condition: the timer was canceled just as
  * it was triggered but before it could do the timed actions. When the other
- * thread returns, the <TT>action()</TT> method unblocks and proceeds to
- * execute. The <TT>action()</TT> method must check whether the timer got
- * canceled between the time when the <TT>action()</TT> method was called and
- * the time when the <TT>action()</TT> method started executing. If the
- * <TT>action()</TT> method doesn't do this check, it may erroneously perform
+ * thread returns, the <code>action()</code> method unblocks and proceeds to
+ * execute. The <code>action()</code> method must check whether the timer got
+ * canceled between the time when the <code>action()</code> method was called and
+ * the time when the <code>action()</code> method started executing. If the
+ * <code>action()</code> method doesn't do this check, it may erroneously perform
  * the timeout actions despite the timer cancellation.
  * <P>
  * Classes {@linkplain Timer}, TimerTask, and {@linkplain TimerThread} provide
@@ -84,10 +84,10 @@ public interface TimerTask {
      * Perform this timer task's timed actions. The {@linkplain Timer} that was
      * triggered is passed in as an argument.
      * <P>
-     * The <TT>action()</TT> method must check whether the timer is still
-     * triggered. If it is, the <TT>action()</TT> method can perform its
+     * The <code>action()</code> method must check whether the timer is still
+     * triggered. If it is, the <code>action()</code> method can perform its
      * processing. But if the timer is no longer triggered, the
-     * <TT>action()</TT> method must return without doing anything.
+     * <code>action()</code> method must return without doing anything.
      *
      * @param theTimer Timer that was triggered.
      */

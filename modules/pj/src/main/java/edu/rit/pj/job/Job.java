@@ -57,42 +57,42 @@ import edu.rit.io.Stdio;
  * Class Job encapsulates a job and its attributes. A job is typically created
  * by a {@linkplain JobGenerator}. The job's attributes are:
  * <UL>
- * <P>
+ *
  * <LI>
  * Job number. A JobGenerator assigns a unique job number to each job it
  * creates.
- * <P>
+ *
  * <LI>
  * Description. An arbitrary string. The {@linkplain Runner} program prints the
  * job number and description whenever a job is started.
- * <P>
+ *
  * <LI>
  * Fully-qualified name of the main program class. To run a job, the main
- * program class's <TT>public static void main(String[])</TT> method is called.
- * <P>
+ * program class's <code>public static void main(String[])</code> method is called.
+ *
  * <LI>
- * List of argument strings for the <TT>main()</TT> method.
- * <P>
+ * List of argument strings for the <code>main()</code> method.
+ *
  * <LI>
  * Standard input redirection. The standard input may be redirected from a file.
  * The job redirects the per-thread standard input stream in class {@linkplain
- * edu.rit.io.Stdio Stdio}. For redirection to work, the <TT>main()</TT> method
- * must use <TT>Stdio.in()</TT> for the standard input.
- * <P>
+ * edu.rit.io.Stdio Stdio}. For redirection to work, the <code>main()</code> method
+ * must use <code>Stdio.in()</code> for the standard input.
+ *
  * <LI>
  * Standard output redirection. The standard output may be redirected to a file,
  * either overwriting or appending to the file. The job redirects the per-thread
  * standard output stream in class {@linkplain edu.rit.io.Stdio Stdio}. For
- * redirection to work, the <TT>main()</TT> method must use <TT>Stdio.out()</TT>
+ * redirection to work, the <code>main()</code> method must use <code>Stdio.out()</code>
  * for the standard output.
- * <P>
+ *
  * <LI>
  * Standard error redirection. The standard error may be redirected to a file,
  * either overwriting or appending to the file. The standard error may also be
  * redirected to the same place as the standard output. The job redirects the
  * per-thread standard error stream in class {@linkplain edu.rit.io.Stdio
- * Stdio}. For redirection to work, the <TT>main()</TT> method must use
- * <TT>Stdio.err()</TT> for the standard error.
+ * Stdio}. For redirection to work, the <code>main()</code> method must use
+ * <code>Stdio.err()</code> for the standard error.
  * </UL>
  *
  * @author Alan Kaminsky
@@ -124,14 +124,14 @@ public class Job
 
     /**
      * Construct a new job. The job has the given job number and description.
-     * The job will run the <TT>public static void main(String[])</TT> method in
+     * The job will run the <code>public static void main(String[])</code> method in
      * the given class.
      *
      * @param theJobNumber Job number.
      * @param theDescription Job description.
      * @param theMainClassName Fully qualified name of main class.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMainClassName</TT> is null.
+     * <code>theMainClassName</code> is null.
      */
     public Job(int theJobNumber,
             String theDescription,
@@ -168,7 +168,7 @@ public class Job
      *
      * @param arg Argument string.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>arg</TT> is null.
+     * <code>arg</code> is null.
      */
     public void addArgument(String arg) {
         if (arg == null) {
@@ -183,7 +183,7 @@ public class Job
      *
      * @param file File.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>file</TT> is null.
+     * <code>file</code> is null.
      */
     public void stdinFromFile(File file) {
         if (file == null) {
@@ -199,7 +199,7 @@ public class Job
      *
      * @param file File.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>file</TT> is null.
+     * <code>file</code> is null.
      */
     public void stdoutToFile(File file) {
         if (file == null) {
@@ -215,7 +215,7 @@ public class Job
      *
      * @param file File.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>file</TT> is null.
+     * <code>file</code> is null.
      */
     public void stdoutAppendToFile(File file) {
         if (file == null) {
@@ -231,7 +231,7 @@ public class Job
      *
      * @param file File.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>file</TT> is null.
+     * <code>file</code> is null.
      */
     public void stderrToFile(File file) {
         if (file == null) {
@@ -247,7 +247,7 @@ public class Job
      *
      * @param file File.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>file</TT> is null.
+     * <code>file</code> is null.
      */
     public void stderrAppendToFile(File file) {
         if (file == null) {
@@ -269,21 +269,21 @@ public class Job
     /**
      * Run this job.
      * <OL TYPE=1>
-     * <P>
+     *
      * <LI>
      * The per-thread standard input, standard output, and standard error in
      * class {@linkplain edu.rit.io.Stdio Stdio} are redirected as necessary.
-     * <P>
+     *
      * <LI>
      * This job's main class is found, using the calling thread's context class
      * loader.
-     * <P>
+     *
      * <LI>
-     * The main class's <TT>public static void main(String[])</TT> method is
+     * The main class's <code>public static void main(String[])</code> method is
      * found.
-     * <P>
+     *
      * <LI>
-     * The <TT>main()</TT> method is called, passing in this job's arguments.
+     * The <code>main()</code> method is called, passing in this job's arguments.
      * </OL>
      * <P>
      * If an I/O error occurs during Step 1, a RuntimeException wrapping an

@@ -65,9 +65,9 @@ import ffx.potential.bonded.Atom;
  * rCellB, rCellC) multiplied by (nEdgeA, nEdgeB, nEdgeC), respectively, must be
  * greater than the cutoff distance <code>Rcut</code> plus a buffer distance
  * <code>delta</code>:
- * <center><code>rCellA * nEdgeA .GE. (Rcut + delta)</code></center>
- * <center><code>rCellB * nEdgeB .GE. (Rcut + delta)</code></center>
- * <center><code>rCellC * nEdgeC .GE. (Rcut + delta)</code></center>
+ * <br><code>rCellA * nEdgeA .GE. (Rcut + delta)</code>
+ * <br><code>rCellB * nEdgeB .GE. (Rcut + delta)</code>
+ * <br><code>rCellC * nEdgeC .GE. (Rcut + delta)</code>
  * All neighbors of an atom are in a block of
  * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells.
  * </li>

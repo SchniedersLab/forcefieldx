@@ -102,7 +102,7 @@ package edu.rit.pj;
  * <p>
  * You can specify a PJ property on the Java command line like this:
  * <p>
- * <TT>&nbsp;&nbsp;&nbsp;&nbsp;java -Dpj.nt=4 . . .</TT>
+ * <code>&nbsp;&nbsp;&nbsp;&nbsp;java -Dpj.nt=4 . . .</code>
  *
  * @author Alan Kaminsky
  * @version 21-May-2008
@@ -118,12 +118,12 @@ public class PJProperties {
     /**
      * Determine the number of backend nodes in a parallel program.
      * <p>
-     * If the <TT>"pj.nn"</TT> Java system property is specified, it must be an
+     * If the <code>"pj.nn"</code> Java system property is specified, it must be an
      * integer greater than or equal to 1.
      *
      * @return Number of backend nodes for a parallel program.
      * @throws IllegalArgumentException (unchecked exception) Thrown if the
-     *                                  <TT>"pj.nn"</TT> property value is not an integer greater than or equal
+     *                                  <code>"pj.nn"</code> property value is not an integer greater than or equal
      *                                  to 1.
      */
     public static int getPjNn() {
@@ -157,16 +157,16 @@ public class PJProperties {
 
     /**
      * Determine the number of processes in a parallel program. This is the
-     * number of backend processes set up when the <TT>Comm.init()</TT> method
+     * number of backend processes set up when the <code>Comm.init()</code> method
      * is executed (see class {@linkplain Comm}). This is also the size of the
      * world communicator.
      * <p>
-     * If the <TT>"pj.np"</TT> Java system property is specified, it must be an
+     * If the <code>"pj.np"</code> Java system property is specified, it must be an
      * integer greater than or equal to 1.
      *
      * @return Number of processes for a parallel program.
      * @throws IllegalArgumentException (unchecked exception) Thrown if the
-     *                                  <TT>"pj.np"</TT> property value is not an integer greater than or equal
+     *                                  <code>"pj.np"</code> property value is not an integer greater than or equal
      *                                  to 1.
      */
     public static int getPjNp() {
@@ -203,16 +203,16 @@ public class PJProperties {
      * the number of threads a {@linkplain ParallelTeam} will have if the number
      * of threads is not specified as a constructor argument.
      * <p>
-     * If the <TT>"pj.nt"</TT> Java system property is specified, it must be an
+     * If the <code>"pj.nt"</code> Java system property is specified, it must be an
      * integer greater than or equal to 1.
      * <p>
-     * If the <TT>"pj.nt"</TT> Java system property is not specified, this
+     * If the <code>"pj.nt"</code> Java system property is not specified, this
      * method returns 0 to signify that all available CPUs should be used.
      *
      * @return Number of CPUs per process for a parallel program, or 0 if not
      * specified.
      * @throws IllegalArgumentException (unchecked exception) Thrown if the
-     *                                  <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     *                                  <code>"pj.nt"</code> property value is not an integer greater than or equal
      *                                  to 1.
      */
     public static int getPjNt() {
@@ -239,22 +239,22 @@ public class PJProperties {
      * runtime schedule. For further information, see class {@linkplain
      * IntegerSchedule} and class {@linkplain LongSchedule}.
      * <p>
-     * If the <TT>"pj.schedule"</TT> Java property is specified, that value
+     * If the <code>"pj.schedule"</code> Java property is specified, that value
      * gives the type of schedule, which must be one of the following:
      * <UL>
-     * <LI><TT>"fixed"</TT> -- Fixed schedule.
-     * <LI><TT>"dynamic"</TT> -- Dynamic schedule with a chunk size of 1.
-     * <LI><TT>"dynamic(&lt;n&gt;)"</TT> -- Dynamic schedule with a chunk size
-     * of <TT>&lt;n&gt;</TT>, an integer &gt;= 1.
-     * <LI><TT>"guided"</TT> -- Self-guided schedule with a minimum chunk size
+     * <LI><code>"fixed"</code> -- Fixed schedule.
+     * <LI><code>"dynamic"</code> -- Dynamic schedule with a chunk size of 1.
+     * <LI><code>"dynamic(&lt;n&gt;)"</code> -- Dynamic schedule with a chunk size
+     * of <code>&lt;n&gt;</code>, an integer &gt;= 1.
+     * <LI><code>"guided"</code> -- Self-guided schedule with a minimum chunk size
      * of 1.
-     * <LI><TT>"guided(&lt;n&gt;)"</TT> -- Self-guided schedule with a minimum
-     * chunk size of <TT>&lt;n&gt;</TT>, an integer &gt;= 1.
-     * <LI><TT>"<I>classname</I>"</TT> -- Schedule that is an instance of the
+     * <LI><code>"guided(&lt;n&gt;)"</code> -- Self-guided schedule with a minimum
+     * chunk size of <code>&lt;n&gt;</code>, an integer &gt;= 1.
+     * <LI><code>"<I>classname</I>"</code> -- Schedule that is an instance of the
      * given class. <I>classname</I> is the fully-qualified class name of the
      * schedule class. The instance is constructed using the subclass's
      * no-argument constructor.
-     * <LI><TT>"<I>classname</I>(<I>arg</I>,<I>arg</I>,...)"</TT> -- Schedule
+     * <LI><code>"<I>classname</I>(<I>arg</I>,<I>arg</I>,...)"</code> -- Schedule
      * that is an instance of the given class. <I>classname</I> is the
      * fully-qualified class name of the schedule class. The arguments between
      * the parentheses are split into separate strings separated by commas.
@@ -264,12 +264,12 @@ public class PJProperties {
      * the parentheses.
      * </UL>
      * <p>
-     * If the <TT>"pj.schedule"</TT> Java property is not specified, the default
+     * If the <code>"pj.schedule"</code> Java property is not specified, the default
      * schedule for a runtime schedule is used. Normally this is a fixed
      * schedule, but a program can specify a different default.
      *
      * @return Schedule for a parallel for loop (one of the above strings), or
-     * null if the <TT>"pj.schedule"</TT> Java property is not specified.
+     * null if the <code>"pj.schedule"</code> Java property is not specified.
      */
     public static String getPjSchedule() {
         return System.getProperty("pj.schedule");
@@ -278,16 +278,16 @@ public class PJProperties {
     /**
      * Determine the host name of the Job Scheduler Daemon to use when running a
      * cluster parallel program. The program contacts the Job Scheduler Daemon
-     * when the <TT>Comm.init()</TT> method is executed (see class {@linkplain
+     * when the <code>Comm.init()</code> method is executed (see class {@linkplain
      * Comm}). For further information, see package {@linkplain
      * edu.rit.pj.cluster edu.rit.pj.cluster} and class {@linkplain
      * edu.rit.pj.cluster.JobScheduler}.
      * <p>
-     * If the <TT>"pj.host"</TT> Java system property is specified, it gives the
+     * If the <code>"pj.host"</code> Java system property is specified, it gives the
      * Job Scheduler Daemon's host name (or IP address).
      * <p>
-     * If the <TT>"pj.host"</TT> Java system property is not specified, a host
-     * name of <TT>"localhost"</TT> is returned.
+     * If the <code>"pj.host"</code> Java system property is not specified, a host
+     * name of <code>"localhost"</code> is returned.
      *
      * @return Job Scheduler Daemon host name.
      */
@@ -298,20 +298,20 @@ public class PJProperties {
     /**
      * Determine the port number of the Job Scheduler Daemon to use when running
      * a cluster parallel program. The program contacts the Job Scheduler Daemon
-     * when the <TT>Comm.init()</TT> method is executed (see class {@linkplain
+     * when the <code>Comm.init()</code> method is executed (see class {@linkplain
      * Comm}). For further information, see package {@linkplain
      * edu.rit.pj.cluster edu.rit.pj.cluster} and class {@linkplain
      * edu.rit.pj.cluster.JobScheduler}.
      * <p>
-     * If the <TT>"pj.port"</TT> Java system property is specified, it gives the
+     * If the <code>"pj.port"</code> Java system property is specified, it gives the
      * Job Scheduler Daemon's port number.
      * <p>
-     * If the <TT>"pj.port"</TT> Java system property is not specified, the
+     * If the <code>"pj.port"</code> Java system property is not specified, the
      * well-known Parallel Java port number (20617) is returned.
      *
      * @return Job Scheduler Daemon port number.
      * @throws IllegalArgumentException (unchecked exception) Thrown if the
-     *                                  <TT>"pj.port"</TT> property value is not an integer.
+     *                                  <code>"pj.port"</code> property value is not an integer.
      */
     public static int getPjPort() {
         try {
@@ -337,16 +337,16 @@ public class PJProperties {
      * Scheduler Daemon present), then the job time setting is ignored and the
      * program will not time out.
      * <p>
-     * If the <TT>"pj.jobtime"</TT> Java system property is specified, it must
+     * If the <code>"pj.jobtime"</code> Java system property is specified, it must
      * be an integer greater than or equal to 1, and that gives the the maximum
      * job timeout in seconds.
      * <p>
-     * If the <TT>"pj.jobtime"</TT> Java system property is not specified, a
+     * If the <code>"pj.jobtime"</code> Java system property is not specified, a
      * value of 0 is returned to signify that there is no job timeout.
      *
      * @return Job timeout (seconds), or 0 if no job timeout.
      * @throws IllegalArgumentException (unchecked exception) Thrown if the
-     *                                  <TT>"pj.jobtime"</TT> property value is not an integer greater than or
+     *                                  <code>"pj.jobtime"</code> property value is not an integer greater than or
      *                                  equal to 1.
      */
     public static int getPjJobTime() {
@@ -370,31 +370,31 @@ public class PJProperties {
      * Determine the JVM flags to include on the Java command line when running
      * a backend process in a cluster parallel program. When a job backend
      * process is started, the JVM flags are included on the command line
-     * immediately after the <TT>"java"</TT> command. These flags then control
+     * immediately after the <code>"java"</code> command. These flags then control
      * the job backend process's JVM. For further information, see package
      * {@linkplain edu.rit.pj.cluster edu.rit.pj.cluster}.
      * <p>
-     * If the <TT>"pj.jvmflags"</TT> Java system property is specified, it gives
+     * If the <code>"pj.jvmflags"</code> Java system property is specified, it gives
      * the JVM flags exactly as they are to appear on the Java command line. If
      * there are multiple flags separated by whitespace, the
-     * <TT>"pj.jvmflags"</TT> Java system property must be enclosed in quotation
+     * <code>"pj.jvmflags"</code> Java system property must be enclosed in quotation
      * marks.
      * <p>
-     * If the <TT>"pj.jvmflags"</TT> Java system property is not specified,
+     * If the <code>"pj.jvmflags"</code> Java system property is not specified,
      * there are no JVM flags, and an empty string is returned.
      * <p>
      * <B>Example.</B> To cause the job backend processes' JVMs to use an
      * initial heap size of 4 MB and a maximum heap size of 128 MB, specify the
-     * <TT>"pj.jvmflags"</TT> property as follows when running the program:
-     * <p>
-     * <TT>&nbsp;&nbsp;&nbsp;&nbsp;java -Dpj.jvmflags="-Xms4m -Xmx128m" . .
-     * .</TT>
+     * <code>"pj.jvmflags"</code> property as follows when running the program:
+     *
+     * <code>&nbsp;&nbsp;&nbsp;&nbsp;java -Dpj.jvmflags="-Xms4m -Xmx128m" . .
+     * .</code>
      * <p>
      * Note that quotation marks are needed around the property value because of
      * the embedded whitespace. This property value causes the Job Launcher
      * Daemon to launch each job backend process's JVM with this command:
-     * <p>
-     * <TT>&nbsp;&nbsp;&nbsp;&nbsp;java -Xms4m -Xmx128m . . .</TT>
+     *
+     * <code>&nbsp;&nbsp;&nbsp;&nbsp;java -Xms4m -Xmx128m . . .</code>
      * <p>
      * which in turn tells each job backend process's JVM to use initial and
      * maximum heap sizes of 4 MB and 128 MB.
@@ -409,16 +409,16 @@ public class PJProperties {
      * Determine the fully-qualified class name of the default pseudorandom
      * number generator (PRNG) class.
      * <p>
-     * If the <TT>"pj.prng"</TT> Java system property is specified, it gives the
+     * If the <code>"pj.prng"</code> Java system property is specified, it gives the
      * fully-qualified class name of the PRNG class that the static
-     * <TT>getInstance(long)</TT> method in class {@linkplain
-     * edu.rit.util.Random} will construct. Specifying the <TT>"pj.prng"</TT>
+     * <code>getInstance(long)</code> method in class {@linkplain
+     * edu.rit.util.Random} will construct. Specifying the <code>"pj.prng"</code>
      * property will substitute a different PRNG algorithm into a program
      * without needing to recompile. See class {@linkplain edu.rit.util.Random}
      * for further information.
      * <p>
-     * If the <TT>"pj.prng"</TT> Java system property is not specified, a PRNG
-     * class name of <TT>"edu.rit.util.DefaultRandom"</TT> is returned. See
+     * If the <code>"pj.prng"</code> Java system property is not specified, a PRNG
+     * class name of <code>"edu.rit.util.DefaultRandom"</code> is returned. See
      * class {@linkplain edu.rit.util.DefaultRandom} for further information.
      *
      * @return Default PRNG class name.

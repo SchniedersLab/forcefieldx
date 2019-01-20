@@ -50,7 +50,7 @@ import edu.rit.util.Range;
  * <P>
  * To execute a parallel region, create a {@linkplain ParallelTeam} object;
  * create an instance of a concrete subclass of class ParallelRegion; and pass
- * this instance to the parallel team's <TT>execute()</TT> method. You can do
+ * this instance to the parallel team's <code>execute()</code> method. You can do
  * all this using an anonymous inner class; for example:
  * <PRE>
  *     new ParallelTeam().execute (new ParallelRegion()
@@ -76,47 +76,47 @@ import edu.rit.util.Range;
  *         });
  * </PRE>
  * <P>
- * The parallel team's <TT>execute()</TT> method does the following. The
+ * The parallel team's <code>execute()</code> method does the following. The
  * parallel team has a certain number of threads <I>K</I>, where <I>K</I> was
  * specified when the parallel team was constructed. The main thread is the
- * thread calling the parallel team's <TT>execute()</TT> method. The main thread
- * calls the parallel region's <TT>start()</TT> method. When the
- * <TT>start()</TT> method returns, all the team threads call the parallel
- * region's <TT>run()</TT> method concurrently. When all the team threads have
- * returned from the <TT>run()</TT> method, the main thread calls the parallel
- * region's <TT>finish()</TT> method. When the <TT>finish()</TT> method returns,
- * the main thread returns from the parallel team's <TT>execute()</TT> method.
+ * thread calling the parallel team's <code>execute()</code> method. The main thread
+ * calls the parallel region's <code>start()</code> method. When the
+ * <code>start()</code> method returns, all the team threads call the parallel
+ * region's <code>run()</code> method concurrently. When all the team threads have
+ * returned from the <code>run()</code> method, the main thread calls the parallel
+ * region's <code>finish()</code> method. When the <code>finish()</code> method returns,
+ * the main thread returns from the parallel team's <code>execute()</code> method.
  * <P>
  * Variables to be shared by all threads in the team may be declared as fields
- * of the ParallelRegion subclass. The <TT>start()</TT> method is intended for
+ * of the ParallelRegion subclass. The <code>start()</code> method is intended for
  * performing initialization in a single thread before parallel execution
- * begins. If no such initialization is needed, omit the <TT>start()</TT>
- * method. The <TT>run()</TT> method contains code to be executed in parallel by
+ * begins. If no such initialization is needed, omit the <code>start()</code>
+ * method. The <code>run()</code> method contains code to be executed in parallel by
  * all threads in the team. Variables that are private to each thread may be
- * declared inside the <TT>run()</TT> method. The <TT>finish()</TT> method is
+ * declared inside the <code>run()</code> method. The <code>finish()</code> method is
  * intended for performing finalization in a single thread after parallel
- * execution ends. If no such finalization is needed, omit the <TT>finish()</TT>
+ * execution ends. If no such finalization is needed, omit the <code>finish()</code>
  * method.
  * <P>
- * If the parallel region's <TT>start()</TT> method throws an exception, the
- * parallel team's <TT>execute()</TT> method throws that same exception, and the
- * <TT>run()</TT> method is not called.
+ * If the parallel region's <code>start()</code> method throws an exception, the
+ * parallel team's <code>execute()</code> method throws that same exception, and the
+ * <code>run()</code> method is not called.
  * <P>
- * If the parallel region's <TT>run()</TT> method throws an exception in one of
+ * If the parallel region's <code>run()</code> method throws an exception in one of
  * the team threads, the exception's stack trace is printed on the standard
  * error, the parallel team waits until all the other team threads have returned
- * from the <TT>run()</TT> method, then the parallel team's <TT>execute()</TT>
+ * from the <code>run()</code> method, then the parallel team's <code>execute()</code>
  * method throws that same exception, and the parallel region's
- * <TT>finish()</TT> method is not called. If the parallel region's
- * <TT>run()</TT> method throws an exception in more than one of the team
+ * <code>finish()</code> method is not called. If the parallel region's
+ * <code>run()</code> method throws an exception in more than one of the team
  * threads, each exception's stack trace is printed on the standard error, the
  * parallel team waits until all the other team threads have returned from the
- * <TT>run()</TT> method, then the parallel team's <TT>execute()</TT> method
+ * <code>run()</code> method, then the parallel team's <code>execute()</code> method
  * throws a {@linkplain MultipleParallelException} wrapping all the thrown
- * exceptions, and the parallel region's <TT>finish()</TT> method is not called.
+ * exceptions, and the parallel region's <code>finish()</code> method is not called.
  * <P>
- * If the parallel region's <TT>finish()</TT> method throws an exception, the
- * parallel team's <TT>execute()</TT> method throws that same exception.
+ * If the parallel region's <code>finish()</code> method throws an exception, the
+ * parallel team's <code>execute()</code> method throws that same exception.
  *
  * @author Alan Kaminsky
  * @version 11-Nov-2007
@@ -139,12 +139,12 @@ public abstract class ParallelRegion
 // Exported operations.
     /**
      * Perform initialization actions before parallel execution begins. Only one
-     * thread calls the <TT>start()</TT> method.
+     * thread calls the <code>start()</code> method.
      * <P>
-     * The <TT>start()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>start()</TT> method does nothing.
+     * The <code>start()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>start()</code> method does nothing.
      *
-     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @exception Exception The <code>start()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public void start()
@@ -153,11 +153,11 @@ public abstract class ParallelRegion
 
     /**
      * Execute parallel code. All threads of the parallel team call the
-     * <TT>run()</TT> method concurrently.
+     * <code>run()</code> method concurrently.
      * <P>
-     * The <TT>run()</TT> method must be implemented in a subclass.
+     * The <code>run()</code> method must be implemented in a subclass.
      *
-     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @exception Exception The <code>run()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run()
@@ -165,12 +165,12 @@ public abstract class ParallelRegion
 
     /**
      * Perform finalization actions after parallel execution ends. Only one
-     * thread calls the <TT>finish()</TT> method.
+     * thread calls the <code>finish()</code> method.
      * <P>
-     * The <TT>finish()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>finish()</TT> method does nothing.
+     * The <code>finish()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>finish()</code> method does nothing.
      *
-     * @exception Exception The <TT>finish()</TT> method may throw any
+     * @exception Exception The <code>finish()</code> method may throw any
      * exception.
      * @throws java.lang.Exception if any.
      */
@@ -181,23 +181,23 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain IntegerForLoop}. The loop index goes
-     * from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in steps of
-     * +1. If <TT>first</TT> is greater than <TT>last</TT>, then no loop
+     * from <code>first</code> (inclusive) to <code>last</code> (inclusive) in steps of
+     * +1. If <code>first</code> is greater than <code>last</code>, then no loop
      * iterations are performed. At the end of the parallel for loop, the
      * parallel team threads wait for each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -211,26 +211,26 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain IntegerForLoop}. The loop index goes
-     * from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in steps of
-     * +1. If <TT>first</TT> is greater than <TT>last</TT>, then no loop
+     * from <code>first</code> (inclusive) to <code>last</code> (inclusive) in steps of
+     * +1. If <code>first</code> is greater than <code>last</code>, then no loop
      * iterations are performed. At the end of the parallel for loop, the
      * parallel team threads encounter a barrier, and their behavior depends on
      * the given {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null. Thrown if
-     * <TT>action</TT> is null.
+     * <code>theLoop</code> is null. Thrown if
+     * <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -315,27 +315,27 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain IntegerStrideForLoop}. The loop index
-     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-     * steps of <TT>stride</TT>. The stride must be positive. If <TT>first</TT>
-     * is greater than <TT>last</TT>, then no loop iterations are performed. At
+     * goes from <code>first</code> (inclusive) to <code>last</code> (inclusive) in
+     * steps of <code>stride</code>. The stride must be positive. If <code>first</code>
+     * is greater than <code>last</code>, then no loop iterations are performed. At
      * the end of the parallel for loop, the parallel team threads wait for each
      * other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Parallel for loop.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>stride</TT> &lt; 1.
+     * <code>stride</code> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -350,16 +350,16 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain IntegerStrideForLoop}. The loop index
-     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-     * steps of <TT>stride</TT>. The stride must be positive. If <TT>first</TT>
-     * is greater than <TT>last</TT>, then no loop iterations are performed. At
+     * goes from <code>first</code> (inclusive) to <code>last</code> (inclusive) in
+     * steps of <code>stride</code>. The stride must be positive. If <code>first</code>
+     * is greater than <code>last</code>, then no loop iterations are performed. At
      * the end of the parallel for loop, the parallel team threads encounter a
      * barrier, and their behavior depends on the given {@linkplain
      * BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
@@ -367,13 +367,13 @@ public abstract class ParallelRegion
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>stride</TT> &lt; 1.
+     * <code>stride</code> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null. Thrown if
-     * <TT>action</TT> is null.
+     * <code>theLoop</code> is null. Thrown if
+     * <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -462,23 +462,23 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain LongForLoop}. The loop index goes from
-     * <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in steps of +1.
-     * If <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations
+     * <code>first</code> (inclusive) to <code>last</code> (inclusive) in steps of +1.
+     * If <code>first</code> is greater than <code>last</code>, then no loop iterations
      * are performed. At the end of the parallel for loop, the parallel team
      * threads wait for each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -492,26 +492,26 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain LongForLoop}. The loop index goes from
-     * <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in steps of +1.
-     * If <TT>first</TT> is greater than <TT>last</TT>, then no loop iterations
+     * <code>first</code> (inclusive) to <code>last</code> (inclusive) in steps of +1.
+     * If <code>first</code> is greater than <code>last</code>, then no loop iterations
      * are performed. At the end of the parallel for loop, the parallel team
      * threads encounter a barrier, and their behavior depends on the given
      * {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null. Thrown if
-     * <TT>action</TT> is null.
+     * <code>theLoop</code> is null. Thrown if
+     * <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -596,27 +596,27 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain LongStrideForLoop}. The loop index
-     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-     * steps of <TT>stride</TT>. The stride must be positive. If <TT>first</TT>
-     * is greater than <TT>last</TT>, then no loop iterations are performed. At
+     * goes from <code>first</code> (inclusive) to <code>last</code> (inclusive) in
+     * steps of <code>stride</code>. The stride must be positive. If <code>first</code>
+     * is greater than <code>last</code>, then no loop iterations are performed. At
      * the end of the parallel for loop, the parallel team threads wait for each
      * other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param stride Loop index stride, &gt;= 1.
      * @param theLoop Parallel for loop.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>stride</TT> &lt; 1.
+     * <code>stride</code> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null.
+     * <code>theLoop</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -631,16 +631,16 @@ public abstract class ParallelRegion
     /**
      * Execute a parallel for loop within this parallel region. For further
      * information, see class {@linkplain LongStrideForLoop}. The loop index
-     * goes from <TT>first</TT> (inclusive) to <TT>last</TT> (inclusive) in
-     * steps of <TT>stride</TT>. The stride must be positive. If <TT>first</TT>
-     * is greater than <TT>last</TT>, then no loop iterations are performed. At
+     * goes from <code>first</code> (inclusive) to <code>last</code> (inclusive) in
+     * steps of <code>stride</code>. The stride must be positive. If <code>first</code>
+     * is greater than <code>last</code>, then no loop iterations are performed. At
      * the end of the parallel for loop, the parallel team threads encounter a
      * barrier, and their behavior depends on the given {@linkplain
      * BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param first First loop index.
      * @param last Last loop index.
@@ -648,13 +648,13 @@ public abstract class ParallelRegion
      * @param theLoop Parallel for loop.
      * @param action Barrier action.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>stride</TT> &lt; 1.
+     * <code>stride</code> &lt; 1.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLoop</TT> is null. Thrown if
-     * <TT>action</TT> is null.
+     * <code>theLoop</code> is null. Thrown if
+     * <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theLoop</TT>'s methods throws
+     * @exception Exception Thrown if one of <code>theLoop</code>'s methods throws
      * an exception.
      * @throws java.lang.Exception if any.
      */
@@ -748,18 +748,18 @@ public abstract class ParallelRegion
      * iteration, the parallel team threads wait for each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theArray Array containing the items.
      * @param theIteration Parallel iteration.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theIteration</TT> is null.
+     * <code>theArray</code> is null or
+     * <code>theIteration</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -789,19 +789,19 @@ public abstract class ParallelRegion
      * behavior depends on the given {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theArray Array containing the items.
      * @param theIteration Parallel iteration.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null. Thrown if
-     * <TT>theIteration</TT> is null. Thrown if <TT>action</TT> is null.
+     * <code>theArray</code> is null. Thrown if
+     * <code>theIteration</code> is null. Thrown if <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -893,18 +893,18 @@ public abstract class ParallelRegion
      * barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theIterator Iterator over the items.
      * @param theIteration Parallel iteration.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theIterator</TT> is null or
-     * <TT>theIteration</TT> is null.
+     * <code>theIterator</code> is null or
+     * <code>theIteration</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -923,19 +923,19 @@ public abstract class ParallelRegion
      * their behavior depends on the given {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theIterator Iterator over the items.
      * @param theIteration Parallel iteration.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theIterator</TT> is null. Thrown if <TT>theIteration</TT> is null.
-     * Thrown if <TT>action</TT> is null.
+     * <code>theIterator</code> is null. Thrown if <code>theIteration</code> is null.
+     * Thrown if <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1027,18 +1027,18 @@ public abstract class ParallelRegion
      * team threads wait for each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theIterable Iterable collection containing the items.
      * @param theIteration Parallel iteration.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theIterable</TT> is null or
-     * <TT>theIteration</TT> is null.
+     * <code>theIterable</code> is null or
+     * <code>theIteration</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1058,19 +1058,19 @@ public abstract class ParallelRegion
      * {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param <T> Data type of the items iterated over.
      * @param theIterable Iterable collection containing the items.
      * @param theIteration Parallel iteration.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theIterable</TT> is null. Thrown if <TT>theIteration</TT> is null.
-     * Thrown if <TT>action</TT> is null.
+     * <code>theIterable</code> is null. Thrown if <code>theIteration</code> is null.
+     * Thrown if <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if one of <TT>theIteration</TT>'s methods
+     * @exception Exception Thrown if one of <code>theIteration</code>'s methods
      * throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1156,21 +1156,21 @@ public abstract class ParallelRegion
 
     /**
      * Execute a parallel section within this parallel region. The parallel
-     * section's <TT>run()</TT> method is called by one of the parallel team
+     * section's <code>run()</code> method is called by one of the parallel team
      * threads. For further information, see class {@linkplain ParallelSection}.
      * At the end of the parallel section, the parallel team threads wait for
      * each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param section Parallel section.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>section</TT> is null.
+     * <code>section</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if the parallel section's <TT>run()</TT>
+     * @exception Exception Thrown if the parallel section's <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1181,24 +1181,24 @@ public abstract class ParallelRegion
 
     /**
      * Execute a parallel section within this parallel region. The parallel
-     * section's <TT>run()</TT> method is called by one of the parallel team
+     * section's <code>run()</code> method is called by one of the parallel team
      * threads. For further information, see class {@linkplain ParallelSection}.
      * At the end of the parallel section, the parallel team threads encounter a
      * barrier, and their behavior depends on the given {@linkplain
      * BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param section Parallel section.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>section</TT> is null. Thrown if
-     * <TT>action</TT> is null.
+     * <code>section</code> is null. Thrown if
+     * <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if the parallel section's <TT>run()</TT>
+     * @exception Exception Thrown if the parallel section's <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1210,24 +1210,24 @@ public abstract class ParallelRegion
 
     /**
      * Execute a group of two parallel sections concurrently within this
-     * parallel region. Each parallel section's <TT>run()</TT> method is called
+     * parallel region. Each parallel section's <code>run()</code> method is called
      * by a different parallel team thread. For further information, see class
      * {@linkplain ParallelSection}. At the end of the parallel section group,
      * the parallel team threads wait for each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param section1 First parallel section.
      * @param section2 Second parallel section.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>section1</TT> is null. Thrown if
-     * <TT>section2</TT> is null.
+     * <code>section1</code> is null. Thrown if
+     * <code>section2</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
-     * <TT>run()</TT> methods throws an exception.
+     * <code>run()</code> methods throws an exception.
      * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
@@ -1239,26 +1239,26 @@ public abstract class ParallelRegion
 
     /**
      * Execute a group of two parallel sections concurrently within this
-     * parallel region. Each parallel section's <TT>run()</TT> method is called
+     * parallel region. Each parallel section's <code>run()</code> method is called
      * by a different parallel team thread. For further information, see class
      * {@linkplain ParallelSection}. At the end of the parallel section group,
      * the parallel team threads encounter a barrier, and their behavior depends
      * on the given {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param section1 First parallel section.
      * @param section2 Second parallel section.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>section1</TT> is null. Thrown if
-     * <TT>section2</TT> is null. Thrown if <TT>action</TT> is null.
+     * <code>section1</code> is null. Thrown if
+     * <code>section2</code> is null. Thrown if <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
-     * <TT>run()</TT> methods throws an exception.
+     * <code>run()</code> methods throws an exception.
      * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
@@ -1271,25 +1271,25 @@ public abstract class ParallelRegion
 
     /**
      * Execute a group of three parallel sections concurrently within this
-     * parallel region. Each parallel section's <TT>run()</TT> method is called
+     * parallel region. Each parallel section's <code>run()</code> method is called
      * by a different parallel team thread. For further information, see class
      * {@linkplain ParallelSection}. At the end of the parallel section group,
      * the parallel team threads wait for each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param section1 First parallel section.
      * @param section2 Second parallel section.
      * @param section3 Third parallel section.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>section1</TT> is null. Thrown if
-     * <TT>section2</TT> is null. Thrown if <TT>section3</TT> is null.
+     * <code>section1</code> is null. Thrown if
+     * <code>section2</code> is null. Thrown if <code>section3</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
-     * <TT>run()</TT> methods throws an exception.
+     * <code>run()</code> methods throws an exception.
      * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
@@ -1302,28 +1302,28 @@ public abstract class ParallelRegion
 
     /**
      * Execute a group of three parallel sections concurrently within this
-     * parallel region. Each parallel section's <TT>run()</TT> method is called
+     * parallel region. Each parallel section's <code>run()</code> method is called
      * by a different parallel team thread. For further information, see class
      * {@linkplain ParallelSection}. At the end of the parallel section group,
      * the parallel team threads encounter a barrier, and their behavior depends
      * on the given {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param section1 First parallel section.
      * @param section2 Second parallel section.
      * @param section3 Third parallel section.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>section1</TT> is null. Thrown if
-     * <TT>section2</TT> is null. Thrown if <TT>section3</TT> is null. Thrown if
-     * <TT>action</TT> is null.
+     * <code>section1</code> is null. Thrown if
+     * <code>section2</code> is null. Thrown if <code>section3</code> is null. Thrown if
+     * <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
-     * <TT>run()</TT> methods throws an exception.
+     * <code>run()</code> methods throws an exception.
      * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection section1,
@@ -1337,22 +1337,22 @@ public abstract class ParallelRegion
 
     /**
      * Execute a group of parallel sections concurrently within this parallel
-     * region. Each parallel section's <TT>run()</TT> method is called by a
+     * region. Each parallel section's <code>run()</code> method is called by a
      * different parallel team thread. For further information, see class
      * {@linkplain ParallelSection}. At the end of the parallel section group,
      * the parallel team threads wait for each other at a barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param sections Parallel sections.
      * @exception NullPointerException (unchecked exception) Thrown if any of
-     * the <TT>sections</TT> is null.
+     * the <code>sections</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
-     * <TT>run()</TT> methods throws an exception.
+     * <code>run()</code> methods throws an exception.
      * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection[] sections)
@@ -1362,24 +1362,24 @@ public abstract class ParallelRegion
 
     /**
      * Execute a group of parallel sections concurrently within this parallel
-     * region. Each parallel section's <TT>run()</TT> method is called by a
+     * region. Each parallel section's <code>run()</code> method is called by a
      * different parallel team thread. For further information, see class
      * {@linkplain ParallelSection}. At the end of the parallel section group,
      * the parallel team threads encounter a barrier, and their behavior depends
      * on the given {@linkplain BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>execute()</TT> method with identical arguments, or none of the
-     * threads must call the <TT>execute()</TT> method.
+     * <code>execute()</code> method with identical arguments, or none of the
+     * threads must call the <code>execute()</code> method.
      *
      * @param sections Parallel sections.
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if any of
-     * the <TT>sections</TT> is null. Thrown if <TT>action</TT> is null.
+     * the <code>sections</code> is null. Thrown if <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
      * @exception Exception Thrown if one of the parallel sections'
-     * <TT>run()</TT> methods throws an exception.
+     * <code>run()</code> methods throws an exception.
      * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelSection[] sections,
@@ -1414,24 +1414,24 @@ public abstract class ParallelRegion
      * Perform a section of code in a critical region with exclusive locking.
      * The locking is performed using the default lock, a hidden {@linkplain
      * Lock} variable shared by all the parallel team threads. The thread
-     * calling the <TT>critical()</TT> method waits until no other thread is
+     * calling the <code>critical()</code> method waits until no other thread is
      * executing a critical region with exclusive locking using the default lock
      * and no other thread is executing a critical region with nonexclusive
      * locking using the default lock. The thread then calls
-     * <TT>theSection</TT>'s <TT>run()</TT> method with exclusive locking using
-     * the default lock. When the <TT>run()</TT> method returns, the thread
-     * unlocks the lock and returns from the <TT>critical()</TT> method.
+     * <code>theSection</code>'s <code>run()</code> method with exclusive locking using
+     * the default lock. When the <code>run()</code> method returns, the thread
+     * unlocks the lock and returns from the <code>critical()</code> method.
      * <P>
-     * If the parallel section's <TT>run()</TT> method throws an exception, the
-     * <TT>critical()</TT> method throws that same exception in the thread that
-     * called the <TT>run()</TT> method (after unlocking the lock).
+     * If the parallel section's <code>run()</code> method throws an exception, the
+     * <code>critical()</code> method throws that same exception in the thread that
+     * called the <code>run()</code> method (after unlocking the lock).
      *
      * @param theSection Parallel section to execute in the critical region.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theSection</TT> is null.
+     * <code>theSection</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if <code>theSection</code>'s <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1444,25 +1444,25 @@ public abstract class ParallelRegion
      * Perform a section of code in a critical region with nonexclusive locking.
      * The locking is performed using the default lock, a hidden {@linkplain
      * Lock} variable shared by all the parallel team threads. The thread
-     * calling the <TT>critical()</TT> method waits until no other thread is
+     * calling the <code>critical()</code> method waits until no other thread is
      * executing a critical region with exclusive locking using the default
      * lock. However, any number of other threads may be executing a critical
      * region with nonexclusive locking using the default lock. The thread then
-     * calls <TT>theSection</TT>'s <TT>run()</TT> method with nonexclusive
-     * locking using the default lock. When the <TT>run()</TT> method returns,
-     * the thread unlocks the lock and returns from the <TT>critical()</TT>
+     * calls <code>theSection</code>'s <code>run()</code> method with nonexclusive
+     * locking using the default lock. When the <code>run()</code> method returns,
+     * the thread unlocks the lock and returns from the <code>critical()</code>
      * method.
      * <P>
-     * If the parallel section's <TT>run()</TT> method throws an exception, the
-     * <TT>critical()</TT> method throws that same exception in the thread that
-     * called the <TT>run()</TT> method (after unlocking the lock).
+     * If the parallel section's <code>run()</code> method throws an exception, the
+     * <code>critical()</code> method throws that same exception in the thread that
+     * called the <code>run()</code> method (after unlocking the lock).
      *
      * @param theSection Parallel section to execute in the critical region.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theSection</TT> is null.
+     * <code>theSection</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if <code>theSection</code>'s <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1473,26 +1473,26 @@ public abstract class ParallelRegion
 
     /**
      * Perform a section of code in a critical region with exclusive locking
-     * using the given lock. The thread calling the <TT>critical()</TT> method
+     * using the given lock. The thread calling the <code>critical()</code> method
      * waits until no other thread is executing a critical region with exclusive
      * locking using the given lock and no other thread is executing a critical
      * region with nonexclusive locking using the given lock. The thread then
-     * calls <TT>theSection</TT>'s <TT>run()</TT> method with exclusive locking
-     * using the given lock. When the <TT>run()</TT> method returns, the thread
-     * unlocks the lock and returns from the <TT>critical()</TT> method.
+     * calls <code>theSection</code>'s <code>run()</code> method with exclusive locking
+     * using the given lock. When the <code>run()</code> method returns, the thread
+     * unlocks the lock and returns from the <code>critical()</code> method.
      * <P>
-     * If the parallel section's <TT>run()</TT> method throws an exception, the
-     * <TT>critical()</TT> method throws that same exception in the thread that
-     * called the <TT>run()</TT> method (after unlocking the lock).
+     * If the parallel section's <code>run()</code> method throws an exception, the
+     * <code>critical()</code> method throws that same exception in the thread that
+     * called the <code>run()</code> method (after unlocking the lock).
      *
      * @param theLock Lock.
      * @param theSection Parallel section to execute in the critical region.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLock</TT> is null or
-     * <TT>theSection</TT> is null.
+     * <code>theLock</code> is null or
+     * <code>theSection</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if <code>theSection</code>'s <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1526,27 +1526,27 @@ public abstract class ParallelRegion
 
     /**
      * Perform a section of code in a critical region with nonexclusive locking
-     * using the given lock. The thread calling the <TT>critical()</TT> method
+     * using the given lock. The thread calling the <code>critical()</code> method
      * waits until no other thread is executing a critical region with exclusive
      * locking using the given lock. However, any number of other threads may be
      * executing a critical region with nonexclusive locking using the given
-     * lock. The thread then calls <TT>theSection</TT>'s <TT>run()</TT> method
-     * with nonexclusive locking using the given lock. When the <TT>run()</TT>
+     * lock. The thread then calls <code>theSection</code>'s <code>run()</code> method
+     * with nonexclusive locking using the given lock. When the <code>run()</code>
      * method returns, the thread unlocks the lock and returns from the
-     * <TT>critical()</TT> method.
+     * <code>critical()</code> method.
      * <P>
-     * If the parallel section's <TT>run()</TT> method throws an exception, the
-     * <TT>critical()</TT> method throws that same exception in the thread that
-     * called the <TT>run()</TT> method (after unlocking the lock).
+     * If the parallel section's <code>run()</code> method throws an exception, the
+     * <code>critical()</code> method throws that same exception in the thread that
+     * called the <code>run()</code> method (after unlocking the lock).
      *
      * @param theLock Lock.
      * @param theSection Parallel section to execute in the critical region.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLock</TT> is null or
-     * <TT>theSection</TT> is null.
+     * <code>theLock</code> is null or
+     * <code>theSection</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if <code>theSection</code>'s <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -1583,8 +1583,8 @@ public abstract class ParallelRegion
      * barrier.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>barrier()</TT> method, or none of the threads must call the
-     * <TT>barrier()</TT> method.
+     * <code>barrier()</code> method, or none of the threads must call the
+     * <code>barrier()</code> method.
      *
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
@@ -1599,15 +1599,15 @@ public abstract class ParallelRegion
      * BarrierAction}.
      * <P>
      * <I>Note:</I> Either all threads in the parallel team must call the
-     * <TT>barrier()</TT> method, or none of the threads must call the
-     * <TT>barrier()</TT> method.
+     * <code>barrier()</code> method, or none of the threads must call the
+     * <code>barrier()</code> method.
      *
      * @param action Barrier action.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>action</TT> is null.
+     * <code>action</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel region.
-     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if <code>theSection</code>'s <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */

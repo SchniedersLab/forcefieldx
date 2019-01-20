@@ -67,11 +67,11 @@ import java.util.Map;
  * Call methods to set the status code and headers as necessary.
  * <BR>&nbsp;
  * <LI>
- * Call the <TT>getPrintWriter()</TT> method, and write the entity body to the
+ * Call the <code>getPrintWriter()</code> method, and write the entity body to the
  * print writer that is returned.
  * <BR>&nbsp;
  * <LI>
- * Call the <TT>close()</TT> method.
+ * Call the <code>close()</code> method.
  * </OL>
  *
  * @author Alan Kaminsky
@@ -203,7 +203,7 @@ public class HttpResponse {
      *
      * @param theSocket Socket.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theSocket</TT> is null.
+     * <code>theSocket</code> is null.
      */
     public HttpResponse(Socket theSocket) {
         if (theSocket == null) {
@@ -220,7 +220,7 @@ public class HttpResponse {
      *
      * @param theStatusCode Status code.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theStatusCode</TT> is null.
+     * <code>theStatusCode</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
      * response headers have already been written to the socket output stream.
      */
@@ -236,13 +236,13 @@ public class HttpResponse {
 
     /**
      * Set this HTTP response's content type. If not set, the default content
-     * type is <TT>"text/html"</TT>.
+     * type is <code>"text/html"</code>.
      *
      * @param theContentType Content type.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theContentType</TT> is null.
+     * <code>theContentType</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theContentType</TT> is zero length.
+     * <code>theContentType</code> is zero length.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
      * response headers have already been written to the socket output stream.
      */
@@ -266,7 +266,7 @@ public class HttpResponse {
      *
      * @param theCharset Character set.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theCharset</TT> is null.
+     * <code>theCharset</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
      * response headers have already been written to the socket output stream.
      */
@@ -288,7 +288,7 @@ public class HttpResponse {
      *
      * @param theContentLength Content length.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theContentLength</TT> is less than 0.
+     * <code>theContentLength</code> is less than 0.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
      * response headers have already been written to the socket output stream.
      */
@@ -308,11 +308,11 @@ public class HttpResponse {
      * @param theHeaderName Header name.
      * @param theHeaderValue Header value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theHeaderName</TT> or
-     * <TT>theHeaderValue</TT> is null.
+     * <code>theHeaderName</code> or
+     * <code>theHeaderValue</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theHeaderName</TT> or
-     * <TT>theHeaderValue</TT> is zero length.
+     * <code>theHeaderName</code> or
+     * <code>theHeaderValue</code> is zero length.
      * @exception IllegalStateException (unchecked exception) Thrown if the HTTP
      * response headers have already been written to the socket output stream.
      */
@@ -424,25 +424,25 @@ public class HttpResponse {
 //				out.println ("<BODY>");
 //				out.println ("<UL>");
 //				out.println ("<LI>");
-//				out.print   ("Method = <TT>\"");
+//				out.print   ("Method = <code>\"");
 //				out.print   (request.getMethod());
-//				out.println ("\"</TT>");
+//				out.println ("\"</code>");
 //				out.println ("<LI>");
-//				out.print   ("URI = <TT>\"");
+//				out.print   ("URI = <code>\"");
 //				out.print   (request.getUri());
-//				out.println ("\"</TT>");
+//				out.println ("\"</code>");
 //				out.println ("<LI>");
-//				out.print   ("Version = <TT>\"");
+//				out.print   ("Version = <code>\"");
 //				out.print   (request.getHttpVersion());
-//				out.println ("\"</TT>");
+//				out.println ("\"</code>");
 //				for (Map.Entry<String,String> entry : request.getHeaders())
 //					{
 //					out.println ("<LI>");
-//					out.print   ("Header name = <TT>\"");
+//					out.print   ("Header name = <code>\"");
 //					out.print   (entry.getKey());
-//					out.print   ("\"</TT>, value = <TT>\"");
+//					out.print   ("\"</code>, value = <code>\"");
 //					out.print   (entry.getValue());
-//					out.println ("\"</TT>");
+//					out.println ("\"</code>");
 //					}
 //				out.println ("</UL>");
 //				out.println ("</BODY>");

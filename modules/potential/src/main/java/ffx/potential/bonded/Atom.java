@@ -459,13 +459,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constructor used when parsing XYZ files.
      *
      * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
      * @param name     The Atom's molecular mechanics name.
      * @param atomType Molecular mechanics atom type.
-     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
      * @param xyz      Cartesian coordinates.
      * @since 1.0
      */
@@ -485,13 +480,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constructor used when parsing PDB files.
      *
      * @param xyzIndex   Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex   Contiguous, unique atom index between 1..nAtoms.
      * @param name       The Atom's molecular mechanics name.
      * @param altLoc     The alternate locations (' ' or 'A' or 'B' etc.).
-     * @param xyzIndex   Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex   Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex   Contiguous, unique atom index between 1..nAtoms.
-     * @param xyzIndex   Contiguous, unique atom index between 1..nAtoms.
      * @param xyz        Cartesian coordinates.
      * @param resName    Residue name.
      * @param resSeq     Residue sequence number.
@@ -521,7 +511,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param xyzIndex   a int.
      * @param name       a {@link java.lang.String} object.
      * @param altLoc     a {@link java.lang.Character} object.
-     * @param xyzIndex   a int.
      * @param xyz        an array of {@link double} objects.
      * @param resName    a {@link java.lang.String} object.
      * @param resSeq     a int.

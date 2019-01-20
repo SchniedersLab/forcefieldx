@@ -91,7 +91,7 @@ public class Unsigned8BitIntegerItemBuf
      *
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public int get(int i) {
@@ -103,7 +103,7 @@ public class Unsigned8BitIntegerItemBuf
      *
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public void put(int i,
@@ -130,7 +130,7 @@ public class Unsigned8BitIntegerItemBuf
      *
      * Send as many items as possible from this buffer to the given byte buffer.
      * <P>
-     * The <TT>sendItems()</TT> method must not block the calling thread; if it
+     * The <code>sendItems()</code> method must not block the calling thread; if it
      * does, all message I/O in MP will be blocked.
      */
     protected int sendItems(int i,
@@ -149,7 +149,7 @@ public class Unsigned8BitIntegerItemBuf
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      */
     protected int receiveItems(int i,

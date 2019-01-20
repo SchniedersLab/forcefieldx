@@ -46,16 +46,16 @@ package edu.rit.pj;
  * following static methods in class {@linkplain IntegerSchedule} or class
  * {@linkplain LongSchedule}:
  * <UL>
- * <LI><TT>IntegerSchedule.fixed()</TT>
- * <LI><TT>IntegerSchedule.dynamic()</TT>
- * <LI><TT>IntegerSchedule.guided()</TT>
- * <LI><TT>IntegerSchedule.runtime()</TT>
- * <LI><TT>IntegerSchedule.parse()</TT>
- * <LI><TT>LongSchedule.fixed()</TT>
- * <LI><TT>LongSchedule.dynamic()</TT>
- * <LI><TT>LongSchedule.guided()</TT>
- * <LI><TT>LongSchedule.runtime()</TT>
- * <LI><TT>LongSchedule.parse()</TT>
+ * <LI><code>IntegerSchedule.fixed()</code>
+ * <LI><code>IntegerSchedule.dynamic()</code>
+ * <LI><code>IntegerSchedule.guided()</code>
+ * <LI><code>IntegerSchedule.runtime()</code>
+ * <LI><code>IntegerSchedule.parse()</code>
+ * <LI><code>LongSchedule.fixed()</code>
+ * <LI><code>LongSchedule.dynamic()</code>
+ * <LI><code>LongSchedule.guided()</code>
+ * <LI><code>LongSchedule.runtime()</code>
+ * <LI><code>LongSchedule.parse()</code>
  * </UL>
  *
  * @author Alan Kaminsky

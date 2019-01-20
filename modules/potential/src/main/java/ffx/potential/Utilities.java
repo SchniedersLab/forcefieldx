@@ -828,11 +828,6 @@ public final class Utilities {
      *
      * @param a            Atom
      * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
      * @return Atom
      */
     public static Atom findBondWith(Atom a, int atomicNumber) {
@@ -1090,11 +1085,6 @@ public final class Utilities {
      *
      * @param a            Atom
      * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
      * @return boolean
      */
     public static boolean formsBondsWith(Atom a, int atomicNumber) {
@@ -1163,11 +1153,6 @@ public final class Utilities {
      * of the specified atomic number.
      *
      * @param a            Atom
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
-     * @param atomicNumber int
      * @param atomicNumber int
      * @return int
      */

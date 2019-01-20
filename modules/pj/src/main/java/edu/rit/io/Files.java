@@ -57,10 +57,10 @@ public class Files {
     /**
      * Append the given rank to the given file. The rank goes before the file
      * extension if any. For example,
-     * <TT>Files.fileForRank(new&nbsp;File("image.pjg"),2)</TT> returns a File
-     * whose name is <TT>"image_2.pjg"</TT>;
-     * <TT>Files.fileForRank(new&nbsp;File("image"),2)</TT> returns a File whose
-     * name is <TT>"image_2"</TT>.
+     * <code>Files.fileForRank(new&nbsp;File("image.pjg"),2)</code> returns a File
+     * whose name is <code>"image_2.pjg"</code>;
+     * <code>Files.fileForRank(new&nbsp;File("image"),2)</code> returns a File whose
+     * name is <code>"image_2"</code>.
      *
      * @param file File.
      * @param rank Rank.
@@ -74,9 +74,9 @@ public class Files {
     /**
      * Append the given rank to the given file name. The rank goes before the
      * file extension if any. For example,
-     * <TT>Files.fileNameForRank("image.pjg",2)</TT> returns
-     * <TT>"image_2.pjg"</TT>; <TT>Files.fileNameForRank("image",2)</TT> returns
-     * <TT>"image_2"</TT>.
+     * <code>Files.fileNameForRank("image.pjg",2)</code> returns
+     * <code>"image_2.pjg"</code>; <code>Files.fileNameForRank("image",2)</code> returns
+     * <code>"image_2"</code>.
      *
      * @param filename File name.
      * @param rank Rank.
@@ -90,10 +90,10 @@ public class Files {
     /**
      * Append the given suffix to the given file. The suffix goes before the
      * file extension if any. For example,
-     * <TT>Files.fileAppend(new&nbsp;File("image.pjg"),"_new")</TT> returns a
-     * File whose name is <TT>"image_new.pjg"</TT>;
-     * <TT>Files.fileAppend(new&nbsp;File("image"),"_new")</TT> returns a File
-     * whose name is <TT>"image_new"</TT>.
+     * <code>Files.fileAppend(new&nbsp;File("image.pjg"),"_new")</code> returns a
+     * File whose name is <code>"image_new.pjg"</code>;
+     * <code>Files.fileAppend(new&nbsp;File("image"),"_new")</code> returns a File
+     * whose name is <code>"image_new"</code>.
      *
      * @param file File.
      * @param suffix Suffix.
@@ -107,9 +107,9 @@ public class Files {
     /**
      * Append the given suffix to the given file name. The suffix goes before
      * the file extension if any. For example,
-     * <TT>Files.fileNameAppend("image.pjg","_new")</TT> returns
-     * <TT>"image_new.pjg"</TT>; <TT>Files.fileNameAppend("image","_new")</TT>
-     * returns <TT>"image_new"</TT>.
+     * <code>Files.fileNameAppend("image.pjg","_new")</code> returns
+     * <code>"image_new.pjg"</code>; <code>Files.fileNameAppend("image","_new")</code>
+     * returns <code>"image_new"</code>.
      *
      * @param filename File name.
      * @param suffix Suffix.
@@ -126,10 +126,10 @@ public class Files {
     /**
      * Prepend the given prefix to the given file. The prefix goes after the
      * directory if any. For example,
-     * <TT>Files.filePrepend(new&nbsp;File("/home/ark/image.pjg"),"new_")</TT>
-     * returns a File whose name is <TT>"/home/ark/new_image.pjg"</TT>;
-     * <TT>Files.filePrepend(new&nbsp;File("image.pjg"),"new_")</TT> returns a
-     * File whose name is <TT>"new_image.pjg"</TT>. The system-dependent file
+     * <code>Files.filePrepend(new&nbsp;File("/home/ark/image.pjg"),"new_")</code>
+     * returns a File whose name is <code>"/home/ark/new_image.pjg"</code>;
+     * <code>Files.filePrepend(new&nbsp;File("image.pjg"),"new_")</code> returns a
+     * File whose name is <code>"new_image.pjg"</code>. The system-dependent file
      * name separator character is used to detect the end of the directory if
      * any.
      *
@@ -145,10 +145,10 @@ public class Files {
     /**
      * Prepend the given prefix to the given file name. The prefix goes after
      * the directory if any. For example,
-     * <TT>Files.fileNamePrepend("/home/ark/image.pjg","new_")</TT> returns
-     * <TT>"/home/ark/new_image.pjg"</TT>;
-     * <TT>Files.fileNamePrepend("image.pjg","new_")</TT> returns
-     * <TT>"new_image.pjg"</TT>. The system-dependent file name separator
+     * <code>Files.fileNamePrepend("/home/ark/image.pjg","new_")</code> returns
+     * <code>"/home/ark/new_image.pjg"</code>;
+     * <code>Files.fileNamePrepend("image.pjg","new_")</code> returns
+     * <code>"new_image.pjg"</code>. The system-dependent file name separator
      * character is used to detect the end of the directory if any.
      *
      * @param filename File name.

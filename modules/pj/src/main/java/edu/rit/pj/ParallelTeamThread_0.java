@@ -77,7 +77,7 @@ class ParallelTeamThread_0
      *
      * @param action Barrier action.
      *
-     * @exception Exception Thrown if the <TT>action</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if the <code>action</code>'s <code>run()</code>
      * method throws an exception.
      */
     void barrier(BarrierAction action)

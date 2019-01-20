@@ -50,10 +50,10 @@ package edu.rit.pj;
  * <P>
  * To execute a parallel iteration, create a {@linkplain ParallelRegion} object;
  * create an instance of a concrete subclass of class ParallelIteration; and
- * pass this instance to the parallel region's <TT>execute()</TT> method. Either
- * every parallel team thread must call the parallel region's <TT>execute()</TT>
+ * pass this instance to the parallel region's <code>execute()</code> method. Either
+ * every parallel team thread must call the parallel region's <code>execute()</code>
  * method with identical arguments, or every thread must not call the
- * <TT>execute()</TT> method. You can do all this using an anonymous inner
+ * <code>execute()</code> method. You can do all this using an anonymous inner
  * class; for example:
  * <PRE>
  *     new ParallelRegion()
@@ -88,48 +88,48 @@ package edu.rit.pj;
  *         }
  * </PRE>
  * <P>
- * The parallel region's <TT>execute()</TT> method does the following. One of
+ * The parallel region's <code>execute()</code> method does the following. One of
  * the parallel team threads sets up the source of the items to be iterated over
  * -- either an array's elements, an iterator's items, or an iterable
  * collection's contents. (Note that only <I>one</I> thread does this setup; but
- * because all threads must call the parallel region's <TT>execute()</TT> method
+ * because all threads must call the parallel region's <code>execute()</code> method
  * with identical arguments, it doesn't matter which thread does the setup.)
- * Each parallel team thread calls the parallel iteration's <TT>start()</TT>
+ * Each parallel team thread calls the parallel iteration's <code>start()</code>
  * method once before beginning any loop iterations. Each thread repeatedly
- * calls the parallel iteration's <TT>run()</TT> method, passing in a different
+ * calls the parallel iteration's <code>run()</code> method, passing in a different
  * item on each call, until all the items have been processed. When a thread has
- * finished calling <TT>run()</TT>, the thread calls the parallel iteration's
- * <TT>finish()</TT> method. Then the thread waits at a barrier. When all the
- * threads have reached the barrier, the <TT>execute()</TT> method returns.
+ * finished calling <code>run()</code>, the thread calls the parallel iteration's
+ * <code>finish()</code> method. Then the thread waits at a barrier. When all the
+ * threads have reached the barrier, the <code>execute()</code> method returns.
  * <P>
  * Note that each parallel team thread actually creates its own instance of the
  * parallel iteration class and passes that instance to the parallel region's
- * <TT>execute()</TT> method. Thus, any fields declared in the parallel
+ * <code>execute()</code> method. Thus, any fields declared in the parallel
  * iteration class will <I>not</I> be shared by all the threads, but instead
  * will be private to each thread.
  * <P>
- * The <TT>start()</TT> method is intended for performing per-thread
+ * The <code>start()</code> method is intended for performing per-thread
  * initialization before starting the loop iterations. If no such initialization
- * is needed, omit the <TT>start()</TT> method.
+ * is needed, omit the <code>start()</code> method.
  * <P>
- * The <TT>run()</TT> method contains the code for the loop body. It does
+ * The <code>run()</code> method contains the code for the loop body. It does
  * whatever processing is needed on the one item passed in as an argument. Note
  * that, unlike a parallel for loop (class {@linkplain ParallelForLoop}), a
  * parallel iteration is not "chunked;" each parallel team thread always
  * processes just one item at a time.
  * <P>
- * The <TT>finish()</TT> method is intended for performing per-thread
+ * The <code>finish()</code> method is intended for performing per-thread
  * finalization after finishing the loop iterations. If no such finalization is
- * needed, omit the <TT>finish()</TT> method.
+ * needed, omit the <code>finish()</code> method.
  * <P>
  * Sometimes a portion of a parallel iteration has to be executed sequentially
  * in the same order as the items' iteration order, while the rest of the
  * parallel iteration can be executed concurrently. For example, the loop body
  * is performing some computation that can be executed in parallel for different
  * items, but the results of each computation must be written to a file
- * sequentially in the items' iteration order. The <TT>ordered()</TT> method is
- * provided for this purpose. A call to the <TT>ordered()</TT> method may appear
- * once in the parallel iteration's <TT>run()</TT> method, like so:
+ * sequentially in the items' iteration order. The <code>ordered()</code> method is
+ * provided for this purpose. A call to the <code>ordered()</code> method may appear
+ * once in the parallel iteration's <code>run()</code> method, like so:
  * <PRE>
  *     public void run (String item)
  *         {
@@ -147,16 +147,16 @@ package edu.rit.pj;
  *         // This portion executed concurrently again
  *         . . .
  *         }
- * </PRE> When called, the <TT>ordered()</TT> method waits until the
- * <TT>ordered()</TT>
+ * </PRE> When called, the <code>ordered()</code> method waits until the
+ * <code>ordered()</code>
  * method has been called and has returned for all items prior to the current
- * item. Then the <TT>ordered()</TT> method calls the given parallel section's
- * <TT>run()</TT> method. When the parallel section's <TT>run()</TT> method
- * returns, the <TT>ordered()</TT> method returns. If the parallel section's
- * <TT>run()</TT> method throws an exception, the <TT>ordered()</TT> method
+ * item. Then the <code>ordered()</code> method calls the given parallel section's
+ * <code>run()</code> method. When the parallel section's <code>run()</code> method
+ * returns, the <code>ordered()</code> method returns. If the parallel section's
+ * <code>run()</code> method throws an exception, the <code>ordered()</code> method
  * throws that same exception.
  * <P>
- * It is possible to stop a parallel iteration using the <TT>stopLoop()</TT>
+ * It is possible to stop a parallel iteration using the <code>stopLoop()</code>
  * method, like this:
  * <PRE>
  *     public void run (String item)
@@ -171,21 +171,21 @@ package edu.rit.pj;
  *         // More loop body
  *         . . .
  *         }
- * </PRE> Once <TT>stopLoop()</TT> is called, after each parallel team thread
+ * </PRE> Once <code>stopLoop()</code> is called, after each parallel team thread
  * finishes processing its current item, each thread will process no further
  * items and will proceed to finish the parallel iteration. Note well that
- * stopping a parallel iteration is not the same as executing a <TT>break</TT>
+ * stopping a parallel iteration is not the same as executing a <code>break</code>
  * statement in a regular loop. The parallel iteration does not stop until each
  * thread,
- * <I>including the thread that called <TT>stopLoop()</TT></I>, has finished
+ * <I>including the thread that called <code>stopLoop()</code></I>, has finished
  * processing its current item. Thus, processing may continue for a while after
- * <TT>stopLoop()</TT> is called. (The <TT>return</TT> statement in the above
- * example causes the thread that called <TT>stopLoop()</TT> to stop its
+ * <code>stopLoop()</code> is called. (The <code>return</code> statement in the above
+ * example causes the thread that called <code>stopLoop()</code> to stop its
  * processing early.)
  * <P>
  * Normally, at the end of the parallel iteration, the parallel team threads
  * wait for each other at a barrier. To eliminate this barrier wait, include
- * {@link edu.rit.pj.BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
+ * {@link edu.rit.pj.BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <code>execute()</code>
  * method call:
  * <PRE>
  *     new ParallelRegion()
@@ -204,8 +204,8 @@ package edu.rit.pj;
  *         }
  * </PRE> To execute a section of code in a single thread as part of the barrier
  * synchronization, include an instance of class {@linkplain BarrierAction} in
- * the <TT>execute()</TT> method call. The barrier action object's
- * <TT>run()</TT> method contains the code to be executed in a single thread
+ * the <code>execute()</code> method call. The barrier action object's
+ * <code>run()</code> method contains the code to be executed in a single thread
  * while the other threads wait:
  * <PRE>
  *     new ParallelRegion()
@@ -231,10 +231,10 @@ package edu.rit.pj;
  *         }
  * </PRE> For further information, see class {@linkplain BarrierAction}.
  * <P>
- * If the parallel iteration's <TT>start()</TT>, <TT>run()</TT>, or
- * <TT>finish()</TT> method throws an exception in one of the threads, then that
+ * If the parallel iteration's <code>start()</code>, <code>run()</code>, or
+ * <code>finish()</code> method throws an exception in one of the threads, then that
  * thread executes no further code in the loop, and the parallel region's
- * <TT>execute()</TT> method throws that same exception in that thread.
+ * <code>execute()</code> method throws that same exception in that thread.
  * Furthermore, the other threads in the parallel team also process no further
  * items after finishing their current items. Thus, if one thread throws an
  * exception, the whole parallel iteration exits with some (perhaps none) of the
@@ -268,10 +268,10 @@ public abstract class ParallelIteration<T>
      * Perform per-thread initialization actions before starting the loop
      * iterations.
      * <P>
-     * The <TT>start()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>start()</TT> method does nothing.
+     * The <code>start()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>start()</code> method does nothing.
      *
-     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @exception Exception The <code>start()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public void start()
@@ -279,13 +279,13 @@ public abstract class ParallelIteration<T>
     }
 
     /**
-     * Process one item in this parallel iteration. The <TT>run()</TT> method
+     * Process one item in this parallel iteration. The <code>run()</code> method
      * must perform the loop body for the given item.
      * <P>
-     * The <TT>run()</TT> method must be overridden in a subclass.
+     * The <code>run()</code> method must be overridden in a subclass.
      *
      * @param item Item.
-     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @exception Exception The <code>run()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run(T item)
@@ -295,10 +295,10 @@ public abstract class ParallelIteration<T>
      * Perform per-thread finalization actions after finishing the loop
      * iterations.
      * <P>
-     * The <TT>finish()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>finish()</TT> method does nothing.
+     * The <code>finish()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>finish()</code> method does nothing.
      *
-     * @exception Exception The <TT>finish()</TT> method may throw any
+     * @exception Exception The <code>finish()</code> method may throw any
      * exception.
      * @throws java.lang.Exception if any.
      */
@@ -308,29 +308,29 @@ public abstract class ParallelIteration<T>
 
     /**
      * Execute the given section of code in the items' iteration order. A call
-     * to the <TT>ordered()</TT> method may appear in this parallel iteration's
-     * <TT>run()</TT> method. When called, the <TT>ordered()</TT> method waits
-     * until the <TT>ordered()</TT> method has been called and has returned for
-     * all items prior to the current item. Then the <TT>ordered()</TT> method
-     * calls the <TT>run()</TT> method of <TT>theParallelSection</TT>. When the
-     * parallel section's <TT>run()</TT> method returns, the <TT>ordered()</TT>
-     * method returns. If the parallel section's <TT>run()</TT> method throws an
-     * exception, the <TT>ordered()</TT> method throws that same exception.
+     * to the <code>ordered()</code> method may appear in this parallel iteration's
+     * <code>run()</code> method. When called, the <code>ordered()</code> method waits
+     * until the <code>ordered()</code> method has been called and has returned for
+     * all items prior to the current item. Then the <code>ordered()</code> method
+     * calls the <code>run()</code> method of <code>theParallelSection</code>. When the
+     * parallel section's <code>run()</code> method returns, the <code>ordered()</code>
+     * method returns. If the parallel section's <code>run()</code> method throws an
+     * exception, the <code>ordered()</code> method throws that same exception.
      * <P>
-     * The <TT>ordered()</TT> method is used when a portion of a parallel
+     * The <code>ordered()</code> method is used when a portion of a parallel
      * iteration has to be executed sequentially in the items' iteration order,
      * while the rest of the parallel iteration can be executed concurrently.
      * <P>
-     * <I>Note:</I> Either the <TT>ordered()</TT> method must be called exactly
-     * once during each call of the parallel iteration's <TT>run()</TT> method,
-     * or the <TT>ordered()</TT> method must not be called at all.
+     * <I>Note:</I> Either the <code>ordered()</code> method must be called exactly
+     * once during each call of the parallel iteration's <code>run()</code> method,
+     * or the <code>ordered()</code> method must not be called at all.
      *
      * @param theSection Parallel section to execute in order.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theSection</TT> is null.
+     * <code>theSection</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel iteration.
-     * @exception Exception Thrown if <TT>theSection</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if <code>theSection</code>'s <code>run()</code>
      * method throws an exception.
      * @throws java.lang.Exception if any.
      */
@@ -368,7 +368,7 @@ public abstract class ParallelIteration<T>
     }
 
     /**
-     * Stop this parallel iteration. Once <TT>stopLoop()</TT> is called, after
+     * Stop this parallel iteration. Once <code>stopLoop()</code> is called, after
      * each parallel team thread finishes processing its current item, each
      * thread will process no further items and will proceed to finish this
      * parallel iteration.
@@ -386,7 +386,7 @@ public abstract class ParallelIteration<T>
 // Hidden operations.
     /**
      * Execute one chunk of iterations of this parallel for loop. This method
-     * performs common processing, then calls the <TT>run()</TT> method.
+     * performs common processing, then calls the <code>run()</code> method.
      *
      * @param index Iteration index.
      * @param item Item.

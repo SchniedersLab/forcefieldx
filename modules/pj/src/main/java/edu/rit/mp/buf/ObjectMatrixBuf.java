@@ -76,8 +76,8 @@ public class ObjectMatrixBuf<T>
 // Exported constructors.
     /**
      * Construct a new object matrix buffer. It is assumed that the rows and
-     * columns of <TT>theMatrix</TT> are allocated and that each row of
-     * <TT>theMatrix</TT> has the same number of columns.
+     * columns of <code>theMatrix</code> are allocated and that each row of
+     * <code>theMatrix</code> has the same number of columns.
      *
      * @param theMatrix Matrix.
      * @param theRowRange Range of rows to include.
@@ -104,7 +104,7 @@ public class ObjectMatrixBuf<T>
      *
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public T get(int i) {
@@ -114,12 +114,11 @@ public class ObjectMatrixBuf<T>
     /**
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
-     * @param item Item to be stored at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @param item Item to be stored at index <code>i</code>.
      */
     public void put(int i,
             T item) {
@@ -131,11 +130,11 @@ public class ObjectMatrixBuf<T>
      * {@inheritDoc}
      *
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public void copy(Buf theSrc) {

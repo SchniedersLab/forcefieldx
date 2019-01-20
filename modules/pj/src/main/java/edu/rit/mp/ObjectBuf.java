@@ -83,83 +83,83 @@ import edu.rit.util.Range;
  * <P>
  * To create an ObjectBuf, call one of the following static factory methods:
  * <UL>
- * <LI><TT>emptyBuffer()</TT>
- * <LI><TT>buffer()</TT>
- * <LI><TT>buffer (T)</TT>
- * <LI><TT>buffer (T[])</TT>
- * <LI><TT>sliceBuffer (T[], Range)</TT>
- * <LI><TT>sliceBuffers (T[], Range[])</TT>
- * <LI><TT>objectBuffer (T[])</TT>
- * <LI><TT>buffer (T[][])</TT>
- * <LI><TT>rowSliceBuffer (T[][], Range)</TT>
- * <LI><TT>rowSliceBuffers (T[][], Range[])</TT>
- * <LI><TT>colSliceBuffer (T[][], Range)</TT>
- * <LI><TT>colSliceBuffers (T[][], Range[])</TT>
- * <LI><TT>patchBuffer (T[][], Range, Range)</TT>
- * <LI><TT>patchBuffers (T[][], Range[], Range[])</TT>
- * <LI><TT>objectBuffer (T[][])</TT>
- * <LI><TT>buffer (SharedObject&lt;T&gt;)</TT>
- * <LI><TT>buffer (SharedObjectArray&lt;T&gt;)</TT>
- * <LI><TT>sliceBuffer (SharedObjectArray&lt;T&gt;, Range)</TT>
- * <LI><TT>sliceBuffers (SharedObjectArray&lt;T&gt;, Range[])</TT>
+ * <LI><code>emptyBuffer()</code>
+ * <LI><code>buffer()</code>
+ * <LI><code>buffer (T)</code>
+ * <LI><code>buffer (T[])</code>
+ * <LI><code>sliceBuffer (T[], Range)</code>
+ * <LI><code>sliceBuffers (T[], Range[])</code>
+ * <LI><code>objectBuffer (T[])</code>
+ * <LI><code>buffer (T[][])</code>
+ * <LI><code>rowSliceBuffer (T[][], Range)</code>
+ * <LI><code>rowSliceBuffers (T[][], Range[])</code>
+ * <LI><code>colSliceBuffer (T[][], Range)</code>
+ * <LI><code>colSliceBuffers (T[][], Range[])</code>
+ * <LI><code>patchBuffer (T[][], Range, Range)</code>
+ * <LI><code>patchBuffers (T[][], Range[], Range[])</code>
+ * <LI><code>objectBuffer (T[][])</code>
+ * <LI><code>buffer (SharedObject&lt;T&gt;)</code>
+ * <LI><code>buffer (SharedObjectArray&lt;T&gt;)</code>
+ * <LI><code>sliceBuffer (SharedObjectArray&lt;T&gt;, Range)</code>
+ * <LI><code>sliceBuffers (SharedObjectArray&lt;T&gt;, Range[])</code>
  * </UL>
  * <P>
  * There are two ways to create a buffer for an array of objects (type
- * <TT>T[]</TT>):
+ * <code>T[]</code>):
  * <OL TYPE=1>
  * <LI>
- * With the <TT>buffer(T[])</TT>, <TT>sliceBuffer(T[],Range)</TT>, and
- * <TT>sliceBuffers(T[],Range[])</TT> methods. These methods create a buffer
+ * With the <code>buffer(T[])</code>, <code>sliceBuffer(T[],Range)</code>, and
+ * <code>sliceBuffers(T[],Range[])</code> methods. These methods create a buffer
  * that sends and receives the array elements as multiple separate objects of
- * type <TT>T</TT>. The receiver must allocate an array of the proper dimension
+ * type <code>T</code>. The receiver must allocate an array of the proper dimension
  * to receive the incoming objects and must create a buffer that receives the
  * array elements as separate objects.
- * <P>
+ *
  * <LI>
- * With the <TT>objectBuffer(T[])</TT> method. This method creates a buffer that
- * sends and receives the entire array as one object of type <TT>T[]</TT>. The
+ * With the <code>objectBuffer(T[])</code> method. This method creates a buffer that
+ * sends and receives the entire array as one object of type <code>T[]</code>. The
  * receiver must also create a buffer that receives the entire array as one
- * object; the buffer's <TT>item</TT> field is automatically set to an array of
+ * object; the buffer's <code>item</code> field is automatically set to an array of
  * the proper dimension.
  * </OL>
  * <P>
  * There are two ways to create a buffer for a matrix of objects (type
- * <TT>T[][]</TT>):
+ * <code>T[][]</code>):
  * <OL TYPE=1>
  * <LI>
- * With the <TT>buffer(T[][])</TT>, <TT>rowSliceBuffer(T[][],Range)</TT>,
- * <TT>rowSliceBuffers(T[][],Range[])</TT>,
- * <TT>colSliceBuffer(T[][],Range)</TT>,
- * <TT>colSliceBuffers(T[][],Range[])</TT>, <TT>patchBuffer(T[][],Range)</TT>,
- * and <TT>patchBuffers(T[][],Range[])</TT> methods. These methods create a
+ * With the <code>buffer(T[][])</code>, <code>rowSliceBuffer(T[][],Range)</code>,
+ * <code>rowSliceBuffers(T[][],Range[])</code>,
+ * <code>colSliceBuffer(T[][],Range)</code>,
+ * <code>colSliceBuffers(T[][],Range[])</code>, <code>patchBuffer(T[][],Range)</code>,
+ * and <code>patchBuffers(T[][],Range[])</code> methods. These methods create a
  * buffer that sends and receives the matrix elements as multiple separate
- * objects of type <TT>T</TT>. The receiver must allocate a matrix of the proper
+ * objects of type <code>T</code>. The receiver must allocate a matrix of the proper
  * dimensions to receive the incoming objects and must create a buffer that
  * receives the matrix elements as separate objects.
- * <P>
+ *
  * <LI>
- * With the <TT>objectBuffer(T[][])</TT> method. This method creates a buffer
+ * With the <code>objectBuffer(T[][])</code> method. This method creates a buffer
  * that sends and receives the entire matrix as one object of type
- * <TT>T[][]</TT>. The receiver must also create a buffer that receives the
- * matrix as one object; the buffer's <TT>item</TT> field is automatically set
+ * <code>T[][]</code>. The receiver must also create a buffer that receives the
+ * matrix as one object; the buffer's <code>item</code> field is automatically set
  * to a matrix of the proper dimensions.
  * </OL>
  * <P>
  * <B><I>Important Note:</I></B> An ObjectBuf uses the protected field
- * <TT>mySerializedItems</TT> to store the serialized representation of the
+ * <code>mySerializedItems</code> to store the serialized representation of the
  * objects in the buffer. If the buffer is used to receive a message, the
  * serialized representation of the received objects is cached in
- * <TT>mySerializedItems</TT>. If the buffer is used to send a message and
- * <TT>mySerializedItems</TT> is empty, the objects in the buffer are
+ * <code>mySerializedItems</code>. If the buffer is used to send a message and
+ * <code>mySerializedItems</code> is empty, the objects in the buffer are
  * serialized, the serialized representation is cached in
- * <TT>mySerializedItems</TT>, and the serialized representation is sent in the
+ * <code>mySerializedItems</code>, and the serialized representation is sent in the
  * message. If the buffer is used to send a message and
- * <TT>mySerializedItems</TT> is not empty, the objects in the buffer are
+ * <code>mySerializedItems</code> is not empty, the objects in the buffer are
  * <I>not</I> serialized; rather, the cached serialized representation is sent.
  * This is done to avoid re-serializing the objects if the buffer is used to
  * send copies of a message to multiple destinations, or if the buffer is used
  * to receive and then immediately send a message. However, if the state of any
- * object in the buffer changes, the buffer's <TT>reset()</TT> method must be
+ * object in the buffer changes, the buffer's <code>reset()</code> method must be
  * called; this tells the buffer to discard the cached serialized representation
  * and re-serialize the objects in the buffer.
  *
@@ -184,7 +184,7 @@ public abstract class ObjectBuf<T>
      *
      * @param theLength Number of items.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theLength</TT> &lt; 0.
+     * <code>theLength</code> &lt; 0.
      */
     protected ObjectBuf(int theLength) {
         super(Constants.TYPE_OBJECT, theLength);
@@ -203,7 +203,7 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for an object item. The item is stored in the
-     * <TT>item</TT> field of the buffer.
+     * <code>item</code> field of the buffer.
      *
      * @param <T> Data type of the objects in the buffer.
      * @return Buffer.
@@ -214,10 +214,10 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for an object item with the given initial value. The item
-     * is stored in the <TT>item</TT> field of the buffer.
+     * is stored in the <code>item</code> field of the buffer.
      *
      * @param <T> Data type of the objects in the buffer.
-     * @param item Initial value of the <TT>item</TT> field.
+     * @param item Initial value of the <code>item</code> field.
      * @return Buffer.
      */
     public static <T> ObjectItemBuf<T> buffer(T item) {
@@ -226,14 +226,14 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for the entire given object array. The returned buffer
-     * encompasses all the elements in <TT>theArray</TT>. The array elements are
-     * sent and received as multiple separate objects of type <TT>T</TT>.
+     * encompasses all the elements in <code>theArray</code>. The array elements are
+     * sent and received as multiple separate objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theArray Array.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null.
+     * <code>theArray</code> is null.
      */
     public static <T> ObjectBuf<T> buffer(T[] theArray) {
         if (theArray == null) {
@@ -245,19 +245,19 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for one slice of the given object array. The returned
-     * buffer encompasses <TT>theRange</TT> of elements in <TT>theArray</TT>.
+     * buffer encompasses <code>theRange</code> of elements in <code>theArray</code>.
      * The range's stride may be 1 or greater than 1. The array elements are
-     * sent and received as multiple separate objects of type <TT>T</TT>.
+     * sent and received as multiple separate objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theArray Array.
      * @param theRange Range of elements to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRange</TT> is null.
+     * <code>theArray</code> is null or
+     * <code>theRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT> does not include all the indexes in <TT>theRange</TT>.
+     * <code>theArray</code> does not include all the indexes in <code>theRange</code>.
      */
     public static <T> ObjectBuf<T> sliceBuffer(T[] theArray,
             Range theRange) {
@@ -279,22 +279,22 @@ public abstract class ObjectBuf<T>
     /**
      * Create an array of buffers for multiple slices of the given object array.
      * The returned buffer array has the same length as
-     * <TT>theRanges</TT>. Each element [<I>i</I>] of the returned buffer array
-     * encompasses the elements of <TT>theArray</TT> specified by
-     * <TT>theRanges[i]</TT>. Each range's stride may be 1 or greater than 1.
+     * <code>theRanges</code>. Each element [<I>i</I>] of the returned buffer array
+     * encompasses the elements of <code>theArray</code> specified by
+     * <code>theRanges[i]</code>. Each range's stride may be 1 or greater than 1.
      * The array elements are sent and received as multiple separate objects of
-     * type <TT>T</TT>.
+     * type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theArray Array.
      * @param theRanges Array of ranges of elements to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRanges</TT> or any element thereof is null.
+     * <code>theArray</code> is null or
+     * <code>theRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT>'s allocation does not include any element of
-     * <TT>theRanges</TT>.
+     * <code>theArray</code>'s allocation does not include any element of
+     * <code>theRanges</code>.
      */
     public static <T> ObjectBuf<T>[] sliceBuffers(T[] theArray,
             Range[] theRanges) {
@@ -308,8 +308,8 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for the entire given object array. The returned buffer
-     * encompasses all the elements in <TT>theArray</TT>. The array is sent and
-     * received as a single object of type <TT>T[]</TT>.
+     * encompasses all the elements in <code>theArray</code>. The array is sent and
+     * received as a single object of type <code>T[]</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theArray Array. May be null.
@@ -322,14 +322,14 @@ public abstract class ObjectBuf<T>
     /**
      * Create a buffer for the entire given object matrix. The returned buffer
      * encompasses all the rows and all the columns in
-     * <TT>theMatrix</TT>. The matrix elements are sent and received as multiple
-     * separate objects of type <TT>T</TT>.
+     * <code>theMatrix</code>. The matrix elements are sent and received as multiple
+     * separate objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null.
+     * <code>theMatrix</code> is null.
      */
     public static <T> ObjectBuf<T> buffer(T[][] theMatrix) {
         if (theMatrix == null) {
@@ -342,20 +342,20 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for one row slice of the given object matrix. The
-     * returned buffer encompasses <TT>theRowRange</TT> of rows, and all the
-     * columns, in <TT>theMatrix</TT>. The range's stride may be 1 or greater
+     * returned buffer encompasses <code>theRowRange</code> of rows, and all the
+     * columns, in <code>theMatrix</code>. The range's stride may be 1 or greater
      * than 1. The matrix elements are sent and received as multiple separate
-     * objects of type <TT>T</TT>.
+     * objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix.
      * @param theRowRange Range of rows to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theRowRange</TT> is null.
+     * <code>theMatrix</code> is null or
+     * <code>theRowRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include <TT>theRowRange</TT>.
+     * <code>theMatrix</code>'s allocation does not include <code>theRowRange</code>.
      */
     public static <T> ObjectBuf<T> rowSliceBuffer(T[][] theMatrix,
             Range theRowRange) {
@@ -378,22 +378,22 @@ public abstract class ObjectBuf<T>
     /**
      * Create an array of buffers for multiple row slices of the given object
      * matrix. The returned buffer array has the same length as
-     * <TT>theRowRanges</TT>. Each element [<I>i</I>] of the returned buffer
-     * array encompasses the rows of <TT>theMatrix</TT> specified by
-     * <TT>theRowRanges[i]</TT> and all the columns of <TT>theMatrix</TT>. Each
+     * <code>theRowRanges</code>. Each element [<I>i</I>] of the returned buffer
+     * array encompasses the rows of <code>theMatrix</code> specified by
+     * <code>theRowRanges[i]</code> and all the columns of <code>theMatrix</code>. Each
      * range's stride may be 1 or greater than 1. The matrix elements are sent
-     * and received as multiple separate objects of type <TT>T</TT>.
+     * and received as multiple separate objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix.
      * @param theRowRanges Array of ranges of rows to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theRowRanges</TT> or any element thereof is null.
+     * <code>theMatrix</code> is null or
+     * <code>theRowRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include any element of
-     * <TT>theRowRanges</TT>.
+     * <code>theMatrix</code>'s allocation does not include any element of
+     * <code>theRowRanges</code>.
      */
     public static <T> ObjectBuf<T>[] rowSliceBuffers(T[][] theMatrix,
             Range[] theRowRanges) {
@@ -407,20 +407,20 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for one column slice of the given object matrix. The
-     * returned buffer encompasses all the rows, and <TT>theColRange</TT> of
-     * columns, in <TT>theMatrix</TT>. The range's stride may be 1 or greater
+     * returned buffer encompasses all the rows, and <code>theColRange</code> of
+     * columns, in <code>theMatrix</code>. The range's stride may be 1 or greater
      * than 1. The matrix elements are sent and received as multiple separate
-     * objects of type <TT>T</TT>.
+     * objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix.
      * @param theColRange Range of columns to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theColRange</TT> is null.
+     * <code>theMatrix</code> is null or
+     * <code>theColRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include <TT>theColRange</TT>.
+     * <code>theMatrix</code>'s allocation does not include <code>theColRange</code>.
      */
     public static <T> ObjectBuf<T> colSliceBuffer(T[][] theMatrix,
             Range theColRange) {
@@ -443,22 +443,22 @@ public abstract class ObjectBuf<T>
     /**
      * Create an array of buffers for multiple column slices of the given object
      * matrix. The returned buffer array has the same length as
-     * <TT>theColRanges</TT>. Each element [<I>i</I>] of the returned buffer
-     * array encompasses all the rows of <TT>theMatrix</TT> and the columns of
-     * <TT>theMatrix</TT> specified by <TT>theColRanges[i]</TT>. Each range's
+     * <code>theColRanges</code>. Each element [<I>i</I>] of the returned buffer
+     * array encompasses all the rows of <code>theMatrix</code> and the columns of
+     * <code>theMatrix</code> specified by <code>theColRanges[i]</code>. Each range's
      * stride may be 1 or greater than 1. The matrix elements are sent and
-     * received as multiple separate objects of type <TT>T</TT>.
+     * received as multiple separate objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix.
      * @param theColRanges Array of ranges of columns to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theColRanges</TT> or any element thereof is null.
+     * <code>theMatrix</code> is null or
+     * <code>theColRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include any element of
-     * <TT>theColRanges</TT>.
+     * <code>theMatrix</code>'s allocation does not include any element of
+     * <code>theColRanges</code>.
      */
     public static <T> ObjectBuf<T>[] colSliceBuffers(T[][] theMatrix,
             Range[] theColRanges) {
@@ -472,10 +472,10 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for one patch of the given object matrix. The returned
-     * buffer encompasses <TT>theRowRange</TT> of rows, and <TT>theColRange</TT>
-     * of columns, in <TT>theMatrix</TT>. Each range's stride may be 1 or
+     * buffer encompasses <code>theRowRange</code> of rows, and <code>theColRange</code>
+     * of columns, in <code>theMatrix</code>. Each range's stride may be 1 or
      * greater than 1. The matrix elements are sent and received as multiple
-     * separate objects of type <TT>T</TT>.
+     * separate objects of type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix.
@@ -483,11 +483,11 @@ public abstract class ObjectBuf<T>
      * @param theColRange Range of columns to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null,
-     * <TT>theRowRange</TT> is null, or <TT>theColRange</TT> is null.
+     * <code>theMatrix</code> is null,
+     * <code>theRowRange</code> is null, or <code>theColRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include <TT>theRowRange</TT> and
-     * <TT>theColRange</TT>.
+     * <code>theMatrix</code>'s allocation does not include <code>theRowRange</code> and
+     * <code>theColRange</code>.
      */
     public static <T> ObjectBuf<T> patchBuffer(T[][] theMatrix,
             Range theRowRange,
@@ -515,13 +515,13 @@ public abstract class ObjectBuf<T>
     /**
      * Create an array of buffers for multiple patches of the given object
      * matrix. The length of the returned buffer array is equal to the length of
-     * <TT>theRowRanges</TT> times the length of <TT>theColRanges</TT>. Each
+     * <code>theRowRanges</code> times the length of <code>theColRanges</code>. Each
      * element of the returned buffer array encompasses the rows given in one
-     * element of <TT>theRowRanges</TT> array, and the columns given in one
-     * element of <TT>theColRanges</TT> array, in all possible combinations, of
-     * <TT>theMatrix</TT>. Each range's stride may be 1 or greater than 1. The
+     * element of <code>theRowRanges</code> array, and the columns given in one
+     * element of <code>theColRanges</code> array, in all possible combinations, of
+     * <code>theMatrix</code>. Each range's stride may be 1 or greater than 1. The
      * matrix elements are sent and received as multiple separate objects of
-     * type <TT>T</TT>.
+     * type <code>T</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix.
@@ -529,13 +529,13 @@ public abstract class ObjectBuf<T>
      * @param theColRanges Array of ranges of columns to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null,
-     * <TT>theRowRanges</TT> or any element thereof is null, or
-     * <TT>theColRanges</TT> or any element thereof is null.
+     * <code>theMatrix</code> is null,
+     * <code>theRowRanges</code> or any element thereof is null, or
+     * <code>theColRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include any element of
-     * <TT>theRowRanges</TT> or
-     * <TT>theColRanges</TT>.
+     * <code>theMatrix</code>'s allocation does not include any element of
+     * <code>theRowRanges</code> or
+     * <code>theColRanges</code>.
      */
     public static <T> ObjectBuf<T>[] patchBuffers(T[][] theMatrix,
             Range[] theRowRanges,
@@ -556,8 +556,8 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for the entire given object matrix. The returned buffer
-     * encompasses all the rows and all the columns in <TT>theMatrix</TT>. The
-     * matrix is sent and received as a single object of type <TT>T[][]</TT>.
+     * encompasses all the rows and all the columns in <code>theMatrix</code>. The
+     * matrix is sent and received as a single object of type <code>T[][]</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theMatrix Matrix. May be null.
@@ -576,7 +576,7 @@ public abstract class ObjectBuf<T>
      * @param <T> Data type of the objects in the buffer.
      * @param item SharedObject object that wraps the item.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>item</TT> is null.
+     * <code>item</code> is null.
      * @return a {@link edu.rit.mp.ObjectBuf} object.
      */
     public static <T> ObjectBuf<T> buffer(SharedObject<T> item) {
@@ -588,13 +588,13 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for the entire given shared object array. The returned
-     * buffer encompasses all the elements in <TT>theArray</TT>.
+     * buffer encompasses all the elements in <code>theArray</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theArray Array.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null.
+     * <code>theArray</code> is null.
      */
     public static <T> ObjectBuf<T> buffer(SharedObjectArray<T> theArray) {
         if (theArray == null) {
@@ -606,18 +606,18 @@ public abstract class ObjectBuf<T>
 
     /**
      * Create a buffer for one slice of the given shared object array. The
-     * returned buffer encompasses <TT>theRange</TT> of elements in
-     * <TT>theArray</TT>. The range's stride may be 1 or greater than 1.
+     * returned buffer encompasses <code>theRange</code> of elements in
+     * <code>theArray</code>. The range's stride may be 1 or greater than 1.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theArray Array.
      * @param theRange Range of elements to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRange</TT> is null.
+     * <code>theArray</code> is null or
+     * <code>theRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT> does not include all the indexes in <TT>theRange</TT>.
+     * <code>theArray</code> does not include all the indexes in <code>theRange</code>.
      */
     public static <T> ObjectBuf<T> sliceBuffer(SharedObjectArray<T> theArray,
             Range theRange) {
@@ -639,20 +639,20 @@ public abstract class ObjectBuf<T>
     /**
      * Create an array of buffers for multiple slices of the given shared object
      * array. The returned buffer array has the same length as
-     * <TT>theRanges</TT>. Each element [<I>i</I>] of the returned buffer array
-     * encompasses the elements of <TT>theArray</TT> specified by
-     * <TT>theRanges[i]</TT>. Each range's stride may be 1 or greater than 1.
+     * <code>theRanges</code>. Each element [<I>i</I>] of the returned buffer array
+     * encompasses the elements of <code>theArray</code> specified by
+     * <code>theRanges[i]</code>. Each range's stride may be 1 or greater than 1.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theArray Array.
      * @param theRanges Array of ranges of elements to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRanges</TT> or any element thereof is null.
+     * <code>theArray</code> is null or
+     * <code>theRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT>'s allocation does not include any element of
-     * <TT>theRanges</TT>.
+     * <code>theArray</code>'s allocation does not include any element of
+     * <code>theRanges</code>.
      */
     public static <T> ObjectBuf<T>[] sliceBuffers(SharedObjectArray<T> theArray,
             Range[] theRanges) {
@@ -667,23 +667,22 @@ public abstract class ObjectBuf<T>
     /**
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @return Item at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @return Item at index <code>i</code>.
      */
     public abstract T get(int i);
 
     /**
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
-     * @param item Item to be stored at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @param item Item to be stored at index <code>i</code>.
      */
     public abstract void put(int i,
             T item);
@@ -692,18 +691,18 @@ public abstract class ObjectBuf<T>
      * {@inheritDoc}
      *
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      * <P>
-     * The default implementation of the <TT>copy()</TT> method calls the
-     * <TT>defaultCopy()</TT> method. A subclass can override the
-     * <TT>copy()</TT> method to use a more efficient algorithm.
+     * The default implementation of the <code>copy()</code> method calls the
+     * <code>defaultCopy()</code> method. A subclass can override the
+     * <code>copy()</code> method to use a more efficient algorithm.
      * <P>
-     * The default implementation of the <TT>copy()</TT> method also calls the
-     * <TT>reset()</TT> method.
+     * The default implementation of the <code>copy()</code> method also calls the
+     * <code>reset()</code> method.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public void copy(Buf theSrc) {
@@ -716,17 +715,17 @@ public abstract class ObjectBuf<T>
     /**
      * {@inheritDoc}
      *
-     * Fill this buffer with the given item. The <TT>item</TT> is assigned to
+     * Fill this buffer with the given item. The <code>item</code> is assigned to
      * each element in this buffer.
      * <P>
-     * The <TT>item</TT> must be an instance of class T or a subclass thereof.
-     * The <TT>item</TT> may be null. Note that since <TT>item</TT> is
+     * The <code>item</code> must be an instance of class T or a subclass thereof.
+     * The <code>item</code> may be null. Note that since <code>item</code> is
      * <I>assigned</I> to every buffer element, every buffer element ends up
-     * referring to the same <TT>item</TT>.
+     * referring to the same <code>item</code>.
      * <P>
-     * The <TT>fill()</TT> method calls the <TT>reset()</TT> method.
+     * The <code>fill()</code> method calls the <code>reset()</code> method.
      * @exception ClassCastException (unchecked exception) Thrown if the
-     * <TT>item</TT>'s data type is not the same as this buffer's item data
+     * <code>item</code>'s data type is not the same as this buffer's item data
      * type.
      */
     public void fill(Object item) {
@@ -749,7 +748,7 @@ public abstract class ObjectBuf<T>
     }
 
     /**
-     * Reset this buffer. Call <TT>reset()</TT> if the state of any object in
+     * Reset this buffer. Call <code>reset()</code> if the state of any object in
      * this buffer changes.
      */
     public void reset() {
@@ -782,7 +781,7 @@ public abstract class ObjectBuf<T>
      *
      * Send as many items as possible from this buffer to the given byte buffer.
      * <P>
-     * The <TT>sendItems()</TT> method must not block the calling thread; if it
+     * The <code>sendItems()</code> method must not block the calling thread; if it
      * does, all message I/O in MP will be blocked.
      */
     protected int sendItems(int i,
@@ -809,7 +808,7 @@ public abstract class ObjectBuf<T>
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      */
     protected int receiveItems(int i,
@@ -879,10 +878,10 @@ public abstract class ObjectBuf<T>
 
     /**
      * Copy items from the given source buffer to the given destination buffer.
-     * The number of items copied is <TT>theSrc</TT>'s length or
-     * <TT>theDst</TT>'s length, whichever is smaller. Each item is copied
-     * individually using the <TT>get()</TT> and <TT>put()</TT> methods. It is
-     * assumed that <TT>theSrc</TT> is not the same as <TT>theDst</TT>.
+     * The number of items copied is <code>theSrc</code>'s length or
+     * <code>theDst</code>'s length, whichever is smaller. Each item is copied
+     * individually using the <code>get()</code> and <code>put()</code> methods. It is
+     * assumed that <code>theSrc</code> is not the same as <code>theDst</code>.
      *
      * @param <T> Data type of the objects in the buffer.
      * @param theSrc Source of items to copy.

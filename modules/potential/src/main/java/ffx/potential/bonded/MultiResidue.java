@@ -96,7 +96,6 @@ public class MultiResidue extends Residue {
      * @param residue          a {@link ffx.potential.bonded.Residue} object.
      * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
      * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
-     * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
      */
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType,
@@ -512,9 +511,11 @@ public class MultiResidue extends Residue {
             } else {
                 allRotamers = addAllDefaultRotamers(usual, nRots);
             }
-            return allRotamers;
+            rotamers = allRotamers;
+            return rotamers;
         } else {
-            return addAllDefaultRotamers(usual, nRots);
+            rotamers = addAllDefaultRotamers(usual, nRots);
+            return rotamers;
         }
     }
 

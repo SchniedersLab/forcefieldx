@@ -57,7 +57,7 @@ public class Sorting {
 // Exported helper classes.
     /**
      * Class Sorting.Byte is the base class for a helper object used to sort an
-     * array of type <TT>byte[]</TT>.
+     * array of type <code>byte[]</code>.
      *
      * @author Alan Kaminsky
      * @version 20-Oct-2010
@@ -68,7 +68,7 @@ public class Sorting {
          * Compare two elements in the given array. This determines the order of
          * the elements in the sorted array.
          * <P>
-         * The default implementation returns true if <TT>x[a] &lt; x[b]</TT>,
+         * The default implementation returns true if <code>x[a] &lt; x[b]</code>,
          * which sorts the array into ascending order. A subclass can override
          * this method to obtain a different ordering criterion; for example,
          * descending order.
@@ -77,7 +77,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public boolean comesBefore(byte[] x,
@@ -89,10 +89,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -109,7 +109,7 @@ public class Sorting {
 
     /**
      * Class Sorting.Character is the base class for a helper object used to
-     * sort an array of type <TT>char[]</TT>.
+     * sort an array of type <code>char[]</code>.
      *
      * @author Alan Kaminsky
      * @version 20-Oct-2010
@@ -120,7 +120,7 @@ public class Sorting {
          * Compare two elements in the given array. This determines the order of
          * the elements in the sorted array.
          * <P>
-         * The default implementation returns true if <TT>x[a] &lt; x[b]</TT>,
+         * The default implementation returns true if <code>x[a] &lt; x[b]</code>,
          * which sorts the array into ascending order. A subclass can override
          * this method to obtain a different ordering criterion; for example,
          * descending order.
@@ -129,7 +129,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public boolean comesBefore(char[] x,
@@ -141,10 +141,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -161,7 +161,7 @@ public class Sorting {
 
     /**
      * Class Sorting.Short is the base class for a helper object used to sort an
-     * array of type <TT>short[]</TT>.
+     * array of type <code>short[]</code>.
      *
      * @author Alan Kaminsky
      * @version 20-Oct-2010
@@ -172,7 +172,7 @@ public class Sorting {
          * Compare two elements in the given array. This determines the order of
          * the elements in the sorted array.
          * <P>
-         * The default implementation returns true if <TT>x[a] &lt; x[b]</TT>,
+         * The default implementation returns true if <code>x[a] &lt; x[b]</code>,
          * which sorts the array into ascending order. A subclass can override
          * this method to obtain a different ordering criterion; for example,
          * descending order.
@@ -181,7 +181,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public boolean comesBefore(short[] x,
@@ -193,10 +193,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -213,7 +213,7 @@ public class Sorting {
 
     /**
      * Class Sorting.Integer is the base class for a helper object used to sort
-     * an array of type <TT>int[]</TT>.
+     * an array of type <code>int[]</code>.
      *
      * @author Alan Kaminsky
      * @version 20-Oct-2010
@@ -224,7 +224,7 @@ public class Sorting {
          * Compare two elements in the given array. This determines the order of
          * the elements in the sorted array.
          * <P>
-         * The default implementation returns true if <TT>x[a] &lt; x[b]</TT>,
+         * The default implementation returns true if <code>x[a] &lt; x[b]</code>,
          * which sorts the array into ascending order. A subclass can override
          * this method to obtain a different ordering criterion; for example,
          * descending order.
@@ -233,7 +233,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public boolean comesBefore(int[] x,
@@ -245,10 +245,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -265,7 +265,7 @@ public class Sorting {
 
     /**
      * Class Sorting.Long is the base class for a helper object used to sort an
-     * array of type <TT>long[]</TT>.
+     * array of type <code>long[]</code>.
      *
      * @author Alan Kaminsky
      * @version 20-Oct-2010
@@ -276,7 +276,7 @@ public class Sorting {
          * Compare two elements in the given array. This determines the order of
          * the elements in the sorted array.
          * <P>
-         * The default implementation returns true if <TT>x[a] &lt; x[b]</TT>,
+         * The default implementation returns true if <code>x[a] &lt; x[b]</code>,
          * which sorts the array into ascending order. A subclass can override
          * this method to obtain a different ordering criterion; for example,
          * descending order.
@@ -285,7 +285,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public boolean comesBefore(long[] x,
@@ -297,10 +297,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -317,7 +317,7 @@ public class Sorting {
 
     /**
      * Class Sorting.Float is the base class for a helper object used to sort an
-     * array of type <TT>float[]</TT>.
+     * array of type <code>float[]</code>.
      *
      * @author Alan Kaminsky
      * @version 20-Oct-2010
@@ -328,7 +328,7 @@ public class Sorting {
          * Compare two elements in the given array. This determines the order of
          * the elements in the sorted array.
          * <P>
-         * The default implementation returns true if <TT>x[a] &lt; x[b]</TT>,
+         * The default implementation returns true if <code>x[a] &lt; x[b]</code>,
          * which sorts the array into ascending order. A subclass can override
          * this method to obtain a different ordering criterion; for example,
          * descending order.
@@ -337,7 +337,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public boolean comesBefore(float[] x,
@@ -349,10 +349,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -369,7 +369,7 @@ public class Sorting {
 
     /**
      * Class Sorting.Double is the base class for a helper object used to sort
-     * an array of type <TT>double[]</TT>.
+     * an array of type <code>double[]</code>.
      *
      * @author Alan Kaminsky
      * @version 20-Oct-2010
@@ -380,7 +380,7 @@ public class Sorting {
          * Compare two elements in the given array. This determines the order of
          * the elements in the sorted array.
          * <P>
-         * The default implementation returns true if <TT>x[a] &lt; x[b]</TT>,
+         * The default implementation returns true if <code>x[a] &lt; x[b]</code>,
          * which sorts the array into ascending order. A subclass can override
          * this method to obtain a different ordering criterion; for example,
          * descending order.
@@ -389,7 +389,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public boolean comesBefore(double[] x,
@@ -401,10 +401,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -421,7 +421,7 @@ public class Sorting {
 
     /**
      * Class Sorting.Object is the abstract base class for a helper object used
-     * to sort an array of objects of type <TT>T[]</TT>.
+     * to sort an array of objects of type <code>T[]</code>.
      *
      * @param <T> Data type of the array elements.
      *
@@ -438,7 +438,7 @@ public class Sorting {
          * @param a Index of first array element being compared.
          * @param b Index of second array element being compared.
          *
-         * @return True if <TT>x[a]</TT> comes before <TT>x[b]</TT> in the
+         * @return True if <code>x[a]</code> comes before <code>x[b]</code> in the
          * desired ordering, false otherwise.
          */
         public abstract boolean comesBefore(T[] x,
@@ -448,10 +448,10 @@ public class Sorting {
         /**
          * Swap two elements in the given array.
          * <P>
-         * The default implementation swaps <TT>x[a]</TT> with <TT>x[b]</TT>. A
+         * The default implementation swaps <code>x[a]</code> with <code>x[b]</code>. A
          * subclass can override this method to do something different; for
          * example, to swap the elements of other arrays in addition to
-         * <TT>x</TT>.
+         * <code>x</code>.
          *
          * @param x Array being sorted.
          * @param a Index of first array element being swapped.
@@ -468,14 +468,14 @@ public class Sorting {
 
 // Exported operations.
     /**
-     * Sort the given array of type <TT>byte[]</TT>. The given helper object is
+     * Sort the given array of type <code>byte[]</code>. The given helper object is
      * used to determine the desired ordering of the array elements and to swap
      * the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>) heapsort
      * algorithm is used.
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static byte[] sort(byte[] x,
             Sorting.Byte helper) {
@@ -533,14 +533,14 @@ public class Sorting {
     }
 
     /**
-     * Sort the given array of type <TT>char[]</TT>. The given helper object is
+     * Sort the given array of type <code>char[]</code>. The given helper object is
      * used to determine the desired ordering of the array elements and to swap
      * the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>) heapsort
      * algorithm is used.
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static char[] sort(char[] x,
             Sorting.Character helper) {
@@ -598,14 +598,14 @@ public class Sorting {
     }
 
     /**
-     * Sort the given array of type <TT>short[]</TT>. The given helper object is
+     * Sort the given array of type <code>short[]</code>. The given helper object is
      * used to determine the desired ordering of the array elements and to swap
      * the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>) heapsort
      * algorithm is used.
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static short[] sort(short[] x,
             Sorting.Short helper) {
@@ -663,14 +663,14 @@ public class Sorting {
     }
 
     /**
-     * Sort the given array of type <TT>int[]</TT>. The given helper object is
+     * Sort the given array of type <code>int[]</code>. The given helper object is
      * used to determine the desired ordering of the array elements and to swap
      * the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>) heapsort
      * algorithm is used.
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static int[] sort(int[] x,
             Sorting.Integer helper) {
@@ -728,14 +728,14 @@ public class Sorting {
     }
 
     /**
-     * Sort the given array of type <TT>long[]</TT>. The given helper object is
+     * Sort the given array of type <code>long[]</code>. The given helper object is
      * used to determine the desired ordering of the array elements and to swap
      * the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>) heapsort
      * algorithm is used.
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static long[] sort(long[] x,
             Sorting.Long helper) {
@@ -793,14 +793,14 @@ public class Sorting {
     }
 
     /**
-     * Sort the given array of type <TT>float[]</TT>. The given helper object is
+     * Sort the given array of type <code>float[]</code>. The given helper object is
      * used to determine the desired ordering of the array elements and to swap
      * the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>) heapsort
      * algorithm is used.
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static float[] sort(float[] x,
             Sorting.Float helper) {
@@ -858,14 +858,14 @@ public class Sorting {
     }
 
     /**
-     * Sort the given array of type <TT>double[]</TT>. The given helper object
+     * Sort the given array of type <code>double[]</code>. The given helper object
      * is used to determine the desired ordering of the array elements and to
      * swap the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>)
      * heapsort algorithm is used.
      *
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static double[] sort(double[] x,
             Sorting.Double helper) {
@@ -923,7 +923,7 @@ public class Sorting {
     }
 
     /**
-     * Sort the given object array of type <TT>T[]</TT>. The given helper object
+     * Sort the given object array of type <code>T[]</code>. The given helper object
      * is used to determine the desired ordering of the array elements and to
      * swap the array elements. An <I>O</I>(<I>n</I>&nbsp;log&nbsp;<I>n</I>)
      * heapsort algorithm is used.
@@ -931,7 +931,7 @@ public class Sorting {
      * @param <T> Data type of the array elements.
      * @param x Array to be sorted.
      * @param helper Helper object.
-     * @return The array that was sorted (<TT>x</TT>).
+     * @return The array that was sorted (<code>x</code>).
      */
     public static <T> T[] sort(T[] x,
             Sorting.Object<T> helper) {

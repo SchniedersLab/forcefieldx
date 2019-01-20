@@ -72,7 +72,7 @@ class ObjectArrayReductionBuf<T>
      * @param op Binary operation.
      * @param theBuf Underlying object array buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public ObjectArrayReductionBuf(T[] theArray,
             Range theRange,
@@ -90,12 +90,12 @@ class ObjectArrayReductionBuf<T>
     /**
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
-     * @param item Item to be stored at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @param item Item to be stored at index <code>i</code>.
+     * @param item Item to be stored at index <code>i</code>.
      */
     public void put(int i,
             T item) {
@@ -109,11 +109,11 @@ class ObjectArrayReductionBuf<T>
      * {@inheritDoc}
      *
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public void copy(Buf theSrc) {

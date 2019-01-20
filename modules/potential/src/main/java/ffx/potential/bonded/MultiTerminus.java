@@ -86,7 +86,6 @@ public class MultiTerminus extends Residue {
      * @param residue          a {@link ffx.potential.bonded.Residue} object.
      * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
      * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
-     * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
      * @param mola             a {@link ffx.potential.MolecularAssembly} object.
      */
     public MultiTerminus(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy,

@@ -54,11 +54,10 @@ public interface ConnectListener {
 // Exported operations.
     /**
      * Report that a channel was connected in the given channel group, initiated
-     * by the near end. The channel group calls the <TT>nearEndConnected()</TT>
+     * by the near end. The channel group calls the <code>nearEndConnected()</code>
      * method of a registered connect listener when the channel group's
-     * <TT>connect()</TT> method is called by code in the same process.
+     * <code>connect()</code> method is called by code in the same process.
      *
-     * @param theChannelGroup Channel group that is calling this method.
      * @param theChannelGroup Channel group that is calling this method.
      * @param theChannel Newly created channel.
      * @exception IOException Thrown if an I/O error occurred.
@@ -70,11 +69,10 @@ public interface ConnectListener {
 
     /**
      * Report that a channel was connected in the given channel group, initiated
-     * by the far end. The channel group calls the <TT>farEndConnected()</TT>
+     * by the far end. The channel group calls the <code>farEndConnected()</code>
      * method of a registered connect listener when an incoming connection
      * request is received from another process.
      *
-     * @param theChannelGroup Channel group that is calling this method.
      * @param theChannelGroup Channel group that is calling this method.
      * @param theChannel Newly created channel.
      * @exception IOException Thrown if an I/O error occurred.

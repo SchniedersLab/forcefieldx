@@ -50,9 +50,9 @@ import edu.rit.pj.reduction.Op;
  * Class EmptySigned16BitIntegerBuf provides a signed 16-bit integer buffer that
  * contains no items for messages using the Message Protocol (MP). When a
  * message is sent from an EmptySigned16BitIntegerBuf, the message item type is
- * signed 16-bit <TT>int</TT> and the message length is 0. When a message is
+ * signed 16-bit <code>int</code> and the message length is 0. When a message is
  * received into an EmptySigned16BitIntegerBuf, the message item type must be
- * signed 16-bit <TT>int</TT>, but all items in the message are discarded.
+ * signed 16-bit <code>int</code>, but all items in the message are discarded.
  *
  * @author Alan Kaminsky
  * @version 19-Nov-2007
@@ -74,7 +74,7 @@ public class EmptySigned16BitIntegerBuf
      *
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public int get(int i) {
@@ -86,7 +86,7 @@ public class EmptySigned16BitIntegerBuf
      *
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public void put(int i,
@@ -98,11 +98,11 @@ public class EmptySigned16BitIntegerBuf
      * {@inheritDoc}
      *
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public void copy(Buf theSrc) {
@@ -135,7 +135,7 @@ public class EmptySigned16BitIntegerBuf
      *
      * Send as many items as possible from this buffer to the given byte buffer.
      * <P>
-     * The <TT>sendItems()</TT> method must not block the calling thread; if it
+     * The <code>sendItems()</code> method must not block the calling thread; if it
      * does, all message I/O in MP will be blocked.
      */
     protected int sendItems(int i,
@@ -149,7 +149,7 @@ public class EmptySigned16BitIntegerBuf
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      */
     protected int receiveItems(int i,

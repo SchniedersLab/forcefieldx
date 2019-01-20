@@ -61,9 +61,9 @@ public class CommPattern {
      *
      * @param size Size of the communicator. Must be &gt;= 1.
      * @param rank Rank of this process in the communicator. Must be in the
-     * range 0 .. <TT>size</TT>-1.
+     * range 0 .. <code>size</code>-1.
      * @param root Rank of the root process for the broadcast. Must be in the
-     * range 0 .. <TT>size</TT>-1.
+     * range 0 .. <code>size</code>-1.
      * @return Array of process ranks for the parallel broadcast pattern. The
      * element at index 0 is the parent process rank, or -1 if there is no
      * parent process. The elements at indexes 1 and above, if any, are the

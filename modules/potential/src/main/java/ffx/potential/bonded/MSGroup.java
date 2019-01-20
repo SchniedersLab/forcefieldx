@@ -173,11 +173,6 @@ public abstract class MSGroup extends MSNode {
      *
      * @param n    a {@link java.lang.String} object.
      * @param node a {@link ffx.potential.bonded.MSNode} object.
-     * @param node a {@link ffx.potential.bonded.MSNode} object.
-     * @param node a {@link ffx.potential.bonded.MSNode} object.
-     * @param node a {@link ffx.potential.bonded.MSNode} object.
-     * @param node a {@link ffx.potential.bonded.MSNode} object.
-     * @param node a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSGroup(String n, MSNode node) {
         this(n);

@@ -366,7 +366,6 @@ public class JobScheduler
      * {@inheritDoc}
      *
      * Report a comment for a process.
-     * @exception IOException Thrown if an I/O error occurred.
      */
     public synchronized void reportComment(JobFrontendRef theJobFrontend,
             int rank,

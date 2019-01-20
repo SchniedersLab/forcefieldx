@@ -42,8 +42,8 @@ package edu.rit.util;
 /**
  * Class DefaultRandom provides a default pseudorandom number generator (PRNG)
  * designed for use in parallel scientific programming. To create an instance of
- * class DefaultRandom, either use the <TT>DefaultRandom()</TT> constructor, or
- * use the static <TT>getInstance(long)</TT> method in class {@linkplain
+ * class DefaultRandom, either use the <code>DefaultRandom()</code> constructor, or
+ * use the static <code>getInstance(long)</code> method in class {@linkplain
  * Random}.
  * <P>
  * Class DefaultRandom generates random numbers by hashing successive counter

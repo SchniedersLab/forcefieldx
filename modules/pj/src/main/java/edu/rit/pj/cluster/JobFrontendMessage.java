@@ -86,7 +86,6 @@ public abstract class JobFrontendMessage
      * @param jvm Full pathname of Java Virtual Machine.
      * @param jvmflags Array of JVM command line flags.
      * @param classpath Java class path for PJ Library.
-     * @param jvmflags Array of JVM command line flags.
      * @param shellCommand Shell command string.
      * @param Nt Number of CPUs assigned to the process.
      * @return a {@link edu.rit.pj.cluster.JobFrontendMessage} object.

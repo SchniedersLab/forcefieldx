@@ -95,7 +95,7 @@ public class BackendFileInputStream
 
 // Hidden constructors.
     /**
-     * Construct a new backend file input stream. Call the <TT>open()</TT>
+     * Construct a new backend file input stream. Call the <code>open()</code>
      * method to open the file and obtain the frontend file descriptor.
      *
      * @param theJobFrontend Job Frontend.
@@ -126,7 +126,7 @@ public class BackendFileInputStream
 // Exported operations.
     /**
      * Read a byte from this input stream. The byte is returned as an
-     * <TT>int</TT> in the range 0 .. 255.
+     * <code>int</code> in the range 0 .. 255.
      *
      * @exception IOException Thrown if an I/O error occurred.
      * @return a int.
@@ -146,7 +146,7 @@ public class BackendFileInputStream
      * @return Number of bytes actually read, or -1 if the end-of-stream was
      * encountered.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
+     * <code>buf</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -160,10 +160,10 @@ public class BackendFileInputStream
      *
      * Read a portion of the given byte array from this input stream.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
+     * <code>buf</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>off</TT> &lt; 0, <TT>len</TT>
-     * &lt; 0, or <TT>off+len</TT> &gt; <TT>buf.length</TT>.
+     * <code>off</code> &lt; 0, <code>len</code>
+     * &lt; 0, or <code>off+len</code> &gt; <code>buf.length</code>.
      * @exception IOException Thrown if an I/O error occurred.
      */
     public int read(byte[] buf,

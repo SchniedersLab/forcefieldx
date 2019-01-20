@@ -79,7 +79,7 @@ import edu.rit.util.TimerThread;
  * <BR><I>K</I> = Number of backend processes (&gt;= 1)
  * <BR><I>rank</I> = Rank of this backend process (0 .. <I>K</I>-1)
  * <BR><I>hasFrontendComm</I> = Whether the frontend communicator exists
- * (<TT>true</TT> or <TT>false</TT>)
+ * (<code>true</code> or <code>false</code>)
  * <BR><I>frontendHost</I> = Job frontend's middleware channel group host name
  * <BR><I>frontendPort</I> = Job frontend's middleware channel group port number
  * <BR><I>backendHost</I> = Job backend's middleware channel group host name
@@ -434,7 +434,7 @@ public class JobBackend
      *                          communicator. The first
      *                          <I>K</I> elements are for the job backend processes in rank order, the
      *                          <I>K</I>+1st element is for the job frontend process. If the frontend
-     *                          communicator does not exist, <TT>frontendAddress</TT> is null.
+     *                          communicator does not exist, <code>frontendAddress</code> is null.
      * @param properties        Java system properties.
      * @param mainClassName     Fully qualified class name of the Java main program
      *                          class to execute.
@@ -814,15 +814,15 @@ public class JobBackend
      * Set the comment string for this job backend process. The comment string
      * appears in the detailed job status display in the Job Scheduler's web
      * interface. Each job backend process (rank) has its own comment string. If
-     * <TT>setComment()</TT> is never called, the comment string is empty. The
+     * <code>setComment()</code> is never called, the comment string is empty. The
      * comment string is typically used to display this job backend process's
      * progress. The comment string is rendered by a web browser and can contain
      * HTML tags.
      * <p>
-     * Calling <TT>setComment()</TT> causes a message to be sent to the job
+     * Calling <code>setComment()</code> causes a message to be sent to the job
      * frontend process, which in turn causes a message to be sent to the Job
      * Scheduler. (Any I/O errors during message sending are ignored.)
-     * Consequently, don't call <TT>setComment()</TT> too frequently, or the
+     * Consequently, don't call <code>setComment()</code> too frequently, or the
      * program's performance will suffer.
      *
      * @param comment Comment string.

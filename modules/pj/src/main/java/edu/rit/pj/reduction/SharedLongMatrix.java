@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
  * Class SharedLongMatrix provides a matrix reduction variable with elements of
- * type <TT>long</TT>.
+ * type <code>long</code>.
  * <P>
  * Class SharedLongMatrix is multiple thread safe. The methods use lock-free
  * atomic compare-and-set.
@@ -67,7 +67,7 @@ public class SharedLongMatrix {
      * @param rows Number of rows.
      * @param cols Number of columns.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>rows</TT> &lt; 0 or <TT>cols</TT>
+     * <code>rows</code> &lt; 0 or <code>cols</code>
      * &lt; 0.
      */
     public SharedLongMatrix(int rows,
@@ -81,12 +81,12 @@ public class SharedLongMatrix {
     /**
      * Construct a new long matrix reduction variable whose elements are copied
      * from the given matrix. It is assumed that all rows of the
-     * <TT>matrix</TT> have the same number of columns.
+     * <code>matrix</code> have the same number of columns.
      *
      * @param matrix Matrix to copy.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>matrix</TT> is null or any row of
-     * <TT>matrix</TT> is null.
+     * <code>matrix</code> is null or any row of
+     * <code>matrix</code> is null.
      */
     public SharedLongMatrix(long[][] matrix) {
         myMatrix = new AtomicLongArray[matrix.length];
@@ -277,15 +277,15 @@ public class SharedLongMatrix {
 
     /**
      * Combine this matrix reduction variable at the given row and column with
-     * the given value using the given operation. (This matrix <TT>[r,c]</TT>)
-     * is set to (this matrix <TT>[r,c]</TT>) <I>op</I> (<TT>value</TT>), then
-     * (this matrix <TT>[r,c]</TT>) is returned.
+     * the given value using the given operation. (This matrix <code>[r,c]</code>)
+     * is set to (this matrix <code>[r,c]</code>) <I>op</I> (<code>value</code>), then
+     * (this matrix <code>[r,c]</code>) is returned.
      *
      * @param r Row index.
      * @param c Column index.
      * @param value Value.
      * @param op Binary operation.
-     * @return (This matrix <TT>[r,c]</TT>) <I>op</I> (<TT>value</TT>).
+     * @return (This matrix <code>[r,c]</code>) <I>op</I> (<code>value</code>).
      */
     public long reduce(int r,
             int c,
@@ -303,19 +303,19 @@ public class SharedLongMatrix {
 
     /**
      * Combine this matrix reduction variable with the given matrix using the
-     * given operation. For every row <TT>r</TT> and column <TT>c</TT> in this
-     * matrix, (this matrix <TT>[r,c]</TT>) is set to (this matrix
-     * <TT>[r,c]</TT>) <I>op</I> (<TT>src[r,c]</TT>).
+     * given operation. For every row <code>r</code> and column <code>c</code> in this
+     * matrix, (this matrix <code>[r,c]</code>) is set to (this matrix
+     * <code>[r,c]</code>) <I>op</I> (<code>src[r,c]</code>).
      * <P>
-     * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
+     * The <code>reduce()</code> method is multiple thread safe <I>on a per-element
      * basis.</I> Each individual matrix element is updated atomically, but the
      * matrix as a whole is not updated atomically.
      *
      * @param src Source matrix.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>src</TT> is null. Thrown if
-     * <TT>op</TT> is null.
+     * <code>src</code> is null. Thrown if
+     * <code>op</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
      * matrix index would be out of bounds.
      */
@@ -326,14 +326,14 @@ public class SharedLongMatrix {
 
     /**
      * Combine a portion of this matrix reduction variable with a portion of the
-     * given matrix using the given operation. For each row index <TT>r</TT>
-     * from 0 to <TT>rowlen-1</TT> inclusive, and for each column index
-     * <TT>c</TT> from 0 to <TT>collen-1</TT> inclusive, (this matrix
-     * <TT>[dstrow+r,dstcol+c]</TT>) is set to (this matrix
-     * <TT>[dstrow+r,dstcol+c]</TT>) <I>op</I>
-     * (<TT>src[srcrow+r,srccol+c]</TT>).
+     * given matrix using the given operation. For each row index <code>r</code>
+     * from 0 to <code>rowlen-1</code> inclusive, and for each column index
+     * <code>c</code> from 0 to <code>collen-1</code> inclusive, (this matrix
+     * <code>[dstrow+r,dstcol+c]</code>) is set to (this matrix
+     * <code>[dstrow+r,dstcol+c]</code>) <I>op</I>
+     * (<code>src[srcrow+r,srccol+c]</code>).
      * <P>
-     * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
+     * The <code>reduce()</code> method is multiple thread safe <I>on a per-element
      * basis.</I> Each individual matrix element is updated atomically, but the
      * matrix as a whole is not updated atomically.
      *
@@ -344,19 +344,15 @@ public class SharedLongMatrix {
      * matrix.
      * @param srccol Column index of first element to update from in the source
      * matrix.
-     * @param srcrow Row index of first element to update from in the source
-     * matrix.
-     * @param srccol Column index of first element to update from in the source
-     * matrix.
      * @param rowlen Number of rows to update.
      * @param collen Number of columns to update.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>src</TT> is null. Thrown if
-     * <TT>op</TT> is null.
+     * <code>src</code> is null. Thrown if
+     * <code>op</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>rowlen</TT> &lt; 0. Thrown if
-     * <TT>collen</TT> &lt; 0. Thrown if any matrix index would be out of
+     * <code>rowlen</code> &lt; 0. Thrown if
+     * <code>collen</code> &lt; 0. Thrown if any matrix index would be out of
      * bounds.
      */
     public void reduce(int dstrow,

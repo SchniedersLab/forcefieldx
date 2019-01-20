@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <P>
  * To execute a parallel region, create a ParallelTeam object; create an
  * instance of a concrete subclass of class {@linkplain ParallelRegion}; and
- * pass this instance to the parallel team's <TT>execute()</TT> method. For
+ * pass this instance to the parallel team's <code>execute()</code> method. For
  * further information, see class {@linkplain ParallelRegion}.
  *
  * @author Alan Kaminsky
@@ -91,18 +91,18 @@ public class ParallelTeam {
 // Exported constructors.
     /**
      * Construct a new parallel team with the default number of threads. If the
-     * <TT>"pj.nt"</TT> Java property is specified, that property gives the
+     * <code>"pj.nt"</code> Java property is specified, that property gives the
      * default number of threads, which must be an integer greater than or equal
-     * to 1. If the <TT>"pj.nt"</TT> Java property is not specified, the default
+     * to 1. If the <code>"pj.nt"</code> Java property is not specified, the default
      * number of threads is the value returned by the
-     * <TT>Runtime.availableProcessors()</TT> method. You can specify the
+     * <code>Runtime.availableProcessors()</code> method. You can specify the
      * default number of threads on the Java command line like this:
      * <PRE>
      *     java -Dpj.nt=4 . . .
      * </PRE>
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     * <code>"pj.nt"</code> property value is not an integer greater than or equal
      * to 1.
      */
     public ParallelTeam() {
@@ -135,13 +135,13 @@ public class ParallelTeam {
      *
      * @param theRegion Parallel region.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theRegion</TT> is null.
+     * <code>theRegion</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * parallel team is already executing a parallel region. Thrown if
-     * <TT>theRegion</TT> is already being executed by a parallel team.
+     * <code>theRegion</code> is already being executed by a parallel team.
      * @exception Exception Exception thrown by the parallel region's
-     * <TT>start()</TT>,
-     * <TT>run()</TT>, or <TT>finish()</TT> methods.
+     * <code>start()</code>,
+     * <code>run()</code>, or <code>finish()</code> methods.
      * @throws java.lang.Exception if any.
      */
     public final void execute(ParallelRegion theRegion)
@@ -235,11 +235,11 @@ public class ParallelTeam {
 
     /**
      * Determine the default number of threads for a parallel team. If the
-     * <TT>"pj.nt"</TT> Java property is specified, that property gives the
+     * <code>"pj.nt"</code> Java property is specified, that property gives the
      * default number of threads, which must be an integer greater than or equal
-     * to 1. If the <TT>"pj.nt"</TT> Java property is not specified, the default
+     * to 1. If the <code>"pj.nt"</code> Java property is not specified, the default
      * number of threads is the value returned by the
-     * <TT>Runtime.availableProcessors()</TT> method. You can specify the
+     * <code>Runtime.availableProcessors()</code> method. You can specify the
      * default number of threads on the Java command line like this:
      * <PRE>
      *     java -Dpj.nt=4 . . .
@@ -247,7 +247,7 @@ public class ParallelTeam {
      *
      * @return Default number of threads for a parallel team.
      * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * <TT>"pj.nt"</TT> property value is not an integer greater than or equal
+     * <code>"pj.nt"</code> property value is not an integer greater than or equal
      * to 1.
      */
     public static int getDefaultThreadCount() {
@@ -289,7 +289,7 @@ public class ParallelTeam {
      *
      * @param action Barrier action.
      *
-     * @exception Exception Thrown if the <TT>action</TT>'s <TT>run()</TT>
+     * @exception Exception Thrown if the <code>action</code>'s <code>run()</code>
      * method throws an exception.
      */
     void barrier(BarrierAction action)

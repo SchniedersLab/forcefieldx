@@ -95,7 +95,7 @@ public class DataInputStream
 
     /**
      * Read a byte value from this data input stream. An int is read using
-     * <TT>readInt()</TT>, the int is converted to a byte, and the byte is
+     * <code>readInt()</code>, the int is converted to a byte, and the byte is
      * returned.
      *
      * @return Byte value.
@@ -110,7 +110,7 @@ public class DataInputStream
 
     /**
      * Read a short value from this data input stream. An int is read using
-     * <TT>readInt()</TT>, the int is converted to a short, and the short is
+     * <code>readInt()</code>, the int is converted to a short, and the short is
      * returned.
      *
      * @return Short value.
@@ -125,7 +125,7 @@ public class DataInputStream
 
     /**
      * Read a character value from this data input stream. An int is read using
-     * <TT>readInt()</TT>, the int is converted to a char, and the char is
+     * <code>readInt()</code>, the int is converted to a char, and the char is
      * returned.
      *
      * @return Character value.
@@ -142,26 +142,26 @@ public class DataInputStream
      * Read an integer value from this data input stream. From one to five bytes
      * are read, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
      * If the first byte's most significant bit is 0, then the least significant
      * 7 bits are sign-extended to an int and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's two most significant bits are 10, then one more
      * byte is read, and the least significant 14 bits are sign-extended to an
      * int and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's three most significant bits are 110, then two
      * more bytes are read, and the least significant 21 bits are sign-extended
      * to an int and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's four most significant bits are 1110, then three
      * more bytes are read, and the least significant 28 bits are sign-extended
      * to an int and returned.
-     * <P>
+     *
      * <LI>
      * Else four more bytes are read, and the least significant 32 bits are
      * returned.
@@ -253,7 +253,7 @@ public class DataInputStream
 
     /**
      * Read an unsigned byte value from this data input stream. An int is read
-     * using <TT>readUnsignedInt()</TT>, the int is converted to a byte, and the
+     * using <code>readUnsignedInt()</code>, the int is converted to a byte, and the
      * byte is returned.
      *
      * @return Byte value.
@@ -268,7 +268,7 @@ public class DataInputStream
 
     /**
      * Read an unsigned short value from this data input stream. An int is read
-     * using <TT>readUnsignedInt()</TT>, the int is converted to a short, and
+     * using <code>readUnsignedInt()</code>, the int is converted to a short, and
      * the short is returned.
      *
      * @return Short value.
@@ -283,7 +283,7 @@ public class DataInputStream
 
     /**
      * Read an unsigned character value from this data input stream. An int is
-     * read using <TT>readUnsignedInt()</TT>, the int is converted to a char,
+     * read using <code>readUnsignedInt()</code>, the int is converted to a char,
      * and the char is returned.
      *
      * @return Character value.
@@ -300,26 +300,26 @@ public class DataInputStream
      * Read an unsigned integer value from this data input stream. From one to
      * five bytes are read, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
      * If the first byte's most significant bit is 0, then the least significant
      * 7 bits are zero-extended to an int and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's two most significant bits are 10, then one more
      * byte is read, and the least significant 14 bits are zero-extended to an
      * int and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's three most significant bits are 110, then two
      * more bytes are read, and the least significant 21 bits are zero-extended
      * to an int and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's four most significant bits are 1110, then three
      * more bytes are read, and the least significant 28 bits are zero-extended
      * to an int and returned.
-     * <P>
+     *
      * <LI>
      * Else four more bytes are read, and the least significant 32 bits are
      * returned.
@@ -408,45 +408,45 @@ public class DataInputStream
      * Read a long value from this data input stream. From one to nine bytes are
      * read, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
      * If the first byte's most significant bit is 0, then the least significant
      * 7 bits are sign-extended to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's two most significant bits are 10, then one more
      * byte is read, and the least significant 14 bits are sign-extended to a
      * long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's three most significant bits are 110, then two
      * more bytes are read, and the least significant 21 bits are sign-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's four most significant bits are 1110, then three
      * more bytes are read, and the least significant 28 bits are sign-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's five most significant bits are 11110, then four
      * more bytes are read, and the least significant 35 bits are sign-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's six most significant bits are 111110, then five
      * more bytes are read, and the least significant 42 bits are sign-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's seven most significant bits are 1111110, then
      * six more bytes are read, and the least significant 49 bits are
      * sign-extended to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte is 11111110, then seven more bytes are read, and
      * the least significant 56 bits are sign-extended to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else eight more bytes are read, and the least significant 64 bits are
      * returned.
@@ -686,45 +686,45 @@ public class DataInputStream
      * Read an unsigned long value from this data input stream. From one to nine
      * bytes are read, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
      * If the first byte's most significant bit is 0, then the least significant
      * 7 bits are zero-extended to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's two most significant bits are 10, then one more
      * byte is read, and the least significant 14 bits are zero-extended to a
      * long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's three most significant bits are 110, then two
      * more bytes are read, and the least significant 21 bits are zero-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's four most significant bits are 1110, then three
      * more bytes are read, and the least significant 28 bits are zero-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's five most significant bits are 11110, then four
      * more bytes are read, and the least significant 35 bits are zero-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's six most significant bits are 111110, then five
      * more bytes are read, and the least significant 42 bits are zero-extended
      * to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte's seven most significant bits are 1111110, then
      * six more bytes are read, and the least significant 49 bits are
      * zero-extended to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else if the first byte is 11111110, then seven more bytes are read, and
      * the least significant 56 bits are zero-extended to a long and returned.
-     * <P>
+     *
      * <LI>
      * Else eight more bytes are read, and the least significant 64 bits are
      * returned.
@@ -952,8 +952,8 @@ public class DataInputStream
 
     /**
      * Read a float value from this data input stream. Four bytes are read in
-     * big-endian order yielding an int value <TT>v</TT>, then
-     * <TT>Float.intBitsToFloat(v)</TT> is returned.
+     * big-endian order yielding an int value <code>v</code>, then
+     * <code>Float.intBitsToFloat(v)</code> is returned.
      *
      * @return Float value.
      * @exception EOFException Thrown if the end of the stream is encountered.
@@ -989,8 +989,8 @@ public class DataInputStream
 
     /**
      * Read a double value from this data input stream. Eight bytes are read in
-     * big-endian order yielding a long value <TT>v</TT>, then
-     * <TT>Double.longBitsToDouble(v)</TT> is returned.
+     * big-endian order yielding a long value <code>v</code>, then
+     * <code>Double.longBitsToDouble(v)</code> is returned.
      *
      * @return Double value.
      * @exception EOFException Thrown if the end of the stream is encountered.
@@ -1046,8 +1046,8 @@ public class DataInputStream
 
     /**
      * Read a string value from this data input stream. The length of the string
-     * is read using <TT>readUnsignedInt()</TT>, then each character of the
-     * string is read using <TT>readUnsignedInt()</TT>.
+     * is read using <code>readUnsignedInt()</code>, then each character of the
+     * string is read using <code>readUnsignedInt()</code>.
      *
      * @return String value.
      * @exception EOFException Thrown if the end of the stream is encountered.

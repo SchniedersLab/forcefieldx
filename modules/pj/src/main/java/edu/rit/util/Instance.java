@@ -62,40 +62,32 @@ public class Instance {
      * whitespace is allowed. This method attempts to find a constructor for the
      * given class as follows, where <I>N</I> is the number of arguments:
      * <UL>
-     * <P>
      * <LI>
      * If <I>N</I> = 0, use a no-argument constructor.
-     * <P>
      * <LI>
      * Else if all arguments are integers, use a constructor with <I>N</I>
-     * arguments of type <TT>int</TT>.
-     * <P>
+     * arguments of type <code>int</code>.
      * <LI>
      * Else if all arguments are integers and there is no such constructor, use
-     * a constructor with one argument of type <TT>int[]</TT>.
-     * <P>
+     * a constructor with one argument of type <code>int[]</code>.
      * <LI>
      * Else if not all arguments are integers, use a constructor with <I>N</I>
-     * arguments of type <TT>String</TT>.
-     * <P>
+     * arguments of type <code>String</code>.
      * <LI>
      * Else if not all arguments are integers and there is no such constructor,
-     * use a constructor with one argument of type <TT>String[]</TT>.
-     * <P>
+     * use a constructor with one argument of type <code>String[]</code>.
      * <LI>
      * Else throw a NoSuchMethodException.
      * </UL>
-     * <P>
      * This method invokes the chosen constructor, passing in the given argument
      * values, and returns a reference to the newly-created instance.
-     * <P>
      * <I>Note:</I> To find the given class, the calling thread's context class
      * loader is used.
      *
      * @param s Constructor expression string.
      * @return New instance.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>s</TT> does not obey the required syntax.
+     * <code>s</code> does not obey the required syntax.
      * @exception ClassNotFoundException Thrown if the given class cannot be
      * found.
      * @exception NoSuchMethodException Thrown if a suitable constructor cannot

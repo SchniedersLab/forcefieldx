@@ -520,7 +520,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @param frame       a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
      * @param frameCoords an array of {@link double} objects.
      * @param localOrigin an array of {@link double} objects.
-     * @param frameCoords an array of {@link double} objects.
      * @return Whether this multipole underwent chiral inversion.
      */
     public static boolean checkMultipoleChirality(double[] multipole, MultipoleFrameDefinition frame,
@@ -567,12 +566,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      *
      * @param frame       the multipole frame definition
      * @param frameCoords the coordinates of the frame atoms
-     * @param frameCoords the coordinates of the frame atoms
-     * @param frameCoords the coordinates of the frame atoms
-     * @param frameCoords the coordinates of the frame atoms
      * @param localOrigin the local origin of the frame
-     * @param frameCoords the coordinates of the frame atoms
-     * @param frameCoords the coordinates of the frame atoms
      * @return the rotation matrix
      */
     public static double[][] getRotationMatrix(MultipoleFrameDefinition frame,

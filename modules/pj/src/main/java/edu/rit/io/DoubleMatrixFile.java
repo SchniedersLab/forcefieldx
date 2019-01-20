@@ -56,16 +56,16 @@ import edu.rit.util.Range;
  * Class DoubleMatrixFile provides an object for reading or writing a double
  * matrix from or to a file. The matrix containing the data to read or write is
  * a separate object, specified as an argument to the constructor or the
- * <TT>setMatrix()</TT> method.
+ * <code>setMatrix()</code> method.
  * <P>
- * To write the matrix to a file, call the <TT>prepareToWrite()</TT> method,
- * specifying the output stream to write. The <TT>prepareToWrite()</TT> method
+ * To write the matrix to a file, call the <code>prepareToWrite()</code> method,
+ * specifying the output stream to write. The <code>prepareToWrite()</code> method
  * returns an instance of class {@linkplain DoubleMatrixFile.Writer}. Call the
  * methods of the writer object to write the matrix, or sections of the matrix,
  * to the output stream. When finished, close the writer.
  * <P>
- * To read the matrix from a file, call the <TT>prepareToRead()</TT> method,
- * specifying the input stream to read. The <TT>prepareToRead()</TT> method
+ * To read the matrix from a file, call the <code>prepareToRead()</code> method,
+ * specifying the input stream to read. The <code>prepareToRead()</code> method
  * returns an instance of class {@linkplain DoubleMatrixFile.Reader}. Call the
  * methods of the reader object to read the matrix, or sections of the matrix,
  * from the input stream. When finished, close the reader.
@@ -79,13 +79,13 @@ import edu.rit.util.Range;
  * <B>Double Matrix File Format</B>
  * <P>
  * A double matrix file is a binary file containing the following items. Each
- * primitive item is written as though by java.io.DataOutput (<TT>int</TT>, four
- * bytes; <TT>double</TT>, eight bytes; most significant byte first).
+ * primitive item is written as though by java.io.DataOutput (<code>int</code>, four
+ * bytes; <code>double</code>, eight bytes; most significant byte first).
  * <UL>
  * <LI>
- * Number of matrix rows, <I>R</I> (<TT>int</TT>). <I>R</I> &gt;= 0.
+ * Number of matrix rows, <I>R</I> (<code>int</code>). <I>R</I> &gt;= 0.
  * <LI>
- * Number of matrix columns, <I>C</I> (<TT>int</TT>). <I>C</I> &gt;= 0.
+ * Number of matrix columns, <I>C</I> (<code>int</code>). <I>C</I> &gt;= 0.
  * <LI>
  * Zero or more segments of matrix elements.
  * </UL>
@@ -93,19 +93,19 @@ import edu.rit.util.Range;
  * Each segment contains the following items.
  * <UL>
  * <LI>
- * The segment's lower row index, <I>RL</I> (<TT>int</TT>). <I>RL</I> &gt;= 0.
+ * The segment's lower row index, <I>RL</I> (<code>int</code>). <I>RL</I> &gt;= 0.
  * <LI>
- * The segment's lower column index, <I>CL</I> (<TT>int</TT>). <I>CL</I> &gt;=
+ * The segment's lower column index, <I>CL</I> (<code>int</code>). <I>CL</I> &gt;=
  * 0.
  * <LI>
- * Number of rows in the segment, <I>M</I> (<TT>int</TT>). <I>M</I> &gt;= 0.
+ * Number of rows in the segment, <I>M</I> (<code>int</code>). <I>M</I> &gt;= 0.
  * <I>RL</I>+<I>M</I> &lt;= <I>R</I>.
  * <LI>
- * Number of columns in the segment, <I>N</I> (<TT>int</TT>). <I>N</I> &gt;= 0.
+ * Number of columns in the segment, <I>N</I> (<code>int</code>). <I>N</I> &gt;= 0.
  * <I>CL</I>+<I>N</I> &lt;= <I>C</I>.
  * <LI>
  * The matrix elements in rows <I>RL</I>..<I>RL</I>+<I>M</I>-1 and columns
- * <I>CL</I>..<I>CL</I>+<I>N</I>-1 (<TT>double</TT>). Stored in row major order.
+ * <I>CL</I>..<I>CL</I>+<I>N</I>-1 (<code>double</code>). Stored in row major order.
  * </UL>
  *
  * @author Alan Kaminsky
@@ -125,7 +125,7 @@ public class DoubleMatrixFile {
      * Construct a new double matrix file object. The matrix's number of rows
      * and number of columns are uninitialized. Before using the matrix file,
      * specify the number of rows and the number of columns by calling the
-     * <TT>setMatrix()</TT> method or by reading the matrix file from an input
+     * <code>setMatrix()</code> method or by reading the matrix file from an input
      * stream.
      */
     public DoubleMatrixFile() {
@@ -139,11 +139,11 @@ public class DoubleMatrixFile {
      * @param C Number of columns.
      * @param theMatrix Underlying matrix.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null.
+     * <code>theMatrix</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>R</TT> &lt; 0. Thrown if
-     * <TT>C</TT> &lt; 0. Thrown if <TT>theMatrix.length</TT> does not equal
-     * <TT>R</TT>.
+     * <code>R</code> &lt; 0. Thrown if
+     * <code>C</code> &lt; 0. Thrown if <code>theMatrix.length</code> does not equal
+     * <code>R</code>.
      */
     public DoubleMatrixFile(int R,
             int C,
@@ -187,11 +187,11 @@ public class DoubleMatrixFile {
      * @param C Number of columns.
      * @param theMatrix Underlying matrix.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null.
+     * <code>theMatrix</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>R</TT> &lt; 0. Thrown if
-     * <TT>C</TT> &lt; 0. Thrown if <TT>theMatrix.length</TT> does not equal
-     * <TT>R</TT>.
+     * <code>R</code> &lt; 0. Thrown if
+     * <code>C</code> &lt; 0. Thrown if <code>theMatrix.length</code> does not equal
+     * <code>R</code>.
      */
     public void setMatrix(int R,
             int C,
@@ -218,7 +218,7 @@ public class DoubleMatrixFile {
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * matrix file object is uninitialized.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theStream</TT> is null.
+     * <code>theStream</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -235,7 +235,7 @@ public class DoubleMatrixFile {
      * of rows and the number of columns are read from the input stream at this
      * time. If this matrix file object is uninitialized, it becomes initialized
      * with the given number of rows and columns, and storage is allocated for
-     * the underlying matrix's row references; call the <TT>getMatrix()</TT>
+     * the underlying matrix's row references; call the <code>getMatrix()</code>
      * method to obtain the underlying matrix. If this matrix file object is
      * already initialized, the number of rows and columns read from the input
      * stream must match those of this matrix file object, otherwise an
@@ -248,7 +248,7 @@ public class DoubleMatrixFile {
      * @param theStream Input stream.
      * @return Reader object with which to read this matrix file.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theStream</TT> is null.
+     * <code>theStream</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @exception InvalidMatrixFileException (subclass of IOException) Thrown if
      * the input stream's contents were invalid.
@@ -309,10 +309,10 @@ public class DoubleMatrixFile {
      * {@linkplain DoubleMatrixFile} to an output stream.
      * <P>
      * When a writer is created, the number of rows and number of columns are
-     * written to the output stream. Each time the <TT>write()</TT>,
-     * <TT>writeRowSlice()</TT>, <TT>writeColSlice()</TT>, or
-     * <TT>writePatch()</TT> method is called, one segment of matrix elements is
-     * written to the output stream. When finished, call the <TT>close()</TT>
+     * written to the output stream. Each time the <code>write()</code>,
+     * <code>writeRowSlice()</code>, <code>writeColSlice()</code>, or
+     * <code>writePatch()</code> method is called, one segment of matrix elements is
+     * written to the output stream. When finished, call the <code>close()</code>
      * method.
      * <P>
      * <I>Note:</I> Class DoubleMatrixFile.Writer is not multiple thread safe.
@@ -333,7 +333,7 @@ public class DoubleMatrixFile {
          * @param theStream Output stream.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theStream</TT> is null.
+         * <code>theStream</code> is null.
          * @exception IOException Thrown if an I/O error occurred.
          */
         private Writer(OutputStream theStream)
@@ -362,16 +362,16 @@ public class DoubleMatrixFile {
          * Write the given row slice of the matrix to the output stream.
          * Elements in the given range of rows and in all columns are written.
          * <P>
-         * <I>Note:</I> <TT>theRowRange</TT>'s stride must be 1.
+         * <I>Note:</I> <code>theRowRange</code>'s stride must be 1.
          *
          * @param theRowRange Range of matrix rows.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT> is null.
+         * <code>theRowRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT>'s stride is greater than 1.
+         * <code>theRowRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theRowRange</TT>
+         * any index in <code>theRowRange</code>
          * is outside the range 0 .. <I>R</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          */
@@ -393,16 +393,16 @@ public class DoubleMatrixFile {
          * Write the given column slice of the matrix to the output stream.
          * Elements in all rows and in the given range of columns are written.
          * <P>
-         * <I>Note:</I> <TT>theColRange</TT>'s stride must be 1.
+         * <I>Note:</I> <code>theColRange</code>'s stride must be 1.
          *
          * @param theColRange Range of matrix columns.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theColRange</TT> is null.
+         * <code>theColRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theColRange</TT>'s stride is greater than 1.
+         * <code>theColRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theColRange</TT>
+         * any index in <code>theColRange</code>
          * is outside the range 0 .. <I>C</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          */
@@ -425,21 +425,21 @@ public class DoubleMatrixFile {
          * the given range of rows and in the given range of columns are
          * written.
          * <P>
-         * <I>Note:</I> <TT>theRowRange</TT>'s stride must be 1.
-         * <TT>theColRange</TT>'s stride must be 1.
+         * <I>Note:</I> <code>theRowRange</code>'s stride must be 1.
+         * <code>theColRange</code>'s stride must be 1.
          *
          * @param theRowRange Range of matrix rows.
          * @param theColRange Range of matrix columns.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT> is null. Thrown if <TT>theColRange</TT> is null.
+         * <code>theRowRange</code> is null. Thrown if <code>theColRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT>'s stride is greater than 1. Thrown if
-         * <TT>theColRange</TT>'s stride is greater than 1.
+         * <code>theRowRange</code>'s stride is greater than 1. Thrown if
+         * <code>theColRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theRowRange</TT>
+         * any index in <code>theRowRange</code>
          * is outside the range 0 .. <I>R</I>-1. Thrown if any index in
-         * <TT>theColRange</TT> is outside the range 0 .. <I>C</I>-1.
+         * <code>theColRange</code> is outside the range 0 .. <I>C</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          */
         public void writePatch(Range theRowRange,
@@ -518,14 +518,14 @@ public class DoubleMatrixFile {
      * otherwise an exception is thrown.
      * <P>
      * To read the matrix element segments one at a time, first call the
-     * <TT>getRowRange()</TT> and <TT>getColRange()</TT> methods to obtain the
+     * <code>getRowRange()</code> and <code>getColRange()</code> methods to obtain the
      * range of rows and columns in the next segment. At this point, allocate
      * storage for the rows and columns in the underlying matrix if necessary.
-     * Then call the <TT>readSegment()</TT> method to read the actual matrix
+     * Then call the <code>readSegment()</code> method to read the actual matrix
      * elements. Repeat these steps if there are additional segments.
      * <P>
      * To read all the matrix element segments (or all the remaining segments),
-     * call the <TT>read()</TT> method.
+     * call the <code>read()</code> method.
      * <P>
      * Methods are also provided to read the current segment, or all the
      * remaining segments, through a <I>filter.</I> As the segment(s) are read,
@@ -533,7 +533,7 @@ public class DoubleMatrixFile {
      * range, or a given row and column range are actually stored in the
      * underlying matrix.
      * <P>
-     * When finished, call the <TT>close()</TT> method.
+     * When finished, call the <code>close()</code> method.
      * <P>
      * <I>Note:</I> Class DoubleMatrixFile.Reader is not multiple thread safe.
      *
@@ -555,7 +555,7 @@ public class DoubleMatrixFile {
          * @param theStream Input stream.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theStream</TT> is null.
+         * <code>theStream</code> is null.
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
          * Thrown if the input stream's contents were invalid.
@@ -589,11 +589,11 @@ public class DoubleMatrixFile {
         // Exported operations.
         /**
          * Read all matrix element segments from the input stream. If some
-         * segments have already been read, the <TT>read()</TT> method reads all
+         * segments have already been read, the <code>read()</code> method reads all
          * remaining segments. If there are no more segments, the
-         * <TT>read()</TT> method does nothing. If storage is not already
+         * <code>read()</code> method does nothing. If storage is not already
          * allocated in the underlying matrix for the matrix elements, the
-         * <TT>read()</TT> method allocates the necessary storage.
+         * <code>read()</code> method allocates the necessary storage.
          *
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
@@ -609,20 +609,20 @@ public class DoubleMatrixFile {
         /**
          * Read all matrix element segments from the input stream, storing only
          * the matrix elements in the given row slice. If some segments have
-         * already been read, the <TT>readRowSlice()</TT> method reads all
+         * already been read, the <code>readRowSlice()</code> method reads all
          * remaining segments. If there are no more segments, the
-         * <TT>readRowSlice()</TT> method does nothing. If storage is not
+         * <code>readRowSlice()</code> method does nothing. If storage is not
          * already allocated in the underlying matrix for the matrix elements,
-         * the <TT>readRowSlice()</TT> method allocates the necessary storage.
+         * the <code>readRowSlice()</code> method allocates the necessary storage.
          *
          * @param theRowRange Row range.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT> is null.
+         * <code>theRowRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT>'s stride is greater than 1.
+         * <code>theRowRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theRowRange</TT>
+         * any index in <code>theRowRange</code>
          * is outside the range 0 .. <I>R</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
@@ -638,20 +638,20 @@ public class DoubleMatrixFile {
         /**
          * Read all matrix element segments from the input stream, storing only
          * the matrix elements in the given column slice. If some segments have
-         * already been read, the <TT>readColSlice()</TT> method reads all
+         * already been read, the <code>readColSlice()</code> method reads all
          * remaining segments. If there are no more segments, the
-         * <TT>readColSlice()</TT> method does nothing. If storage is not
+         * <code>readColSlice()</code> method does nothing. If storage is not
          * already allocated in the underlying matrix for the matrix elements,
-         * the <TT>readColSlice()</TT> method allocates the necessary storage.
+         * the <code>readColSlice()</code> method allocates the necessary storage.
          *
          * @param theColRange Column range.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theColRange</TT> is null.
+         * <code>theColRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theColRange</TT>'s stride is greater than 1.
+         * <code>theColRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theColRange</TT>
+         * any index in <code>theColRange</code>
          * is outside the range 0 .. <I>C</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
@@ -667,24 +667,24 @@ public class DoubleMatrixFile {
         /**
          * Read all matrix element segments from the input stream, storing only
          * the matrix elements in the given patch. If some segments have already
-         * been read, the <TT>readPatch()</TT> method reads all remaining
-         * segments. If there are no more segments, the <TT>readPatch()</TT>
+         * been read, the <code>readPatch()</code> method reads all remaining
+         * segments. If there are no more segments, the <code>readPatch()</code>
          * method does nothing. If storage is not already allocated in the
-         * underlying matrix for the matrix elements, the <TT>readPatch()</TT>
+         * underlying matrix for the matrix elements, the <code>readPatch()</code>
          * method allocates the necessary storage.
          *
          * @param theRowRange Row range.
          * @param theColRange Column range.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT> is null. Thrown if <TT>theColRange</TT> is null.
+         * <code>theRowRange</code> is null. Thrown if <code>theColRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT>'s stride is greater than 1. Thrown if
-         * <TT>theColRange</TT>'s stride is greater than 1.
+         * <code>theRowRange</code>'s stride is greater than 1. Thrown if
+         * <code>theColRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theRowRange</TT>
+         * any index in <code>theRowRange</code>
          * is outside the range 0 .. <I>R</I>-1. Thrown if any index in
-         * <TT>theColRange</TT> is outside the range 0 .. <I>C</I>-1.
+         * <code>theColRange</code> is outside the range 0 .. <I>C</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
          * Thrown if the input stream's contents were invalid.
@@ -719,9 +719,9 @@ public class DoubleMatrixFile {
 
         /**
          * Read the next matrix element segment from the input stream. If there
-         * are no more segments, the <TT>readSegment()</TT> method does nothing.
+         * are no more segments, the <code>readSegment()</code> method does nothing.
          * If storage is not already allocated in the underlying matrix for the
-         * matrix elements, the <TT>readSegment()</TT> method allocates the
+         * matrix elements, the <code>readSegment()</code> method allocates the
          * necessary storage.
          *
          * @exception IOException Thrown if an I/O error occurred.
@@ -736,19 +736,19 @@ public class DoubleMatrixFile {
         /**
          * Read the next matrix element segment from the input stream, storing
          * only the matrix elements in the given row slice. If there are no more
-         * segments, the <TT>readSegmentRowSlice()</TT> method does nothing. If
+         * segments, the <code>readSegmentRowSlice()</code> method does nothing. If
          * storage is not already allocated in the underlying matrix for the
-         * matrix elements, the <TT>readSegmentRowSlice()</TT> method allocates
+         * matrix elements, the <code>readSegmentRowSlice()</code> method allocates
          * the necessary storage.
          *
          * @param theRowRange Row range.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT> is null.
+         * <code>theRowRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT>'s stride is greater than 1.
+         * <code>theRowRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theRowRange</TT>
+         * any index in <code>theRowRange</code>
          * is outside the range 0 .. <I>R</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
@@ -771,19 +771,19 @@ public class DoubleMatrixFile {
         /**
          * Read the next matrix element segment from the input stream, storing
          * only the matrix elements in the given column slice. If there are no
-         * more segments, the <TT>readSegmentRowSlice()</TT> method does
+         * more segments, the <code>readSegmentRowSlice()</code> method does
          * nothing. If storage is not already allocated in the underlying matrix
-         * for the matrix elements, the <TT>readSegmentRowSlice()</TT> method
+         * for the matrix elements, the <code>readSegmentRowSlice()</code> method
          * allocates the necessary storage.
          *
          * @param theColRange Column range.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theColRange</TT> is null.
+         * <code>theColRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theColRange</TT>'s stride is greater than 1.
+         * <code>theColRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theColRange</TT>
+         * any index in <code>theColRange</code>
          * is outside the range 0 .. <I>C</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
@@ -806,23 +806,23 @@ public class DoubleMatrixFile {
         /**
          * Read the next matrix element segment from the input stream, storing
          * only the matrix elements in the given patch. If there are no more
-         * segments, the <TT>readSegmentPatch()</TT> method does nothing. If
+         * segments, the <code>readSegmentPatch()</code> method does nothing. If
          * storage is not already allocated in the underlying matrix for the
-         * matrix elements, the <TT>readSegmentPatch()</TT> method allocates the
+         * matrix elements, the <code>readSegmentPatch()</code> method allocates the
          * necessary storage.
          *
          * @param theRowRange Row range.
          * @param theColRange Column range.
          *
          * @exception NullPointerException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT> is null. Thrown if <TT>theColRange</TT> is null.
+         * <code>theRowRange</code> is null. Thrown if <code>theColRange</code> is null.
          * @exception IllegalArgumentException (unchecked exception) Thrown if
-         * <TT>theRowRange</TT>'s stride is greater than 1. Thrown if
-         * <TT>theColRange</TT>'s stride is greater than 1.
+         * <code>theRowRange</code>'s stride is greater than 1. Thrown if
+         * <code>theColRange</code>'s stride is greater than 1.
          * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-         * any index in <TT>theRowRange</TT>
+         * any index in <code>theRowRange</code>
          * is outside the range 0 .. <I>R</I>-1. Thrown if any index in
-         * <TT>theColRange</TT> is outside the range 0 .. <I>C</I>-1.
+         * <code>theColRange</code> is outside the range 0 .. <I>C</I>-1.
          * @exception IOException Thrown if an I/O error occurred.
          * @exception InvalidMatrixFileException (subclass of IOException)
          * Thrown if the input stream's contents were invalid.
@@ -906,9 +906,9 @@ public class DoubleMatrixFile {
         /**
          * Read the next matrix element segment from the input stream, storing
          * only the matrix elements within the given row and column index
-         * bounds. If there are no more segments, the <TT>readSegment()</TT>
+         * bounds. If there are no more segments, the <code>readSegment()</code>
          * method does nothing. If storage is not already allocated in the
-         * underlying matrix for the matrix elements, the <TT>readSegment()</TT>
+         * underlying matrix for the matrix elements, the <code>readSegment()</code>
          * method allocates the necessary storage.
          *
          * @param RL Lower row index.
@@ -1021,8 +1021,8 @@ public class DoubleMatrixFile {
      * @param C Number of columns.
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>R</TT> &lt; 0. Thrown if
-     * <TT>C</TT> &lt; 0.
+     * <code>R</code> &lt; 0. Thrown if
+     * <code>C</code> &lt; 0.
      */
     void setRC(int R,
             int C) {

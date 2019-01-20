@@ -67,7 +67,7 @@ class ObjectItemReductionBuf<T>
      * @param buf Buffer containing the item.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public ObjectItemReductionBuf(ObjectItemBuf<T> buf,
             ObjectOp<T> op) {
@@ -85,7 +85,7 @@ class ObjectItemReductionBuf<T>
      *
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public T get(int i) {
@@ -93,16 +93,16 @@ class ObjectItemReductionBuf<T>
     }
 
     /**
-     * Store the given item in this buffer. The item at index <TT>i</TT> in this
-     * buffer is combined with the given <TT>item</TT> using the binary
+     * Store the given item in this buffer. The item at index <code>i</code> in this
+     * buffer is combined with the given <code>item</code> using the binary
      * operation.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
-     * @param item Item to be stored at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @param item Item to be stored at index <code>i</code>.
+     * @param item Item to be stored at index <code>i</code>.
      */
     public void put(int i,
             T item) {

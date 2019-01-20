@@ -51,7 +51,7 @@ import edu.rit.mp.IORequest;
  * allows the calling thread to do other work while the message passing
  * operation is in progress. When the calling thread needs to wait for the
  * message passing operation to finish, the calling thread calls the CommRequest
- * object's <TT>waitForFinish()</TT> method.
+ * object's <code>waitForFinish()</code> method.
  *
  * @author Alan Kaminsky
  * @version 18-Sep-2007
@@ -74,10 +74,10 @@ public class CommRequest {
      * Determine if the message passing operation associated with this
      * CommRequest object has finished.
      * <P>
-     * <I>Note:</I> If the <TT>isFinished()</TT> method is called on a
+     * <I>Note:</I> If the <code>isFinished()</code> method is called on a
      * newly-created CommRequest object that has not been passed to or returned
      * from a communicator's non-blocking send or receive method, the
-     * <TT>isFinished()</TT> method immediately returns true.
+     * <code>isFinished()</code> method immediately returns true.
      *
      * @return False if the message passing operation has not finished, true if
      * the message passing operation has finished successfully.
@@ -106,10 +106,10 @@ public class CommRequest {
      * than the length of the receive buffer, the extra data items at the end of
      * the message are discarded.
      * <P>
-     * <I>Note:</I> If the <TT>waitForFinish()</TT> method is called on a
+     * <I>Note:</I> If the <code>waitForFinish()</code> method is called on a
      * newly-created CommRequest object that has not been passed to or returned
      * from a communicator's non-blocking send or receive method, the
-     * <TT>waitForFinish()</TT> method immediately returns null.
+     * <code>waitForFinish()</code> method immediately returns null.
      *
      * @return Status object for a receive operation, otherwise null.
      * @exception IOException Thrown if an I/O error occurred.

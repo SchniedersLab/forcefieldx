@@ -141,7 +141,6 @@ public abstract class JobSchedulerMessage
      * @param Nn Number of backend nodes.
      * @param Np Number of processes.
      * @param Nt Number of CPUs per process. 0 means "all CPUs."
-     * @exception IOException Thrown if an I/O error occurred.
      * @return a {@link edu.rit.pj.cluster.JobSchedulerMessage} object.
      */
     public static JobSchedulerMessage requestJob(JobFrontendRef theJobFrontend,

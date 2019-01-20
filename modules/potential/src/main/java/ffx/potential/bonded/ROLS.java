@@ -102,11 +102,6 @@ public interface ROLS {
      *
      * @param c     a {@link java.lang.Class} object.
      * @param count a long.
-     * @param count a long.
-     * @param count a long.
-     * @param count a long.
-     * @param count a long.
-     * @param count a long.
      * @return a long.
      */
     long getMSCount(Class<?> c, long count);
@@ -132,18 +127,7 @@ public interface ROLS {
      * <p>
      * setColor</p>
      *
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *                   object.
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *                   object.
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *                   object.
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *                   object.
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *                   object.
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *                   object.
+     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      * @param color      a {@link javax.vecmath.Color3f} object.
      * @param mat        a {@link javax.media.j3d.Material} object.
      */
@@ -153,8 +137,7 @@ public interface ROLS {
      * <p>
      * setView</p>
      *
-     * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     *                  object.
+     * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
      * @param newShapes a {@link java.util.List} object.
      */
     void setView(ViewModel viewModel, List<BranchGroup> newShapes);

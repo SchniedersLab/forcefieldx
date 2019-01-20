@@ -67,7 +67,7 @@ public class SharedObjectArray<T> {
      *
      * @param len Length.
      * @exception NegativeArraySizeException (unchecked exception) Thrown if
-     * <TT>len</TT> &lt; 0.
+     * <code>len</code> &lt; 0.
      */
     public SharedObjectArray(int len) {
         myArray = new AtomicReferenceArray<T>(len);
@@ -79,7 +79,7 @@ public class SharedObjectArray<T> {
      *
      * @param array Array to copy.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>array</TT> is null.
+     * <code>array</code> is null.
      */
     public SharedObjectArray(T[] array) {
         myArray = new AtomicReferenceArray<T>(array);
@@ -163,14 +163,14 @@ public class SharedObjectArray<T> {
 
     /**
      * Combine this array reduction variable at the given index with the given
-     * value using the given operation. (This array <TT>[i]</TT>) is set to
-     * (this array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>), then (this array
-     * <TT>[i]</TT>) is returned.
+     * value using the given operation. (This array <code>[i]</code>) is set to
+     * (this array <code>[i]</code>) <I>op</I> (<code>value</code>), then (this array
+     * <code>[i]</code>) is returned.
      *
      * @param i Index.
      * @param value Value.
      * @param op Binary operation.
-     * @return (This array <TT>[i]</TT>) <I>op</I> (<TT>value</TT>).
+     * @return (This array <code>[i]</code>) <I>op</I> (<code>value</code>).
      */
     public T reduce(int i,
             T value,
@@ -186,19 +186,19 @@ public class SharedObjectArray<T> {
 
     /**
      * Combine this array reduction variable with the given array using the
-     * given operation. For each index <TT>i</TT> from 0 to this array's
-     * length-1, (this array <TT>[i]</TT>) is set to (this array <TT>[i]</TT>)
-     * <I>op</I> (<TT>src[i]</TT>).
+     * given operation. For each index <code>i</code> from 0 to this array's
+     * length-1, (this array <code>[i]</code>) is set to (this array <code>[i]</code>)
+     * <I>op</I> (<code>src[i]</code>).
      * <P>
-     * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
+     * The <code>reduce()</code> method is multiple thread safe <I>on a per-element
      * basis.</I> Each individual array element is updated atomically, but the
      * array as a whole is not updated atomically.
      *
      * @param src Source array.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>src</TT> is null. Thrown if
-     * <TT>op</TT> is null.
+     * <code>src</code> is null. Thrown if
+     * <code>op</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
      * array index would be out of bounds.
      */
@@ -209,25 +209,24 @@ public class SharedObjectArray<T> {
 
     /**
      * Combine a portion of this array reduction variable with a portion of the
-     * given array using the given operation. For each index <TT>i</TT> from 0
-     * to <TT>len</TT>-1, (this array <TT>[dstoff+i]</TT>) is set to (this array
-     * <TT>[dstoff+i]</TT>) <I>op</I> (<TT>src[srcoff+i]</TT>).
+     * given array using the given operation. For each index <code>i</code> from 0
+     * to <code>len</code>-1, (this array <code>[dstoff+i]</code>) is set to (this array
+     * <code>[dstoff+i]</code>) <I>op</I> (<code>src[srcoff+i]</code>).
      * <P>
-     * The <TT>reduce()</TT> method is multiple thread safe <I>on a per-element
+     * The <code>reduce()</code> method is multiple thread safe <I>on a per-element
      * basis.</I> Each individual array element is updated atomically, but the
      * array as a whole is not updated atomically.
      *
      * @param dstoff Index of first element to update in this array.
      * @param src Source array.
      * @param srcoff Index of first element to update from in the source array.
-     * @param srcoff Index of first element to update from in the source array.
      * @param len Number of array elements to update.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>src</TT> is null. Thrown if
-     * <TT>op</TT> is null.
+     * <code>src</code> is null. Thrown if
+     * <code>op</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>len</TT> &lt; 0. Thrown if any array index would be out of bounds.
+     * <code>len</code> &lt; 0. Thrown if any array index would be out of bounds.
      */
     public void reduce(int dstoff,
             T[] src,

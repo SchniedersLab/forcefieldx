@@ -69,7 +69,7 @@ public class ByteSequence {
      * array.
      *
      * @param buf Byte array to copy.
-     * @exception NullPointerException Thrown if <TT>buf</TT> is null.
+     * @exception NullPointerException Thrown if <code>buf</code> is null.
      */
     public ByteSequence(byte[] buf) {
         this(buf, 0, buf.length);
@@ -82,10 +82,10 @@ public class ByteSequence {
      * @param buf Byte array to copy.
      * @param off Index of first byte to copy.
      * @param len Number of bytes to copy.
-     * @exception NullPointerException Thrown if <TT>buf</TT> is null.
-     * @exception IndexOutOfBoundsException Thrown if <TT>off</TT> &lt; 0,
-     * <TT>len</TT> &lt; 0, or
-     * <TT>off+len</TT> &gt; <TT>buf.length</TT>.
+     * @exception NullPointerException Thrown if <code>buf</code> is null.
+     * @exception IndexOutOfBoundsException Thrown if <code>off</code> &lt; 0,
+     * <code>len</code> &lt; 0, or
+     * <code>off+len</code> &gt; <code>buf.length</code>.
      */
     public ByteSequence(byte[] buf,
             int off,
@@ -102,9 +102,9 @@ public class ByteSequence {
 
     /**
      * Construct a new byte sequence whose contents come from the given input
-     * stream. Bytes are read from <TT>theInputStream</TT> into the byte
+     * stream. Bytes are read from <code>theInputStream</code> into the byte
      * sequence until the end-of-stream is encountered, then
-     * <TT>theInputStream</TT> is closed. If <TT>theInputStream</TT> is null,
+     * <code>theInputStream</code> is closed. If <code>theInputStream</code> is null,
      * the byte sequence's length is 0.
      *
      * @param theInputStream Input stream, or null.
@@ -136,7 +136,7 @@ public class ByteSequence {
      * sequence.
      *
      * @param theByteSequence Byte sequence to copy.
-     * @exception NullPointerException Thrown if <TT>theByteSequence</TT> is
+     * @exception NullPointerException Thrown if <code>theByteSequence</code> is
      * null.
      */
     public ByteSequence(ByteSequence theByteSequence) {
@@ -170,14 +170,14 @@ public class ByteSequence {
 
     /**
      * Copy this byte sequence's contents into the given byte array. Bytes are
-     * copied into <TT>buf</TT> starting at index 0. The number of bytes copied
-     * is <TT>buf.length</TT> or this byte sequence's length, whichever is
+     * copied into <code>buf</code> starting at index 0. The number of bytes copied
+     * is <code>buf.length</code> or this byte sequence's length, whichever is
      * smaller.
      *
      * @param buf Buffer to hold the copy.
      * @return Actual number of bytes copied.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
+     * <code>buf</code> is null.
      */
     public int copy(byte[] buf) {
         return copy(buf, 0, buf.length);
@@ -185,19 +185,19 @@ public class ByteSequence {
 
     /**
      * Copy this byte sequence's contents into a portion of the given byte
-     * array. Bytes are copied into <TT>buf</TT> starting at index <TT>off</TT>.
-     * The number of bytes copied is <TT>len</TT> or this byte sequence's
+     * array. Bytes are copied into <code>buf</code> starting at index <code>off</code>.
+     * The number of bytes copied is <code>len</code> or this byte sequence's
      * length, whichever is smaller.
      *
      * @param buf Buffer to hold the copy.
-     * @param off Index in <TT>buf</TT> at which to start copying.
+     * @param off Index in <code>buf</code> at which to start copying.
      * @param len Maximum number of bytes to copy.
      * @return Actual number of bytes copied.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
-     * @exception IndexOutOfBoundsException Thrown if <TT>off</TT> &lt; 0,
-     * <TT>len</TT> &lt; 0, or
-     * <TT>off+len</TT> &gt; <TT>buf.length</TT>.
+     * <code>buf</code> is null.
+     * @exception IndexOutOfBoundsException Thrown if <code>off</code> &lt; 0,
+     * <code>len</code> &lt; 0, or
+     * <code>off+len</code> &gt; <code>buf.length</code>.
      */
     public int copy(byte[] buf,
             int off,

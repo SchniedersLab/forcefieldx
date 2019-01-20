@@ -47,17 +47,17 @@ import java.lang.reflect.Constructor;
  * Class IORequest encapsulates the state of a message being sent or received in
  * the Message Protocol (MP).
  * <P>
- * Class {@linkplain ChannelGroup}'s non-blocking <TT>sendNoWait()</TT> method
+ * Class {@linkplain ChannelGroup}'s non-blocking <code>sendNoWait()</code> method
  * includes an IORequest argument. This allows the caller to initiate the send
  * operation and continue processing while the channel group sends the message
  * in a separate thread. To wait for the message to be sent, the caller must
- * call the IORequest object's <TT>waitForFinish()</TT> method.
+ * call the IORequest object's <code>waitForFinish()</code> method.
  * <P>
- * Class {@linkplain ChannelGroup}'s non-blocking <TT>receiveNoWait()</TT>
+ * Class {@linkplain ChannelGroup}'s non-blocking <code>receiveNoWait()</code>
  * method includes an IORequest argument. This allows the caller to initiate the
  * receive operation and continue processing while the channel group receives
  * the message in a separate thread. To wait for the message to be received, the
- * caller must call the IORequest object's <TT>waitForFinish()</TT> method,
+ * caller must call the IORequest object's <code>waitForFinish()</code> method,
  * which returns a {@linkplain Status} object giving the results of the receive
  * operation.
  *
@@ -212,7 +212,7 @@ public class IORequest {
      *
      * @param that I/O request to match.
      *
-     * @return True if this I/O request matches <TT>theIORequest</TT>, false
+     * @return True if this I/O request matches <code>theIORequest</code>, false
      * otherwise.
      */
     boolean match(IORequest that) {

@@ -64,7 +64,7 @@ import edu.rit.util.Instance;
  * <P>
  * The Runner program is targeted at three use cases:
  * <UL>
- * <P>
+ *
  * <LI>
  * <B>Sequential jobs on a cluster parallel computer.</B> Each job is a
  * sequential (single-threaded) program. The Runner program is running on a
@@ -74,7 +74,7 @@ import edu.rit.util.Instance;
  *     java -Dpj.nn=<I>N</I> edu.rit.pj.job.Runner . . .
  * </PRE> The Runner program runs with one process per node and one thread per
  * process.
- * <P>
+ *
  * <LI>
  * <B>Sequential jobs on a hybrid parallel computer.</B> Each job is a
  * sequential (single-threaded) program. The Runner program is running on a
@@ -85,7 +85,7 @@ import edu.rit.util.Instance;
  *     java -Dpj.nn=<I>N</I> -Dpj.np=<I>C</I> edu.rit.pj.job.Runner . . .
  * </PRE> The Runner program runs with multiple processes per node and one
  * thread per process.
- * <P>
+ *
  * <LI>
  * <B>SMP parallel jobs on a hybrid parallel computer.</B> Each job is an SMP
  * parallel (multi-threaded) program. The Runner program is running on a hybrid

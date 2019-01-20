@@ -43,28 +43,28 @@ package edu.rit.pj.reduction;
  * Class ObjectOp is the abstract base class for a binary operation on object
  * values, used to do reduction in a parallel program.
  * <P>
- * When classes in the Parallel Java Library call the <TT>op(x,y)</TT> method
- * during a reduction operation, the <TT>x</TT> argument is the value of the
- * reduction variable, and the <TT>y</TT> argument is the value to be combined
- * with the reduction variable. The value returned by the <TT>op(x,y)</TT>
+ * When classes in the Parallel Java Library call the <code>op(x,y)</code> method
+ * during a reduction operation, the <code>x</code> argument is the value of the
+ * reduction variable, and the <code>y</code> argument is the value to be combined
+ * with the reduction variable. The value returned by the <code>op(x,y)</code>
  * method is stored back into the reduction variable.
  * <P>
- * The <TT>op(x,y)</TT> method in any subclass of class ObjectOp must obey the
+ * The <code>op(x,y)</code> method in any subclass of class ObjectOp must obey the
  * following requirements, which are assumed by classes in the Parallel Java
  * Library:
  * <UL>
  * <LI>
  * If as a result of the binary operation the state of the reduction variable
- * will not change, the <TT>op(x,y)</TT> method must return <TT>x</TT>.
- * <P>
+ * will not change, the <code>op(x,y)</code> method must return <code>x</code>.
+ *
  * <LI>
  * If as a result of the binary operation the state of the reduction variable
- * will change, the <TT>op(x,y)</TT> method must return a newly created object
+ * will change, the <code>op(x,y)</code> method must return a newly created object
  * containing the desired state.
- * <P>
+ *
  * <LI>
- * The <TT>op(x,y)</TT> method must neither change the state of <TT>x</TT> nor
- * change the state of <TT>y</TT>; that is, the <TT>op(x,y)</TT> method must
+ * The <code>op(x,y)</code> method must neither change the state of <code>x</code> nor
+ * change the state of <code>y</code>; that is, the <code>op(x,y)</code> method must
  * have no side effects.
  * </UL>
  *
@@ -89,7 +89,7 @@ public abstract class ObjectOp<T>
      *
      * @param x First argument.
      * @param y Second argument.
-     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * @return (<code>x</code> <I>op</I> <code>y</code>), where <I>op</I> stands for
      * this binary operation.
      */
     public abstract T op(T x,

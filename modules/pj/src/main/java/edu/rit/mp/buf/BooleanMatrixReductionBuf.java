@@ -64,15 +64,15 @@ class BooleanMatrixReductionBuf
 // Exported constructors.
     /**
      * Construct a new Boolean matrix reduction buffer. It is assumed that the
-     * rows and columns of <TT>theMatrix</TT> are allocated and that each row of
-     * <TT>theMatrix</TT> has the same number of columns.
+     * rows and columns of <code>theMatrix</code> are allocated and that each row of
+     * <code>theMatrix</code> has the same number of columns.
      *
      * @param theMatrix Matrix.
      * @param theRowRange Range of rows to include.
      * @param theColRange Range of columns to include.
      * @param op Boolean operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public BooleanMatrixReductionBuf(boolean[][] theMatrix,
             Range theRowRange,
@@ -91,7 +91,7 @@ class BooleanMatrixReductionBuf
      *
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public void put(int i,
@@ -105,11 +105,11 @@ class BooleanMatrixReductionBuf
      * {@inheritDoc}
      *
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public void copy(Buf theSrc) {
@@ -144,7 +144,7 @@ class BooleanMatrixReductionBuf
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      */
     protected int receiveItems(int i,

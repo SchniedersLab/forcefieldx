@@ -356,7 +356,6 @@ public class BondedUtils {
      * @param atomName   a {@link java.lang.String} object.
      * @param ia         a {@link ffx.potential.bonded.Atom} object.
      * @param bond       a double.
-     * @param bondList   a {@link java.util.ArrayList} object.
      * @param ib         a {@link ffx.potential.bonded.Atom} object.
      * @param angle1     a double.
      * @param ic         a {@link ffx.potential.bonded.Atom} object.
@@ -398,7 +397,6 @@ public class BondedUtils {
      * @param atomName   a {@link java.lang.String} object.
      * @param ia         a {@link ffx.potential.bonded.Atom} object.
      * @param bond       a double.
-     * @param bondList   a {@link java.util.ArrayList} object.
      * @param ib         a {@link ffx.potential.bonded.Atom} object.
      * @param angle1     a double.
      * @param ic         a {@link ffx.potential.bonded.Atom} object.
@@ -422,7 +420,6 @@ public class BondedUtils {
      * @param atomName   a {@link java.lang.String} object.
      * @param ia         a {@link ffx.potential.bonded.Atom} object.
      * @param bond       a double.
-     * @param bondList   a {@link java.util.ArrayList} object.
      * @param ib         a {@link ffx.potential.bonded.Atom} object.
      * @param angle1     a double.
      * @param ic         a {@link ffx.potential.bonded.Atom} object.
@@ -446,7 +443,6 @@ public class BondedUtils {
      * @param atomName   a {@link java.lang.String} object.
      * @param ia         a {@link ffx.potential.bonded.Atom} object.
      * @param bond       a double.
-     * @param bondList   a {@link java.util.ArrayList} object.
      * @param ib         a {@link ffx.potential.bonded.Atom} object.
      * @param angle1     a double.
      * @param ic         a {@link ffx.potential.bonded.Atom} object.

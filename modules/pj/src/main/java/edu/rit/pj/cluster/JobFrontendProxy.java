@@ -65,7 +65,6 @@ public class JobFrontendProxy
      * in the given channel group to send messages to the job frontend process.
      *
      * @param theChannelGroup Channel group.
-     * @param theChannelGroup Channel group.
      * @param theChannel Channel.
      */
     public JobFrontendProxy(ChannelGroup theChannelGroup,
@@ -210,8 +209,8 @@ public class JobFrontendProxy
     /**
      * {@inheritDoc}
      *
-     * Write the given bytes to the given output file. <TT>fd</TT> = 1 refers to
-     * the job's standard output stream; <TT>fd</TT> = 2 refers to the job's
+     * Write the given bytes to the given output file. <code>fd</code> = 1 refers to
+     * the job's standard output stream; <code>fd</code> = 2 refers to the job's
      * standard error stream; other values refer to a previously opened file.
      * @exception IOException Thrown if an I/O error occurred.
      */
@@ -266,7 +265,7 @@ public class JobFrontendProxy
     /**
      * {@inheritDoc}
      *
-     * Read bytes from the given input file. <TT>ffd</TT> = 1 refers to the
+     * Read bytes from the given input file. <code>ffd</code> = 1 refers to the
      * job's standard input stream; other values refer to a previously opened
      * file.
      * @exception IOException Thrown if an I/O error occurred.

@@ -55,8 +55,8 @@ public class Mathe {
 
 // Exported operations.
     /**
-     * Compute the integer square root of the integer <TT>x</TT>. The value
-     * floor(<TT>x</TT><SUP>1/2</SUP>) is returned. The answer is calculated
+     * Compute the integer square root of the integer <code>x</code>. The value
+     * floor(<code>x</code><SUP>1/2</SUP>) is returned. The answer is calculated
      * using an exact integer algorithm taken from:
      * <UL>
      * <LI>
@@ -66,8 +66,8 @@ public class Mathe {
      * </UL>
      *
      * @param x Input.
-     * @return Floor(<TT>x</TT><SUP>1/2</SUP>).
-     * @exception ArithmeticException (unchecked exception) Thrown if <TT>x</TT>
+     * @return Floor(<code>x</code><SUP>1/2</SUP>).
+     * @exception ArithmeticException (unchecked exception) Thrown if <code>x</code>
      * &lt; 0.
      */
     public static int sqrt(int x) {

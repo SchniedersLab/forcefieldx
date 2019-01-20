@@ -151,7 +151,6 @@ public class BackendFileReader {
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes read, or -1 if EOF.
      * @param exc Null if success, exception if failure.
-     * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileReadResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -173,7 +172,6 @@ public class BackendFileReader {
      * @param ffd Frontend file descriptor.
      * @param len Number of bytes skipped.
      * @param exc Null if success, exception if failure.
-     * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileSkipResult(JobFrontendRef theJobFrontend,
             int ffd,
@@ -194,7 +192,6 @@ public class BackendFileReader {
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param ffd Frontend file descriptor.
      * @param exc Null if success, exception if failure.
-     * @exception IOException Thrown if an I/O error occurred.
      */
     public void inputFileCloseResult(JobFrontendRef theJobFrontend,
             int ffd,

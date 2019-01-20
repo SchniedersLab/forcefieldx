@@ -42,8 +42,8 @@ package edu.rit.util;
 /**
  * Class Mcg1Random provides a default pseudorandom number generator (PRNG)
  * designed for use in parallel scientific programming. To create an instance of
- * class Mcg1Random, either use the <TT>Mcg1Random()</TT> constructor, or use
- * the static <TT>getInstance(long,String)</TT> method in class {@linkplain
+ * class Mcg1Random, either use the <code>Mcg1Random()</code> constructor, or use
+ * the static <code>getInstance(long,String)</code> method in class {@linkplain
  * Random}.
  * <P>
  * Class Mcg1Random uses L'Ecuyer's 63-bit multiplicative congruential
@@ -146,7 +146,7 @@ public class Mcg1Random
      *
      * @param seed Seed.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>seed</TT> = 0.
+     * <code>seed</code> = 0.
      */
     public Mcg1Random(long seed) {
         setSeed(seed);
@@ -158,7 +158,7 @@ public class Mcg1Random
      *
      * Set this PRNG's seed. The seed must not be 0.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>seed</TT> = 0.
+     * <code>seed</code> = 0.
      */
     public void setSeed(long seed) {
         if (seed == 0L) {

@@ -44,8 +44,8 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 /**
  * Class Lock provides an object used for synchronizing parallel team threads in
  * a critical region. You don't call methods on a Lock object directly, rather
- * you pass a Lock object to the <TT>critical()</TT> or
- * <TT>criticalNonexclusive()</TT> methods of class {@linkplain ParallelRegion}.
+ * you pass a Lock object to the <code>critical()</code> or
+ * <code>criticalNonexclusive()</code> methods of class {@linkplain ParallelRegion}.
  *
  * @author Alan Kaminsky
  * @version 05-Jun-2007
@@ -55,7 +55,7 @@ public class Lock {
 // Hidden helper classes.
     /**
      * Class Lock.Synchronizer does the actual work. The synchronizer state, a
-     * single <TT>int</TT>, is interpreted as follows: state = 0 means unlocked;
+     * single <code>int</code>, is interpreted as follows: state = 0 means unlocked;
      * state &gt; 0 means locked nonexclusively, with the state giving the
      * number of threads that have acquired the lock; state = -1 means locked
      * exclusively, with one thread having acquired the lock.

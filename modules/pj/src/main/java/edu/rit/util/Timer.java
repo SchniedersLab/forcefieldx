@@ -46,8 +46,7 @@ import java.util.Date;
  * actions.
  * <P>
  * A timer is in one of three states as shown by this state diagram:
- * <P>
- * <FONT SIZE="-1">
+ *
  * <PRE>
  *       +---+                   +---+
  *       |   | stop              |   | start
@@ -68,13 +67,12 @@ import java.util.Date;
  *       |                                                     |
  *       +-----------------------------------------------------+
  * </PRE>
- * </FONT>
  * <P>
  * When a timer is created, it is associated with a {@linkplain TimerTask}. The
  * timer is initially <B>stopped.</B> The timer can then be <B>started</B> in
  * various ways. The timer will then <B>time out</B> at some instant, depending
  * on how it was started. When the timer times out, the timer becomes
- * <B>triggered,</B> and the timer's timer task's <TT>action()</TT> method is
+ * <B>triggered,</B> and the timer's timer task's <code>action()</code> method is
  * called. The timer task can stop the timer, or it can start the timer again
  * for a different timeout, or it can leave the timer alone. If the timer task
  * does not start or stop the timer, the timer goes into a state determined by
@@ -114,11 +112,11 @@ import java.util.Date;
  * </UL>
  * <P>
  * A Timer object is not constructed directly. Rather, a timer object is created
- * by calling a {@linkplain TimerThread}'s <TT>createTimer()</TT> method, giving
+ * by calling a {@linkplain TimerThread}'s <code>createTimer()</code> method, giving
  * a timer task to associate with the timer. A single timer thread can control
  * any number of timers. The timer thread is responsible for doing all the
  * timers' timeouts and causing the timers to call the timer tasks'
- * <TT>action()</TT> methods at the proper times. Since a timer thread does not
+ * <code>action()</code> methods at the proper times. Since a timer thread does not
  * provide real-time guarantees, the time at which a timer task's action
  * actually starts may be later than when the timeout occurred.
  * <P>
@@ -166,7 +164,7 @@ public class Timer {
      * @param theTimerTask Timer task.
      *
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theTimerTask</TT> is null.
+     * <code>theTimerTask</code> is null.
      */
     Timer(TimerThread theTimerThread,
             TimerTask theTimerTask) {
@@ -218,7 +216,7 @@ public class Timer {
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     * <code>theRepetitionInterval</code> &lt;= 0.
      */
     public synchronized void start(Date theFirstTime,
             long theRepetitionInterval) {
@@ -244,7 +242,7 @@ public class Timer {
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     * <code>theRepetitionInterval</code> &lt;= 0.
      */
     public synchronized void start(long theFirstInterval,
             long theRepetitionInterval) {
@@ -268,7 +266,7 @@ public class Timer {
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     * <code>theRepetitionInterval</code> &lt;= 0.
      */
     public synchronized void startFixedIntervalTimeout(Date theFirstTime,
             long theRepetitionInterval) {
@@ -294,7 +292,7 @@ public class Timer {
      * @param theRepetitionInterval Interval between successive actions
      * (milliseconds).
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theRepetitionInterval</TT> &lt;= 0.
+     * <code>theRepetitionInterval</code> &lt;= 0.
      */
     public synchronized void startFixedIntervalTimeout(long theFirstInterval,
             long theRepetitionInterval) {
@@ -345,16 +343,16 @@ public class Timer {
     /**
      * Determine the time when this timer is or was scheduled to time out.
      * <P>
-     * If the <TT>getTimeout()</TT> method is called when this timer is in the
-     * stopped state, then <TT>Long.MAX_VALUE</TT> is returned.
+     * If the <code>getTimeout()</code> method is called when this timer is in the
+     * stopped state, then <code>Long.MAX_VALUE</code> is returned.
      * <P>
-     * If the <TT>getTimeout()</TT> method is called when this timer is in the
-     * started state, then the <TT>getTimeout()</TT> method returns the time
+     * If the <code>getTimeout()</code> method is called when this timer is in the
+     * started state, then the <code>getTimeout()</code> method returns the time
      * when the next timeout will occur.
      * <P>
-     * If the <TT>getTimeout()</TT> method is called when this timer is in the
-     * triggered state, such as by this timer's timer task's <TT>action()</TT>
-     * method, then the <TT>getTimeout()</TT> method returns the time when the
+     * If the <code>getTimeout()</code> method is called when this timer is in the
+     * triggered state, such as by this timer's timer task's <code>action()</code>
+     * method, then the <code>getTimeout()</code> method returns the time when the
      * present timeout was <I>scheduled</I> to occur. Since a timer thread
      * provides no real-time guarantees, the time when the timeout
      * <I>actually</I> occurred may be some time later. If desired, the caller

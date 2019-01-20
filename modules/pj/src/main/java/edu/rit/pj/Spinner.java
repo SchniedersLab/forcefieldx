@@ -49,7 +49,7 @@ package edu.rit.pj;
  *        Spinner spinner = new Spinner();
  *        while (&lt;condition&gt;) spinner.spin();
  *        }
- * </PRE> This will wait as long as the <TT>&lt;condition&gt;</TT> is true.
+ * </PRE> This will wait as long as the <code>&lt;condition&gt;</code> is true.
  *
  * @author Alan Kaminsky
  * @version 20-Dec-2007
@@ -78,7 +78,7 @@ class Spinner {
 
 // Exported operations.
     /**
-     * Spin this spinner. If enough consecutive <TT>spin()</TT> calls occur, the
+     * Spin this spinner. If enough consecutive <code>spin()</code> calls occur, the
      * calling thread yields the CPU.
      */
     public void spin() {

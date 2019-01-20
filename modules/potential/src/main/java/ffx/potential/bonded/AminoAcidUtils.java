@@ -433,20 +433,13 @@ public class AminoAcidUtils {
      * @param aminoAcid  The amino acid to use.
      * @param residue    The residue node.
      * @param CA         The C-alpha carbon of this residue.
-     * @param CA         The C-alpha carbon of this residue.
      * @param N          The peptide nitrogen of this residue.
-     * @param CA         The C-alpha carbon of this residue.
-     * @param CA         The C-alpha carbon of this residue.
-     * @param CA         The C-alpha carbon of this residue.
-     * @param CA         The C-alpha carbon of this residue.
      * @param C          The peptide carbonyl carbon.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param bondList   a {@link java.util.ArrayList} object.
-     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     public static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
-                                                Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList)
-            throws MissingHeavyAtomException {
+                                                Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList) {
         int k = AA_CB[aminoAcid.ordinal()];
         switch (aminoAcid) {
             case GLY:
@@ -867,7 +860,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -889,7 +881,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -917,7 +908,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -948,7 +938,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -980,7 +969,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1003,7 +991,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1029,7 +1016,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1052,7 +1038,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1074,7 +1059,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1101,7 +1085,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param position   a {@link ffx.potential.bonded.Residue.ResiduePosition} object.
@@ -1148,7 +1131,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1181,7 +1163,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1215,7 +1196,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1248,7 +1228,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1286,7 +1265,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1317,7 +1295,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1347,7 +1324,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1377,7 +1353,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1401,7 +1376,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1426,7 +1400,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1452,7 +1425,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1479,7 +1451,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1507,7 +1478,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1536,7 +1506,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1565,7 +1534,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1599,7 +1567,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1632,7 +1599,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1668,7 +1634,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1699,7 +1664,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
@@ -1725,7 +1689,6 @@ public class AminoAcidUtils {
      * @param residue    a {@link ffx.potential.bonded.Residue} object.
      * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param N          a {@link ffx.potential.bonded.Atom} object.
-     * @param CA         a {@link ffx.potential.bonded.Atom} object.
      * @param C          a {@link ffx.potential.bonded.Atom} object.
      * @param k          a int.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.

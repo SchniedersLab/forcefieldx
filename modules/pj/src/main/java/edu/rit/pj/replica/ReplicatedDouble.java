@@ -49,7 +49,7 @@ import edu.rit.pj.reduction.DoubleOp;
 
 /**
  * Class ReplicatedDouble provides a replicated, shared reduction variable for a
- * value of type <TT>double</TT>.
+ * value of type <code>double</code>.
  * <P>
  * A replicated, shared reduction variable is intended to be used in a cluster
  * or hybrid parallel program for a data item shared among all the processes in
@@ -62,28 +62,28 @@ import edu.rit.pj.reduction.DoubleOp;
  * updates, and specifying the communicator (class {@linkplain edu.rit.pj.Comm})
  * and the message tag to use for sending updates among the processes. At this
  * point a <I>replica</I> of the variable exists in each process.
- * <P>
+ *
  * <LI>
- * To read the variable, call the <TT>get()</TT> method. The current value of
+ * To read the variable, call the <code>get()</code> method. The current value of
  * the local process's replicated variable is returned.
- * <P>
+ *
  * <LI>
- * To update the variable, call the <TT>reduce()</TT> method, specifying a new
- * value. The <TT>reduce()</TT> method performs an <I>atomic reduction</I>
+ * To update the variable, call the <code>reduce()</code> method, specifying a new
+ * value. The <code>reduce()</code> method performs an <I>atomic reduction</I>
  * (described below) on the local process's replicated variable with the new
  * value. If the variable changed as a result of the reduction, the variable's
  * (updated) value is flooded to all the processes in the communicator. Finally,
- * the <TT>reduce()</TT> method returns the variable's value.
+ * the <code>reduce()</code> method returns the variable's value.
  * <P>
  * Whenever one of the aforementioned flooded messages arrives, a separate
  * thread performs an atomic reduction on the local process's variable with the
  * received value.
  * <P>
  * An atomic reduction consists of these steps, performed atomically: Call the
- * reduction operator's <TT>op()</TT> method, passing in the current value of
+ * reduction operator's <code>op()</code> method, passing in the current value of
  * the local process's replicated variable and the new value (either the new
- * value specified as an argument of <TT>reduce()</TT>, or the new value
- * received in a flooded message). Then store the <TT>op()</TT> method's return
+ * value specified as an argument of <code>reduce()</code>, or the new value
+ * received in a flooded message). Then store the <code>op()</code> method's return
  * value back into the local process's replicated variable.
  * </OL>
  * <P>
@@ -157,7 +157,7 @@ public class ReplicatedDouble
      *
      * @param op Reduction operator.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public ReplicatedDouble(DoubleOp op) {
         this(op, 0.0, 0, Comm.world());
@@ -171,7 +171,7 @@ public class ReplicatedDouble
      * @param op Reduction operator.
      * @param initialValue Initial value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public ReplicatedDouble(DoubleOp op,
             double initialValue) {
@@ -187,8 +187,8 @@ public class ReplicatedDouble
      * @param initialValue Initial value.
      * @param tag Message tag.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null. Thrown if
-     * <TT>comm</TT> is null.
+     * <code>op</code> is null. Thrown if
+     * <code>comm</code> is null.
      */
     public ReplicatedDouble(DoubleOp op,
             double initialValue,
@@ -205,8 +205,8 @@ public class ReplicatedDouble
      * @param tag Message tag.
      * @param comm Communicator.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null. Thrown if
-     * <TT>comm</TT> is null.
+     * <code>op</code> is null. Thrown if
+     * <code>comm</code> is null.
      */
     public ReplicatedDouble(DoubleOp op,
             double initialValue,
@@ -245,7 +245,7 @@ public class ReplicatedDouble
      * processes in the communicator.
      *
      * @param value Value.
-     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     * @return (This variable) <I>op</I> (<code>value</code>).
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -281,7 +281,7 @@ public class ReplicatedDouble
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>int</TT>.
+     * <code>int</code>.
      *
      * @return Current value.
      */
@@ -291,7 +291,7 @@ public class ReplicatedDouble
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>long</TT>.
+     * <code>long</code>.
      *
      * @return Current value.
      */
@@ -301,7 +301,7 @@ public class ReplicatedDouble
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>float</TT>.
+     * <code>float</code>.
      *
      * @return Current value.
      */
@@ -311,7 +311,7 @@ public class ReplicatedDouble
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>double</TT>.
+     * <code>double</code>.
      *
      * @return Current value.
      */

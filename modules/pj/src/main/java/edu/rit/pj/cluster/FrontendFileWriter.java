@@ -186,8 +186,8 @@ public class FrontendFileWriter {
         }
 
         /**
-         * Write the given bytes to the given output file. <TT>ffd</TT> = 1
-         * refers to the job's standard output stream; <TT>ffd</TT> = 2 refers
+         * Write the given bytes to the given output file. <code>ffd</code> = 1
+         * refers to the job's standard output stream; <code>ffd</code> = 2 refers
          * to the job's standard error stream; other values refer to a
          * previously opened file.
          *
@@ -381,8 +381,8 @@ public class FrontendFileWriter {
     }
 
     /**
-     * Write the given bytes to the given output file. <TT>ffd</TT> = 1 refers
-     * to the job's standard output stream; <TT>ffd</TT> = 2 refers to the job's
+     * Write the given bytes to the given output file. <code>ffd</code> = 1 refers
+     * to the job's standard output stream; <code>ffd</code> = 2 refers to the job's
      * standard error stream; other values refer to a previously opened file.
      *
      * @param theJobBackend Job Backend that is calling this method.

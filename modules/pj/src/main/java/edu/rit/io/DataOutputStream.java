@@ -52,7 +52,7 @@ import java.io.OutputStream;
  * can save space in the file if small integer values are written more
  * frequently than large integer values. The resulting byte stream can be read
  * using class {@linkplain DataInputStream}.
- * <P>
+ * <p>
  * Note that class DataOutputStream does <I>not</I> implement interface
  * java.io.DataOutput, because the methods do not obey the contract specified in
  * that interface.
@@ -64,6 +64,7 @@ public class DataOutputStream
         extends FilterOutputStream {
 
 // Exported constructors.
+
     /**
      * Construct a new data output stream.
      *
@@ -74,12 +75,13 @@ public class DataOutputStream
     }
 
 // Exported operations.
+
     /**
      * Write the given Boolean value to this data output stream. One byte is
-     * written, either 0 (if <TT>v</TT> is false) or 1 (if <TT>v</TT> is true).
+     * written, either 0 (if <code>v</code> is false) or 1 (if <code>v</code> is true).
      *
      * @param v Boolean value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeBoolean(boolean v)
@@ -92,30 +94,30 @@ public class DataOutputStream
      * be used to write values of type byte, short, char, or int. From one to
      * five bytes are written, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
-     * If &minus;64 &le; <TT>v</TT> &le; 63, then one byte is written,
-     * containing 0 (1 bit) followed by <TT>v</TT> (7 bits).
-     * <P>
+     * If &minus;64 &le; <code>v</code> &le; 63, then one byte is written,
+     * containing 0 (1 bit) followed by <code>v</code> (7 bits).
+     *
      * <LI>
-     * Else if &minus;8192 &le; <TT>v</TT> &le; 8191, then two bytes are
-     * written, containing 10 (2 bits) followed by <TT>v</TT> (14 bits).
-     * <P>
+     * Else if &minus;8192 &le; <code>v</code> &le; 8191, then two bytes are
+     * written, containing 10 (2 bits) followed by <code>v</code> (14 bits).
+     *
      * <LI>
-     * Else if &minus;1048576 &le; <TT>v</TT> &le; 1048575, then three bytes are
-     * written, containing 110 (3 bits) followed by <TT>v</TT> (21 bits).
-     * <P>
+     * Else if &minus;1048576 &le; <code>v</code> &le; 1048575, then three bytes are
+     * written, containing 110 (3 bits) followed by <code>v</code> (21 bits).
+     *
      * <LI>
-     * Else if &minus;134217728 &le; <TT>v</TT> &le; 134217727, then four bytes
-     * are written, containing 1110 (4 bits) followed by <TT>v</TT> (28 bits).
-     * <P>
+     * Else if &minus;134217728 &le; <code>v</code> &le; 134217727, then four bytes
+     * are written, containing 1110 (4 bits) followed by <code>v</code> (28 bits).
+     *
      * <LI>
      * Else five bytes are written, containing 1111 (4 bits) followed by
-     * <TT>v</TT> (sign-extended to 36 bits).
+     * <code>v</code> (sign-extended to 36 bits).
      * </UL>
      *
      * @param v Integer value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeInt(int v)
@@ -148,30 +150,30 @@ public class DataOutputStream
      * method can be used to write values of type byte, short, char, or int.
      * From one to five bytes are written, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
-     * If 0 &le; <TT>v</TT> &le; 127, then one byte is written, containing 0 (1
-     * bit) followed by <TT>v</TT> (7 bits).
-     * <P>
+     * If 0 &le; <code>v</code> &le; 127, then one byte is written, containing 0 (1
+     * bit) followed by <code>v</code> (7 bits).
+     *
      * <LI>
-     * Else if 128 &le; <TT>v</TT> &le; 16383, then two bytes are written,
-     * containing 10 (2 bits) followed by <TT>v</TT> (14 bits).
-     * <P>
+     * Else if 128 &le; <code>v</code> &le; 16383, then two bytes are written,
+     * containing 10 (2 bits) followed by <code>v</code> (14 bits).
+     *
      * <LI>
-     * Else if 16384 &le; <TT>v</TT> &le; 2097151, then three bytes are written,
-     * containing 110 (3 bits) followed by <TT>v</TT> (21 bits).
-     * <P>
+     * Else if 16384 &le; <code>v</code> &le; 2097151, then three bytes are written,
+     * containing 110 (3 bits) followed by <code>v</code> (21 bits).
+     *
      * <LI>
-     * Else if 2097152 &le; <TT>v</TT> &le; 268435455, then four bytes are
-     * written, containing 1110 (4 bits) followed by <TT>v</TT> (28 bits).
-     * <P>
+     * Else if 2097152 &le; <code>v</code> &le; 268435455, then four bytes are
+     * written, containing 1110 (4 bits) followed by <code>v</code> (28 bits).
+     *
      * <LI>
      * Else five bytes are written, containing 1111 (4 bits) followed by
-     * <TT>v</TT> (zero-extended to 36 bits).
+     * <code>v</code> (zero-extended to 36 bits).
      * </UL>
      *
      * @param v Integer value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeUnsignedInt(int v)
@@ -203,50 +205,50 @@ public class DataOutputStream
      * Write the given long value to this data output stream. From one to nine
      * bytes are written, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
-     * If &minus;64 &le; <TT>v</TT> &le; 63, then one byte is written,
-     * containing 0 (1 bit) followed by <TT>v</TT> (7 bits).
-     * <P>
+     * If &minus;64 &le; <code>v</code> &le; 63, then one byte is written,
+     * containing 0 (1 bit) followed by <code>v</code> (7 bits).
+     *
      * <LI>
-     * Else if &minus;8192 &le; <TT>v</TT> &le; 8191, then two bytes are
-     * written, containing 10 (2 bits) followed by <TT>v</TT> (14 bits).
-     * <P>
+     * Else if &minus;8192 &le; <code>v</code> &le; 8191, then two bytes are
+     * written, containing 10 (2 bits) followed by <code>v</code> (14 bits).
+     *
      * <LI>
-     * Else if &minus;1048576 &le; <TT>v</TT> &le; 1048575, then three bytes are
-     * written, containing 110 (3 bits) followed by <TT>v</TT> (21 bits).
-     * <P>
+     * Else if &minus;1048576 &le; <code>v</code> &le; 1048575, then three bytes are
+     * written, containing 110 (3 bits) followed by <code>v</code> (21 bits).
+     *
      * <LI>
-     * Else if &minus;134217728 &le; <TT>v</TT> &le; 134217727, then four bytes
-     * are written, containing 1110 (4 bits) followed by <TT>v</TT> (28 bits).
-     * <P>
+     * Else if &minus;134217728 &le; <code>v</code> &le; 134217727, then four bytes
+     * are written, containing 1110 (4 bits) followed by <code>v</code> (28 bits).
+     *
      * <LI>
-     * Else if &minus;17179869184 &le; <TT>v</TT> &le; 17179869183, then five
-     * bytes are written, containing 11110 (5 bits) followed by <TT>v</TT> (35
+     * Else if &minus;17179869184 &le; <code>v</code> &le; 17179869183, then five
+     * bytes are written, containing 11110 (5 bits) followed by <code>v</code> (35
      * bits).
-     * <P>
+     *
      * <LI>
-     * Else if &minus;2199023255552 &le; <TT>v</TT> &le; 2199023255551, then six
-     * bytes are written, containing 111110 (6 bits) followed by <TT>v</TT> (42
+     * Else if &minus;2199023255552 &le; <code>v</code> &le; 2199023255551, then six
+     * bytes are written, containing 111110 (6 bits) followed by <code>v</code> (42
      * bits).
-     * <P>
+     *
      * <LI>
-     * Else if &minus;281474976710656 &le; <TT>v</TT> &le; 281474976710655, then
+     * Else if &minus;281474976710656 &le; <code>v</code> &le; 281474976710655, then
      * seven bytes are written, containing 1111110 (7 bits) followed by
-     * <TT>v</TT> (49 bits).
-     * <P>
+     * <code>v</code> (49 bits).
+     *
      * <LI>
-     * Else if &minus;36028797018963968 &le; <TT>v</TT> &le; 36028797018963967,
+     * Else if &minus;36028797018963968 &le; <code>v</code> &le; 36028797018963967,
      * then eight bytes are written, containing 11111110 (8 bits) followed by
-     * <TT>v</TT> (56 bits).
-     * <P>
+     * <code>v</code> (56 bits).
+     *
      * <LI>
      * Else nine bytes are written, containing 11111111 (8 bits) followed by
-     * <TT>v</TT> (64 bits).
+     * <code>v</code> (64 bits).
      * </UL>
      *
      * @param v Integer value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeLong(long v)
@@ -312,48 +314,48 @@ public class DataOutputStream
      * Write the given unsigned long value to this data output stream. From one
      * to nine bytes are written, in big-endian order, as follows:
      * <UL>
-     * <P>
+     *
      * <LI>
-     * If 0 &le; <TT>v</TT> &le; 127, then one byte is written, containing 0 (1
-     * bit) followed by <TT>v</TT> (7 bits).
-     * <P>
+     * If 0 &le; <code>v</code> &le; 127, then one byte is written, containing 0 (1
+     * bit) followed by <code>v</code> (7 bits).
+     *
      * <LI>
-     * Else if 128 &le; <TT>v</TT> &le; 16383, then two bytes are written,
-     * containing 10 (2 bits) followed by <TT>v</TT> (14 bits).
-     * <P>
+     * Else if 128 &le; <code>v</code> &le; 16383, then two bytes are written,
+     * containing 10 (2 bits) followed by <code>v</code> (14 bits).
+     *
      * <LI>
-     * Else if 16384 &le; <TT>v</TT> &le; 2097151, then three bytes are written,
-     * containing 110 (3 bits) followed by <TT>v</TT> (21 bits).
-     * <P>
+     * Else if 16384 &le; <code>v</code> &le; 2097151, then three bytes are written,
+     * containing 110 (3 bits) followed by <code>v</code> (21 bits).
+     *
      * <LI>
-     * Else if 2097152 &le; <TT>v</TT> &le; 268435455, then four bytes are
-     * written, containing 1110 (4 bits) followed by <TT>v</TT> (28 bits).
-     * <P>
+     * Else if 2097152 &le; <code>v</code> &le; 268435455, then four bytes are
+     * written, containing 1110 (4 bits) followed by <code>v</code> (28 bits).
+     *
      * <LI>
-     * Else if 268435456 &le; <TT>v</TT> &le; 34359738367, then five bytes are
-     * written, containing 11110 (5 bits) followed by <TT>v</TT> (35 bits).
-     * <P>
+     * Else if 268435456 &le; <code>v</code> &le; 34359738367, then five bytes are
+     * written, containing 11110 (5 bits) followed by <code>v</code> (35 bits).
+     *
      * <LI>
-     * Else if 34359738368 &le; <TT>v</TT> &le; 4398046511103, then six bytes
-     * are written, containing 111110 (6 bits) followed by <TT>v</TT> (42 bits).
-     * <P>
+     * Else if 34359738368 &le; <code>v</code> &le; 4398046511103, then six bytes
+     * are written, containing 111110 (6 bits) followed by <code>v</code> (42 bits).
+     *
      * <LI>
-     * Else if 4398046511104 &le; <TT>v</TT> &le; 562949953421311, then seven
-     * bytes are written, containing 1111110 (7 bits) followed by <TT>v</TT> (49
+     * Else if 4398046511104 &le; <code>v</code> &le; 562949953421311, then seven
+     * bytes are written, containing 1111110 (7 bits) followed by <code>v</code> (49
      * bits).
-     * <P>
+     *
      * <LI>
-     * Else if 562949953421312 &le; <TT>v</TT> &le; 72057594037927935, then
+     * Else if 562949953421312 &le; <code>v</code> &le; 72057594037927935, then
      * eight bytes are written, containing 11111110 (8 bits) followed by
-     * <TT>v</TT> (56 bits).
-     * <P>
+     * <code>v</code> (56 bits).
+     *
      * <LI>
      * Else nine bytes are written, containing 11111111 (8 bits) followed by
-     * <TT>v</TT> (64 bits).
+     * <code>v</code> (64 bits).
      * </UL>
      *
      * @param v Integer value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeUnsignedLong(long v)
@@ -418,10 +420,10 @@ public class DataOutputStream
     /**
      * Write the given float value to this data output stream. Four bytes are
      * written in big-endian order containing
-     * <TT>Float.floatToRawIntBits(v)</TT>.
+     * <code>Float.floatToRawIntBits(v)</code>.
      *
      * @param v Float value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeFloat(float v)
@@ -436,10 +438,10 @@ public class DataOutputStream
     /**
      * Write the given double value to this data output stream. Eight bytes are
      * written in big-endian order containing
-     * <TT>Double.doubleToRawLongBits(v)</TT>.
+     * <code>Double.doubleToRawLongBits(v)</code>.
      *
      * @param v Double value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeDouble(double v)
@@ -457,11 +459,11 @@ public class DataOutputStream
 
     /**
      * Write the given string value to this data output stream. The length of
-     * the string is written using <TT>writeUnsignedInt()</TT>, then each
-     * character of the string is written using <TT>writeUnsignedInt()</TT>.
+     * the string is written using <code>writeUnsignedInt()</code>, then each
+     * character of the string is written using <code>writeUnsignedInt()</code>.
      *
      * @param v String value.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeString(String v)

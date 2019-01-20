@@ -465,9 +465,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param molecularAssembly Assembly to construct energy for.
      * @param requestedPlatform requested OpenMM platform to be used.
-     * @param restraints Harmonic coordinate restraints.
-     * @param nThreads Number of threads to use in the super class
-     * ForceFieldEnergy instance.
+     * @param restraints        Harmonic coordinate restraints.
+     * @param nThreads          Number of threads to use in the super class
+     *                          ForceFieldEnergy instance.
      */
     protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform, List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
@@ -487,7 +487,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Create the OpenMM System
         system = OpenMM_System_create();
-        logger.info(" Created OpenMM system and adding forces");
+        logger.info(" System created.");
 
         ForceField forceField = molecularAssembly.getForceField();
 
@@ -613,9 +613,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (pmeLambdaTerm || vdwLambdaTerm) {
             lambdaTerm = true;
         }
-        
+
         CompositeConfiguration properties = molecularAssembly.getProperties();
-        if (properties.containsKey("openMMdEdL")){
+        if (properties.containsKey("openMMdEdL")) {
             doOpenMMdEdL = true;
             doFFXdEdL = false;
         }
@@ -636,10 +636,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Print out the OpenMM Version.
         Pointer version = OpenMM_Platform_getOpenMMVersion();
-        logger.log(Level.INFO, " OpenMM Version: {0}", version.getString(0));
+        logger.log(Level.INFO, " Version: {0}", version.getString(0));
 
         // Print out the OpenMM plugin directory.
-        logger.log(Level.INFO, " OpenMM Plugin Dir: {0}", OpenMMUtils.OPENMM_PLUGIN_DIR);
+        logger.log(Level.INFO, " Plugin Dir: {0}", OpenMMUtils.OPENMM_PLUGIN_DIR);
 
         /**
          * Load plugins and print out plugins.
@@ -653,7 +653,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         plugins = OpenMM_Platform_loadPluginsFromDirectory(OpenMMUtils.OPENMM_PLUGIN_DIR);
         int numPlugins = OpenMM_StringArray_getSize(plugins);
 
-        logger.log(Level.INFO, " Number of OpenMM Plugins: {0}", numPlugins);
+        logger.log(Level.INFO, " Number of Plugins: {0}", numPlugins);
         boolean cuda = false;
         for (int i = 0; i < numPlugins; i++) {
             String pluginString = stringFromArray(plugins, i);
@@ -678,15 +678,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         int numPlatforms = OpenMM_Platform_getNumPlatforms();
-        logger.log(Level.INFO, " Number of OpenMM Platforms: {0}", numPlatforms);
+        logger.log(Level.INFO, " Number of Platforms: {0}", numPlatforms);
 
-        /**
-         * for (int i = 0; i < numPlatforms; i++) { PointerByReference
-         * currentPlatform = OpenMM_Platform_getPlatform(i); Pointer
-         * platformName = OpenMM_Platform_getName(currentPlatform);
-         * logger.log(Level.INFO, " Platform: {0}", platformName.getString(0));
-         * OpenMM_Platform_destroy(currentPlatform); }
-         */
         String defaultPrecision = "mixed";
         String precision = molecularAssembly.getForceField().getString(ForceField.ForceFieldString.PRECISION, defaultPrecision).toLowerCase();
         precision = precision.replace("-precision", "");
@@ -694,7 +687,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             case "double":
             case "mixed":
             case "single":
-                logger.info(String.format(" Using precision level %s", precision));
+                logger.info(String.format(" Precision level: %s", precision));
                 break;
             default:
                 logger.info(String.format(" Could not interpret precision level %s, defaulting to %s", precision, defaultPrecision));
@@ -710,7 +703,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"), pointerForString(deviceIDString));
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
-            logger.info(String.format(" Selected OpenMM AMOEBA CUDA Platform (Device ID: %d)", deviceID));
+            logger.info(String.format(" Platform: AMOEBA CUDA (Device ID %d)", deviceID));
             try {
                 Comm world = Comm.world();
                 if (world != null) {
@@ -721,7 +714,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         } else {
             platform = OpenMM_Platform_getPlatformByName("Reference");
-            logger.info(" Selected OpenMM AMOEBA Reference Platform");
+            logger.info(" Platform: AMOEBA CPU Reference");
         }
     }
 
@@ -975,7 +968,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public boolean destroy() {
         boolean ffxFFEDestroy = super.destroy();
         freeOpenMM();
-        logger.info(" Destroyed the Context, Integrator, and OpenMMSystem.");
+        logger.fine(" Destroyed the Context, Integrator, and OpenMMSystem.");
         return ffxFFEDestroy;
     }
 
@@ -1074,7 +1067,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Add an Andersen thermostat to the system.
      *
-     * @param targetTemp Target temperature in Kelvins.
+     * @param targetTemp    Target temperature in Kelvins.
      * @param collisionFreq Collision frequency in 1/psec
      */
     public void addAndersenThermostat(double targetTemp, double collisionFreq) {
@@ -1094,7 +1087,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.info(format(" Added a Monte Carlo barostat at target pressure %10.6f bar, target temperature %10.6fK and MC move frequency %d.", targetPressure, targetTemp, frequency));
 
             CompositeConfiguration properties = molecularAssembly.getProperties();
-            
+
             if (properties.containsKey("randomseed")) {
                 int randomSeed = properties.getInt("randomseed", 0);
                 logger.info(String.format(" Setting random seed %d for Monte Carlo Barostat", randomSeed));
@@ -1374,7 +1367,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     a1, a2, a3, a4, improperTorsionType.periodicity,
                     improperTorsionType.phase * OpenMM_RadiansPerDegree,
                     OpenMM_KJPerKcal * improperTorsion.units
-                    * improperTorsion.scaleFactor * improperTorsionType.k);
+                            * improperTorsion.scaleFactor * improperTorsionType.k);
         }
 
         ForceField.ForceFieldInteger imptorsFgroup = ForceField.ForceFieldInteger.IMPROPER_TORSION_FORCE_GROUP;
@@ -2067,29 +2060,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 // "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
                 // "step(r+sr2-or1)*0.5*((1/L^3-1/U^3)/3+(1/U^4-1/L^4)/8*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
                 "0.5*((1/L^3-1/U^3)/3.0+(1/U^4-1/L^4)/8.0*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
-                + "U=r+sr2;"
-                // + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
-                + "C=2/3*(1/or1^3-1/L^3)*step(sr2-r-or1);"
-                // + "L=step(or1-D)*or1 + (1-step(or1-D))*D;"
-                // + "D=step(r-sr2)*(r-sr2) + (1-step(r-sr2))*(sr2-r);"
-                + "L = step(sr2 - r1r)*sr2mr + (1 - step(sr2 - r1r))*L;"
-                + "sr2mr = sr2 - r;"
-                + "r1r = radius1 + r;"
-                + "L = step(r1sr2 - r)*radius1 + (1 - step(r1sr2 - r))*L;"
-                + "r1sr2 = radius1 + sr2;"
-                + "L = r - sr2;"
-                + "sr2 = scale2 * radius2;"
-                + "or1 = radius1; or2 = radius2",
+                        + "U=r+sr2;"
+                        // + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
+                        + "C=2/3*(1/or1^3-1/L^3)*step(sr2-r-or1);"
+                        // + "L=step(or1-D)*or1 + (1-step(or1-D))*D;"
+                        // + "D=step(r-sr2)*(r-sr2) + (1-step(r-sr2))*(sr2-r);"
+                        + "L = step(sr2 - r1r)*sr2mr + (1 - step(sr2 - r1r))*L;"
+                        + "sr2mr = sr2 - r;"
+                        + "r1r = radius1 + r;"
+                        + "L = step(r1sr2 - r)*radius1 + (1 - step(r1sr2 - r))*L;"
+                        + "r1sr2 = radius1 + sr2;"
+                        + "L = r - sr2;"
+                        + "sr2 = scale2 * radius2;"
+                        + "or1 = radius1; or2 = radius2",
                 OpenMM_CustomGBForce_ParticlePairNoExclusions);
 
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "B",
                 // "1/(1/or-tanh(1*psi-0.8*psi^2+4.85*psi^3)/radius);"
                 // "psi=I*or; or=radius-0.009"
                 "step(BB-radius)*BB + (1 - step(BB-radius))*radius;"
-                + "BB = 1 / ( (3.0*III)^(1.0/3.0) );"
-                + "III = step(II)*II + (1 - step(II))*1.0e-9/3.0;"
-                + "II = maxI - I;"
-                + "maxI = 1/(3.0*radius^3)",
+                        + "BB = 1 / ( (3.0*III)^(1.0/3.0) );"
+                        + "III = step(II)*II + (1 - step(II))*1.0e-9/3.0;"
+                        + "II = maxI - I;"
+                        + "maxI = 1/(3.0*radius^3)",
                 OpenMM_CustomGBForce_SingleParticle);
 
         double sTens = 0.0;
@@ -2110,7 +2103,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
                 "-138.935456*(1/soluteDielectric-1/solventDielectric)*q1*q2/f;"
-                + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
+                        + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
                 OpenMM_CustomGBForce_ParticlePair);
 
         double baseRadii[] = gk.getBaseRadii();
@@ -2213,7 +2206,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_IntArray_resize(exclusions, 0);
         }
         OpenMM_IntArray_destroy(exclusions);
-        logger.log(Level.INFO, "  Added van der Waals force");
+        logger.log(Level.INFO, "  van der Waals force");
     }
 
     /**
@@ -2580,7 +2573,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             case BORN_SOLV:
             case NONE:
             default:
-            // WCA force is not being used.
+                // WCA force is not being used.
         }
 
         logger.log(Level.INFO, "  Generalized Kirkwood force");
@@ -2840,9 +2833,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Updates the fixed-charge non-bonded force for change in Use flags.
      *
-     * @param atoms Array of all Atoms in the system
+     * @param atoms         Array of all Atoms in the system
      * @param vdwLambdaTerm If true, set charges and eps values to zero for
-     * Lambda atoms
+     *                      Lambda atoms
      */
     private void updateFixedChargeNonBondedForce(Atom[] atoms, boolean vdwLambdaTerm) {
         VanDerWaals vdW = super.getVdwNode();
@@ -3242,7 +3235,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param x       Coordinate array
      * @param verbose Verbosity of energy call
-     * @return        Total energy calculated by reference FFX implementation.
+     * @return Total energy calculated by reference FFX implementation.
      */
     public double ffxEnergy(double[] x, boolean verbose) {
         return super.energy(x, verbose);
@@ -3585,7 +3578,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param velocities        a {@link com.sun.jna.ptr.PointerByReference} object.
      * @param numberOfVariables a int.
-     * @param velocities        a {@link com.sun.jna.ptr.PointerByReference} object.
      * @param v                 an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
@@ -3663,13 +3655,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_System_setDefaultPeriodicBoxVectors(system, a, b, c);
         }
     }
-    
-    private void getPeriodicBoxVectors(PointerByReference state){
-        
+
+    private void getPeriodicBoxVectors(PointerByReference state) {
+
         OpenMM_Vec3 a = new OpenMM_Vec3();
         OpenMM_Vec3 b = new OpenMM_Vec3();
         OpenMM_Vec3 c = new OpenMM_Vec3();
-        
+
         OpenMM_State_getPeriodicBoxVectors(state, a, b, c);
     }
 

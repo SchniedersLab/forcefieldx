@@ -56,22 +56,22 @@ import edu.rit.util.PrintStreamLogger;
  * <P>
  * When constructed, the HTTP server starts a thread listening for connections
  * to a given host and port. When a web browser sets up a connection, the HTTP
- * server calls the <TT>process()</TT> method to process the request. This is an
- * abstract method that must be overridden in a subclass. The <TT>process()</TT>
+ * server calls the <code>process()</code> method to process the request. This is an
+ * abstract method that must be overridden in a subclass. The <code>process()</code>
  * method's arguments are an {@linkplain HttpRequest} object from which the
  * method reads the HTTP request message and an {@linkplain HttpResponse} object
  * to which the method writes the HTTP response message.
  * <P>
- * The HTTP server assumes that the <TT>process()</TT> method will not perform
+ * The HTTP server assumes that the <code>process()</code> method will not perform
  * any lengthy processing and will not block the calling thread. If the HTTP
  * request requires lengthy processing or requires blocking, the
- * <TT>process()</TT> method should spawn a separate thread to process the
+ * <code>process()</code> method should spawn a separate thread to process the
  * request. A thread pool may prove useful; see package java.util.concurrent.
  * <P>
  * When a client opens a socket connection to the HTTP server, the server places
  * a two-second timeout on reading the socket. If the client does not send an
  * HTTP request message before the timeout, the {@linkplain HttpRequest}'s
- * <TT>isValid()</TT> method returns false.
+ * <code>isValid()</code> method returns false.
  *
  * @author Alan Kaminsky
  * @version 29-Jul-2010
@@ -188,9 +188,9 @@ public abstract class HttpServer {
 
 // Hidden operations.
     /**
-     * Process the given HTTP request. The <TT>process()</TT> method must be
+     * Process the given HTTP request. The <code>process()</code> method must be
      * overridden in a subclass to read the HTTP request from
-     * <TT>theRequest</TT> and write the HTTP response to <TT>theResponse</TT>.
+     * <code>theRequest</code> and write the HTTP response to <code>theResponse</code>.
      *
      * @param theRequest HTTP request.
      * @param theResponse HTTP response.
@@ -230,26 +230,26 @@ public abstract class HttpServer {
 //						out.println ("<BODY>");
 //						out.println ("<UL>");
 //						out.println ("<LI>");
-//						out.print   ("Method = <TT>\"");
+//						out.print   ("Method = <code>\"");
 //						out.print   (request.getMethod());
-//						out.println ("\"</TT>");
+//						out.println ("\"</code>");
 //						out.println ("<LI>");
-//						out.print   ("URI = <TT>\"");
+//						out.print   ("URI = <code>\"");
 //						out.print   (request.getUri());
-//						out.println ("\"</TT>");
+//						out.println ("\"</code>");
 //						out.println ("<LI>");
-//						out.print   ("Version = <TT>\"");
+//						out.print   ("Version = <code>\"");
 //						out.print   (request.getHttpVersion());
-//						out.println ("\"</TT>");
+//						out.println ("\"</code>");
 //						for (Map.Entry<String,String> entry :
 //									request.getHeaders())
 //							{
 //							out.println ("<LI>");
-//							out.print   ("Header name = <TT>\"");
+//							out.print   ("Header name = <code>\"");
 //							out.print   (entry.getKey());
-//							out.print   ("\"</TT>, value = <TT>\"");
+//							out.print   ("\"</code>, value = <code>\"");
 //							out.print   (entry.getValue());
-//							out.println ("\"</TT>");
+//							out.println ("\"</code>");
 //							}
 //						out.println ("</UL>");
 //						out.println ("</BODY>");

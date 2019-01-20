@@ -2116,12 +2116,7 @@ public class BiojavaFilter extends ConversionFilter {
      * @param aminoAcid The amino acid to use.
      * @param residue   The residue node.
      * @param CA        The C-alpha carbon of this residue.
-     * @param CA        The C-alpha carbon of this residue.
      * @param N         The peptide nitrogen of this residue.
-     * @param CA        The C-alpha carbon of this residue.
-     * @param CA        The C-alpha carbon of this residue.
-     * @param CA        The C-alpha carbon of this residue.
-     * @param CA        The C-alpha carbon of this residue.
      * @param C         The peptide carbonyl carbon.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */

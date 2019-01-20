@@ -61,8 +61,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one Boolean array with a range of
      * elements in another Boolean array. The number of elements combined is the
-     * smaller of <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length.
-     * Either or both of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may
+     * smaller of <code>srcRange</code>'s length and <code>dstRange</code>'s length.
+     * Either or both of <code>srcRange</code>'s and <code>dstRange</code>'s strides may
      * be greater than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -71,17 +71,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(boolean[] src,
             Range srcRange,
@@ -124,8 +122,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one byte array with a range of elements
      * in another byte array. The number of elements combined is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -134,17 +132,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(byte[] src,
             Range srcRange,
@@ -187,8 +183,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one character array with a range of
      * elements in another character array. The number of elements combined is
-     * the smaller of <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length.
-     * Either or both of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may
+     * the smaller of <code>srcRange</code>'s length and <code>dstRange</code>'s length.
+     * Either or both of <code>srcRange</code>'s and <code>dstRange</code>'s strides may
      * be greater than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -197,17 +193,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(char[] src,
             Range srcRange,
@@ -250,8 +244,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one double array with a range of
      * elements in another double array. The number of elements combined is the
-     * smaller of <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length.
-     * Either or both of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may
+     * smaller of <code>srcRange</code>'s length and <code>dstRange</code>'s length.
+     * Either or both of <code>srcRange</code>'s and <code>dstRange</code>'s strides may
      * be greater than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -260,17 +254,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(double[] src,
             Range srcRange,
@@ -313,8 +305,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one float array with a range of elements
      * in another float array. The number of elements combined is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -323,17 +315,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(float[] src,
             Range srcRange,
@@ -376,8 +366,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one integer array with a range of
      * elements in another integer array. The number of elements combined is the
-     * smaller of <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length.
-     * Either or both of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may
+     * smaller of <code>srcRange</code>'s length and <code>dstRange</code>'s length.
+     * Either or both of <code>srcRange</code>'s and <code>dstRange</code>'s strides may
      * be greater than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -386,17 +376,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(int[] src,
             Range srcRange,
@@ -439,8 +427,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one long array with a range of elements
      * in another long array. The number of elements combined is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -449,17 +437,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(long[] src,
             Range srcRange,
@@ -502,8 +488,8 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one short array with a range of elements
      * in another short array. The number of elements combined is the smaller of
-     * <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length. Either or both
-     * of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may be greater
+     * <code>srcRange</code>'s length and <code>dstRange</code>'s length. Either or both
+     * of <code>srcRange</code>'s and <code>dstRange</code>'s strides may be greater
      * than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
@@ -512,17 +498,15 @@ public class ReduceArrays {
      *
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static void reduce(short[] src,
             Range srcRange,
@@ -565,28 +549,27 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one object array with a range of
      * elements in another object array. The number of elements combined is the
-     * smaller of <TT>srcRange</TT>'s length and <TT>dstRange</TT>'s length.
-     * Either or both of <TT>srcRange</TT>'s and <TT>dstRange</TT>'s strides may
+     * smaller of <code>srcRange</code>'s length and <code>dstRange</code>'s length.
+     * Either or both of <code>srcRange</code>'s and <code>dstRange</code>'s strides may
      * be greater than 1.
      * <P>
      * For each destination array element <I>D</I> in the destination range and
      * each corresponding source array element <I>S</I> in the source range,
      * <I>D</I> is set to <I>D op S</I>.
      *
+     * @param <ST> Data type that extends the destination matrix element data type.
      * @param <DT> Destination array element data type.
      * @param src Source array.
      * @param srcRange Range of source elements.
-     * @param srcRange Range of source elements.
      * @param dst Destination array.
-     * @param dstRange Range of destination elements.
      * @param dstRange Range of destination elements.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRange</TT> is outside the bounds of the source array.
+     * index in <code>srcRange</code> is outside the bounds of the source array.
      * Thrown if any index in
-     * <TT>dstRange</TT> is outside the bounds of the destination array.
+     * <code>dstRange</code> is outside the bounds of the destination array.
      */
     public static <DT, ST extends DT> void reduce(ST[] src,
             Range srcRange,
@@ -629,11 +612,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one Boolean matrix with a range of
      * elements in another Boolean matrix. The number of rows combined is the
-     * smaller of <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s
+     * smaller of <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s
      * length. Within each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -645,23 +628,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(boolean[][] src,
@@ -707,11 +686,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one byte matrix with a range of elements
      * in another byte matrix. The number of rows combined is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -723,23 +702,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(byte[][] src,
@@ -785,11 +760,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one character matrix with a range of
      * elements in another character matrix. The number of rows combined is the
-     * smaller of <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s
+     * smaller of <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s
      * length. Within each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -801,23 +776,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(char[][] src,
@@ -863,11 +834,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one double matrix with a range of
      * elements in another double matrix. The number of rows combined is the
-     * smaller of <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s
+     * smaller of <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s
      * length. Within each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -875,23 +846,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(double[][] src,
@@ -937,11 +904,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one float matrix with a range of
      * elements in another float matrix. The number of rows combined is the
-     * smaller of <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s
+     * smaller of <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s
      * length. Within each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -953,23 +920,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(float[][] src,
@@ -1015,11 +978,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one integer matrix with a range of
      * elements in another integer matrix. The number of rows combined is the
-     * smaller of <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s
+     * smaller of <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s
      * length. Within each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1031,23 +994,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(int[][] src,
@@ -1093,11 +1052,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one long matrix with a range of elements
      * in another long matrix. The number of rows combined is the smaller of
-     * <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s length. Within
+     * <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s length. Within
      * each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1109,23 +1068,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(long[][] src,
@@ -1171,11 +1126,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one short matrix with a range of
      * elements in another short matrix. The number of rows combined is the
-     * smaller of <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s
+     * smaller of <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s
      * length. Within each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1187,23 +1142,19 @@ public class ReduceArrays {
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static void reduce(short[][] src,
@@ -1249,11 +1200,11 @@ public class ReduceArrays {
     /**
      * Combine a range of elements from one object matrix with a range of
      * elements in another object matrix. The number of rows combined is the
-     * smaller of <TT>srcRowRange</TT>'s length and <TT>dstRowRange</TT>'s
+     * smaller of <code>srcRowRange</code>'s length and <code>dstRowRange</code>'s
      * length. Within each row, the number of columns combined is the smaller of
-     * <TT>srcColRange</TT>'s length and <TT>dstColRange</TT>'s length. Any of
-     * <TT>srcRowRange</TT>'s, <TT>srcColRange</TT>'s, <TT>dstRowRange</TT>'s,
-     * and <TT>dstColRange</TT>'s strides may be greater than 1. It is assumed
+     * <code>srcColRange</code>'s length and <code>dstColRange</code>'s length. Any of
+     * <code>srcRowRange</code>'s, <code>srcColRange</code>'s, <code>dstRowRange</code>'s,
+     * and <code>dstColRange</code>'s strides may be greater than 1. It is assumed
      * that the source matrix is fully allocated; each row in the source matrix
      * is the same length; the destination matrix is fully allocated; and each
      * row in the destination matrix is the same length.
@@ -1262,27 +1213,24 @@ public class ReduceArrays {
      * column ranges and each corresponding source matrix element <I>S</I> in
      * the source row and column ranges, <I>D</I> is set to <I>D op S</I>.
      *
+     * @param <ST> Data type that extends the destination matrix element data type.
      * @param <DT> Destination matrix element data type.
      * @param src Source matrix.
      * @param srcRowRange Range of source rows.
      * @param srcColRange Range of source columns.
-     * @param srcRowRange Range of source rows.
-     * @param srcColRange Range of source columns.
      * @param dst Destination matrix.
-     * @param dstRowRange Range of destination rows.
-     * @param dstColRange Range of destination columns.
      * @param dstRowRange Range of destination rows.
      * @param dstColRange Range of destination columns.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if any
      * argument is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if any
-     * index in <TT>srcRowRange</TT> is outside the row bounds of the source
+     * index in <code>srcRowRange</code> is outside the row bounds of the source
      * matrix. Thrown if any index in
-     * <TT>srcColRange</TT> is outside the column bounds of the source matrix.
-     * Thrown if any index in <TT>dstRowRange</TT> is outside the row bounds of
+     * <code>srcColRange</code> is outside the column bounds of the source matrix.
+     * Thrown if any index in <code>dstRowRange</code> is outside the row bounds of
      * the destination matrix. Thrown if any index in
-     * <TT>dstColRange</TT> is outside the column bounds of the destination
+     * <code>dstColRange</code> is outside the column bounds of the destination
      * matrix.
      */
     public static <DT, ST extends DT> void reduce(ST[][] src,

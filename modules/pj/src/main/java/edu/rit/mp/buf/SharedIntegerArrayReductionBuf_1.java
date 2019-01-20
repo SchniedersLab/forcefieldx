@@ -69,7 +69,7 @@ class SharedIntegerArrayReductionBuf_1
      * stride is assumed to be 1.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public SharedIntegerArrayReductionBuf_1(SharedIntegerArray theArray,
             Range theRange,
@@ -87,7 +87,7 @@ class SharedIntegerArrayReductionBuf_1
      *
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public void put(int i,
@@ -115,7 +115,7 @@ class SharedIntegerArrayReductionBuf_1
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      */
     protected int receiveItems(int i,

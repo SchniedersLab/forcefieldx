@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class SharedInteger provides a reduction variable for a value of type
- * <TT>int</TT>.
+ * <code>int</code>.
  * <P>
  * Class SharedInteger is multiple thread safe. The methods use lock-free atomic
  * compare-and-set.
@@ -198,7 +198,7 @@ public class SharedInteger
      *
      * @param value Value.
      * @param op Binary operation.
-     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     * @return (This variable) <I>op</I> (<code>value</code>).
      */
     public int reduce(int value,
             IntegerOp op) {
@@ -222,7 +222,7 @@ public class SharedInteger
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>int</TT>.
+     * <code>int</code>.
      *
      * @return Current value.
      */
@@ -232,7 +232,7 @@ public class SharedInteger
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>long</TT>.
+     * <code>long</code>.
      *
      * @return Current value.
      */
@@ -242,7 +242,7 @@ public class SharedInteger
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>float</TT>.
+     * <code>float</code>.
      *
      * @return Current value.
      */
@@ -252,7 +252,7 @@ public class SharedInteger
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>double</TT>.
+     * <code>double</code>.
      *
      * @return Current value.
      */

@@ -57,7 +57,7 @@ import java.lang.reflect.Constructor;
  * <LI>
  * Whereas class java.util.Random generates 48-bit numbers under the hood, class
  * Random generates 64-bit numbers. This makes class Random faster than class
- * java.util.Random for some operations, notably the <TT>nextDouble()</TT>
+ * java.util.Random for some operations, notably the <code>nextDouble()</code>
  * method.
  * <BR>&nbsp;
  * <LI>
@@ -84,8 +84,8 @@ import java.lang.reflect.Constructor;
  * <PRE>
  *     public double nextDouble();
  *     public double nextDouble (long skip);
- * </PRE> Calling the second version with an argument <TT>skip</TT> is
- * equivalent to calling the first version <TT>skip</TT> times:
+ * </PRE> Calling the second version with an argument <code>skip</code> is
+ * equivalent to calling the first version <code>skip</code> times:
  * <PRE>
  *     Random prng1 = Random.getInstance (1234L);
  *     double x = prng1.nextDouble (1000);
@@ -93,11 +93,11 @@ import java.lang.reflect.Constructor;
  *     double y;
  *     for (int i = 0; i &lt; 1000; ++ i)
  *         y = prng2.nextDouble();
- * </PRE> At the end of the above code fragment, <TT>x</TT> and <TT>y</TT> will
- * have the same value. However, calling <TT>nextDouble(1000)</TT> will
- * typically be much faster than calling <TT>nextDouble()</TT> 1000 times.
+ * </PRE> At the end of the above code fragment, <code>x</code> and <code>y</code> will
+ * have the same value. However, calling <code>nextDouble(1000)</code> will
+ * typically be much faster than calling <code>nextDouble()</code> 1000 times.
  * Conversely,
- * <TT>nextDouble(1)</TT> is equivalent to <TT>nextDouble()</TT>, but the former
+ * <code>nextDouble(1)</code> is equivalent to <code>nextDouble()</code>, but the former
  * will typically be slower than the latter.
  * <P>
  * An instance of class Random can be serialized; for example, to checkpoint the
@@ -143,20 +143,20 @@ public abstract class Random
     /**
      * Construct a new PRNG with the given seed using the default algorithm.
      * <P>
-     * If the <TT>"pj.prng"</TT> Java system property is specified, it gives the
+     * If the <code>"pj.prng"</code> Java system property is specified, it gives the
      * fully-qualified class name of the default PRNG class that the
-     * <TT>getInstance()</TT> method will construct. Specifying the
-     * <TT>"pj.prng"</TT> property will substitute a different PRNG algorithm
+     * <code>getInstance()</code> method will construct. Specifying the
+     * <code>"pj.prng"</code> property will substitute a different PRNG algorithm
      * into a program without needing to recompile.
      * <P>
-     * If the <TT>"pj.prng"</TT> Java system property is not specified, the
-     * <TT>getInstance()</TT> method will return an instance of class
+     * If the <code>"pj.prng"</code> Java system property is not specified, the
+     * <code>getInstance()</code> method will return an instance of class
      * {@linkplain DefaultRandom}.
      * <P>
-     * You can specify the <TT>"pj.prng"</TT> property on the Java command line
+     * You can specify the <code>"pj.prng"</code> property on the Java command line
      * like this:
-     * <P>
-     * <TT>&nbsp;&nbsp;&nbsp;&nbsp;java -Dpj.prng=MyOwnPrngClass . . .</TT>
+     *
+     * <code>&nbsp;&nbsp;&nbsp;&nbsp;java -Dpj.prng=MyOwnPrngClass . . .</code>
      * <P>
      * <I>Note:</I> Depending on the PRNG algorithm, certain seed values may not
      * be allowed. See the PRNG algorithm subclass for further information.
@@ -224,7 +224,7 @@ public abstract class Random
 
     /**
      * Skip the given number of positions ahead in this PRNG's sequence. If
-     * <TT>skip</TT> &lt;= 0, the <TT>skip()</TT> method does nothing.
+     * <code>skip</code> &lt;= 0, the <code>skip()</code> method does nothing.
      *
      * @param skip Number of positions to skip.
      */
@@ -236,8 +236,8 @@ public abstract class Random
 
     /**
      * Return the Boolean value from the next pseudorandom value in this PRNG's
-     * sequence. With a probability of 0.5 <TT>true</TT> is returned, with a
-     * probability of 0.5 <TT>false</TT> is returned.
+     * sequence. With a probability of 0.5 <code>true</code> is returned, with a
+     * probability of 0.5 <code>false</code> is returned.
      *
      * @return Boolean value.
      */
@@ -249,13 +249,13 @@ public abstract class Random
     /**
      * Return the Boolean value from the pseudorandom value the given number of
      * positions ahead in this PRNG's sequence. With a probability of 0.5
-     * <TT>true</TT> is returned, with a probability of 0.5 <TT>false</TT> is
+     * <code>true</code> is returned, with a probability of 0.5 <code>false</code> is
      * returned.
      *
      * @param skip Number of positions to skip.
      * @return Boolean value.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public boolean nextBoolean(long skip) {
         if (skip <= 0) {
@@ -285,7 +285,7 @@ public abstract class Random
      * @param skip Number of positions to skip.
      * @return Byte value in the range &minus;128 through 127 inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public byte nextByte(long skip) {
         if (skip <= 0) {
@@ -299,7 +299,7 @@ public abstract class Random
      * PRNG's sequence. Each value in the range 0 through 255 is returned with a
      * probability of 1/2<SUP>8</SUP>.
      *
-     * @return Unsigned byte value (as an <TT>int</TT>) in the range 0 through
+     * @return Unsigned byte value (as an <code>int</code>) in the range 0 through
      * 255 inclusive.
      */
     public int nextUnsignedByte() {
@@ -312,10 +312,10 @@ public abstract class Random
      * range 0 through 255 is returned with a probability of 1/2<SUP>8</SUP>.
      *
      * @param skip Number of positions to skip.
-     * @return Unsigned byte value (as an <TT>int</TT>) in the range 0 through
+     * @return Unsigned byte value (as an <code>int</code>) in the range 0 through
      * 255 inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public int nextUnsignedByte(long skip) {
         if (skip <= 0) {
@@ -326,11 +326,11 @@ public abstract class Random
 
     /**
      * Return the character value from the next pseudorandom value in this
-     * PRNG's sequence. Each value in the range <TT>'&#92;u0000'</TT> through
-     * <TT>'&#92;uFFFF'</TT> is returned with a probability of 1/2<SUP>16</SUP>.
+     * PRNG's sequence. Each value in the range <code>'&#92;u0000'</code> through
+     * <code>'&#92;uFFFF'</code> is returned with a probability of 1/2<SUP>16</SUP>.
      *
-     * @return Character value in the range <TT>'&#92;u0000'</TT> through
-     * <TT>'&#92;uFFFF'</TT> inclusive.
+     * @return Character value in the range <code>'&#92;u0000'</code> through
+     * <code>'&#92;uFFFF'</code> inclusive.
      */
     public char nextCharacter() {
         return (char) next();
@@ -339,14 +339,14 @@ public abstract class Random
     /**
      * Return the character value from the next pseudorandom value the given
      * number of positions ahead in this PRNG's sequence. Each value in the
-     * range <TT>'&#92;u0000'</TT> through <TT>'&#92;uFFFF'</TT> is returned
+     * range <code>'&#92;u0000'</code> through <code>'&#92;uFFFF'</code> is returned
      * with a probability of 1/2<SUP>16</SUP>.
      *
      * @param skip Number of positions to skip.
-     * @return Character value in the range <TT>'&#92;u0000'</TT> through
-     * <TT>'&#92;uFFFF'</TT> inclusive.
+     * @return Character value in the range <code>'&#92;u0000'</code> through
+     * <code>'&#92;uFFFF'</code> inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public int nextCharacter(long skip) {
         if (skip <= 0) {
@@ -375,7 +375,7 @@ public abstract class Random
      * @param skip Number of positions to skip.
      * @return Short value in the range &minus;32768 through 32767 inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public short nextShort(long skip) {
         if (skip <= 0) {
@@ -389,7 +389,7 @@ public abstract class Random
      * PRNG's sequence. Each value in the range 0 through 65535 is returned with
      * a probability of 1/2<SUP>16</SUP>.
      *
-     * @return Unsigned short value (as an <TT>int</TT>) in the range 0 through
+     * @return Unsigned short value (as an <code>int</code>) in the range 0 through
      * 65535 inclusive.
      */
     public int nextUnsignedShort() {
@@ -403,10 +403,10 @@ public abstract class Random
      * 1/2<SUP>16</SUP>.
      *
      * @param skip Number of positions to skip.
-     * @return Unsigned short value (as an <TT>int</TT>) in the range 0 through
+     * @return Unsigned short value (as an <code>int</code>) in the range 0 through
      * 65535 inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public int nextUnsignedShort(long skip) {
         if (skip <= 0) {
@@ -437,7 +437,7 @@ public abstract class Random
      * @return Integer value in the range &minus;2147483648 through 2147483647
      * inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public int nextInteger(long skip) {
         if (skip <= 0) {
@@ -474,7 +474,7 @@ public abstract class Random
      * @return Integer value in the range 0 through <I>N</I>&minus;1 inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>N</I> &lt;= 0. Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public int nextInt(int n,
             long skip) {
@@ -506,7 +506,7 @@ public abstract class Random
      * @return Long value in the range &minus;9223372036854775808 through
      * 9223372036854775807 inclusive.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public long nextLong(long skip) {
         if (skip <= 0) {
@@ -538,7 +538,7 @@ public abstract class Random
      * @param skip Number of positions to skip.
      * @return Float value.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public float nextFloat(long skip) {
         if (skip <= 0) {
@@ -574,7 +574,7 @@ public abstract class Random
      * @param skip Number of positions to skip.
      * @return Double value.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>skip</TT> &lt;= 0.
+     * <code>skip</code> &lt;= 0.
      */
     public double nextDouble(long skip) {
         if (skip <= 0) {

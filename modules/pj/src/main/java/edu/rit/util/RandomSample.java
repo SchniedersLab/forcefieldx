@@ -57,17 +57,17 @@ public class RandomSample {
 
 // Exported operations.
     /**
-     * Create an iterator that generates a random sample of <TT>int</TT>s
+     * Create an iterator that generates a random sample of <code>int</code>s
      * without replacement. The set to be sampled consists of the integers from
      * 0 through <I>N</I>&minus;1 inclusive. The sample consists of <I>n</I>
      * items. Each item in the set is equally likely to occur in the sample. The
      * iterator returns the items in the sample in ascending order. The iterator
-     * uses the given <TT>prng</TT> to sample items at random. For each item
-     * returned, the iterator consumes one random number from the <TT>prng</TT>.
+     * uses the given <code>prng</code> to sample items at random. For each item
+     * returned, the iterator consumes one random number from the <code>prng</code>.
      * <P>
      * As a special case, if <I>n</I> &ge; <I>N</I>, then the iterator returns
      * all items in the set in ascending order, and the iterator does not use
-     * the <TT>prng</TT>.
+     * the <code>prng</code>.
      * <P>
      * The iterator uses the algorithm in A. Bissell, Ordered random selection
      * without replacement, <I>Applied Statistics,</I> 35(1):73-75, 1986.
@@ -143,18 +143,18 @@ public class RandomSample {
     }
 
     /**
-     * Generate a random sample of <TT>int</TT>s without replacement. The set to
+     * Generate a random sample of <code>int</code>s without replacement. The set to
      * be sampled consists of the integers from 0 through <I>N</I>&minus;1
      * inclusive. The sample consists of <I>n</I> items. Each item in the set is
      * equally likely to occur in the sample. The items in the sample are stored
-     * in ascending order in the given <TT>buf</TT> starting at index 0. The
-     * iterator uses the given <TT>prng</TT> to sample items at random. For each
+     * in ascending order in the given <code>buf</code> starting at index 0. The
+     * iterator uses the given <code>prng</code> to sample items at random. For each
      * item sampled, the iterator consumes one random number from the
-     * <TT>prng</TT>.
+     * <code>prng</code>.
      * <P>
      * As a special case, if <I>n</I> &ge; <I>N</I>, then all items in the set
-     * are stored in ascending order in the given <TT>buf</TT> starting at index
-     * 0, and the iterator does not use the <TT>prng</TT>.
+     * are stored in ascending order in the given <code>buf</code> starting at index
+     * 0, and the iterator does not use the <code>prng</code>.
      * <P>
      * This method uses the algorithm in A. Bissell, Ordered random selection
      * without replacement, <I>Applied Statistics,</I> 35(1):73-75, 1986.
@@ -163,13 +163,13 @@ public class RandomSample {
      * @param n Number of items in the sample.
      * @param N Number of items in the set.
      * @param buf Array in which to store the sampled items.
-     * @return Number of sampled items actually stored in <TT>buf</TT>.
+     * @return Number of sampled items actually stored in <code>buf</code>.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>n</I> &lt; 0 or <I>N</I> &lt; 0.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
+     * <code>buf</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>buf.length</TT> &lt; <TT>n</TT>.
+     * <code>buf.length</code> &lt; <code>n</code>.
      */
     public static int withoutReplacement(Random prng,
             int n,
@@ -207,17 +207,17 @@ public class RandomSample {
     }
 
     /**
-     * Create an iterator that generates a random sample of <TT>long</TT>s
+     * Create an iterator that generates a random sample of <code>long</code>s
      * without replacement. The set to be sampled consists of the integers from
      * 0 through <I>N</I>&minus;1 inclusive. The sample consists of <I>n</I>
      * items. Each item in the set is equally likely to occur in the sample. The
      * iterator returns the items in the sample in ascending order. The iterator
-     * uses the given <TT>prng</TT> to sample items at random. For each item
-     * returned, the iterator consumes one random number from the <TT>prng</TT>.
+     * uses the given <code>prng</code> to sample items at random. For each item
+     * returned, the iterator consumes one random number from the <code>prng</code>.
      * <P>
      * As a special case, if <I>n</I> &ge; <I>N</I>, then the iterator returns
      * all items in the set in ascending order, and the iterator does not use
-     * the <TT>prng</TT>.
+     * the <code>prng</code>.
      * <P>
      * The iterator uses the algorithm in A. Bissell, Ordered random selection
      * without replacement, <I>Applied Statistics,</I> 35(1):73-75, 1986.
@@ -293,18 +293,18 @@ public class RandomSample {
     }
 
     /**
-     * Generate a random sample of <TT>long</TT>s without replacement. The set
+     * Generate a random sample of <code>long</code>s without replacement. The set
      * to be sampled consists of the integers from 0 through <I>N</I>&minus;1
      * inclusive. The sample consists of <I>n</I> items. Each item in the set is
      * equally likely to occur in the sample. The items in the sample are stored
-     * in ascending order in the given <TT>buf</TT> starting at index 0. The
-     * iterator uses the given <TT>prng</TT> to sample items at random. For each
+     * in ascending order in the given <code>buf</code> starting at index 0. The
+     * iterator uses the given <code>prng</code> to sample items at random. For each
      * item sampled, the iterator consumes one random number from the
-     * <TT>prng</TT>.
+     * <code>prng</code>.
      * <P>
      * As a special case, if <I>n</I> &ge; <I>N</I>, then all items in the set
-     * are stored in ascending order in the given <TT>buf</TT> starting at index
-     * 0, and the iterator does not use the <TT>prng</TT>.
+     * are stored in ascending order in the given <code>buf</code> starting at index
+     * 0, and the iterator does not use the <code>prng</code>.
      * <P>
      * This method uses the algorithm in A. Bissell, Ordered random selection
      * without replacement, <I>Applied Statistics,</I> 35(1):73-75, 1986.
@@ -313,13 +313,13 @@ public class RandomSample {
      * @param n Number of items in the sample.
      * @param N Number of items in the set.
      * @param buf Array in which to store the sampled items.
-     * @return Number of sampled items actually stored in <TT>buf</TT>.
+     * @return Number of sampled items actually stored in <code>buf</code>.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <I>n</I> &lt; 0 or <I>N</I> &lt; 0.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null.
+     * <code>buf</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>buf.length</TT> &lt; <TT>n</TT>.
+     * <code>buf.length</code> &lt; <code>n</code>.
      */
     public static int withoutReplacement(Random prng,
             int n,

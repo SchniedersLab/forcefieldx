@@ -74,9 +74,12 @@ import ffx.potential.bonded.Atom;
  * rCellB, rCellC) multiplied by (nEdgeA, nEdgeB, nEdgeC), respectively, must be
  * greater than the cutoff distance <code>Rcut</code> plus a buffer distance
  * <code>delta</code>:
- * <center><code>rCellA * nEdgeA .GE. (Rcut + delta)</code></center>
- * <center><code>rCellB * nEdgeB .GE. (Rcut + delta)</code></center>
- * <center><code>rCellC * nEdgeC .GE. (Rcut + delta)</code></center>
+ * <br>
+ * <code>rCellA * nEdgeA .GE. (Rcut + delta)</code>
+ * <br>
+ * <code>rCellB * nEdgeB .GE. (Rcut + delta)</code>
+ * <br>
+ * <code>rCellC * nEdgeC .GE. (Rcut + delta)</code>
  * <br>
  * All neighbors of an atom are in a block of
  * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells.
@@ -90,8 +93,9 @@ import ffx.potential.bonded.Atom;
  * <li>
  * Verlet lists from the search are stored, which reduces the number of
  * neighbors whose distances must be calculated by a factor of approximately:
- * <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center> About 1/3
- * as many interactions are contained in the Verlet lists as in the neighboring
+ * <br>
+ * <code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code>
+ * About 1/3 as many interactions are contained in the Verlet lists as in the neighboring
  * cells.
  * </li>
  * </ol>

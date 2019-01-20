@@ -45,7 +45,7 @@ import edu.rit.util.LongRange;
 
 /**
  * Class GuidedLongSchedule provides a self-guided schedule object. The loop
- * index is type <TT>long</TT>. The loop iterations are apportioned into chunks
+ * index is type <code>long</code>. The loop iterations are apportioned into chunks
  * of exponentially diminishing sizes. Each successive chunk's size is half the
  * remaining number of iterations divided by the number of threads in the
  * parallel team. However, each chunk is at least a given minimum size (a given
@@ -81,7 +81,7 @@ class GuidedLongSchedule
      * 1.
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theChunkSize</TT> is less than 1.
+     * <code>theChunkSize</code> is less than 1.
      */
     public GuidedLongSchedule() {
         this(1);
@@ -92,7 +92,7 @@ class GuidedLongSchedule
      *
      * @param theChunkSize Minimum chunk size.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theChunkSize</TT> is less than 1.
+     * <code>theChunkSize</code> is less than 1.
      */
     public GuidedLongSchedule(long theChunkSize) {
         super();
@@ -105,12 +105,12 @@ class GuidedLongSchedule
 
     /**
      * Construct a new self-guided schedule object. This constructor is for use
-     * by the <TT>LongSchedule.parse()</TT> method. <TT>args</TT> must be an
+     * by the <code>LongSchedule.parse()</code> method. <code>args</code> must be an
      * array of one string, namely the minimum chunk size, an integer &gt;= 1.
      *
      * @param args Array of argument strings.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>args</TT> is not an array of one string. Thrown if the minimum chunk
+     * <code>args</code> is not an array of one string. Thrown if the minimum chunk
      * size is less than 1.
      */
     public GuidedLongSchedule(String[] args) {
@@ -151,7 +151,7 @@ class GuidedLongSchedule
      * Start generating chunks of iterations for a parallel for loop using this
      * schedule.
      * <P>
-     * The <TT>start()</TT> method is only called by a single thread in the
+     * The <code>start()</code> method is only called by a single thread in the
      * Parallel Java middleware.
      */
     public void start(int K,
@@ -169,12 +169,12 @@ class GuidedLongSchedule
      * are more iterations, a range object is returned whose lower bound, upper
      * bound, and stride specify the chunk of iterations to perform. The
      * returned range object's stride is the same as that given to the
-     * <TT>start()</TT> method. The returned range object's lower bound and
-     * upper bound are contained within the range given to the <TT>start()</TT>
+     * <code>start()</code> method. The returned range object's lower bound and
+     * upper bound are contained within the range given to the <code>start()</code>
      * method. If there are no more iterations, null is returned.
      * <P>
-     * The <TT>next()</TT> method is called by multiple parallel team threads in
-     * the Parallel Java middleware. The <TT>next()</TT> method must be multiple
+     * The <code>next()</code> method is called by multiple parallel team threads in
+     * the Parallel Java middleware. The <code>next()</code> method must be multiple
      * thread safe.
      */
     public LongRange next(int theThreadIndex) {

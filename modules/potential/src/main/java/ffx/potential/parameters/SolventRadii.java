@@ -61,7 +61,6 @@ public class SolventRadii {
      * <p>Constructor for SolventRadii.</p>
      *
      * @param forceFieldString a {@link java.lang.String} object.
-     * @param forceFieldString a {@link java.lang.String} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
     public SolventRadii(String forceFieldString, ForceField forceField) {

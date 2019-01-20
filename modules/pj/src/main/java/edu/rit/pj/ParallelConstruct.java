@@ -123,11 +123,11 @@ public abstract class ParallelConstruct {
      * this parallel construct.
      *
      * @return Index of the calling thread in the range 0 ..
-     * <TT>getThreadCount()-1</TT>.
+     * <code>getThreadCount()-1</code>.
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * parallel team is executing this parallel construct. Thrown if the thread
      * calling
-     * <TT>getThreadIndex()</TT> is not part of the parallel team executing this
+     * <code>getThreadIndex()</code> is not part of the parallel team executing this
      * parallel construct.
      */
     public final int getThreadIndex() {

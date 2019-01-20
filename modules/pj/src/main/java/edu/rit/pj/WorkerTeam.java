@@ -60,7 +60,7 @@ import java.util.concurrent.Semaphore;
  * <P>
  * To execute a worker region, create a WorkerTeam object; create an instance of
  * a concrete subclass of class {@linkplain WorkerRegion}; and pass this
- * instance to the worker team's <TT>execute()</TT> method. For further
+ * instance to the worker team's <code>execute()</code> method. For further
  * information, see class {@linkplain WorkerRegion}.
  *
  * @author Alan Kaminsky
@@ -118,7 +118,7 @@ public class WorkerTeam {
      *
      * @param comm Communicator to use for message passing.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>comm</TT> is null.
+     * <code>comm</code> is null.
      */
     public WorkerTeam(Comm comm) {
         if (comm == null) {
@@ -173,13 +173,13 @@ public class WorkerTeam {
      *
      * @param theRegion Worker region.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theRegion</TT> is null.
+     * <code>theRegion</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if this
      * worker team is already executing a worker region. Thrown if
-     * <TT>theRegion</TT> is already being executed by a worker team.
+     * <code>theRegion</code> is already being executed by a worker team.
      * @exception Exception Exception thrown by the worker region's
-     * <TT>start()</TT>,
-     * <TT>run()</TT>, or <TT>finish()</TT> methods.
+     * <code>start()</code>,
+     * <code>run()</code>, or <code>finish()</code> methods.
      * @throws java.lang.Exception if any.
      */
     public final void execute(WorkerRegion theRegion)
@@ -296,8 +296,8 @@ public class WorkerTeam {
      * @param w Worker index.
      * @return Worker process rank.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>w</TT> is not in the range 0 ..
-     * <TT>getTotalThreadCount()</TT>&minus;1.
+     * <code>w</code> is not in the range 0 ..
+     * <code>getTotalThreadCount()</code>&minus;1.
      */
     public int workerRank(int w) {
         if (0 > w || w >= count) {

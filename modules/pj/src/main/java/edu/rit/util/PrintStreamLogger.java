@@ -57,7 +57,7 @@ public class PrintStreamLogger
 
 // Exported constructors.
     /**
-     * Construct a new print stream logger that logs to <TT>System.err</TT>.
+     * Construct a new print stream logger that logs to <code>System.err</code>.
      */
     public PrintStreamLogger() {
         this.out = System.err;
@@ -68,7 +68,7 @@ public class PrintStreamLogger
      *
      * @param out Print stream.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>out</TT> is null.
+     * <code>out</code> is null.
      */
     public PrintStreamLogger(PrintStream out) {
         if (out == null) {

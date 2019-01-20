@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Class SharedLong provides a reduction variable for a value of type
- * <TT>long</TT>.
+ * <code>long</code>.
  * <P>
  * Class SharedLong is multiple thread safe. The methods use lock-free atomic
  * compare-and-set.
@@ -198,7 +198,7 @@ public class SharedLong
      *
      * @param value Value.
      * @param op Binary operation.
-     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     * @return (This variable) <I>op</I> (<code>value</code>).
      */
     public long reduce(long value,
             LongOp op) {
@@ -222,7 +222,7 @@ public class SharedLong
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>int</TT>.
+     * <code>int</code>.
      *
      * @return Current value.
      */
@@ -232,7 +232,7 @@ public class SharedLong
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>long</TT>.
+     * <code>long</code>.
      *
      * @return Current value.
      */
@@ -242,7 +242,7 @@ public class SharedLong
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>float</TT>.
+     * <code>float</code>.
      *
      * @return Current value.
      */
@@ -252,7 +252,7 @@ public class SharedLong
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>double</TT>.
+     * <code>double</code>.
      *
      * @return Current value.
      */

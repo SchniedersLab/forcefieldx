@@ -63,7 +63,7 @@ public abstract class FloatOp
      *
      * @param x First argument.
      * @param y Second argument.
-     * @return (<TT>x</TT> <I>op</I> <TT>y</TT>), where <I>op</I> stands for
+     * @return (<code>x</code> <I>op</I> <code>y</code>), where <I>op</I> stands for
      * this binary operation.
      */
     public abstract float op(float x,

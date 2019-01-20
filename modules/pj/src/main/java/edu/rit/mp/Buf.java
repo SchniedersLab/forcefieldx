@@ -87,7 +87,7 @@ public abstract class Buf {
      * @param theLength Number of items.
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theLength</TT> &lt; 0.
+     * <code>theLength</code> &lt; 0.
      */
     Buf(byte theType,
             int theLength) {
@@ -111,36 +111,36 @@ public abstract class Buf {
 
     /**
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      *
      * @param theSrc Source of items to copy into this buffer.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public abstract void copy(Buf theSrc);
 
     /**
-     * Fill this buffer with the given item. The <TT>item</TT> is assigned to
+     * Fill this buffer with the given item. The <code>item</code> is assigned to
      * each element in this buffer.
      * <P>
-     * If this buffer's item data type is a primitive type, the <TT>item</TT>
+     * If this buffer's item data type is a primitive type, the <code>item</code>
      * must be an instance of the corresponding primitive wrapper class -- class
-     * Integer for type <TT>int</TT>, class Double for type <TT>double</TT>, and
-     * so on. If the <TT>item</TT> is null, the item data type's default initial
+     * Integer for type <code>int</code>, class Double for type <code>double</code>, and
+     * so on. If the <code>item</code> is null, the item data type's default initial
      * value is assigned to each element in this buffer.
      * <P>
-     * If this buffer's item data type is a nonprimitive type, the <TT>item</TT>
+     * If this buffer's item data type is a nonprimitive type, the <code>item</code>
      * must be an instance of the item class or a subclass thereof. The
-     * <TT>item</TT> may be null. Note that since <TT>item</TT> is
+     * <code>item</code> may be null. Note that since <code>item</code> is
      * <I>assigned</I> to every buffer element, every buffer element ends up
-     * referring to the same <TT>item</TT>.
+     * referring to the same <code>item</code>.
      *
      * @param item Item.
      * @exception ClassCastException (unchecked exception) Thrown if the
-     * <TT>item</TT>'s data type is not the same as this buffer's item data
+     * <code>item</code>'s data type is not the same as this buffer's item data
      * type.
      */
     public abstract void fill(Object item);
@@ -186,11 +186,11 @@ public abstract class Buf {
     /**
      * Send as many items as possible from this buffer to the given byte buffer.
      * <P>
-     * The <TT>sendItems()</TT> method must not block the calling thread; if it
+     * The <code>sendItems()</code> method must not block the calling thread; if it
      * does, all message I/O in MP will be blocked.
      *
      * @param i Index of first item to send, in the range 0 ..
-     * <TT>length</TT>-1.
+     * <code>length</code>-1.
      * @param buffer Byte buffer.
      * @return Number of items sent.
      */
@@ -222,11 +222,11 @@ public abstract class Buf {
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      *
      * @param i Index of first item to receive, in the range 0 ..
-     * <TT>length</TT>-1.
+     * <code>length</code>-1.
      * @param num Maximum number of items to receive.
      * @param buffer Byte buffer.
      * @return Number of items received.

@@ -74,9 +74,9 @@ public class BackendClassLoader
 // Exported constructors.
     /**
      * Construct a new backend class loader. The parent class loader is the one
-     * returned by <TT>ClassLoader.getSystemClassLoader()</TT>. Class files will
-     * be requested from <TT>theJobFrontend</TT>. Class files will be stored in
-     * <TT>theCache</TT>.
+     * returned by <code>ClassLoader.getSystemClassLoader()</code>. Class files will
+     * be requested from <code>theJobFrontend</code>. Class files will be stored in
+     * <code>theCache</code>.
      *
      * @param theJobBackend Reference to job backend.
      * @param theJobFrontend Reference to job frontend.
@@ -93,8 +93,8 @@ public class BackendClassLoader
 
     /**
      * Construct a new backend class loader. The parent class loader is
-     * <TT>parent</TT>. Class files will be requested from
-     * <TT>theJobFrontend</TT>. Class files will be stored in <TT>theCache</TT>.
+     * <code>parent</code>. Class files will be requested from
+     * <code>theJobFrontend</code>. Class files will be stored in <code>theCache</code>.
      *
      * @param parent Parent class loader.
      * @param theJobBackend Reference to job backend.

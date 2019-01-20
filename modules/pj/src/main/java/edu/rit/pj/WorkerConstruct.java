@@ -147,7 +147,7 @@ public abstract class WorkerConstruct {
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct. Thrown if the thread
      * calling
-     * <TT>getThreadIndex()</TT> is not part of the worker team executing this
+     * <code>getThreadIndex()</code> is not part of the worker team executing this
      * worker construct.
      */
     public final int getThreadIndex() {
@@ -163,7 +163,7 @@ public abstract class WorkerConstruct {
      * @exception IllegalStateException (unchecked exception) Thrown if no
      * worker team is executing this worker construct. Thrown if the thread
      * calling
-     * <TT>getThreadIndex()</TT> is not part of the worker team executing this
+     * <code>getThreadIndex()</code> is not part of the worker team executing this
      * worker construct.
      */
     public final boolean isMasterThread() {

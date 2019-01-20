@@ -45,7 +45,7 @@ import edu.rit.util.Range;
 
 /**
  * Class DynamicIntegerSchedule provides a dynamic schedule object. The loop
- * index is type <TT>int</TT>. The loop iterations are apportioned into chunks
+ * index is type <code>int</code>. The loop iterations are apportioned into chunks
  * of a given size (a given number of iterations per chunk). Each parallel team
  * thread repeatedly performs the next available chunk of iterations until there
  * are no more chunks. The final chunk may be smaller than the given chunk size.
@@ -79,7 +79,7 @@ class DynamicIntegerSchedule
      *
      * @param theChunkSize Chunk size.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theChunkSize</TT> is less than 1.
+     * <code>theChunkSize</code> is less than 1.
      */
     public DynamicIntegerSchedule(int theChunkSize) {
         super();
@@ -92,12 +92,12 @@ class DynamicIntegerSchedule
 
     /**
      * Construct a new dynamic schedule object. This constructor is for use by
-     * the <TT>IntegerSchedule.parse()</TT> method. <TT>args</TT> must be an
+     * the <code>IntegerSchedule.parse()</code> method. <code>args</code> must be an
      * array of one string, namely the chunk size, an integer &gt;= 1.
      *
      * @param args Array of argument strings.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>args</TT> is not an array of one string. Thrown if the chunk size is
+     * <code>args</code> is not an array of one string. Thrown if the chunk size is
      * less than 1.
      */
     public DynamicIntegerSchedule(String[] args) {
@@ -137,7 +137,7 @@ class DynamicIntegerSchedule
      * Start generating chunks of iterations for a parallel for loop using this
      * schedule.
      * <P>
-     * The <TT>start()</TT> method is only called by a single thread in the
+     * The <code>start()</code> method is only called by a single thread in the
      * Parallel Java middleware.
      */
     public void start(int K,
@@ -153,12 +153,12 @@ class DynamicIntegerSchedule
      * are more iterations, a range object is returned whose lower bound, upper
      * bound, and stride specify the chunk of iterations to perform. The
      * returned range object's stride is the same as that given to the
-     * <TT>start()</TT> method. The returned range object's lower bound and
-     * upper bound are contained within the range given to the <TT>start()</TT>
+     * <code>start()</code> method. The returned range object's lower bound and
+     * upper bound are contained within the range given to the <code>start()</code>
      * method. If there are no more iterations, null is returned.
      * <P>
-     * The <TT>next()</TT> method is called by multiple parallel team threads in
-     * the Parallel Java middleware. The <TT>next()</TT> method must be multiple
+     * The <code>next()</code> method is called by multiple parallel team threads in
+     * the Parallel Java middleware. The <code>next()</code> method must be multiple
      * thread safe.
      */
     public Range next(int theThreadIndex) {

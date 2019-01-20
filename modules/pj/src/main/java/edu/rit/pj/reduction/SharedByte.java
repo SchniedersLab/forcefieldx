@@ -43,14 +43,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class SharedByte provides a reduction variable for a value of type
- * <TT>byte</TT>.
+ * <code>byte</code>.
  * <P>
  * Class SharedByte is multiple thread safe. The methods use lock-free atomic
  * compare-and-set.
  * <P>
  * <I>Note:</I> Class SharedByte is implemented using class
  * java.util.concurrent.atomic.AtomicInteger. The byte value is stored as an
- * <TT>int</TT> whose values are restricted to the range of type <TT>byte</TT>.
+ * <code>int</code> whose values are restricted to the range of type <code>byte</code>.
  *
  * @author Alan Kaminsky
  * @version 07-Jun-2007
@@ -235,7 +235,7 @@ public class SharedByte
      *
      * @param value Value.
      * @param op Binary operation.
-     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     * @return (This variable) <I>op</I> (<code>value</code>).
      */
     public byte reduce(byte value,
             ByteOp op) {
@@ -259,7 +259,7 @@ public class SharedByte
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>int</TT>.
+     * <code>int</code>.
      *
      * @return Current value.
      */
@@ -269,7 +269,7 @@ public class SharedByte
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>long</TT>.
+     * <code>long</code>.
      *
      * @return Current value.
      */
@@ -279,7 +279,7 @@ public class SharedByte
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>float</TT>.
+     * <code>float</code>.
      *
      * @return Current value.
      */
@@ -289,7 +289,7 @@ public class SharedByte
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>double</TT>.
+     * <code>double</code>.
      *
      * @return Current value.
      */

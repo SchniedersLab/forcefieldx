@@ -69,7 +69,7 @@ public class StreamFile {
      *
      * @param theFile File.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theFile</TT> is null.
+     * <code>theFile</code> is null.
      */
     public StreamFile(File theFile) {
         if (theFile == null) {
@@ -114,9 +114,9 @@ public class StreamFile {
 
     /**
      * Open an output stream for writing this stream file. If the file does not
-     * exist, it is created; if the file exists and the <TT>append</TT> flag is
+     * exist, it is created; if the file exists and the <code>append</code> flag is
      * false, the file is overwritten; if the file exists and the
-     * <TT>append</TT> flag is true, data is written after the end of the file.
+     * <code>append</code> flag is true, data is written after the end of the file.
      * <P>
      * When called from a job backend process in a cluster parallel program, the
      * returned output stream communicates with the job frontend process to

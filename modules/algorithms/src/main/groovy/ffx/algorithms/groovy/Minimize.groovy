@@ -42,12 +42,16 @@ class Minimizer extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
     List<String> filenames = null
-    private File baseDir = null;
+    private File baseDir = null
 
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
-    private Potential potential;
+    private Potential potential
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
 
     @Override
     Minimizer run() {
@@ -58,86 +62,93 @@ class Minimizer extends AlgorithmsScript {
 
         List<String> arguments = filenames;
         // Check nArgs should either be number of arguments (min 1), else 1.
-        int nArgs = arguments ? arguments.size() : 1;
-        nArgs = (nArgs < 1) ? 1 : nArgs;
+        int nArgs = arguments ? arguments.size() : 1
+        nArgs = (nArgs < 1) ? 1 : nArgs
 
-        topologies = new MolecularAssembly[nArgs];
+        topologies = new MolecularAssembly[nArgs]
 
-        int numParallel = topology.getNumParallel(threadsAvail, nArgs);
-        threadsPer = threadsAvail / numParallel;
+        int numParallel = topology.getNumParallel(threadsAvail, nArgs)
+        threadsPer = threadsAvail / numParallel
 
         // Turn on computation of lambda derivatives if softcore atoms exist.
-        boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore();
+        boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore()
 
         if (lambdaTerm) {
             System.setProperty("lambdaterm", "true")
         }
 
-        double lambda = alchemical.getInitialLambda();
+        double lambda = alchemical.getInitialLambda()
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
         if (nArgs >= 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
-            System.setProperty("ligand-vapor-elec", "false");
+            System.setProperty("ligand-vapor-elec", "false")
         }
 
-        List<MolecularAssembly> topologyList = new ArrayList<>(4);
+        List<MolecularAssembly> topologyList = new ArrayList<>(4)
 
         /**
          * Read in files.
          */
         if (!arguments || arguments.isEmpty()) {
-            MolecularAssembly mola = algorithmFunctions.getActiveAssembly();
+            MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
             if (mola == null) {
                 logger.info(helpString())
                 return this
             }
             arguments = new ArrayList<>();
             arguments.add(mola.getFile().getName());
-            topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0));
+            topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0))
         } else {
-            logger.info(String.format(" Initializing %d topologies...", nArgs));
+            logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(alchemical.openFile(algorithmFunctions, Optional.of(topology), threadsPer, arguments.get(i), i));
+                topologyList.add(alchemical.openFile(algorithmFunctions,
+                        Optional.of(topology), threadsPer, arguments.get(i), i))
             }
         }
 
-        MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()]);
+        MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
         /**
          * Configure the potential to test.
          */
-        StringBuilder sb = new StringBuilder("\n Minimizing energy of ");
-        potential = topology.assemblePotential(topologies, threadsAvail, sb);
+        StringBuilder sb = new StringBuilder("\n Minimizing energy of ")
+        potential = topology.assemblePotential(topologies, threadsAvail, sb)
 
-        logger.info(sb.toString());
+        logger.info(sb.toString())
 
-        LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null;
-        linter?.setLambda(lambda);
+        LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
+        linter?.setLambda(lambda)
 
         double[] x = new double[potential.getNumberOfVariables()]
         potential.getCoordinates(x)
         potential.energy(x, true)
 
         Minimize minimize = new Minimize(topologies[0], potential, algorithmListener)
-        minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations());
+        minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
 
         potential.getCoordinates(x)
         potential.energy(x, true)
 
         for (mola in topologies) {
-            File file = mola.getFile();
-            String filename = mola.getFile().getName()
-            String ext = FilenameUtils.getExtension(filename)
-            filename = FilenameUtils.removeExtension(filename)
+            String modelFilename = mola.getFile().getAbsolutePath()
+
+            File saveDir = baseDir
+            if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+                saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+            }
+
+            String dirName = saveDir.toString() + File.separator
+            String fileName = FilenameUtils.getName(modelFilename)
+            String ext = FilenameUtils.getExtension(fileName)
+            fileName = FilenameUtils.removeExtension(fileName)
 
             if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(mola, new File(filename + ".xyz"))
+                algorithmFunctions.saveAsXYZ(mola, new File(dirName + fileName + ".xyz"))
             } else {
-                file = saveDirFile(file);
-                algorithmFunctions.saveAsPDB(mola, file);
+                algorithmFunctions.saveAsPDB(mola, new File(dirName + fileName + ".pdb"))
             }
         }
 
@@ -146,7 +157,7 @@ class Minimizer extends AlgorithmsScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+        return potential == null ? Collections.emptyList() : Collections.singletonList(potential)
     }
 }
 

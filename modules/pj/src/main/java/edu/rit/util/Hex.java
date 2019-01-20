@@ -58,7 +58,7 @@ public class Hex {
 
 // Exported operations.
     /**
-     * Convert the given <TT>byte</TT> value to a two-digit hexadecimal string.
+     * Convert the given <code>byte</code> value to a two-digit hexadecimal string.
      *
      * @param val Value.
      * @return Hexadecimal string.
@@ -71,7 +71,7 @@ public class Hex {
     }
 
     /**
-     * Convert the given <TT>char</TT> value to a four-digit hexadecimal string.
+     * Convert the given <code>char</code> value to a four-digit hexadecimal string.
      *
      * @param val Value.
      * @return Hexadecimal string.
@@ -86,7 +86,7 @@ public class Hex {
     }
 
     /**
-     * Convert the given <TT>short</TT> value to a four-digit hexadecimal
+     * Convert the given <code>short</code> value to a four-digit hexadecimal
      * string.
      *
      * @param val Value.
@@ -102,7 +102,7 @@ public class Hex {
     }
 
     /**
-     * Convert the given <TT>int</TT> value to an eight-digit hexadecimal
+     * Convert the given <code>int</code> value to an eight-digit hexadecimal
      * string.
      *
      * @param val Value.
@@ -122,7 +122,7 @@ public class Hex {
     }
 
     /**
-     * Convert the given <TT>long</TT> value to a sixteen-digit hexadecimal
+     * Convert the given <code>long</code> value to a sixteen-digit hexadecimal
      * string.
      *
      * @param val Value.
@@ -150,20 +150,20 @@ public class Hex {
     }
 
     /**
-     * Convert the given <TT>byte</TT> array to a hexadecimal string. Each byte
+     * Convert the given <code>byte</code> array to a hexadecimal string. Each byte
      * is converted to two hexadecimal digits.
      *
      * @param val Byte array.
      * @return Hexadecimal string.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>val</TT> is null.
+     * <code>val</code> is null.
      */
     public static String toString(byte[] val) {
         return toString(val, 0, val.length);
     }
 
     /**
-     * Convert a portion of the given <TT>byte</TT> array to a hexadecimal
+     * Convert a portion of the given <code>byte</code> array to a hexadecimal
      * string. Each byte is converted to two hexadecimal digits.
      *
      * @param val Byte array.
@@ -171,10 +171,10 @@ public class Hex {
      * @param len Number of bytes to convert.
      * @return Hexadecimal string.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>val</TT> is null.
+     * <code>val</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>off</TT> &lt; 0, <TT>len</TT>
-     * &lt; 0, or <TT>off+len</TT> &gt; <TT>val.length</TT>.
+     * <code>off</code> &lt; 0, <code>len</code>
+     * &lt; 0, or <code>off+len</code> &gt; <code>val.length</code>.
      */
     public static String toString(byte[] val,
             int off,
@@ -193,7 +193,7 @@ public class Hex {
     }
 
     /**
-     * Convert the given hexadecimal string to a <TT>byte</TT> value. Characters
+     * Convert the given hexadecimal string to a <code>byte</code> value. Characters
      * of the string from the highest index to the lowest index give the
      * hexadecimal digits of the value from least significant digit to most
      * significant digit. Any extra high-order digits in the string are omitted.
@@ -201,18 +201,18 @@ public class Hex {
      * @param str Hexadecimal string.
      * @return Value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null.
+     * <code>str</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> ..
-     * <TT>'f'</TT>, or <TT>'A'</TT> .. <TT>'F'</TT>).
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> ..
+     * <code>'f'</code>, or <code>'A'</code> .. <code>'F'</code>).
      */
     public static byte toByte(String str) {
         return (byte) toInt(str);
     }
 
     /**
-     * Convert the given hexadecimal string to a <TT>char</TT> value. Characters
+     * Convert the given hexadecimal string to a <code>char</code> value. Characters
      * of the string from the highest index to the lowest index give the
      * hexadecimal digits of the value from least significant digit to most
      * significant digit. Any extra high-order digits in the string are omitted.
@@ -220,18 +220,18 @@ public class Hex {
      * @param str Hexadecimal string.
      * @return Value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null.
+     * <code>str</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> ..
-     * <TT>'f'</TT>, or <TT>'A'</TT> .. <TT>'F'</TT>).
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> ..
+     * <code>'f'</code>, or <code>'A'</code> .. <code>'F'</code>).
      */
     public static char toChar(String str) {
         return (char) toInt(str);
     }
 
     /**
-     * Convert the given hexadecimal string to a <TT>short</TT> value.
+     * Convert the given hexadecimal string to a <code>short</code> value.
      * Characters of the string from the highest index to the lowest index give
      * the hexadecimal digits of the value from least significant digit to most
      * significant digit. Any extra high-order digits in the string are omitted.
@@ -239,18 +239,18 @@ public class Hex {
      * @param str Hexadecimal string.
      * @return Value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null.
+     * <code>str</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> ..
-     * <TT>'f'</TT>, or <TT>'A'</TT> .. <TT>'F'</TT>).
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> ..
+     * <code>'f'</code>, or <code>'A'</code> .. <code>'F'</code>).
      */
     public static short toShort(String str) {
         return (short) toInt(str);
     }
 
     /**
-     * Convert the given hexadecimal string to an <TT>int</TT> value. Characters
+     * Convert the given hexadecimal string to an <code>int</code> value. Characters
      * of the string from the highest index to the lowest index give the
      * hexadecimal digits of the value from least significant digit to most
      * significant digit. Any extra high-order digits in the string are omitted.
@@ -258,11 +258,11 @@ public class Hex {
      * @param str Hexadecimal string.
      * @return Value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null.
+     * <code>str</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> ..
-     * <TT>'f'</TT>, or <TT>'A'</TT> .. <TT>'F'</TT>).
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> ..
+     * <code>'f'</code>, or <code>'A'</code> .. <code>'F'</code>).
      */
     public static int toInt(String str) {
         int result = 0;
@@ -274,7 +274,7 @@ public class Hex {
     }
 
     /**
-     * Convert the given hexadecimal string to a <TT>long</TT> value. Characters
+     * Convert the given hexadecimal string to a <code>long</code> value. Characters
      * of the string from the highest index to the lowest index give the
      * hexadecimal digits of the value from least significant digit to most
      * significant digit. Any extra high-order digits in the string are omitted.
@@ -282,11 +282,11 @@ public class Hex {
      * @param str Hexadecimal string.
      * @return Value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null.
+     * <code>str</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> ..
-     * <TT>'f'</TT>, or <TT>'A'</TT> .. <TT>'F'</TT>).
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> ..
+     * <code>'f'</code>, or <code>'A'</code> .. <code>'F'</code>).
      */
     public static long toLong(String str) {
         long result = 0L;
@@ -299,7 +299,7 @@ public class Hex {
 
     /**
      * Convert the given hexadecimal string to a sequence of bytes stored in a
-     * new <TT>byte</TT> array. Characters of the string from the highest index
+     * new <code>byte</code> array. Characters of the string from the highest index
      * to the lowest index give the hexadecimal digits of the value from least
      * significant digit to most significant digit. The value is stored in a
      * newly allocated byte array, with the least significant byte stored at the
@@ -310,11 +310,11 @@ public class Hex {
      * @param str Hexadecimal string.
      * @return Value (byte array).
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null.
+     * <code>str</code> is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> ..
-     * <TT>'f'</TT>, or <TT>'A'</TT> .. <TT>'F'</TT>).
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> ..
+     * <code>'f'</code>, or <code>'A'</code> .. <code>'F'</code>).
      */
     public static byte[] toByteArray(String str) {
         int n = (str.length() + 1) / 2;
@@ -325,25 +325,25 @@ public class Hex {
 
     /**
      * Convert the given hexadecimal string to a sequence of bytes stored in the
-     * given <TT>byte</TT> array. Characters of the string from the highest
+     * given <code>byte</code> array. Characters of the string from the highest
      * index to the lowest index give the hexadecimal digits of the value from
      * least significant digit to most significant digit. The value is stored in
-     * <TT>val</TT> from highest index to lowest index, with the least
-     * significant byte stored at index <TT>val.length-1</TT>. If the converted
-     * string requires more than <TT>val.length</TT> bytes, the extra digits at
+     * <code>val</code> from highest index to lowest index, with the least
+     * significant byte stored at index <code>val.length-1</code>. If the converted
+     * string requires more than <code>val.length</code> bytes, the extra digits at
      * the beginning of the string are not converted. If the converted string
-     * requires fewer than <TT>val.length</TT> bytes, the extra bytes at the
-     * beginning of <TT>val</TT> are set to 0.
+     * requires fewer than <code>val.length</code> bytes, the extra bytes at the
+     * beginning of <code>val</code> are set to 0.
      *
      * @param str Hexadecimal string.
      * @param val Byte array in which to store converted value.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null or <TT>val</TT>
+     * <code>str</code> is null or <code>val</code>
      * is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> ..
-     * <TT>'f'</TT>, or <TT>'A'</TT> .. <TT>'F'</TT>).
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> ..
+     * <code>'f'</code>, or <code>'A'</code> .. <code>'F'</code>).
      */
     public static void toByteArray(String str,
             byte[] val) {
@@ -352,29 +352,29 @@ public class Hex {
 
     /**
      * Convert the given hexadecimal string to a sequence of bytes stored in a
-     * portion of the given <TT>byte</TT> array. Characters of the string from
+     * portion of the given <code>byte</code> array. Characters of the string from
      * the highest index to the lowest index give the hexadecimal digits of the
      * value from least significant digit to most significant digit. The value
-     * is stored in <TT>val</TT> from highest index to lowest index, with the
-     * least significant byte stored at index <TT>off+len-1</TT>. If the
-     * converted string requires more than <TT>len</TT> bytes, the extra digits
+     * is stored in <code>val</code> from highest index to lowest index, with the
+     * least significant byte stored at index <code>off+len-1</code>. If the
+     * converted string requires more than <code>len</code> bytes, the extra digits
      * at the beginning of the string are not converted. If the converted string
-     * requires fewer than <TT>len</TT> bytes, the extra bytes starting at index
-     * <TT>off</TT> of <TT>val</TT> are set to 0.
+     * requires fewer than <code>len</code> bytes, the extra bytes starting at index
+     * <code>off</code> of <code>val</code> are set to 0.
      *
      * @param str Hexadecimal string.
      * @param val Byte array in which to store converted value.
      * @param off Index of first byte to store.
      * @param len Number of bytes to store.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>str</TT> is null or <TT>val</TT>
+     * <code>str</code> is null or <code>val</code>
      * is null.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>off</TT> &lt; 0, <TT>len</TT>
-     * &lt; 0, or <TT>off+len</TT> &gt; <TT>val.length</TT>. Thrown if any
-     * character of the string is not a hexadecimal digit (<TT>'0'</TT> ..
-     * <TT>'9'</TT>, <TT>'a'</TT> .. <TT>'f'</TT>, or <TT>'A'</TT> ..
-     * <TT>'F'</TT>).
+     * <code>off</code> &lt; 0, <code>len</code>
+     * &lt; 0, or <code>off+len</code> &gt; <code>val.length</code>. Thrown if any
+     * character of the string is not a hexadecimal digit (<code>'0'</code> ..
+     * <code>'9'</code>, <code>'a'</code> .. <code>'f'</code>, or <code>'A'</code> ..
+     * <code>'F'</code>).
      */
     public static void toByteArray(String str,
             byte[] val,
@@ -406,16 +406,16 @@ public class Hex {
 
 // Hidden operations.
     /**
-     * Convert the given hexadecimal digit to an <TT>int</TT> value.
+     * Convert the given hexadecimal digit to an <code>int</code> value.
      *
      * @param digit Hexadecimal digit.
      *
      * @return Value.
      *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>digit</TT> is not a hexadecimal digit (<TT>'0'</TT> .. <TT>'9'</TT>,
-     * <TT>'a'</TT> .. <TT>'f'</TT>, or
-     * <TT>'A'</TT> .. <TT>'F'</TT>).
+     * <code>digit</code> is not a hexadecimal digit (<code>'0'</code> .. <code>'9'</code>,
+     * <code>'a'</code> .. <code>'f'</code>, or
+     * <code>'A'</code> .. <code>'F'</code>).
      */
     private static int hex2int(char digit) {
         switch (digit) {

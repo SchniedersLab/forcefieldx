@@ -46,11 +46,11 @@ import java.util.Vector;
  * Class TimerThread encapsulates a thread that does the timing for {@linkplain
  * Timer}s and performs {@linkplain TimerTask}s' actions when timeouts occur.
  * <P>
- * A timer is created by calling a timer thread's <TT>createTimer()</TT> method,
+ * A timer is created by calling a timer thread's <code>createTimer()</code> method,
  * giving a timer task to associate with the timer. Multiple timers may be
  * created under the control of the same timer thread. The timer thread will
  * perform the actions of its timers' timer tasks one at a time at the proper
- * instants (by causing each timer to call its timer task's <TT>action()</TT>
+ * instants (by causing each timer to call its timer task's <code>action()</code>
  * method). Note that the timer tasks of a single timer thread are performed
  * sequentially, which may cause some timer tasks' actions to be delayed
  * depending on how long other timer tasks' actions take to execute. If
@@ -63,16 +63,16 @@ import java.util.Vector;
  * <P>
  * A TimerThread is just a {@linkplain java.lang.Thread Thread}. After
  * constructing a timer thread, you can mark it as a daemon thread if you want.
- * You must also call the timer thread's <TT>start()</TT> method, or no timeouts
- * will occur. To gracefully stop a timer thread, call the <TT>shutdown()</TT>
+ * You must also call the timer thread's <code>start()</code> method, or no timeouts
+ * will occur. To gracefully stop a timer thread, call the <code>shutdown()</code>
  * method.
  * <P>
  * To simplify writing programs with multiple objects that all use the same
- * timer thread, the static <TT>TimerThread.getDefault()</TT> method returns a
+ * timer thread, the static <code>TimerThread.getDefault()</code> method returns a
  * single shared instance of class TimerThread. The default timer thread is
  * marked as a daemon thread and is started automatically. The default timer
  * thread is not created until the first call to
- * <TT>TimerThread.getDefault()</TT>.
+ * <code>TimerThread.getDefault()</code>.
  * <P>
  * Classes {@linkplain Timer}, {@linkplain TimerTask}, and TimerThread provide
  * capabilities similar to classes java.util.Timer and java.util.TimerTask.
@@ -137,7 +137,7 @@ public class TimerThread
 // Exported constructors.
     /**
      * Construct a new timer thread. After constructing it, you must call the
-     * timer thread's <TT>start()</TT> method, or no timeouts will occur.
+     * timer thread's <code>start()</code> method, or no timeouts will occur.
      */
     public TimerThread() {
         super();
@@ -148,7 +148,7 @@ public class TimerThread
      * Get the default timer thread, a single shared instance of class
      * TimerThread. The default timer thread is marked as a daemon thread and is
      * started automatically. The default timer thread is not created until the
-     * first call to <TT>TimerThread.getDefault()</TT>.
+     * first call to <code>TimerThread.getDefault()</code>.
      *
      * @return Default timer thread.
      */
@@ -165,11 +165,11 @@ public class TimerThread
      * Create a new timer associated with the given timer task and under the
      * control of this timer thread. When the timer is triggered, this timer
      * thread will cause the timer to call the given timer task's
-     * <TT>action()</TT> method.
+     * <code>action()</code> method.
      *
      * @param theTimerTask Timer task.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theTimerTask</TT> is null.
+     * <code>theTimerTask</code> is null.
      * @return a {@link edu.rit.util.Timer} object.
      */
     public Timer createTimer(TimerTask theTimerTask) {
@@ -187,11 +187,11 @@ public class TimerThread
     }
 
     /**
-     * Perform this timer thread's processing. (Never call the <TT>run()</TT>
+     * Perform this timer thread's processing. (Never call the <code>run()</code>
      * method yourself!)
      *
      * @exception IllegalStateException (unchecked exception) Thrown if some
-     * thread other than this timer thread called the <TT>run()</TT> method.
+     * thread other than this timer thread called the <code>run()</code> method.
      */
     @SuppressWarnings("unchecked")
     public void run() {

@@ -140,26 +140,6 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      * @param r3 r^3
      * @param r4 r^4
      * @param r5 r^5
-     * @param r2 r^2
-     * @param r3 r^3
-     * @param r4 r^4
-     * @param r5 r^5
-     * @param r2 r^2
-     * @param r2 r^2
-     * @param r3 r^3
-     * @param r3 r^3
-     * @param r4 r^4
-     * @param r4 r^4
-     * @param r5 r^5
-     * @param r5 r^5
-     * @param r2 r^2
-     * @param r2 r^2
-     * @param r3 r^3
-     * @param r3 r^3
-     * @param r4 r^4
-     * @param r4 r^4
-     * @param r5 r^5
-     * @param r5 r^5
      * @return Value of switch at r
      */
     public double taper(double r, double r2, double r3, double r4, double r5) {
@@ -172,21 +152,6 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      * @param r  r
      * @param r2 r^2
      * @param r3 r^3
-     * @param r4 r^4
-     * @param r2 r^2
-     * @param r3 r^3
-     * @param r4 r^4
-     * @param r2 r^2
-     * @param r2 r^2
-     * @param r3 r^3
-     * @param r3 r^3
-     * @param r4 r^4
-     * @param r4 r^4
-     * @param r2 r^2
-     * @param r2 r^2
-     * @param r3 r^3
-     * @param r3 r^3
-     * @param r4 r^4
      * @param r4 r^4
      * @return First derivative of switch at r
      */

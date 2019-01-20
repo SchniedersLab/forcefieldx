@@ -44,7 +44,7 @@ package edu.rit.pj;
  * executed in parallel.
  * <P>
  * A group of parallel sections may be executed concurrently by calling a
- * {@linkplain ParallelRegion}'s <TT>execute()</TT> method. Each section in the
+ * {@linkplain ParallelRegion}'s <code>execute()</code> method. Each section in the
  * group is executed by a different thread in the parallel thread team. Here is
  * one way to code a parallel section group with two parallel sections:
  * <PRE>
@@ -98,14 +98,14 @@ package edu.rit.pj;
  *             }
  *         });
  * </PRE> A parallel section group may contain any number of parallel sections.
- * There are overloaded <TT>execute()</TT> methods that take one, two, or three
+ * There are overloaded <code>execute()</code> methods that take one, two, or three
  * parallel section arguments. If there are four or more parallel sections, put
- * them in an array (type <TT>ParallelSection[]</TT>) and pass the array to the
- * <TT>execute()</TT> method.
+ * them in an array (type <code>ParallelSection[]</code>) and pass the array to the
+ * <code>execute()</code> method.
  * <P>
  * Normally, at the end of the parallel section group, the parallel team threads
  * wait for each other at a barrier. To eliminate this barrier wait, include
- * {@link edu.rit.pj.BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <TT>execute()</TT>
+ * {@link edu.rit.pj.BarrierAction#NO_WAIT BarrierAction.NO_WAIT} in the <code>execute()</code>
  * method call:
  * <PRE>
  *     new ParallelTeam(2).execute (new ParallelRegion()
@@ -117,8 +117,8 @@ package edu.rit.pj;
  *         });
  * </PRE> To execute a section of code in a single thread as part of the barrier
  * synchronization, include an instance of class {@linkplain BarrierAction} in
- * the <TT>execute()</TT> method call. The barrier action object's
- * <TT>run()</TT> method contains the code to be executed in a single thread
+ * the <code>execute()</code> method call. The barrier action object's
+ * <code>run()</code> method contains the code to be executed in a single thread
  * while the other threads wait:
  * <PRE>
  *     new ParallelTeam(2).execute (new ParallelRegion()
@@ -160,8 +160,8 @@ package edu.rit.pj;
  * </PRE>
  * <P>
  * A parallel section may be executed in a mutually exclusive fashion by calling
- * a {@linkplain ParallelRegion}'s <TT>critical()</TT> or
- * <TT>criticalNonexclusive()</TT> method. For example:
+ * a {@linkplain ParallelRegion}'s <code>critical()</code> or
+ * <code>criticalNonexclusive()</code> method. For example:
  * <PRE>
  *     new ParallelTeam().execute (new ParallelRegion()
  *         {
@@ -181,14 +181,14 @@ package edu.rit.pj;
  *         });
  * </PRE>
  * <P>
- * By calling a {@linkplain ParallelForLoop}'s <TT>ordered()</TT> method, a
+ * By calling a {@linkplain ParallelForLoop}'s <code>ordered()</code> method, a
  * parallel section may be executed in the order of the loop indexes within a
  * parallel for loop body, while the rest of the parallel for loop body executes
  * concurrently. See classes {@linkplain IntegerForLoop}, {@linkplain
  * IntegerStrideForLoop}, {@linkplain LongForLoop}, and {@linkplain
  * LongStrideForLoop} for further information.
  * <P>
- * By calling a {@linkplain ParallelIteration}'s <TT>ordered()</TT> method, a
+ * By calling a {@linkplain ParallelIteration}'s <code>ordered()</code> method, a
  * parallel section may be executed in the order of the items within a parallel
  * iteration body, while the rest of the parallel iteration body executes
  * concurrently. See class {@linkplain ParallelIteration} for further
@@ -212,9 +212,9 @@ public abstract class ParallelSection
     /**
      * Execute this parallel section.
      * <P>
-     * The <TT>run()</TT> method must be implemented in a subclass.
+     * The <code>run()</code> method must be implemented in a subclass.
      *
-     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @exception Exception The <code>run()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run()

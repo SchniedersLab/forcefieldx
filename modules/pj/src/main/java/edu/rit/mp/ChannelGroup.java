@@ -69,32 +69,32 @@ import edu.rit.util.TimerThread;
  * <P>
  * The channel group can be configured to listen to a certain host and port for
  * connection requests. Configure the host and port by by calling the
- * <TT>listen()</TT> method. To start accepting connection requests, call the
- * <TT>startListening()</TT> method.
+ * <code>listen()</code> method. To start accepting connection requests, call the
+ * <code>startListening()</code> method.
  * <P>
  * If desired, an application can receive notification of newly created channels
  * by providing a {@linkplain ConnectListener} object to the channel group's
- * <TT>setConnectListener()</TT> method. Specify a connect listener object
- * before calling the <TT>startListening()</TT> method, otherwise the
+ * <code>setConnectListener()</code> method. Specify a connect listener object
+ * before calling the <code>startListening()</code> method, otherwise the
  * application may not receive some notifications.
  * <P>
  * When a connection request arrives, the channel group sets up a new channel
  * object for communicating over the connection. If a connect listener has been
  * registered, the channel group then passes the channel to the connect
- * listener's <TT>farEndConnected()</TT> method, which does whatever the
+ * listener's <code>farEndConnected()</code> method, which does whatever the
  * application needs to record the new channel's presence. The channel does not
  * start sending and receiving messages until after the connect listener's
- * <TT>farEndConnected()</TT> method (if any) has returned.
+ * <code>farEndConnected()</code> method (if any) has returned.
  * <P>
- * The application can also call the channel group's <TT>connect()</TT> method
+ * The application can also call the channel group's <code>connect()</code> method
  * to request a connection to another host and port. The channel group sets up a
  * new channel object for communicating over the connection. If a connect
  * listener has been registered, the channel group then passes the channel to
- * the connect listener's <TT>nearEndConnected()</TT> method, which does
+ * the connect listener's <code>nearEndConnected()</code> method, which does
  * whatever the application needs to record the new channel's presence. The
  * channel does not start sending and receiving messages until after the connect
- * listener's <TT>nearEndConnected()</TT> method (if any) has returned. The
- * <TT>connect()</TT> method also returns the new channel.
+ * listener's <code>nearEndConnected()</code> method (if any) has returned. The
+ * <code>connect()</code> method also returns the new channel.
  * <P>
  * Once a connection has been set up and a channel object has been created on
  * each side, the applications can use their respective channels to send and
@@ -107,7 +107,7 @@ import edu.rit.util.TimerThread;
  * <B>Channel Group IDs</B>
  * <P>
  * Each channel group has a channel group ID. The channel group ID is an
- * integer, initially 0, that can be changed by the <TT>setChannelGroupId()</TT>
+ * integer, initially 0, that can be changed by the <code>setChannelGroupId()</code>
  * method. The channel group attaches no significance to the channel group ID;
  * it is provided for the use of the application using the channel group.
  * <P>
@@ -120,16 +120,16 @@ import edu.rit.util.TimerThread;
  * <P>
  * To send a message, the application creates a message buffer (class
  * {@linkplain Buf}) specifying where to get the items to be sent. The
- * application calls the channel group's <TT>send()</TT> method, passing the
+ * application calls the channel group's <code>send()</code> method, passing the
  * channel on which to send the message, the message buffer, and the message
  * tag. (If the message tag is not specified, it defaults to 0.) The channel
  * group extracts the items from the message buffer and sends a message over the
- * channel's connection. When the <TT>send()</TT> method returns, the message
+ * channel's connection. When the <code>send()</code> method returns, the message
  * has been fully sent, but the message may not have been fully received yet.
  * <P>
  * The far end application must receive the message from the channel at the
  * other end of the connection. If no application is receiving the message, the
- * <TT>send()</TT> method may block (because of flow control). This in turn may
+ * <code>send()</code> method may block (because of flow control). This in turn may
  * lead to a deadlock.
  * <P>
  * At most one outgoing message at a time may be in progress on a channel. If a
@@ -141,7 +141,7 @@ import edu.rit.util.TimerThread;
  * <P>
  * To receive a message, the application creates a message buffer (class
  * {@linkplain Buf}) specifying where to put the items to be received. The
- * application calls the channel group's <TT>receive()</TT> method, passing the
+ * application calls the channel group's <code>receive()</code> method, passing the
  * channel from which to receive the message, the desired message tag, and the
  * message buffer. The application can specify "any channel" instead of a
  * specific channel. The application can specify a range of tags or "any tag"
@@ -168,7 +168,7 @@ import edu.rit.util.TimerThread;
  * length of the message buffer, the extra items at the end of the message
  * buffer are not set to anything. If there are more items in the message than
  * the length of the message buffer, the extra items are read from the message
- * and discarded. Once the message has been read, the <TT>receive()</TT> method
+ * and discarded. Once the message has been read, the <code>receive()</code> method
  * returns a {@linkplain Status} object reporting the channel on which the
  * message arrived, the message tag, and the actual number of items in the
  * message (which may or may not be the same as the number of items in the
@@ -181,37 +181,37 @@ import edu.rit.util.TimerThread;
  * <P>
  * Each channel group has a "loopback" channel that is used to send messages
  * within the same process. To obtain the loopback channel, call the
- * <TT>loopbackChannel()</TT> method. Then one thread can send messages using
+ * <code>loopbackChannel()</code> method. Then one thread can send messages using
  * the loopback channel while a different thread receives messages using the
  * loopback channel. If the same thread both sends and receives using the
  * loopback channel, a deadlock may occur.
  * <P>
- * The loopback channel uses the <TT>copy()</TT> method of class {@linkplain
+ * The loopback channel uses the <code>copy()</code> method of class {@linkplain
  * Buf} to transfer data items directly from the source buffer to the
  * destination buffer. The loopback channel does not do any network
  * communication.
  * <P>
  * <B>Non-Blocking Send and Receive Operations</B>
  * <P>
- * The <TT>send()</TT> method described so far does a <B>blocking send</B>
- * operation; the <TT>send()</TT> method does not return until the message has
+ * The <code>send()</code> method described so far does a <B>blocking send</B>
+ * operation; the <code>send()</code> method does not return until the message has
  * been fully sent. There is also a <B>non-blocking send</B> operation,
- * <TT>sendNoWait()</TT>, which includes an {@linkplain IORequest} argument. The
- * <TT>sendNoWait()</TT> method initiates the send operation and returns
+ * <code>sendNoWait()</code>, which includes an {@linkplain IORequest} argument. The
+ * <code>sendNoWait()</code> method initiates the send operation and returns
  * immediately. This allows the caller to continue processing while the channel
  * group sends the message in a separate thread. To wait for the message to be
  * fully sent, the caller must call the IORequest object's
- * <TT>waitForFinish()</TT> method.
+ * <code>waitForFinish()</code> method.
  * <P>
- * Likewise, the <TT>receive()</TT> method described so far does a <B>blocking
- * receive</B> operation; the <TT>receive()</TT> method does not return until
+ * Likewise, the <code>receive()</code> method described so far does a <B>blocking
+ * receive</B> operation; the <code>receive()</code> method does not return until
  * the message has been fully received. There is also a <B>non-blocking
- * receive</B> operation, <TT>receiveNoWait()</TT>, which includes an
- * {@linkplain IORequest} argument. The <TT>receiveNoWait()</TT> method
+ * receive</B> operation, <code>receiveNoWait()</code>, which includes an
+ * {@linkplain IORequest} argument. The <code>receiveNoWait()</code> method
  * initiates the receive operation and returns immediately. This allows the
  * caller to continue processing while the channel group receives the message in
  * a separate thread. To wait for the message to be fully received, the caller
- * must call the IORequest object's <TT>waitForFinish()</TT> method, which
+ * must call the IORequest object's <code>waitForFinish()</code> method, which
  * returns a {@linkplain Status} object giving the results of the receive
  * operation.
  *
@@ -308,8 +308,8 @@ public class ChannelGroup {
     /**
      * Construct a new channel group. The channel group ID is initially 0. The
      * channel group will not listen for connection requests. To listen for
-     * connection requests at a later time, call the <TT>listen()</TT> method
-     * followed by the <TT>startListening</TT> method.
+     * connection requests at a later time, call the <code>listen()</code> method
+     * followed by the <code>startListening</code> method.
      * <P>
      * The channel group will log error messages on the standard error.
      */
@@ -320,14 +320,14 @@ public class ChannelGroup {
     /**
      * Construct a new channel group. The channel group ID is initially 0. The
      * channel group will listen for connection requests on the given host and
-     * port. To start actively listening, call the <TT>startListening()</TT>
+     * port. To start actively listening, call the <code>startListening()</code>
      * method.
      * <P>
      * The channel group will log error messages on the standard error.
      *
      * @param theListenAddress Host and port at which to listen.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theListenAddress</TT> is null.
+     * <code>theListenAddress</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -340,16 +340,16 @@ public class ChannelGroup {
      * Construct a new channel group. The channel group ID is initially 0. The
      * channel group will listen for connection requests using the given server
      * socket channel. The server socket channel must be bound to a host and
-     * port. To start actively listening, call the <TT>startListening()</TT>
+     * port. To start actively listening, call the <code>startListening()</code>
      * method.
      * <P>
      * The channel group will log error messages on the standard error.
      *
      * @param theServerSocketChannel Server socket channel.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theServerSocketChannel</TT> is null.
+     * <code>theServerSocketChannel</code> is null.
      * @exception IOException Thrown if an I/O error occurred. Thrown if
-     * <TT>theServerSocketChannel</TT> is not bound.
+     * <code>theServerSocketChannel</code> is not bound.
      * @throws java.io.IOException if any.
      */
     public ChannelGroup(ServerSocketChannel theServerSocketChannel)
@@ -360,14 +360,14 @@ public class ChannelGroup {
     /**
      * Construct a new channel group. The channel group ID is initially 0. The
      * channel group will not listen for connection requests. To listen for
-     * connection requests at a later time, call the <TT>listen()</TT> method
-     * followed by the <TT>startListening</TT> method.
+     * connection requests at a later time, call the <code>listen()</code> method
+     * followed by the <code>startListening</code> method.
      * <P>
      * The channel group will log error messages using the given logger.
      *
      * @param theLogger Logger for error messages.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theLogger</TT> is null.
+     * <code>theLogger</code> is null.
      */
     public ChannelGroup(Logger theLogger) {
         if (theLogger == null) {
@@ -386,7 +386,7 @@ public class ChannelGroup {
     /**
      * Construct a new channel group. The channel group ID is initially 0. The
      * channel group will listen for connection requests on the given host and
-     * port. To start actively listening, call the <TT>startListening()</TT>
+     * port. To start actively listening, call the <code>startListening()</code>
      * method.
      * <P>
      * The channel group will log error messages using the given logger.
@@ -394,7 +394,7 @@ public class ChannelGroup {
      * @param theListenAddress Host and port at which to listen.
      * @param theLogger Logger for error messages.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theListenAddress</TT> is null. Thrown if <TT>theLogger</TT> is null.
+     * <code>theListenAddress</code> is null. Thrown if <code>theLogger</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -409,7 +409,7 @@ public class ChannelGroup {
      * Construct a new channel group. The channel group ID is initially 0. The
      * channel group will listen for connection requests using the given server
      * socket channel. The server socket channel must be bound to a host and
-     * port. To start actively listening, call the <TT>startListening()</TT>
+     * port. To start actively listening, call the <code>startListening()</code>
      * method.
      * <P>
      * The channel group will log error messages using the given logger.
@@ -417,10 +417,10 @@ public class ChannelGroup {
      * @param theServerSocketChannel Server socket channel.
      * @param theLogger Logger for error messages.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theServerSocketChannel</TT> is null. Thrown if <TT>theLogger</TT> is
+     * <code>theServerSocketChannel</code> is null. Thrown if <code>theLogger</code> is
      * null.
      * @exception IOException Thrown if an I/O error occurred. Thrown if
-     * <TT>theServerSocketChannel</TT> is not bound.
+     * <code>theServerSocketChannel</code> is not bound.
      * @throws java.io.IOException if any.
      */
     public ChannelGroup(ServerSocketChannel theServerSocketChannel,
@@ -465,11 +465,11 @@ public class ChannelGroup {
 
     /**
      * Listen for connection requests on the given host and port. To start
-     * actively listening, call the <TT>startListening()</TT> method.
+     * actively listening, call the <code>startListening()</code> method.
      *
      * @param theListenAddress Host and port at which to listen.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theListenAddress</TT> is null.
+     * <code>theListenAddress</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if
      * listening has already started.
      * @exception IOException Thrown if an I/O error occurred.
@@ -488,15 +488,15 @@ public class ChannelGroup {
     /**
      * Listen for connection requests using the given server socket channel. The
      * server socket channel must be bound to a host and port. To start actively
-     * listening, call the <TT>startListening()</TT> method.
+     * listening, call the <code>startListening()</code> method.
      *
      * @param theServerSocketChannel Server socket channel.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theServerSocketChannel</TT> is null.
+     * <code>theServerSocketChannel</code> is null.
      * @exception IllegalStateException (unchecked exception) Thrown if
      * listening has already started.
      * @exception IOException Thrown if an I/O error occurred. Thrown if
-     * <TT>theServerSocketChannel</TT> is not bound.
+     * <code>theServerSocketChannel</code> is not bound.
      * @throws java.io.IOException if any.
      */
     public synchronized void listen(ServerSocketChannel theServerSocketChannel)
@@ -520,19 +520,19 @@ public class ChannelGroup {
     /**
      * Register the given connect listener with this channel group. Thereafter,
      * this channel group will report each connected channel by calling
-     * <TT>theConnectListener</TT>'s <TT>nearEndConnected()</TT> method (if the
+     * <code>theConnectListener</code>'s <code>nearEndConnected()</code> method (if the
      * connection request originated in this process) or
-     * <TT>farEndConnected()</TT> method (if the connection request originated
+     * <code>farEndConnected()</code> method (if the connection request originated
      * in another process). It is assumed that these methods will not do any
      * lengthy processing and will not block the calling thread.
      * <P>
      * At most one connect listener may be registered. If a connect listener is
      * already registered, it is replaced with the given connect listener. If
-     * <TT>theConnectListener</TT> is null, any registered connect listener is
+     * <code>theConnectListener</code> is null, any registered connect listener is
      * discarded, and this channel group will not report connected channels.
      * <P>
-     * Call the <TT>setConnectListener()</TT> method before calling the
-     * <TT>startListening()</TT> method, otherwise the application may not
+     * Call the <code>setConnectListener()</code> method before calling the
+     * <code>startListening()</code> method, otherwise the application may not
      * receive some connection notifications.
      *
      * @param theConnectListener Connect listener, or null.
@@ -564,7 +564,7 @@ public class ChannelGroup {
      * far end computer, there must be a channel group listening to the given
      * host and port. Once the connection is set up, if a connect listener has
      * been registered, the channel group calls the connect listener's
-     * <TT>nearEndConnected()</TT> method to report the new channel.
+     * <code>nearEndConnected()</code> method to report the new channel.
      *
      * @param theFarEndAddress Host and port of far end channel group.
      * @return New channel.
@@ -610,18 +610,18 @@ public class ChannelGroup {
      * Send a message to the given channel. The message uses a tag of 0. The
      * message items come from the given item source buffer.
      * <P>
-     * The <TT>send()</TT> method does not return until the message has been
+     * The <code>send()</code> method does not return until the message has been
      * fully sent. (The message may not have been fully received yet.)
      * <P>
-     * The <TT>send()</TT> method assumes that <TT>theChannel</TT> was created
-     * by this channel group. If not, the <TT>send()</TT> method's behavior is
+     * The <code>send()</code> method assumes that <code>theChannel</code> was created
+     * by this channel group. If not, the <code>send()</code> method's behavior is
      * unspecified.
      *
      * @param theChannel Channel.
      * @param theSrc Item source buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theChannel</TT> is null or
-     * <TT>theSrc</TT> is null.
+     * <code>theChannel</code> is null or
+     * <code>theSrc</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -637,19 +637,19 @@ public class ChannelGroup {
      * Send a message to the given channel with the given tag. The message items
      * come from the given item source buffer.
      * <P>
-     * The <TT>send()</TT> method does not return until the message has been
+     * The <code>send()</code> method does not return until the message has been
      * fully sent. (The message may not have been fully received yet.)
      * <P>
-     * The <TT>send()</TT> method assumes that <TT>theChannel</TT> was created
-     * by this channel group. If not, the <TT>send()</TT> method's behavior is
+     * The <code>send()</code> method assumes that <code>theChannel</code> was created
+     * by this channel group. If not, the <code>send()</code> method's behavior is
      * unspecified.
      *
      * @param theChannel Channel.
      * @param theTag Message tag.
      * @param theSrc Item source buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theChannel</TT> is null or
-     * <TT>theSrc</TT> is null.
+     * <code>theChannel</code> is null or
+     * <code>theSrc</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -665,22 +665,22 @@ public class ChannelGroup {
     /**
      * Send (non-blocking) a message to the given channel. The message uses a
      * tag of 0. The message items come from the given item source buffer.
-     * <TT>theIORequest</TT> is the IORequest object to be associated with the
+     * <code>theIORequest</code> is the IORequest object to be associated with the
      * send operation.
      * <P>
-     * The <TT>sendNoWait()</TT> method returns immediately. To wait for the
-     * message to be fully sent, call <TT>theIORequest.waitForFinish()</TT>.
+     * The <code>sendNoWait()</code> method returns immediately. To wait for the
+     * message to be fully sent, call <code>theIORequest.waitForFinish()</code>.
      * <P>
-     * The <TT>sendNoWait()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>sendNoWait()</TT> method's
+     * The <code>sendNoWait()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>sendNoWait()</code> method's
      * behavior is unspecified.
      *
      * @param theChannel Channel.
      * @param theSrc Item source buffer.
      * @param theIORequest IORequest object.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theChannel</TT> is null,
-     * <TT>theSrc</TT> is null, or <TT>theIORequest</TT> is null.
+     * <code>theChannel</code> is null,
+     * <code>theSrc</code> is null, or <code>theIORequest</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -694,14 +694,14 @@ public class ChannelGroup {
     /**
      * Send (non-blocking) a message to the given channel with the given tag.
      * The message items come from the given item source buffer.
-     * <TT>theIORequest</TT> is the IORequest object to be associated with the
+     * <code>theIORequest</code> is the IORequest object to be associated with the
      * send operation.
      * <P>
-     * The <TT>sendNoWait()</TT> method returns immediately. To wait for the
-     * message to be fully sent, call <TT>theIORequest.waitForFinish()</TT>.
+     * The <code>sendNoWait()</code> method returns immediately. To wait for the
+     * message to be fully sent, call <code>theIORequest.waitForFinish()</code>.
      * <P>
-     * The <TT>sendNoWait()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>sendNoWait()</TT> method's
+     * The <code>sendNoWait()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>sendNoWait()</code> method's
      * behavior is unspecified.
      *
      * @param theChannel Channel.
@@ -709,8 +709,8 @@ public class ChannelGroup {
      * @param theSrc Item source buffer.
      * @param theIORequest IORequest object.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theChannel</TT> is null,
-     * <TT>theSrc</TT> is null, or <TT>theIORequest</TT> is null.
+     * <code>theChannel</code> is null,
+     * <code>theSrc</code> is null, or <code>theIORequest</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -735,23 +735,23 @@ public class ChannelGroup {
     }
 
     /**
-     * Receive a message from the given channel. If <TT>theChannel</TT> is null,
+     * Receive a message from the given channel. If <code>theChannel</code> is null,
      * a message will be received from any channel in this channel group. The
      * message must have a tag of 0. The message items are stored in the given
      * item destination buffer.
      * <P>
-     * The <TT>receive()</TT> method does not return until the message has been
+     * The <code>receive()</code> method does not return until the message has been
      * fully received.
      * <P>
-     * The <TT>receive()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>receive()</TT> method's
+     * The <code>receive()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>receive()</code> method's
      * behavior is unspecified.
      *
      * @param theChannel Channel, or null to receive from any channel.
      * @param theDst Item destination buffer.
      * @return Status object giving the outcome of the message reception.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theDst</TT> is null.
+     * <code>theDst</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -765,15 +765,15 @@ public class ChannelGroup {
 
     /**
      * Receive a message from the given channel with the given tag. If
-     * <TT>theChannel</TT> is null, a message will be received from any channel
+     * <code>theChannel</code> is null, a message will be received from any channel
      * in this channel group. The message items are stored in the given item
      * destination buffer.
      * <P>
-     * The <TT>receive()</TT> method does not return until the message has been
+     * The <code>receive()</code> method does not return until the message has been
      * fully received.
      * <P>
-     * The <TT>receive()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>receive()</TT> method's
+     * The <code>receive()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>receive()</code> method's
      * behavior is unspecified.
      *
      * @param theChannel Channel, or null to receive from any channel.
@@ -781,7 +781,7 @@ public class ChannelGroup {
      * @param theDst Item destination buffer.
      * @return Status object giving the outcome of the message reception.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theDst</TT> is null.
+     * <code>theDst</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -796,16 +796,16 @@ public class ChannelGroup {
 
     /**
      * Receive a message from the given channel with the given range of tags. If
-     * <TT>theChannel</TT> is null, a message will be received from any channel
-     * in this channel group. If <TT>theTagRange</TT> is null, a message will be
+     * <code>theChannel</code> is null, a message will be received from any channel
+     * in this channel group. If <code>theTagRange</code> is null, a message will be
      * received with any tag. The message items are stored in the given item
      * destination buffer.
      * <P>
-     * The <TT>receive()</TT> method does not return until the message has been
+     * The <code>receive()</code> method does not return until the message has been
      * fully received.
      * <P>
-     * The <TT>receive()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>receive()</TT> method's
+     * The <code>receive()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>receive()</code> method's
      * behavior is unspecified.
      *
      * @param theChannel Channel, or null to receive from any channel.
@@ -813,7 +813,7 @@ public class ChannelGroup {
      * @param theDst Item destination buffer.
      * @return Status object giving the outcome of the message reception.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theDst</TT> is null.
+     * <code>theDst</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -832,25 +832,25 @@ public class ChannelGroup {
 
     /**
      * Receive (non-blocking) a message from the given channel. If
-     * <TT>theChannel</TT> is null, a message will be received from any channel
+     * <code>theChannel</code> is null, a message will be received from any channel
      * in this channel group. The message must have a tag of 0. The message
      * items are stored in the given item destination buffer.
-     * <TT>theIORequest</TT> is the IORequest object to be associated with the
+     * <code>theIORequest</code> is the IORequest object to be associated with the
      * receive operation.
      * <P>
-     * The <TT>receiveNoWait()</TT> method returns immediately. To wait for the
-     * message to be fully received, call <TT>theIORequest.waitForFinish()</TT>.
+     * The <code>receiveNoWait()</code> method returns immediately. To wait for the
+     * message to be fully received, call <code>theIORequest.waitForFinish()</code>.
      * <P>
-     * The <TT>receiveNoWait()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>receiveNoWait()</TT>
+     * The <code>receiveNoWait()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>receiveNoWait()</code>
      * method's behavior is unspecified.
      *
      * @param theChannel Channel, or null to receive from any channel.
      * @param theDst Item destination buffer.
      * @param theIORequest IORequest object.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theDst</TT> is null or
-     * <TT>theIORequest</TT> is null.
+     * <code>theDst</code> is null or
+     * <code>theIORequest</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -863,16 +863,16 @@ public class ChannelGroup {
 
     /**
      * Receive (non-blocking) a message from the given channel with the given
-     * tag. If <TT>theChannel</TT> is null, a message will be received from any
+     * tag. If <code>theChannel</code> is null, a message will be received from any
      * channel in this channel group. The message items are stored in the given
-     * item destination buffer. <TT>theIORequest</TT> is the IORequest object to
+     * item destination buffer. <code>theIORequest</code> is the IORequest object to
      * be associated with the receive operation.
      * <P>
-     * The <TT>receiveNoWait()</TT> method returns immediately. To wait for the
-     * message to be fully received, call <TT>theIORequest.waitForFinish()</TT>.
+     * The <code>receiveNoWait()</code> method returns immediately. To wait for the
+     * message to be fully received, call <code>theIORequest.waitForFinish()</code>.
      * <P>
-     * The <TT>receiveNoWait()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>receiveNoWait()</TT>
+     * The <code>receiveNoWait()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>receiveNoWait()</code>
      * method's behavior is unspecified.
      *
      * @param theChannel Channel, or null to receive from any channel.
@@ -880,8 +880,8 @@ public class ChannelGroup {
      * @param theDst Item destination buffer.
      * @param theIORequest IORequest object.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theDst</TT> is null or
-     * <TT>theIORequest</TT> is null.
+     * <code>theDst</code> is null or
+     * <code>theIORequest</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -895,17 +895,17 @@ public class ChannelGroup {
 
     /**
      * Receive (non-blocking) a message from the given channel with the given
-     * range of tags. If <TT>theChannel</TT> is null, a message will be received
-     * from any channel in this channel group. If <TT>theTagRange</TT> is null,
+     * range of tags. If <code>theChannel</code> is null, a message will be received
+     * from any channel in this channel group. If <code>theTagRange</code> is null,
      * a message will be received with any tag. The message items are stored in
-     * the given item destination buffer. <TT>theIORequest</TT> is the IORequest
+     * the given item destination buffer. <code>theIORequest</code> is the IORequest
      * object to be associated with the receive operation.
      * <P>
-     * The <TT>receiveNoWait()</TT> method returns immediately. To wait for the
-     * message to be fully received, call <TT>theIORequest.waitForFinish()</TT>.
+     * The <code>receiveNoWait()</code> method returns immediately. To wait for the
+     * message to be fully received, call <code>theIORequest.waitForFinish()</code>.
      * <P>
-     * The <TT>receiveNoWait()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>receiveNoWait()</TT>
+     * The <code>receiveNoWait()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>receiveNoWait()</code>
      * method's behavior is unspecified.
      *
      * @param theChannel Channel, or null to receive from any channel.
@@ -913,8 +913,8 @@ public class ChannelGroup {
      * @param theDst Item destination buffer.
      * @param theIORequest IORequest object.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theDst</TT> is null or
-     * <TT>theIORequest</TT> is null.
+     * <code>theDst</code> is null or
+     * <code>theIORequest</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
@@ -940,16 +940,16 @@ public class ChannelGroup {
 
     /**
      * Receive (non-blocking) a message from the given channel with the given
-     * tag range. If <TT>theChannel</TT> is null, a message will be received
+     * tag range. If <code>theChannel</code> is null, a message will be received
      * from any channel in this channel group. The message items are stored in
-     * the given item destination buffer. <TT>theIORequest</TT> is the IORequest
+     * the given item destination buffer. <code>theIORequest</code> is the IORequest
      * object to be associated with the receive operation.
      * <P>
-     * The <TT>receiveNoWait()</TT> method returns immediately. To wait for the
-     * message to be fully received, call <TT>theIORequest.waitForFinish()</TT>.
+     * The <code>receiveNoWait()</code> method returns immediately. To wait for the
+     * message to be fully received, call <code>theIORequest.waitForFinish()</code>.
      * <P>
-     * The <TT>receiveNoWait()</TT> method assumes that <TT>theChannel</TT> was
-     * created by this channel group. If not, the <TT>receiveNoWait()</TT>
+     * The <code>receiveNoWait()</code> method assumes that <code>theChannel</code> was
+     * created by this channel group. If not, the <code>receiveNoWait()</code>
      * method's behavior is unspecified.
      *
      * @param theChannel Channel, or null to receive from any channel.
@@ -959,8 +959,8 @@ public class ChannelGroup {
      * @param theIORequest IORequest object.
      *
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theDst</TT> is null or
-     * <TT>theIORequest</TT> is null.
+     * <code>theDst</code> is null or
+     * <code>theIORequest</code> is null.
      * @exception IOException Thrown if an I/O error occurred.
      */
     private void receiveNoWait(Channel theChannel,
@@ -996,8 +996,8 @@ public class ChannelGroup {
      * Specify an alternate class loader for this channel group. When objects
      * are received in a message via this channel group, the given class loader
      * will be used to load the objects' classes. If
-     * <TT>setAlternateClassLoader()</TT> is never called, or if
-     * <TT>theClassLoader</TT> is null, an alternate class loader will not be
+     * <code>setAlternateClassLoader()</code> is never called, or if
+     * <code>theClassLoader</code> is null, an alternate class loader will not be
      * used.
      *
      * @param theClassLoader Alternate class loader, or null.

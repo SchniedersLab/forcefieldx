@@ -47,19 +47,19 @@ package edu.rit.pj;
  * variation; see the subclasses for further information. The subclasses are:
  * <UL>
  * <LI>
- * Class {@linkplain IntegerForLoop} -- loop index is type <TT>int</TT>, loop
+ * Class {@linkplain IntegerForLoop} -- loop index is type <code>int</code>, loop
  * stride is implicit (+1).
  * <BR>&nbsp;
  * <LI>
- * Class {@linkplain IntegerStrideForLoop} -- loop index is type <TT>int</TT>,
+ * Class {@linkplain IntegerStrideForLoop} -- loop index is type <code>int</code>,
  * loop stride is explicitly specified.
  * <BR>&nbsp;
  * <LI>
- * Class {@linkplain LongForLoop} -- loop index is type <TT>long</TT>, loop
+ * Class {@linkplain LongForLoop} -- loop index is type <code>long</code>, loop
  * stride is implicit (+1).
  * <BR>&nbsp;
  * <LI>
- * Class {@linkplain LongStrideForLoop} -- loop index is type <TT>long</TT>,
+ * Class {@linkplain LongStrideForLoop} -- loop index is type <code>long</code>,
  * loop stride is explicitly specified.
  * <BR>&nbsp;
  * </UL>

@@ -141,7 +141,7 @@ public class SharedObject<T> {
      *
      * @param value Value.
      * @param op Binary operation.
-     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     * @return (This variable) <I>op</I> (<code>value</code>).
      */
     public T reduce(T value,
             ObjectOp<T> op) {

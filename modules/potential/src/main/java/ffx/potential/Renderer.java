@@ -100,17 +100,7 @@ public class Renderer extends Behavior {
      * @param t     True for a change in atomic position
      * @param v     True for a change in rendering method
      * @param vtype The rendering method to use
-     * @param vtype The rendering method to use
-     * @param vtype The rendering method to use
-     * @param vtype The rendering method to use
-     * @param vtype The rendering method to use
-     * @param vtype The rendering method to use
      * @param c     True for a change in rendering color
-     * @param ctype The coloring method to use
-     * @param ctype The coloring method to use
-     * @param ctype The coloring method to use
-     * @param ctype The coloring method to use
-     * @param ctype The coloring method to use
      * @param ctype The coloring method to use
      */
     public void arm(ArrayList<MSNode> nodes, boolean t, boolean v,
@@ -145,27 +135,7 @@ public class Renderer extends Behavior {
      * @param v     a boolean.
      * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
      *              object.
-     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     *              object.
-     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     *              object.
-     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     *              object.
-     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     *              object.
-     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     *              object.
      * @param c     a boolean.
-     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *              object.
-     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *              object.
-     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *              object.
-     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *              object.
-     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *              object.
      * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
      *              object.
      */

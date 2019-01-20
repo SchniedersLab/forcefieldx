@@ -78,23 +78,23 @@ import edu.rit.util.Range;
  * <P>
  * To create a ShortBuf, call one of the following static factory methods:
  * <UL>
- * <LI><TT>emptyBuffer()</TT>
- * <LI><TT>buffer()</TT>
- * <LI><TT>buffer (short)</TT>
- * <LI><TT>buffer (short[])</TT>
- * <LI><TT>sliceBuffer (short[], Range)</TT>
- * <LI><TT>sliceBuffers (short[], Range[])</TT>
- * <LI><TT>buffer (short[][])</TT>
- * <LI><TT>rowSliceBuffer (short[][], Range)</TT>
- * <LI><TT>rowSliceBuffers (short[][], Range[])</TT>
- * <LI><TT>colSliceBuffer (short[][], Range)</TT>
- * <LI><TT>colSliceBuffers (short[][], Range[])</TT>
- * <LI><TT>patchBuffer (short[][], Range, Range)</TT>
- * <LI><TT>patchBuffers (short[][], Range[], Range[])</TT>
- * <LI><TT>buffer (SharedShort)</TT>
- * <LI><TT>buffer (SharedShortArray)</TT>
- * <LI><TT>sliceBuffer (SharedShortArray, Range)</TT>
- * <LI><TT>sliceBuffers (SharedShortArray, Range[])</TT>
+ * <LI><code>emptyBuffer()</code>
+ * <LI><code>buffer()</code>
+ * <LI><code>buffer (short)</code>
+ * <LI><code>buffer (short[])</code>
+ * <LI><code>sliceBuffer (short[], Range)</code>
+ * <LI><code>sliceBuffers (short[], Range[])</code>
+ * <LI><code>buffer (short[][])</code>
+ * <LI><code>rowSliceBuffer (short[][], Range)</code>
+ * <LI><code>rowSliceBuffers (short[][], Range[])</code>
+ * <LI><code>colSliceBuffer (short[][], Range)</code>
+ * <LI><code>colSliceBuffers (short[][], Range[])</code>
+ * <LI><code>patchBuffer (short[][], Range, Range)</code>
+ * <LI><code>patchBuffers (short[][], Range[], Range[])</code>
+ * <LI><code>buffer (SharedShort)</code>
+ * <LI><code>buffer (SharedShortArray)</code>
+ * <LI><code>sliceBuffer (SharedShortArray, Range)</code>
+ * <LI><code>sliceBuffers (SharedShortArray, Range[])</code>
  * </UL>
  *
  * @author Alan Kaminsky
@@ -109,7 +109,7 @@ public abstract class ShortBuf
      *
      * @param theLength Number of items.
      * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theLength</TT> &lt; 0.
+     * <code>theLength</code> &lt; 0.
      */
     protected ShortBuf(int theLength) {
         super(Constants.TYPE_SHORT, theLength);
@@ -128,7 +128,7 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for a short item. The item is stored in the
-     * <TT>item</TT> field of the buffer.
+     * <code>item</code> field of the buffer.
      *
      * @return Buffer.
      */
@@ -138,9 +138,9 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for a short item with the given initial value. The item
-     * is stored in the <TT>item</TT> field of the buffer.
+     * is stored in the <code>item</code> field of the buffer.
      *
-     * @param item Initial value of the <TT>item</TT> field.
+     * @param item Initial value of the <code>item</code> field.
      * @return Buffer.
      */
     public static ShortItemBuf buffer(short item) {
@@ -149,12 +149,12 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for the entire given short array. The returned buffer
-     * encompasses all the elements in <TT>theArray</TT>.
+     * encompasses all the elements in <code>theArray</code>.
      *
      * @param theArray Array.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null.
+     * <code>theArray</code> is null.
      */
     public static ShortBuf buffer(short[] theArray) {
         if (theArray == null) {
@@ -166,17 +166,17 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for one slice of the given short array. The returned
-     * buffer encompasses <TT>theRange</TT> of elements in <TT>theArray</TT>.
+     * buffer encompasses <code>theRange</code> of elements in <code>theArray</code>.
      * The range's stride may be 1 or greater than 1.
      *
      * @param theArray Array.
      * @param theRange Range of elements to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRange</TT> is null.
+     * <code>theArray</code> is null or
+     * <code>theRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT> does not include all the indexes in <TT>theRange</TT>.
+     * <code>theArray</code> does not include all the indexes in <code>theRange</code>.
      */
     public static ShortBuf sliceBuffer(short[] theArray,
             Range theRange) {
@@ -198,19 +198,19 @@ public abstract class ShortBuf
     /**
      * Create an array of buffers for multiple slices of the given short array.
      * The returned buffer array has the same length as
-     * <TT>theRanges</TT>. Each element [<I>i</I>] of the returned buffer array
-     * encompasses the elements of <TT>theArray</TT> specified by
-     * <TT>theRanges[i]</TT>. Each range's stride may be 1 or greater than 1.
+     * <code>theRanges</code>. Each element [<I>i</I>] of the returned buffer array
+     * encompasses the elements of <code>theArray</code> specified by
+     * <code>theRanges[i]</code>. Each range's stride may be 1 or greater than 1.
      *
      * @param theArray Array.
      * @param theRanges Array of ranges of elements to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRanges</TT> or any element thereof is null.
+     * <code>theArray</code> is null or
+     * <code>theRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT>'s allocation does not include any element of
-     * <TT>theRanges</TT>.
+     * <code>theArray</code>'s allocation does not include any element of
+     * <code>theRanges</code>.
      */
     public static ShortBuf[] sliceBuffers(short[] theArray,
             Range[] theRanges) {
@@ -225,12 +225,12 @@ public abstract class ShortBuf
     /**
      * Create a buffer for the entire given short matrix. The returned buffer
      * encompasses all the rows and all the columns in
-     * <TT>theMatrix</TT>.
+     * <code>theMatrix</code>.
      *
      * @param theMatrix Matrix.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null.
+     * <code>theMatrix</code> is null.
      */
     public static ShortBuf buffer(short[][] theMatrix) {
         if (theMatrix == null) {
@@ -243,17 +243,17 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for one row slice of the given short matrix. The returned
-     * buffer encompasses <TT>theRowRange</TT> of rows, and all the columns, in
-     * <TT>theMatrix</TT>. The range's stride may be 1 or greater than 1.
+     * buffer encompasses <code>theRowRange</code> of rows, and all the columns, in
+     * <code>theMatrix</code>. The range's stride may be 1 or greater than 1.
      *
      * @param theMatrix Matrix.
      * @param theRowRange Range of rows to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theRowRange</TT> is null.
+     * <code>theMatrix</code> is null or
+     * <code>theRowRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include <TT>theRowRange</TT>.
+     * <code>theMatrix</code>'s allocation does not include <code>theRowRange</code>.
      */
     public static ShortBuf rowSliceBuffer(short[][] theMatrix,
             Range theRowRange) {
@@ -276,20 +276,20 @@ public abstract class ShortBuf
     /**
      * Create an array of buffers for multiple row slices of the given short
      * matrix. The returned buffer array has the same length as
-     * <TT>theRowRanges</TT>. Each element [<I>i</I>] of the returned buffer
-     * array encompasses the rows of <TT>theMatrix</TT> specified by
-     * <TT>theRowRanges[i]</TT> and all the columns of <TT>theMatrix</TT>. Each
+     * <code>theRowRanges</code>. Each element [<I>i</I>] of the returned buffer
+     * array encompasses the rows of <code>theMatrix</code> specified by
+     * <code>theRowRanges[i]</code> and all the columns of <code>theMatrix</code>. Each
      * range's stride may be 1 or greater than 1.
      *
      * @param theMatrix Matrix.
      * @param theRowRanges Array of ranges of rows to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theRowRanges</TT> or any element thereof is null.
+     * <code>theMatrix</code> is null or
+     * <code>theRowRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include any element of
-     * <TT>theRowRanges</TT>.
+     * <code>theMatrix</code>'s allocation does not include any element of
+     * <code>theRowRanges</code>.
      */
     public static ShortBuf[] rowSliceBuffers(short[][] theMatrix,
             Range[] theRowRanges) {
@@ -303,18 +303,18 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for one column slice of the given short matrix. The
-     * returned buffer encompasses all the rows, and <TT>theColRange</TT> of
-     * columns, in <TT>theMatrix</TT>. The range's stride may be 1 or greater
+     * returned buffer encompasses all the rows, and <code>theColRange</code> of
+     * columns, in <code>theMatrix</code>. The range's stride may be 1 or greater
      * than 1.
      *
      * @param theMatrix Matrix.
      * @param theColRange Range of columns to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theColRange</TT> is null.
+     * <code>theMatrix</code> is null or
+     * <code>theColRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include <TT>theColRange</TT>.
+     * <code>theMatrix</code>'s allocation does not include <code>theColRange</code>.
      */
     public static ShortBuf colSliceBuffer(short[][] theMatrix,
             Range theColRange) {
@@ -337,20 +337,20 @@ public abstract class ShortBuf
     /**
      * Create an array of buffers for multiple column slices of the given short
      * matrix. The returned buffer array has the same length as
-     * <TT>theColRanges</TT>. Each element [<I>i</I>] of the returned buffer
-     * array encompasses all the rows of <TT>theMatrix</TT> and the columns of
-     * <TT>theMatrix</TT> specified by <TT>theColRanges[i]</TT>. Each range's
+     * <code>theColRanges</code>. Each element [<I>i</I>] of the returned buffer
+     * array encompasses all the rows of <code>theMatrix</code> and the columns of
+     * <code>theMatrix</code> specified by <code>theColRanges[i]</code>. Each range's
      * stride may be 1 or greater than 1.
      *
      * @param theMatrix Matrix.
      * @param theColRanges Array of ranges of columns to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null or
-     * <TT>theColRanges</TT> or any element thereof is null.
+     * <code>theMatrix</code> is null or
+     * <code>theColRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include any element of
-     * <TT>theColRanges</TT>.
+     * <code>theMatrix</code>'s allocation does not include any element of
+     * <code>theColRanges</code>.
      */
     public static ShortBuf[] colSliceBuffers(short[][] theMatrix,
             Range[] theColRanges) {
@@ -364,8 +364,8 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for one patch of the given short matrix. The returned
-     * buffer encompasses <TT>theRowRange</TT> of rows, and <TT>theColRange</TT>
-     * of columns, in <TT>theMatrix</TT>. Each range's stride may be 1 or
+     * buffer encompasses <code>theRowRange</code> of rows, and <code>theColRange</code>
+     * of columns, in <code>theMatrix</code>. Each range's stride may be 1 or
      * greater than 1.
      *
      * @param theMatrix Matrix.
@@ -373,11 +373,11 @@ public abstract class ShortBuf
      * @param theColRange Range of columns to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null,
-     * <TT>theRowRange</TT> is null, or <TT>theColRange</TT> is null.
+     * <code>theMatrix</code> is null,
+     * <code>theRowRange</code> is null, or <code>theColRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include <TT>theRowRange</TT> and
-     * <TT>theColRange</TT>.
+     * <code>theMatrix</code>'s allocation does not include <code>theRowRange</code> and
+     * <code>theColRange</code>.
      */
     public static ShortBuf patchBuffer(short[][] theMatrix,
             Range theRowRange,
@@ -405,24 +405,24 @@ public abstract class ShortBuf
     /**
      * Create an array of buffers for multiple patches of the given short
      * matrix. The length of the returned buffer array is equal to the length of
-     * <TT>theRowRanges</TT> times the length of <TT>theColRanges</TT>. Each
+     * <code>theRowRanges</code> times the length of <code>theColRanges</code>. Each
      * element of the returned buffer array encompasses the rows given in one
-     * element of <TT>theRowRanges</TT> array, and the columns given in one
-     * element of <TT>theColRanges</TT> array, in all possible combinations, of
-     * <TT>theMatrix</TT>. Each range's stride may be 1 or greater than 1.
+     * element of <code>theRowRanges</code> array, and the columns given in one
+     * element of <code>theColRanges</code> array, in all possible combinations, of
+     * <code>theMatrix</code>. Each range's stride may be 1 or greater than 1.
      *
      * @param theMatrix Matrix.
      * @param theRowRanges Array of ranges of rows to include.
      * @param theColRanges Array of ranges of columns to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT> is null,
-     * <TT>theRowRanges</TT> or any element thereof is null, or
-     * <TT>theColRanges</TT> or any element thereof is null.
+     * <code>theMatrix</code> is null,
+     * <code>theRowRanges</code> or any element thereof is null, or
+     * <code>theColRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theMatrix</TT>'s allocation does not include any element of
-     * <TT>theRowRanges</TT> or
-     * <TT>theColRanges</TT>.
+     * <code>theMatrix</code>'s allocation does not include any element of
+     * <code>theRowRanges</code> or
+     * <code>theColRanges</code>.
      */
     public static ShortBuf[] patchBuffers(short[][] theMatrix,
             Range[] theRowRanges,
@@ -449,7 +449,7 @@ public abstract class ShortBuf
      *
      * @param item SharedShort object that wraps the item.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>item</TT> is null.
+     * <code>item</code> is null.
      * @return a {@link edu.rit.mp.ShortBuf} object.
      */
     public static ShortBuf buffer(SharedShort item) {
@@ -461,12 +461,12 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for the entire given shared short array. The returned
-     * buffer encompasses all the elements in <TT>theArray</TT>.
+     * buffer encompasses all the elements in <code>theArray</code>.
      *
      * @param theArray Array.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null.
+     * <code>theArray</code> is null.
      */
     public static ShortBuf buffer(SharedShortArray theArray) {
         if (theArray == null) {
@@ -478,17 +478,17 @@ public abstract class ShortBuf
 
     /**
      * Create a buffer for one slice of the given shared short array. The
-     * returned buffer encompasses <TT>theRange</TT> of elements in
-     * <TT>theArray</TT>. The range's stride may be 1 or greater than 1.
+     * returned buffer encompasses <code>theRange</code> of elements in
+     * <code>theArray</code>. The range's stride may be 1 or greater than 1.
      *
      * @param theArray Array.
      * @param theRange Range of elements to include.
      * @return Buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRange</TT> is null.
+     * <code>theArray</code> is null or
+     * <code>theRange</code> is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT> does not include all the indexes in <TT>theRange</TT>.
+     * <code>theArray</code> does not include all the indexes in <code>theRange</code>.
      */
     public static ShortBuf sliceBuffer(SharedShortArray theArray,
             Range theRange) {
@@ -510,19 +510,19 @@ public abstract class ShortBuf
     /**
      * Create an array of buffers for multiple slices of the given shared short
      * array. The returned buffer array has the same length as
-     * <TT>theRanges</TT>. Each element [<I>i</I>] of the returned buffer array
-     * encompasses the elements of <TT>theArray</TT> specified by
-     * <TT>theRanges[i]</TT>. Each range's stride may be 1 or greater than 1.
+     * <code>theRanges</code>. Each element [<I>i</I>] of the returned buffer array
+     * encompasses the elements of <code>theArray</code> specified by
+     * <code>theRanges[i]</code>. Each range's stride may be 1 or greater than 1.
      *
      * @param theArray Array.
      * @param theRanges Array of ranges of elements to include.
      * @return Array of buffers.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theArray</TT> is null or
-     * <TT>theRanges</TT> or any element thereof is null.
+     * <code>theArray</code> is null or
+     * <code>theRanges</code> or any element thereof is null.
      * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>theArray</TT>'s allocation does not include any element of
-     * <TT>theRanges</TT>.
+     * <code>theArray</code>'s allocation does not include any element of
+     * <code>theRanges</code>.
      */
     public static ShortBuf[] sliceBuffers(SharedShortArray theArray,
             Range[] theRanges) {
@@ -537,23 +537,22 @@ public abstract class ShortBuf
     /**
      * Obtain the given item from this buffer.
      * <P>
-     * The <TT>get()</TT> method must not block the calling thread; if it does,
+     * The <code>get()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @return Item at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @return Item at index <code>i</code>.
      */
     public abstract short get(int i);
 
     /**
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
-     * @param item Item to be stored at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @param item Item to be stored at index <code>i</code>.
      */
     public abstract void put(int i,
             short item);
@@ -562,15 +561,15 @@ public abstract class ShortBuf
      * {@inheritDoc}
      *
      * Copy items from the given buffer to this buffer. The number of items
-     * copied is this buffer's length or <TT>theSrc</TT>'s length, whichever is
-     * smaller. If <TT>theSrc</TT> is this buffer, the <TT>copy()</TT> method
+     * copied is this buffer's length or <code>theSrc</code>'s length, whichever is
+     * smaller. If <code>theSrc</code> is this buffer, the <code>copy()</code> method
      * does nothing.
      * <P>
-     * The default implementation of the <TT>copy()</TT> method calls the
-     * <TT>defaultCopy()</TT> method. A subclass can override the
-     * <TT>copy()</TT> method to use a more efficient algorithm.
+     * The default implementation of the <code>copy()</code> method calls the
+     * <code>defaultCopy()</code> method. A subclass can override the
+     * <code>copy()</code> method to use a more efficient algorithm.
      * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>theSrc</TT>'s item data type is not the same as this buffer's item
+     * <code>theSrc</code>'s item data type is not the same as this buffer's item
      * data type.
      */
     public void copy(Buf theSrc) {
@@ -582,13 +581,13 @@ public abstract class ShortBuf
     /**
      * {@inheritDoc}
      *
-     * Fill this buffer with the given item. The <TT>item</TT> is assigned to
+     * Fill this buffer with the given item. The <code>item</code> is assigned to
      * each element in this buffer.
      * <P>
-     * The <TT>item</TT> must be an instance of class Short. If the
-     * <TT>item</TT> is null, 0 is assigned to each element in this buffer.
+     * The <code>item</code> must be an instance of class Short. If the
+     * <code>item</code> is null, 0 is assigned to each element in this buffer.
      * @exception ClassCastException (unchecked exception) Thrown if the
-     * <TT>item</TT>'s data type is not the same as this buffer's item data
+     * <code>item</code>'s data type is not the same as this buffer's item data
      * type.
      */
     public void fill(Object item) {
@@ -627,10 +626,10 @@ public abstract class ShortBuf
 
     /**
      * Copy items from the given source buffer to the given destination buffer.
-     * The number of items copied is <TT>theSrc</TT>'s length or
-     * <TT>theDst</TT>'s length, whichever is smaller. Each item is copied
-     * individually using the <TT>get()</TT> and <TT>put()</TT> methods. It is
-     * assumed that <TT>theSrc</TT> is not the same as <TT>theDst</TT>.
+     * The number of items copied is <code>theSrc</code>'s length or
+     * <code>theDst</code>'s length, whichever is smaller. Each item is copied
+     * individually using the <code>get()</code> and <code>put()</code> methods. It is
+     * assumed that <code>theSrc</code> is not the same as <code>theDst</code>.
      *
      * @param theSrc Source of items to copy.
      * @param theDst Destination of items to copy.

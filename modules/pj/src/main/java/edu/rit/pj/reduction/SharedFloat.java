@@ -43,14 +43,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class SharedFloat provides a reduction variable for a value of type
- * <TT>float</TT>.
+ * <code>float</code>.
  * <P>
  * Class SharedFloat is multiple thread safe. The methods use lock-free atomic
  * compare-and-set.
  * <P>
  * <I>Note:</I> Class SharedFloat is implemented using class
  * java.util.concurrent.atomic.AtomicInteger. The float value is stored as an
- * <TT>int</TT> whose bit pattern is the same as the float value.
+ * <code>int</code> whose bit pattern is the same as the float value.
  *
  * @author Alan Kaminsky
  * @version 07-Jun-2007
@@ -247,7 +247,7 @@ public class SharedFloat
      *
      * @param value Value.
      * @param op Binary operation.
-     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     * @return (This variable) <I>op</I> (<code>value</code>).
      */
     public float reduce(float value,
             FloatOp op) {
@@ -273,7 +273,7 @@ public class SharedFloat
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>int</TT>.
+     * <code>int</code>.
      *
      * @return Current value.
      */
@@ -283,7 +283,7 @@ public class SharedFloat
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>long</TT>.
+     * <code>long</code>.
      *
      * @return Current value.
      */
@@ -293,7 +293,7 @@ public class SharedFloat
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>float</TT>.
+     * <code>float</code>.
      *
      * @return Current value.
      */
@@ -303,7 +303,7 @@ public class SharedFloat
 
     /**
      * Returns this reduction variable's current value converted to type
-     * <TT>double</TT>.
+     * <code>double</code>.
      *
      * @return Current value.
      */

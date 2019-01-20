@@ -68,7 +68,7 @@ class SharedObjectReductionBuf<T>
      * @param op Binary operation.
      * @param theBuf Underlying object buffer.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public SharedObjectReductionBuf(SharedObject<T> item,
             ObjectOp<T> op,
@@ -85,12 +85,12 @@ class SharedObjectReductionBuf<T>
     /**
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      *
-     * @param i Item index in the range 0 .. <TT>length()</TT>-1.
-     * @param item Item to be stored at index <TT>i</TT>.
-     * @param item Item to be stored at index <TT>i</TT>.
+     * @param i Item index in the range 0 .. <code>length()</code>-1.
+     * @param item Item to be stored at index <code>i</code>.
+     * @param item Item to be stored at index <code>i</code>.
      */
     public void put(int i,
             T item) {

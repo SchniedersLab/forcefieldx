@@ -49,13 +49,13 @@ import java.util.Set;
  * group of {@linkplain Job}s.
  * <P>
  * Jobs are numbered from 0 to <I>N</I>&minus;1, where <I>N</I> is the number of
- * jobs in the group. A subclass must override the <TT>jobCount()</TT> method to
- * return <I>N</I>. A subclass must override the <TT>createJob()</TT> method to
+ * jobs in the group. A subclass must override the <code>jobCount()</code> method to
+ * return <I>N</I>. A subclass must override the <code>createJob()</code> method to
  * create and return the job corresponding to a given job number. The job
  * generator need not create all the jobs in the group, and it need not create
  * them in any particular order.
  * <P>
- * Class JobGenerator provides the <TT>omit()</TT> method to omit generating
+ * Class JobGenerator provides the <code>omit()</code> method to omit generating
  * certain job numbers. This is used for checkpointing. For further information,
  * see class {@linkplain Runner}.
  *
@@ -79,13 +79,13 @@ public abstract class JobGenerator
 // Exported operations.
     /**
      * Omit the job numbers in the given set when generating jobs. To be
-     * effective, <TT>omit()</TT> must be called before calling
-     * <TT>iterator()</TT>. A snapshot of the given set is taken; changing the
+     * effective, <code>omit()</code> must be called before calling
+     * <code>iterator()</code>. A snapshot of the given set is taken; changing the
      * set's contents thereafter will not affect the job numbers to be omitted.
      *
      * @param theOmittedJobNumbers Set of job numbers to be omitted.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>theOmittedJobNumbers</TT> is null.
+     * <code>theOmittedJobNumbers</code> is null.
      */
     public void omit(Set<Integer> theOmittedJobNumbers) {
         myOmittedJobNumbers.clear();
@@ -144,7 +144,7 @@ public abstract class JobGenerator
     /**
      * Create the job with the given job number. This method must create and
      * return an instance of class {@linkplain Job} whose job number is
-     * <TT>theJobNumber</TT>.
+     * <code>theJobNumber</code>.
      *
      * @param theJobNumber Job number (0 .. <I>N</I>&minus;1).
      * @return a {@link edu.rit.pj.job.Job} object.

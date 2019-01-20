@@ -62,7 +62,6 @@ public interface JobFrontendRef {
      * @param jvm Full pathname of Java Virtual Machine.
      * @param jvmflags Array of JVM command line flags.
      * @param classpath Java class path for PJ Library.
-     * @param jvmflags Array of JVM command line flags.
      * @param shellCommand Shell command string.
      * @param Nt Number of CPUs assigned to the process.
      * @exception IOException Thrown if an I/O error occurred.
@@ -198,8 +197,8 @@ public interface JobFrontendRef {
             throws IOException;
 
     /**
-     * Write the given bytes to the given output file. <TT>ffd</TT> = 1 refers
-     * to the job's standard output stream; <TT>ffd</TT> = 2 refers to the job's
+     * Write the given bytes to the given output file. <code>ffd</code> = 1 refers
+     * to the job's standard output stream; <code>ffd</code> = 2 refers to the job's
      * standard error stream; other values refer to a previously opened file.
      *
      * @param theJobBackend Job Backend that is calling this method.
@@ -256,7 +255,7 @@ public interface JobFrontendRef {
             throws IOException;
 
     /**
-     * Read bytes from the given input file. <TT>ffd</TT> = 1 refers to the
+     * Read bytes from the given input file. <code>ffd</code> = 1 refers to the
      * job's standard input stream; other values refer to a previously opened
      * file.
      *

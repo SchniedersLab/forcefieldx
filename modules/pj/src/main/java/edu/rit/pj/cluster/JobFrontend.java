@@ -170,8 +170,8 @@ public class JobFrontend
 // Exported constructors.
     /**
      * Construct a new job frontend object. The job frontend object will contact
-     * the Job Scheduler Daemon specified by the <TT>"pj.host"</TT> and
-     * <TT>"pj.port"</TT> Java system properties. See class {@linkplain
+     * the Job Scheduler Daemon specified by the <code>"pj.host"</code> and
+     * <code>"pj.port"</code> Java system properties. See class {@linkplain
      * edu.rit.pj.PJProperties} for further information.
      *
      * @param username User name.
@@ -741,8 +741,8 @@ public class JobFrontend
     /**
      * {@inheritDoc}
      *
-     * Write the given bytes to the given output file. <TT>ffd</TT> = 1 refers
-     * to the job's standard output stream; <TT>ffd</TT> = 2 refers to the job's
+     * Write the given bytes to the given output file. <code>ffd</code> = 1 refers
+     * to the job's standard output stream; <code>ffd</code> = 2 refers to the job's
      * standard error stream; other values refer to a previously opened file.
      * @exception IOException Thrown if an I/O error occurred.
      */
@@ -795,7 +795,7 @@ public class JobFrontend
     /**
      * {@inheritDoc}
      *
-     * Read bytes from the given input file. <TT>ffd</TT> = 1 refers to the
+     * Read bytes from the given input file. <code>ffd</code> = 1 refers to the
      * job's standard input stream; other values refer to a previously opened
      * file.
      * @exception IOException Thrown if an I/O error occurred.
@@ -994,8 +994,8 @@ public class JobFrontend
     /**
      * Terminate this Job Frontend immediately, sending a "cancel job" message
      * to the Job Scheduler and all Job Backends. The error message is
-     * <TT>msg</TT>. This method must only be called by the thread calling
-     * <TT>run()</TT>.
+     * <code>msg</code>. This method must only be called by the thread calling
+     * <code>run()</code>.
      *
      * @param msg Error message.
      */
@@ -1012,7 +1012,7 @@ public class JobFrontend
      * Terminate this Job Frontend immediately, sending a "cancel job" message
      * to the Job Scheduler and all Job Backends. The error message comes from
      * the given exception. This method must only be called by the thread
-     * calling <TT>run()</TT>.
+     * calling <code>run()</code>.
      *
      * @param exc Exception.
      */
@@ -1033,7 +1033,7 @@ public class JobFrontend
      * Terminate this Job Frontend immediately, sending a "cancel job" message
      * to the Job Scheduler and all Job Backends. The error message comes from
      * the given exception. This method must only be called by a thread other
-     * than the thread calling <TT>run()</TT>.
+     * than the thread calling <code>run()</code>.
      *
      * @param exc Exception.
      */

@@ -923,11 +923,6 @@ public class ReciprocalSpace {
      *
      * @param inducedDipole   Induced dipoles.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
-     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
-     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
-     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
-     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
-     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param use             The atoms in use.
      */
     public void splineInducedDipoles(double inducedDipole[][][],
@@ -1051,7 +1046,6 @@ public class ReciprocalSpace {
      * @param cartInducedDipoleCRPhi  an array of {@link double} objects.
      * @param cartUnscaledDipolePhi   an array of {@link double} objects.
      * @param cartUnscaledDipolePhiCR an array of {@link double} objects.
-     * @param cartUnscaledDipolePhiCR an array of {@link double} objects.
      */
     public void computeInducedPhi(
             double cartInducedDipolePhi[][], double cartInducedDipoleCRPhi[][],
@@ -1082,11 +1076,6 @@ public class ReciprocalSpace {
      * cartToFracInducedDipoles</p>
      *
      * @param inducedDipole   an array of double.
-     * @param inducedDipoleCR an array of double.
-     * @param inducedDipoleCR an array of double.
-     * @param inducedDipoleCR an array of double.
-     * @param inducedDipoleCR an array of double.
-     * @param inducedDipoleCR an array of double.
      * @param inducedDipoleCR an array of double.
      */
     public void cartToFracInducedDipoles(double inducedDipole[][][],

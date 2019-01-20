@@ -107,11 +107,11 @@ public class Stdio {
 
     /**
      * Set the standard input stream for the calling thread. If not set, the
-     * default is <TT>System.in</TT>.
+     * default is <code>System.in</code>.
      *
      * @param stream Standard input stream.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>stream</TT> is null.
+     * <code>stream</code> is null.
      */
     public static void in(InputStream stream) {
         if (stream == null) {
@@ -122,11 +122,11 @@ public class Stdio {
 
     /**
      * Set the standard output stream for the calling thread. If not set, the
-     * default is <TT>System.out</TT>.
+     * default is <code>System.out</code>.
      *
      * @param stream Standard output stream.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>stream</TT> is null.
+     * <code>stream</code> is null.
      */
     public static void out(PrintStream stream) {
         if (stream == null) {
@@ -137,11 +137,11 @@ public class Stdio {
 
     /**
      * Set the standard error stream for the calling thread. If not set, the
-     * default is <TT>System.err</TT>.
+     * default is <code>System.err</code>.
      *
      * @param stream Standard error stream.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>stream</TT> is null.
+     * <code>stream</code> is null.
      */
     public static void err(PrintStream stream) {
         if (stream == null) {

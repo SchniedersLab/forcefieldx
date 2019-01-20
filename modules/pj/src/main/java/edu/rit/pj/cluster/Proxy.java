@@ -66,7 +66,6 @@ public abstract class Proxy {
      * channel group to send messages to the far end process.
      *
      * @param theChannelGroup Channel group.
-     * @param theChannelGroup Channel group.
      * @param theChannel Channel.
      */
     public Proxy(ChannelGroup theChannelGroup,
@@ -111,7 +110,7 @@ public abstract class Proxy {
      * message must have a tag of 0. The message items are stored in the given
      * item destination buffer.
      * <P>
-     * The <TT>receive()</TT> method does not return until the message has been
+     * The <code>receive()</code> method does not return until the message has been
      * fully received.
      *
      * @param theDst Item destination buffer.
@@ -127,11 +126,11 @@ public abstract class Proxy {
     /**
      * Receive a message with the given tag from this proxy's far end process. A
      * message will be received from this proxy's channel in this proxy's
-     * channel group. If <TT>theTag</TT> is null, a message will be received
+     * channel group. If <code>theTag</code> is null, a message will be received
      * with any tag. The message items are stored in the given item destination
      * buffer.
      * <P>
-     * The <TT>receive()</TT> method does not return until the message has been
+     * The <code>receive()</code> method does not return until the message has been
      * fully received.
      *
      * @param theTag Message tag, or null to receive any tag.

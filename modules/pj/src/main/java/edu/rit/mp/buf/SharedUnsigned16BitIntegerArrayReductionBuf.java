@@ -68,7 +68,7 @@ class SharedUnsigned16BitIntegerArrayReductionBuf
      * @param theRange Range of array elements to include in the buffer.
      * @param op Binary operation.
      * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>op</TT> is null.
+     * <code>op</code> is null.
      */
     public SharedUnsigned16BitIntegerArrayReductionBuf(SharedIntegerArray theArray,
             Range theRange,
@@ -86,7 +86,7 @@ class SharedUnsigned16BitIntegerArrayReductionBuf
      *
      * Store the given item in this buffer.
      * <P>
-     * The <TT>put()</TT> method must not block the calling thread; if it does,
+     * The <code>put()</code> method must not block the calling thread; if it does,
      * all message I/O in MP will be blocked.
      */
     public void put(int i,
@@ -114,7 +114,7 @@ class SharedUnsigned16BitIntegerArrayReductionBuf
      * Receive as many items as possible from the given byte buffer to this
      * buffer.
      * <P>
-     * The <TT>receiveItems()</TT> method must not block the calling thread; if
+     * The <code>receiveItems()</code> method must not block the calling thread; if
      * it does, all message I/O in MP will be blocked.
      */
     protected int receiveItems(int i,

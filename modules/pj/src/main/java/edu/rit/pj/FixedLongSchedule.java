@@ -43,7 +43,7 @@ import edu.rit.util.LongRange;
 
 /**
  * Class FixedLongSchedule provides a fixed schedule object. The loop index is
- * type <TT>long</TT>. The loop iterations are apportioned among the parallel
+ * type <code>long</code>. The loop iterations are apportioned among the parallel
  * team threads once at the beginning of the parallel for loop, with each thread
  * getting a fixed number of iterations, the same number of iterations for each
  * thread (plus or minus one).
@@ -68,7 +68,7 @@ class FixedLongSchedule
 
     /**
      * Construct a new fixed schedule object. This constructor is for use by the
-     * <TT>LongSchedule.parse()</TT> method.
+     * <code>LongSchedule.parse()</code> method.
      *
      * @param args Array of argument strings.
      */
@@ -97,7 +97,7 @@ class FixedLongSchedule
      * Start generating chunks of iterations for a parallel for loop using this
      * schedule.
      * <P>
-     * The <TT>start()</TT> method is only called by a single thread in the
+     * The <code>start()</code> method is only called by a single thread in the
      * Parallel Java middleware.
      */
     public void start(int K,
@@ -117,12 +117,12 @@ class FixedLongSchedule
      * are more iterations, a range object is returned whose lower bound, upper
      * bound, and stride specify the chunk of iterations to perform. The
      * returned range object's stride is the same as that given to the
-     * <TT>start()</TT> method. The returned range object's lower bound and
-     * upper bound are contained within the range given to the <TT>start()</TT>
+     * <code>start()</code> method. The returned range object's lower bound and
+     * upper bound are contained within the range given to the <code>start()</code>
      * method. If there are no more iterations, null is returned.
      * <P>
-     * The <TT>next()</TT> method is called by multiple parallel team threads in
-     * the Parallel Java middleware. The <TT>next()</TT> method must be multiple
+     * The <code>next()</code> method is called by multiple parallel team threads in
+     * the Parallel Java middleware. The <code>next()</code> method must be multiple
      * thread safe.
      */
     public LongRange next(int theThreadIndex) {

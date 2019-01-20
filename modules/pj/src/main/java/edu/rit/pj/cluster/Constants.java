@@ -53,7 +53,7 @@ public class Constants {
 
 // Exported constants.
     /**
-     * Host name referring to all network interfaces (<TT>"0.0.0.0"</TT>).
+     * Host name referring to all network interfaces (<code>"0.0.0.0"</code>).
      */
     public static final String ALL_NETWORK_INTERFACES = "0.0.0.0";
 

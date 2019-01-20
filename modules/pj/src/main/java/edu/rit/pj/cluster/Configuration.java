@@ -50,88 +50,88 @@ import java.util.Scanner;
  * Class Configuration provides configuration information about a parallel
  * computer running Parallel Java. The configuration information is read from a
  * plain text file. Each configuration file entry is on a single line. Lines
- * beginning with <TT>#</TT> and blank lines are ignored. The order of the
+ * beginning with <code>#</code> and blank lines are ignored. The order of the
  * entries in the file does not matter (unless stated otherwise below). The
  * items in each entry are separated by whitespace; there cannot be any
  * whitespace within an item (unless stated otherwise below). The configuration
  * file entries are:
  * <UL>
- * <P>
+ *
  * <LI>
- * <TT>cluster &lt;name&gt;</TT>
- * <BR>The name of the cluster is <TT>&lt;name&gt;</TT>. The name may contain
+ * <code>cluster &lt;name&gt;</code>
+ * <BR>The name of the cluster is <code>&lt;name&gt;</code>. The name may contain
  * whitespace. This entry must be specified; there is no default.
- * <P>
+ *
  * <LI>
- * <TT>logfile &lt;file&gt;</TT>
+ * <code>logfile &lt;file&gt;</code>
  * <BR>The Job Scheduler will append log entries to the log file named
- * <TT>&lt;file&gt;</TT>. This entry must be specified; there is no default.
- * <P>
+ * <code>&lt;file&gt;</code>. This entry must be specified; there is no default.
+ *
  * <LI>
- * <TT>webhost &lt;host&gt;</TT>
+ * <code>webhost &lt;host&gt;</code>
  * <BR>The host name for the Job Scheduler's web interface is
- * <TT>&lt;host&gt;</TT>. This entry must be specified; there is no default.
- * <P>
+ * <code>&lt;host&gt;</code>. This entry must be specified; there is no default.
+ *
  * <LI>
- * <TT>webport &lt;port&gt;</TT>
+ * <code>webport &lt;port&gt;</code>
  * <BR>The port number for the Job Scheduler's web interface is
- * <TT>&lt;port&gt;</TT>. If not specified, the default port number is 8080.
- * <P>
+ * <code>&lt;port&gt;</code>. If not specified, the default port number is 8080.
+ *
  * <LI>
- * <TT>schedulerhost &lt;host&gt;</TT>
+ * <code>schedulerhost &lt;host&gt;</code>
  * <BR>The host name to which the Job Scheduler listens for connections from job
- * frontend processes is <TT>&lt;host&gt;</TT>. If not specified, the default is
- * <TT>"localhost"</TT>.
- * <P>
+ * frontend processes is <code>&lt;host&gt;</code>. If not specified, the default is
+ * <code>"localhost"</code>.
+ *
  * <LI>
- * <TT>schedulerport &lt;port&gt;</TT>
+ * <code>schedulerport &lt;port&gt;</code>
  * <BR>The port number to which the Job Scheduler listens for connections from
- * job frontend processes is <TT>&lt;port&gt;</TT>. If not specified, the
+ * job frontend processes is <code>&lt;port&gt;</code>. If not specified, the
  * default port number is 20617.
- * <P>
+ *
  * <LI>
- * <TT>frontendhost &lt;host&gt;</TT>
+ * <code>frontendhost &lt;host&gt;</code>
  * <BR>The host name to which job frontend processes listen for connections from
- * job backend processes is <TT>&lt;host&gt;</TT>. This entry must be specified;
+ * job backend processes is <code>&lt;host&gt;</code>. This entry must be specified;
  * there is no default.
- * <P>
+ *
  * <LI>
- * <TT>backend &lt;name&gt; &lt;cpus&gt; &lt;host&gt; &lt;jvm&gt;
- * &lt;classpath&gt; [&lt;jvmflag&gt; ...]</TT>
+ * <code>backend &lt;name&gt; &lt;cpus&gt; &lt;host&gt; &lt;jvm&gt;
+ * &lt;classpath&gt; [&lt;jvmflag&gt; ...]</code>
  * <BR>The parallel computer includes a backend node named
- * <TT>&lt;name&gt;</TT> with <TT>&lt;cpus&gt;</TT> CPUs. The host name for SSH
- * remote logins to the backend node is <TT>&lt;host&gt;</TT>. The full pathname
+ * <code>&lt;name&gt;</code> with <code>&lt;cpus&gt;</code> CPUs. The host name for SSH
+ * remote logins to the backend node is <code>&lt;host&gt;</code>. The full pathname
  * for executing the Java Virtual Machine (JVM) on the backend node is
- * <TT>&lt;jvm&gt;</TT>. The Java class path for the Parallel Java Library on
- * the backend node is <TT>&lt;classpath&gt;</TT>. Each
- * <TT>&lt;jvmflag&gt;</TT> (zero or more) gives a flag passed to the JVM on the
+ * <code>&lt;jvm&gt;</code>. The Java class path for the Parallel Java Library on
+ * the backend node is <code>&lt;classpath&gt;</code>. Each
+ * <code>&lt;jvmflag&gt;</code> (zero or more) gives a flag passed to the JVM on the
  * command line. At least one of this entry must be specified.
- * <P>
+ *
  * <LI>
- * <TT>backendshell &lt;name&gt; &lt;shell command&gt;</TT>
- * <BR>On the backend node named <TT>&lt;name&gt;</TT>, use the given shell
+ * <code>backendshell &lt;name&gt; &lt;shell command&gt;</code>
+ * <BR>On the backend node named <code>&lt;name&gt;</code>, use the given shell
  * command string when starting a job backend process. This entry, if present,
- * must appear after the corresponding <TT>backend &lt;name&gt;</TT> entry. If
+ * must appear after the corresponding <code>backend &lt;name&gt;</code> entry. If
  * this entry is omitted, the default shell command string is
- * <TT>"bash&nbsp;-l&nbsp;-c"</TT>.
- * <P>
+ * <code>"bash&nbsp;-l&nbsp;-c"</code>.
+ *
  * <LI>
- * <TT>jobtime &lt;time&gt;</TT>
+ * <code>jobtime &lt;time&gt;</code>
  * <BR>The maximum time in seconds any Parallel Java job is allowed to run. The
  * Job Scheduler will abort a job if it runs for this many seconds. If not
  * specified, the default is not to impose a maximum time on jobs. <I>Note:</I>
  * If the Job Scheduler is configured with a maximum job time and a particular
- * job is given a maximum time with the <TT>-Dpj.jobtime</TT> property, the
+ * job is given a maximum time with the <code>-Dpj.jobtime</code> property, the
  * smaller of the Job Scheduler's maximum job time and the job's maximum time
  * will be used for that job.
  * </UL>
  * <P>
  * Here is an example of a configuration file:
- * <P>
- * <TABLE BORDER=1 CELLPADDING=10 CELLSPACING=0>
+ *
+ * <TABLE BORDER=1>
+ * <CAPTION>Parallel Java Job Scheduler configuration file</CAPTION>
  * <TR>
- * <TD ALIGN="left" VALIGN="top">
- * <FONT SIZE="-1">
+ * <TD VALIGN="top">
  * <PRE> # Parallel Java Job Scheduler configuration file
  * # Frontend node: tardis.cs.rit.edu
  * # Backend nodes: dr00-dr09
@@ -153,7 +153,6 @@ import java.util.Scanner;
  * backend dr07 4 10.10.221.17 /usr/local/versions/jdk-1.5.0_15/bin/java /var/tmp/parajava/pj.jar
  * backend dr08 4 10.10.221.18 /usr/local/versions/jdk-1.5.0_15/bin/java /var/tmp/parajava/pj.jar
  * backend dr09 4 10.10.221.19 /usr/local/versions/jdk-1.5.0_15/bin/java /var/tmp/parajava/pj.jar</PRE>
- * </FONT>
  * </TD>
  * </TR>
  * </TABLE>
@@ -285,7 +284,7 @@ public class Configuration {
     /**
      * Returns information about the given backend processor.
      *
-     * @param i Index in the range 0 .. <TT>getBackendCount()-1</TT>.
+     * @param i Index in the range 0 .. <code>getBackendCount()-1</code>.
      * @return Backend information object.
      */
     public BackendInfo getBackendInfo(int i) {
@@ -424,7 +423,7 @@ public class Configuration {
      *
      * @param name Backend name.
      *
-     * @return Backend info, or null if <TT>name</TT> does not exist.
+     * @return Backend info, or null if <code>name</code> does not exist.
      */
     private BackendInfo backendInfoForName(String name) {
         for (BackendInfo backendinfo : myBackendInfo) {

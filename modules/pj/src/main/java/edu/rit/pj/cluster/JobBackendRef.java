@@ -82,7 +82,7 @@ public interface JobBackendRef {
      * communicator. The first
      * <I>K</I> elements are for the job backend processes in rank order, the
      * <I>K</I>+1st element is for the job frontend process. If the frontend
-     * communicator does not exist, <TT>frontendAddress</TT> is null.
+     * communicator does not exist, <code>frontendAddress</code> is null.
      * @param properties Java system properties.
      * @param mainClassName Fully qualified class name of the Java main program
      * class to execute.

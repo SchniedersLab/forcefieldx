@@ -60,7 +60,7 @@ public class Searching {
 // Exported helper classes.
     /**
      * Class Searching.Byte is the base class for a helper object used to search
-     * an array of type <TT>byte[]</TT>.
+     * an array of type <code>byte[]</code>.
      *
      * @author Alan Kaminsky
      * @version 22-Nov-2011
@@ -70,7 +70,7 @@ public class Searching {
         /**
          * Compare two elements according to the desired ordering criterion.
          * <P>
-         * The default implementation compares <TT>a</TT> and <TT>b</TT> using
+         * The default implementation compares <code>a</code> and <code>b</code> using
          * ascending order. A subclass can override this method to obtain a
          * different ordering criterion; for example, descending order.
          *
@@ -78,8 +78,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public int compare(byte a,
                 byte b) {
@@ -89,7 +89,7 @@ public class Searching {
 
     /**
      * Class Searching.Character is the base class for a helper object used to
-     * search an array of type <TT>char[]</TT>.
+     * search an array of type <code>char[]</code>.
      *
      * @author Alan Kaminsky
      * @version 22-Nov-2011
@@ -99,7 +99,7 @@ public class Searching {
         /**
          * Compare two elements according to the desired ordering criterion.
          * <P>
-         * The default implementation compares <TT>a</TT> and <TT>b</TT> using
+         * The default implementation compares <code>a</code> and <code>b</code> using
          * ascending order. A subclass can override this method to obtain a
          * different ordering criterion; for example, descending order.
          *
@@ -107,8 +107,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public int compare(char a,
                 char b) {
@@ -118,7 +118,7 @@ public class Searching {
 
     /**
      * Class Searching.Short is the base class for a helper object used to
-     * search an array of type <TT>short[]</TT>.
+     * search an array of type <code>short[]</code>.
      *
      * @author Alan Kaminsky
      * @version 22-Nov-2011
@@ -128,7 +128,7 @@ public class Searching {
         /**
          * Compare two elements according to the desired ordering criterion.
          * <P>
-         * The default implementation compares <TT>a</TT> and <TT>b</TT> using
+         * The default implementation compares <code>a</code> and <code>b</code> using
          * ascending order. A subclass can override this method to obtain a
          * different ordering criterion; for example, descending order.
          *
@@ -136,8 +136,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public int compare(short a,
                 short b) {
@@ -147,7 +147,7 @@ public class Searching {
 
     /**
      * Class Searching.Integer is the base class for a helper object used to
-     * search an array of type <TT>int[]</TT>.
+     * search an array of type <code>int[]</code>.
      *
      * @author Alan Kaminsky
      * @version 22-Nov-2011
@@ -157,7 +157,7 @@ public class Searching {
         /**
          * Compare two elements according to the desired ordering criterion.
          * <P>
-         * The default implementation compares <TT>a</TT> and <TT>b</TT> using
+         * The default implementation compares <code>a</code> and <code>b</code> using
          * ascending order. A subclass can override this method to obtain a
          * different ordering criterion; for example, descending order.
          *
@@ -165,8 +165,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public int compare(int a,
                 int b) {
@@ -176,7 +176,7 @@ public class Searching {
 
     /**
      * Class Searching.Long is the base class for a helper object used to search
-     * an array of type <TT>long[]</TT>.
+     * an array of type <code>long[]</code>.
      *
      * @author Alan Kaminsky
      * @version 22-Nov-2011
@@ -186,7 +186,7 @@ public class Searching {
         /**
          * Compare two elements according to the desired ordering criterion.
          * <P>
-         * The default implementation compares <TT>a</TT> and <TT>b</TT> using
+         * The default implementation compares <code>a</code> and <code>b</code> using
          * ascending order. A subclass can override this method to obtain a
          * different ordering criterion; for example, descending order.
          *
@@ -194,8 +194,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public int compare(long a,
                 long b) {
@@ -206,7 +206,7 @@ public class Searching {
 
     /**
      * Class Searching.Float is the base class for a helper object used to
-     * search an array of type <TT>float[]</TT>.
+     * search an array of type <code>float[]</code>.
      *
      * @author Alan Kaminsky
      * @version 22-Nov-2011
@@ -216,7 +216,7 @@ public class Searching {
         /**
          * Compare two elements according to the desired ordering criterion.
          * <P>
-         * The default implementation compares <TT>a</TT> and <TT>b</TT> using
+         * The default implementation compares <code>a</code> and <code>b</code> using
          * ascending order. A subclass can override this method to obtain a
          * different ordering criterion; for example, descending order.
          *
@@ -224,8 +224,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public int compare(float a,
                 float b) {
@@ -236,7 +236,7 @@ public class Searching {
 
     /**
      * Class Searching.Double is the base class for a helper object used to
-     * search an array of type <TT>double[]</TT>.
+     * search an array of type <code>double[]</code>.
      *
      * @author Alan Kaminsky
      * @version 22-Nov-2011
@@ -246,7 +246,7 @@ public class Searching {
         /**
          * Compare two elements according to the desired ordering criterion.
          * <P>
-         * The default implementation compares <TT>a</TT> and <TT>b</TT> using
+         * The default implementation compares <code>a</code> and <code>b</code> using
          * ascending order. A subclass can override this method to obtain a
          * different ordering criterion; for example, descending order.
          *
@@ -254,8 +254,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public int compare(double a,
                 double b) {
@@ -266,7 +266,7 @@ public class Searching {
 
     /**
      * Class Searching.Object is the base class for a helper object used to
-     * search an array of type <TT>T[]</TT>.
+     * search an array of type <code>T[]</code>.
      *
      * @param <T> Array element data type.
      *
@@ -282,8 +282,8 @@ public class Searching {
          * @param b Second element being compared.
          *
          * @return A number less than, equal to, or greater than 0 if
-         * <TT>a</TT> comes before, is the same as, or comes after
-         * <TT>b</TT>, respectively.
+         * <code>a</code> comes before, is the same as, or comes after
+         * <code>b</code>, respectively.
          */
         public abstract int compare(T a,
                 T b);
@@ -291,14 +291,14 @@ public class Searching {
 
 // Exported operations.
     /**
-     * Search the given unordered array of type <TT>byte[]</TT> for the given
+     * Search the given unordered array of type <code>byte[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchUnsorted(byte[] x,
@@ -313,17 +313,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>byte[]</TT> for the given
+     * Search the given ordered array of type <code>byte[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchSorted(byte[] x,
@@ -369,14 +369,14 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>char[]</TT> for the given
+     * Search the given unordered array of type <code>char[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchUnsorted(char[] x,
@@ -391,17 +391,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>char[]</TT> for the given
+     * Search the given ordered array of type <code>char[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchSorted(char[] x,
@@ -447,14 +447,14 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>short[]</TT> for the given
+     * Search the given unordered array of type <code>short[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchUnsorted(short[] x,
@@ -469,17 +469,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>short[]</TT> for the given
+     * Search the given ordered array of type <code>short[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchSorted(short[] x,
@@ -525,14 +525,14 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>int[]</TT> for the given
+     * Search the given unordered array of type <code>int[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchUnsorted(int[] x,
@@ -547,17 +547,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>int[]</TT> for the given
+     * Search the given ordered array of type <code>int[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchSorted(int[] x,
@@ -603,14 +603,14 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>long[]</TT> for the given
+     * Search the given unordered array of type <code>long[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchUnsorted(long[] x,
@@ -625,17 +625,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>long[]</TT> for the given
+     * Search the given ordered array of type <code>long[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchSorted(long[] x,
@@ -681,14 +681,14 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>float[]</TT> for the given
+     * Search the given unordered array of type <code>float[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchUnsorted(float[] x,
@@ -703,17 +703,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>float[]</TT> for the given
+     * Search the given ordered array of type <code>float[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchSorted(float[] x,
@@ -759,14 +759,14 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>double[]</TT> for the given
+     * Search the given unordered array of type <code>double[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchUnsorted(double[] x,
@@ -781,17 +781,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>double[]</TT> for the given
+     * Search the given ordered array of type <code>double[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static int searchSorted(double[] x,
@@ -837,7 +837,7 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>T[]</TT> for the given
+     * Search the given unordered array of type <code>T[]</code> for the given
      * element. The given helper object is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
@@ -845,7 +845,7 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static <T> int searchUnsorted(T[] x,
@@ -860,10 +860,10 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>T[]</TT> for the given
+     * Search the given ordered array of type <code>T[]</code> for the given
      * element. The given helper object is used to compare elements for order
      * and equality. It is assumed that the array is sorted in the order
-     * determined by the helper object; otherwise, the <TT>searchSorted()</TT>
+     * determined by the helper object; otherwise, the <code>searchSorted()</code>
      * method's behavior is not specified. An <I>O</I>(log <I>n</I>) binary
      * search algorithm is used.
      *
@@ -871,7 +871,7 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param helper Helper object.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static <T> int searchSorted(T[] x,
@@ -917,7 +917,7 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>T[]</TT> for the given
+     * Search the given unordered array of type <code>T[]</code> for the given
      * element. The given comparator is used to compare elements for equality
      * only. An <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
@@ -925,7 +925,7 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param comp Comparator.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static <T> int searchUnsorted(T[] x,
@@ -940,10 +940,10 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>T[]</TT> for the given
+     * Search the given ordered array of type <code>T[]</code> for the given
      * element. The given comparator is used to compare elements for order and
      * equality. It is assumed that the array is sorted in the order determined
-     * by the comparator; otherwise, the <TT>searchSorted()</TT> method's
+     * by the comparator; otherwise, the <code>searchSorted()</code> method's
      * behavior is not specified. An <I>O</I>(log <I>n</I>) binary search
      * algorithm is used.
      *
@@ -951,7 +951,7 @@ public class Searching {
      * @param x Array to be searched.
      * @param a Element to be searched for.
      * @param comp Comparator.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static <T> int searchSorted(T[] x,
@@ -997,14 +997,15 @@ public class Searching {
     }
 
     /**
-     * Search the given unordered array of type <TT>T[]</TT> for the given
-     * element. The array element's natural ordering (<TT>compareTo()</TT>
+     * Search the given unordered array of type <code>T[]</code> for the given
+     * element. The array element's natural ordering (<code>compareTo()</code>
      * method) is used to compare elements for equality only. An
      * <I>O</I>(<I>n</I>) linear search algorithm is used.
      *
+     * @param <T> Class that extends Comparable.
      * @param x Array to be searched.
      * @param a Element to be searched for.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static <T extends Comparable> int searchUnsorted(T[] x,
@@ -1018,16 +1019,17 @@ public class Searching {
     }
 
     /**
-     * Search the given ordered array of type <TT>T[]</TT> for the given
-     * element. The array element's natural ordering (<TT>compareTo()</TT>
+     * Search the given ordered array of type <code>T[]</code> for the given
+     * element. The array element's natural ordering (<code>compareTo()</code>
      * method) is used to compare elements for order and equality. It is assumed
      * that the array is sorted in the order determined by the natural ordering;
-     * otherwise, the <TT>searchSorted()</TT> method's behavior is not
+     * otherwise, the <code>searchSorted()</code> method's behavior is not
      * specified. An <I>O</I>(log <I>n</I>) binary search algorithm is used.
      *
+     * @param <T> Class that extends Comparable.
      * @param x Array to be searched.
      * @param a Element to be searched for.
-     * @return If an element the same as <TT>a</TT> exists in <TT>x</TT>, then
+     * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
     public static <T extends Comparable> int searchSorted(T[] x,

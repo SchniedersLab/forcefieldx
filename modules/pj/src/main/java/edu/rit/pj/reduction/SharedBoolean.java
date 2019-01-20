@@ -43,14 +43,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class SharedBoolean provides a reduction variable for a value of type
- * <TT>boolean</TT>.
+ * <code>boolean</code>.
  * <P>
  * Class SharedBoolean is multiple thread safe. The methods use lock-free atomic
  * compare-and-set.
  * <P>
  * <I>Note:</I> Class SharedBoolean is implemented using class
  * java.util.concurrent.atomic.AtomicBoolean. The Boolean value is stored as an
- * <TT>int</TT> with 0 = false and 1 = true.
+ * <code>int</code> with 0 = false and 1 = true.
  *
  * @author Alan Kaminsky
  * @version 06-Jun-2007
@@ -141,7 +141,7 @@ public class SharedBoolean {
      *
      * @param value Value.
      * @param op Binary operation.
-     * @return (This variable) <I>op</I> (<TT>value</TT>).
+     * @return (This variable) <I>op</I> (<code>value</code>).
      */
     public boolean reduce(boolean value,
             BooleanOp op) {

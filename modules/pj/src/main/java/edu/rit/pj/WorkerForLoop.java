@@ -46,22 +46,22 @@ package edu.rit.pj;
  * loop stride is implicit or explicit. There is a subclass for each variation;
  * see the subclasses for further information. The subclasses are:
  * <UL>
- * <P>
+ *
  * <LI>
- * Class {@linkplain WorkerIntegerForLoop} -- loop index is type <TT>int</TT>,
+ * Class {@linkplain WorkerIntegerForLoop} -- loop index is type <code>int</code>,
  * loop stride is implicit (+1).
- * <P>
+ *
  * <LI>
  * Class {@linkplain WorkerIntegerStrideForLoop} -- loop index is type
- * <TT>int</TT>, loop stride is explicitly specified.
- * <P>
+ * <code>int</code>, loop stride is explicitly specified.
+ *
  * <LI>
- * Class {@linkplain WorkerLongForLoop} -- loop index is type <TT>long</TT>,
+ * Class {@linkplain WorkerLongForLoop} -- loop index is type <code>long</code>,
  * loop stride is implicit (+1).
- * <P>
+ *
  * <LI>
  * Class {@linkplain WorkerLongStrideForLoop} -- loop index is type
- * <TT>long</TT>, loop stride is explicitly specified.
+ * <code>long</code>, loop stride is explicitly specified.
  * </UL>
  *
  * @author Alan Kaminsky

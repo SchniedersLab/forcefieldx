@@ -80,11 +80,6 @@ public class DYNFilter {
      * @param v       an array of double.
      * @param a       an array of double.
      * @param ap      an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
      * @return a boolean.
      */
     public boolean readDYN(File dynFile, Crystal crystal,
@@ -206,11 +201,6 @@ public class DYNFilter {
      * @param x       an array of double.
      * @param v       an array of double.
      * @param a       an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
-     * @param ap      an array of double.
      * @param ap      an array of double.
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @return a boolean.

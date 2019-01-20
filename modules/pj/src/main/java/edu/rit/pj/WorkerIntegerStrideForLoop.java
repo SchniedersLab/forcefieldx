@@ -48,15 +48,15 @@ import edu.rit.util.Range;
 /**
  * Class WorkerIntegerStrideForLoop is the abstract base class for one variation
  * of a worker for loop that is executed inside a {@linkplain WorkerRegion}. The
- * loop index data type is <TT>int</TT>. The loop stride is explicitly
+ * loop index data type is <code>int</code>. The loop stride is explicitly
  * specified.
  * <P>
  * To execute a worker for loop, create a {@linkplain WorkerRegion} object;
  * create an instance of a concrete subclass of class
  * WorkerIntegerStrideForLoop; and pass this instance to the worker region's
- * <TT>execute()</TT> method. Either every worker team thread must call the
- * worker region's <TT>execute()</TT> method with identical arguments, or every
- * thread must not call the <TT>execute()</TT> method. You can do all this using
+ * <code>execute()</code> method. Either every worker team thread must call the
+ * worker region's <code>execute()</code> method with identical arguments, or every
+ * thread must not call the <code>execute()</code> method. You can do all this using
  * an anonymous inner class; for example:
  * <PRE>
  *     new WorkerRegion()
@@ -96,48 +96,48 @@ import edu.rit.util.Range;
  * <I>K</I>&minus;1 for the last worker thread in the last process, where
  * <I>K</I> is the total number of worker threads in all the processes. In
  * addition, in one process there is a master thread. The worker and master
- * threads all call the worker region's <TT>execute()</TT> method to execute the
+ * threads all call the worker region's <code>execute()</code> method to execute the
  * worker for loop. However, the worker and master threads differ in their
  * actions.
  * <P>
  * The master thread does the following. The master obtains the worker for
- * loop's schedule as returned by the <TT>schedule()</TT> method. The range of
+ * loop's schedule as returned by the <code>schedule()</code> method. The range of
  * loop indexes is divided into "chunks" and the chunks are apportioned among
  * the workers in accordance with the schedule. The master repeatedly sends
  * "tasks" to the workers and receives "responses" from the workers. To send a
  * task to a particular worker, the master (1) sends a message containing the
  * chunk index range to the worker's process; and (2) calls the worker for
- * loop's <TT>sendTaskInput()</TT> method. This method's default implementation
+ * loop's <code>sendTaskInput()</code> method. This method's default implementation
  * does nothing, but it can be overridden to send additional task input data to
  * the worker. To receive a response from a particular worker, the master (1)
  * receives a message containing the chunk index range from the worker's
- * process; and (2) calls the worker for loop's <TT>receiveTaskOutput()</TT>
+ * process; and (2) calls the worker for loop's <code>receiveTaskOutput()</code>
  * method. This method's default implementation does nothing, but it can be
  * overridden to receive additional task output data from the worker. Once all
  * tasks have been sent to the workers and all responses have been received from
- * the workers, the master returns from the worker region's <TT>execute()</TT>
+ * the workers, the master returns from the worker region's <code>execute()</code>
  * method.
  * <P>
  * Each worker thread does the following. The worker calls the worker for loop's
- * <TT>start()</TT> method once before beginning any loop iterations. The worker
+ * <code>start()</code> method once before beginning any loop iterations. The worker
  * repeatedly receives tasks from the master and sends responses to the master.
  * To receive a task from the master, the worker (1) receives a message
  * containing the chunk index range from the master's process; and (2) calls the
- * worker for loop's <TT>receiveTaskInput()</TT> method. This method's default
+ * worker for loop's <code>receiveTaskInput()</code> method. This method's default
  * implementation does nothing, but it can be overridden to receive additional
  * task input data from the master. The worker now calls the worker for loop's
- * <TT>run()</TT> method, passing in the chunk index range lower and upper
- * bounds. When the <TT>run()</TT> method returns, the worker sends the response
+ * <code>run()</code> method, passing in the chunk index range lower and upper
+ * bounds. When the <code>run()</code> method returns, the worker sends the response
  * to the master. To send the response, the worker (1) sends a message
  * containing the chunk index range to the master's process; and (2) calls the
- * worker for loop's <TT>sendTaskOutput()</TT> method. This method's default
+ * worker for loop's <code>sendTaskOutput()</code> method. This method's default
  * implementation does nothing, but it can be overridden to send additional task
  * output data to the master. Once all tasks have been received from the master
  * and all responses have been sent to the master, the worker calls the worker
- * for loop's <TT>finish()</TT> method. (Unlike a {@linkplain ParallelTeam}'s
+ * for loop's <code>finish()</code> method. (Unlike a {@linkplain ParallelTeam}'s
  * threads, the workers do <I>not</I> synchronize with each other at a barrier
  * at this point.) The worker then returns from the worker region's
- * <TT>execute()</TT> method.
+ * <code>execute()</code> method.
  * <P>
  * If the worker for loop has a fixed schedule (in which there is exactly one
  * chunk with a predetermined index range for each worker), then the messages
@@ -147,8 +147,8 @@ import edu.rit.util.Range;
  * <P>
  * Each message described above is sent with a message tag equal to
  * <I>W</I>+<I>T</I>, where <I>W</I> is the worker index and <I>T</I> is the
- * "tag offset." The tag offset is <TT>Integer.MIN_VALUE</TT> by default, but
- * this can be changed by overriding the <TT>tagOffset()</TT> method. Thus, the
+ * "tag offset." The tag offset is <code>Integer.MIN_VALUE</code> by default, but
+ * this can be changed by overriding the <code>tagOffset()</code> method. Thus, the
  * message tags fall in the range <I>T</I> .. <I>K</I>&minus;1+<I>T</I>, where
  * <I>K</I> is the total number of workers in all the processes. The program
  * should not use message tags in this range except to send and receive the
@@ -156,18 +156,18 @@ import edu.rit.util.Range;
  * <P>
  * Note that each worker team thread actually creates its own instance of the
  * worker for loop class and passes that instance to the worker region's
- * <TT>execute()</TT> method. Thus, any fields declared in the worker for loop
+ * <code>execute()</code> method. Thus, any fields declared in the worker for loop
  * class will <I>not</I> be shared by all the workers, but instead will be
  * private to each worker.
  * <P>
- * The <TT>start()</TT> method is intended for performing per-thread
+ * The <code>start()</code> method is intended for performing per-thread
  * initialization before starting the loop iterations. If no such initialization
- * is needed, omit the <TT>start()</TT> method.
+ * is needed, omit the <code>start()</code> method.
  * <P>
- * The <TT>run()</TT> method contains the code for the loop. The first and last
+ * The <code>run()</code> method contains the code for the loop. The first and last
  * indexes for a chunk of loop iterations are passed in as arguments. The loop
  * stride, which is always positive, is also explicitly specified as an
- * argument. The worker for loop's <TT>run()</TT> method must be coded this way:
+ * argument. The worker for loop's <code>run()</code> method must be coded this way:
  * <PRE>
  *     public void run (int first, int last, int stride)
  *         {
@@ -177,17 +177,17 @@ import edu.rit.util.Range;
  *             . . .
  *             }
  *         }
- * </PRE> with the loop indexes running from <TT>first</TT> to <TT>last</TT>
- * inclusive and increasing by <TT>stride</TT> on each iteration.
+ * </PRE> with the loop indexes running from <code>first</code> to <code>last</code>
+ * inclusive and increasing by <code>stride</code> on each iteration.
  * <P>
- * The <TT>finish()</TT> method is intended for performing per-thread
+ * The <code>finish()</code> method is intended for performing per-thread
  * finalization after finishing the loop iterations. If no such finalization is
- * needed, omit the <TT>finish()</TT> method.
+ * needed, omit the <code>finish()</code> method.
  * <P>
- * If the worker for loop's <TT>start()</TT>, <TT>run()</TT>, or
- * <TT>finish()</TT> method throws an exception in one of the worker threads,
+ * If the worker for loop's <code>start()</code>, <code>run()</code>, or
+ * <code>finish()</code> method throws an exception in one of the worker threads,
  * then that worker thread executes no further code in the loop, and the worker
- * region's <TT>execute()</TT> method throws that same exception in that thread.
+ * region's <code>execute()</code> method throws that same exception in that thread.
  * However, the other worker threads in the worker team continue to execute.
  *
  * @author Alan Kaminsky
@@ -211,7 +211,7 @@ public abstract class WorkerIntegerStrideForLoop
      * apportioned among the worker team threads. For further information, see
      * class {@linkplain IntegerSchedule}.
      * <P>
-     * The <TT>schedule()</TT> method may be overridden in a subclass to return
+     * The <code>schedule()</code> method may be overridden in a subclass to return
      * the desired schedule. If not overridden, the default is a runtime
      * schedule (see {@link edu.rit.pj.IntegerSchedule#runtime()}).
      *
@@ -225,10 +225,10 @@ public abstract class WorkerIntegerStrideForLoop
      * Perform per-thread initialization actions before starting the loop
      * iterations. Called by a worker thread.
      * <P>
-     * The <TT>start()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>start()</TT> method does nothing.
+     * The <code>start()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>start()</code> method does nothing.
      *
-     * @exception Exception The <TT>start()</TT> method may throw any exception.
+     * @exception Exception The <code>start()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public void start()
@@ -241,8 +241,8 @@ public abstract class WorkerIntegerStrideForLoop
      * input data must be sent using the given communicator, to the given worker
      * process rank, with the given message tag.
      * <P>
-     * The <TT>sendTaskInput()</TT> method may be overridden in a subclass. If
-     * not overridden, the <TT>sendTaskInput()</TT> method does nothing.
+     * The <code>sendTaskInput()</code> method may be overridden in a subclass. If
+     * not overridden, the <code>sendTaskInput()</code> method does nothing.
      *
      * @param range Chunk of loop iterations.
      * @param comm Communicator.
@@ -264,8 +264,8 @@ public abstract class WorkerIntegerStrideForLoop
      * input data must be received using the given communicator, from the given
      * master process rank, with the given message tag.
      * <P>
-     * The <TT>receiveTaskInput()</TT> method may be overridden in a subclass.
-     * If not overridden, the <TT>receiveTaskInput()</TT> method does nothing.
+     * The <code>receiveTaskInput()</code> method may be overridden in a subclass.
+     * If not overridden, the <code>receiveTaskInput()</code> method does nothing.
      *
      * @param range Chunk of loop iterations.
      * @param comm Communicator.
@@ -283,16 +283,16 @@ public abstract class WorkerIntegerStrideForLoop
 
     /**
      * Execute one chunk of iterations of this worker for loop. Called by a
-     * worker thread. The <TT>run()</TT> method must perform the loop body for
-     * indexes <TT>first</TT> through <TT>last</TT> inclusive, increasing the
-     * loop index by <TT>stride</TT> after each iteration.
+     * worker thread. The <code>run()</code> method must perform the loop body for
+     * indexes <code>first</code> through <code>last</code> inclusive, increasing the
+     * loop index by <code>stride</code> after each iteration.
      * <P>
-     * The <TT>run()</TT> method must be overridden in a subclass.
+     * The <code>run()</code> method must be overridden in a subclass.
      *
      * @param first First loop index.
      * @param last Last loop index.
      * @param stride Loop index stride, always positive.
-     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @exception Exception The <code>run()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run(int first,
@@ -306,8 +306,8 @@ public abstract class WorkerIntegerStrideForLoop
      * output data must be sent using the given communicator, to the given
      * master process rank, with the given message tag.
      * <P>
-     * The <TT>sendTaskOutput()</TT> method may be overridden in a subclass. If
-     * not overridden, the <TT>sendTaskOutput()</TT> method does nothing.
+     * The <code>sendTaskOutput()</code> method may be overridden in a subclass. If
+     * not overridden, the <code>sendTaskOutput()</code> method does nothing.
      *
      * @param range Chunk of loop iterations.
      * @param comm Communicator.
@@ -329,8 +329,8 @@ public abstract class WorkerIntegerStrideForLoop
      * The output data must be received using the given communicator, from the
      * given worker process rank, with the given message tag.
      * <P>
-     * The <TT>receiveTaskOutput()</TT> method may be overridden in a subclass.
-     * If not overridden, the <TT>receiveTaskOutput()</TT> method does nothing.
+     * The <code>receiveTaskOutput()</code> method may be overridden in a subclass.
+     * If not overridden, the <code>receiveTaskOutput()</code> method does nothing.
      *
      * @param range Chunk of loop iterations.
      * @param comm Communicator.
@@ -350,10 +350,10 @@ public abstract class WorkerIntegerStrideForLoop
      * Perform per-thread finalization actions after finishing the loop
      * iterations. Called by a worker thread.
      * <P>
-     * The <TT>finish()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>finish()</TT> method does nothing.
+     * The <code>finish()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>finish()</code> method does nothing.
      *
-     * @exception Exception The <TT>finish()</TT> method may throw any
+     * @exception Exception The <code>finish()</code> method may throw any
      * exception.
      * @throws java.lang.Exception if any.
      */
@@ -367,9 +367,9 @@ public abstract class WorkerIntegerStrideForLoop
      * <I>W</I>+<I>T</I>, where <I>W</I> is the worker index and <I>T</I> is the
      * tag offset.
      * <P>
-     * The <TT>tagOffset()</TT> method may be overridden in a subclass. If not
-     * overridden, the <TT>tagOffset()</TT> returns a default tag offset of
-     * <TT>Integer.MIN_VALUE</TT>.
+     * The <code>tagOffset()</code> method may be overridden in a subclass. If not
+     * overridden, the <code>tagOffset()</code> returns a default tag offset of
+     * <code>Integer.MIN_VALUE</code>.
      *
      * @return Tag offset.
      */
