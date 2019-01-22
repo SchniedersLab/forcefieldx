@@ -135,7 +135,7 @@ class ManyBody extends AlgorithmsScript {
             algorithmFunctions.energy(activeAssembly);
         }
 
-        manyBody.saveEliminatedRotamers();
+        //manyBody.saveEliminatedRotamers();
 
         if (priorGKwarn == null) {
             System.clearProperty("gk-suppressWarnings");
