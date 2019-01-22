@@ -46,6 +46,14 @@ import ffx.numerics.Potential;
  * potential split into fast- and slow-evolving portions.
  * <p>
  * The inner RESPA loop is position Verlet.
+ * <p>
+ * D. D. Humphreys, R. A. Friesner and B. J. Berne, "A Multiple-Time-Step
+ * Molecular Dynamics Algorithm for Macromolecules", Journal of Physical
+ * Chemistry, 98, 6885-6892 (1994)
+ * <p>
+ * X. Qian and T. Schlick, "Efficient Multiple-Time-Step Integrators with
+ * Distance-Based Force Splitting for Particle-Mesh-Ewald Molecular Dynamics
+ * Simulations", Journal of Chemical Physics, 115, 4019-4029 (2001)
  *
  * @author Gaurav Chattree
  * @since 1.0
