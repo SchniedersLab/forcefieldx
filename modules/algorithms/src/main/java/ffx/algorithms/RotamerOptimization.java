@@ -9050,28 +9050,20 @@ public class RotamerOptimization implements Terminatable {
                         if (!check(i, ri) || !check(j, rj) || !check(i, ri, j, rj)) {
                             Residue residueI = residues[i];
                             Residue residueJ = residues[j];
-                            //long indexTime = -System.nanoTime();
                             int indexI = allResiduesList.indexOf(residueI);
                             int indexJ = allResiduesList.indexOf(residueJ);
-                            //indexTime += System.nanoTime();
-                            //System.out.println("index time: " + indexTime);
                             double resDist = getResidueDistance(indexI, ri, indexJ, rj);
                             String resDistString = format("large");
                             if (resDist < Double.MAX_VALUE) {
                                 resDistString = format("%5.3f", resDist);
                             }
 
-                            //indexTime = -System.nanoTime();
                             double dist = checkDistMatrix(indexI, ri, indexJ, rj);
-                            //indexTime += System.nanoTime();
-                            //System.out.println("checkDistMatrix time: " + indexTime);
-
                             String distString = format("     large");
                             if (dist < Double.MAX_VALUE) {
                                 distString = format("%10.3f", dist);
                             }
 
-                            //indexTime = -System.nanoTime();
                             double twoBodyEnergy = 0.0;
                             if (dist < superpositionThreshold) {
                                 // Set the energy to NaN for superposed atoms.
@@ -9098,12 +9090,9 @@ public class RotamerOptimization implements Terminatable {
                                 }
                             }
                             myBuffer.put(4, twoBodyEnergy);
-                            //indexTime += System.nanoTime();
-                            //System.out.println("if-else time: " + indexTime);
                         }
                     }
 
-                    //long commTime = -System.nanoTime();
                     // All to All communication
                     if (numProc > 1) {
                         try {
@@ -9112,11 +9101,7 @@ public class RotamerOptimization implements Terminatable {
                             logger.log(Level.SEVERE, " Exception communicating pair energies.", e);
                         }
                     }
-                    //commTime += System.nanoTime();
-                    //System.out.println("comm time: " + commTime);
 
-
-                    //commTime = -System.nanoTime();
                     // Process the two-body energy received from each process.
                     for (DoubleBuf doubleBuf : resultBuffer) {
                         int resi = (int) doubleBuf.get(0);
@@ -9142,8 +9127,6 @@ public class RotamerOptimization implements Terminatable {
                             }
                         }
                     }
-                    //commTime += System.nanoTime();
-                    //System.out.println("processing time: " + commTime);
                 }
             }
         }
