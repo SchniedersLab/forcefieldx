@@ -837,11 +837,11 @@ public class ManyBodyOptions {
      *                             file. The --out flag relies on the presence of a log file where output is
      *                             piped.
      */
-    public void saveEliminatedRotamers() throws IOException {
+    /*public void saveEliminatedRotamers() throws IOException {
         if (saveOutput) {
             rotamerOptimization.outputEliminated();
         }
-    }
+    }*/
 
     /**
      * Gets the restart file created during rotamer optimization.
