@@ -7062,6 +7062,10 @@ public class RotamerOptimization implements Terminatable {
         this.useGoldstein = set;
     }
 
+    public void setRotamerLibrary(RotamerLibrary lib) {
+        library = lib;
+    }
+
     /**
      * Sets level of pruning: 0 for fully off, 1 for only singles, 2 for single
      * and pair pruning.

@@ -77,11 +77,8 @@ class CreateRotamers extends AlgorithmsScript {
         // For now, always use the original coordinates as a (fixed) rotamer.
         boolean useOriginalRotamers = true;
 
-        // TODO: handle getting AA vs. NA libraries.
         // AA Library
-        //RotamerLibrary rotamerLibrary = new RotamerLibrary(ProteinLibrary.intToProteinLibrary(library), useOriginalRotamers)
-        // NA Library
-        RotamerLibrary rotamerLibrary = new RotamerLibrary(RotamerLibrary.NucleicAcidLibrary.RICHARDSON, useOriginalRotamers)
+        RotamerLibrary rotamerLibrary = new RotamerLibrary(ProteinLibrary.intToProteinLibrary(library), useOriginalRotamers);
 
         // Initialize Default NA Coordinates
         Polymer[] polymers = activeAssembly.getChains()

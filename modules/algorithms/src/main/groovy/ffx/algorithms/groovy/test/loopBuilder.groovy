@@ -118,7 +118,7 @@ boolean runTTOSRW = false;
 // Local minimization mode
 boolean localMin = false;
 
-RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+RotamerLibrary rLib = new RotamerLibrary(true);
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -648,11 +648,9 @@ if (runRotamer) {
 
     logger.info(String.format("Rotamer Optimization"));
     rotamerOptimization = new RotamerOptimization(active, forceFieldEnergy, null);
+    rotamerOptimization.setRotamerLibrary(rLib);
 
     rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
-    rLib.setUseOrigCoordsRotamer(true);
-    //rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
-    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 
     //Rotamer Optimization inclusion list building (grab residues within 7A of the built loop)
     boolean expandList = true

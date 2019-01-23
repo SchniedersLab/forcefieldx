@@ -110,7 +110,7 @@ class SaveRotamers extends PotentialScript {
             modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary()
+        RotamerLibrary rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true);
         String chain = Character.toString(c)
 
         boolean saveAllRotamers = false
@@ -123,7 +123,7 @@ class SaveRotamers extends PotentialScript {
 
         logger.info("\n Saving rotamers for residue number " + resID + " of chain " + chain + ".")
 
-        RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains())
+        RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains());
         Polymer polymer = activeAssembly.getChain(chain)
         if (polymer == null) {
             logger.info(" Polymer + " + chain + " does not exist.")
@@ -133,12 +133,6 @@ class SaveRotamers extends PotentialScript {
         if (residue == null) {
             logger.info(" Residue + " + resID + " does not exist.")
             return this
-        }
-
-        if (library == 1) {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards)
-        } else {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)
         }
 
         Rotamer[] rotamers = residue.getRotamers(rLib)

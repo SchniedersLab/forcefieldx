@@ -214,9 +214,10 @@ public class PhMD implements MonteCarloListener {
         this.chosenResidues = titrating;
 
         // Set the rotamer library in case we do rotamer MC moves.
-        library = RotamerLibrary.getDefaultLibrary();
-        library.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        library.setUseOrigCoordsRotamer(false);
+        //library = RotamerLibrary.getDefaultLibrary();
+        //library.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+        //library.setUseOrigCoordsRotamer(false);
+        library = new RotamerLibrary(false);
 
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Running Constant-pH MD:\n"));
