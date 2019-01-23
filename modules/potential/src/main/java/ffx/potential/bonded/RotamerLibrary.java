@@ -95,7 +95,17 @@ public class RotamerLibrary {
      */
     private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
 
-    private ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
+    /**
+     * The idealized amino acid rotamer library in use. Defaults to the Richardson library.
+     */
+    private final ProteinLibrary proteinLibrary;
+    private static final ProteinLibrary DEFAULT_PROTEIN_LIB = ProteinLibrary.Richardson;
+
+    /**
+     * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library... partially because there's no other library.
+     */
+    private final NucleicAcidLibrary nucleicAcidLibrary;
+    private static final NucleicAcidLibrary DEFAULT_NA_LIB = NucleicAcidLibrary.RICHARDSON;
 
     // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
     private boolean useOrigCoordsRotamer = false;
@@ -185,11 +195,42 @@ public class RotamerLibrary {
     /**
      * <p>Constructor for RotamerLibrary.</p>
      *
-     * @param name       a {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} object.
-     * @param origCoords a boolean.
+     * @param origCoords Whether to use original-coordinates rotamers.
      */
-    public RotamerLibrary(ProteinLibrary name, boolean origCoords) {
-        proteinLibrary = name;
+    public RotamerLibrary(boolean origCoords) {
+        this(DEFAULT_PROTEIN_LIB, DEFAULT_NA_LIB, origCoords);
+    }
+
+    /**
+     * <p>Constructor for RotamerLibrary.</p>
+     *
+     * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as the idealized amino acid rotamer library.
+     * @param origCoords Whether to use original-coordinates rotamers.
+     */
+    public RotamerLibrary(ProteinLibrary protLibrary, boolean origCoords) {
+        this(protLibrary, DEFAULT_NA_LIB, origCoords);
+    }
+
+    /**
+     * <p>Constructor for RotamerLibrary.</p>
+     *
+     * @param naLibrary  A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as the idealized nucleic acid rotamer library.
+     * @param origCoords Whether to use original-coordinates rotamers.
+     */
+    public RotamerLibrary(NucleicAcidLibrary naLibrary, boolean origCoords) {
+        this(DEFAULT_PROTEIN_LIB, naLibrary, origCoords);
+    }
+
+    /**
+     * <p>Constructor for RotamerLibrary.</p>
+     *
+     * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as the idealized amino acid rotamer library.
+     * @param naLibrary  A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as the idealized nucleic acid rotamer library.
+     * @param origCoords Whether to use original-coordinates rotamers.
+     */
+    public RotamerLibrary(ProteinLibrary protLibrary, NucleicAcidLibrary naLibrary, boolean origCoords) {
+        proteinLibrary = protLibrary;
+        nucleicAcidLibrary = naLibrary;
         useOrigCoordsRotamer = origCoords;
     }
 
@@ -200,18 +241,6 @@ public class RotamerLibrary {
      */
     public static RotamerLibrary getDefaultLibrary() {
         return defaultRotamerLibrary;
-    }
-
-    /**
-     * Set the protein rotamer library to use.
-     *
-     * @param name the ProteinLibrary to use.
-     */
-    public void setLibrary(ProteinLibrary name) {
-        proteinLibrary = name;
-        for (int i = 0; i < numberOfAminoAcids; i++) {
-            aminoAcidRotamerCache[i] = null;
-        }
     }
 
     /**

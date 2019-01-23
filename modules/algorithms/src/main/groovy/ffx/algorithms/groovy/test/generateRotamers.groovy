@@ -62,7 +62,6 @@ boolean verbose = false;
 String videoFile = null;
 String electrostatics = null;
 String inactiveAtoms = null;
-RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
 def cli = new CliBuilder(usage: ' ffxc test.generateRotamers [options] <filename>');
@@ -159,15 +158,6 @@ if (options.e) {
 
 if (options.ia) {
     inactiveAtoms = options.ia;
-}
-
-/**
- * This needs to come before setting the baseline residue.
- */
-if (library == 1) {
-    rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
-} else {
-    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
 GenerateRotamers genr = new GenerateRotamers(active, active.getPotentialEnergy(), residue, outFile, nChi, sh);

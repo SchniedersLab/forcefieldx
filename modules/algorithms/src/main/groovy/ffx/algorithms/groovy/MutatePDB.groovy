@@ -99,7 +99,7 @@ class MutatePDB extends AlgorithmsScript {
         molecularAssembly.finalize(true, forceField)
 
         if (destRotamer > -1) {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)
+            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, true);
             Polymer polymer = molecularAssembly.getChain(chain.toString())
             Residue residue = polymer.getResidue(resID)
             Rotamer[] rotamers = residue.getRotamers(rLib)

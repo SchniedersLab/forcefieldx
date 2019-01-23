@@ -113,7 +113,6 @@ double printInterval = 0.01;
 double saveInterval = 10;
 boolean initVelocities = true;
 double temperature = 298.15;
-RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
 def cli = new CliBuilder(usage: ' ffxc test.rotamerMD [options] <filename>');
@@ -171,6 +170,12 @@ if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
 }
 
+// Rotamer Library.
+if (options.l) {
+    library = Integer.parseInt(options.l);
+}
+RotamerLibrary rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), true);
+
 // Ensemble.
 if (options.pE) {
     parallelEnergies = Boolean.parseBoolean(options.pE);
@@ -184,11 +189,6 @@ if (options.e) {
 // Buffer.
 if (options.b) {
     buffer = Double.parseDouble(options.b);
-}
-
-// Rotamer Library.
-if (options.l) {
-    library = Integer.parseInt(options.l);
 }
 
 // Algorithm.
@@ -506,6 +506,7 @@ open(filename);
 
 Potential potential;
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
+rotamerOptimization.setRotamerLibrary(rLib);
 rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
 rotamerOptimization.setThreeBodyCutoffDist(threeBodyCutoffDist);
 rotamerOptimization.setGoldstein(useGoldstein);
@@ -530,11 +531,6 @@ rotamerOptimization.setSingletonClashThreshold(singletonClashThreshold);
 rotamerOptimization.setPairClashThreshold(pairClashThreshold);
 if (useEnergyRestart) {
     rotamerOptimization.setEnergyRestartFile(energyRestartFile);
-}
-if (library == 1) {
-    rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
-} else {
-    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
 if (useOrigCoordsRotamer) {

@@ -571,6 +571,8 @@ class Thermodynamics extends Script {
 
         ffx.algorithms.AlgorithmListener alist = aFuncts.getDefaultListener();
         ffx.algorithms.RotamerOptimization ropt = new ffx.algorithms.RotamerOptimization(mola, pot, alist);
+        rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, false);
+        ropt.setRotamerLibrary(rLib);
 
         ropt.setThreeBodyEnergy(false);
         ropt.setVerboseEnergies(true);
@@ -581,8 +583,6 @@ class Thermodynamics extends Script {
         ropt.setPrintFiles(false);
         def addedResList = ropt.setResiduesIgnoreNull(resList);
 
-        rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        rLib.setUseOrigCoordsRotamer(false);
         RotamerLibrary.measureRotamers(resList, false);
 
         String oldLazyMat = System.getProperty("ro-lazyMatrix");

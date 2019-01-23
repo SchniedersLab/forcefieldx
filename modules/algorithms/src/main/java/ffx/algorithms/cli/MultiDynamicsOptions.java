@@ -223,7 +223,7 @@ public class MultiDynamicsOptions {
      * @param pot  Potential to use
      */
     private void optStructure(MolecularAssembly mola, Potential pot, AlgorithmFunctions aFuncts, int rank, int worldSize) {
-        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+        RotamerLibrary rLib = new RotamerLibrary(false);
         String[] distribRes = parseDistributed();
 
         if (distribRes == null || distribRes.length == 0) {
@@ -276,6 +276,7 @@ public class MultiDynamicsOptions {
 
         AlgorithmListener alist = aFuncts.getDefaultListener();
         RotamerOptimization ropt = new RotamerOptimization(mola, pot, alist);
+        ropt.setRotamerLibrary(rLib);
 
         ropt.setThreeBodyEnergy(false);
         if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
@@ -285,8 +286,6 @@ public class MultiDynamicsOptions {
         ropt.setPrintFiles(false);
         ropt.setResiduesIgnoreNull(residueList);
 
-        rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        rLib.setUseOrigCoordsRotamer(false);
         RotamerLibrary.measureRotamers(residueList, false);
 
         String oldLazyMat = System.getProperty("ro-lazyMatrix");

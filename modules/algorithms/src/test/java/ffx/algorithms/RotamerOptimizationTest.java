@@ -386,9 +386,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
         load();
 
         // Run the optimization.
-        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
-        rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        rLib.setUseOrigCoordsRotamer(useOriginalRotamers);
+        RotamerLibrary rLib = new RotamerLibrary(useOriginalRotamers);
 
         int counter = 1;
         ArrayList<Residue> residueList = new ArrayList<Residue>();
@@ -415,6 +413,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
         Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
+        rotamerOptimization.setRotamerLibrary(rLib);
         rotamerOptimization.setThreeBodyEnergy(useThreeBody);
         rotamerOptimization.setUseGoldstein(useGoldstein);
         rotamerOptimization.setPruning(pruningLevel);
@@ -690,9 +689,10 @@ public class RotamerOptimizationTest extends PJDependentTest {
         load();
 
         // Run the optimization.
-        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
-        rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        rLib.setUseOrigCoordsRotamer(useOriginalRotamers);
+        //RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+        /*rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+        rLib.setUseOrigCoordsRotamer(useOriginalRotamers);*/
+        RotamerLibrary rLib = new RotamerLibrary(useOriginalRotamers);
 
         int counter = 1;
         ArrayList<Residue> residueList = new ArrayList<Residue>();
@@ -719,6 +719,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
         Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
+        rotamerOptimization.setRotamerLibrary(rLib);
         rotamerOptimization.setThreeBodyEnergy(useThreeBody);
         rotamerOptimization.setUseGoldstein(useGoldstein);
         rotamerOptimization.setPruning(pruningLevel);
