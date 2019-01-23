@@ -5,6 +5,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
@@ -77,7 +78,14 @@ class CreateRotamers extends AlgorithmsScript {
         boolean useOriginalRotamers = true;
 
         // TODO: handle getting AA vs. NA libraries.
-        RotamerLibrary rotamerLibrary = new RotamerLibrary(ProteinLibrary.intToProteinLibrary(library), useOriginalRotamers)
+        // AA Library
+        //RotamerLibrary rotamerLibrary = new RotamerLibrary(ProteinLibrary.intToProteinLibrary(library), useOriginalRotamers)
+        // NA Library
+        RotamerLibrary rotamerLibrary = new RotamerLibrary(RotamerLibrary.NucleicAcidLibrary.RICHARDSON, useOriginalRotamers)
+
+        // Initialize Default NA Coordinates
+        Polymer[] polymers = activeAssembly.getChains()
+        RotamerLibrary.initializeDefaultAtomicCoordinates(polymers)
 
         // Get the residue list.
         List<Residue> residues = activeAssembly.getResidueList().stream().
