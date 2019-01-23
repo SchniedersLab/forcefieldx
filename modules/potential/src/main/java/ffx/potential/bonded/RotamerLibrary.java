@@ -97,6 +97,8 @@ public class RotamerLibrary {
 
     private ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
 
+    private NucleicAcidLibrary nucleicAcidLibrary = NucleicAcidLibrary.RICHARDSON;
+
     // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
     private boolean useOrigCoordsRotamer = false;
 
@@ -190,6 +192,17 @@ public class RotamerLibrary {
      */
     public RotamerLibrary(ProteinLibrary name, boolean origCoords) {
         proteinLibrary = name;
+        useOrigCoordsRotamer = origCoords;
+    }
+
+    /**
+     * <p>Constructor for RotamerLibrary.</p>
+     *
+     * @param name       a {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} object.
+     * @param origCoords a boolean.
+     */
+    public RotamerLibrary(NucleicAcidLibrary name, boolean origCoords) {
+        nucleicAcidLibrary = name;
         useOrigCoordsRotamer = origCoords;
     }
 
