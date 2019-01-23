@@ -195,15 +195,15 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
         forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
 
-        trueImpliedBoolean(ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
+        trueImpliedBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
         trueImpliedBoolean(ForceFieldBoolean.LAMBDATERM, ForceFieldBoolean.VDW_LAMBDATERM,
-                ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
+                ForceFieldBoolean.ELEC_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
     }
 
     /**
      * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
      * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
-     * PME_LAMBDATERM, or GK_LAMBDATERM.
+     * ELEC_LAMBDATERM, or GK_LAMBDATERM.
      *
      * @param toSet Boolean to set true if otherBooleans true.
      * @param otherBooleans Booleans that imply toSet is true.
@@ -1757,7 +1757,7 @@ public class ForceField {
         CHECK_ALL_NODE_CHARGES, GK_USEFITRADII, GK_VERBOSERADII, PRINT_ON_FAILURE,
         DISABLE_NEIGHBOR_UPDATES, ENFORCE_PBC, PME_QI,
         /* Term-specific flags for softcoring. Any will imply LAMBDATERM is true. */
-        PME_LAMBDATERM, GK_LAMBDATERM, VDW_LAMBDATERM,
+        ELEC_LAMBDATERM, GK_LAMBDATERM, VDW_LAMBDATERM,
         /* Flag to set Hydrogen bonds to rigid and flag to signify alchemical behavior*/
         RIGID_HYDROGEN, VOLUME
     }

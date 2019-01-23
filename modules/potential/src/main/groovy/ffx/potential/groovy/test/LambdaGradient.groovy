@@ -35,6 +35,21 @@ class LambdaGradient extends PotentialScript {
     @Mixin
     GradientOptions gradientOptions
 
+
+    /**
+     * --lm or --lambdaMoveSize Size of the lambda moves during the test.
+     */
+    @Option(names = ['--lm', '--lambdaMoveSize'], paramLabel = '0.01',
+            description = 'Size of the lambda moves during the test.')
+    double lambdaMoveSize = 0.01
+
+    /**
+     * --sk2 or --skip2 disables dU2/dL2, and dU2/dLdX tests.
+     */
+    @Option(names = ['--sk2', '--skip2'], paramLabel = 'false',
+            description = 'Skip 2nd derivatives.')
+    boolean skipSecondDerivatives = false
+
     /**
      * -sdX or --skipdX disables the very long atomic gradient tests and
      * only performs dU/dL, dU2/dL2, and dU2/dLdX tests. Useful if the
@@ -81,8 +96,6 @@ class LambdaGradient extends PotentialScript {
 
         int numParallel = topology.getNumParallel(threadsAvail, nArgs)
         threadsPer = threadsAvail / numParallel
-
-        boolean debug = (System.getProperty("debug") != null)
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
         /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
@@ -175,7 +188,7 @@ class LambdaGradient extends PotentialScript {
 
         // Test Lambda gradient in the neighborhood of the lambda variable.
         for (int j = 0; j < 3; j++) {
-            lambda = alchemical.initialLambda - 0.01 + 0.01 * j
+            lambda = alchemical.initialLambda - lambdaMoveSize + lambdaMoveSize * j
 
             if (lambda - gradientOptions.dx < 0.0) {
                 continue
@@ -192,6 +205,7 @@ class LambdaGradient extends PotentialScript {
 
             // Analytic dEdL, d2E/dL2 and dE/dL/dX
             double dEdL = linter.getdEdL()
+
             double d2EdL2 = linter.getd2EdL2()
             for (int i = 0; i < n; i++) {
                 lambdaGrad[i] = 0.0
@@ -209,14 +223,6 @@ class LambdaGradient extends PotentialScript {
             double dEdLFD = (lp - lm) / width
             double d2EdL2FD = (dedlp - dedlm) / width
 
-            if (debug) {
-                logger.info(String.format(" db> Lambda FD Test  lower,center,upper: %g %g %g",
-                        lambda - gradientOptions.dx, lambda, lambda + gradientOptions.dx))
-                logger.info(String.format(" db> dE/dL   Numeric lp,lm,width,val: %+9.6g %+9.6g %4.2g (%+9.6g)", lp, lm, width, dEdLFD))
-                logger.info(String.format(" db> d2E/dL2 Numeric lp,lm,width,val: %+9.6g %+9.6g %4.2g [%+9.6g]", dedlp, dedlm, width, d2EdL2FD))
-                logger.info(String.format(" db> Analytic vers   l,dEdL,d2EdL2: %4.2f (%+9.6g) [%+9.6g]", lambda, dEdL, d2EdL2))
-            }
-
             double err = Math.abs(dEdLFD - dEdL)
             if (err < errTol) {
                 logger.info(String.format(" dE/dL passed:   %10.6f", err))
@@ -227,51 +233,52 @@ class LambdaGradient extends PotentialScript {
             logger.info(String.format(" Numeric:   %15.8f", dEdLFD))
             logger.info(String.format(" Analytic:  %15.8f", dEdL))
 
-            err = Math.abs(d2EdL2FD - d2EdL2)
-            if (err < errTol) {
-                logger.info(String.format(" d2E/dL2 passed: %10.6f", err))
-            } else {
-                logger.info(String.format(" d2E/dL2 failed: %10.6f", err))
-                nd2EdL2Failures++
-            }
-            logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD))
-            logger.info(String.format(" Analytic:  %15.8f", d2EdL2))
-
-            double rmsError = 0
-            for (int i = 0; i < nAtoms; i++) {
-                int ii = i * 3
-                double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
-                double dXa = lambdaGrad[ii]
-                double eX = dX - dXa
-                ii++
-                double dY = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
-                double dYa = lambdaGrad[ii]
-                double eY = dY - dYa
-                ii++
-                double dZ = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
-                double dZa = lambdaGrad[ii]
-                double eZ = dZ - dZa
-
-                double error = eX * eX + eY * eY + eZ * eZ
-                rmsError += error
-                error = Math.sqrt(error)
-                if (error < errTol) {
-                    logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error))
+            if (!skipSecondDerivatives) {
+                err = Math.abs(d2EdL2FD - d2EdL2)
+                if (err < errTol) {
+                    logger.info(String.format(" d2E/dL2 passed: %10.6f", err))
                 } else {
-                    logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error))
-                    logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
-                    logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
-                    ndEdXdLFailures++
+                    logger.info(String.format(" d2E/dL2 failed: %10.6f", err))
+                    nd2EdL2Failures++
                 }
-            }
-            rmsError = Math.sqrt(rmsError / nAtoms)
-            if (ndEdXdLFailures == 0) {
-                logger.info(String.format(" dE/dX/dL passed for all atoms: RMS error %15.8f", rmsError))
-            } else {
-                logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", ndEdXdLFails, nAtoms, rmsError))
-            }
+                logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD))
+                logger.info(String.format(" Analytic:  %15.8f", d2EdL2))
 
-            logger.info("")
+                double rmsError = 0
+                for (int i = 0; i < nAtoms; i++) {
+                    int ii = i * 3
+                    double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
+                    double dXa = lambdaGrad[ii]
+                    double eX = dX - dXa
+                    ii++
+                    double dY = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
+                    double dYa = lambdaGrad[ii]
+                    double eY = dY - dYa
+                    ii++
+                    double dZ = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width
+                    double dZa = lambdaGrad[ii]
+                    double eZ = dZ - dZa
+
+                    double error = eX * eX + eY * eY + eZ * eZ
+                    rmsError += error
+                    error = Math.sqrt(error)
+                    if (error < errTol) {
+                        logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error))
+                    } else {
+                        logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error))
+                        logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
+                        logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
+                        ndEdXdLFailures++
+                    }
+                }
+                rmsError = Math.sqrt(rmsError / nAtoms)
+                if (ndEdXdLFailures == 0) {
+                    logger.info(String.format(" dE/dX/dL passed for all atoms: RMS error %15.8f", rmsError))
+                } else {
+                    logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", ndEdXdLFailures, nAtoms, rmsError))
+                }
+                logger.info("")
+            }
         }
 
         boolean loopPrint = gradientOptions.verbose

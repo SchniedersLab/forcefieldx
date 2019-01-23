@@ -502,7 +502,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         // If PME is using softcore and polarization, GK must also be softcored.
         if (!lambdaTerm && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
-            if (forceField.getBoolean(ForceField.ForceFieldBoolean.PME_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false))) {
+            if (forceField.getBoolean(ForceField.ForceFieldBoolean.ELEC_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false))) {
                 logger.info(" If PME is using softcoring and polarization, GK must also be softcored. Setting GK lambda term to true.");
                 lambdaTerm = true;
             }

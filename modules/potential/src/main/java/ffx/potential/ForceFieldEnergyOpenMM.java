@@ -413,17 +413,27 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double collisionFreq = 91.0;
     /**
-     * Value of the state variable Lambda, controls electrostatic scaling.
+     * Lambda flag to indicate control of electrostatic scaling. If both elec and vdW are being scaled, then vdW
+     * is scaled first, followed by elec.
      */
-    private boolean pmeLambdaTerm = false;
+    private boolean elecLambdaTerm = false;
     /**
-     * Value of the state variable lambda, controls van Der Waals scaling.
+     * Lambda flag to indicate control of vdW scaling. If both elec and vdW are being scaled, then vdW
+     * is scaled first, followed by elec.
      */
     private boolean vdwLambdaTerm = false;
     /**
-     * Lambda value, scales specified property.
+     * Value of the lambda state variable.
      */
     private double lambda = 1.0;
+    /**
+     * Value of the van der Waals lambda state variable.
+     */
+    private double lambdaVDW = 1.0;
+    /**
+     * Value of the electrostatics lambda state variable.
+     */
+    private double lambdaElec = 1.0;
     /**
      * Derivative of van Der Waals contribution to the potential energy with respect to lambda.
      */
@@ -441,8 +451,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private PointerByReference ommThermostat = null;
 
-    private boolean doOpenMMdEdL = false;
-    private boolean doFFXdEdL = true;
+    // private boolean doOpenMMdEdL = false;
+    // private boolean doFFXdEdL = true;
+
     private boolean testdEdL = true;
     /**
      * Boolean to control logging statements to the screen, typically used when an integrator other than the default is chosen for dynamics.
@@ -596,35 +607,27 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_State_destroy(state);
 
-        pmeLambdaTerm = forceField.getBoolean(ForceFieldBoolean.PME_LAMBDATERM,
+        elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM,
                 forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
 
         vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
 
-        /**
-         * Currently, electrostatics and vdW cannot undergo alchemical changes
-         * simultaneously. Softcore vdW is given priority.
-         */
-        if (vdwLambdaTerm) {
-            logger.info(" vdw lambda term is true");
-            pmeLambdaTerm = false;
-        }
-
-        if (pmeLambdaTerm || vdwLambdaTerm) {
+        if (elecLambdaTerm || vdwLambdaTerm) {
             lambdaTerm = true;
         }
 
-        CompositeConfiguration properties = molecularAssembly.getProperties();
-        if (properties.containsKey("openMMdEdL")) {
-            doOpenMMdEdL = true;
-            doFFXdEdL = false;
+        if (lambdaTerm) {
+            logger.info(format(" Lambda scales vdW interactions: %s", vdwLambdaTerm));
+            logger.info(format(" Lambda scales electrostatics:   %s", elecLambdaTerm));
         }
 
-        /**
-         * logger.info(format(" vdwLambdaTerm %s", vdwLambdaTerm));
-         * logger.info(format(" pmeLambdaTerm %s", pmeLambdaTerm));
-         * logger.info(format(" lambdaTerm %s", lambdaTerm));
-         */
+//        CompositeConfiguration properties = molecularAssembly.getProperties();
+//        if (properties.containsKey("openMMdEdL")) {
+//            doOpenMMdEdL = true;
+//            doFFXdEdL = false;
+//        }
+
+
     }
 
     /**
@@ -2329,7 +2332,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 useFactor = 0.0;
             }
 
-            double lambdaScale = lambda; // Should be 1.0 at this point.
+            double lambdaScale = lambdaElec; // Should be 1.0 at this point.
             if (!atom.applyLambda()) {
                 lambdaScale = 1.0;
             }
@@ -2350,11 +2353,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             }
 
-            //int zaxis = 0;
             int zaxis = 1;
-            //int xaxis = 0;
             int xaxis = 1;
-            //int yaxis = 0;
             int yaxis = 1;
             int refAtoms[] = axisAtom[i];
             if (refAtoms != null) {
@@ -2366,7 +2366,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     }
                 }
             } else {
-
                 axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
                 logger.info(String.format(" Atom type %s", atom.getAtomType().toString()));
             }
@@ -2750,14 +2749,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 addCustomNonbondedSoftcoreForce(forceField);
                 // Reset the context.
                 createContext(integratorString, timeStep, temperature);
-                OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
+                OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
                 softcoreCreated = true;
                 if (x != null) {
                     double energy = energy(x);
-                    logger.info(format(" OpenMM Energy (L=%6.3f): %16.8f", lambda, energy));
+                    logger.info(format(" OpenMM Energy (L=%6.3f): %16.8f", lambdaVDW, energy));
                 }
             } else {
-                OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
+                OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
             }
         }
 
@@ -2875,18 +2874,25 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             double charge = Double.MIN_VALUE;
             MultipoleType multipoleType = atom.getMultipoleType();
-            if (multipoleType != null && atoms[i].getElectrostatics()) {
+            if (multipoleType != null && atom.getElectrostatics()) {
                 charge = multipoleType.charge;
-                if (lambdaTerm && applyLambda) {
-                    charge *= lambda;
-                }
             }
 
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
 
-            if ((vdwLambdaTerm && applyLambda) || !atoms[i].getUse()) {
+            if (applyLambda) {
+                // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom Non-Bonded force.
+                if (vdwLambdaTerm) {
+                    eps = 0.0;
+                }
+                // Always scale the charge by lambdaElec
+                charge *= lambdaElec;
+                // logger.info(format(" %s using electrostatics %b, with charge %8.3f", atom.toString(), atom.getElectrostatics(), charge));
+            }
+
+            if (!atoms[i].getUse()) {
                 eps = 0.0;
                 charge = 0.0;
             }
@@ -2927,8 +2933,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             Atom atom1 = atoms[i1];
             Atom atom2 = atoms[i2];
 
-            double lambdaValue = lambda;
-            if (lambda == 0.0) {
+            double lambdaValue = lambdaElec;
+            if (lambdaValue == 0.0) {
                 lambdaValue = 1.0e-6;
             }
 
@@ -2936,7 +2942,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 qq *= lambdaValue;
                 if (vdwLambdaTerm) {
                     epsilon = 1.0e-6;
-                    qq = 1.0e-6;
+                    // qq = 1.0e-6;
                 }
             }
 
@@ -2944,7 +2950,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 qq *= lambdaValue;
                 if (vdwLambdaTerm) {
                     epsilon = 1.0e-6;
-                    qq = 1.0e-6;
+                    // qq = 1.0e-6;
                 }
             }
 
@@ -2989,7 +2995,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 //if (!atoms[i].getUse()) {
                 chargeUseFactor = 0.0;
             }
-            double lambdaScale = lambda;
+            double lambdaScale = lambdaElec;
             if (!atom.applyLambda()) {
                 lambdaScale = 1.0;
             }
@@ -3045,7 +3051,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 useFactor = 0.0;
             }
 
-            double lambdaScale = lambda;
+            double lambdaScale = lambdaElec;
             if (!atom.applyLambda()) {
                 lambdaScale = 1.0;
             }
@@ -3144,7 +3150,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 chargeUseFactor = 0.0;
             }
 
-            double lambdaScale = lambda;
+            double lambdaScale = lambdaElec;
             if (!atoms[i].applyLambda()) {
                 lambdaScale = 1.0;
             }
@@ -3179,7 +3185,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 useFactor = 0.0;
             }
 
-            double lambdaScale = lambda;
+            // Scale all implicit solvent terms with the lambda for electrostatics.
+            double lambdaScale = lambdaElec;
             if (!atoms[i].applyLambda()) {
                 lambdaScale = 1.0;
             }
@@ -3205,6 +3212,35 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (lambda >= 0.0 && lambda <= 1.0) {
                 this.lambda = lambda;
                 super.setLambda(lambda);
+
+                if (!vdwLambdaTerm && !elecLambdaTerm) {
+                    lambdaVDW = 1.0;
+                    lambdaElec = 1.0;
+                    return;
+                }
+
+                // Lambda only effects vdW.
+                if (vdwLambdaTerm && !elecLambdaTerm) {
+                    lambdaVDW = lambda;
+                    lambdaElec = 0.0;
+                }
+
+                // Lambda only effects electrostatics.
+                if (elecLambdaTerm && !vdwLambdaTerm) {
+                    lambdaVDW = 1.0;
+                    lambdaElec = lambda;
+                }
+
+                // Lambda effects both vdW and electrostatics.
+                if (elecLambdaTerm && vdwLambdaTerm) {
+                    lambdaVDW = lambda;
+                    if (lambda < 0.5) {
+                        lambdaElec = 0.0;
+                    } else {
+                        lambdaElec = 2.0 * (lambda - 0.5);
+                    }
+                }
+
                 updateParameters(null);
             } else {
                 String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
@@ -3705,11 +3741,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     @Override
     public double getdEdL() {
+        // No lambda dependence.
         if (!lambdaTerm) {
             return 0.0;
         }
 
-        if (vdwLambdaTerm) {
+        // Only vdW has a lambda dependence.
+        if (vdwLambdaTerm && !elecLambdaTerm) {
             return vdwdUdL;
         }
 
@@ -3719,82 +3757,82 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         double currentLambda = lambda;
-        double width = fdDLambda;
+        double width;
         double ePlus;
         double eMinus;
-        double dEdL = 0.0;
-        double openMMdEdL = 0.0;
-        double ffxdEdL = 0.0;
+        double dEdL;
+        double openMMdEdL;
 
         // Small optimization to only create the x array once.
         double[] x = new double[getNumberOfVariables()];
         getCoordinates(x);
 
-        if (doOpenMMdEdL) {
-            // logger.info(String.format(" Calculating lambda with OpenMM"));
-            width = fdDLambda;
-            if (currentLambda + fdDLambda > 1.0) {
-                logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
-                ePlus = energy(x);
-                setLambda(currentLambda - fdDLambda);
-                eMinus = energy(x);
-            } else if (currentLambda - fdDLambda < 0.0) {
-                logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
-                eMinus = energy(x);
-                setLambda(currentLambda + fdDLambda);
-                ePlus = energy(x);
-            } else {
-                setLambda(currentLambda + fdDLambda);
-                ePlus = energy(x);
-                setLambda(currentLambda - fdDLambda);
-                eMinus = energy(x);
-                //logger.info(String.format(" OpenMM %12.8f %12.8f", ePlus, eMinus));
-                width *= 2.0;
-            }
-            // Reset Lambda.
-            setLambda(currentLambda);
-            openMMdEdL = (ePlus - eMinus) / width;
-            //logger.info(String.format(" Step: %16.10f OpenMM: %16.10f", fdDLambda, openMMdEdL));
-            dEdL = openMMdEdL;
+//        if (doOpenMMdEdL) {
+        // logger.info(String.format(" Calculating lambda with OpenMM"));
+        width = fdDLambda;
+        if (currentLambda + fdDLambda > 1.0) {
+            logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
+            ePlus = energy(x);
+            setLambda(currentLambda - fdDLambda);
+            eMinus = energy(x);
+        } else if (currentLambda - fdDLambda < 0.0) {
+            logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
+            eMinus = energy(x);
+            setLambda(currentLambda + fdDLambda);
+            ePlus = energy(x);
+        } else {
+            setLambda(currentLambda + fdDLambda);
+            ePlus = energy(x);
+            setLambda(currentLambda - fdDLambda);
+            eMinus = energy(x);
+            //logger.info(String.format(" OpenMM %12.8f %12.8f", ePlus, eMinus));
+            width *= 2.0;
         }
+        // Reset Lambda.
+        setLambda(currentLambda);
+        openMMdEdL = (ePlus - eMinus) / width;
+        //logger.info(String.format(" Step: %16.10f OpenMM: %16.10f", fdDLambda, openMMdEdL));
+        dEdL = openMMdEdL;
+//        }
 
-        if (doFFXdEdL || !doOpenMMdEdL) {
-            // logger.info(String.format(" Calculating lambda with FFX"));
-            width = fdDLambda;
-            // This section technically not robust to the case that fdDLambda > 0.5.
-            // However, that should be an error case checked when fdDLambda is set.
-            super.setLambda(1.0);
-            if (currentLambda + fdDLambda > 1.0) {
-                logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
-                super.setLambdaMultipoleScale(currentLambda);
-                ePlus = super.energy(x, false);
-                // ePlus = super.getTotalElectrostaticEnergy();
-                super.setLambdaMultipoleScale(currentLambda - fdDLambda);
-                eMinus = super.energy(x, false);
-                // eMinus = super.getTotalElectrostaticEnergy();
-            } else if (currentLambda - fdDLambda < 0.0) {
-                logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
-                super.setLambdaMultipoleScale(currentLambda);
-                eMinus = super.energy(x, false);
-                // eMinus = super.getTotalElectrostaticEnergy();
-                super.setLambdaMultipoleScale(currentLambda + fdDLambda);
-                ePlus = super.energy(x, false);
-                // ePlus = super.getTotalElectrostaticEnergy();
-            } else {
-                super.setLambdaMultipoleScale(currentLambda + fdDLambda);
-                ePlus = super.energy(x, false);
-                // ePlus = super.getTotalElectrostaticEnergy();
-                super.setLambdaMultipoleScale(currentLambda - fdDLambda);
-                eMinus = super.energy(x, false);
-                // eMinus = super.getTotalElectrostaticEnergy();
-                //logger.info(String.format(" FFX    %12.8f %12.8f", ePlus, eMinus));
-                width *= 2.0;
-            }
-            super.setLambdaMultipoleScale(currentLambda);
-            ffxdEdL = (ePlus - eMinus) / width;
-            //logger.info(String.format(" Step: %16.10f FFX:    %16.10f", fdDLambda, ffxdEdL));
-            dEdL = ffxdEdL;
-        }
+//        double ffxdEdL = 0.0;
+//        if (doFFXdEdL || !doOpenMMdEdL) {
+//            // logger.info(String.format(" Calculating lambda with FFX"));
+//            width = fdDLambda;
+//            // This section technically not robust to the case that fdDLambda > 0.5.
+//            // However, that should be an error case checked when fdDLambda is set.
+//            super.setLambda(1.0);
+//            if (currentLambda + fdDLambda > 1.0) {
+//                logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
+//                super.setLambdaMultipoleScale(currentLambda);
+//                ePlus = super.energy(x, false);
+//                // ePlus = super.getTotalElectrostaticEnergy();
+//                super.setLambdaMultipoleScale(currentLambda - fdDLambda);
+//                eMinus = super.energy(x, false);
+//                // eMinus = super.getTotalElectrostaticEnergy();
+//            } else if (currentLambda - fdDLambda < 0.0) {
+//                logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
+//                super.setLambdaMultipoleScale(currentLambda);
+//                eMinus = super.energy(x, false);
+//                // eMinus = super.getTotalElectrostaticEnergy();
+//                super.setLambdaMultipoleScale(currentLambda + fdDLambda);
+//                ePlus = super.energy(x, false);
+//                // ePlus = super.getTotalElectrostaticEnergy();
+//            } else {
+//                super.setLambdaMultipoleScale(currentLambda + fdDLambda);
+//                ePlus = super.energy(x, false);
+//                // ePlus = super.getTotalElectrostaticEnergy();
+//                super.setLambdaMultipoleScale(currentLambda - fdDLambda);
+//                eMinus = super.energy(x, false);
+//                // eMinus = super.getTotalElectrostaticEnergy();
+//                //logger.info(String.format(" FFX    %12.8f %12.8f", ePlus, eMinus));
+//                width *= 2.0;
+//            }
+//            super.setLambdaMultipoleScale(currentLambda);
+//            ffxdEdL = (ePlus - eMinus) / width;
+//            //logger.info(String.format(" Step: %16.10f FFX:    %16.10f", fdDLambda, ffxdEdL));
+//            dEdL = ffxdEdL;
+//        }
 
         return dEdL;
     }
@@ -3810,7 +3848,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double[] x = new double[getNumberOfVariables()];
         getCoordinates(x);
 
-        // Test OpenMM at L=0.5 and L=1.
+        // Test OpenMM at L=0.0 and L=1.
         setLambda(0.0);
         double openMMEnergyZero = energy(x);
         setLambda(1.0);
