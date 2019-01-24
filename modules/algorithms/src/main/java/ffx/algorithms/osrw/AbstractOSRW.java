@@ -424,6 +424,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected double totalSquare = 0;
     protected int periodCount = 0;
     protected int window = 1000;
+    
+    protected double lambdaWriteOut = -1.0;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -592,6 +594,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
     
     public abstract void writeRestart();
+    
+    public void setLambdaWriteOut(double lambdaWriteOut){
+        this.lambdaWriteOut = lambdaWriteOut;
+    }
     
     public void setMCRestartWriter(boolean mcRestart){
         this.mcRestart = mcRestart;

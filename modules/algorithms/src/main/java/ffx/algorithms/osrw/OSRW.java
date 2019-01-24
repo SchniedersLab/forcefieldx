@@ -711,7 +711,7 @@ public class OSRW extends AbstractOSRW {
          * Only the rank 0 process writes the histogram restart file.
          */
         if (rank == 0) {
-            try {
+            try {              
                 OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
                         new BufferedWriter(new FileWriter(histogramFile)));
                 osrwHistogramRestart.writeHistogramFile();
