@@ -228,8 +228,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
     public double getLambda() {
         return lambda;
     }
-    
-    public void setLambdaWriteOut(double lambdaWriteOut){
+
+    public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
     }
 
@@ -424,11 +424,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
                 if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0) {
                     if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
-                        logger.info(" Judging lambda value for write out");
-                        if (lambda >= lambdaWriteOut) {
-                            osrw.writeRestart();
-                            mdMove.writeRestart();
-                        }
+                        osrw.writeRestart();
+                        mdMove.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
                     } else {
                         osrw.writeRestart();
                         mdMove.writeRestart();
@@ -588,10 +585,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
                 if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0) {
                     if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
-                        if (lambda >= lambdaWriteOut) {
-                            osrw.writeRestart();
-                            mdMove.writeRestart();
-                        }
+                        osrw.writeRestart();
+                        mdMove.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
                     } else {
                         osrw.writeRestart();
                         mdMove.writeRestart();

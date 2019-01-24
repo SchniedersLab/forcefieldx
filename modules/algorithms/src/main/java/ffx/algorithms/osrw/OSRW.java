@@ -1082,6 +1082,10 @@ public class OSRW extends AbstractOSRW {
         }
         return sum;
     }
+    @Override
+    public void setLambdaWriteOut(double lambdaWriteOut){
+        this.lambdaWriteOut = lambdaWriteOut;
+    }
 
     private class ReceiveThread extends Thread {
 

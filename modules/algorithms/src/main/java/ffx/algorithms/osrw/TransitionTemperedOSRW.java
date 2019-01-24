@@ -1259,7 +1259,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
         throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
     }
-
     /**
      * {@inheritDoc}
      */
@@ -1277,6 +1276,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public boolean dEdLZeroAtEnds() {
         return false;
+    }
+    @Override
+    public void setLambdaWriteOut(double lambdaWriteOut){
+        this.lambdaWriteOut = lambdaWriteOut;
     }
 
     private class ReceiveThread extends Thread {

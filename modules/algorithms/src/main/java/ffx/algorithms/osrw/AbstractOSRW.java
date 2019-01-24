@@ -594,10 +594,11 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
     
     public abstract void writeRestart();
-    
-    public void setLambdaWriteOut(double lambdaWriteOut){
-        this.lambdaWriteOut = lambdaWriteOut;
-    }
+    /**
+     * Abstract method used to set the lambda threshold controlled write out of snapshots.
+     * @param lambdaWriteOut 
+     */
+    public abstract void setLambdaWriteOut(double lambdaWriteOut);
     
     public void setMCRestartWriter(boolean mcRestart){
         this.mcRestart = mcRestart;

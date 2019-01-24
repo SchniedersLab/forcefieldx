@@ -243,5 +243,9 @@ public class MDMove implements MCMove {
     public void writeRestart(){
         molecularDynamics.writeRestart();
     }
+    
+    public void writeLambdaThresholdRestart(double lambda, double lambdaWriteOut){
+        molecularDynamics.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
+    }
 
 }
