@@ -235,11 +235,27 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
 public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergyOpenMM.class.getName());
+
     /**
-     * Whether to enforce periodic boundary conditions when obtaining new
-     * States.
+     * Requested Platform (i.e. Java or an OpenMM platform).
      */
-    public final int enforcePBC;
+    private final Platform ffxPlatform;
+    /**
+     * OpenMM Platform.
+     */
+    private PointerByReference platform = null;
+    /**
+     * OpenMM System.
+     */
+    private PointerByReference system = null;
+    /**
+     * OpenMM Context.
+     */
+    private PointerByReference context = null;
+    /**
+     * OpenMM Integrator.
+     */
+    private PointerByReference integrator = null;
     /**
      * Integrator string (default = VERLET).
      */
@@ -253,29 +269,21 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double temperature = 298.15;
     /**
-     * OpenMM Platform.
+     * OpenMM thermostat. Currently an Andersen thermostat is supported.
      */
-    private PointerByReference platform = null;
+    private PointerByReference ommThermostat = null;
     /**
-     * OpenMM System.
+     * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
      */
-    private PointerByReference system = null;
-    /**
-     * OpenMM Integrator.
-     */
-    private PointerByReference integrator = null;
-    /**
-     * OpenMM Context.
-     */
-    private PointerByReference context = null;
+    private PointerByReference ommBarostat = null;
     /**
      * OpenMM State.
      */
-    private PointerByReference state = null;
+    private PointerByReference state;
     /**
      * OpenMM Forces.
      */
-    private PointerByReference forces = null;
+    private PointerByReference forces;
     /**
      * OpenMM Positions.
      */
@@ -381,19 +389,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Boolean array, holds charge exclusion list.
      */
-    private boolean chargeExclusion[];
+    private boolean[] chargeExclusion;
     /**
      * Boolean array, holds van Der Waals exclusion list.
      */
-    private boolean vdWExclusion[];
+    private boolean[] vdWExclusion;
     /**
      * Double array, holds charge quantity value for exceptions.
      */
-    private double exceptionChargeProd[];
+    private double[] exceptionChargeProd;
     /**
      * Double array, holds epsilon quantity value for exceptions.
      */
-    private double exceptionEps[];
+    private double[] exceptionEps;
     /**
      * OpenMM Custom GB Force.
      */
@@ -407,21 +415,21 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Langevin friction coefficient.
      */
-    private double frictionCoeff = 0.01;
+    private double frictionCoeff;
     /**
      * Andersen thermostat collision frequency.
      */
-    private double collisionFreq = 91.0;
+    private double collisionFreq;
     /**
      * Lambda flag to indicate control of electrostatic scaling. If both elec and vdW are being scaled, then vdW
      * is scaled first, followed by elec.
      */
-    private boolean elecLambdaTerm = false;
+    private boolean elecLambdaTerm;
     /**
      * Lambda flag to indicate control of vdW scaling. If both elec and vdW are being scaled, then vdW
      * is scaled first, followed by elec.
      */
-    private boolean vdwLambdaTerm = false;
+    private boolean vdwLambdaTerm;
     /**
      * Value of the lambda state variable.
      */
@@ -441,20 +449,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Lambda step size for finite difference dU/dL.
      */
-    private double fdDLambda = 0.001;
+    private double fdDLambda;
     /**
      * Flag to set water molecule bonds as rigid.
      */
-    private boolean rigidHydrogen = false;
+    private boolean rigidHydrogen;
+
     /**
-     * OpenMM thermostat. Currently an Andersen thermostat is supported.
+     * Whether to enforce periodic boundary conditions when obtaining new
+     * States.
      */
-    private PointerByReference ommThermostat = null;
+    public final int enforcePBC;
 
-    // private boolean doOpenMMdEdL = false;
-    // private boolean doFFXdEdL = true;
 
-    private boolean testdEdL = true;
     /**
      * Boolean to control logging statements to the screen, typically used when an integrator other than the default is chosen for dynamics.
      */
@@ -463,12 +470,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Integer that controls the value of the quiet boolean.
      */
     private int quietInt = 0;
-    /**
-     * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
-     */
-    private PointerByReference ommBarostat = null;
 
-    private final Platform ffxPlatform;
+    // private boolean doOpenMMdEdL = false;
+    // private boolean doFFXdEdL = true;
+    private boolean testdEdL = true;
+
 
     /**
      * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
@@ -1937,12 +1943,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_System_addForce(system, fixedChargeSoftcore);
         logger.log(Level.INFO, String.format(" Added fixed charge softcore sterics force."));
 
-        GeneralizedKirkwood gk = super.getGK();
-        if (gk != null) {
-            logger.severe(" OpenMM alchemical methods are not supported for GB.");
-            addCustomGBForce(forceField);
-        }
-
         // Alchemical with Alchemical could be either softcore or normal interactions (softcore here).
         alchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
 
@@ -2014,19 +2014,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
-        // The logic below should be handled by the "updateFixedChargeNonBondedForce" method.
-        /**
-         * for (int i = 0; i < nAtoms; i++) { // logger.info(format(" i is %d",
-         * i)); Atom atom1 = atoms[i]; for (int j = i + 1; j < nAtoms; j++) {
-         * Atom atom2 = atoms[j]; int maskI[] = torsionMask[i]; int jID = j;
-         * boolean epsException = false; for (int k = 0; k < maskI.length; k++)
-         * { if (maskI[k] == jID) { epsException = true; break; } } if
-         * ((!atom1.applyLambda() && !atom2.applyLambda()) &&
-         * !atom1.is_12_or_13(atom2) && !epsException) {
-         * OpenMM_CustomNonbondedForce_addExclusion(fixedChargeSoftcore, i, j);
-         * logger.info(format(" Excluding %s and %s interaction", atom1,
-         * atom2)); } } }
-         */
 //        for (int i = 0; i < range; i++){
 //            OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i, atomi, atomj, charge, sigma, eps);
 //
@@ -2037,6 +2024,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //                OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i, atomi.getValue(), atomj.getValue(), abs(0.0*charge.getValue()), sigma.getValue(), abs(0.0*eps.getValue()));
 //            }
 //        }
+
         OpenMM_CustomBondForce_addEnergyParameterDerivative(alchemicalAlchemicalStericsForce, "vdw_lambda");
         OpenMM_System_addForce(system, alchemicalAlchemicalStericsForce);
         OpenMM_CustomBondForce_addEnergyParameterDerivative(nonAlchemicalAlchemicalStericsForce, "vdw_lambda");
@@ -2050,10 +2038,21 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return;
         }
 
+        double sTens = 0.0;
+        if (gk.getNonPolarModel() == NonPolar.BORN_SOLV || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+            sTens = gk.getSurfaceTension();
+            sTens *= OpenMM_KJPerKcal;
+            sTens *= 100.0; // 100 square Angstroms per square nanometer.
+            // logger.info(String.format(" FFX surface tension: %9.5g kcal/mol/Ang^2", sTens));
+            // logger.info(String.format(" OpenMM surface tension: %9.5g kJ/mol/nm^2", sTens));
+        }
+
         customGBForce = OpenMM_CustomGBForce_create();
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "q");
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "radius");
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "scale");
+        OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "surfaceTension");
+
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", gk.getSolventPermittivity());
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "soluteDielectric", 1.0);
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "dOffset", gk.getDielecOffset() * OpenMM_NmPerAngstrom); // Factor of 0.1 for Ang to nm.
@@ -2088,17 +2087,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         + "maxI = 1/(3.0*radius^3)",
                 OpenMM_CustomGBForce_SingleParticle);
 
-        double sTens = 0.0;
-        if (gk.getNonPolarModel() == NonPolar.BORN_SOLV || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
-            sTens = gk.getSurfaceTension();
-            sTens *= OpenMM_KJPerKcal;
-            sTens *= 100.0; // 100 square Angstroms per square nanometer.
-            // logger.info(String.format(" FFX surface tension: %9.5g kcal/mol/Ang^2", sTens));
-            // logger.info(String.format(" OpenMM surface tension: %9.5g kJ/mol/nm^2", sTens));
-        }
-        String surfaceTension = Double.toString(sTens);
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
-                surfaceTension + "*(radius+probeRadius+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+                "surfaceTension*(radius+probeRadius+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
                 OpenMM_CustomGBForce_SingleParticle);
 
         /**
@@ -2119,6 +2109,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_DoubleArray_append(doubleArray, multipoleType.charge);
             OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadii[i]);
             OpenMM_DoubleArray_append(doubleArray, overlapScale[i]);
+            OpenMM_DoubleArray_append(doubleArray, sTens);
+
             OpenMM_CustomGBForce_addParticle(customGBForce, doubleArray);
             OpenMM_DoubleArray_resize(doubleArray, 0);
         }
@@ -2982,17 +2974,23 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private void updateCustomGBForce(Atom[] atoms) {
         GeneralizedKirkwood gk = super.getGK();
-        double baseRadii[] = gk.getBaseRadii();
-        double overlapScale[] = gk.getOverlapScale();
+        double[] baseRadii = gk.getBaseRadii();
+        double[] overlapScale = gk.getOverlapScale();
         PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
         boolean nea = gk.getNativeEnvironmentApproximation();
+
+        double sTens = 0.0;
+        if (gk.getNonPolarModel() == NonPolar.BORN_SOLV || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+            sTens = gk.getSurfaceTension();
+            sTens *= OpenMM_KJPerKcal;
+            sTens *= 100.0; // 100 square Angstroms per square nanometer.
+        }
 
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             double chargeUseFactor = 1.0;
             if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
-                //if (!atoms[i].getUse()) {
                 chargeUseFactor = 0.0;
             }
             double lambdaScale = lambdaElec;
@@ -3002,13 +3000,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             chargeUseFactor *= lambdaScale;
             double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
+            double oScale = overlapScale[i] * overlapScaleUseFactor;
 
             MultipoleType multipoleType = atom.getMultipoleType();
             double charge = multipoleType.charge * chargeUseFactor;
-            double oScale = overlapScale[i] * overlapScaleUseFactor;
+            double surfaceTension = sTens * chargeUseFactor;
+
+            double baseRadius = baseRadii[i];
+            
             OpenMM_DoubleArray_append(doubleArray, charge);
-            OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadii[i]);
+            OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadius);
             OpenMM_DoubleArray_append(doubleArray, oScale);
+            OpenMM_DoubleArray_append(doubleArray, surfaceTension);
+
             OpenMM_CustomGBForce_setParticleParameters(customGBForce, i, doubleArray);
             OpenMM_DoubleArray_resize(doubleArray, 0);
         }

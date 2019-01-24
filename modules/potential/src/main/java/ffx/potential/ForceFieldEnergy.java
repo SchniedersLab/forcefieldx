@@ -4725,7 +4725,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * <p>
      * OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
      */
-    public static enum Platform {
+    public enum Platform {
         FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL;
     }
 }
