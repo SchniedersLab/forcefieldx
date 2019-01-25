@@ -3811,9 +3811,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Only vdW has a lambda dependence.
-        if (vdwLambdaTerm && !elecLambdaTerm) {
-            return vdwdUdL;
-        }
+        // if (vdwLambdaTerm && !elecLambdaTerm) {
+        //     return vdwdUdL;
+        // }
 
         if (testdEdL) {
             testLambda();
