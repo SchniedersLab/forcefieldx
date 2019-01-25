@@ -62,6 +62,7 @@ import com.sun.jna.ptr.PointerByReference;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.CharacterBuf;
@@ -463,14 +464,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Flag to set water molecule bonds as rigid.
      */
     private boolean rigidHydrogen;
-
     /**
      * Whether to enforce periodic boundary conditions when obtaining new
      * States.
      */
     public final int enforcePBC;
-
-
     /**
      * Boolean to control logging statements to the screen, typically used when an integrator other than the default is chosen for dynamics.
      */
@@ -482,7 +480,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     // private boolean doOpenMMdEdL = false;
     // private boolean doFFXdEdL = true;
-    private boolean testdEdL = true;
+    private boolean testdEdL = false;
 
     /**
      * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
@@ -1904,9 +1902,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             } else {
                 OpenMM_IntSet_insert(nonAlchemicalGroup, i);
             }
+
+            /**
+             * Handle cases where sigma is 0.0; for example Amber99 tyrosine hydrogens.
+             */
+            double sigmaValue = sigma.getValue();
+            double epsValue = eps.getValue();
+            if (sigmaValue == 0.0) {
+                sigmaValue = 1.0;
+                epsValue = 0.0;
+            }
+
             PointerByReference particleParameters = OpenMM_DoubleArray_create(0);
-            OpenMM_DoubleArray_append(particleParameters, sigma.getValue());
-            OpenMM_DoubleArray_append(particleParameters, eps.getValue());
+            OpenMM_DoubleArray_append(particleParameters, sigmaValue);
+            OpenMM_DoubleArray_append(particleParameters, epsValue);
             OpenMM_CustomNonbondedForce_addParticle(fixedChargeSoftcore, particleParameters);
             OpenMM_DoubleArray_destroy(particleParameters);
         }
@@ -2939,43 +2948,35 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             Atom atom1 = atoms[i1];
             Atom atom2 = atoms[i2];
 
+            /**
+             * Note that the minimum epsilon value cannot be zero, or OpenMM may report an error that
+             * the number of Exceptions has changed.
+             */
+            double minEpsilon = 1.0e-12;
             double lambdaValue = lambdaElec;
-            if (lambdaValue == 0.0) {
-                lambdaValue = 1.0e-6;
+
+            if (lambdaValue < minEpsilon) {
+                lambdaValue = minEpsilon;
             }
 
             if (atom1.applyLambda()) {
                 qq *= lambdaValue;
                 if (vdwLambdaTerm) {
-                    epsilon = 1.0e-6;
-                    // qq = 1.0e-6;
+                    epsilon = minEpsilon;
                 }
             }
-
             if (atom2.applyLambda()) {
                 qq *= lambdaValue;
                 if (vdwLambdaTerm) {
-                    epsilon = 1.0e-6;
-                    // qq = 1.0e-6;
+                    epsilon = minEpsilon;
                 }
             }
-
             if (!atom1.getUse() || !atom2.getUse()) {
-                qq = 1.0e-6;
-                epsilon = 1.0e-6;
+                qq = minEpsilon;
+                epsilon = minEpsilon;
             }
-
             OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i,
                     i1, i2, qq, sigma.getValue(), epsilon);
-
-            /**
-             * logger.info(format(" B Exception %d %d %d q=%10.8f s=%10.8f
-             * e=%10.8f.", i, i1, i2, chargeProd.getValue(), sigma.getValue(),
-             * eps.getValue()));
-             *
-             * logger.info(format(" E Exception %d %d %d q=%10.8f s=%10.8f
-             * e=%10.8f.", i, i1, i2, qq, sigma.getValue(), epsilon));
-             */
         }
 
         OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
@@ -3809,11 +3810,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (!lambdaTerm) {
             return 0.0;
         }
-
-        // Only vdW has a lambda dependence.
-        // if (vdwLambdaTerm && !elecLambdaTerm) {
-        //     return vdwdUdL;
-        // }
 
         if (testdEdL) {
             testLambda();
