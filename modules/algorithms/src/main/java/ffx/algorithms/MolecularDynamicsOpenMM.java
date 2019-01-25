@@ -793,19 +793,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
         double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
         double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
-
-        //logger.info(String.format(" Outside if statement"));
-        //logger.info(String.format(" Counter is %d", counter));
         if (currentTemperature != targetTemperature || currentTimeStp != dt || !currentIntegrator.equalsIgnoreCase(integratorString) || (currentIntegrator.equalsIgnoreCase("VERLET") && contextCounter != 0)) {
             if (!quiet) {
                 logger.info(String.format(" Creating OpenMM Context with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
             }
-            logger.info(" Creating new OpenMM Context");
+            logger.fine(" Creating new OpenMM Context");
             long contextTime = 0;
             contextTime = -System.nanoTime();
             forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
             contextTime += System.nanoTime();
-            logger.info(String.format("Created new context in %6.3f", contextTime * NS2SEC));
+            logger.fine(String.format("Created new context in %6.3f", contextTime * NS2SEC));
             integrator = forceFieldEnergyOpenMM.getIntegrator();
             context = forceFieldEnergyOpenMM.getContext();
         } else {

@@ -622,15 +622,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_State_destroy(state);
 
-        elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM,
-                forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
-
+        elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM,false);
         vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
-
         torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
 
         if (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm) {
             lambdaTerm = true;
+        } else {
+            lambdaTerm = false;
         }
 
         if (lambdaTerm) {
