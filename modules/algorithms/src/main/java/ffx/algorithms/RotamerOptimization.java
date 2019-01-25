@@ -8912,7 +8912,7 @@ public class RotamerOptimization implements Terminatable {
                         // Skip for padded result.
                         if (resi >= 0 && roti >= 0) {
                             if (Double.isNaN(energy)) {
-                                logger.info("Rotamer eliminated.");
+                                logger.info(" Rotamer  eliminated: " + resi +", " + roti);
                                 eliminateRotamer(residues, resi, roti, false);
                             }
                             setSelf(resi, roti, energy);
@@ -9116,7 +9116,7 @@ public class RotamerOptimization implements Terminatable {
                         // Skip for padded result.
                         if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0) {
                             if (!Double.isFinite(energy)) {
-                                logger.info("Rotamer eliminated.");
+                                logger.info(" Rotamer pair eliminated: " + resi +", " + roti +", "+ resj +", "+ rotj);
                                 eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                             }
                             set2Body(resi, roti, resj, rotj, energy);
@@ -9339,7 +9339,7 @@ public class RotamerOptimization implements Terminatable {
                         // Skip for padded result.
                         if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0 && resk >= 0 && rotk >= 0) {
                             if (!Double.isFinite(energy)) {
-                                logger.info("Rotamer eliminated.");
+                                logger.info(" Rotamer pair eliminated: " + resi +", " + roti +", "+ resj +", "+ rotj);
                                 eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                             }
                             set3Body(residues, resi, roti, resj, rotj, resk, rotk, energy);

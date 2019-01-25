@@ -131,9 +131,9 @@ public class ManyBodyOptions {
     /**
      * --tC or --twoBodyCutoff Cutoff distance for two-body interactions.
      */
-    @Option(names = {"--tC", "--twoBodyCutoff"}, paramLabel = "2.0",
+    @Option(names = {"--tC", "--twoBodyCutoff"}, paramLabel = "3.0",
             description = "Cutoff distance for two body interactions.")
-    double twoBodyCutoff = 2.0;
+    double twoBodyCutoff = 3.0;
 
     /**
      * -T or --threeBody Include 3-Body interactions in the elimination
@@ -146,9 +146,9 @@ public class ManyBodyOptions {
     /**
      * --thC or --threeBodyCutoff Cutoff distance for three-body interactions.
      */
-    @Option(names = {"--thC", "--threeBodyCutoff"}, paramLabel = "2.0",
+    @Option(names = {"--thC", "--threeBodyCutoff"}, paramLabel = "3.0",
             description = "Cutoff distance for three-body interactions.")
-    double threeBodyCutoff = 2.0;
+    double threeBodyCutoff = 3.0;
 
     /**
      * --pr or --prune Prune no clashes (0), only single clashes (1), or all

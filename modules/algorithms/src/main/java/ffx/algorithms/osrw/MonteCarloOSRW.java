@@ -97,6 +97,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     private double lambda = 0.0;
     /**
+     * Double to set lambda threshold for restart file printout.
+     */
+    private double lambdaWriteOut = -1.0;
+    /**
      * MDMove object for completing MC-OSRW molecular dynamics moves.
      */
     private MDMove mdMove;
@@ -130,21 +134,21 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * <p>
      * Constructor for MonteCarloOSRW.</p>
      *
-     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param osrw                a {@link AbstractOSRW} object.
-     * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly}
-     *                            object.
-     * @param properties          a
-     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param osrw a {@link AbstractOSRW} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
+     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     *                            {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
      * @param requestedIntegrator a
-     *                            {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     * {@link ffx.algorithms.integrators.IntegratorEnum} object.
      */
     public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
-                          MolecularAssembly molecularAssembly, CompositeConfiguration properties,
-                          AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+            MolecularAssembly molecularAssembly, CompositeConfiguration properties,
+            AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
         this.potential = potentialEnergy;
         this.osrw = osrw;
 
@@ -166,7 +170,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
          * as adding the time dependent bias.
          */
         osrw.setPropagateLambda(false);
-       
+
     }
 
     /**
@@ -174,9 +178,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * the stepsPerMove and timeStep parameters to the current value in this
      * class
      *
-     * @param totalSteps   a int.
+     * @param totalSteps a int.
      * @param stepsPerMove a int.
-     * @param timeStep     a double.
+     * @param timeStep a double.
      */
     public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
         this.totalSteps = totalSteps;
@@ -223,6 +227,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     public double getLambda() {
         return lambda;
+    }
+
+    public void setLambdaWriteOut(double lambdaWriteOut) {
+        this.lambdaWriteOut = lambdaWriteOut;
     }
 
     /**
@@ -413,12 +421,17 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
-                
-                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0){
-                    osrw.writeRestart();
-                    mdMove.writeRestart();
+
+                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0) {
+                    if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
+                        osrw.writeRestart();
+                        mdMove.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
+                    } else {
+                        osrw.writeRestart();
+                        mdMove.writeRestart();
+                    }
                 }
-                
+
             }
 
             totalMoveTime += System.nanoTime();
@@ -569,10 +582,16 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
-                
-                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0){
-                    osrw.writeRestart();
-                    mdMove.writeRestart();
+
+                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0) {
+                    if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
+                        osrw.writeRestart();
+                        mdMove.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
+                    } else {
+                        osrw.writeRestart();
+                        mdMove.writeRestart();
+                    }
+
                 }
 
             }
