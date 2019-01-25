@@ -211,7 +211,7 @@ public class ExtendedVariableTest {
         setProp("forcefield", ForceFieldName.AMOEBA_PROTEIN_2013);
         setProp(true, "esvterm", "bondterm", "angleterm", "strbendterm", "ureyterm",
                 "opbendterm", "torsionterm", "pitorsterm", "tortorterm", "improperterm");
-        setProp(false, "lambdaterm", "gkterm", "restrainterm", "comrestrainterm", "lambda-torsions");
+        setProp(false, "lambdaterm", "gkterm", "restrainterm", "comrestrainterm", "torsion-lambdaterm");
 
         // Potential Details
         setProp(true, "vdwterm", "esv.vanDerWaals", "mpoleterm", "esv.electrostatics");

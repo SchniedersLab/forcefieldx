@@ -431,6 +431,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private boolean vdwLambdaTerm;
     /**
+     * Lambda flag to indicate control of torsional force constants (L=0 corresponds to torsions being off, and L=1 to
+     * torsions at full strength.
+     */
+    private boolean torsionLambdaTerm;
+    /**
      * Value of the lambda state variable.
      */
     private double lambda = 1.0;
@@ -442,6 +447,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Value of the electrostatics lambda state variable.
      */
     private double lambdaElec = 1.0;
+    /**
+     * Value of the electrostatics lambda state variable.
+     */
+    private double lambdaTorsion = 1.0;
     /**
      * Derivative of van Der Waals contribution to the potential energy with respect to lambda.
      */
@@ -475,7 +484,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     // private boolean doFFXdEdL = true;
     private boolean testdEdL = true;
 
-
     /**
      * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
      * OpenMM Platform while keeping track of information locally.
@@ -486,7 +494,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param nThreads          Number of threads to use in the super class
      *                          ForceFieldEnergy instance.
      */
-    protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform, List<CoordRestraint> restraints, int nThreads) {
+    protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform,
+                                     List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
 
         Crystal crystal = getCrystal();
@@ -618,13 +627,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
 
-        if (elecLambdaTerm || vdwLambdaTerm) {
+        torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
+
+        if (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm) {
             lambdaTerm = true;
         }
 
         if (lambdaTerm) {
             logger.info(format(" Lambda scales vdW interactions: %s", vdwLambdaTerm));
             logger.info(format(" Lambda scales electrostatics:   %s", elecLambdaTerm));
+            logger.info(format(" Lambda scales torsions:   %s", torsionLambdaTerm));
         }
 
 //        CompositeConfiguration properties = molecularAssembly.getProperties();
@@ -632,7 +644,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //            doOpenMMdEdL = true;
 //            doFFXdEdL = false;
 //        }
-
 
     }
 
@@ -2736,6 +2747,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         Atom[] atoms = molecularAssembly.getAtomArray();
 
         if (vdwLambdaTerm) {
+            if (amoebaVDWForce != null) {
+                logger.severe(" Softcore vdW is not yet supported for AMOEBA.");
+            }
             if (!softcoreCreated) {
                 ForceField forceField = molecularAssembly.getForceField();
                 addCustomNonbondedSoftcoreForce(forceField);
@@ -2752,9 +2766,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
+        if (torsionLambdaTerm && amoebaTorsionForce != null) {
+            updateTorsionForce(atoms);
+        }
+
         // Update fixed charge non-bonded parameters.
         if (fixedChargeNonBondedForce != null) {
-            updateFixedChargeNonBondedForce(atoms, vdwLambdaTerm);
+            updateFixedChargeNonBondedForce(atoms);
         }
 
         // Update fixed charge GB parameters.
@@ -2824,11 +2842,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Updates the fixed-charge non-bonded force for change in Use flags.
      *
-     * @param atoms         Array of all Atoms in the system
-     * @param vdwLambdaTerm If true, set charges and eps values to zero for
-     *                      Lambda atoms
+     * @param atoms Array of all Atoms in the system
      */
-    private void updateFixedChargeNonBondedForce(Atom[] atoms, boolean vdwLambdaTerm) {
+    private void updateFixedChargeNonBondedForce(Atom[] atoms) {
         VanDerWaals vdW = super.getVdwNode();
         /**
          * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
@@ -2892,7 +2908,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge, sigma, eps);
         }
 
-        // OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
         /**
          * Update Exceptions.
          */
@@ -3007,7 +3022,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             double surfaceTension = sTens * chargeUseFactor;
 
             double baseRadius = baseRadii[i];
-            
+
             OpenMM_DoubleArray_append(doubleArray, charge);
             OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadius);
             OpenMM_DoubleArray_append(doubleArray, oScale);
@@ -3173,7 +3188,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Updates the WCA force for change in Use flags.
      *
-     * @param atoms Array of all Atoms in the system
+     * @param atoms Array of all Atoms in the system.
      */
     private void updateWCAForce(Atom[] atoms) {
         VanDerWaals vdW = super.getVdwNode();
@@ -3208,6 +3223,51 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Updates the Torsion force for application of lambda scaling.
+     *
+     * @param atoms Array of all Atoms in the system.
+     */
+    private void updateTorsionForce(Atom[] atoms) {
+
+        // Only update parameters if torsions are being scaled by lambda.
+        if (!torsionLambdaTerm) {
+            return;
+        }
+
+        // Check if this system has torsions.
+        Torsion torsions[] = super.getTorsions();
+        if (torsions == null || torsions.length < 1) {
+            return;
+        }
+
+        int nTorsions = torsions.length;
+        int index = 0;
+        for (int i = 0; i < nTorsions; i++) {
+            Torsion torsion = torsions[i];
+            int a1 = torsion.getAtom(0).getXyzIndex() - 1;
+            int a2 = torsion.getAtom(1).getXyzIndex() - 1;
+            int a3 = torsion.getAtom(2).getXyzIndex() - 1;
+            int a4 = torsion.getAtom(3).getXyzIndex() - 1;
+            TorsionType torsionType = torsion.torsionType;
+            int nTerms = torsionType.phase.length;
+            for (int j = 0; j < nTerms; j++) {
+
+                double forceConstant = OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j];
+                forceConstant *= lambdaTorsion;
+
+                OpenMM_PeriodicTorsionForce_setTorsionParameters(
+                        amoebaTorsionForce, index,
+                        a1, a2, a3, a4, j + 1,
+                        torsionType.phase[j] * OpenMM_RadiansPerDegree,
+                        forceConstant);
+                index++;
+            }
+        }
+
+        OpenMM_PeriodicTorsionForce_updateParametersInContext(amoebaTorsionForce, context);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -3217,32 +3277,33 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 this.lambda = lambda;
                 super.setLambda(lambda);
 
-                if (!vdwLambdaTerm && !elecLambdaTerm) {
-                    lambdaVDW = 1.0;
-                    lambdaElec = 1.0;
-                    return;
+                // Initially set all lambda values to 1.0.
+                lambdaTorsion = 1.0;
+                lambdaVDW = 1.0;
+                lambdaElec = 1.0;
+
+                if (torsionLambdaTerm) {
+                    lambdaTorsion = lambda;
                 }
 
-                // Lambda only effects vdW.
-                if (vdwLambdaTerm && !elecLambdaTerm) {
-                    lambdaVDW = lambda;
-                    lambdaElec = 0.0;
-                }
 
-                // Lambda only effects electrostatics.
-                if (elecLambdaTerm && !vdwLambdaTerm) {
-                    lambdaVDW = 1.0;
-                    lambdaElec = lambda;
-                }
-
-                // Lambda effects both vdW and electrostatics.
                 if (elecLambdaTerm && vdwLambdaTerm) {
+                    // Lambda effects both vdW and electrostatics.
                     lambdaVDW = lambda;
                     if (lambda < 0.5) {
+                        // Begin turning vdW on with electrostatics off.
                         lambdaElec = 0.0;
                     } else {
+                        // Turn electrostatics on during the latter part of the path.
                         lambdaElec = 2.0 * (lambda - 0.5);
                     }
+                } else if (vdwLambdaTerm) {
+                    // Lambda effects vdW, with electrostatics turned off.
+                    lambdaVDW = lambda;
+                    lambdaElec = 0.0;
+                } else if (elecLambdaTerm) {
+                    // Lambda effects electrostatics, but not vdW.
+                    lambdaElec = lambda;
                 }
 
                 updateParameters(null);

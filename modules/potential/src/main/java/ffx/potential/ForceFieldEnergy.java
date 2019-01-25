@@ -914,7 +914,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
-        lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
+        lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
         printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, false);
 
         // For RESPA

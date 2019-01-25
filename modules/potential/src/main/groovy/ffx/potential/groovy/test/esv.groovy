@@ -210,7 +210,7 @@ System.setProperty("esv-scaleUnshared", "true");        // use multipole scaling
 System.setProperty("gkterm", "false");
 System.setProperty("restrainterm", "false");
 System.setProperty("comrestrainterm", "false");
-System.setProperty("lambda-torsions", "false");
+System.setProperty("torsion-lambdaterm", "false");
 
 // Potential Settings
 System.setProperty("permanent-lambda-alpha","2.0");

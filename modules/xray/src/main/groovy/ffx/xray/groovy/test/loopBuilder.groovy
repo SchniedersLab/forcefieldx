@@ -396,7 +396,7 @@ if (runOSRW) {
     System.setProperty("intramolecular-softcore", "true");
     System.setProperty("intermolecular-softcore", "true");
     System.setProperty("lambdaterm", "true");
-    System.setProperty("lambda-torsions", "true");
+    System.setProperty("torsion-lambdaterm", "true");
     System.setProperty("ligand-vapor-elec", "false");
     System.setProperty("lambda-bias-cutoff", "3");
     if (options.g) {
@@ -539,7 +539,7 @@ if (!loopBuildError) {
     System.setProperty("intramolecularSoftcore", "false");
     System.setProperty("intermolecularSoftcore", "false");
     System.setProperty("lambdaterm", "false");
-    System.setProperty("lambda-torsions", "false");
+    System.setProperty("torsion-lambdaterm", "false");
 
     forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
