@@ -51,6 +51,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import static java.lang.String.format;
 
 import com.sun.jna.Memory;
@@ -61,6 +62,7 @@ import com.sun.jna.ptr.PointerByReference;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
+
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -71,6 +73,7 @@ import edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_NonbondedMeth
 import edu.uiowa.jopenmm.OpenMMLibrary.*;
 import edu.uiowa.jopenmm.OpenMMUtils;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
+
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_3D_DoubleArray_create;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_3D_DoubleArray_destroy;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_3D_DoubleArray_set;
@@ -220,6 +223,7 @@ import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
+
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
@@ -465,6 +469,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private boolean rigidHydrogen;
     /**
+     * Flag to set all bonds as rigid.
+     */
+    private boolean rigidBonds;
+    /**
      * Whether to enforce periodic boundary conditions when obtaining new
      * States.
      */
@@ -526,6 +534,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         if (rigidHydrogen) {
             setUpHydrogenConstraints(system);
+        }
+
+        rigidBonds = forceField.getBoolean(ForceField.ForceFieldBoolean.RIGID_BONDS, false);
+
+        if (rigidBonds) {
+            setUpBondConstraints(system);
         }
 
         // Add Bond Force.
@@ -620,7 +634,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_State_destroy(state);
 
-        elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM,false);
+        elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, false);
         vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
         torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
 
@@ -4028,6 +4042,46 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 iAtom2 = parentAtom.getXyzIndex() - 1;
                 OpenMM_System_addConstraint(system, iAtom1, iAtom2, bondForBondLength.bondType.distance * OpenMM_NmPerAngstrom);
             }
+        }
+    }
+
+    /**
+     * <p>setUpBondConstraints.</p>
+     * Constrains all bonds in the system to a fixed length.
+     *
+     * @param system a {@link com.sun.jna.ptr.PointerByReference} object.
+     */
+    public void setUpBondConstraints(PointerByReference system) {
+        int i;
+        int iAtom1;
+        int iAtom2;
+
+        //Atom[] atoms = molecularAssembly.getAtomArray();
+        Bond[] bonds = super.getBonds();
+
+        logger.info(String.format(" Setting up bond constraints"));
+
+        if (bonds == null || bonds.length < 1) {
+            return;
+        }
+        int nBonds = bonds.length;
+        Atom atom1;
+        Atom atom2;
+        Atom parentAtom;
+        Bond bondForBondLength;
+        BondType bondType;
+
+        for (i = 0; i < nBonds; i++) {
+            Bond bond = bonds[i];
+            atom1 = bond.getAtom(0);
+            atom2 = bond.getAtom(1);
+            parentAtom = atom1.getBonds().get(0).get1_2(atom1);
+            bondForBondLength = atom1.getBonds().get(0);
+            bondType = bondForBondLength.bondType;
+            iAtom1 = atom1.getXyzIndex() - 1;
+            iAtom2 = parentAtom.getXyzIndex() - 1;
+            OpenMM_System_addConstraint(system, iAtom1, iAtom2, bondForBondLength.bondType.distance * OpenMM_NmPerAngstrom);
+
         }
     }
 
