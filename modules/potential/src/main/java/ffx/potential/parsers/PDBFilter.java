@@ -4230,6 +4230,9 @@ public final class PDBFilter extends SystemFilter {
      * @param residue Residue to fix atom names of.
      */
     private static void renameAminoAcidToPDBStandard(Residue residue) {
+        if (residue.getChainID() == null) {
+            residue.setChainID('Z');
+        }
         final Atom N = findNitrogenAtom(residue);
         AminoAcid3 aa3 = residue.getAminoAcid3();
         if (N != null) {
@@ -4920,6 +4923,9 @@ public final class PDBFilter extends SystemFilter {
     }
 
     private static void renameNucleicAcidToPDBStandard(Residue residue) {
+        if (residue.getChainID() == null) {
+            residue.setChainID('Z');
+        }
         assert residue.getResidueType() == Residue.ResidueType.NA;
         NucleicAcid3 na3 = residue.getNucleicAcid3();
         logger.info(residue.toString());
