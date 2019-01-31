@@ -2636,6 +2636,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Adds harmonic restraints (CoordRestraint objects) to OpenMM as a custom
      * external force.
+     *
+     * TODO: Make robust to flat-bottom restraints.
      */
     private void addHarmonicRestraintForce(ForceField forceField) {
         for (CoordRestraint restraint : super.getCoordRestraints()) {
