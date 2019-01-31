@@ -4126,7 +4126,7 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param assembly MolecularAssembly to fix.
      */
-    private static void renameAtomsToPDBStandard(MolecularAssembly assembly) {
+    public static void renameAtomsToPDBStandard(MolecularAssembly assembly) {
         Polymer[] polys = assembly.getChains();
         if (polys != null && polys.length > 0) {
             for (Polymer polymer : polys) {

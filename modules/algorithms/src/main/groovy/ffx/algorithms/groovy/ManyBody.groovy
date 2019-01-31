@@ -15,6 +15,7 @@ import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.bonded.ResidueState
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -64,6 +65,9 @@ class ManyBody extends AlgorithmsScript {
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0));
             activeAssembly = assemblies[0];
+            if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
+                PDBFilter.renameAtomsToPDBStandard(activeAssembly);
+            }
             modelFileName = activeAssembly.getFile().getAbsolutePath();
         } else if (activeAssembly == null) {
             logger.info(helpString());
