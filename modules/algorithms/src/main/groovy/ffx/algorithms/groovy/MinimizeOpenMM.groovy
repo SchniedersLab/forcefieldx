@@ -48,6 +48,12 @@ class MinimizerOpenMM extends AlgorithmsScript {
         if (!init()) {
             return this
         }
+        
+        if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()){
+            System.setProperty("platform", System.getProperty("platform"))
+        } else{
+            System.setProperty("platform", "OMM")
+        }
 
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
