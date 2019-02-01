@@ -820,6 +820,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private int nRelativeSolvations;
     private boolean relativeSolvationTerm;
     private double relativeSolvationEnergy;
+    private Platform platform = Platform.FFX;
 
 
     /**
@@ -3069,9 +3070,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return A Platform.
      */
     public Platform getPlatform() {
-        return Platform.FFX;
+        return platform;
     }
-
+    
+    public void setOpenMMPlatform(){
+        platform = Platform.OMM;
+    }
+    
     /**
      * <p>
      * setRestraintBond</p>

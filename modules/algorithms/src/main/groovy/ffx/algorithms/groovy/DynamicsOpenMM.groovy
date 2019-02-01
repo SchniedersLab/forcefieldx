@@ -65,6 +65,8 @@ class DynamicsOpenMM extends AlgorithmsScript {
     }
 
     private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
+    
+    private ForceFieldEnergy forceFieldEnergy;
 
     @Override
     DynamicsOpenMM run() {
@@ -75,10 +77,16 @@ class DynamicsOpenMM extends AlgorithmsScript {
 
         dynamics.init()
 
+        if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()){
+            System.setProperty("platform", System.getProperty("platform"))
+        } else{
+            System.setProperty("platform", "OMM")
+        }
+        
         String modelfilename
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
+            activeAssembly = assemblies[0]            
             modelfilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -86,8 +94,8 @@ class DynamicsOpenMM extends AlgorithmsScript {
         } else {
             modelfilename = activeAssembly.getFile().getAbsolutePath()
         }
-
-        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy();
+        
+        forceFieldEnergy = activeAssembly.getPotentialEnergy();
         switch (forceFieldEnergy.getPlatform()) {
             case ForceFieldEnergy.Platform.OMM:
             case ForceFieldEnergy.Platform.OMM_CUDA:
