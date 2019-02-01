@@ -473,6 +473,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private boolean rigidBonds;
     /**
+     * Flag to set all hydrogen angles as rigid.
+     */
+    private boolean rigidHydrogenAngles;
+    /**
      * Whether to enforce periodic boundary conditions when obtaining new
      * States.
      */
@@ -541,6 +545,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (rigidBonds) {
             setUpBondConstraints(system);
         }
+
+        if (rigidHydrogenAngles){
+            setUpHydrogenAngleConstraints(system);
+        }
+
+        rigidHydrogenAngles = forceField.getBoolean(ForceField.ForceFieldBoolean.RIGID_HYDROGEN_ANGLES, false);
 
         // Add Bond Force.
         addBondForce(forceField);
@@ -2659,6 +2669,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Adds harmonic restraints (CoordRestraint objects) to OpenMM as a custom
      * external force.
+     *
+     * TODO: Make robust to flat-bottom restraints.
      */
     private void addHarmonicRestraintForce(ForceField forceField) {
         for (CoordRestraint restraint : super.getCoordRestraints()) {
@@ -4065,23 +4077,67 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return;
         }
         int nBonds = bonds.length;
-        Atom atom1;
-        Atom atom2;
-        Atom parentAtom;
-        Bond bondForBondLength;
-        BondType bondType;
 
         for (i = 0; i < nBonds; i++) {
             Bond bond = bonds[i];
-            atom1 = bond.getAtom(0);
-            atom2 = bond.getAtom(1);
-            parentAtom = atom1.getBonds().get(0).get1_2(atom1);
-            bondForBondLength = atom1.getBonds().get(0);
-            bondType = bondForBondLength.bondType;
+            Atom atom1 = bond.getAtom(0);
+            Atom atom2 = bond.get1_2(atom1);
             iAtom1 = atom1.getXyzIndex() - 1;
-            iAtom2 = parentAtom.getXyzIndex() - 1;
-            OpenMM_System_addConstraint(system, iAtom1, iAtom2, bondForBondLength.bondType.distance * OpenMM_NmPerAngstrom);
+            iAtom2 = atom2.getXyzIndex() - 1;
+            //Don't need to calculate energy term for frozen angles?
+            //Is the thermostat correct after removing degrees of freedom?
+            OpenMM_System_addConstraint(system, iAtom1, iAtom2, bond.bondType.distance * OpenMM_NmPerAngstrom);
+        }
+    }
 
+    /**
+     * <p>setUpHydrogenAngleConstraints.</p>
+     *
+     * @param system a {@link com.sun.jna.ptr.PointerByReference} object.
+     */
+    public void setUpHydrogenAngleConstraints(PointerByReference system) {
+        int i;
+        int iAtom1;
+        int iAtom3;
+
+        Angle[] angles = super.getAngles();
+
+        logger.info(String.format(" Setting up hydrogen angle constraints"));
+
+        if (angles == null || angles.length < 1){
+            return;
+        }
+
+        int nAngles = angles.length;
+        Atom atom1;
+        Atom atom2;
+        Atom atom3;
+
+        for (i = 0; i < nAngles; i++) {
+            Angle angle = angles[i];
+            if (angle.getValue() < 160.0){
+                if (angle.containsHydrogen()) {
+                    atom1 = angle.getAtom(0);
+                    atom2 = angle.getAtom(1);
+                    atom3 = angle.getAtom(2);
+                    //Setting constraints only on angles where atom1 or atom3 is a hydrogen while atom2 is not a hydrogen.
+                    if (atom1.isHydrogen() && atom3.isHydrogen() && !atom2.isHydrogen()) {
+                        //Calculate a "false bond" length between atoms 1 and 3 to constrain the angle using the law of cosines.
+                        Bond a = atom1.getBonds().get(0);
+                        Double aDist = a.bondType.distance;
+
+                        Bond b = atom3.getBonds().get(0);
+                        Double bDist = b.bondType.distance;
+
+                        //Law of cosines.
+                        double falseBondLength = Math.sqrt(aDist*aDist+bDist*bDist-2*aDist*bDist*Math.cos(angle.getValue()));
+
+                        iAtom1 = atom1.getXyzIndex() - 1;
+                        iAtom3 = atom3.getXyzIndex() - 1;
+                        OpenMM_System_addConstraint(system, iAtom1, iAtom3, falseBondLength * OpenMM_NmPerAngstrom);
+                    }
+                }
+            }
         }
     }
 
