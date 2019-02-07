@@ -225,9 +225,12 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
+import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.HHG;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
+import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.CUBIC_MEAN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
+import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.BUFFERED_14_7;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
 
 /**
@@ -378,11 +381,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Fixed charge softcore vdW force boolean.
      */
-    boolean softcoreCreated = false;
+    private boolean softcoreCreated = false;
+    /**
+     * AMOEBA softcore vdW force boolean
+     */
+    private boolean amoebaSoftcoreCreated = false;
     /**
      * Fixed charge softcore force.
      */
     private PointerByReference fixedChargeSoftcore = null;
+    /**
+     * Amoeba softcore force
+     */
+    private PointerByReference amoebaSoftcore = null;
     /**
      * Sterics force between alchemical atoms.
      */
@@ -391,6 +402,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Sterics force between alchemical and non alchemical atoms.
      */
     private PointerByReference nonAlchemicalAlchemicalStericsForce = null;
+    /**
+     * Sterics force between alchemical atoms for AMOEBA.
+     */
+    private PointerByReference amoebaAlchemicalAlchemicalStericsForce = null;
+    /**
+     * Sterics force between alchemical and non alchemical atoms for AMOEBA.
+     */
+    private PointerByReference amoebaNonAlchemicalAlchemicalStericsForce = null;
     /**
      * Boolean array, holds charge exclusion list.
      */
@@ -426,18 +445,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double collisionFreq;
     /**
-     * Lambda flag to indicate control of electrostatic scaling. If both elec and vdW are being scaled, then vdW
-     * is scaled first, followed by elec.
+     * Lambda flag to indicate control of electrostatic scaling. If both elec
+     * and vdW are being scaled, then vdW is scaled first, followed by elec.
      */
     private boolean elecLambdaTerm;
     /**
-     * Lambda flag to indicate control of vdW scaling. If both elec and vdW are being scaled, then vdW
-     * is scaled first, followed by elec.
+     * Lambda flag to indicate control of vdW scaling. If both elec and vdW are
+     * being scaled, then vdW is scaled first, followed by elec.
      */
     private boolean vdwLambdaTerm;
     /**
-     * Lambda flag to indicate control of torsional force constants (L=0 corresponds to torsions being off, and L=1 to
-     * torsions at full strength.
+     * Lambda flag to indicate control of torsional force constants (L=0
+     * corresponds to torsions being off, and L=1 to torsions at full strength.
      */
     private boolean torsionLambdaTerm;
     /**
@@ -457,7 +476,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double lambdaTorsion = 1.0;
     /**
-     * Derivative of van Der Waals contribution to the potential energy with respect to lambda.
+     * Value of the AMOEBA van der Waals lambda state variable.
+     *
+     * This controls turning on "regular" AMOEBA vdW interactions after
+     * "softcore" AMOEBA vdW create space.
+     */
+    private double lambdaAmoebaVDW = 1.0;
+    /**
+     * Derivative of van Der Waals contribution to the potential energy with
+     * respect to lambda.
      */
     private double vdwdUdL = 0.0;
     /**
@@ -478,7 +505,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public final int enforcePBC;
     /**
-     * Boolean to control logging statements to the screen, typically used when an integrator other than the default is chosen for dynamics.
+     * Boolean to control logging statements to the screen, typically used when
+     * an integrator other than the default is chosen for dynamics.
      */
     private boolean quiet = true;
     /**
@@ -496,12 +524,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param molecularAssembly Assembly to construct energy for.
      * @param requestedPlatform requested OpenMM platform to be used.
-     * @param restraints        Harmonic coordinate restraints.
-     * @param nThreads          Number of threads to use in the super class
-     *                          ForceFieldEnergy instance.
+     * @param restraints Harmonic coordinate restraints.
+     * @param nThreads Number of threads to use in the super class
+     * ForceFieldEnergy instance.
      */
     protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform,
-                                     List<CoordRestraint> restraints, int nThreads) {
+            List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
 
         Crystal crystal = getCrystal();
@@ -645,8 +673,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         if (lambdaTerm) {
-            logger.info(format(" Lambda scales vdW interactions: %s", vdwLambdaTerm));
-            logger.info(format(" Lambda scales electrostatics:   %s", elecLambdaTerm));
+            if( amoebaVDWForce != null || amoebaMultipoleForce != null){
+                logger.info(format(" Lambda scales AMOEBA vdW interactions: %s", vdwLambdaTerm));
+                logger.info(format(" Lambda scales AMOEBA electrostatics:   %s", elecLambdaTerm));
+            } else{
+                logger.info(format(" Lambda scales fixed charge vdW interactions: %s", vdwLambdaTerm));
+                logger.info(format(" Lambda scales fixed charege electrostatics:   %s", elecLambdaTerm));
+            }
             logger.info(format(" Lambda scales torsions:   %s", torsionLambdaTerm));
         }
 
@@ -655,7 +688,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //            doOpenMMdEdL = true;
 //            doFFXdEdL = false;
 //        }
-
     }
 
     /**
@@ -835,8 +867,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Brownian, Custom, Compound and Verlet integrator
      *
      * @param integratorString a {@link java.lang.String} object.
-     * @param timeStep         a double.
-     * @param temperature      a double.
+     * @param timeStep a double.
+     * @param temperature a double.
      */
     public void createContext(String integratorString, double timeStep, double temperature) {
 
@@ -921,7 +953,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>Getter for the field <code>integratorString</code>.</p>
+     * <p>
+     * Getter for the field <code>integratorString</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -930,7 +963,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>Getter for the field <code>temperature</code>.</p>
+     * <p>
+     * Getter for the field <code>temperature</code>.</p>
      *
      * @return a double.
      */
@@ -939,7 +973,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>Getter for the field <code>timeStep</code>.</p>
+     * <p>
+     * Getter for the field <code>timeStep</code>.</p>
      *
      * @return a double.
      */
@@ -948,7 +983,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>setCoeffOfFriction.</p>
+     * <p>
+     * setCoeffOfFriction.</p>
      *
      * @param coeffOfFriction a double.
      */
@@ -957,7 +993,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>Setter for the field <code>collisionFreq</code>.</p>
+     * <p>
+     * Setter for the field <code>collisionFreq</code>.</p>
      *
      * @param collisionFreq a double.
      */
@@ -1098,7 +1135,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Add an Andersen thermostat to the system.
      *
-     * @param targetTemp    Target temperature in Kelvins.
+     * @param targetTemp Target temperature in Kelvins.
      * @param collisionFreq Collision frequency in 1/psec
      */
     public void addAndersenThermostat(double targetTemp, double collisionFreq) {
@@ -1398,7 +1435,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     a1, a2, a3, a4, improperTorsionType.periodicity,
                     improperTorsionType.phase * OpenMM_RadiansPerDegree,
                     OpenMM_KJPerKcal * improperTorsion.units
-                            * improperTorsion.scaleFactor * improperTorsionType.k);
+                    * improperTorsion.scaleFactor * improperTorsionType.k);
         }
 
         ForceField.ForceFieldInteger imptorsFgroup = ForceField.ForceFieldInteger.IMPROPER_TORSION_FORCE_GROUP;
@@ -1918,7 +1955,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             /**
-             * Handle cases where sigma is 0.0; for example Amber99 tyrosine hydrogens.
+             * Handle cases where sigma is 0.0; for example Amber99 tyrosine
+             * hydrogens.
              */
             double sigmaValue = sigma.getValue();
             double epsValue = eps.getValue();
@@ -2057,7 +2095,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //                OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i, atomi.getValue(), atomj.getValue(), abs(0.0*charge.getValue()), sigma.getValue(), abs(0.0*eps.getValue()));
 //            }
 //        }
-
         OpenMM_CustomBondForce_addEnergyParameterDerivative(alchemicalAlchemicalStericsForce, "vdw_lambda");
         OpenMM_System_addForce(system, alchemicalAlchemicalStericsForce);
         OpenMM_CustomBondForce_addEnergyParameterDerivative(nonAlchemicalAlchemicalStericsForce, "vdw_lambda");
@@ -2095,29 +2132,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 // "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
                 // "step(r+sr2-or1)*0.5*((1/L^3-1/U^3)/3+(1/U^4-1/L^4)/8*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
                 "0.5*((1/L^3-1/U^3)/3.0+(1/U^4-1/L^4)/8.0*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
-                        + "U=r+sr2;"
-                        // + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
-                        + "C=2/3*(1/or1^3-1/L^3)*step(sr2-r-or1);"
-                        // + "L=step(or1-D)*or1 + (1-step(or1-D))*D;"
-                        // + "D=step(r-sr2)*(r-sr2) + (1-step(r-sr2))*(sr2-r);"
-                        + "L = step(sr2 - r1r)*sr2mr + (1 - step(sr2 - r1r))*L;"
-                        + "sr2mr = sr2 - r;"
-                        + "r1r = radius1 + r;"
-                        + "L = step(r1sr2 - r)*radius1 + (1 - step(r1sr2 - r))*L;"
-                        + "r1sr2 = radius1 + sr2;"
-                        + "L = r - sr2;"
-                        + "sr2 = scale2 * radius2;"
-                        + "or1 = radius1; or2 = radius2",
+                + "U=r+sr2;"
+                // + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
+                + "C=2/3*(1/or1^3-1/L^3)*step(sr2-r-or1);"
+                // + "L=step(or1-D)*or1 + (1-step(or1-D))*D;"
+                // + "D=step(r-sr2)*(r-sr2) + (1-step(r-sr2))*(sr2-r);"
+                + "L = step(sr2 - r1r)*sr2mr + (1 - step(sr2 - r1r))*L;"
+                + "sr2mr = sr2 - r;"
+                + "r1r = radius1 + r;"
+                + "L = step(r1sr2 - r)*radius1 + (1 - step(r1sr2 - r))*L;"
+                + "r1sr2 = radius1 + sr2;"
+                + "L = r - sr2;"
+                + "sr2 = scale2 * radius2;"
+                + "or1 = radius1; or2 = radius2",
                 OpenMM_CustomGBForce_ParticlePairNoExclusions);
 
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "B",
                 // "1/(1/or-tanh(1*psi-0.8*psi^2+4.85*psi^3)/radius);"
                 // "psi=I*or; or=radius-0.009"
                 "step(BB-radius)*BB + (1 - step(BB-radius))*radius;"
-                        + "BB = 1 / ( (3.0*III)^(1.0/3.0) );"
-                        + "III = step(II)*II + (1 - step(II))*1.0e-9/3.0;"
-                        + "II = maxI - I;"
-                        + "maxI = 1/(3.0*radius^3)",
+                + "BB = 1 / ( (3.0*III)^(1.0/3.0) );"
+                + "III = step(II)*II + (1 - step(II))*1.0e-9/3.0;"
+                + "II = maxI - I;"
+                + "maxI = 1/(3.0*radius^3)",
                 OpenMM_CustomGBForce_SingleParticle);
 
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
@@ -2129,7 +2166,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
                 "-138.935456*(1/soluteDielectric-1/solventDielectric)*q1*q2/f;"
-                        + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
+                + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
                 OpenMM_CustomGBForce_ParticlePair);
 
         double baseRadii[] = gk.getBaseRadii();
@@ -2235,6 +2272,230 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
         OpenMM_IntArray_destroy(exclusions);
         logger.log(Level.INFO, "  van der Waals force");
+    }
+
+    private void addAmoebaVDWSoftcoreForce(ForceField forceField) {
+
+        VanDerWaals vdW = super.getVdwNode();
+        if (vdW == null) {
+            return;
+        }
+
+        /**
+         * Buffered 14-7 with Cubic Mean and HHG rule for epsilon is supported.
+         */
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        if (vdwForm.vdwType != BUFFERED_14_7
+                || vdwForm.radiusRule != CUBIC_MEAN
+                || vdwForm.epsilonRule != HHG) {
+            logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
+            logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
+            logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
+            return;
+        }
+
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+            radScale = 0.5;
+        }
+
+        // Sterics mixing rules.
+        // Eps rule: HHG
+        // epsilon = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
+        String stericsMixingRules = " epsilon = 4.0 * (epsilon1 * epsilon2) / ((sqrt(epsilon1) + sqrt(epsilon2)) * (sqrt(epsilon1) + sqrt(epsilon2)));";
+
+        // Radius rule: cubic mean
+        // radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
+        stericsMixingRules += " radmin = 2.0 * ((rmin1 * rmin1 * rmin1) + (rmin2 * rmin2 * rmin2)) / ((rmin1 * rmin1) + (rmin2 * rmin2));";
+
+        // Softcore Lennard-Jones, with a form equivalent to that used in FFX VanDerWaals class.
+        // String stericsEnergyExpression = "(vdw_lambda^beta)*epsilon*x*(x-2.0);";
+        String stericsEnergyExpression = " (vdw_lambda^beta)*epsilon*t1*t2;";
+        // Effective softcore distance for sterics.
+        // stericsEnergyExpression += " x = 1.0 / (alpha*(1.0-vdw_lambda)^2.0 + (r/rmin)^6.0);";
+        stericsEnergyExpression += " t1 = ((1.0 + delta)^(n-m))/((alpha * (1.0 - vdw_lambda)^2.0) + (rho + delta)^(n - m));";
+        stericsEnergyExpression += " t2 = ((1 + gamma)/((alpha * (1 - vdw_lambda)^2.0) + (rho^m) + gamma)) - 2.0;";
+        stericsEnergyExpression += " rho = r/radmin;";
+        // Define energy expression for sterics.
+        String energyExpression = stericsEnergyExpression + stericsMixingRules;
+
+        amoebaSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
+
+        // Get the Alpha and Beta constants from the VanDerWaals instance.
+        double alpha = vdW.getAlpha();
+        double beta = vdW.getBeta();
+
+        logger.info(format(" Custom non-bonded force with alpha = %8.6f and beta = %8.6f", alpha, beta));
+
+        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "vdw_lambda", 1.0);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "alpha", alpha);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "beta", beta);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "n", 14);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "m", 7);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "delta", 0.07);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "gamma", 0.12);
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(amoebaSoftcore, "rmin");
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(amoebaSoftcore, "epsilon");
+
+        /**
+         * Add particles.
+         */
+        PointerByReference alchemicalGroup = OpenMM_IntSet_create();
+        PointerByReference nonAlchemicalGroup = OpenMM_IntSet_create();
+
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+
+            if (atom.applyLambda()) {
+                OpenMM_IntSet_insert(alchemicalGroup, i);
+                logger.info(format(" Adding alchemical atom %s.", atom));
+            } else {
+                OpenMM_IntSet_insert(nonAlchemicalGroup, i);
+            }
+
+            double rminValue = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+            double epsValue = OpenMM_KJPerKcal * vdwType.wellDepth;
+
+            PointerByReference particleParameters = OpenMM_DoubleArray_create(0);
+            OpenMM_DoubleArray_append(particleParameters, rminValue);
+            OpenMM_DoubleArray_append(particleParameters, epsValue);
+            OpenMM_CustomNonbondedForce_addParticle(amoebaSoftcore, particleParameters);
+            OpenMM_DoubleArray_destroy(particleParameters);
+        }
+
+        OpenMM_CustomNonbondedForce_addInteractionGroup(amoebaSoftcore, alchemicalGroup, alchemicalGroup);
+        OpenMM_CustomNonbondedForce_addInteractionGroup(amoebaSoftcore, alchemicalGroup, nonAlchemicalGroup);
+        OpenMM_IntSet_destroy(alchemicalGroup);
+        OpenMM_IntSet_destroy(nonAlchemicalGroup);
+
+        Crystal crystal = super.getCrystal();
+        if (crystal.aperiodic()) {
+            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaSoftcore,
+                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_NoCutoff);
+        } else {
+            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaSoftcore,
+                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_CutoffPeriodic);
+        }
+
+        NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
+        double off = nonbondedCutoff.off;
+        double cut = nonbondedCutoff.cut;
+        if (cut == off) {
+            logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
+            if (cut == Double.MAX_VALUE || cut == Double.POSITIVE_INFINITY) {
+                logger.info(" Detected infinite or max-value cutoff; setting cut to 1E+40 for OpenMM.");
+                cut = 1E40;
+            } else {
+                logger.info(String.format(" Detected cut %8.4g == off %8.4g; scaling cut to 0.99 of off for OpenMM.", cut, off));
+                cut *= 0.99;
+            }
+        }
+
+        OpenMM_CustomNonbondedForce_setCutoffDistance(amoebaSoftcore, OpenMM_NmPerAngstrom * off);
+        OpenMM_CustomNonbondedForce_setUseSwitchingFunction(amoebaSoftcore, OpenMM_True);
+        OpenMM_CustomNonbondedForce_setSwitchingDistance(amoebaSoftcore, OpenMM_NmPerAngstrom * cut);
+
+        // Add energy parameter derivative
+        OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(amoebaSoftcore, "vdw_lambda");
+
+        ForceField.ForceFieldInteger vdwFgroup = ForceField.ForceFieldInteger.VDW_FORCE_GROUP;
+        int fGroup = forceField.getInteger(vdwFgroup, vdwFgroup.getDefaultValue());
+
+        OpenMM_Force_setForceGroup(amoebaSoftcore, fGroup);
+        OpenMM_System_addForce(system, amoebaSoftcore);
+        logger.log(Level.INFO, String.format(" Added AMOEBA softcore sterics force."));
+
+        // Alchemical with Alchemical could be either softcore or normal interactions (softcore here).
+        amoebaAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(energyExpression);
+
+        // Non-Alchemical with Alchemical is essentially always softcore.
+        amoebaNonAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(energyExpression);
+
+        // Currently both are treated the same (so we could condense the code below).
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "rmin1");
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "rmin2");
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "epsilon1");
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "epsilon2");
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "alpha", alpha);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "beta", beta);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "n", 14);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "m", 7);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "delta", 0.07);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "gamma", 0.12);
+
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "rmin1");
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "rmin2");
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "epsilon1");
+        OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "epsilon2");
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "alpha", alpha);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "beta", beta);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "n", 14);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "m", 7);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "delta", 0.07);
+        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "gamma", 0.12);
+
+        double mask[] = new double[nAtoms];
+        Arrays.fill(mask, 1.0);
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom1 = atoms[i];
+            VDWType vdwType1 = atom1.getVDWType();
+            vdW.applyMask(mask, i);
+            for (int j = i + 1; j < nAtoms; j++) {
+                if (mask[j] == 0.0) {
+
+                    Atom atom2 = atoms[j];
+                    VDWType vdwType2 = atom2.getVDWType();
+
+                    boolean bothAlchemical = false;
+                    boolean oneAlchemical = false;
+
+                    if (atom1.applyLambda() && atom2.applyLambda()) {
+                        bothAlchemical = true;
+                    } else if ((atom1.applyLambda() && !atom2.applyLambda()) || (!atom1.applyLambda() && atom2.applyLambda())) {
+                        oneAlchemical = true;
+                    }
+
+                    if (bothAlchemical || oneAlchemical) {
+                        PointerByReference bondParameters = OpenMM_DoubleArray_create(0);
+                        OpenMM_DoubleArray_append(bondParameters, OpenMM_NmPerAngstrom * vdwType1.radius * radScale);
+                        OpenMM_DoubleArray_append(bondParameters, OpenMM_NmPerAngstrom * vdwType2.radius * radScale);
+                        OpenMM_DoubleArray_append(bondParameters, OpenMM_KJPerKcal * vdwType1.wellDepth);
+                        OpenMM_DoubleArray_append(bondParameters, OpenMM_KJPerKcal * vdwType2.wellDepth);
+                        if (bothAlchemical) {
+                            OpenMM_CustomBondForce_addBond(amoebaAlchemicalAlchemicalStericsForce, i, j, bondParameters);
+                        } else if (oneAlchemical) {
+                            OpenMM_CustomBondForce_addBond(amoebaNonAlchemicalAlchemicalStericsForce, i, j, bondParameters);
+                        }
+                        OpenMM_DoubleArray_destroy(bondParameters);
+                    }
+                }
+            }
+            vdW.removeMask(mask, i);
+        }
+
+        if (crystal.aperiodic()) {
+            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaAlchemicalAlchemicalStericsForce,
+                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_NoCutoff);
+            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaNonAlchemicalAlchemicalStericsForce,
+                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_NoCutoff);
+        } else {
+            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaAlchemicalAlchemicalStericsForce,
+                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_CutoffPeriodic);
+            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaNonAlchemicalAlchemicalStericsForce,
+                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_CutoffPeriodic);
+        }
+
+        OpenMM_CustomBondForce_addEnergyParameterDerivative(amoebaAlchemicalAlchemicalStericsForce, "vdw_lambda");
+        OpenMM_System_addForce(system, amoebaAlchemicalAlchemicalStericsForce);
+        OpenMM_CustomBondForce_addEnergyParameterDerivative(amoebaNonAlchemicalAlchemicalStericsForce, "vdw_lambda");
+        OpenMM_System_addForce(system, amoebaNonAlchemicalAlchemicalStericsForce);
+
     }
 
     /**
@@ -2597,7 +2858,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             case BORN_SOLV:
             case NONE:
             default:
-                // WCA force is not being used.
+            // WCA force is not being used.
         }
 
         logger.log(Level.INFO, "  Generalized Kirkwood force");
@@ -2771,12 +3032,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         Atom[] atoms = molecularAssembly.getAtomArray();
 
         if (vdwLambdaTerm) {
-            if (amoebaVDWForce != null) {
-                logger.severe(" Softcore vdW is not yet supported for AMOEBA.");
-            }
             if (!softcoreCreated) {
                 ForceField forceField = molecularAssembly.getForceField();
-                addCustomNonbondedSoftcoreForce(forceField);
+                if (amoebaVDWForce != null) {
+                    addAmoebaVDWSoftcoreForce(forceField);
+                } else {
+                    addCustomNonbondedSoftcoreForce(forceField);
+                }
                 // Reset the context.
                 createContext(integratorString, timeStep, temperature);
                 OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
@@ -2855,10 +3117,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
+
+            if (vdwLambdaTerm && atom.applyLambda()) {
+                useFactor *= lambdaAmoebaVDW;
+            }
+
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
+
             OpenMM_AmoebaVdwForce_setParticleParameters(amoebaVDWForce,
                     i, ired[i], OpenMM_NmPerAngstrom * vdwType.radius * radScale,
                     eps, vdwType.reductionFactor);
+
         }
         OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, context);
     }
@@ -2965,8 +3234,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             Atom atom2 = atoms[i2];
 
             /**
-             * Note that the minimum epsilon value cannot be zero, or OpenMM may report an error that
-             * the number of Exceptions has changed.
+             * Note that the minimum epsilon value cannot be zero, or OpenMM may
+             * report an error that the number of Exceptions has changed.
              */
             double minEpsilon = 1.0e-12;
             double lambdaValue = lambdaElec;
@@ -3249,7 +3518,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (!torsionLambdaTerm) {
             return;
         }
-
+        
         // Check if this system has torsions.
         Torsion torsions[] = super.getTorsions();
         if (torsions == null || torsions.length < 1) {
@@ -3295,17 +3564,23 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 // Initially set all lambda values to 1.0.
                 lambdaTorsion = 1.0;
+
+                // Applied to softcore vdW forces.
                 lambdaVDW = 1.0;
+
+                // Applied to noraml AMOEBA eps values for alchemical atoms.
+                lambdaAmoebaVDW = 1.0;
+
+                // Applied to normal electrostatic parameters for alchemical atoms.
                 lambdaElec = 1.0;
 
                 if (torsionLambdaTerm) {
                     lambdaTorsion = lambda;
                 }
 
-
                 if (elecLambdaTerm && vdwLambdaTerm) {
                     // Lambda effects both vdW and electrostatics.
-                    lambdaVDW = lambda;
+                    
                     if (lambda < 0.5) {
                         // Begin turning vdW on with electrostatics off.
                         lambdaElec = 0.0;
@@ -3313,16 +3588,46 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         // Turn electrostatics on during the latter part of the path.
                         lambdaElec = 2.0 * (lambda - 0.5);
                     }
+                    
+                    lambdaVDW = lambda;
+                    // AMOEBA Case
+                    if (amoebaVDWForce != null) {
+                        if (lambda > 0.5) {
+                            // Turn off softcore that lack reduction factors.
+                            lambdaVDW = 1.0 - lambda;
+                        }
+                        double oneThird = 1.0 / 3.0;
+                        double twoThirds = 1.0 - oneThird;
+                        lambdaAmoebaVDW = 0.0;
+                        if (lambda > oneThird) {
+                            lambdaAmoebaVDW = (lambda - oneThird) / twoThirds;
+                        }
+                    }
+
                 } else if (vdwLambdaTerm) {
                     // Lambda effects vdW, with electrostatics turned off.
                     lambdaVDW = lambda;
                     lambdaElec = 0.0;
+                    // AMOEBA Case
+                    if (amoebaVDWForce != null) {
+                        // Turn off softcore that lack reduction factors.
+                        if (lambda > 0.5) {
+                            lambdaVDW = 1.0 - lambda;
+                        }
+                        double oneThird = 1.0 / 3.0;
+                        double twoThirds = 1.0 - oneThird;
+                        lambdaAmoebaVDW = 0.0;
+                        if (lambda > oneThird) {
+                            lambdaAmoebaVDW = (lambda - oneThird) / twoThirds;
+                        }
+                    }
                 } else if (elecLambdaTerm) {
                     // Lambda effects electrostatics, but not vdW.
                     lambdaElec = lambda;
                 }
 
                 updateParameters(null);
+
             } else {
                 String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
                 logger.warning(message);
@@ -3336,7 +3641,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Evaluates energy both with OpenMM and reference potential, and returns
      * the difference FFX-OpenMM.
      *
-     * @param x       Coordinate array
+     * @param x Coordinate array
      * @param verbose a boolean.
      * @return Energy discrepancy
      */
@@ -3350,7 +3655,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Evaluates energy explicitly using the Java implementation backing this
      * ForceFieldEnergyOpenMM.
      *
-     * @param x       Coordinate array
+     * @param x Coordinate array
      * @param verbose Verbosity of energy call
      * @return Total energy calculated by reference FFX implementation.
      */
@@ -3362,9 +3667,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Evaluates energy and gradients both with OpenMM and reference potential,
      * and returns the difference FFX-OpenMM.
      *
-     * @param x       Coordinate array
-     * @param gFFX    Array for FFX gradients to be stored in
-     * @param gOMM    Array for OpenMM gradients to be stored in
+     * @param x Coordinate array
+     * @param gFFX Array for FFX gradients to be stored in
+     * @param gOMM Array for OpenMM gradients to be stored in
      * @param verbose a boolean.
      * @return Energy discrepancy
      */
@@ -3610,7 +3915,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * reader method and appends these values to a Vec3Array. Finally this
      * method sets the created Vec3Array as the positions of the context.
      *
-     * @param x                 an array of {@link double} objects.
+     * @param x an array of {@link double} objects.
      * @param numberOfVariables a int.
      */
     public void setOpenMMPositions(double x[], int numberOfVariables) {
@@ -3635,7 +3940,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * reader method and appends these values to a Vec3Array. Finally this
      * method sets the created Vec3Arrat as the velocities of the context.
      *
-     * @param v                 an array of {@link double} objects.
+     * @param v an array of {@link double} objects.
      * @param numberOfVariables a int.
      */
     public void setOpenMMVelocities(double v[], int numberOfVariables) {
@@ -3662,9 +3967,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * method then adds these values to a new double array x and returns it to
      * the method call
      *
-     * @param positions         a {@link com.sun.jna.ptr.PointerByReference} object.
+     * @param positions a {@link com.sun.jna.ptr.PointerByReference} object.
      * @param numberOfVariables a int.
-     * @param x                 an array of {@link double} objects.
+     * @param x an array of {@link double} objects.
      * @return x
      */
     public double[] getOpenMMPositions(PointerByReference positions, int numberOfVariables, double x[]) {
@@ -3693,9 +3998,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * method then adds these values to a new double array v and returns it to
      * the method call
      *
-     * @param velocities        a {@link com.sun.jna.ptr.PointerByReference} object.
+     * @param velocities a {@link com.sun.jna.ptr.PointerByReference} object.
      * @param numberOfVariables a int.
-     * @param v                 an array of {@link double} objects.
+     * @param v an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
     public double[] getOpenMMVelocities(PointerByReference velocities, int numberOfVariables, double v[]) {
@@ -3725,10 +4030,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * then adds these values (divided by mass, effectively turning them into
      * accelerations) to a new double array a and returns it to the method call
      *
-     * @param forces            a {@link com.sun.jna.ptr.PointerByReference} object.
+     * @param forces a {@link com.sun.jna.ptr.PointerByReference} object.
      * @param numberOfVariables a int.
-     * @param mass              an array of {@link double} objects.
-     * @param a                 an array of {@link double} objects.
+     * @param mass an array of {@link double} objects.
+     * @param a an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
     public double[] getOpenMMAccelerations(PointerByReference forces, int numberOfVariables, double[] mass, double[] a) {
@@ -3909,7 +4214,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //            //logger.info(String.format(" Step: %16.10f FFX:    %16.10f", fdDLambda, ffxdEdL));
 //            dEdL = ffxdEdL;
 //        }
-
         return dEdL;
     }
 
@@ -3961,7 +4265,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>getVDWRadius.</p>
+     * <p>
+     * getVDWRadius.</p>
      *
      * @return a double.
      */
@@ -4001,7 +4306,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>setUpHydrogenConstraints.</p>
+     * <p>
+     * setUpHydrogenConstraints.</p>
      *
      * @param system a {@link com.sun.jna.ptr.PointerByReference} object.
      */
@@ -4048,7 +4354,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>setUpBondConstraints.</p>
+     * <p>
+     * setUpBondConstraints.</p>
      * Constrains all bonds in the system to a fixed length.
      *
      * @param system a {@link com.sun.jna.ptr.PointerByReference} object.
@@ -4088,7 +4395,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>calculateDegreesOfFreedom.</p>
+     * <p>
+     * calculateDegreesOfFreedom.</p>
      *
      * @return a int.
      */
@@ -4102,7 +4410,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>Getter for the field <code>numParticles</code>.</p>
+     * <p>
+     * Getter for the field <code>numParticles</code>.</p>
      *
      * @return a int.
      */
@@ -4111,10 +4420,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * <p>addRESPA.</p>
+     * <p>
+     * addRESPA.</p>
      *
      * @param inner a double.
-     * @param dt    a double.
+     * @param dt a double.
      * @return a {@link com.sun.jna.ptr.PointerByReference} object.
      */
     public PointerByReference addRESPA(double inner, double dt) {
