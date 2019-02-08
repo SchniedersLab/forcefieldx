@@ -540,17 +540,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             setUpHydrogenConstraints(system);
         }
 
-        rigidBonds = forceField.getBoolean(ForceField.ForceFieldBoolean.RIGID_BONDS, false);
-
+        try {
+            rigidBonds = forceField.getBoolean(ForceFieldBoolean.RIGID_BONDS);
+        } catch (Exception e){
+            logger.info("Could not get rigidBonds." + e);
+        }
         if (rigidBonds) {
             setUpBondConstraints(system);
+        }
+
+        try{
+            rigidHydrogenAngles=forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGEN_ANGLES);
+        } catch(Exception e){
+            logger.info("Could not get rigidHydrogenAngles." + e);
         }
 
         if (rigidHydrogenAngles){
             setUpHydrogenAngleConstraints(system);
         }
-
-        rigidHydrogenAngles = forceField.getBoolean(ForceField.ForceFieldBoolean.RIGID_HYDROGEN_ANGLES, false);
 
         // Add Bond Force.
         addBondForce(forceField);
@@ -869,7 +876,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 if (!quiet) {
                     logger.log(Level.INFO, String.format(" Created Langevin integrator with time step %6.3e (psec).", dt));
                 }
-                integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+                createLangevinIntegrator(temperature, frictionCoeff, dt);
 
                 if (properties.containsKey("randomseed")) {
                     int randomSeed = properties.getInt("randomseed", 0);
@@ -892,13 +899,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 break;
             /*
             case "BROWNIAN":
-                integrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
+                createBrownianIntegrator(temperature, frictionCoeff, dt);
                 break;
             case "CUSTOM":
-                integrator = OpenMM_CustomIntegrator_create(dt);
+                createCustomIntegrator(dt);
                 break;
             case "COMPOUND":
-                integrator = OpenMM_CompoundIntegrator_create();
+                createCompoundIntegrator();
                 break;
              */
             case "VERLET":
@@ -906,7 +913,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 if (!quiet) {
                     logger.log(Level.INFO, String.format(" Created Verlet integrator with time step %6.3e (psec).", dt));
                 }
-                integrator = OpenMM_VerletIntegrator_create(dt);
+                createVerletIntegrator(dt);
         }
 
         // Create a context.
@@ -4064,7 +4071,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param system a {@link com.sun.jna.ptr.PointerByReference} object.
      */
     public void setUpBondConstraints(PointerByReference system) {
-        int i;
         int iAtom1;
         int iAtom2;
 
@@ -4076,10 +4082,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (bonds == null || bonds.length < 1) {
             return;
         }
-        int nBonds = bonds.length;
 
-        for (i = 0; i < nBonds; i++) {
-            Bond bond = bonds[i];
+        for (Bond bond : bonds) {
             Atom atom1 = bond.getAtom(0);
             Atom atom2 = bond.get1_2(atom1);
             iAtom1 = atom1.getXyzIndex() - 1;
@@ -4096,7 +4100,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param system a {@link com.sun.jna.ptr.PointerByReference} object.
      */
     public void setUpHydrogenAngleConstraints(PointerByReference system) {
-        int i;
         int iAtom1;
         int iAtom3;
 
@@ -4108,13 +4111,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return;
         }
 
-        int nAngles = angles.length;
         Atom atom1;
         Atom atom2;
         Atom atom3;
 
-        for (i = 0; i < nAngles; i++) {
-            Angle angle = angles[i];
+        for (Angle angle :angles) {
             if (angle.getValue() < 160.0){
                 if (angle.containsHydrogen()) {
                     atom1 = angle.getAtom(0);
@@ -4173,7 +4174,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public PointerByReference addRESPA(double inner, double dt) {
 
-        integrator = OpenMM_CustomIntegrator_create(dt);
+        createCustomIntegrator(dt);
 
         // Update the Context with the new integrator (i.e. without creating a new context).
         // OpenMM_CustomIntegrator_addUpdateContextState (integrator);
@@ -4197,5 +4198,32 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         return integrator;
     }
+
+    public void createLangevinIntegrator(double temperature, double frictionCoeff, double dt){
+        integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+    }
+
+    public void createVerletIntegrator(double dt){
+        integrator = OpenMM_VerletIntegrator_create(dt);
+        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+    }
+
+    public void createCustomIntegrator(double dt){
+        integrator = OpenMM_CustomIntegrator_create(dt);
+        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+    }
+
+    /* These methods create the Brownian and Compound integrators and are called within the createContext method.
+    // However, within createContext, these integrators are commented out. As such, these methods are implemented
+    // but also commented out.
+    public void createCompoundIntegrator() {
+        integrator = OpenMM_CompoundIntegrator_create();
+        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+    }
+
+    public void createBrownianIntegrator(double temperature, double frictionCoeff, double dt){
+        integrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
+    } */
 
 }
