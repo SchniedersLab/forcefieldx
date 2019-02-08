@@ -115,11 +115,7 @@ public class RotamerLibrary {
 
     private static final RotamerLibrary defaultRotamerLibrary = new RotamerLibrary(ProteinLibrary.PonderAndRichards, false);
 
-    private static final boolean useIdealRingGeometries;
-
-    static {
-        useIdealRingGeometries = Boolean.parseBoolean(System.getProperty("useIdealRingGeo", "true"));
-    }
+    private static final boolean useIdealRingGeometries = Boolean.parseBoolean(System.getProperty("useIdealRingGeo", "true"));
 
     private static final Map<AminoAcid3, Map<String, Double>> idealAngleGeometries;
 
