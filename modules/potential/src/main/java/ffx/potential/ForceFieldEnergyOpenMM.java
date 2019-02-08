@@ -4437,8 +4437,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         Bond b = atom3.getBonds().get(0);
                         Double bDist = b.bondType.distance;
 
+                        //Equilibrium angle value in degrees.
+                        double angleVal = angle.angleType.angle[angle.nh];
+
                         //Law of cosines.
-                        double falseBondLength = Math.sqrt(aDist*aDist+bDist*bDist-2*aDist*bDist*Math.cos(angle.getValue()));
+                        double falseBondLength = Math.sqrt(aDist*aDist+bDist*bDist-2*aDist*bDist*Math.cos(Math.toRadians(angleVal)));
 
                         iAtom1 = atom1.getXyzIndex() - 1;
                         iAtom3 = atom3.getXyzIndex() - 1;
