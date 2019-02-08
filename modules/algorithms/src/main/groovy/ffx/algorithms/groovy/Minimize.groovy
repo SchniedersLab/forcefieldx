@@ -135,7 +135,6 @@ class Minimizer extends AlgorithmsScript {
         for (mola in topologies) {
             String modelFilename = mola.getFile().getAbsolutePath()
 
-            File saveDir = baseDir
             if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
                 saveDir = new File(FilenameUtils.getFullPath(modelFilename))
             }

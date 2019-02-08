@@ -84,8 +84,7 @@ class MinimizerOpenMM extends AlgorithmsScript {
         if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
             MinimizeOpenMM minimizeOpenMM = new MinimizeOpenMM(activeAssembly)
             minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
-
-            File saveDir = baseDir
+            
             if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
                 saveDir = new File(FilenameUtils.getFullPath(modelFilename))
             }

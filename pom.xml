@@ -332,7 +332,6 @@
                     <version>${install.version}</version>
                     <configuration>
                         <installAtEnd>true</installAtEnd>
-                        <createChecksum>true</createChecksum>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -409,6 +408,7 @@
                         </dependency>
                     </dependencies>
                     <configuration>
+                        <alwaysGenerateSurefireReport>true</alwaysGenerateSurefireReport>
                         <aggregate>true</aggregate>
                         <linkXRef>true</linkXRef>
                     </configuration>
@@ -976,6 +976,7 @@
                 <configuration>
                     <linkXRef>true</linkXRef>
                     <aggregate>true</aggregate>
+                    <alwaysGenerateSurefireReport>true</alwaysGenerateSurefireReport>
                 </configuration>
             </plugin>
             <!-- plugin>
