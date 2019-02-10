@@ -134,21 +134,21 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * <p>
      * Constructor for MonteCarloOSRW.</p>
      *
-     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param osrw a {@link AbstractOSRW} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param osrw                a {@link AbstractOSRW} object.
+     * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly}
+     *                            object.
+     * @param properties          a
+     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     *                            {@link ffx.algorithms.thermostats.ThermostatEnum} object.
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     *                            {@link ffx.algorithms.integrators.IntegratorEnum} object.
      */
     public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
-            MolecularAssembly molecularAssembly, CompositeConfiguration properties,
-            AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+                          MolecularAssembly molecularAssembly, CompositeConfiguration properties,
+                          AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
         this.potential = potentialEnergy;
         this.osrw = osrw;
 
@@ -178,9 +178,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * the stepsPerMove and timeStep parameters to the current value in this
      * class
      *
-     * @param totalSteps a int.
+     * @param totalSteps   a int.
      * @param stepsPerMove a int.
-     * @param timeStep a double.
+     * @param timeStep     a double.
      */
     public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
         this.totalSteps = totalSteps;
@@ -553,7 +553,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                     acceptMCOSRW++;
                     double percent = (acceptMCOSRW * 100.0) / (imove + 1);
-                    logger.info(String.format("\n Accept [ L=%8.3f, FL=%8.3f, E=%12.4f]\n    -> [ L=%8.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(String.format("\n Accept [ L=%8.3f, FL=%8.3f, E=%12.4f]\n     -> [ L=%8.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentLambda, currentdUdL, currentOSRWEnergy, proposedLambda, proposeddUdL, proposedOSRWEnergy, percent));
                     lambda = proposedLambda;
                     currentdUdL = proposeddUdL;
@@ -561,7 +561,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     System.arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
                 } else {
                     double percent = (acceptMCOSRW * 100.0) / (imove + 1);
-                    logger.info(String.format("\n Reject [ L=%8.3f, FL=%8.3f, E=%12.4f]\n    -> [ L=%8.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(String.format("\n Reject [ L=%8.3f, FL=%8.3f, E=%12.4f]\n     -> [ L=%8.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentLambda, currentdUdL, currentOSRWEnergy, proposedLambda, proposeddUdL, proposedOSRWEnergy, percent));
                     lambdaMove.revertMove();
                     lambda = currentLambda;

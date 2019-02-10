@@ -110,13 +110,13 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * An array of all atoms in the system.
      */
-    private Atom atoms[];
-    private Atom previousAtoms[];
+    private Atom[] atoms;
+    private Atom[] previousAtoms;
     /**
      * Specification of the molecular index for each atom.
      */
-    private int molecule[];
-    private int previousMolecule[];
+    private int[] molecule;
+    private int[] previousMolecule;
     /**
      * The Force Field that defines the Van der Waals interactions.
      */
@@ -125,7 +125,7 @@ public class VanDerWaals implements MaskingInterface,
      * An array of whether each atom in the system should be used in the
      * calculations.
      */
-    private boolean use[] = null;
+    private boolean[] use = null;
     /**
      * A local convenience variable equal to atoms.length.
      */
@@ -142,7 +142,7 @@ public class VanDerWaals implements MaskingInterface,
     private boolean gradient;
     private boolean lambdaTerm;
     private boolean esvTerm;
-    private boolean isSoft[];
+    private boolean[] isSoft;
 
     /**
      * There are 2 softCore arrays of length nAtoms.
@@ -153,7 +153,7 @@ public class VanDerWaals implements MaskingInterface,
      * The second is used for atoms in the outer loop that are soft. This mask
      * equals: true for inner loop hard atoms false for inner loop soft atoms
      */
-    private boolean softCore[][];
+    private boolean[][] softCore;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
 
@@ -193,21 +193,21 @@ public class VanDerWaals implements MaskingInterface,
      */
     private ExtendedSystem esvSystem;
     private int numESVs = 0;
-    private double esvLambda[];
-    private double esvLambdaSwitch[];
-    private double esvSwitchDeriv[];
-    private boolean esvAtoms[];
-    private int atomEsvID[];
+    private double[] esvLambda;
+    private double[] esvLambdaSwitch;
+    private double[] esvSwitchDeriv;
+    private boolean[] esvAtoms;
+    private int[] atomEsvID;
     /**
      * TODO: To enable multi-dimensional lambda variables. Preload this with the
      * effective (combined) lambda for each atom state. [nAtoms][nStates]
      */
-    private double esvStateLambda[][];
+    private double[][] esvStateLambda;
     /**
      * TODO: To enable multi-dimensional lambda variables. Preload this with the
      * effective (combined) radEps for each atom state. [nAtoms][nStates]
      */
-    private double esvStateRadEps[][];
+    private double[][] esvStateRadEps;
 
     /**
      * *************************************************************************
@@ -217,12 +217,12 @@ public class VanDerWaals implements MaskingInterface,
      * A local copy of atomic coordinates, including reductions on the hydrogen
      * atoms.
      */
-    private double coordinates[];
+    private double[] coordinates;
     /**
      * Reduced coordinates of size: [nSymm][nAtoms * 3]
      */
-    private double reduced[][];
-    private double reducedXYZ[];
+    private double[][] reduced;
+    private double[] reducedXYZ;
     /**
      * Neighbor lists for each atom. Size: [nSymm][nAtoms][nNeighbors]
      */
@@ -237,21 +237,22 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * A local reference to the atom class of each atom in the system.
      */
-    private int atomClass[];
+    private int[] atomClass;
     /**
      * Hydrogen atom vdW sites are located toward their heavy atom relative to
      * their nucleus. This is a look-up that gives the heavy atom index for each
      * hydrogen.
      */
-    private int reductionIndex[];
-    private int bondMask[][];
-    private int angleMask[][];
-    private int torsionMask[][];
+    private int[] reductionIndex;
+    private int[][] bondMask;
+    private int[][] angleMask;
+    private int[][] torsionMask;
     /**
      * Each hydrogen vdW site is located a fraction of the way from the heavy
      * atom nucleus to the hydrogen nucleus (~0.9).
      */
-    private double reductionValue[];
+    private double[] reductionValue;
+    private boolean reducedHydrogens;
     private double longRangeCorrection;
     private final boolean doLongRangeCorrection;
     /**
@@ -308,9 +309,9 @@ public class VanDerWaals implements MaskingInterface,
      * Timing variables.
      */
     private boolean print = false;
-    private final long initializationTime[];
-    private final long vdwTime[];
-    private final long reductionTime[];
+    private final long[] initializationTime;
+    private final long[] vdwTime;
+    private final long[] reductionTime;
     private long initializationTotal, vdwTotal, reductionTotal;
     private final VanDerWaalsForm vdwForm;
     private final NonbondedCutoff nonbondedCutoff;
@@ -348,6 +349,7 @@ public class VanDerWaals implements MaskingInterface,
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
         vdwForm = new VanDerWaalsForm(forceField);
+        reducedHydrogens = forceField.getBoolean(ForceField.ForceFieldBoolean.REDUCE_HYDROGENS, true);
 
         /**
          * Lambda parameters.
@@ -434,6 +436,9 @@ public class VanDerWaals implements MaskingInterface,
         logger.info(format("   Switch Start:                         %6.3f (A)", vdwTaper));
         logger.info(format("   Cut-Off:                              %6.3f (A)", vdwCutoff));
         logger.info(format("   Long-Range Correction:                %b", doLongRangeCorrection));
+        if (!reducedHydrogens) {
+            logger.info(format("   Reduce Hydrogens:                     %b", reducedHydrogens));
+        }
 
         if (lambdaTerm) {
             logger.info("   Alchemical Parameters");
@@ -608,7 +613,7 @@ public class VanDerWaals implements MaskingInterface,
             ai.setVDWType(type);
             ArrayList<Bond> bonds = ai.getBonds();
             int numBonds = bonds.size();
-            if (type.reductionFactor > 0.0 && numBonds == 1) {
+            if (reducedHydrogens && type.reductionFactor > 0.0 && numBonds == 1) {
                 Bond bond = bonds.get(0);
                 Atom heavyAtom = bond.get1_2(ai);
                 // Atom indexes start at 1

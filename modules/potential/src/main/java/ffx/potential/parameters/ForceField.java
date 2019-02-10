@@ -60,7 +60,6 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class ForceField {
 
@@ -85,7 +84,7 @@ public class ForceField {
      * Get for the URL for the named force field.</p>
      *
      * @param forceField a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
+     *                   {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
      * @return a {@link java.net.URL} object.
      */
     public static URL getForceFieldURL(ForceFieldName forceField) {
@@ -132,8 +131,8 @@ public class ForceField {
     /**
      * ForceField Constructor.
      *
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties    a
+     *                      {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param parameterFile a {@link java.io.File} object.
      */
     public ForceField(CompositeConfiguration properties, File parameterFile) {
@@ -145,7 +144,7 @@ public class ForceField {
      * ForceField Constructor.
      *
      * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ForceField(CompositeConfiguration properties) {
         this.properties = properties;
@@ -205,7 +204,7 @@ public class ForceField {
      * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
      * ELEC_LAMBDATERM, or GK_LAMBDATERM.
      *
-     * @param toSet Boolean to set true if otherBooleans true.
+     * @param toSet         Boolean to set true if otherBooleans true.
      * @param otherBooleans Booleans that imply toSet is true.
      * @return If toSet is true.
      */
@@ -323,8 +322,8 @@ public class ForceField {
     /**
      * Renumber ForceField class, type and biotype values.
      *
-     * @param classOffset a int.
-     * @param typeOffset a int.
+     * @param classOffset   a int.
+     * @param typeOffset    a int.
      * @param bioTypeOffset a int.
      */
     public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
@@ -585,7 +584,7 @@ public class ForceField {
      * getDouble</p>
      *
      * @param forceFieldDouble a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     *                         {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
      * @return a double.
      * @throws java.lang.Exception if any.
      */
@@ -606,8 +605,8 @@ public class ForceField {
      * getDouble</p>
      *
      * @param forceFieldDouble a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
-     * @param defaultValue a double.
+     *                         {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     * @param defaultValue     a double.
      * @return a double.
      */
     public double getDouble(ForceFieldDouble forceFieldDouble,
@@ -640,7 +639,7 @@ public class ForceField {
      * getInteger</p>
      *
      * @param forceFieldInteger a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     *                          {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
      * @return a int.
      * @throws java.lang.Exception if any.
      */
@@ -661,8 +660,8 @@ public class ForceField {
      * getInteger</p>
      *
      * @param forceFieldInteger a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
-     * @param defaultValue a int.
+     *                          {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     * @param defaultValue      a int.
      * @return a int.
      */
     public int getInteger(ForceFieldInteger forceFieldInteger,
@@ -679,7 +678,7 @@ public class ForceField {
      * getString</p>
      *
      * @param forceFieldString a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     *                         {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
      * @return a {@link java.lang.String} object.
      * @throws java.lang.Exception if any.
      */
@@ -700,8 +699,8 @@ public class ForceField {
      * getString</p>
      *
      * @param forceFieldString a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
-     * @param defaultString a {@link java.lang.String} object.
+     *                         {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     * @param defaultString    a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
      */
     public String getString(ForceFieldString forceFieldString,
@@ -718,7 +717,7 @@ public class ForceField {
      * getBoolean</p>
      *
      * @param forceFieldBoolean a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     *                          {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
      * @return a boolean.
      * @throws java.lang.Exception if any.
      */
@@ -739,8 +738,8 @@ public class ForceField {
      * getBoolean</p>
      *
      * @param forceFieldBoolean a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
-     * @param defaultBoolean a {@link java.lang.Boolean} object.
+     *                          {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @param defaultBoolean    a {@link java.lang.Boolean} object.
      * @return a boolean.
      */
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean,
@@ -756,7 +755,7 @@ public class ForceField {
      * Add a force field keyword that is represented by a double.
      *
      * @param forceFieldDouble ForceFieldDouble
-     * @param value double
+     * @param value            double
      */
     public void addForceFieldDouble(ForceFieldDouble forceFieldDouble, double value) {
         if (forceFieldDouble == null) {
@@ -782,7 +781,7 @@ public class ForceField {
      * Add a force field keyword that is represented by an int.
      *
      * @param forceFieldInteger ForceFieldInteger
-     * @param value int
+     * @param value             int
      */
     public void addForceFieldInteger(ForceFieldInteger forceFieldInteger, int value) {
         if (forceFieldInteger == null) {
@@ -849,7 +848,7 @@ public class ForceField {
      * Store a force field keyword that is represented by a String.
      *
      * @param forceFieldString ForceFieldString
-     * @param value String
+     * @param value            String
      */
     public void addForceFieldString(ForceFieldString forceFieldString, String value) {
         if (forceFieldString == null) {
@@ -875,7 +874,7 @@ public class ForceField {
      * Store a force field keyword that is represented by a Boolean.
      *
      * @param forceFieldBoolean ForceFieldBoolean
-     * @param value Boolean
+     * @param value             Boolean
      */
     public void addForceFieldBoolean(ForceFieldBoolean forceFieldBoolean, Boolean value) {
         if (forceFieldBoolean == null) {
@@ -958,7 +957,7 @@ public class ForceField {
      * getAtomType</p>
      *
      * @param moleculeName a {@link java.lang.String} object.
-     * @param atomName a {@link java.lang.String} object.
+     * @param atomName     a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.AtomType} object.
      */
     public AtomType getAtomType(String moleculeName, String atomName) {
@@ -976,7 +975,7 @@ public class ForceField {
      * <p>getBioType.</p>
      *
      * @param moleculeName a {@link java.lang.String} object.
-     * @param atomName a {@link java.lang.String} object.
+     * @param atomName     a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.BioType} object.
      */
     public BioType getBioType(String moleculeName, String atomName) {
@@ -995,8 +994,8 @@ public class ForceField {
      * to both CD1 and CD2.
      *
      * @param molecule a {@link java.lang.String} object.
-     * @param atom a {@link java.lang.String} object.
-     * @param newType a int.
+     * @param atom     a {@link java.lang.String} object.
+     * @param newType  a int.
      * @return a {@link ffx.potential.parameters.AtomType} object.
      */
     public AtomType updateBioType(String molecule, String atom, int newType) {
@@ -1060,7 +1059,7 @@ public class ForceField {
      * getBonds</p>
      *
      * @param moleculeName a {@link java.lang.String} object.
-     * @param atomName a {@link java.lang.String} object.
+     * @param atomName     a {@link java.lang.String} object.
      * @return an array of {@link java.lang.String} objects.
      */
     public String[] getBonds(String moleculeName, String atomName) {
@@ -1285,7 +1284,7 @@ public class ForceField {
      * getForceFieldTypeCount</p>
      *
      * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType}
-     * object.
+     *             object.
      * @return a int.
      */
     @SuppressWarnings("unchecked")
@@ -1431,7 +1430,9 @@ public class ForceField {
         return "";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         String forceFieldName;
@@ -1470,7 +1471,7 @@ public class ForceField {
      * classes/types require "hybrid" force field types that include a mixture
      * of new and existing types.
      *
-     * @param typeMap A look-up from new types to existing types.
+     * @param typeMap    A look-up from new types to existing types.
      * @param patchTypes a {@link java.util.HashMap} object.
      */
     public void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap, HashMap<String, AtomType> patchTypes) {
@@ -1637,6 +1638,8 @@ public class ForceField {
         VDW_CUTOFF, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA,
         /* Van der Waals masking rules */
         VDW_12_SCALE, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE,
+        /* Van der Waals Softcore path for OpenMM */
+        SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START,
         /* Polarization parameters */
         POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
         CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
@@ -1715,7 +1718,7 @@ public class ForceField {
 
         /**
          * Returns the default value of this ForceFieldInteger if it is meaningful.
-         *
+         * <p>
          * Throws an Exception if it either does not have a meaningful default, or
          * if the default is determined via a formula. For example, PME_GRID_X is
          * generally determined as a function of a-axis length and PME grid spacing.
@@ -1735,6 +1738,7 @@ public class ForceField {
 
         /**
          * Checks whether there is a meaningful, constant default.
+         *
          * @return If meaningful constant default exists.
          */
         public boolean getDefaultMeaningful() {
@@ -1748,7 +1752,7 @@ public class ForceField {
         OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM, STRBNDTERM,
         TORSIONTERM, ANGTORSTERM, STRTORSTERM,
         TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
-        RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS,
+        RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS, REDUCE_HYDROGENS,
         USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES,
         LIGAND_VAPOR_ELEC, LIGAND_GK_ELEC,
         NO_LIGAND_CONDENSED_SCF, USE_SCF_PRECONDITIONER,
