@@ -4,6 +4,7 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
+import ffx.algorithms.Barostat
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.ReplicaExchange
 import ffx.algorithms.cli.AlgorithmsScript
@@ -13,6 +14,7 @@ import ffx.algorithms.cli.WriteoutOptions
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.parameters.ForceField
 
 import picocli.CommandLine.Command
@@ -91,10 +93,7 @@ class Dynamics extends AlgorithmsScript {
         structureFile = new File(structureFile.getAbsolutePath())
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
-        // test line below to try and work out a JUnit test, original line is commented out below (the one with the Potential object instantiated in this scope)
         potential = activeAssembly.getPotentialEnergy();
-        //Potential potential = activeAssembly.getPotentialEnergy()
-        logger.info(" Starting energy (before .dyn restart loaded):")
         boolean updatesDisabled = activeAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
@@ -105,19 +104,12 @@ class Dynamics extends AlgorithmsScript {
         potential.energy(x, true)
 
         if (barostatOpt.pressure > 0) {
-            if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
+            if (potential instanceof ForceFieldEnergyOpenMM) {
                 logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.")
             }
             logger.info(String.format(" Running NPT dynamics at pressure %7.4g", barostatOpt.pressure))
             CrystalPotential crystalPotential = (CrystalPotential) potential
-            ffx.algorithms.Barostat barostat = barostatOpt.createBarostat(activeAssembly, crystalPotential)
-            //ffx.algorithms.Barostat barostat = new ffx.algorithms.Barostat(activeAssembly, crystalPotential)
-            //barostat.setPressure(barostatOpt.pressure)
-            //barostat.setMaxDensity(barostatOpt.maxDensity)
-            //barostat.setMinDensity(barostatOpt.minDensity)
-            //barostat.setMaxSideMove(barostatOpt.maxSideMove)
-            //barostat.setMaxAngleMove(barostatOpt.maxAngleMove)
-            //barostat.setMeanBarostatInterval(barostatOpt.meanInterval)
+            Barostat barostat = barostatOpt.createBarostat(activeAssembly, crystalPotential)
             potential = barostat
         }
 

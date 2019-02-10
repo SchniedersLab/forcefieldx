@@ -70,7 +70,7 @@ public class DynamicsOptions {
      * -b or --thermostat sets the desired thermostat: current choices are
      * Adiabatic, Berendsen, or Bussi.
      */
-    @Option(names = {"-b", "--thermostat"}, paramLabel = "Berendsen",
+    @Option(names = {"-b", "--thermostat"}, paramLabel = "Bussi",
             description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
     String thermostatString = "BUSSI";
 
@@ -78,9 +78,9 @@ public class DynamicsOptions {
      * -i or --integrator sets the desired integrator: current choices are
      * Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
      */
-    @Option(names = {"-i", "--integrator"}, paramLabel = "Beeman",
+    @Option(names = {"-i", "--integrator"}, paramLabel = "VelocityVerlet",
             description = "Integrator: [Beeman / Respa / Stochastic / VelocityVerlet].")
-    String integratorString = "VELOCITYVERLET";
+    String integratorString = "VelocityVerlet";
 
     /**
      * -r or --report sets the thermodynamics reporting frequency in picoseconds

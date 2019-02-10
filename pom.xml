@@ -1000,9 +1000,9 @@
                 <artifactId>maven-linkcheck-plugin</artifactId>
                 <version>${linkcheck.version}</version>
             </plugin>
-            <!-- plugin>
+            <plugin>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.9.0</version>
+                <version>${pmd.version}</version>
                 <configuration>
                     <linkXRef>true</linkXRef>
                     <minimumTokens>500</minimumTokens>
@@ -1018,7 +1018,7 @@
                         </reports>
                     </reportSet>
                 </reportSets>
-            </plugin -->
+            </plugin>
             <!-- plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
@@ -1110,7 +1110,7 @@
         <jopenmm.version>7.3.0</jopenmm.version>
         <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
-        <biojava.version>5.1.1</biojava.version>
+        <biojava.version>5.2.0</biojava.version>
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.1.0</clustering.version>
         <fastutil.version>8.2.1</fastutil.version>
@@ -1151,7 +1151,7 @@
         <versions.version>2.7</versions.version>
         <properties.version>1.0.0</properties.version>
         <!-- Clover Plugin -->
-        <clover.version>4.2.0</clover.version>
+        <clover.version>4.3.1</clover.version>
     </properties>
     <dependencies>
         <dependency>

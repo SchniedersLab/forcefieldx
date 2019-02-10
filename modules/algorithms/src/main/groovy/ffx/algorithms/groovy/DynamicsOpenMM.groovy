@@ -112,8 +112,8 @@ class DynamicsOpenMM extends AlgorithmsScript {
         }
 
 
-        logger.info(" Starting energy (before .dyn restart loaded):")
-        boolean updatesDisabled = activeAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
+        boolean updatesDisabled = activeAssembly.getForceField().getBoolean(
+                ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
         }

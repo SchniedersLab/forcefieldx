@@ -275,13 +275,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             receiveThread = null;
         }
 
-        String propString = System.getProperty("ttosrw-alwaystemper", "true");
-        if (Boolean.parseBoolean(propString)) {
-            logger.info(" Disabling detection of transitions; will immediately begin tempering.");
-            tempering = true;
-        }
-
-        propString = System.getProperty("ttosrw-temperOffset", "1");
+        String propString = System.getProperty("ttosrw-temperOffset", "1");
         temperOffset = 1;
         try {
             temperOffset = Double.parseDouble(propString);
@@ -289,12 +283,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
             temperOffset = 1;
         }
-        if (temperOffset > 0) {
-            logger.info(String.format(" Applying a %7.4g kcal/mol offset to tempering", temperOffset));
-        } else if (temperOffset < 0) {
-            logger.warning(String.format(" Tempering offset %7.4g < 0; resetting to 0", temperOffset));
+
+         if (temperOffset < 0) {
             temperOffset = 0;
         }
+        logger.info(format("  Coverage before tempering:     %7.4g kcal/mol", temperOffset));
 
         propString = System.getProperty("ttosrw-integrationType", "SIMPSONS");
         IntegrationType testType = SIMPSONS;

@@ -321,12 +321,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
                  */
                 requestedThermostat = ThermostatEnum.ADIABATIC;
                 break;
-            case VELOCITYVERLET:
-                integrator = new VelocityVerlet(numberOfVariables, x, v, a, mass);
-                break;
             case BEEMAN:
-            default:
                 integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
+                break;
+            case VELOCITYVERLET:
+            default:
+                integrator = new VelocityVerlet(numberOfVariables, x, v, a, mass);
         }
 
         /**

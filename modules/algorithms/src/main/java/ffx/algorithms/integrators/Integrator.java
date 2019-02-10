@@ -63,8 +63,8 @@ public abstract class Integrator {
         try {
             return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
         } catch (Exception e) {
-            logger.info(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-            return IntegratorEnum.BEEMAN;
+            logger.info(String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
+            return IntegratorEnum.VELOCITYVERLET;
         }
     }
 
