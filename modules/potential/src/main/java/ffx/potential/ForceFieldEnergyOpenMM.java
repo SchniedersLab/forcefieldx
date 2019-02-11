@@ -866,11 +866,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double dt = timeStep * 1.0e-3;
         switch (integratorString) {
             case "LANGEVIN":
+                createLangevinIntegrator(temperature, frictionCoeff, dt);
                 if (!quiet) {
                     logger.log(Level.INFO, String.format(" Created Langevin integrator with time step %6.3e (psec).", dt));
                 }
-                createLangevinIntegrator(temperature, frictionCoeff, dt);
-
                 if (properties.containsKey("randomseed")) {
                     int randomSeed = properties.getInt("randomseed", 0);
                     logger.info(String.format(" Setting random seed %d for Langevin dynamics", randomSeed));
@@ -885,10 +884,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     in = 2;
                 }
                 double inner = dt / in;
+                createRESPAIntegrator(inner, dt);
                 if (!quiet) {
-                    logger.log(Level.INFO, String.format(" Created a RESPA integrator with outer %6.3e and inner %6.3e time steps (psec).", dt, inner));
+                    logger.log(Level.INFO,
+                            format(" Created a RESPA integrator with outer %6.3e and inner %6.3e time steps (psec).", dt, inner));
                 }
-                integrator = addRESPA(inner, dt);
                 break;
             /*
             case "BROWNIAN":
@@ -903,10 +903,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
              */
             case "VERLET":
             default:
+                createVerletIntegrator(dt);
                 if (!quiet) {
                     logger.log(Level.INFO, String.format(" Created Verlet integrator with time step %6.3e (psec).", dt));
                 }
-                createVerletIntegrator(dt);
         }
 
         // Create a context.
@@ -2990,7 +2990,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Update parameters if the Use flags changed.
      */
-    private void updateParameters(double x[]) {
+    private void updateParameters() {
+
+        /**
+        logger.info(format(" Update parameters called. VDW: %8.6f ELEC: %8.6f AVDW: %8.6f TOR: : %8.6f",
+                lambdaVDW, lambdaElec, lambdaAmoebaVDW, lambdaTorsion)); */
 
         Atom[] atoms = molecularAssembly.getAtomArray();
 
@@ -3006,10 +3010,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 createContext(integratorString, timeStep, temperature);
                 OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
                 softcoreCreated = true;
-                if (x != null) {
-                    double energy = energy(x);
-                    logger.info(format(" OpenMM Energy (L=%6.3f): %16.8f", lambdaVDW, energy));
-                }
             } else {
                 OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
             }
@@ -3626,7 +3626,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     lambdaElec = lambda;
                 }
 
-                updateParameters(null);
+                updateParameters();
 
             } else {
                 String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
@@ -3697,7 +3697,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return 0.0;
         }
 
-        updateParameters(x);
+        updateParameters();
 
         /**
          * Unscale the coordinates.
@@ -4462,18 +4462,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /**
      * <p>
-     * addRESPA.</p>
+     * createRESPAIntegrator.</p>
      *
      * @param inner a double.
      * @param dt    a double.
      * @return a {@link com.sun.jna.ptr.PointerByReference} object.
      */
-    public PointerByReference addRESPA(double inner, double dt) {
+    public void createRESPAIntegrator(double inner, double dt) {
 
         createCustomIntegrator(dt);
 
-        // Update the Context with the new integrator (i.e. without creating a new context).
-        // OpenMM_CustomIntegrator_addUpdateContextState (integrator);
         int n = (int) (Math.round(dt / inner));
         StringBuffer e1 = new StringBuffer("v+0.5*(dt/" + n + ")*f0/m");
         StringBuffer e11 = new StringBuffer(n + "*(x-x1)/dt+" + e1);
@@ -4491,8 +4489,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
         OpenMM_CustomIntegrator_addComputePerDof(integrator, "v", "v+0.5*dt*f1/m");
         OpenMM_CustomIntegrator_addConstrainVelocities(integrator);
-
-        return integrator;
     }
 
     public void createLangevinIntegrator(double temperature, double frictionCoeff, double dt) {

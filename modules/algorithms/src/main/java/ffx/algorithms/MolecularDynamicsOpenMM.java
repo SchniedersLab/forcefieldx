@@ -50,6 +50,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState_2;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocitiesToTemperature;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setStepSize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
@@ -303,6 +304,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
         currentTemperature = 2.0 * currentKineticEnergy * convert / (kB * dof);
 
+        // logger.info(format(" MDOpenMM getE P=%16.8f K=%16.8f", currentPotentialEnergy, currentKineticEnergy));
+
         OpenMM_State_destroy(state);
     }
 
@@ -310,13 +313,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         context = forceFieldEnergyOpenMM.getContext();
 
         int infoMask = OpenMM_State_Positions + OpenMM_State_Energy;
-
         PointerByReference state = OpenMM_Context_getState(context, infoMask, forceFieldEnergyOpenMM.enforcePBC);
 
         currentPotentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
         currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
         currentTemperature = 2.0 * currentKineticEnergy * convert / (kB * dof);
+
+        // logger.info(format(" MDOpenMM getEandP P=%16.8f K=%16.8f", currentPotentialEnergy, currentKineticEnergy));
 
         positions = OpenMM_State_getPositions(state);
         forceFieldEnergyOpenMM.getOpenMMPositions(positions, numParticles, x);
@@ -613,6 +617,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
             // Call to retrieve the starting kinetic energy for the system.
             long retrieveEnergyTime = -System.nanoTime();
+
+            forceFieldEnergyOpenMM.setLambda(forceFieldEnergyOpenMM.getLambda());
+
             getOpenMMEnergies();
             retrieveEnergyTime += System.nanoTime();
 

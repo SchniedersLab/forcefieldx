@@ -294,7 +294,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         switch (requestedIntegrator) {
             case RESPA:
                 Respa respa = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
-                //integrator = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
                 int in = molecularAssembly.getProperties().getInt("respa-dt", 4);
                 if (in < 2) {
                     in = 2;
@@ -302,7 +301,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 if (!oMMLogging) {
                     respa.setInnerTimeSteps(in);
                 }
-                logger.log(Level.INFO, String.format(" Created a RESPA integrator with %d inner time steps.", in));
+                logger.log(Level.FINE, String.format(" Created a RESPA integrator with %d inner time steps.", in));
                 integrator = respa;
                 break;
             case STOCHASTIC:
