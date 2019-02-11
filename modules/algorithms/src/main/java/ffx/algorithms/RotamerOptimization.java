@@ -2493,11 +2493,11 @@ public class RotamerOptimization implements Terminatable {
                         break;
                     }
                 }
-                if (deadEnd) {
-                    continue;
+                if (!deadEnd) {
+                    break;
                 }
-                return true;
             }
+            return true;
         }
         return false;
     }
@@ -2510,9 +2510,9 @@ public class RotamerOptimization implements Terminatable {
      */
     private double globalOptimization(List<Residue> residueList) {
         int currentEnsemble = Integer.MAX_VALUE;
-        Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
+        Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
         int nResidues = residues.length;
-        int currentRotamers[] = new int[nResidues];
+        int[] currentRotamers = new int[nResidues];
 
         int iterations = 0;
         boolean finalTry = false;

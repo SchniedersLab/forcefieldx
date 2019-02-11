@@ -1708,7 +1708,7 @@ public class ForceField {
         }
 
         ForceFieldInteger(int defaultValue) {
-            this(1, true);
+            this(defaultValue, true);
         }
 
         ForceFieldInteger(int defaultValue, boolean constantDefault) {

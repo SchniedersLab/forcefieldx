@@ -106,8 +106,8 @@ public class CrystalReciprocalSpace {
     private final boolean neutron;
     private final double bAdd;
     private final double fftScale;
-    private final double densityGrid[];
-    private final double solventGrid[];
+    private final double[] densityGrid;
+    private final double[] solventGrid;
     private final int nSymm;
     private final int bulkNSymm;
     private final int nAtoms;
@@ -121,9 +121,9 @@ public class CrystalReciprocalSpace {
     private final SharedIntegerArray optSliceWeightAtomic;
     private final SharedIntegerArray optSliceWeightSolvent;
     private final SharedIntegerArray optSliceWeightBulkSolvent;
-    private final int previousOptSliceWeightAtomic[];
-    private final int previousOptSliceWeightSolvent[];
-    private final int previousOptSliceWeightBulkSolvent[];
+    private final int[] previousOptSliceWeightAtomic;
+    private final int[] previousOptSliceWeightSolvent;
+    private final int[] previousOptSliceWeightBulkSolvent;
     private final SliceSchedule atomicSliceSchedule;
     private final SliceSchedule solventSliceSchedule;
     private final SliceSchedule bulkSolventSliceSchedule;
@@ -131,50 +131,50 @@ public class CrystalReciprocalSpace {
     private final SharedIntegerArray optRowWeightAtomic;
     private final SharedIntegerArray optRowWeightSolvent;
     private final SharedIntegerArray optRowWeightBulkSolvent;
-    private final int previousOptRowWeightAtomic[];
-    private final int previousOptRowWeightSolvent[];
-    private final int previousOptRowWeightBulkSolvent[];
+    private final int[] previousOptRowWeightAtomic;
+    private final int[] previousOptRowWeightSolvent;
+    private final int[] previousOptRowWeightBulkSolvent;
     private final RowSchedule atomicRowSchedule;
     private final RowSchedule solventRowSchedule;
     private final RowSchedule bulkSolventRowSchedule;
     private final ParallelTeam parallelTeam;
-    private final Atom atoms[];
+    private final Atom[] atoms;
     private final Crystal crystal;
     private final Resolution resolution;
     private final ReflectionList reflectionList;
-    private final FormFactor atomFormFactors[][];
-    private final FormFactor solventFormFactors[][];
+    private final FormFactor[][] atomFormFactors;
+    private final FormFactor[][] solventFormFactors;
     private final GridMethod gridMethod;
     private final SharedIntegerArray optAtomicGradientWeight;
-    private final int previousOptAtomicGradientWeight[];
+    private final int[] previousOptAtomicGradientWeight;
     private final GradientSchedule atomicGradientSchedule;
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * 3D spatial decomposition.
      */
     private final SpatialDensityRegion atomicDensityRegion;
-    private final AtomicDensityLoop atomicDensityLoops[];
+    private final AtomicDensityLoop[] atomicDensityLoops;
     private final SpatialDensityRegion solventDensityRegion;
-    private final SolventDensityLoop solventDensityLoops[];
-    private final SolventDensityLoop bulkSolventDensityLoops[];
+    private final SolventDensityLoop[] solventDensityLoops;
+    private final SolventDensityLoop[] bulkSolventDensityLoops;
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * slice-based decomposition.
      */
     private final SliceRegion atomicSliceRegion;
-    private final AtomicSliceLoop atomicSliceLoops[];
+    private final AtomicSliceLoop[] atomicSliceLoops;
     private final SliceRegion solventSliceRegion;
-    private final SolventSliceLoop solventSliceLoops[];
-    private final BulkSolventSliceLoop bulkSolventSliceLoops[];
+    private final SolventSliceLoop[] solventSliceLoops;
+    private final BulkSolventSliceLoop[] bulkSolventSliceLoops;
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * row-based decomposition.
      */
     private final RowRegion atomicRowRegion;
-    private final AtomicRowLoop atomicRowLoops[];
+    private final AtomicRowLoop[] atomicRowLoops;
     private final RowRegion solventRowRegion;
-    private final SolventRowLoop solventRowLoops[];
-    private final BulkSolventRowLoop bulkSolventRowLoops[];
+    private final SolventRowLoop[] solventRowLoops;
+    private final BulkSolventRowLoop[] bulkSolventRowLoops;
     /**
      * Parallelization over atomic structure factor loops.
      */
@@ -198,7 +198,7 @@ public class CrystalReciprocalSpace {
     private boolean solvent = false;
     private boolean useThreeGaussians = true;
     // not final for purposes of finite differences
-    private double coordinates[][][];
+    private double[][][] coordinates;
     private double aRad;
     private double weight = 1.0;
     private int aRadGrid;
@@ -2069,10 +2069,8 @@ public class CrystalReciprocalSpace {
                 if (lb >= rowLB || rowUB <= ub) {
                     buildListA.add(iAtom);
                     buildListS.add(iSymm);
-                } else {
-                    continue;
+                    break;
                 }
-                break;
             }
         }
 
@@ -2284,10 +2282,8 @@ public class CrystalReciprocalSpace {
                 if (lb >= rowLB || rowUB <= ub) {
                     buildListA.add(iAtom);
                     buildListS.add(iSymm);
-                } else {
-                    continue;
+                    break;
                 }
-                break;
             }
         }
 
@@ -2654,12 +2650,11 @@ public class CrystalReciprocalSpace {
             int buff = bufferSize;
             for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
-                if (lb > giz || giz > ub) {
-                    continue;
+                if (giz >= lb && giz <= ub) {
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                    break;
                 }
-                buildListA.add(iAtom);
-                buildListS.add(iSymm);
-                break;
             }
         }
 
@@ -2770,12 +2765,11 @@ public class CrystalReciprocalSpace {
             int buff = bufferSize;
             for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
                 int giz = Crystal.mod(iz, fftZ);
-                if (lb > giz || giz > ub) {
-                    continue;
+                if (giz >= lb && giz <= ub) {
+                    buildListA.add(iAtom);
+                    buildListS.add(iSymm);
+                    break;
                 }
-                buildListA.add(iAtom);
-                buildListS.add(iSymm);
-                break;
             }
         }
 

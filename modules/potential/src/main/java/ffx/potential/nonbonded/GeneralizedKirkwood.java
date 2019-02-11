@@ -446,9 +446,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             hydrogenOverlap = defaultOverlapScale;
         }
         hydrogenOverlapScale = hydrogenOverlap;
-        //hydrogenOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, defaultOverlapScale);
 
-        NonPolar nonpolarModel = NonPolar.CAV_DISP;
+        NonPolar nonpolarModel;
         try {
             String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
             nonpolarModel = getNonPolarModel(cavModel);
@@ -515,7 +514,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         gkEnergyRegion = new GKEnergyRegion(threadCount);
         bornGradRegion = new BornCRRegion(threadCount);
 
-        double tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
+        double tensionDefault;
         switch (nonPolar) {
             case CAV:
                 cavitationRegion = new CavitationRegion(threadCount);
