@@ -2275,20 +2275,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Sterics mixing rules.
         // Eps rule: HHG
-        // epsilon = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
         String stericsMixingRules = " epsilon = 4.0 * (epsilon1 * epsilon2) / ((sqrt(epsilon1) + sqrt(epsilon2)) * (sqrt(epsilon1) + sqrt(epsilon2)));";
 
         // Radius rule: cubic mean
-        // radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
         stericsMixingRules += " rmin = 2.0 * ((rmin1 * rmin1 * rmin1) + (rmin2 * rmin2 * rmin2)) / ((rmin1 * rmin1) + (rmin2 * rmin2));";
 
         // Softcore Lennard-Jones, with a form equivalent to that used in FFX VanDerWaals class.
-        // String stericsEnergyExpression = "(vdw_lambda^beta)*epsilon*x*(x-2.0);";
         String stericsEnergyExpression = " (vdw_lambda^beta)*epsilon*t1*t2;";
         // Effective softcore distance for sterics.
-        // stericsEnergyExpression += " x = 1.0 / (alpha*(1.0-vdw_lambda)^2.0 + (r/rmin)^6.0);";
-        stericsEnergyExpression += " t1 = ((1.0 + delta)^(n-m))/((alpha * (1.0 - vdw_lambda)^2.0) + (rho + delta)^(n - m));";
-        stericsEnergyExpression += " t2 = ((1.0 + gamma)/((alpha * (1.0 - vdw_lambda)^2.0) + (rho^m) + gamma)) - 2.0;";
+        stericsEnergyExpression += " t1 = 1.07^7/(alpha * (1.0 - vdw_lambda)^2.0 + (rho + 0.07)^7);";
+        stericsEnergyExpression += " t2 = 1.12/  (alpha * (1.0 - vdw_lambda)^2.0 + (rho^7) + 0.12) - 2.0;";
         stericsEnergyExpression += " rho = r/rmin;";
         // Define energy expression for sterics.
         String energyExpression = stericsEnergyExpression + stericsMixingRules;
@@ -2302,10 +2298,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "vdw_lambda", 1.0);
         OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "alpha", alpha);
         OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "beta", beta);
-        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "n", 14);
-        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "m", 7);
-        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "delta", 0.07);
-        OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "gamma", 0.12);
         OpenMM_CustomNonbondedForce_addPerParticleParameter(amoebaSoftcore, "rmin");
         OpenMM_CustomNonbondedForce_addPerParticleParameter(amoebaSoftcore, "epsilon");
 
@@ -2382,20 +2374,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
         OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "alpha", alpha);
         OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "beta", beta);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "n", 14);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "m", 7);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "delta", 0.07);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "gamma", 0.12);
         OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "rmin");
         OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "epsilon");
 
         OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
         OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "alpha", alpha);
         OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "beta", beta);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "n", 14);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "m", 7);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "delta", 0.07);
-        OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "gamma", 0.12);
         OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "rmin");
         OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "epsilon");
 
