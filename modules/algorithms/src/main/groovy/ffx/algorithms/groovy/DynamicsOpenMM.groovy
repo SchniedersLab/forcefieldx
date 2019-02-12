@@ -111,15 +111,11 @@ class DynamicsOpenMM extends AlgorithmsScript {
                 break
         }
 
-
         boolean updatesDisabled = activeAssembly.getForceField().getBoolean(
                 ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
         }
-        double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
-        forceFieldEnergy.getCoordinates(x)
-        forceFieldEnergy.energy(x, true)
 
         logger.info("\n Running molecular dynamics on " + modelfilename)
 
@@ -156,7 +152,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         return forceFieldEnergyOpenMM == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergyOpenMM);
     }
 }

@@ -940,12 +940,9 @@ class Thermodynamics extends Script {
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
         }
-        double[] x = new double[potential.getNumberOfVariables()];
-        potential.getCoordinates(x);
+
         LambdaInterface linter = (LambdaInterface) potential;
         linter.setLambda(lambda);
-
-        potential.energy(x, true);
 
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
@@ -990,8 +987,6 @@ class Thermodynamics extends Script {
         osrw.setResetStatistics(options.reset);
 
         osrw.setTemperingParameter(options.temperParam);
-
-
 
         if (options.optimize) {
             osrw.setOptimization(true, topologies[0]);

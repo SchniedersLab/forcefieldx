@@ -80,6 +80,8 @@ public class MDMove implements MCMove {
      */
     private double temperature = 298.15;
     private boolean initVelocities = true;
+    private File dyn;
+
     private int mdMoveCounter = 0;
     private double energyDriftTotalAbs;
     private double energyDriftTotalNet;
@@ -113,15 +115,13 @@ public class MDMove implements MCMove {
 
 
         String name = assembly.getFile().getAbsolutePath();
-        File dyn = new File(FilenameUtils.removeExtension(name) + ".dyn");
+        dyn = new File(FilenameUtils.removeExtension(name) + ".dyn");
         if (!dyn.exists()) {
             dyn = null;
         }
 
         molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
-
         molecularDynamics.setQuiet(true);
-
     }
 
     /**
@@ -159,6 +159,7 @@ public class MDMove implements MCMove {
      */
     @Override
     public void move() {
+
         mdMoveCounter++;
 
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);

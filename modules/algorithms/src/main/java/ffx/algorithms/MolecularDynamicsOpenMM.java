@@ -166,11 +166,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private boolean NPT = false;
     /**
-     * Boolean used to suppress logging for creation of integrator, typically
-     * used to limit the amount of output to the screen.
-     */
-    private boolean quiet = true;
-    /**
      * Double that holds the target pressure for the barostat under NPT
      * dynamics.
      */
@@ -179,12 +174,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Frequency of collisions for the barostat under NPT dynamics.
      */
     private int barostatFrequency;
-    /**
-     * Integer used to count the number of times the context has been set up,
-     * mainly used to add a thermostat to the default integrator (Velocity
-     * Verlet).
-     */
-    private int contextCounter = 0;
     /**
      * Composite properties for the system used in the simulation.
      */
@@ -237,8 +226,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         } else {
             random.setSeed(0);
         }
-
-        updateContext();
     }
 
     /**
@@ -444,51 +431,30 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         this.restartFile = dyn;
         this.initVelocities = initVelocities;
 
-        //logger.info(String.format(" Target Temperature %f", targetTemperature));
-        // Uncomment this to get code back to normal
-        //updateContext();
         switch (thermostatType) {
             case BUSSI:
             case BERENDSEN:
                 if (!integratorString.equalsIgnoreCase("LANGEVIN")) {
-                    logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
+                    logger.info(String.format(" Replacing %s thermostat Andersen", thermostatType));
                     forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
                     if (NPT) {
                         setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
-                        long updateContextTime = 0;
-                        updateContextTime = -System.nanoTime();
-                        updateContext();
-                        updateContextTime += System.nanoTime();
-                        logger.info(String.format(" Updated context in %6.3f seconds", updateContextTime * NS2SEC));
-                    } else {
-                        long updateContextTime = 0;
-                        updateContextTime = -System.nanoTime();
-                        updateContext();
-                        updateContextTime += System.nanoTime();
-                        logger.info(String.format(" Updated context in %6.3f seconds", updateContextTime * NS2SEC));
                     }
                 } else {
                     logger.info(" Langevin/Stochastic dynamics already has temperature control, will not be adding thermostat!");
                 }
-
                 break;
             case ADIABATIC:
                 if (integratorString.equalsIgnoreCase("LANGEVIN") && NPT) {
                     setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
-                    long updateContextTime = 0;
-                    updateContextTime = -System.nanoTime();
-                    updateContext();
-                    updateContextTime += System.nanoTime();
-                    logger.info(String.format(" Updated context in %6.3f seconds", updateContextTime * NS2SEC));
                 }
             default:
                 break;
             // No thermostat.
         }
 
-        // Code used to have the updateContext method call here to ensure the context is updated if the user wished to add
-        // a thermostat or a barostat. It has been moved inside the different cases of the switch statement to help the 
-        // performance of the the MCOSRW algorithm which does not require a thermostat
+        updateContext();
+
         /**
          * Convert the print interval to a print frequency.
          */
@@ -797,27 +763,19 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * updateContext.</p>
      */
     public final void updateContext() {
-        String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
-        double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
-        double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
-        if (currentTemperature != targetTemperature || currentTimeStp != dt || !currentIntegrator.equalsIgnoreCase(integratorString) || (currentIntegrator.equalsIgnoreCase("VERLET") && contextCounter != 0)) {
-            if (!quiet) {
-                logger.info(String.format(" Creating OpenMM Context with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
-            }
-            logger.fine(" Creating new OpenMM Context");
-            long contextTime = 0;
-            contextTime = -System.nanoTime();
+        if (context == null) {
             forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
-            contextTime += System.nanoTime();
-            logger.fine(String.format("Created new context in %6.3f", contextTime * NS2SEC));
-            integrator = forceFieldEnergyOpenMM.getIntegrator();
-            context = forceFieldEnergyOpenMM.getContext();
         } else {
-            integrator = forceFieldEnergyOpenMM.getIntegrator();
-            context = forceFieldEnergyOpenMM.getContext();
+            String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
+            double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
+            double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
+            if (currentTemperature != targetTemperature || currentTimeStp != dt
+                    || !currentIntegrator.equalsIgnoreCase(integratorString)) {
+                forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
+            }
         }
-        quiet = false;
-        contextCounter++;
+        context = forceFieldEnergyOpenMM.getContext();
+        integrator = forceFieldEnergyOpenMM.getIntegrator();
     }
 
     /**

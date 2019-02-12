@@ -474,15 +474,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * States.
      */
     public final int enforcePBC;
-    /**
-     * Boolean to control logging statements to the screen, typically used when
-     * an integrator other than the default is chosen for dynamics.
-     */
-    private boolean quiet = true;
-    /**
-     * Integer that controls the value of the quiet boolean.
-     */
-    private int quietInt = 0;
 
     private boolean testdEdL = false;
 
@@ -602,38 +593,35 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         frictionCoeff = forceField.getDouble(ForceFieldDouble.FRICTION_COEFF, 91.0);
         collisionFreq = forceField.getDouble(ForceFieldDouble.COLLISION_FREQ, 0.01);
 
-        createContext(integratorString, timeStep, temperature);
+//        createContext(integratorString, timeStep, temperature);
 
         // Set initial positions.
-        double x[] = new double[numParticles * 3];
-        int index = 0;
-        Atom atoms[] = molecularAssembly.getAtomArray();
-        for (int i = 0; i < numParticles; i++) {
-            Atom atom = atoms[i];
-            x[index] = atom.getX();
-            x[index + 1] = atom.getY();
-            x[index + 2] = atom.getZ();
-            index += 3;
-        }
-        setOpenMMPositions(x, numParticles * 3);
-
-        int infoMask = OpenMM_State_Positions;
-        infoMask += OpenMM_State_Forces;
-        infoMask += OpenMM_State_Energy;
+//        double x[] = new double[numParticles * 3];
+//        int index = 0;
+//        Atom atoms[] = molecularAssembly.getAtomArray();
+//        for (int i = 0; i < numParticles; i++) {
+//            Atom atom = atoms[i];
+//            x[index] = atom.getX();
+//            x[index + 1] = atom.getY();
+//            x[index + 2] = atom.getZ();
+//            index += 3;
+//        }
+//        setOpenMMPositions(x, numParticles * 3);
 
         boolean aperiodic = super.getCrystal().aperiodic();
         boolean pbcEnforced = forceField.getBoolean(ForceField.ForceFieldBoolean.ENFORCE_PBC, !aperiodic);
         enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
-        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
-        forces = OpenMM_State_getForces(state);
-        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+//         int infoMask = OpenMM_State_Positions;
+//         infoMask += OpenMM_State_Forces;
+//         infoMask += OpenMM_State_Energy;
+//         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+//         forces = OpenMM_State_getForces(state);
+//         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+//         OpenMM_State_destroy(state);
+//         logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
 
-        logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
         fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
-
-        OpenMM_State_destroy(state);
-
         elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, false);
         vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
         torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
@@ -856,20 +844,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         CompositeConfiguration properties = molecularAssembly.getProperties();
 
-        //logger.info(String.format(" quietInt is %d", quietInt));
-        if (quietInt == 1) {
-            quiet = false;
+        if (context != null) {
+            OpenMM_Context_destroy(context);
+            context = null;
         }
-
-        OpenMM_Context_destroy(context);
 
         double dt = timeStep * 1.0e-3;
         switch (integratorString) {
             case "LANGEVIN":
                 createLangevinIntegrator(temperature, frictionCoeff, dt);
-                if (!quiet) {
-                    logger.log(Level.INFO, String.format(" Created Langevin integrator with time step %6.3e (psec).", dt));
-                }
                 if (properties.containsKey("randomseed")) {
                     int randomSeed = properties.getInt("randomseed", 0);
                     logger.info(String.format(" Setting random seed %d for Langevin dynamics", randomSeed));
@@ -885,10 +868,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
                 double inner = dt / in;
                 createRESPAIntegrator(inner, dt);
-                if (!quiet) {
-                    logger.log(Level.INFO,
-                            format(" Created a RESPA integrator with outer %6.3e and inner %6.3e time steps (psec).", dt, inner));
-                }
                 break;
             /*
             case "BROWNIAN":
@@ -904,10 +883,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             case "VERLET":
             default:
                 createVerletIntegrator(dt);
-                if (!quiet) {
-                    logger.log(Level.INFO, String.format(" Created Verlet integrator with time step %6.3e (psec).", dt));
-                }
         }
+
+        // Set all lambda variables to 1.0 when creating the context.
+        // double doublelambdaVDWBak = lambdaVDW;
+        // double lambdaElecBak = lambdaElec;
+        // double lambdaAmoebaVDWBak = lambdaAmoebaVDW;
+        // double lambdaTorsionBak = lambdaTorsion;
+        // lambdaVDW = 1.0;
+        // lambdaElec = 1.0;
+        // lambdaAmoebaVDW = 1.0;
+        // lambdaTorsion = 1.0;
 
         // Create a context.
         context = OpenMM_Context_create_2(system, integrator, platform);
@@ -924,10 +910,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             index += 3;
         }
 
-        setOpenMMPositions(x, numParticles * 3);
+        logger.info(format(" Context created (integrator=%s, time step=%6.2f, temperature=%6.2f).\n",
+                integratorString, timeStep, temperature));
 
-        quietInt++;
-        //logger.info(String.format(" quietInt is %d", quietInt));
+        setOpenMMPositions(x, numParticles * 3);
     }
 
     /**
@@ -1120,7 +1106,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (ommThermostat == null) {
             ommThermostat = OpenMM_AndersenThermostat_create(targetTemp, collisionFreq);
             OpenMM_System_addForce(system, ommThermostat);
-            logger.info(format(" Added an Andersen thermostat at %10.6fK and collison frequency %10.6f.", targetTemp, collisionFreq));
+            if (context != null) {
+                int preserveState = 1;
+                OpenMM_Context_reinitialize(context, preserveState);
+            }
+            logger.info(format(" Added an Andersen thermostat at %6.2fK and collision frequency %6.2f.", targetTemp, collisionFreq));
         } else {
             logger.info(" Attempted to add a second thermostat to an OpenMM force field!");
         }
@@ -1129,17 +1119,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public void addMonteCarloBarostat(double targetPressure, double targetTemp, int frequency) {
         if (ommBarostat == null) {
             ommBarostat = OpenMM_MonteCarloBarostat_create(targetPressure, targetTemp, frequency);
-            OpenMM_System_addForce(system, ommBarostat);
-            logger.info(format(" Added a Monte Carlo barostat at target pressure %10.6f bar, target temperature %10.6fK and MC move frequency %d.", targetPressure, targetTemp, frequency));
-
             CompositeConfiguration properties = molecularAssembly.getProperties();
-
             if (properties.containsKey("randomseed")) {
                 int randomSeed = properties.getInt("randomseed", 0);
                 logger.info(String.format(" Setting random seed %d for Monte Carlo Barostat", randomSeed));
                 OpenMM_MonteCarloBarostat_setRandomNumberSeed(integrator, randomSeed);
             }
 
+            OpenMM_System_addForce(system, ommBarostat);
+            if (context != null) {
+                int preserveState = 1;
+                OpenMM_Context_reinitialize(context, preserveState);
+            }
+            logger.info(format(" Added a Monte Carlo barostat at target pressure %10.6f bar, target temperature %10.6fK and MC move frequency %d.", targetPressure, targetTemp, frequency));
         } else {
             logger.info(" Attempted to add a second barostat to an OpenMM force field!");
         }
@@ -1913,8 +1905,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double alpha = vdW.getAlpha();
         double beta = vdW.getBeta();
 
-        logger.info(format(" Custom non-bonded force with alpha = %8.6f and beta = %8.6f", alpha, beta));
-
         OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "vdw_lambda", 1.0);
         OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "alpha", alpha);
         OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "beta", beta);
@@ -1937,7 +1927,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_NonbondedForce_getParticleParameters(fixedChargeNonBondedForce, i, charge, sigma, eps);
             if (atom.applyLambda()) {
                 OpenMM_IntSet_insert(alchemicalGroup, i);
-                logger.info(format(" Adding alchemical atom %s.", atom));
             } else {
                 OpenMM_IntSet_insert(nonAlchemicalGroup, i);
             }
@@ -2082,7 +2071,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_System_addForce(system, nonAlchemicalAlchemicalStericsForce);
 
         logger.log(Level.INFO, format("  Added fixed charge softcore force \t%d", fGroup));
-
+        logger.log(Level.INFO, format("   Alpha = %8.6f and beta = %8.6f", alpha, beta));
     }
 
     private void addCustomGBForce(ForceField forceField) {
@@ -2310,8 +2299,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double alpha = vdW.getAlpha();
         double beta = vdW.getBeta();
 
-        logger.info(format(" Custom non-bonded force with alpha = %8.6f and beta = %8.6f", alpha, beta));
-
         OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "vdw_lambda", 1.0);
         OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "alpha", alpha);
         OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "beta", beta);
@@ -2336,7 +2323,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             if (atom.applyLambda()) {
                 OpenMM_IntSet_insert(alchemicalGroup, i);
-                logger.info(format(" Adding alchemical atom %s.", atom));
             } else {
                 OpenMM_IntSet_insert(nonAlchemicalGroup, i);
             }
@@ -2490,7 +2476,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_System_addForce(system, amoebaNonAlchemicalAlchemicalStericsForce);
 
         logger.log(Level.INFO, format("  AMOEBA softcore van der Waals force \t%d", fGroup));
-
+        logger.log(Level.INFO, format("   Alpha = %8.6f and beta = %8.6f", alpha, beta));
     }
 
     private void addAmoebaMultipoleForce(ForceField forceField) {
@@ -3006,12 +2992,21 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 } else if (fixedChargeNonBondedForce != null) {
                     addCustomNonbondedSoftcoreForce(forceField);
                 }
-                // Reset the context.
-                createContext(integratorString, timeStep, temperature);
-                OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
+
+                //createContext(integratorString, timeStep, temperature);
+
+                // Re-initialize the context.
+                if (context != null) {
+                    int preserveState = 1;
+                    OpenMM_Context_reinitialize(context, preserveState);
+                    OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
+                }
+
                 softcoreCreated = true;
             } else {
-                OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
+                if (context != null) {
+                    OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
+                }
             }
         }
 
@@ -3092,7 +3087,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     eps, vdwType.reductionFactor);
 
         }
-        OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, context);
+
+        if (context != null) {
+            OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, context);
+        }
     }
 
     /**
@@ -3227,7 +3225,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     i1, i2, qq, sigma.getValue(), epsilon);
         }
 
-        OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
+        if (context != null) {
+            OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
+        }
     }
 
     /**
@@ -3280,7 +3280,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_DoubleArray_resize(doubleArray, 0);
         }
         OpenMM_DoubleArray_destroy(doubleArray);
-        OpenMM_CustomGBForce_updateParametersInContext(customGBForce, context);
+
+        if (context != null) {
+            OpenMM_CustomGBForce_updateParametersInContext(customGBForce, context);
+        }
     }
 
     /**
@@ -3392,7 +3395,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(dipoles);
         OpenMM_DoubleArray_destroy(quadrupoles);
 
-        OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, context);
+        if (context != null) {
+            OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, context);
+        }
     }
 
     /**
@@ -3447,7 +3452,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //                break;
 //        }
 
-        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, context);
+        if (context != null) {
+            OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, context);
+        }
     }
 
     /**
@@ -3484,7 +3491,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     OpenMM_NmPerAngstrom * radius * radScale,
                     OpenMM_KJPerKcal * eps * useFactor);
         }
-        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, context);
+
+        if (context != null) {
+            OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, context);
+        }
     }
 
     /**
@@ -3529,7 +3539,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
-        OpenMM_PeriodicTorsionForce_updateParametersInContext(amoebaTorsionForce, context);
+        if (context != null) {
+            OpenMM_PeriodicTorsionForce_updateParametersInContext(amoebaTorsionForce, context);
+        }
     }
 
     /**
@@ -3697,6 +3709,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return 0.0;
         }
 
+        if (context == null) {
+            createContext(integratorString, timeStep, temperature);
+        }
+
         updateParameters();
 
         /**
@@ -3765,6 +3781,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 x[i] /= optimizationScaling[i];
             }
         }
+
+        if (context == null) {
+            createContext(integratorString, timeStep, temperature);
+        }
+
         setCoordinates(x);
         setOpenMMPositions(x, x.length);
 
@@ -4102,6 +4123,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @return context
      */
     public PointerByReference getContext() {
+        if (context == null) {
+            createContext(this.integratorString, timeStep, temperature);
+        }
         return context;
     }
 
@@ -4471,6 +4495,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public void createRESPAIntegrator(double inner, double dt) {
 
         createCustomIntegrator(dt);
+
+        OpenMM_CustomIntegrator_addUpdateContextState(integrator);
+        OpenMM_CustomIntegrator_setKineticEnergyExpression(integrator, "m*v*v/2");
 
         int n = (int) (Math.round(dt / inner));
         StringBuffer e1 = new StringBuffer("v+0.5*(dt/" + n + ")*f0/m");
