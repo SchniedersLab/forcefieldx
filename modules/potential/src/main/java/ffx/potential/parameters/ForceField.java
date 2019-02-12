@@ -1640,6 +1640,8 @@ public class ForceField {
         VDW_12_SCALE, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE,
         /* Van der Waals Softcore path for OpenMM */
         SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START,
+        /* Electrostatics switch for full path non bonded force scaling using OpenMM */
+        ELEC_START,
         /* Polarization parameters */
         POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
         CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,

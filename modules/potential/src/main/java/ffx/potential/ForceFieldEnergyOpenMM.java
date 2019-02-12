@@ -464,7 +464,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * If this value is set to 1.0, softcored AMOEBA vdw will not be turned off.
      */
     private double softcoreAMOEBAvdWMidPoint = 0.5;
-
+    
+    /**
+     * The lambda value that defines when the electrostatics will start to turn on for full path non bonded term scaling.
+     */
+    private double electrostaticStart = 0.5;
     /**
      * Lambda step size for finite difference dU/dL.
      */
@@ -643,9 +647,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MIDPOINT, softcoreAMOEBAvdWMidPoint);
                 nonSoftcoreAMOEBAvdWStart = forceField.getDouble(
                         ForceFieldDouble.NON_SOFTCORE_AMOEBA_VDW_START, nonSoftcoreAMOEBAvdWStart);
+                if (elecLambdaTerm){
+                    electrostaticStart = forceField.getDouble(
+                        ForceFieldDouble.ELEC_START, electrostaticStart);             
+                }
 
                 logger.info(format(" Softcore AMOEBA vdW midpoint:  %6.3f", softcoreAMOEBAvdWMidPoint));
                 logger.info(format(" Non-Softcore AMOEBA vdW start: %6.3f ", nonSoftcoreAMOEBAvdWStart));
+                if (elecLambdaTerm){
+                    logger.info(format(" Electrostatics start: %6.3f", electrostaticStart));
+                }
+            } else if (elecLambdaTerm && vdwLambdaTerm){
+                electrostaticStart = forceField.getDouble(
+                        ForceFieldDouble.ELEC_START, electrostaticStart);
+                logger.info(format(" Electrostatic start: %6.3f", electrostaticStart));
             }
         }
 
@@ -3557,7 +3572,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 if (elecLambdaTerm && vdwLambdaTerm) {
                     // Lambda effects both vdW and electrostatics.
 
-                    if (lambda < 0.5) {
+                    if (lambda < electrostaticStart) {
                         // Begin turning vdW on with electrostatics off.
                         lambdaElec = 0.0;
                     } else {
