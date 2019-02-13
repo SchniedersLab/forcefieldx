@@ -279,7 +279,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             if (equilibration) {
                 logger.info(String.format("\n MD Equilibration Round %d", imove + 1));
             } else {
-                logger.info(String.format("\n MC-OSRW Round %d\n  MC MD Step", imove + 1));
+                logger.info(String.format("\n MC Orthogonal Space Sampling Round %d\n  MC MD Step", imove + 1));
             }
 
             /**
@@ -319,11 +319,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedTotalEnergy = proposedOSRWEnergy + proposedKineticEnergy;
 
             logger.info(format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
-            logger.info(format("  Current  %12.3f %12.3f %12.3f %12.3f",
+            logger.info(format("  Current  %12.4f %12.4f %12.4f %12.4f",
                     currentKineticEnergy, currentForceFieldEnergy, currentBiasEnergy, currentTotalEnergy));
-            logger.info(format("  Proposed %12.3f %12.3f %12.3f %12.3f",
+            logger.info(format("  Proposed %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy, proposedForceFieldEnergy, proposedBiasEnergy, proposedTotalEnergy));
-            logger.info(format("  Delta    %12.3f %12.3f %12.3f %12.3f",
+            logger.info(format("  Delta    %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy - currentKineticEnergy,
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
@@ -435,7 +435,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             }
 
             totalMoveTime += System.nanoTime();
-            logger.info(format(" MC-OSRW round in %6.3f sec.", totalMoveTime * NS2SEC));
+            logger.info(format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
         }
     }
 
@@ -470,9 +470,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedLambda = currentLambda;
 
             if (equilibration) {
-                logger.info(String.format("\n MD Equilibration Round %d", imove + 1));
+                logger.info(String.format("\n Equilibration Round %d", imove + 1));
             } else {
-                logger.info(String.format("\n MC-OSRW Round %d", imove + 1));
+                logger.info(String.format("\n MC Orthogonal Space Sampling Round %d", imove + 1));
                 lambdaMove.move();
                 proposedLambda = osrw.getLambda();
             }
@@ -519,11 +519,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedTotalEnergy = proposedOSRWEnergy + proposedKineticEnergy;
 
             logger.info(format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
-            logger.info(format("  Current  %12.3f %12.3f %12.3f %12.3f",
+            logger.info(format("  Current  %12.4f %12.4f %12.4f %12.4f",
                     currentKineticEnergy, currentForceFieldEnergy, currentBiasEnergy, currentTotalEnergy));
-            logger.info(format("  Proposed %12.3f %12.3f %12.3f %12.3f",
+            logger.info(format("  Proposed %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy, proposedForceFieldEnergy, proposedBiasEnergy, proposedTotalEnergy));
-            logger.info(format("  Delta    %12.3f %12.3f %12.3f %12.3f",
+            logger.info(format("  Delta    %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy - currentKineticEnergy,
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
@@ -597,7 +597,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             }
 
             totalMoveTime += System.nanoTime();
-            logger.info(format(" MC-OSRW round in %6.3f sec.", totalMoveTime * NS2SEC));
+            logger.info(format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
         }
     }
 
