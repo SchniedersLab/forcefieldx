@@ -538,7 +538,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Add Bond Force.
-        addBondForce(forceField);
+        if(rigidBonds){
+            logger.info("Not adding bonds to AmoebaBondForce because bonds are constrained.");
+        }
+        else {
+            addBondForce(forceField);
+        }
 
         // Add Angle Force.
         addAngleForce(forceField);
@@ -1217,8 +1222,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             int i2 = angle.getAtom(1).getXyzIndex() - 1;
             int i3 = angle.getAtom(2).getXyzIndex() - 1;
             int nh = angle.nh;
-            OpenMM_AmoebaAngleForce_addAngle(amoebaAngleForce, i1, i2, i3,
-                    angle.angleType.angle[nh], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
+            if(isHydrogenAngle(angle)){
+                logger.info("Not adding angle to AmoebaAngleForce because angle is constrained: " + angle);
+            }
+            else {
+                OpenMM_AmoebaAngleForce_addAngle(amoebaAngleForce, i1, i2, i3,
+                        angle.angleType.angle[nh], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
+            }
         }
 
         if (angles[0].angleType.angleFunction == AngleFunction.SEXTIC) {
@@ -4425,35 +4435,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         Atom atom1;
-        Atom atom2;
         Atom atom3;
 
         for (Angle angle : angles) {
-            if (angle.getValue() < 160.0) {
-                if (angle.containsHydrogen()) {
-                    atom1 = angle.getAtom(0);
-                    atom2 = angle.getAtom(1);
-                    atom3 = angle.getAtom(2);
-                    //Setting constraints only on angles where atom1 or atom3 is a hydrogen while atom2 is not a hydrogen.
-                    if (atom1.isHydrogen() && atom3.isHydrogen() && !atom2.isHydrogen()) {
-                        //Calculate a "false bond" length between atoms 1 and 3 to constrain the angle using the law of cosines.
-                        Bond a = atom1.getBonds().get(0);
-                        Double aDist = a.bondType.distance;
+            if (isHydrogenAngle(angle)){
+                atom1 = angle.getAtom(0);
+                atom3 = angle.getAtom(2);
 
-                        Bond b = atom3.getBonds().get(0);
-                        Double bDist = b.bondType.distance;
+                //Calculate a "false bond" length between atoms 1 and 3 to constrain the angle using the law of cosines.
+                Bond a = atom1.getBonds().get(0);
+                Double aDist = a.bondType.distance;
 
-                        //Equilibrium angle value in degrees.
-                        double angleVal = angle.angleType.angle[angle.nh];
+                Bond b = atom3.getBonds().get(0);
+                Double bDist = b.bondType.distance;
 
-                        //Law of cosines.
-                        double falseBondLength = Math.sqrt(aDist * aDist + bDist * bDist - 2 * aDist * bDist * Math.cos(Math.toRadians(angleVal)));
+                // Equilibrium angle value in degrees.
+                double angleVal = angle.angleType.angle[angle.nh];
 
-                        iAtom1 = atom1.getXyzIndex() - 1;
-                        iAtom3 = atom3.getXyzIndex() - 1;
-                        OpenMM_System_addConstraint(system, iAtom1, iAtom3, falseBondLength * OpenMM_NmPerAngstrom);
-                    }
-                }
+                //Law of cosines.
+                double falseBondLength = Math.sqrt(aDist * aDist + bDist * bDist - 2 * aDist * bDist * Math.cos(Math.toRadians(angleVal)));
+
+                iAtom1 = atom1.getXyzIndex() - 1;
+                iAtom3 = atom3.getXyzIndex() - 1;
+                OpenMM_System_addConstraint(system, iAtom1, iAtom3, falseBondLength * OpenMM_NmPerAngstrom);
             }
         }
     }
@@ -4544,4 +4548,28 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         integrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
     } */
 
+    /**
+     * Check to see if an angle is a hydrogen angle. This method only returns true for hydrogen angles that are less
+     * than 160 degrees.
+     * @param angle Angle to check.
+     * @return boolean indicating whether or not an angle is a hydrogen angle that is less than 160 degrees.
+     */
+    public boolean isHydrogenAngle(Angle angle){
+        if(angle.containsHydrogen()){
+            // Equilibrium angle value in degrees.
+            double angleVal = angle.angleType.angle[angle.nh];
+            // Make sure angle is less than 160 degrees because greater than 160 degrees will not be constrained
+            // well using the law of cosines.
+            if (angleVal < 160.0) {
+                Atom atom1 = angle.getAtom(0);
+                Atom atom2 = angle.getAtom(1);
+                Atom atom3 = angle.getAtom(2);
+                //Setting constraints only on angles where atom1 or atom3 is a hydrogen while atom2 is not a hydrogen.
+                if (atom1.isHydrogen() && atom3.isHydrogen() && !atom2.isHydrogen()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
