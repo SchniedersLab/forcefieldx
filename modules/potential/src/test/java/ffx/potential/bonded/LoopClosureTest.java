@@ -63,90 +63,78 @@ public class LoopClosureTest {
     private final MolecularAssembly molecularAssembly;
     private final Loop loop;
 
-    double[][] xyz_n_test = new double[3][3];
-    double[][] xyz_c_test = new double[3][3];
-    double[][] xyz_a_test = new double[3][3];
-    double[][] xyz_o_test = new double[3][3];
+    private double[][] xyzNTest;
+    private double[][] xyzCTest;
+    private double[][] xyzATest;
+    private double[][] xyzOTest;
 
     @Parameters
     public static Collection<Object[]> data() {
 
-        double xyz_n_test[][] = new double[3][3];
-        double xyz_a_test[][] = new double[3][3];
-        double xyz_c_test[][] = new double[3][3];
-        double xyz_o_test[][] = new double[3][3];
-        //residue 1
-        xyz_n_test[0][0] = 7.773;
-        xyz_n_test[0][1] = -9.71;
-        xyz_n_test[0][2] = -7.32;
-        xyz_a_test[0][0] = 6.331;
-        xyz_a_test[0][1] = -9.839;
-        xyz_a_test[0][2] = -7.259;
-        xyz_c_test[0][0] = 5.886372894231285;
-        xyz_c_test[0][1] = -10.55641925089512;
-        xyz_c_test[0][2] = -5.994873283542817;
-        xyz_o_test[0][0] = 4.7066623518635335;
-        xyz_o_test[0][1] = -10.772063009151791;
-        xyz_o_test[0][2] = -5.7426213147669065;
-        //residue 2
-        xyz_n_test[1][0] = 6.267265566616004;
-        xyz_n_test[1][1] = -11.821304411459156;
-        xyz_n_test[1][2] = -5.840321341761048;
-        xyz_a_test[1][0] = 5.873570174757412;
-        xyz_a_test[1][1] = -12.55730694668949;
-        xyz_a_test[1][2] = -4.654655197113309;
-        xyz_c_test[1][0] = 4.522327673119161;
-        xyz_c_test[1][1] = -13.229312851952344;
-        xyz_c_test[1][2] = -4.836181407502477;
-        xyz_o_test[1][0] = 4.000608042124467;
-        xyz_o_test[1][1] = -13.903386108027433;
-        xyz_o_test[1][2] = -3.955679208709603;
-        //residue 3
-        xyz_n_test[2][0] = 3.9321584783416297;
-        xyz_n_test[2][1] = -13.724556941299172;
-        xyz_n_test[2][2] = -3.7520533645561343;
-        xyz_a_test[2][0] = 2.642;
-        xyz_a_test[2][1] = -14.377;
-        xyz_a_test[2][2] = -3.863;
-        xyz_c_test[2][0] = 1.658;
-        xyz_c_test[2][1] = -13.856;
-        xyz_c_test[2][2] = -2.821;
-        xyz_o_test[2][0] = 0.5084362754396345;
-        xyz_o_test[2][1] = -14.272368583539699;
-        xyz_o_test[2][2] = -2.7373896189696216;
+        double xyzNTest[][] = new double[3][3];
+        double xyzATest[][] = new double[3][3];
+        double xyzCTest[][] = new double[3][3];
+        double xyzOTest[][] = new double[3][3];
+
+        // Residue 1
+        xyzNTest[0][0] = 7.773;
+        xyzNTest[0][1] = -9.71;
+        xyzNTest[0][2] = -7.32;
+        xyzATest[0][0] = 6.331;
+        xyzATest[0][1] = -9.839;
+        xyzATest[0][2] = -7.259;
+        xyzCTest[0][0] = 5.886372894231285;
+        xyzCTest[0][1] = -10.55641925089512;
+        xyzCTest[0][2] = -5.994873283542817;
+        xyzOTest[0][0] = 4.7066623518635335;
+        xyzOTest[0][1] = -10.772063009151791;
+        xyzOTest[0][2] = -5.7426213147669065;
+        // Residue 2
+        xyzNTest[1][0] = 6.267265566616004;
+        xyzNTest[1][1] = -11.821304411459156;
+        xyzNTest[1][2] = -5.840321341761048;
+        xyzATest[1][0] = 5.873570174757412;
+        xyzATest[1][1] = -12.55730694668949;
+        xyzATest[1][2] = -4.654655197113309;
+        xyzCTest[1][0] = 4.522327673119161;
+        xyzCTest[1][1] = -13.229312851952344;
+        xyzCTest[1][2] = -4.836181407502477;
+        xyzOTest[1][0] = 4.000608042124467;
+        xyzOTest[1][1] = -13.903386108027433;
+        xyzOTest[1][2] = -3.955679208709603;
+        // Residue 3
+        xyzNTest[2][0] = 3.9321584783416297;
+        xyzNTest[2][1] = -13.724556941299172;
+        xyzNTest[2][2] = -3.7520533645561343;
+        xyzATest[2][0] = 2.642;
+        xyzATest[2][1] = -14.377;
+        xyzATest[2][2] = -3.863;
+        xyzCTest[2][0] = 1.658;
+        xyzCTest[2][1] = -13.856;
+        xyzCTest[2][2] = -2.821;
+        xyzOTest[2][0] = 0.5084362754396345;
+        xyzOTest[2][1] = -14.272368583539699;
+        xyzOTest[2][2] = -2.7373896189696216;
 
         return Arrays.asList(
                 new Object[][]{
-                    {xyz_n_test, xyz_a_test, xyz_c_test, xyz_o_test}, // constructor arguments for test set 1
+                    {xyzNTest, xyzATest, xyzCTest, xyzOTest}, // constructor arguments for test set 1
                 });
     }
 
-    public LoopClosureTest(double[][] xyz_n_test, double[][] xyz_a_test, double[][] xyz_c_test, double[][] xyz_o_test) {
-        int stt_res = 2;
-        int end_res = 4;
-        boolean writeFile = false;
-        ClassLoader cl = getClass().getClassLoader();
-        File structure = new File(cl.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
-        PotentialsUtils potUtil = new PotentialsUtils();
-        molecularAssembly = potUtil.open(structure);
-        loop = new Loop(molecularAssembly, stt_res, end_res, writeFile);
+    public LoopClosureTest(double[][] xyzNTest, double[][] xyzATest, double[][] xyzCTest, double[][] xyzOTest) {
+        int startResidue = 2;
+        int endResidue = 4;
+        ClassLoader classLoader = getClass().getClassLoader();
+        File structure = new File(classLoader.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
+        PotentialsUtils potentialsUtils = new PotentialsUtils();
+        molecularAssembly = potentialsUtils.open(structure);
+        loop = new Loop(molecularAssembly, startResidue, endResidue);
 
-        this.xyz_n_test = xyz_n_test;
-        this.xyz_a_test = xyz_a_test;
-        this.xyz_c_test = xyz_c_test;
-        this.xyz_o_test = xyz_o_test;
-    }
-
-    @Before
-    public void setUp() {
-//        logger.info("\n\n\n\n\n\n\n\n\n\n\nHi, this is Mallory's Test!");
-//        int stt_res = 1;
-//        int end_res = 5;
-//        ClassLoader cl = this.getClass().getClassLoader();
-//        structure = new File(cl.getResource("ffx/potential/structures/loopClosureTestPDB.pdb").getPath());
-//        PotentialsUtils potentialUtils = new PotentialsUtils();
-//        molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
-//        Loop loop = new Loop(molecularAssembly, stt_res, end_res);
+        this.xyzNTest = xyzNTest;
+        this.xyzATest = xyzATest;
+        this.xyzCTest = xyzCTest;
+        this.xyzOTest = xyzOTest;
     }
 
     @After
@@ -157,36 +145,25 @@ public class LoopClosureTest {
 
     @Test
     public void loopTest() {
-        double[][] r_a = new double[3][3];
-        double[][] r_c = new double[3][3];
-        double[][] r_n = new double[3][3];
-     //   double[][] r_o = new double[5][3];
+        double[][] rA;
+        double[][] rC;
+        double[][] rN;
 
-        r_a = loop.getRA();
-        r_c = loop.getRC();
-        r_n = loop.getRN();
-   //     r_o = loop.sturmMethod.getr_o();
+        rA = loop.getRA();
+        rC = loop.getRC();
+        rN = loop.getRN();
 
-        //System.out.println("R_O:\n");
-        //System.out.println(r_o+"\n\n\n\n");
-        //System.out.println(r_o);
-        int j = 0;
-
-        for (j = 0; j < 3; j++) {
-            assertArrayEquals(r_a[j], xyz_a_test[j], 1e-8);
+        for (int j = 0; j < 3; j++) {
+            assertArrayEquals(rA[j], xyzATest[j], 1e-8);
         }
 
-        for (j = 0; j < 3; j++) {
-            assertArrayEquals(r_c[j], xyz_c_test[j], 1e-8);
+        for (int j = 0; j < 3; j++) {
+            assertArrayEquals(rC[j], xyzCTest[j], 1e-8);
         }
 
-        for (j = 0; j < 3; j++) {
-            assertArrayEquals(r_n[j], xyz_n_test[j], 1e-8);
+        for (int j = 0; j < 3; j++) {
+            assertArrayEquals(rN[j], xyzNTest[j], 1e-8);
         }
-
-     //   for (j = 0; j < 3; j++) {
-      //      assertArrayEquals(r_o[j], xyz_o_test[j], 1e-8);
-     //   }
 
     }
 }

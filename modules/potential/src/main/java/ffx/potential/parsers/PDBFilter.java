@@ -2504,7 +2504,7 @@ public final class PDBFilter extends SystemFilter {
                     for (AminoAcid3 amino : aminoAcidList) {
                         if (amino.toString().equalsIgnoreCase(name)) {
                             aa = true;
-                            checkHydrogenAtomNames(residue);
+                            checkHydrogenAtomNames(residue, fileStandard);
                             break;
                         }
                     }
@@ -3491,7 +3491,7 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param residue
      */
-    private void checkHydrogenAtomNames(Residue residue) {
+    public static void checkHydrogenAtomNames(Residue residue, PDBFileStandard fileStandard) {
         switch (fileStandard) {
             case VERSION3_3:
                 return;

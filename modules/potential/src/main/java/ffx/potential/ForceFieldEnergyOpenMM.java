@@ -1215,6 +1215,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (nAngles < 1) {
             return;
         }
+
+        boolean rigidHydrogenAngles = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGEN_ANGLES, false);
+
         amoebaAngleForce = OpenMM_AmoebaAngleForce_create();
         for (int i = 0; i < nAngles; i++) {
             Angle angle = normalAngles.get(i);
@@ -1222,7 +1225,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             int i2 = angle.getAtom(1).getXyzIndex() - 1;
             int i3 = angle.getAtom(2).getXyzIndex() - 1;
             int nh = angle.nh;
-            if(isHydrogenAngle(angle)){
+            if(isHydrogenAngle(angle) && rigidHydrogenAngles){
                 logger.info("Not adding angle to AmoebaAngleForce because angle is constrained: " + angle);
             }
             else {
