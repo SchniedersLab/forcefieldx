@@ -114,32 +114,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 public class GeneralizedKirkwood implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
-    /**
-     * Empirical constant that controls the GK cross-term.
-     */
-    private static final double gkc = 2.455;
-    /**
-     * Permittivity of water at STP.
-     */
-    private static final double dWater = 78.3;
-    /**
-     * Default bondi scale factor.
-     */
-    private static final double DEFAULT_BONDI_SCALE = 1.03;
-    /**
-     * Default overlap scale factor.
-     */
-    private static final double DEFAULT_OVERLAP_SCALE = 0.69;
-    /**
-     * Default surface tension for apolar models with explicit dispersion terms.
-     */
-    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.08;
-    /**
-     * Default surface tension for apolar models without explicit dispersion
-     * terms. This is lower than CAVDISP, since the favorable dispersion term is
-     * implicitly included.
-     */
-    private static final double DEFAULT_CAV_SURFACE_TENSION = 0.0049;
+
     /**
      * Set of force fields for which we have fitted GK/GB radii.
      */
@@ -156,12 +131,37 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
+     * Empirical constant that controls the GK cross-term.
+     */
+    private static final double gkc = 2.455;
+    /**
      * Kirkwood multipolar reaction field constants.
      */
     private final double fc;
     private final double fd;
     private final double fq;
-
+    /**
+     * Permittivity of water at STP.
+     */
+    private static final double dWater = 78.3;
+    /**
+     * Default Bondi scale factor.
+     */
+    private static final double DEFAULT_BONDI_SCALE = 1.03;
+    /**
+     * Default overlap scale factor for the Hawkins, Cramer & Truhlar pairwise descreening algorithm.
+     */
+    private static final double DEFAULT_OVERLAP_SCALE = 0.69;
+    /**
+     * Default surface tension for apolar models with an explicit dispersion term.
+     */
+    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.08;
+    /**
+     * Default surface tension for apolar models without an explicit dispersion
+     * term. This is lower than CAVDISP, since the favorable dispersion term is
+     * implicitly included.
+     */
+    private static final double DEFAULT_CAV_SURFACE_TENSION = 0.0049;
     /**
      * Empirical scaling of the Bondi radii.
      */
@@ -177,26 +177,122 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * The requested permittivity.
      */
-    private double epsilon = dWater;
-
-    private final double bornaiTerm;
-    //private final double probe;
+    private double epsilon;
+    /**
+     * Water probe radius.
+     */
     public double probe;
+    /**
+     * Dielectric offset from:
+     * <p>
+     * W. C. Still, A. Tempczyk, R. C. Hawley and T. Hendrickson, "A Semianalytical Treatment of Solvation for Molecular
+     * Mechanics and Dynamics", J. Amer. Chem. Soc., 112, 6127-6129 (1990)
+     */
     private final double dOffset = 0.09;
-    private boolean use[] = null;
+    /**
+     * Force field in use.
+     */
+    private final ForceField forceField;
+    /**
+     * Treatment of polarization.
+     */
     private final Polarization polarization;
-    private Atom atoms[];
-    private double x[], y[], z[];
-    private double sXYZ[][][];
-    private double globalMultipole[][][];
-    private double inducedDipole[][][];
-    private double inducedDipoleCR[][][];
-    private double baseRadius[];
-    private double baseRadiusWithBondi[];
-    private double overlapScale[];
-    private double rDisp[];
-    private double born[];
+    /**
+     * Treatment of non-polar interactions.
+     */
+    private final NonPolar nonPolar;
+    /**
+     * Array of Atoms being considered.
+     */
+    private Atom[] atoms;
+    /**
+     * Number of atoms.
+     */
     private int nAtoms;
+    /**
+     * Cartesian coordinates of each atom.
+     */
+    private double[] x, y, z;
+    /**
+     * Base radius of each atom.
+     */
+    private double[] baseRadius;
+    /**
+     * Base radius of each atom including Bondi scale factor.
+     */
+    private double[] baseRadiusWithBondi;
+    /**
+     * Overlap scale factor for each atom, when using the Hawkins, Cramer & Truhlar pairwise descreening algorithm.
+     * <p>
+     * G. D. Hawkins, C. J. Cramer and D. G. Truhlar, "Parametrized Models of Aqueous Free Energies of Solvation Based on Pairwise
+     * Descreening of Solute Atomic Charges from a Dielectric Medium", J. Phys. Chem., 100, 19824-19839 (1996).
+     */
+    private double[] overlapScale;
+    /**
+     * Over-ride the overlap scale factor for hydrogen atoms.
+     */
+    private final double heavyAtomOverlapScale;
+    /**
+     * Over-ride the overlap scale factor for hydrogen atoms.
+     */
+    private final double hydrogenOverlapScale;
+    /**
+     * Radius of each atom for calculation of dispersion energy.
+     */
+    private double[] rDisp;
+    /**
+     * Born radius of each atom.
+     */
+    private double[] born;
+    /**
+     * Flag to indicate if an atom should be included.
+     */
+    private boolean[] use = null;
+    /**
+     * Periodic boundary conditions and symmetry.
+     */
+    private Crystal crystal;
+    /**
+     * Particle mesh Ewald instance, which contains variables such as expanded coordinates and multipoles
+     * in the global frame that GK uses.
+     */
+    private final ParticleMeshEwald particleMeshEwald;
+    /**
+     * Atomic coordinates for each symmetry operator.
+     */
+    private double[][][] sXYZ;
+    /**
+     * Multipole moments for each symmetry operator.
+     */
+    private double[][][] globalMultipole;
+    /**
+     * Induced dipoles for each symmetry operator.
+     */
+    private double[][][] inducedDipole;
+    /**
+     * Induced dipole chain rule terms for each symmetry operator.
+     */
+    private double[][][] inducedDipoleCR;
+    /**
+     * Gradient array for each thread.
+     */
+    private double[][][] grad;
+    /**
+     * Torque array for each thread.
+     */
+    private double[][][] torque;
+    /**
+     * Lambda gradient array for each thread (dU/dX/dL)
+     */
+    private double[][][] lambdaGrad;
+    /**
+     * Lambda torque array for each thread.
+     */
+    private double[][][] lambdaTorque;
+    /**
+     * Neighbor lists for each atom and symmetry operator.
+     */
+    private int[][][] neighborLists;
     /**
      * This field is because re-initializing the force field resizes some arrays
      * but not others; that second category must, when called on, be resized not
@@ -204,62 +300,110 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * thus to the size of the first category of arrays).
      */
     private int maxNumAtoms;
-    private final ParticleMeshEwald particleMeshEwald;
+    /**
+     * Parallel team object for shared memory parallelization.
+     */
     private final ParallelTeam parallelTeam;
-    private Crystal crystal;
+    /**
+     * Parallel computation of Born Radii.
+     */
     private final BornRadiiRegion bornRadiiRegion;
+    /**
+     * Parallel computation of the Permanent GK Field.
+     */
     private final PermanentGKFieldRegion permanentGKFieldRegion;
+    /**
+     * Parallel computation of the Induced GK Field.
+     */
     private final InducedGKFieldRegion inducedGKFieldRegion;
+    /**
+     * Parallel computation of the GK continuum electrostatics energy.
+     */
     private final GKEnergyRegion gkEnergyRegion;
+    /**
+     * Parallel computation of Born radii chain rule term.
+     */
     private final BornCRRegion bornGradRegion;
+    /**
+     * Parallel computation of Dispersion energy.
+     */
     private final DispersionRegion dispersionRegion;
+    /**
+     * Parallel computation of Cavitation.
+     */
     private final CavitationRegion cavitationRegion;
+    /**
+     * Parallel computation of Volume.
+     */
     private final VolumeRegion volumeRegion;
-
     /**
-     * Gradient array for each thread.
+     * Shared array for computation of Born radii gradient.
      */
-    private double grad[][][];
-    /**
-     * Torque array for each thread.
-     */
-    private double torque[][][];
-    /**
-     * Lambda gradient array for each thread (dU/dX/dL)
-     */
-    private double lambdaGrad[][][];
-    /**
-     * Lambda torque array for each thread.
-     */
-    private double lambdaTorque[][][];
-
-    private int neighborLists[][][];
-
     private SharedDoubleArray sharedBornGrad;
-    protected SharedDoubleArray sharedGKField[];
-    protected SharedDoubleArray sharedGKFieldCR[];
+    /**
+     * Shared arrays for computation of the GK field for each symmetry operator.
+     */
+    protected SharedDoubleArray[] sharedGKField;
+    /**
+     * Shared arrays for computation of the GK field chain-rule term for each symmetry operator.
+     */
+    protected SharedDoubleArray[] sharedGKFieldCR;
+    /**
+     * GK cut-off distance.
+     */
     private double cutoff;
+    /**
+     * GK cut-off distance squared.
+     */
     private double cut2;
-    private final NonPolar nonPolar;
-
-    private boolean lambdaTerm = false;
+    /**
+     * Boolean flag to indicate GK will be scaled by the lambda state variable.
+     */
+    private boolean lambdaTerm;
+    /**
+     * The current value of the lambda state variable.
+     */
     private double lambda = 1.0;
+    /**
+     * lPow equals lambda^polarizationLambdaExponent, where polarizationLambdaExponent also used by PME.
+     */
     private double lPow = 1.0;
+    /**
+     * First derivative of lPow with respect to l.
+     */
     private double dlPow = 0.0;
+    /**
+     * Second derivative of lPow with respect to l.
+     */
     private double dl2Pow = 0.0;
-
+    /**
+     * Electrostatic Solvation Energy.
+     */
     private double solvationEnergy = 0.0;
-
-    private long gkTime = 0;
-    private long pmfTime = 0;
-    private long dispersionTime = 0;
-    private long cavitationTime = 0;
+    /**
+     * Dispersion Solvation Energy.
+     */
     private double dispersionEnergy = 0.0;
+    /**
+     * Cavitation Solvation Energy.
+     */
     private double cavitationEnergy = 0.0;
+    /**
+     * Time to compute GK electrostatics.
+     */
+    private long gkTime = 0;
+    /**
+     * Time to compute Dispersion energy.
+     */
+    private long dispersionTime = 0;
+    /**
+     * Time to compute Cavitation energy.
+     */
+    private long cavitationTime = 0;
     /**
      * Use base radii defined by AtomType rather than by atomic number.
      */
-    private boolean verboseRadii = false;
+    private boolean verboseRadii;
     /**
      * If true, prevents Born radii from updating.
      */
@@ -267,7 +411,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Forces all atoms to be considered during Born radius updates.
      */
-    private boolean nativeEnvironmentApproximation = false;
+    private boolean nativeEnvironmentApproximation;
     /**
      * Provides maps from atomtypes or biotypes to fitted GK radii (by
      * forcefield).
@@ -287,16 +431,32 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
     /**
-     * Over-rides the overlap scale factor for hydrogens only.
+     * Control GK logging.
      */
-    private final double hydrogenOverlapScale;
-    private final ForceField forceField;
-
     private final Level GK_WARN_LEVEL;
-
-    private double evol, earea, esurf, ecav;
-
+    /**
+     * Molecular volume.
+     */
+    private double evol;
+    /**
+     * Molecular surface area.
+     */
+    private double earea;
+    /**
+     * Surface area based cavitation energy.
+     */
+    private double esurf;
+    /**
+     * Surface area based cavitation energy.
+     */
+    private double ecav;
+    /**
+     * Flag to indicate calculation of molecular volume.
+     */
     private boolean doVolume;
+    /**
+     * Flag to indicate outputting Volume.
+     */
     private final boolean outputVolume;
 
     /**
@@ -372,7 +532,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
                 ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
         forcefieldName = forcefieldName.replaceAll("_", "-");
-        boolean doUseFitRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true);
+
+        boolean doUseFitRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, false);
+
         boolean hasFittedRadii = fittedForceFields.contains(forcefieldName.toUpperCase());
 
         if (doUseFitRadii) {
@@ -437,15 +599,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        double defaultOverlapScale = (doUseFitRadii && hasFittedRadii) ? solventRadii.getOverlapScale() : DEFAULT_OVERLAP_SCALE;
-        double hydrogenOverlap;
-        try {
-            hydrogenOverlap = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE);
-            logger.info(String.format(" Over-riding hydrogen atom overlap scale factor to %8.5g", hydrogenOverlap));
-        } catch (Exception ex) {
-            hydrogenOverlap = defaultOverlapScale;
+        double defaultOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, DEFAULT_OVERLAP_SCALE);
+        if (doUseFitRadii && hasFittedRadii) {
+            defaultOverlapScale = solventRadii.getOverlapScale();
         }
-        hydrogenOverlapScale = hydrogenOverlap;
+
+        heavyAtomOverlapScale = defaultOverlapScale;
+        hydrogenOverlapScale = forceField.getDouble(
+                ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, heavyAtomOverlapScale);
 
         NonPolar nonpolarModel;
         try {
@@ -457,34 +618,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
         nonPolar = nonpolarModel;
 
-        double aiTerm = 4.0 * PI;
-        try {
-            aiTerm *= forceField.getDouble(ForceField.ForceFieldDouble.BORNAI);
-        } catch (Exception ex) {
-            switch (nonPolar) {
-                case BORN_SOLV:
-                    aiTerm *= 0.003; // Value from TINKER.
-                    break;
-                case BORN_CAV_DISP:
-                    aiTerm *= 0.050; // Complete random guess.
-                    break;
-                default:
-                    break;
-            }
-        }
-        bornaiTerm = aiTerm;
-
         sharedGKField = new SharedDoubleArray[3];
         sharedGKFieldCR = new SharedDoubleArray[3];
 
-        nativeEnvironmentApproximation = forceField.getBoolean(ForceField.ForceFieldBoolean.NATIVE_ENVIRONMENT_APPROXIMATION, false);
+        nativeEnvironmentApproximation = forceField.getBoolean(
+                ForceField.ForceFieldBoolean.NATIVE_ENVIRONMENT_APPROXIMATION, false);
 
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
 
         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.GK_CUTOFF, particleMeshEwald.getEwaldCutoff());
         cut2 = cutoff * cutoff;
 
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_LAMBDATERM,
+                forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
 
         initAtomArrays();
 
@@ -499,10 +645,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(" GK lambda term set to false.");
         }
 
-        // If PME is using softcore and polarization, GK must also be softcored.
+        // If PME includes polarization and is a function of lambda, GK must also.
         if (!lambdaTerm && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
-            if (forceField.getBoolean(ForceField.ForceFieldBoolean.ELEC_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false))) {
-                logger.info(" If PME is using softcoring and polarization, GK must also be softcored. Setting GK lambda term to true.");
+            if (forceField.getBoolean(ForceField.ForceFieldBoolean.ELEC_LAMBDATERM,
+                    forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false))) {
+                logger.info(" If PME includes polarization and is a function of lambda, GK must also.");
                 lambdaTerm = true;
             }
         }
@@ -750,11 +897,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fill(use, true);
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
-            overlapScale[i] = DEFAULT_OVERLAP_SCALE;   // Original value based on small molecule parameterization.
-            //overlapScale[i] = 0.60;     // New default value based on 2016 amino acid GK parameterization.
-            if (useFittedRadii) {
-                overlapScale[i] = solventRadii.getOverlapScale();
-            }
+            overlapScale[i] = heavyAtomOverlapScale;
             int atomicNumber = atoms[i].getAtomicNumber();
             AtomType atomType = atoms[i].getAtomType();
 
@@ -2405,16 +2548,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             interaction(i, i);
 
                             /**
-                             * Formula for Born energy approximation is: e = ai
-                             * * 4.0*pi * (ri + probe)^2 * (ri/rb)^6. ri is
-                             * baseRadius, rb is Born radius of given atom. ai
-                             * is an empirical constant for the atom. If ai is
-                             * too low, everything wants to pack into a solid
-                             * ball, and if ai is too high, everything wants to
-                             * unfold and be as solvent-exposed as possible.
-                             *
-                             * The bornaiTerm is a precalculated 4 * pi * ai
-                             * value.
+                             * Formula for Born energy approximation for cavitation energy is:
+                             * e = surfaceTension / 6 * (ri + probe)^2 * (ri/rb)^6.
+                             * ri is the base atomic radius the atom.
+                             * rb is Born radius of the atom.
                              */
                             switch (nonPolar) {
                                 case BORN_SOLV:
@@ -4167,7 +4304,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final DispersionLoop dispersionLoop[];
         private final SharedDouble sharedDispersion;
         private boolean gradient = false;
-        private double[] cdisp = null;
+        private double[] cdisp;
         private static final double DISP_OVERLAP_SCALE_FACTOR = 0.81;
         private static final double SLEVY = 1.0;
         private static final double AWATER = 0.033428;
@@ -10616,7 +10753,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         CAV, CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
 
-    private static enum RADII_MAP_TYPE {
+    private enum RADII_MAP_TYPE {
 
         ATOMTYPE, BIOTYPE, NONE;
     }
