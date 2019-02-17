@@ -448,7 +448,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * "softcore" AMOEBA vdW create space.
      */
     private double lambdaAmoebaVDW = 1.0;
-
     /**
      * The lambda value that defines when non-softcored AMOEBA vdW will begin turning on
      * for alchemical atoms.
@@ -456,7 +455,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * If this value is set to 1.0, non-softcored AMOEBA vdW will not be turned on.
      */
     private double nonSoftcoreAMOEBAvdWStart = 1.0 / 3.0;
-
     /**
      * The lambda value that defines when softcore AMOEBA vdW will finish om and begin turning off for alchemical atoms.
      * These must be turned off because they do not include hydrogen reduction factors.
@@ -3590,9 +3588,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         lambdaElec = 0.0;
                     } else {
                         // Turn electrostatics on during the latter part of the path.
-                        lambdaElec = 2.0 * (lambda - 0.5);
+                        double elecWindow = 1.0 - electrostaticStart;
+                        lambdaElec = (lambda - electrostaticStart) / elecWindow;
                     }
-
                     lambdaVDW = lambda;
                     // AMOEBA Case
                     if (amoebaVDWForce != null) {
