@@ -2,10 +2,12 @@ package ffx.potential.groovy
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
+import ffx.potential.utils.Superpose;
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -106,6 +108,33 @@ class Energy extends PotentialScript {
             }
         } else {
             energy = forceFieldEnergy.energy(x, true)
+        }
+
+        SystemFilter systemFilter = potentialFunctions.getFilter()
+        if (systemFilter instanceof XYZFilter) {
+            XYZFilter xyzFilter = (XYZFilter) systemFilter
+
+            double[] x2 = new double[nVars]
+            double[] mass = new double[nVars / 3];
+
+            int nAtoms = atoms.length;
+            for (int i=0; i<nAtoms; i++) {
+                mass[i] = atoms[i].getMass();
+            }
+
+            while (xyzFilter.readNext()) {
+
+                forceFieldEnergy.getCoordinates(x2)
+                energy = forceFieldEnergy.energy(x2, true)
+
+//                double origRMSD = Superpose.rmsd(x, x2, mass)
+//                Superpose.center(x, mass, x2, mass)
+//                double transRMSD = Superpose.rmsd(x, x2, mass)
+//                Superpose.quatfit(x, x2, mass)
+//                double rotRMSD = Superpose.rmsd(x, x2, mass)
+//                logger.info(String.format(" RMSD Original: %8.3f Translation: %8.3f Rotation: %8.3f",
+//                        origRMSD, transRMSD, rotRMSD))
+            }
         }
 
         return this
