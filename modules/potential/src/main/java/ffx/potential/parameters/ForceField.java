@@ -1642,6 +1642,8 @@ public class ForceField {
         SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START,
         /* Electrostatics switch for full path non bonded force scaling using OpenMM */
         ELEC_START,
+        /* Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. */
+        LAMBDA_START,
         /* Polarization parameters */
         POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
         CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
