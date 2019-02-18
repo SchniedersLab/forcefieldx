@@ -174,7 +174,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationTy
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_SingleParticle;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
@@ -430,6 +429,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double lambda = 1.0;
     /**
+     * Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. This is useful for conformational
+     * optimization if full removal of vdW interactions is not desired (i.e. lambdaStart = ~0.2).
+     */
+    private double lambdaStart = 0.0;
+    /**
      * Value of the van der Waals lambda state variable.
      */
     private double lambdaVDW = 1.0;
@@ -448,7 +452,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * "softcore" AMOEBA vdW create space.
      */
     private double lambdaAmoebaVDW = 1.0;
-
     /**
      * The lambda value that defines when non-softcored AMOEBA vdW will begin turning on
      * for alchemical atoms.
@@ -456,7 +459,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * If this value is set to 1.0, non-softcored AMOEBA vdW will not be turned on.
      */
     private double nonSoftcoreAMOEBAvdWStart = 1.0 / 3.0;
-
     /**
      * The lambda value that defines when softcore AMOEBA vdW will finish om and begin turning off for alchemical atoms.
      * These must be turned off because they do not include hydrogen reduction factors.
@@ -464,7 +466,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * If this value is set to 1.0, softcored AMOEBA vdw will not be turned off.
      */
     private double softcoreAMOEBAvdWMidPoint = 0.5;
-    
+
     /**
      * The lambda value that defines when the electrostatics will start to turn on for full path non bonded term scaling.
      */
@@ -538,10 +540,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Add Bond Force.
-        if(rigidBonds){
+        if (rigidBonds) {
             logger.info("Not adding bonds to AmoebaBondForce because bonds are constrained.");
-        }
-        else {
+        } else {
             addBondForce(forceField);
         }
 
@@ -648,21 +649,47 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             if (amoebaVDWForce != null && vdwLambdaTerm) {
 
-                softcoreAMOEBAvdWMidPoint = forceField.getDouble(
-                        ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MIDPOINT, softcoreAMOEBAvdWMidPoint);
-                nonSoftcoreAMOEBAvdWStart = forceField.getDouble(
-                        ForceFieldDouble.NON_SOFTCORE_AMOEBA_VDW_START, nonSoftcoreAMOEBAvdWStart);
-                if (elecLambdaTerm){
-                    electrostaticStart = forceField.getDouble(
-                        ForceFieldDouble.ELEC_START, electrostaticStart);             
+                lambdaStart = forceField.getDouble(
+                        ForceFieldDouble.LAMBDA_START, 0.0);
+                if (lambdaStart > 1.0) {
+                    lambdaStart = 1.0;
+                } else if (lambdaStart < 0.0) {
+                    lambdaStart = 0.0;
                 }
 
+                softcoreAMOEBAvdWMidPoint = forceField.getDouble(
+                        ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MIDPOINT, softcoreAMOEBAvdWMidPoint);
+                if (softcoreAMOEBAvdWMidPoint > 1.0) {
+                    softcoreAMOEBAvdWMidPoint = 1.0;
+                } else if (softcoreAMOEBAvdWMidPoint < 0.0) {
+                    softcoreAMOEBAvdWMidPoint = 0.0;
+                }
+
+                nonSoftcoreAMOEBAvdWStart = forceField.getDouble(
+                        ForceFieldDouble.NON_SOFTCORE_AMOEBA_VDW_START, nonSoftcoreAMOEBAvdWStart);
+                if (nonSoftcoreAMOEBAvdWStart > 1.0) {
+                    nonSoftcoreAMOEBAvdWStart = 1.0;
+                } else if (nonSoftcoreAMOEBAvdWStart < 0.0) {
+                    nonSoftcoreAMOEBAvdWStart = 0.0;
+                }
+
+                if (elecLambdaTerm) {
+                    electrostaticStart = forceField.getDouble(
+                            ForceFieldDouble.ELEC_START, electrostaticStart);
+                    if (electrostaticStart > 1.0) {
+                        electrostaticStart = 1.0;
+                    } else if (electrostaticStart < 0.0) {
+                        electrostaticStart = 0.0;
+                    }
+                }
+
+                logger.info(format(" Lambda path start:             %6.3f", lambdaStart));
                 logger.info(format(" Softcore AMOEBA vdW midpoint:  %6.3f", softcoreAMOEBAvdWMidPoint));
                 logger.info(format(" Non-Softcore AMOEBA vdW start: %6.3f ", nonSoftcoreAMOEBAvdWStart));
-                if (elecLambdaTerm){
+                if (elecLambdaTerm) {
                     logger.info(format(" Electrostatics start: %6.3f", electrostaticStart));
                 }
-            } else if (elecLambdaTerm && vdwLambdaTerm){
+            } else if (elecLambdaTerm && vdwLambdaTerm) {
                 electrostaticStart = forceField.getDouble(
                         ForceFieldDouble.ELEC_START, electrostaticStart);
                 logger.info(format(" Electrostatic start: %6.3f", electrostaticStart));
@@ -1238,10 +1265,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             int i2 = angle.getAtom(1).getXyzIndex() - 1;
             int i3 = angle.getAtom(2).getXyzIndex() - 1;
             int nh = angle.nh;
-            if(isHydrogenAngle(angle) && rigidHydrogenAngles){
+            if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
                 logger.info("Not adding angle to AmoebaAngleForce because angle is constrained: " + angle);
-            }
-            else {
+            } else {
                 OpenMM_AmoebaAngleForce_addAngle(amoebaAngleForce, i1, i2, i3,
                         angle.angleType.angle[nh], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
             }
@@ -3004,8 +3030,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private void updateParameters() {
 
         /**
-        logger.info(format(" Update parameters called. VDW: %8.6f ELEC: %8.6f AVDW: %8.6f TOR: : %8.6f",
-                lambdaVDW, lambdaElec, lambdaAmoebaVDW, lambdaTorsion)); */
+         logger.info(format(" Update parameters called. VDW: %8.6f ELEC: %8.6f AVDW: %8.6f TOR: : %8.6f",
+         lambdaVDW, lambdaElec, lambdaAmoebaVDW, lambdaTorsion)); */
 
         Atom[] atoms = molecularAssembly.getAtomArray();
 
@@ -3576,6 +3602,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public void setLambda(double lambda) {
         if (lambdaTerm) {
             if (lambda >= 0.0 && lambda <= 1.0) {
+
+                // Remove the beginning of the normal Lambda path.
+                if (lambdaStart > 0) {
+                    double windowSize = 1.0 - lambdaStart;
+                    lambda = lambdaStart + lambda * windowSize;
+                }
+
                 this.lambda = lambda;
                 super.setLambda(lambda);
 
@@ -3603,9 +3636,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         lambdaElec = 0.0;
                     } else {
                         // Turn electrostatics on during the latter part of the path.
-                        lambdaElec = 2.0 * (lambda - 0.5);
+                        double elecWindow = 1.0 - electrostaticStart;
+                        lambdaElec = (lambda - electrostaticStart) / elecWindow;
                     }
-
                     lambdaVDW = lambda;
                     // AMOEBA Case
                     if (amoebaVDWForce != null) {
@@ -4454,7 +4487,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         Atom atom3;
 
         for (Angle angle : angles) {
-            if (isHydrogenAngle(angle)){
+            if (isHydrogenAngle(angle)) {
                 atom1 = angle.getAtom(0);
                 atom3 = angle.getAtom(2);
 
@@ -4567,11 +4600,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Check to see if an angle is a hydrogen angle. This method only returns true for hydrogen angles that are less
      * than 160 degrees.
+     *
      * @param angle Angle to check.
      * @return boolean indicating whether or not an angle is a hydrogen angle that is less than 160 degrees.
      */
-    public boolean isHydrogenAngle(Angle angle){
-        if(angle.containsHydrogen()){
+    public boolean isHydrogenAngle(Angle angle) {
+        if (angle.containsHydrogen()) {
             // Equilibrium angle value in degrees.
             double angleVal = angle.angleType.angle[angle.nh];
             // Make sure angle is less than 160 degrees because greater than 160 degrees will not be constrained

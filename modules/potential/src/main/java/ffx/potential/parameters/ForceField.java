@@ -1642,6 +1642,8 @@ public class ForceField {
         SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START,
         /* Electrostatics switch for full path non bonded force scaling using OpenMM */
         ELEC_START,
+        /* Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. */
+        LAMBDA_START,
         /* Polarization parameters */
         POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
         CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
@@ -1663,7 +1665,7 @@ public class ForceField {
         /* Generalized Kirkwood dielectric and debugging */
         GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE, GK_HYDROGEN_OVERLAPSCALE, GK_GLOBAL_RADIISCALE, GK_CUTOFF,
         /* Miscellaneous */
-        RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
+        RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
         /* OpenMM finite-difference lambda step size */
         FD_DLAMBDA,
         /* OpenMM coefficient of friction for Langevin integrator */
