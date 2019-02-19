@@ -157,7 +157,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * If the recursion kernel becomes too large for some combinations of (Lambda, dU/dL),
      * then its statistical weight = exp(kernel * beta) will exceed the maximum representable double value.
-     *
+     * <p>
      * In this case, we can simply apply a lambda bin dependent negative offset to all kernel values.
      */
     private double[] kernelOffset;
@@ -293,7 +293,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             temperOffset = 1;
         }
 
-         if (temperOffset < 0) {
+        if (temperOffset < 0) {
             temperOffset = 0;
         }
         logger.info(format("  Coverage before tempering:     %7.4g kcal/mol", temperOffset));
@@ -399,8 +399,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" %s %16.8f  %s",
                     "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
-        
-        if(mcRestart){
+
+        if (mcRestart) {
             energyCount++;
         }
 
@@ -530,8 +530,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" %s %16.8f  %s",
                     "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
-        
-        if(mcRestart){
+
+        if (mcRestart) {
             energyCount++;
         }
 
@@ -606,8 +606,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
             optimization(forceFieldEnergy, x, gradient);
         }
-        
-        if(mcRestart){
+
+        if (mcRestart) {
             return;
         }
 
@@ -649,41 +649,41 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
         }
     }
-    
+
     @Override
-    public void writeRestart(){
+    public void writeRestart() {
         if (algorithmListener != null) {
-                algorithmListener.algorithmUpdate(molecularAssembly);
-            }
-            /**
-             * Only the rank 0 process writes the histogram restart file.
-             */
-            if (rank == 0) {
-                try {
-                    TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
-                            new BufferedWriter(new FileWriter(histogramFile)));
-                    ttOSRWHistogramRestart.writeHistogramFile();
-                    ttOSRWHistogramRestart.flush();
-                    ttOSRWHistogramRestart.close();
-                    logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
-                } catch (IOException ex) {
-                    String message = " Exception writing TTOSRW histogram restart file.";
-                    logger.log(Level.INFO, message, ex);
-                }
-            }
-            /**
-             * All ranks write a lambda restart file.
-             */
+            algorithmListener.algorithmUpdate(molecularAssembly);
+        }
+        /**
+         * Only the rank 0 process writes the histogram restart file.
+         */
+        if (rank == 0) {
             try {
-                TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-                ttOSRWLambdaRestart.writeLambdaFile();
-                ttOSRWLambdaRestart.flush();
-                ttOSRWLambdaRestart.close();
-                logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
+                TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
+                        new BufferedWriter(new FileWriter(histogramFile)));
+                ttOSRWHistogramRestart.writeHistogramFile();
+                ttOSRWHistogramRestart.flush();
+                ttOSRWHistogramRestart.close();
+                logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
             } catch (IOException ex) {
-                String message = " Exception writing TTOSRW lambda restart file.";
+                String message = " Exception writing TTOSRW histogram restart file.";
                 logger.log(Level.INFO, message, ex);
             }
+        }
+        /**
+         * All ranks write a lambda restart file.
+         */
+        try {
+            TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+            ttOSRWLambdaRestart.writeLambdaFile();
+            ttOSRWLambdaRestart.flush();
+            ttOSRWLambdaRestart.close();
+            logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
+        } catch (IOException ex) {
+            String message = " Exception writing TTOSRW lambda restart file.";
+            logger.log(Level.INFO, message, ex);
+        }
     }
 
     public double computeBiasEnergy(double currentLambda, double currentdUdL) {
@@ -1050,15 +1050,15 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             temperingWeight = exp(temperEnergy / deltaT);
         }
 
-        if (print || abs(freeEnergy - previousFreeEnergy) > 0.001) {
-                stringBuilder.append(String.format(" Minimum Bias %8.3f", minFL));
-                logger.info(stringBuilder.toString());
-                double fromNumeric = integrateNumeric(FLambda, integrationType);
-                logger.info(String.format(" Free energy from %s rule: %12.4f", integrationType.toString(), fromNumeric));
-                previousFreeEnergy = freeEnergy;
-        }
+        freeEnergy = integrateNumeric(FLambda, integrationType);
 
-        if (print || biasCount % printFrequency == 0) {
+        if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
+            logger.info(stringBuilder.toString());
+            logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
+                    freeEnergy, totalWeight, temperingWeight));
+            logger.info(String.format(" Minimum Bias %8.3f", minFL));
+            previousFreeEnergy = freeEnergy;
+        } else if (print || biasCount % printFrequency == 0) {
             logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
                     freeEnergy, totalWeight, temperingWeight));
         }
@@ -1269,6 +1269,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
         throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
     }
+
     /**
      * {@inheritDoc}
      */
@@ -1287,8 +1288,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     public boolean dEdLZeroAtEnds() {
         return false;
     }
+
     @Override
-    public void setLambdaWriteOut(double lambdaWriteOut){
+    public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
     }
 

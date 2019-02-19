@@ -744,7 +744,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (requestedPlatform == Platform.OMM_CUDA && cuda == false) {
             logger.info(" The OMM_CUDA platform was requested, but is not available.");
         }
-        
+
         /**
          * Extra logging to print out plugins that failed to load.
          */
