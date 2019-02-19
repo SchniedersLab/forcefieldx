@@ -735,24 +735,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             String pluginString = stringFromArray(plugins, i);
             logger.log(Level.INFO, "  Plugin: {0}", pluginString);
             boolean amoebaCudaAvailable = pluginString.toUpperCase().contains("AMOEBACUDA");
-            switch (requestedPlatform) {
-                case OMM_CUDA:
-                    if (!amoebaCudaAvailable) {
-                        logger.severe(" The OMM_CUDA platform was specifically requested but could not be found! CUDA may not be installed properly!");
-                    } else {
-                        cuda = true;
-                    }
-                    break;
-                case OMM_OPENCL:
-                case OMM_OPTCPU:
-                case OMM_REF:
-                default:
-                    cuda = amoebaCudaAvailable;
-                    break;
+            if (amoebaCudaAvailable) {
+                cuda = true;
             }
         }
         OpenMM_StringArray_destroy(plugins);
 
+        if (requestedPlatform == Platform.OMM_CUDA && cuda == false) {
+            logger.info(" The OMM_CUDA platform was requested, but is not available.");
+        }
+        
         /**
          * Extra logging to print out plugins that failed to load.
          */

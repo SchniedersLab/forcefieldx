@@ -49,7 +49,6 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class BondType extends BaseType implements Comparator<String> {
 
@@ -61,7 +60,8 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     public enum BondFunction {
         // Typical bond functions.
-        HARMONIC("0.5*k*(r-r0)^2", false), QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=r-r0", false),
+        HARMONIC("0.5*k*(r-r0)^2", false),
+        QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=r-r0", false),
 
         // Usually only for restraints.
         FLAT_BOTTOM_HARMONIC("0.5*k*dv^2;dv=step(dv)*step(dv-fb)*(dv-fb)" +
@@ -85,6 +85,7 @@ public final class BondType extends BaseType implements Comparator<String> {
 
         /**
          * Returns the form of this bond as a mathematical expression parsable by OpenMM.
+         *
          * @return A string describing mathematical form.
          */
         public String toMathematicalForm() {
@@ -93,6 +94,7 @@ public final class BondType extends BaseType implements Comparator<String> {
 
         /**
          * Returns whether or not this BondFunction has a flat bottom.
+         *
          * @return Flat bottom.
          */
         public boolean hasFlatBottom() {
@@ -103,7 +105,7 @@ public final class BondType extends BaseType implements Comparator<String> {
     /**
      * Atom classes that form this bond stretch.
      */
-    public final int atomClasses[];
+    public final int[] atomClasses;
     /**
      * Force constant (Kcal/mol).
      */
@@ -117,31 +119,33 @@ public final class BondType extends BaseType implements Comparator<String> {
      * Will almost always be 0.
      */
     public final double flatBottomRadius;
-
+    /**
+     * The function used by the bond: harmonic or quartic with flat-bottom variants.
+     */
     public final BondFunction bondFunction;
 
     /**
      * BondType constructor.
      *
-     * @param atomClasses int[]
+     * @param atomClasses   int[]
      * @param forceConstant double
-     * @param distance double
-     * @param bondFunction the BondFunction type to apply.
+     * @param distance      double
+     * @param bondFunction  the BondFunction type to apply.
      */
-    public BondType(int atomClasses[], double forceConstant, double distance, BondFunction bondFunction) {
+    public BondType(int[] atomClasses, double forceConstant, double distance, BondFunction bondFunction) {
         this(atomClasses, forceConstant, distance, bondFunction, 0.0);
     }
 
     /**
      * BondType constructor.
      *
-     * @param atomClasses int[]
-     * @param forceConstant double
-     * @param distance double
-     * @param bondFunction the BondFunction type to apply.
+     * @param atomClasses      int[]
+     * @param forceConstant    double
+     * @param distance         double
+     * @param bondFunction     the BondFunction type to apply.
      * @param flatBottomRadius a double.
      */
-    public BondType(int atomClasses[], double forceConstant, double distance, BondFunction bondFunction, double flatBottomRadius) {
+    public BondType(int[] atomClasses, double forceConstant, double distance, BondFunction bondFunction, double flatBottomRadius) {
         super(ForceFieldType.BOND, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
@@ -188,7 +192,7 @@ public final class BondType extends BaseType implements Comparator<String> {
          * If found, create a new BondType that bridges to known classes.
          */
         if (count == 1) {
-            int newClasses[] = Arrays.copyOf(atomClasses, len);
+            int[] newClasses = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
@@ -205,7 +209,7 @@ public final class BondType extends BaseType implements Comparator<String> {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted bond stretch string.
      */
     @Override
@@ -239,8 +243,8 @@ public final class BondType extends BaseType implements Comparator<String> {
      * Average two BondType instances. The atom classes that define the new type
      * must be supplied.
      *
-     * @param bondType1 a {@link ffx.potential.parameters.BondType} object.
-     * @param bondType2 a {@link ffx.potential.parameters.BondType} object.
+     * @param bondType1   a {@link ffx.potential.parameters.BondType} object.
+     * @param bondType2   a {@link ffx.potential.parameters.BondType} object.
      * @param atomClasses an array of {@link int} objects.
      * @return a {@link ffx.potential.parameters.BondType} object.
      */
@@ -272,13 +276,15 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     public static final double quartic = 3.793125;
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String key1, String key2) {
-        String keys1[] = key1.split(" ");
-        String keys2[] = key2.split(" ");
-        int c1[] = new int[2];
-        int c2[] = new int[2];
+        String[] keys1 = key1.split(" ");
+        String[] keys2 = key2.split(" ");
+        int[] c1 = new int[2];
+        int[] c2 = new int[2];
         for (int i = 0; i < 2; i++) {
             c1[i] = Integer.parseInt(keys1[i]);
             c2[i] = Integer.parseInt(keys2[i]);
@@ -297,7 +303,9 @@ public final class BondType extends BaseType implements Comparator<String> {
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -307,14 +315,16 @@ public final class BondType extends BaseType implements Comparator<String> {
             return false;
         }
         BondType bondType = (BondType) other;
-        int c[] = bondType.atomClasses;
+        int[] c = bondType.atomClasses;
         if (c[0] == atomClasses[0] && c[1] == atomClasses[1]) {
             return true;
         }
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 7;
