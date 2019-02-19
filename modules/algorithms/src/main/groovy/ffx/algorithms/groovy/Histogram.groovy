@@ -42,7 +42,7 @@ class Histogram extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
     private List<String> filenames
-    private AbstractOSRW osrw;
+    private AbstractOSRW abstractOSRW;
 
     @Override
     Histogram run() {
@@ -84,21 +84,23 @@ class Histogram extends AlgorithmsScript {
         double saveInterval = 100.0
         double temperature = 298.15
 
+
         if (!untempered) {
-            osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+            TransitionTemperedOSRW osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
             if (pmf) {
                 osrw.evaluatePMF()
             }
+            abstractOSRW = osrw
         } else {
-            // Wrap the potential energy inside an OSRW instance.
-            osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
+            OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
             if (pmf) {
                 osrw.evaluatePMF()
             }
+            abstractOSRW = osrw
         }
 
         return this
@@ -106,7 +108,7 @@ class Histogram extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
+        return abstractOSRW == null ? Collections.emptyList() : Collections.singletonList(abstractOSRW)
     }
 }
 

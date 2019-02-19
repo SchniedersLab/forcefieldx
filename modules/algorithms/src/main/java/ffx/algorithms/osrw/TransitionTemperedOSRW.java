@@ -946,7 +946,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         double beta = 1.0 / (Thermostat.R * temperature);
         StringBuilder stringBuilder = new StringBuilder();
         if (print) {
-            stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
+            stringBuilder.append("  Weight    Lambda Bins     F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
         }
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
@@ -988,6 +988,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                         maxBias = kernel;
                     }
                     double weight = exp(kernel * beta);
+                    if (Double.isInfinite(weight) || Double.isNaN(weight)) {
+                        logger.info(format(
+                                " Skipping %8.6f weight for (L=%5.3f FL=%7.1f) due to kernel %8.3f.",
+                                weight, iL * dL, currentFLambda, kernel, recursionKernel[iL][jFL]));
+                        continue;
+                    }
+
                     ensembleAverageFLambda += currentFLambda * weight;
                     partitionFunction += weight;
                     lambdaCount += recursionKernel[iL][jFL];
@@ -1018,7 +1025,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 if (ulL > 1.0) {
                     ulL = 1.0;
                 }
-                stringBuilder.append(String.format(" %6.2e  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f  %8.3f %8.3f\n",
+                stringBuilder.append(String.format(" %6.2e  %6.4f %6.4f   %7.1f %7.1f   %8.2f  %8.2f  %8.3f %8.3f\n",
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], maxBias, deltaFreeEnergy, freeEnergy));
             }
@@ -1029,16 +1036,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             temperingWeight = exp(temperEnergy / deltaT);
         }
 
-        if (abs(freeEnergy - previousFreeEnergy) > 0.001) {
-            if (print) {
+        if (print || abs(freeEnergy - previousFreeEnergy) > 0.001) {
                 stringBuilder.append(String.format(" Minimum Bias %8.3f", minFL));
                 logger.info(stringBuilder.toString());
                 double fromNumeric = integrateNumeric(FLambda, integrationType);
                 logger.info(String.format(" Free energy from %s rule: %12.4f", integrationType.toString(), fromNumeric));
-
                 previousFreeEnergy = freeEnergy;
-            }
-
         }
 
         if (print || biasCount % printFrequency == 0) {
