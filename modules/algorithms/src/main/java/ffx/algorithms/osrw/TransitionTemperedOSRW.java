@@ -154,6 +154,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * The default temperOffset = 1.0.
      */
     private double temperOffset;
+    /**
+     * If the recursion kernel becomes too large for some combinations of (Lambda, dU/dL),
+     * then its statistical weight = exp(kernel * beta) will exceed the maximum representable double value.
+     *
+     * In this case, we can simply apply a lambda bin dependent negative offset to all kernel values.
+     */
+    private double[] kernelOffset;
 
     /**
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
@@ -221,6 +228,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Allocate space for the recursion kernel that stores weights.
          */
         recursionKernel = new double[lambdaBins][FLambdaBins];
+
+        kernelOffset = new double[lambdaBins];
 
         /**
          * Load the OSRW histogram restart file if it exists.
@@ -987,14 +996,19 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                     if (kernel > maxBias) {
                         maxBias = kernel;
                     }
+                    kernel += kernelOffset[iL];
                     double weight = exp(kernel * beta);
                     if (Double.isInfinite(weight) || Double.isNaN(weight)) {
                         logger.info(format(
-                                " Skipping %8.6f weight for (L=%5.3f FL=%7.1f) due to kernel %8.3f.",
-                                weight, iL * dL, currentFLambda, kernel, recursionKernel[iL][jFL]));
-                        continue;
+                                " %8.6f weight for (L=%5.3f FL=%7.1f) due to kernel %8.3f.",
+                                weight, iL * dL, currentFLambda, kernel));
+                        kernelOffset[iL] = -(kernel - kernelOffset[iL]);
+                        logger.info(format(" Setting recursion kernel offset for L=%5.3f to %8.3f.", iL * dL, kernelOffset[iL]));
+                        logger.info(format(" The weight for (L=%5.3f FL=%7.1f) is now 1.",
+                                iL * dL, currentFLambda, kernel));
+                        // Call this method again, using the new kernelOffset.
+                        return updateFLambda(print);
                     }
-
                     ensembleAverageFLambda += currentFLambda * weight;
                     partitionFunction += weight;
                     lambdaCount += recursionKernel[iL][jFL];
