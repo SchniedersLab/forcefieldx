@@ -7,7 +7,9 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-import ffx.potential.utils.Superpose;
+import ffx.potential.utils.Superpose
+
+import static java.lang.String.format
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -115,33 +117,31 @@ class Energy extends PotentialScript {
             XYZFilter xyzFilter = (XYZFilter) systemFilter
 
             double[] x2 = new double[nVars]
-            double[] mass = new double[nVars / 3];
+            double[] mass = new double[nVars / 3]
 
             int nAtoms = atoms.length;
             for (int i=0; i<nAtoms; i++) {
-                mass[i] = atoms[i].getMass();
+                mass[i] = atoms[i].getMass()
             }
 
             while (xyzFilter.readNext()) {
-
                 forceFieldEnergy.getCoordinates(x2)
                 energy = forceFieldEnergy.energy(x2, true)
-
-//                double origRMSD = Superpose.rmsd(x, x2, mass)
-//                Superpose.center(x, mass, x2, mass)
-//                double transRMSD = Superpose.rmsd(x, x2, mass)
-//                Superpose.quatfit(x, x2, mass)
-//                double rotRMSD = Superpose.rmsd(x, x2, mass)
-//                logger.info(String.format(" RMSD Original: %8.3f Translation: %8.3f Rotation: %8.3f",
-//                        origRMSD, transRMSD, rotRMSD))
+                double origRMSD = Superpose.rmsd(x, x2, mass)
+                Superpose.translate(x, mass, x2, mass)
+                double transRMSD = Superpose.rmsd(x, x2, mass)
+                Superpose.rotate(x, x2, mass)
+                double rotRMSD = Superpose.rmsd(x, x2, mass)
+                logger.info(format(
+                        "\n Coordinate RMSD (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
+                        origRMSD, transRMSD, rotRMSD))
             }
         }
-
         return this
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy);
     }
 }

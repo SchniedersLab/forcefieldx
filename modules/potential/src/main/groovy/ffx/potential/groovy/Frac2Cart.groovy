@@ -101,7 +101,7 @@ class Frac2Cart extends PotentialScript {
         String fileName = FilenameUtils.getName(modelFilename)
         String ext = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName)
-        
+
         if (ext.toUpperCase().contains("XYZ")) {
             potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
         } else {
