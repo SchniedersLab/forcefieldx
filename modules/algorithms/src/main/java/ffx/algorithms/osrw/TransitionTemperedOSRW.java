@@ -155,12 +155,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private double temperOffset;
     /**
-     * If the recursion kernel becomes too large for some combinations of (Lambda, dU/dL),
-     * then its statistical weight = exp(kernel * beta) will exceed the maximum representable double value.
-     * <p>
-     * In this case, we can simply apply a lambda bin dependent negative offset to all kernel values.
+     * If the recursion kernel becomes too large or too small for some combinations of (Lambda, dU/dL),
+     * then its statistical weight = exp(kernel * beta) will cannot be represented by a double value.
      */
-    private double[] kernelOffset;
+    private double[] kernelValues;
 
     /**
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
@@ -229,7 +227,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          */
         recursionKernel = new double[lambdaBins][FLambdaBins];
 
-        kernelOffset = new double[lambdaBins];
+        kernelValues = new double[FLambdaBins];
 
         /**
          * Load the OSRW histogram restart file if it exists.
@@ -904,6 +902,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
             recursionKernel = newRecursionKernel;
             FLambdaBins = newFLambdaBins;
+            kernelValues = new double[FLambdaBins];
             maxFLambda = minFLambda + dFL * FLambdaBins;
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
@@ -923,6 +922,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
             int newFLambdaBins = FLambdaBins + offset;
             double newRecursionKernel[][] = new double[lambdaBins][newFLambdaBins];
+
             /**
              * We have added bins below the current counts, so their indeces
              * must be increased by: offset = newFLBins - FLBins
@@ -933,6 +933,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
             FLambdaBins = newFLambdaBins;
+            kernelValues = new double[FLambdaBins];
+
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
@@ -957,6 +959,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (print) {
             stringBuilder.append("  Weight    Lambda Bins     F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
         }
+
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
             int llFL = -1;
@@ -990,27 +993,22 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             } else {
                 double ensembleAverageFLambda = 0.0;
                 double partitionFunction = 0.0;
+
+                // Evaluate and regularize all kernel values for this value of lambda.
+                double offset = evaluateKernelforLambda(iL, llFL, ulFL);
+
                 for (int jFL = llFL; jFL <= ulFL; jFL++) {
-                    double currentFLambda = minFLambda + jFL * dFL + dFL_2;
-                    double kernel = evaluateKernel(iL, jFL);
-                    if (kernel > maxBias) {
-                        maxBias = kernel;
+                    double kernel = kernelValues[jFL];
+
+                    if (kernel - offset > maxBias) {
+                        maxBias = kernel - offset;
                     }
-                    kernel += kernelOffset[iL];
+
                     double weight = exp(kernel * beta);
-                    if (Double.isInfinite(weight) || Double.isNaN(weight)) {
-                        logger.info(format(
-                                " %8.6f weight for (L=%5.3f FL=%7.1f) due to kernel %8.3f.",
-                                weight, iL * dL, currentFLambda, kernel));
-                        kernelOffset[iL] = -(kernel - kernelOffset[iL]);
-                        logger.info(format(" Setting recursion kernel offset for L=%5.3f to %8.3f.", iL * dL, kernelOffset[iL]));
-                        logger.info(format(" The weight for (L=%5.3f FL=%7.1f) is now 1.",
-                                iL * dL, currentFLambda, kernel));
-                        // Call this method again, using the new kernelOffset.
-                        return updateFLambda(print);
-                    }
-                    ensembleAverageFLambda += currentFLambda * weight;
                     partitionFunction += weight;
+
+                    double currentFLambda = minFLambda + jFL * dFL + dFL_2;
+                    ensembleAverageFLambda += currentFLambda * weight;
                     lambdaCount += recursionKernel[iL][jFL];
                 }
                 if (minFL > maxBias) {
@@ -1054,16 +1052,46 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
             logger.info(stringBuilder.toString());
-            logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
+            logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
                     freeEnergy, totalWeight, temperingWeight));
-            logger.info(String.format(" Minimum Bias %8.3f", minFL));
+            logger.info(format(" Minimum Bias %8.3f", minFL));
             previousFreeEnergy = freeEnergy;
         } else if (print || biasCount % printFrequency == 0) {
-            logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
+            logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
                     freeEnergy, totalWeight, temperingWeight));
         }
 
         return freeEnergy;
+    }
+
+    /**
+     * Evaluate the kernel across dU/dL values at given value of lambda. The largest kernel value V
+     * is used to define an offset (-V), which is added to all to kernel values. Then,
+     * the largest kernel value is zero, and will result in a statistical weight of 1.
+     * <p>
+     * The offset avoids the recursion kernel becoming too large for some combinations of (Lambda, dU/dL).
+     * This can result in its statistical weight = exp(kernel * beta)
+     * exceeding the maximum representable double value.
+     *
+     * @param lambda Value of Lambda to evaluate the kernal for.
+     * @param llFL   Lower FLambda bin.
+     * @param ulFL   Upper FLambda bin.
+     * @return the applied offset.
+     */
+    private double evaluateKernelforLambda(int lambda, int llFL, int ulFL) {
+        double maxKernel = Double.MIN_VALUE;
+        for (int jFL = llFL; jFL <= ulFL; jFL++) {
+            double value = evaluateKernel(lambda, jFL);
+            kernelValues[jFL] = value;
+            if (value > maxKernel) {
+                maxKernel = value;
+            }
+        }
+        double offset = -maxKernel;
+        for (int jFL = llFL; jFL <= ulFL; jFL++) {
+            kernelValues[jFL] += offset;
+        }
+        return offset;
     }
 
     /**
@@ -1458,6 +1486,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
                 // Allocate memory for the recursion kernel.
                 recursionKernel = new double[lambdaBins][FLambdaBins];
+                kernelValues = new double[FLambdaBins];
+
                 for (int i = 0; i < lambdaBins; i++) {
                     String counts[] = readLine().split(" +");
                     for (int j = 0; j < FLambdaBins; j++) {
