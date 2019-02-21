@@ -4927,7 +4927,7 @@ public final class PDBFilter extends SystemFilter {
             residue.setChainID('Z');
         }
         assert residue.getResidueType() == Residue.ResidueType.NA;
-        NucleicAcid3 na3 = residue.getNucleicAcid3();
+        NucleicAcid3 na3 = residue.getNucleicAcid3(true);
         logger.info(residue.toString());
         switch (na3) {
             case ADE:

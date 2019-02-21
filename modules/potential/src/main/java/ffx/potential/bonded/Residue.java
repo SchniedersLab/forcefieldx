@@ -670,12 +670,47 @@ public class Residue extends MSGroup {
     public NucleicAcid3 getNucleicAcid3() {
         if (this.residueType != ResidueType.NA) {
             throw new IllegalArgumentException(String.format(" This residue is "
-                    + "not an amino acid: %s", this.toString()));
+                    + "not a nucleic acid: %s", this.toString()));
         } else if (na == NA3.UNK) {
             return NucleicAcid3.UNK;
         }
         return NucleicAcid3.valueOf(getName());
 
+    }
+
+    /**
+     * <p>Returns the NucleicAcid3 corresponding to this Residue, with additional robust checking for 1- or 2-letter names.
+     * </p>
+     * @param matchShortName Try to match 1- or 2-letter names (e.g. A to ADE).
+     * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+     */
+    public NucleicAcid3 getNucleicAcid3(boolean matchShortName) {
+        NucleicAcid3 na3 = getNucleicAcid3();
+        if (na3 == NucleicAcid3.UNK && matchShortName) {
+            switch (getName()) {
+                case "A":
+                    return NucleicAcid3.ADE;
+                case "C":
+                    return NucleicAcid3.CYT;
+                case "G":
+                    return NucleicAcid3.GUA;
+                case "T":
+                    return NucleicAcid3.THY;
+                case "U":
+                    return NucleicAcid3.URI;
+                case "DA":
+                    return NucleicAcid3.DAD;
+                case "DC":
+                    return NucleicAcid3.DCY;
+                case "DG":
+                    return NucleicAcid3.DGU;
+                case "DT":
+                    return NucleicAcid3.DTY;
+                case "DU":
+                    throw new IllegalArgumentException(" No NucleicAcid3 enum exists for DU (presumed to be deoxy-uracil)!");
+            }
+        }
+        return na3;
     }
 
     /**
