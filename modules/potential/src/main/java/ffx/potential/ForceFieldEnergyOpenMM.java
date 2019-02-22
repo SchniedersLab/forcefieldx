@@ -466,7 +466,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * If this value is set to 1.0, softcored AMOEBA vdw will not be turned off.
      */
     private double softcoreAMOEBAvdWMidPoint = 0.5;
-
     /**
      * The lambda value that defines when the electrostatics will start to turn on for full path non bonded term scaling.
      */
@@ -937,16 +936,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 createVerletIntegrator(dt);
         }
 
-        // Set all lambda variables to 1.0 when creating the context.
-        // double doublelambdaVDWBak = lambdaVDW;
-        // double lambdaElecBak = lambdaElec;
-        // double lambdaAmoebaVDWBak = lambdaAmoebaVDW;
-        // double lambdaTorsionBak = lambdaTorsion;
-        // lambdaVDW = 1.0;
-        // lambdaElec = 1.0;
-        // lambdaAmoebaVDW = 1.0;
-        // lambdaTorsion = 1.0;
-
         // Create a context.
         context = OpenMM_Context_create_2(system, integrator, platform);
 
@@ -962,10 +951,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             index += 3;
         }
 
+        setOpenMMPositions(x, numParticles * 3);
+
         logger.info(format(" Context created (integrator=%s, time step=%6.2f, temperature=%6.2f).\n",
                 integratorString, timeStep, temperature));
-
-        setOpenMMPositions(x, numParticles * 3);
     }
 
     /**
@@ -3631,7 +3620,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         double elecWindow = 1.0 - electrostaticStart;
                         lambdaElec = (lambda - electrostaticStart) / elecWindow;
                     }
+
                     lambdaVDW = lambda;
+
                     // AMOEBA Case
                     if (amoebaVDWForce != null) {
 
@@ -4174,7 +4165,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public PointerByReference getContext() {
         if (context == null) {
-            createContext(this.integratorString, timeStep, temperature);
+            createContext(integratorString, timeStep, temperature);
         }
         return context;
     }

@@ -2560,10 +2560,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
                                     ratio *= ratio;
                                     ratio *= (ratio * ratio);
-                                    double saTerm = -surfaceTension * r * r * ratio;
-                                    gkEnergy += saTerm / -6.0;
-                                    // Now calculate derivatives
-                                    gb_local[i] += saTerm / born[i];
+                                    double saTerm = surfaceTension * r * r * ratio / 6.0;
+                                    gkEnergy += saTerm;
+                                    gb_local[i] -= 6.0 * saTerm / born[i];
                                     break;
                                 default:
                                     break;
