@@ -25,11 +25,19 @@ import picocli.CommandLine.Parameters
 class Histogram extends AlgorithmsScript {
 
     /**
-     * -p or --pmf Print out potential of mean force information.
+     * -b or --bias2D Print out the potential of mean force from the 2D bias.
+     */
+    @Option(names = ['-b', '--bias2D'], paramLabel = 'false',
+            description = 'Print out the potential of mean force from the 2D bias.')
+    boolean pmf2D = false
+
+    /**
+     * -p or --pmf Print out potential of mean force from the total bias (1D + 2D).
      */
     @Option(names = ['-p', '--pmf'], paramLabel = 'false',
-            description = 'Print out potential of mean force information.')
+            description = 'Print out potential of mean force from the total bias (1D + 2D).')
     boolean pmf = false
+
     /**
      * -u or --untempered Histogram for untempered OSRW.
      */
@@ -90,7 +98,10 @@ class Histogram extends AlgorithmsScript {
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
             if (pmf) {
-                osrw.evaluatePMF()
+                osrw.evaluateTotalPMF()
+            }
+            if (pmf2D) {
+                osrw.evaluate2DPMF()
             }
             abstractOSRW = osrw
         } else {
@@ -98,7 +109,10 @@ class Histogram extends AlgorithmsScript {
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
             if (pmf) {
-                osrw.evaluatePMF()
+                osrw.evaluateTotalPMF()
+            }
+            if (pmf2D) {
+                osrw.evaluate2DPMF()
             }
             abstractOSRW = osrw
         }

@@ -162,16 +162,16 @@ class LambdaGradient extends PotentialScript {
         assert (n % 3 == 0)
         int nAtoms = n / 3
 
-        // Compute the Lambda = 0.0 energy.
-        double lambda = 0.0
+        // Compute the Lambda = 1.0 energy.
+        double lambda = 1.0
         linter.setLambda(lambda)
         potential.getCoordinates(x)
-        e0 = potential.energy(x, true)
-
-        // Compute the Lambda = 1.0 energy.
-        lambda = 1.0
-        linter.setLambda(lambda)
         e1 = potential.energy(x, true)
+
+        // Compute the Lambda = 0.0 energy.
+        lambda = 0.0
+        linter.setLambda(lambda)
+        e0 = potential.energy(x, true)
 
         logger.info(String.format(" E(0):      %20.8f.", e0))
         logger.info(String.format(" E(1):      %20.8f.", e1))
