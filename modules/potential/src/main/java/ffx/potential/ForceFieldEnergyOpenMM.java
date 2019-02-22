@@ -3294,20 +3294,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             chargeUseFactor *= lambdaScale;
-            double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
-            double oScale = overlapScale[i] * overlapScaleUseFactor;
 
             MultipoleType multipoleType = atom.getMultipoleType();
             double charge = multipoleType.charge * chargeUseFactor;
             double surfaceTension = sTens * chargeUseFactor;
 
+            double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
+            double oScale = overlapScale[i] * overlapScaleUseFactor;
             double baseRadius = baseRadii[i];
 
             OpenMM_DoubleArray_append(doubleArray, charge);
             OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadius);
             OpenMM_DoubleArray_append(doubleArray, oScale);
             OpenMM_DoubleArray_append(doubleArray, surfaceTension);
-
             OpenMM_CustomGBForce_setParticleParameters(customGBForce, i, doubleArray);
             OpenMM_DoubleArray_resize(doubleArray, 0);
         }
@@ -3611,7 +3610,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 if (elecLambdaTerm && vdwLambdaTerm) {
                     // Lambda effects both vdW and electrostatics.
-
                     if (lambda < electrostaticStart) {
                         // Begin turning vdW on with electrostatics off.
                         lambdaElec = 0.0;
@@ -3625,7 +3623,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                     // AMOEBA Case
                     if (amoebaVDWForce != null) {
-
                         double turnOnRange = softcoreAMOEBAvdWMidPoint;
                         double turnOffRange = 1.0 - softcoreAMOEBAvdWMidPoint;
                         if (lambda < softcoreAMOEBAvdWMidPoint) {
@@ -3639,7 +3636,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                                 lambdaVDW = (1.0 - lambda) / turnOffRange;
                             }
                         }
-
                         lambdaAmoebaVDW = 0.0;
                         if (lambda > nonSoftcoreAMOEBAvdWStart) {
                             lambdaAmoebaVDW = (lambda - nonSoftcoreAMOEBAvdWStart) / (1.0 - nonSoftcoreAMOEBAvdWStart);

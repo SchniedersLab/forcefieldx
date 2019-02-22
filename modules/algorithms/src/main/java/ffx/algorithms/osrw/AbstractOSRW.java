@@ -762,18 +762,37 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * <p>evaluatePMF.</p>
+     * <p>evaluate2DPMF.</p>
      */
-    public void evaluatePMF() {
+    public void evaluate2DPMF() {
         StringBuffer sb = new StringBuffer();
-        for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
-                sb.append(String.format(" %16.8f", evaluateKernel(lambdaBin, fLambdaBin)));
+        for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+            for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                double bias = -evaluateKernel(lambdaBin, fLambdaBin);
+                sb.append(String.format(" %16.8f", bias));
             }
             sb.append("\n");
         }
         logger.info(sb.toString());
     }
+
+    /**
+     * <p>evaluateTotalPMF.</p>
+     */
+    public void evaluateTotalPMF() {
+        StringBuffer sb = new StringBuffer();
+        for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+            for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                lambda = lambdaBin * dL + dL_2;
+                double bias1D = -current1DBiasEnergy(lambda, false);
+                double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
+                sb.append(String.format(" %16.8f", totalBias));
+            }
+            sb.append("\n");
+        }
+        logger.info(sb.toString());
+    }
+
 
     /**
      * {@inheritDoc}
