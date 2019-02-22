@@ -174,6 +174,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationTy
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_SingleParticle;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
@@ -270,6 +271,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double temperature = 298.15;
     /**
+     * Constraint tolerance in Angstroms.
+     */
+    private double constraintTolerance = 1e-3;
+    /**
      * OpenMM thermostat. Currently an Andersen thermostat is supported.
      */
     private PointerByReference ommThermostat = null;
@@ -277,22 +282,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Barostat to be added if NPT (isothermal-isobaric) dynamics is requested.
      */
     private PointerByReference ommBarostat = null;
-    /**
-     * OpenMM State.
-     */
-    private PointerByReference state;
-    /**
-     * OpenMM Forces.
-     */
-    private PointerByReference forces;
-    /**
-     * OpenMM Positions.
-     */
-    private PointerByReference positions = null;
-    /**
-     * OpenMM Velocities.
-     */
-    private PointerByReference velocities = null;
     /**
      * OpenMM center-of-mass motion remover.
      */
@@ -951,7 +940,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             index += 3;
         }
 
+        // Load current atomic positions.
         setOpenMMPositions(x, numParticles * 3);
+
+        // Apply constraints starting from current atomic positions.
+        OpenMM_Context_applyConstraints(context, constraintTolerance * OpenMM_NmPerAngstrom);
+
+        // Get back constrained atomic coordinates for consistency.
+        int infoMask = OpenMM_State_Positions;
+        PointerByReference state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        PointerByReference positions = OpenMM_State_getPositions(state);
+        getOpenMMPositions(positions, numParticles, x);
+        OpenMM_State_destroy(state);
 
         logger.info(format(" Context created (integrator=%s, time step=%6.2f, temperature=%6.2f).\n",
                 integratorString, timeStep, temperature));
@@ -3766,7 +3766,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         setOpenMMPositions(x, x.length);
 
         int infoMask = OpenMM_State_Energy;
-        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        PointerByReference state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
         if (!Double.isFinite(e)) {
             String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
@@ -3833,7 +3833,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         //     infoMask += OpenMM_State_ParameterDerivatives;
         // }
 
-        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        PointerByReference state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
         if (!Double.isFinite(e)) {
             String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
@@ -3874,9 +3874,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
         }
 
-        forces = OpenMM_State_getForces(state);
+        PointerByReference forces = OpenMM_State_getForces(state);
+        fillGradients(forces, g);
 
-        fillGradients(g);
         /**
          * Scale the coordinates and gradients.
          */
@@ -3910,7 +3910,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     @Override
     public double[] getGradients(double g[]) {
-        return fillGradients(g);
+        int infoMask = OpenMM_State_Forces;
+        PointerByReference state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        PointerByReference forces = OpenMM_State_getForces(state);
+        g = fillGradients(forces, g);
+        OpenMM_State_destroy(state);
+        return g;
     }
 
     /**
@@ -3921,7 +3926,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param g Gradient array to fill.
      * @return Gradient array.
      */
-    public double[] fillGradients(double[] g) {
+    public double[] fillGradients(PointerByReference forces, double[] g) {
         assert (g != null);
         int n = getNumberOfVariables();
         if (g.length < n) {
@@ -3978,11 +3983,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public void setOpenMMPositions(double x[], int numberOfVariables) {
         assert numberOfVariables == getNumberOfVariables();
-        if (positions == null) {
-            positions = OpenMM_Vec3Array_create(0);
-        } else {
-            OpenMM_Vec3Array_resize(positions, 0);
-        }
+        PointerByReference positions = OpenMM_Vec3Array_create(0);
         OpenMM_Vec3.ByValue pos = new OpenMM_Vec3.ByValue();
         for (int i = 0; i < numberOfVariables; i = i + 3) {
             pos.x = x[i] * OpenMM_NmPerAngstrom;
@@ -3991,6 +3992,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_Vec3Array_append(positions, pos);
         }
         OpenMM_Context_setPositions(context, positions);
+        OpenMM_Vec3Array_destroy(positions);
     }
 
     /**
@@ -4003,11 +4005,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public void setOpenMMVelocities(double v[], int numberOfVariables) {
         assert numberOfVariables == getNumberOfVariables();
-        if (velocities == null) {
-            velocities = OpenMM_Vec3Array_create(0);
-        } else {
-            OpenMM_Vec3Array_resize(velocities, 0);
-        }
+        PointerByReference velocities = OpenMM_Vec3Array_create(0);
         OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
         for (int i = 0; i < numberOfVariables; i = i + 3) {
             vel.x = v[i] * OpenMM_NmPerAngstrom;
@@ -4016,6 +4014,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_Vec3Array_append(velocities, vel);
         }
         OpenMM_Context_setVelocities(context, velocities);
+        OpenMM_Vec3Array_destroy(velocities);
     }
 
     /**
@@ -4551,17 +4550,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     public void createLangevinIntegrator(double temperature, double frictionCoeff, double dt) {
         integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
-        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
     }
 
     public void createVerletIntegrator(double dt) {
         integrator = OpenMM_VerletIntegrator_create(dt);
-        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
     }
 
     public void createCustomIntegrator(double dt) {
         integrator = OpenMM_CustomIntegrator_create(dt);
-        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
     }
 
     /* These methods create the Brownian and Compound integrators and are called within the createContext method.
@@ -4569,7 +4568,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     // but also commented out.
     public void createCompoundIntegrator() {
         integrator = OpenMM_CompoundIntegrator_create();
-        OpenMM_Integrator_setConstraintTolerance(integrator, 1E-4);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
     }
 
     public void createBrownianIntegrator(double temperature, double frictionCoeff, double dt){
