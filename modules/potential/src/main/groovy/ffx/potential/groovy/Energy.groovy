@@ -124,17 +124,73 @@ class Energy extends PotentialScript {
                 mass[i] = atoms[i].getMass()
             }
 
+            //Get heavy atom masses.
+            int nHeavyVars = forceFieldEnergy.getNumberOfHeavyAtomVariables()
+            double[] massHeavy = new double [nHeavyVars/3]
+            for (int i=0; i<nHeavyVars/3; i++){
+                if(!atoms[i].isHydrogen()) {
+                    massHeavy[i] = atoms[i].getMass()
+                }
+            }
+
+            //Array containing heavy atom indices.
+            double[] heavyAtomPositions = new double[nHeavyVars/3];
+            int j = 0;
+            for(int i=0; i<nVars/3; i++){
+                if(!atoms[i].isHydrogen()){
+                    heavyAtomPositions[j]=i
+                    j++
+                }
+            }
+
             while (xyzFilter.readNext()) {
+                //Arrays for holding coordinates of heavy atoms after rotation and translation.
+                double[] xHeavy = new double[nHeavyVars]
+                double[] x2Heavy = new double[nHeavyVars]
+
                 forceFieldEnergy.getCoordinates(x2)
                 energy = forceFieldEnergy.energy(x2, true)
-                double origRMSD = Superpose.rmsd(x, x2, mass)
+
+                //Original RMSD.
+                for(int i = 0; i < nHeavyVars/3; i++){
+                    int positionOfHeavyAtom = heavyAtomPositions[i]
+                    xHeavy[i*3]=x[positionOfHeavyAtom]
+                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
+                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
+                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
+                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
+                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
+                }
+                double origRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy);
+
+                //Translated RMSD.
                 Superpose.translate(x, mass, x2, mass)
-                double transRMSD = Superpose.rmsd(x, x2, mass)
+                for(int i = 0; i < nHeavyVars/3; i++){
+                    int positionOfHeavyAtom = heavyAtomPositions[i]
+                    xHeavy[i*3]=x[positionOfHeavyAtom]
+                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
+                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
+                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
+                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
+                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
+                }
+                double transRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
+
+                //Rotated RMSD.
                 Superpose.rotate(x, x2, mass)
-                double rotRMSD = Superpose.rmsd(x, x2, mass)
+                for(int i = 0; i < nHeavyVars/3; i++){
+                    int positionOfHeavyAtom = heavyAtomPositions[i]
+                    xHeavy[i*3]=x[positionOfHeavyAtom]
+                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
+                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
+                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
+                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
+                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
+                }
+                double rotRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
                 logger.info(format(
-                        "\n Coordinate RMSD (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                        origRMSD, transRMSD, rotRMSD))
+                        "\n Coordinate RMSD Based On Heavy Atoms (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
+                        origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
             }
         }
         return this
