@@ -209,7 +209,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Atom gradient array for use if "energy" is called.
      */
-    private double grad[] = null;
+    private double[] grad = null;
     /**
      * Force Field Potential Energy (i.e. with no bias terms added).
      */
@@ -234,7 +234,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Mixed second partial derivative with respect to coordinates and lambda.
      */
-    protected double dUdXdL[];
+    protected double[] dUdXdL;
     /**
      * Magnitude of each hill (not including tempering).
      * <p>
@@ -244,7 +244,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * 1D PMF with respect to lambda F(L).
      */
-    protected double FLambda[];
+    protected double[] FLambda;
     /**
      * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
      */
@@ -258,6 +258,13 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double dGdFLambda;
 
+    /**
+     * Map lambda to a periodic variable theta.
+     *
+     * <code>theta = asin(sqrt(lambda))</code>
+     *
+     * <code>lambda = sin^2 (theta).</code>
+     */
     private double theta;
     /**
      * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
@@ -311,7 +318,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * lambdaResetValue.
      */
     protected boolean resetStatistics = false;
-
     /**
      * Flag to turn on OSRW optimization.
      * <p>
@@ -328,7 +334,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Holds the lowest potential-energy parameters for loopBuilder runs from
      * all visits to lambda &gt; osrwOptimizationLambdaCutoff.
      */
-    protected double osrwOptimumCoords[];
+    protected double[] osrwOptimumCoords;
     /**
      * The lowest energy found via optimizations.
      * <p>
@@ -361,7 +367,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * SystemFilter used to save optimized structures.
      */
     protected SystemFilter osrwOptimizationFilter;
-
     /**
      * Interval between how often the 1D histogram is printed to screen versus
      * silently updated in background.
@@ -396,9 +401,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * where the free energy has changed.
      */
     protected double previousFreeEnergy = 0.0;
-    protected double lastAverage = 0.0;
-    protected double lastStdDev = 0.0;
-
     /**
      * Equilibration counts.
      */
@@ -417,14 +419,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected final boolean asynchronous;
 
-    /**
-     * Running average and standard deviation.
-     */
-    protected double totalAverage = 0;
-    protected double totalSquare = 0;
-    protected int periodCount = 0;
-    protected int window = 1000;
-    
     protected double lambdaWriteOut = -1.0;
 
     /**
@@ -792,7 +786,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
         }
         logger.info(sb.toString());
     }
-
 
     /**
      * {@inheritDoc}

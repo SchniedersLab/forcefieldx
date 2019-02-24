@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 public class Superpose {
 
@@ -12,10 +13,10 @@ public class Superpose {
     /**
      * Move the center of mass for both sets of atoms to the origin.
      *
-     * @param x1
-     * @param mass1
-     * @param x2
-     * @param mass2
+     * @param x1    Cartesian coordinates of the first system.
+     * @param mass1 The mass of each particle in the first system.
+     * @param x2    Cartesian coordinates of the second system.
+     * @param mass2 The mass of each particle in the second system.
      */
     public static void translate(double[] x1, double mass1[], double[] x2, double mass2[]) {
         // Move the first set of atoms.
@@ -27,8 +28,8 @@ public class Superpose {
     /**
      * Move the center of mass for a set of atoms to the origin.
      *
-     * @param x
-     * @param mass
+     * @param x    Cartesian coordinates of the system.
+     * @param mass The mass of each particle in the system.
      */
     private static void translate(double[] x, double mass[]) {
         double xmid = 0.0;
@@ -58,9 +59,9 @@ public class Superpose {
     /**
      * Minimize the RMS distance between two sets of atoms using quaternions.
      *
-     * @param x1
-     * @param x2
-     * @param mass
+     * @param x1   Cartesian coordinates of the first system.
+     * @param x2   Cartesian coordinates of the second system.
+     * @param mass The mass of each particle in the system.
      */
     public static void rotate(double[] x1, double[] x2, double mass[]) {
         // Build the upper triangle of the quadratic form matrix
@@ -145,9 +146,9 @@ public class Superpose {
     /**
      * Compute the rms fit over superimposed atom pairs
      *
-     * @param x1
-     * @param x2
-     * @param mass
+     * @param x1   Cartesian coordinates of the first system.
+     * @param x2   Cartesian coordinates of the second system.
+     * @param mass The mass of each particle in the system.
      * @return
      */
     public static double rmsd(double[] x1, double[] x2, double mass[]) {
@@ -165,7 +166,7 @@ public class Superpose {
             double rmsterm = dist2 * weigh;
             rmsfit = rmsfit + rmsterm;
         }
-        return Math.sqrt(rmsfit / norm);
+        return sqrt(rmsfit / norm);
     }
 
 }

@@ -62,7 +62,9 @@ import com.sun.jna.ptr.PointerByReference;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
@@ -3923,7 +3925,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * super.energy, and this class delegating to the subclass's getGradients
      * method.
      *
-     * @param g Gradient array to fill.
+     * @param forces Reference to forces returned by OpenMM.
+     * @param g      Gradient array to fill.
      * @return Gradient array.
      */
     public double[] fillGradients(PointerByReference forces, double[] g) {
@@ -3940,8 +3943,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (a.isActive()) {
                 OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(forces, i);
                 /**
-                 * Convert OpenMM Forces in KJ/Nm into an FFX gradient in
-                 * Kcal/A.
+                 * Convert OpenMM Forces in KJ/Nm into an FFX gradient in Kcal/A.
                  */
                 double gx = -posInNm.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
                 double gy = -posInNm.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
@@ -3949,9 +3951,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 if (Double.isNaN(gx) || Double.isInfinite(gx)
                         || Double.isNaN(gy) || Double.isInfinite(gy)
                         || Double.isNaN(gz) || Double.isInfinite(gz)) {
-                    /*String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                            a.toString(), gx, gy, gz);*/
-                    StringBuilder sb = new StringBuilder(format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                    StringBuilder sb = new StringBuilder(format(" The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
                             a.toString(), gx, gy, gz));
                     double[] vals = new double[3];
                     a.getVelocity(vals);
@@ -3961,7 +3961,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     a.getPreviousAcceleration(vals);
                     sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
 
-                    //logger.severe(message);
                     throw new EnergyException(sb.toString());
                 }
                 a.setXYZGradient(gx, gy, gz);
@@ -4480,7 +4479,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 double angleVal = angle.angleType.angle[angle.nh];
 
                 //Law of cosines.
-                double falseBondLength = Math.sqrt(aDist * aDist + bDist * bDist - 2 * aDist * bDist * Math.cos(Math.toRadians(angleVal)));
+                double falseBondLength = sqrt(aDist * aDist + bDist * bDist
+                        - 2.0 * aDist * bDist * cos(toRadians(angleVal)));
 
                 iAtom1 = atom1.getXyzIndex() - 1;
                 iAtom3 = atom3.getXyzIndex() - 1;
@@ -4520,7 +4520,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param inner a double.
      * @param dt    a double.
-     * @return a {@link com.sun.jna.ptr.PointerByReference} object.
      */
     public void createRESPAIntegrator(double inner, double dt) {
 
@@ -4548,16 +4547,33 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomIntegrator_addConstrainVelocities(integrator);
     }
 
+    /**
+     * Create a Langevin Integrator.
+     *
+     * @param temperature   Temperature (Kelvin).
+     * @param frictionCoeff Frictional coefficient.
+     * @param dt            Time step.
+     */
     public void createLangevinIntegrator(double temperature, double frictionCoeff, double dt) {
         integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
         OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
     }
 
+    /**
+     * Create a Verlet Integrator.
+     *
+     * @param dt Time step.
+     */
     public void createVerletIntegrator(double dt) {
         integrator = OpenMM_VerletIntegrator_create(dt);
         OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
     }
 
+    /**
+     * Create a Custom Integrator.
+     *
+     * @param dt Time step.
+     */
     public void createCustomIntegrator(double dt) {
         integrator = OpenMM_CustomIntegrator_create(dt);
         OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);

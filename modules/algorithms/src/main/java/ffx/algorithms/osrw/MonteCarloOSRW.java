@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
+import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.integrators.IntegratorEnum;
@@ -51,6 +52,7 @@ import ffx.algorithms.mc.MDMove;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.utils.EnergyException;
 
 /**
  * Sample a thermodynamic path using the OSRW method, with the time-dependent
@@ -129,6 +131,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * Convert nanoseconds to seconds.
      */
     private static final double NS2SEC = 1e-9;
+
+    /**
+     * Energy conservation during MD moves should generally be within ~0.1 kcal/mol.
+     * A change in total energy of 1.0 kcal/mol or more is of significant concern that the time step is too large,
+     * or lambda moves are too aggressive.
+     */
+    private double EnergyConservationTolerance = 10.0;
 
     /**
      * <p>
@@ -302,7 +311,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
             // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
             long proposedOSRWEnergyTime = -System.nanoTime();
-            double proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
+
+            double proposedOSRWEnergy = 0;
+            try {
+                proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
+            } catch (EnergyException e) {
+                logger.log(Level.WARNING, " Unstable MD Move skipped.", e);
+                continue;
+            }
             proposedOSRWEnergyTime += System.nanoTime();
 
             if (logger.isLoggable(Level.FINE)) {
@@ -328,6 +344,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
                     proposedTotalEnergy - currentTotalEnergy));
+
+            if (abs(currentTotalEnergy - proposedTotalEnergy) > EnergyConservationTolerance) {
+                logger.warning(" MC MD Move skipped due to lack of energy conservation.");
+                continue;
+            }
 
             if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                 /**
@@ -503,7 +524,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
             proposedOSRWEnergyTime = -System.nanoTime();
 
             // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
-            double proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
+            double proposedOSRWEnergy = 0.0;
+            try {
+                proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
+            } catch (EnergyException e) {
+                logger.log(Level.WARNING, " Unstable MD Move skipped.", e);
+                continue;
+            }
+
             proposedOSRWEnergyTime += System.nanoTime();
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(String.format(" Time to complete MD OSRW energy method call %6.3f", proposedOSRWEnergyTime * NS2SEC));
@@ -528,6 +556,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
                     proposedTotalEnergy - currentTotalEnergy));
+
+            if (abs(currentTotalEnergy - proposedTotalEnergy) > EnergyConservationTolerance) {
+                logger.warning(" MC Move skipped due to lack of energy conservation");
+                continue;
+            }
 
             if (equilibration) {
                 if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {

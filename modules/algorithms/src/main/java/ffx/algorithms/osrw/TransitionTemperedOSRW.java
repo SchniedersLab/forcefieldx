@@ -95,7 +95,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * The recursion kernel stores the weight of each [lambda][Flambda] bin.
      */
-    private double recursionKernel[][];
+    private double[][] recursionKernel;
     /**
      * The recursionWeights stores the [Lambda, FLambda] weight for each
      * process. Therefore the array is of size [number of Processes][2].
@@ -103,12 +103,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * Each 2 entry array must be wrapped inside a Parallel Java IntegerBuf for the
      * All-Gather communication calls.
      */
-    private final double recursionWeights[][];
-    private final double myRecursionWeight[];
+    private final double[][] recursionWeights;
+    private final double[] myRecursionWeight;
     /**
      * These DoubleBufs wrap the recursionWeight arrays.
      */
-    private final DoubleBuf recursionWeightsBuf[];
+    private final DoubleBuf[] recursionWeightsBuf;
     private final DoubleBuf myRecursionWeightBuf;
 
     /**
@@ -585,21 +585,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         fLambdaUpdates++;
         boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
         totalFreeEnergy = updateFLambda(printFLambda);
-
-        /**
-         * Calculating Moving Average & Standard Deviation
-         */
-        totalAverage += totalFreeEnergy;
-        totalSquare += pow(totalFreeEnergy, 2);
-        periodCount++;
-        if (periodCount == window - 1) {
-            lastAverage = totalAverage / window;
-            lastStdDev = sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
-            logger.info(format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.", lastAverage, lastStdDev));
-            totalAverage = 0;
-            totalSquare = 0;
-            periodCount = 0;
-        }
 
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
             optimization(forceFieldEnergy, x, gradient);

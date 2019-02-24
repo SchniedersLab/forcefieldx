@@ -2191,6 +2191,14 @@ public final class PDBFilter extends SystemFilter {
                 Polymer c1 = activeMolecularAssembly.getChain(String.format("%c", c1ch));
                 Polymer c2 = activeMolecularAssembly.getChain(String.format("%c", c2ch));
 
+                Polymer[] chains = activeMolecularAssembly.getChains();
+                if (c1 == null) {
+                    c1 = chains[0];
+                }
+                if (c2 == null) {
+                    c2 = chains[0];
+                }
+
                 String origResNum1 = ssbond.substring(17, 21).trim();
                 char insChar1 = ssbond.charAt(21);
                 String origResNum2 = ssbond.substring(31, 35).trim();
@@ -2239,7 +2247,7 @@ public final class PDBFilter extends SystemFilter {
                     continue;
                 }
                 double d = VectorMath.dist(SG1.getXYZ(null), SG2.getXYZ(null));
-                if (d < 3.0) {
+                if (d < 5.0) {
                     r1.setName("CYX");
                     r2.setName("CYX");
                     for (Atom atom : atoms1) {
@@ -3489,7 +3497,8 @@ public final class PDBFilter extends SystemFilter {
      * chirality errors for prochiral hydrogens. If necessary, we will implement
      * more specific mapping.
      *
-     * @param residue
+     * @param residue      Residue to examine.
+     * @param fileStandard PDB File Standard to use.
      */
     public static void checkHydrogenAtomNames(Residue residue, PDBFileStandard fileStandard) {
         switch (fileStandard) {
