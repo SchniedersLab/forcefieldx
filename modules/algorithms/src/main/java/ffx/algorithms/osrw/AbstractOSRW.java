@@ -41,6 +41,8 @@ import java.io.File;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -207,10 +209,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double maxFLambda;
     /**
-     * Atom gradient array for use if "energy" is called.
-     */
-    private double[] grad = null;
-    /**
      * Force Field Potential Energy (i.e. with no bias terms added).
      */
     protected double forceFieldEnergy;
@@ -258,14 +256,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double dGdFLambda;
     /**
-     * Map lambda to a periodic variable theta.
-     *
-     * <code>theta = asin(sqrt(lambda))</code>
-     *
-     * <code>lambda = sin^2 (theta).</code>
-     */
-    private double theta;
-    /**
      * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
      */
     protected double thetaFriction = 1.0e-19;
@@ -274,17 +264,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double thetaMass = 1.0e-18;
     protected double halfThetaVelocity = 0.0;
-    private final Random stochasticRandom;
-    /**
-     * Random force conversion to kcal/mol/A;
-     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
-     */
-    private static final double randomConvert = sqrt(4.184) / 10e9;
-    /**
-     * randomConvert squared.
-     * Units: Joule per calorie / (nanometer per meter)^2
-     */
-    private static final double randomConvert2 = randomConvert * randomConvert;
     /**
      * Time step in picoseconds.
      */
@@ -424,7 +403,30 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Should the 1D OSRW bias be included in the target function.
      */
-    protected boolean include1DBias = true;
+    protected boolean include1DBias;
+    /**
+     * Atom gradient array for use if "energy" is called.
+     */
+    private double[] grad = null;
+    /**
+     * Map lambda to a periodic variable theta.
+     *
+     * <code>theta = asin(sqrt(lambda))</code>
+     *
+     * <code>lambda = sin^2 (theta).</code>
+     */
+    private double theta;
+    private final Random stochasticRandom;
+    /**
+     * Random force conversion to kcal/mol/A;
+     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
+     */
+    private static final double randomConvert = sqrt(4.184) / 10e9;
+    /**
+     * randomConvert squared.
+     * Units: Joule per calorie / (nanometer per meter)^2
+     */
+    private static final double randomConvert2 = randomConvert * randomConvert;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -513,7 +515,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         }
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        biasMag = properties.getDouble("bias-gaussian-mag", 0.050);
+        biasMag = properties.getDouble("bias-gaussian-mag", 0.05);
         dL = properties.getDouble("lambda-bin-width", 0.005);
         dFL = properties.getDouble("flambda-bin-width", 2.0);
 
@@ -564,14 +566,17 @@ public abstract class AbstractOSRW implements CrystalPotential {
         rank = world.rank();
         jobBackend = JobBackend.getJobBackend();
 
+        include1DBias = properties.getBoolean("osrw-1D-bias", true);
+
         /**
          * Log OSRW parameters.
          */
         logger.info("\n Orthogonal Space Random Walk Parameters");
-        logger.info(String.format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
-        logger.info(String.format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
-        logger.info(String.format("  Print Interval:                 %6.3f psec", printInterval));
-        logger.info(String.format("  Save Interval:                  %6.3f psec", checkpointInterval));
+        logger.info(format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
+        logger.info(format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
+        logger.info(format("  Print Interval:                 %6.3f psec", printInterval));
+        logger.info(format("  Save Interval:                  %6.3f psec", checkpointInterval));
+        logger.info(format("  Include 1D OSRW Bias:           %6b", include1DBias));
     }
 
     /**
@@ -868,7 +873,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
             for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
                 double bias = -evaluateKernel(lambdaBin, fLambdaBin);
-                sb.append(String.format(" %16.8f", bias));
+                sb.append(format(" %16.8f", bias));
             }
             sb.append("\n");
         }
@@ -885,7 +890,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
                 lambda = lambdaBin * dL + dL_2;
                 double bias1D = -current1DBiasEnergy(lambda, false);
                 double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
-                sb.append(String.format(" %16.8f", totalBias));
+                sb.append(format(" %16.8f", totalBias));
             }
             sb.append("\n");
         }
@@ -955,7 +960,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public void setBiasMagnitude(double biasMag) {
         this.biasMag = biasMag;
-        logger.info(String.format(" Gaussian Bias Magnitude: %6.4f (kcal/mol)", biasMag));
+        logger.info(format(" Gaussian Bias Magnitude: %6.4f (kcal/mol)", biasMag));
     }
 
     /**

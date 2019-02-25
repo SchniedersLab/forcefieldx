@@ -227,6 +227,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          */
         recursionKernel = new double[lambdaBins][FLambdaBins];
 
+        /**
+         * Allocate space to regularize kernel values.
+         */
         kernelValues = new double[FLambdaBins];
 
         /**
@@ -282,24 +285,22 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             receiveThread = null;
         }
 
-        include1DBias = properties.getBoolean("osrw-1D-bias", true);
-
-        String propString = System.getProperty("ttosrw-temperOffset", "1");
-        temperOffset = 1;
+        double defaultOffset = 20.0 * biasMag;
+        String propString = System.getProperty("ttosrw-temperOffset",   Double.toString(defaultOffset));
+        temperOffset = defaultOffset;
         try {
             temperOffset = Double.parseDouble(propString);
         } catch (NumberFormatException ex) {
             logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
-            temperOffset = 1;
+            temperOffset = defaultOffset;
         }
-
-        if (temperOffset < 0) {
-            temperOffset = 0;
+        if (temperOffset < 0.0) {
+            temperOffset = 0.0;
         }
         logger.info(format("  Coverage before tempering:     %7.4g kcal/mol", temperOffset));
 
         propString = System.getProperty("ttosrw-integrationType", "SIMPSONS");
-        IntegrationType testType = SIMPSONS;
+        IntegrationType testType;
         try {
             testType = IntegrationType.valueOf(propString.toUpperCase());
         } catch (Exception ex) {
@@ -511,7 +512,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return bias1D + gLdEdL;
     }
 
-    private void optimization(double e, double x[], double gradient[]) {
+    private void optimization(double e, double[] x, double[] gradient) {
         if (energyCount % osrwOptimizationFrequency == 0) {
             logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
 

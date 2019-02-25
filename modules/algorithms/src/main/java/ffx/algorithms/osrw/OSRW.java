@@ -92,7 +92,6 @@ public class OSRW extends AbstractOSRW {
      */
     private final DoubleBuf[] recursionCountsBuf;
     private final DoubleBuf myRecursionCountBuf;
-
     /**
      * Total histogram counts.
      */
@@ -154,8 +153,6 @@ public class OSRW extends AbstractOSRW {
                 double saveInterval, boolean asynchronous, boolean resetNumSteps,
                 AlgorithmListener algorithmListener) {
         super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
-
-        include1DBias = properties.getBoolean("osrw-1D-bias", true);
 
         /**
          * Allocate space for the recursion kernel that stores counts.
