@@ -307,7 +307,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
                 mdMove.revertMove();
-                logger.log(Level.WARNING, " Unstable MD Move skipped.", e);
+                logger.log(Level.INFO, " Unstable MD Move skipped.");
                 continue;
             }
             proposedOSRWEnergyTime += System.nanoTime();
@@ -538,7 +538,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     lambdaMove.revertMove();
                     lambda = currentLambda;
                 }
-                logger.log(Level.WARNING, " Unstable MD Move skipped.", e);
+                logger.log(Level.INFO, " Unstable MD Move skipped.");
                 continue;
             }
 

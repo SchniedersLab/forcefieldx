@@ -332,6 +332,30 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
+     * Set the OSRW Gaussian biasing potential magnitude (kcal/mol).
+     *
+     * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
+     */
+    public void setBiasMagnitude(double biasMag) {
+        this.biasMag = biasMag;
+        logger.info(format("\n  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
+
+        double defaultOffset = 20.0 * biasMag;
+        String propString = System.getProperty("ttosrw-temperOffset",   Double.toString(defaultOffset));
+        temperOffset = defaultOffset;
+        try {
+            temperOffset = Double.parseDouble(propString);
+        } catch (NumberFormatException ex) {
+            logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+            temperOffset = defaultOffset;
+        }
+        if (temperOffset < 0.0) {
+            temperOffset = 0.0;
+        }
+        logger.info(format("  Coverage before tempering:     %6.4f (kcal/mol)", temperOffset));
+    }
+
+    /**
      * {@inheritDoc}
      */
     public double energy(double[] x) {
