@@ -306,6 +306,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             try {
                 proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
+                mdMove.revertMove();
                 logger.log(Level.WARNING, " Unstable MD Move skipped.", e);
                 continue;
             }
@@ -337,10 +338,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
             double energyChange = mdMove.getEnergyChange();
             if (abs(energyChange) > EnergyConservationTolerance) {
+                mdMove.revertMove();
                 logger.warning(" MC Move skipped due to lack of MD energy conservation");
                 continue;
             }
-            
+
             if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                 /**
                  * Accept MD move.
@@ -498,11 +500,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.info(String.format("\n MC Orthogonal Space Sampling Round %d", imove + 1));
                 lambdaMove.move();
                 proposedLambda = osrw.getLambda();
-                logger.info(String.format("\n Running MD on at lambda value: %f", proposedLambda));
+                logger.info(String.format("\n Running MD at proposed lambda=%5.3f.", proposedLambda));
             }
 
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Starting force field energy for move %f", currentForceFieldEnergy));
+                logger.fine(String.format(" Starting force field energy for move %16.8f", currentForceFieldEnergy));
             }
 
             /**
@@ -531,6 +533,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
             try {
                 proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
+                mdMove.revertMove();
+                if (!equilibration) {
+                    lambdaMove.revertMove();
+                    lambda = currentLambda;
+                }
                 logger.log(Level.WARNING, " Unstable MD Move skipped.", e);
                 continue;
             }
@@ -562,7 +569,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
             double energyChange = mdMove.getEnergyChange();
             if (abs(energyChange) > EnergyConservationTolerance) {
-                logger.warning(" MC Move skipped due to lack of MD energy conservation");
+                mdMove.revertMove();
+                if (!equilibration) {
+                    lambdaMove.revertMove();
+                    lambda = currentLambda;
+                }
+                logger.warning(" MC Move skipped due to lack of MD energy conservation.");
                 continue;
             }
 
@@ -590,7 +602,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                     acceptMCOSRW++;
                     double percent = (acceptMCOSRW * 100.0) / (imove + 1);
-                    logger.info(String.format("\n Accept [ L=%8.3f, FL=%8.3f, E=%12.4f]\n     -> [ L=%8.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(String.format("\n Accept [ L=%5.3f, FL=%8.3f, E=%12.4f]\n     -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentLambda, currentdUdL, currentOSRWEnergy, proposedLambda, proposeddUdL, proposedOSRWEnergy, percent));
                     lambda = proposedLambda;
                     currentdUdL = proposeddUdL;
@@ -598,7 +610,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     System.arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
                 } else {
                     double percent = (acceptMCOSRW * 100.0) / (imove + 1);
-                    logger.info(String.format("\n Reject [ L=%8.3f, FL=%8.3f, E=%12.4f]\n     -> [ L=%8.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(String.format("\n Reject [ L=%5.3f, FL=%8.3f, E=%12.4f]\n     -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentLambda, currentdUdL, currentOSRWEnergy, proposedLambda, proposeddUdL, proposedOSRWEnergy, percent));
                     lambdaMove.revertMove();
                     lambda = currentLambda;
