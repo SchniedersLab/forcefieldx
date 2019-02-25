@@ -273,9 +273,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double temperature = 298.15;
     /**
-     * Constraint tolerance in Angstroms.
+     * Constraint tolerance as a fraction of the constrained bond length.
      */
-    private double constraintTolerance = 1e-3;
+    private double constraintTolerance = 1e-4;
     /**
      * OpenMM thermostat. Currently an Andersen thermostat is supported.
      */
@@ -946,7 +946,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         setOpenMMPositions(x, numParticles * 3);
 
         // Apply constraints starting from current atomic positions.
-        OpenMM_Context_applyConstraints(context, constraintTolerance * OpenMM_NmPerAngstrom);
+        OpenMM_Context_applyConstraints(context, constraintTolerance);
 
         // Get back constrained atomic coordinates for consistency.
         int infoMask = OpenMM_State_Positions;
@@ -4556,7 +4556,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public void createLangevinIntegrator(double temperature, double frictionCoeff, double dt) {
         integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
-        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance);
     }
 
     /**
@@ -4566,7 +4566,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public void createVerletIntegrator(double dt) {
         integrator = OpenMM_VerletIntegrator_create(dt);
-        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance);
     }
 
     /**
@@ -4576,7 +4576,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public void createCustomIntegrator(double dt) {
         integrator = OpenMM_CustomIntegrator_create(dt);
-        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance);
     }
 
     /* These methods create the Brownian and Compound integrators and are called within the createContext method.
@@ -4584,7 +4584,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     // but also commented out.
     public void createCompoundIntegrator() {
         integrator = OpenMM_CompoundIntegrator_create();
-        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance * OpenMM_NmPerAngstrom);
+        OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance);
     }
 
     public void createBrownianIntegrator(double temperature, double frictionCoeff, double dt){
