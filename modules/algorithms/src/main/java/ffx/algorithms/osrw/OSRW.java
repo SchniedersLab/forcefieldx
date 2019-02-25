@@ -106,25 +106,25 @@ public class OSRW extends AbstractOSRW {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous,
-            AlgorithmListener algorithmListener) {
+                File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                double temperature, double dt, double printInterval,
+                double saveInterval, boolean asynchronous,
+                AlgorithmListener algorithmListener) {
         this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
                 temperature, dt, printInterval, saveInterval, asynchronous,
                 true, algorithmListener);
@@ -133,27 +133,29 @@ public class OSRW extends AbstractOSRW {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
-     * @param resetNumSteps whether to reset energy counts to 0
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
+     * @param resetNumSteps     whether to reset energy counts to 0
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous, boolean resetNumSteps,
-            AlgorithmListener algorithmListener) {
+                File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                double temperature, double dt, double printInterval,
+                double saveInterval, boolean asynchronous, boolean resetNumSteps,
+                AlgorithmListener algorithmListener) {
         super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
+
+        include1DBias = properties.getBoolean("osrw-1D-bias", true);
 
         /**
          * Allocate space for the recursion kernel that stores counts.
@@ -356,7 +358,11 @@ public class OSRW extends AbstractOSRW {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, true);
+        }
+        biasEnergy = bias1D + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -551,7 +557,11 @@ public class OSRW extends AbstractOSRW {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, true);
+        }
+        biasEnergy = bias1D + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -647,11 +657,12 @@ public class OSRW extends AbstractOSRW {
             }
         }
 
-        /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
-         */
-        return current1DBiasEnergy(currentLambda, false) + gLdEdL;
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, false);
+        }
+
+        return bias1D + gLdEdL;
     }
 
     /**
@@ -666,7 +677,7 @@ public class OSRW extends AbstractOSRW {
             synchronousSend(lambda, dEdU);
         }
 
-        biasCount++;  
+        biasCount++;
     }
 
     @Override
@@ -678,7 +689,7 @@ public class OSRW extends AbstractOSRW {
          * Only the rank 0 process writes the histogram restart file.
          */
         if (rank == 0) {
-            try {              
+            try {
                 OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
                         new BufferedWriter(new FileWriter(histogramFile)));
                 osrwHistogramRestart.writeHistogramFile();
@@ -1051,20 +1062,21 @@ public class OSRW extends AbstractOSRW {
     }
 
     @Override
-    public void setLambdaWriteOut(double lambdaWriteOut){
+    public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
     }
 
+    /**
+     * The ReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
+     */
     private class ReceiveThread extends Thread {
 
-        final double recursionCount[];
+        final double[] recursionCount;
         final DoubleBuf recursionCountBuf;
-        private int countsReceived;
 
         public ReceiveThread() {
             recursionCount = new double[2];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
-            countsReceived = 0;
         }
 
         @Override
@@ -1072,7 +1084,6 @@ public class OSRW extends AbstractOSRW {
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
-                    ++countsReceived;
                 } catch (InterruptedIOException ioe) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
                     break;
@@ -1110,12 +1121,11 @@ public class OSRW extends AbstractOSRW {
                 }
             }
         }
-
-        int getCountsReceived() {
-            return countsReceived;
-        }
     }
 
+    /**
+     * Write out the OSRW Histogram.
+     */
     private class OSRWHistogramWriter extends PrintWriter {
 
         public OSRWHistogramWriter(Writer writer) {
@@ -1143,6 +1153,9 @@ public class OSRW extends AbstractOSRW {
         }
     }
 
+    /**
+     * Write out the current value of Lambda, its velocity and the number of counts.
+     */
     private class OSRWLambdaWriter extends PrintWriter {
 
         public OSRWLambdaWriter(Writer writer) {
@@ -1156,6 +1169,9 @@ public class OSRW extends AbstractOSRW {
         }
     }
 
+    /**
+     * Read in the OSRW Histogram.
+     */
     private class OSRWHistogramReader extends BufferedReader {
 
         public OSRWHistogramReader(Reader reader) {
@@ -1195,14 +1211,13 @@ public class OSRW extends AbstractOSRW {
         }
     }
 
+    /**
+     * Read in the current value of Lambda, its velocity and the number of counts.
+     */
     private class OSRWLambdaReader extends BufferedReader {
 
         public OSRWLambdaReader(Reader reader) {
             super(reader);
-        }
-
-        public void readLambdaFile() {
-            readLambdaFile(true);
         }
 
         public void readLambdaFile(boolean resetEnergyCount) {

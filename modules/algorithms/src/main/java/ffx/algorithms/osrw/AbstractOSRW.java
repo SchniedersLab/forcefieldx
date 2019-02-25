@@ -257,7 +257,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * First derivative of the 2D bias with respect to  dU/dL.
      */
     protected double dGdFLambda;
-
     /**
      * Map lambda to a periodic variable theta.
      *
@@ -418,8 +417,14 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * self-consistent fields to interpolate polarization.
      */
     protected final boolean asynchronous;
-
-    protected double lambdaWriteOut = -1.0;
+    /**
+     * Write out structures only for lambda values greater than or equal to this threshold.
+     */
+    protected double lambdaWriteOut = 0.0;
+    /**
+     * Should the 1D OSRW bias be included in the target function.
+     */
+    protected boolean include1DBias = true;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -570,35 +575,67 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * <p>Setter for the field <code>propagateLambda</code>.</p>
-     *
-     * @param propagateLambda a boolean.
-     */
-    public void setPropagateLambda(boolean propagateLambda) {
-        this.propagateLambda = propagateLambda;
-    }
-
-    /**
      * <p>addBias.</p>
      *
-     * @param dUdL     a double.
-     * @param x        an array of {@link double} objects.
-     * @param gradient an array of {@link double} objects.
+     * @param dUdL     The current value of dU/dL
+     * @param x        Atomic coordinate array.
+     * @param gradient Gradient array.
      */
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
-    
+
+    /**
+     * Write out OSRW restart files.
+     */
     public abstract void writeRestart();
+
     /**
      * Abstract method used to set the lambda threshold controlled write out of snapshots.
-     * @param lambdaWriteOut 
+     *
+     * @param lambdaWriteOut
      */
     public abstract void setLambdaWriteOut(double lambdaWriteOut);
-    
-    public void setMCRestartWriter(boolean mcRestart){
-        this.mcRestart = mcRestart;
-    }
 
+    /**
+     * Compute the OSRW bias energy at (lambda, dU/dL).
+     *
+     * @param currentLambda The value of lambda.
+     * @param currentdUdL   The value of dU/dL.
+     * @return The value of the bias.
+     */
     public abstract double computeBiasEnergy(double currentLambda, double currentdUdL);
+
+    /**
+     * <p>evaluateKernel.</p>
+     *
+     * @param cLambda   the current Lambda bin.
+     * @param cF_Lambda the current dU/dL bin.
+     * @return The value of the recursion kernel.
+     */
+    protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
+
+    /**
+     * Update the 1D Bias based on the recursion kernel.
+     *
+     * @param print True requests verbose logging.
+     * @return The current free energy.
+     */
+    protected abstract double updateFLambda(boolean print);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Shuts down resources associated with this OSRW; primarily the receive
+     * thread.
+     */
+    @Override
+    public abstract boolean destroy();
+
+    /**
+     * <p>checkRecursionKernelSize.</p>
+     *
+     * @param dudl a double.
+     */
+    protected abstract void checkRecursionKernelSize(double dudl);
 
     /**
      * <p>checkRecursionKernelSize.</p>
@@ -613,11 +650,76 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * <p>checkRecursionKernelSize.</p>
+     * Specify if MC-OSRW restart files should be written.
+     * TODO: move this method to MC-OSRW.
      *
-     * @param dudl a double.
+     * @param mcRestart True to indicate writing MC OSRW restart files.
      */
-    protected abstract void checkRecursionKernelSize(double dudl);
+    public void setMCRestartWriter(boolean mcRestart) {
+        this.mcRestart = mcRestart;
+    }
+
+    /**
+     * Indicate if the Lambda extended system particle should be propagated using Langevin dynamics.
+     *
+     * @param propagateLambda If true, Lambda will be propagated using Langevin dynamics.
+     */
+    public void setPropagateLambda(boolean propagateLambda) {
+        this.propagateLambda = propagateLambda;
+    }
+
+    /**
+     * Propagate Lambda using Langevin dynamics.
+     */
+    protected void langevin() {
+        /**
+         * Compute the random force pre-factor (kcal/mol * psec^-2).
+         */
+        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
+
+        /**
+         * Compute the random force.
+         */
+        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
+
+        /**
+         * Compute dEdL (kcal/mol).
+         */
+        double dEdL = -dUdLambda * sin(2.0 * theta);
+
+        /**
+         * Update halfThetaVelocity (ps-1).
+         */
+        halfThetaVelocity =
+                (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
+                        + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
+                        / (2.0 * thetaMass + thetaFriction * dt);
+
+        /**
+         * Update theta.
+         */
+        theta = theta + dt * halfThetaVelocity;
+
+        /**
+         * Maintain theta in the interval PI to -PI.
+         */
+        if (theta > PI) {
+            theta -= 2.0 * PI;
+        } else if (theta <= -PI) {
+            theta += 2.0 * PI;
+        }
+
+        /**
+         * Compute the sin(theta).
+         */
+        double sinTheta = sin(theta);
+
+        /**
+         * Compute lambda as sin(theta)^2.
+         */
+        lambda = sinTheta * sinTheta;
+        lambdaInterface.setLambda(lambda);
+    }
 
     /**
      * <p>binForLambda.</p>
@@ -705,6 +807,9 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * @return a double.
      */
     protected double current1DBiasEnergy(double currentLambda, boolean gradient) {
+        if (!include1DBias) {
+            return 0.0;
+        }
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
@@ -786,32 +891,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
         }
         logger.info(sb.toString());
     }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Shuts down resources associated with this OSRW, primarily the receive
-     * thread.
-     */
-    @Override
-    public abstract boolean destroy();
-
-    /**
-     * <p>evaluateKernel.</p>
-     *
-     * @param cLambda   a int.
-     * @param cF_Lambda a int.
-     * @return a double.
-     */
-    protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
-
-    /**
-     * <p>updateFLambda.</p>
-     *
-     * @param print a boolean.
-     * @return a double.
-     */
-    protected abstract double updateFLambda(boolean print);
 
     /**
      * <p>Setter for the field <code>lambda</code>.</p>
@@ -896,83 +975,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * Propagate Lambda using Langevin dynamics.
-     */
-    protected void langevin() {
-        /**
-         * Compute the random force pre-factor (kcal/mol * psec^-2).
-         */
-        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
-
-        /**
-         * Compute the random force.
-         */
-        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
-
-        /**
-         * Compute dEdL (kcal/mol).
-         */
-        double dEdL = -dUdLambda * sin(2.0 * theta);
-
-        /**
-         * Update halfThetaVelocity (ps-1).
-         */
-        halfThetaVelocity =
-                (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
-                        + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
-                        / (2.0 * thetaMass + thetaFriction * dt);
-
-        /**
-         * Update theta.
-         */
-        theta = theta + dt * halfThetaVelocity;
-
-        /**
-         * Maintain theta in the interval PI to -PI.
-         */
-        if (theta > PI) {
-            theta -= 2.0 * PI;
-        } else if (theta <= -PI) {
-            theta += 2.0 * PI;
-        }
-
-        /**
-         * Compute the sin(theta).
-         */
-        double sinTheta = sin(theta);
-
-        /**
-         * Compute lambda as sin(theta)^2.
-         */
-        lambda = sinTheta * sinTheta;
-        lambdaInterface.setLambda(lambda);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        potential.setScaling(scaling);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return potential.getScaling();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] doubles) {
-        return potential.getCoordinates(doubles);
-    }
-
-    /**
      * <p>getOSRWOptimumEnergy.</p>
      *
      * @return a double.
@@ -1031,6 +1033,30 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public int getEnergyCount() {
         return energyCount;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        potential.setScaling(scaling);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return potential.getScaling();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] doubles) {
+        return potential.getCoordinates(doubles);
     }
 
     /**
