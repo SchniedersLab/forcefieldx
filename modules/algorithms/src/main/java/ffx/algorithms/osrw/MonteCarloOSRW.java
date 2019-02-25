@@ -128,7 +128,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * A change in total energy of 1.0 kcal/mol or more is of significant concern that the time step is too large,
      * or lambda moves are too aggressive.
      */
-    private double EnergyConservationTolerance = 10.0;
+    private final double EnergyConservationTolerance = 10.0;
 
     /**
      * <p>
@@ -335,11 +335,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     proposedBiasEnergy - currentBiasEnergy,
                     proposedTotalEnergy - currentTotalEnergy));
 
-            if (abs(currentTotalEnergy - proposedTotalEnergy) > EnergyConservationTolerance) {
-                logger.warning(" MC MD Move skipped due to lack of energy conservation.");
+            double energyChange = mdMove.getEnergyChange();
+            if (abs(energyChange) > EnergyConservationTolerance) {
+                logger.warning(" MC Move skipped due to lack of MD energy conservation");
                 continue;
             }
-
+            
             if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                 /**
                  * Accept MD move.
@@ -559,8 +560,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     proposedBiasEnergy - currentBiasEnergy,
                     proposedTotalEnergy - currentTotalEnergy));
 
-            if (abs(currentTotalEnergy - proposedTotalEnergy) > EnergyConservationTolerance) {
-                logger.warning(" MC Move skipped due to lack of energy conservation");
+            double energyChange = mdMove.getEnergyChange();
+            if (abs(energyChange) > EnergyConservationTolerance) {
+                logger.warning(" MC Move skipped due to lack of MD energy conservation");
                 continue;
             }
 
