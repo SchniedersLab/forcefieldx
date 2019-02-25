@@ -167,23 +167,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Method that determines whether a dynamics is done by the java
      * implementation native to ffx or the OpenMM implementation
      *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a
+     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     *                            {@link ffx.algorithms.thermostats.ThermostatEnum} object.
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     *                            {@link ffx.algorithms.integrators.IntegratorEnum} object.
      * @return a {@link ffx.algorithms.MolecularDynamics} object.
      */
     public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener,
-            ThermostatEnum requestedThermostat,
-            IntegratorEnum requestedIntegrator) {
+                                                    Potential potentialEnergy,
+                                                    CompositeConfiguration properties,
+                                                    AlgorithmListener listener,
+                                                    ThermostatEnum requestedThermostat,
+                                                    IntegratorEnum requestedIntegrator) {
 
         return dynamicsFactory(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator, defaultEngine(potentialEnergy));
     }
@@ -192,23 +192,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * dynamicsFactory.</p>
      *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a
+     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     *                            {@link ffx.algorithms.thermostats.ThermostatEnum} object.
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.integrators.IntegratorEnum} object.
-     * @param engine a {@link ffx.algorithms.MolecularDynamics.DynamicsEngine}
-     * object.
+     *                            {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     * @param engine              a {@link ffx.algorithms.MolecularDynamics.DynamicsEngine}
+     *                            object.
      * @return a {@link ffx.algorithms.MolecularDynamics} object.
      */
     public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
-            Potential potentialEnergy, CompositeConfiguration properties,
-            AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
-            DynamicsEngine engine) {
+                                                    Potential potentialEnergy, CompositeConfiguration properties,
+                                                    AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
+                                                    DynamicsEngine engine) {
         switch (engine) {
             case OPENMM:
                 return new MolecularDynamicsOpenMM(assembly,
@@ -242,22 +242,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * Constructor for MolecularDynamics.</p>
      *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a
+     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     *                            {@link ffx.algorithms.thermostats.ThermostatEnum} object.
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     *                            {@link ffx.algorithms.integrators.IntegratorEnum} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener,
-            ThermostatEnum requestedThermostat,
-            IntegratorEnum requestedIntegrator) {
+                             Potential potentialEnergy,
+                             CompositeConfiguration properties,
+                             AlgorithmListener listener,
+                             ThermostatEnum requestedThermostat,
+                             IntegratorEnum requestedIntegrator) {
         this.molecularAssembly = assembly;
         assemblies = new ArrayList<>();
         assemblies.add(new AssemblyInfo(assembly));
@@ -380,24 +380,24 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * Constructor for MolecularDynamics.</p>
      *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a
+     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     *                            {@link ffx.algorithms.thermostats.ThermostatEnum} object.
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.integrators.IntegratorEnum} object.
-     * @param esvSystem a {@link ffx.potential.extended.ExtendedSystem} object.
+     *                            {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     * @param esvSystem           a {@link ffx.potential.extended.ExtendedSystem} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener,
-            ThermostatEnum requestedThermostat,
-            IntegratorEnum requestedIntegrator,
-            ExtendedSystem esvSystem) {
+                             Potential potentialEnergy,
+                             CompositeConfiguration properties,
+                             AlgorithmListener listener,
+                             ThermostatEnum requestedThermostat,
+                             IntegratorEnum requestedIntegrator,
+                             ExtendedSystem esvSystem) {
         this(assembly, potentialEnergy, properties, listener,
                 requestedThermostat, requestedIntegrator);
         this.esvSystem = esvSystem;
@@ -471,7 +471,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Setter for an archive file of arbitrary position.
      *
      * @param archive A File to set as archive
-     * @param pos Index of MolecularAssembly to set this for
+     * @param pos     Index of MolecularAssembly to set this for
      */
     public void setArchiveFile(File archive, int pos) {
         assemblies.get(pos).archiveFile = archive;
@@ -519,7 +519,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note:
      * does not affect the underlying Potential.
      *
-     * @param mola A MolecularAssembly to be tracked
+     * @param mola  A MolecularAssembly to be tracked
      * @param props Associated CompositeConfiguration
      */
     public void addAssembly(MolecularAssembly mola, CompositeConfiguration props) {
@@ -552,8 +552,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Setter for the field <code>monteCarloListener</code>.</p>
      *
      * @param listener a {@link ffx.algorithms.MonteCarloListener} object.
-     * @param when a
-     * {@link ffx.algorithms.MolecularDynamics.MonteCarloNotification} object.
+     * @param when     a
+     *                 {@link ffx.algorithms.MolecularDynamics.MonteCarloNotification} object.
      */
     public void setMonteCarloListener(MonteCarloListener listener, MonteCarloNotification when) {
         monteCarloListener = listener;
@@ -564,7 +564,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * attachExtendedSystem.</p>
      *
-     * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
+     * @param system         a {@link ffx.potential.extended.ExtendedSystem} object.
      * @param printFrequency a int.
      */
     public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
@@ -591,20 +591,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * init</p>
      *
-     * @param nSteps a int.
-     * @param timeStep a double.
-     * @param printInterval a double.
-     * @param saveInterval a double.
-     * @param fileType a String.
+     * @param nSteps           a int.
+     * @param timeStep         a double.
+     * @param printInterval    a double.
+     * @param saveInterval     a double.
+     * @param fileType         a String.
      * @param restartFrequency the number of steps between writing restart
-     * files.
-     * @param temperature a double.
-     * @param initVelocities a boolean.
-     * @param dyn a {@link java.io.File} object.
+     *                         files.
+     * @param temperature      a double.
+     * @param initVelocities   a boolean.
+     * @param dyn              a {@link java.io.File} object.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final String fileType, final double restartFrequency,
-            final double temperature, final boolean initVelocities, final File dyn) {
+                     final double saveInterval, final String fileType, final double restartFrequency,
+                     final double temperature, final boolean initVelocities, final File dyn) {
 
         /**
          * Return if already running.
@@ -713,25 +713,25 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * method with default values for added parameters. Needed by (at least)
      * ReplicaExchange, which calls this directly.
      *
-     * @param nSteps the number of MD steps.
-     * @param timeStep the time step.
-     * @param printInterval the number of steps between loggging updates.
-     * @param saveInterval the number of steps between saving snapshots.
-     * @param temperature the target temperature.
+     * @param nSteps         the number of MD steps.
+     * @param timeStep       the time step.
+     * @param printInterval  the number of steps between loggging updates.
+     * @param saveInterval   the number of steps between saving snapshots.
+     * @param temperature    the target temperature.
      * @param initVelocities true to reset velocities from a Maxwell
-     * distribution.
-     * @param dyn the Dynamic restart file.
+     *                       distribution.
+     * @param dyn            the Dynamic restart file.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities,
-            final File dyn) {
+                     final double saveInterval, final double temperature, final boolean initVelocities,
+                     final File dyn) {
         init(nSteps, timeStep, printInterval, saveInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
     }
 
     /**
      * Causes this MolecularDynamics to take an additional set of timesteps.
      *
-     * @param nSteps Number of steps to take
+     * @param nSteps      Number of steps to take
      * @param temperature Temperature of simulation
      */
     public void redynamic(final int nSteps, final double temperature) {
@@ -765,19 +765,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
      *
-     * @param nSteps a int.
-     * @param timeStep a double.
-     * @param printInterval a double.
-     * @param saveInterval a double.
-     * @param temperature a double.
-     * @param initVelocities a boolean.
-     * @param fileType a String (either XYZ or PDB).
+     * @param nSteps           a int.
+     * @param timeStep         a double.
+     * @param printInterval    a double.
+     * @param saveInterval     a double.
+     * @param temperature      a double.
+     * @param initVelocities   a boolean.
+     * @param fileType         a String (either XYZ or PDB).
      * @param restartFrequency a double specifying the restart frequency.
-     * @param dyn a {@link java.io.File} object.
+     * @param dyn              a {@link java.io.File} object.
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities,
-            String fileType, double restartFrequency, final File dyn) {
+                        final double saveInterval, final double temperature, final boolean initVelocities,
+                        String fileType, double restartFrequency, final File dyn) {
         this.fileType = fileType;
         this.restartFrequency = restartFrequency;
         dynamic(nSteps, timeStep, printInterval, saveInterval, temperature,
@@ -788,17 +788,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
      *
-     * @param nSteps a int.
-     * @param timeStep a double.
-     * @param printInterval a double.
-     * @param saveInterval a double.
-     * @param temperature a double.
+     * @param nSteps         a int.
+     * @param timeStep       a double.
+     * @param printInterval  a double.
+     * @param saveInterval   a double.
+     * @param temperature    a double.
      * @param initVelocities a boolean.
-     * @param dyn a {@link java.io.File} object.
+     * @param dyn            a {@link java.io.File} object.
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities,
-            final File dyn) {
+                        final double saveInterval, final double temperature, final boolean initVelocities,
+                        final File dyn) {
         /**
          * Return if already running; Could happen if two threads call dynamic
          * on the same MolecularDynamics instance.
@@ -881,7 +881,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param restartFrequency the time between writing restart files.
      * @throws java.lang.IllegalArgumentException If restart frequency is not a
-     * positive number
+     *                                            positive number
      */
     public void setRestartFrequency(double restartFrequency) throws IllegalArgumentException {
         if (Double.isFinite(restartFrequency) && restartFrequency > 0) {
@@ -896,7 +896,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * energy.
      *
      * @param removeCOMMotionFrequency Number of time steps between center of
-     * mass removal.
+     *                                 mass removal.
      */
     public void setRemoveCOMMotionFrequency(int removeCOMMotionFrequency) {
         if (removeCOMMotionFrequency < 0) {
@@ -1235,9 +1235,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * After prior snapshots have been written to disc, the queue they are
      * stored on is now empty, preventing printing of duplicate snapshots.
      *
-     * @param priorPE Potential energy prior to this step.
+     * @param priorPE     Potential energy prior to this step.
      * @param delPEThresh If potential energy changes by this much, trigger a
-     * snapshot write.
+     *                    snapshot write.
      * @return True if atypical energy detected.
      */
     protected boolean detectAtypicalEnergy(double priorPE, double delPEThresh) {
@@ -1549,7 +1549,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Constructs a DynamicsEngine using the two presently known types of
          * Platform.
          *
-         * @param ffx Add support for the FFX reference energy platform.
+         * @param ffx    Add support for the FFX reference energy platform.
          * @param openMM Add support for the OpenMM energy platforms.
          */
         DynamicsEngine(boolean ffx, boolean openMM) {
@@ -1665,7 +1665,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
             logger.info(format(" Wrote dynamics restart file to " + restartFile.getName()));
         } else {
-            logger.info(format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+            logger.info(format(" Writing dynamics restart file to " + restartFile.getName() + " failed."));
         }
 
     }
@@ -1675,24 +1675,24 @@ public class MolecularDynamics implements Runnable, Terminatable {
             for (AssemblyInfo ai : assemblies) {
                 if (ai.archiveFile != null && !saveSnapshotAsPDB) {
                     if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                        logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                        logger.info(String.format(" Appended snap shot to %s.", ai.archiveFile.getName()));
                     } else {
-                        logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
+                        logger.warning(String.format(" Appending snap shot to %s failed.", ai.archiveFile.getName()));
                     }
                 } else if (saveSnapshotAsPDB) {
                     if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                        logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                        logger.info(String.format(" Wrote PDB file to %s.", ai.pdbFile.getName()));
                     } else {
                         logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
                     }
                 }
             }
         }
-        
+
         if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
             logger.info(format(" Wrote dynamics restart file to " + restartFile.getName()));
         } else {
-            logger.info(format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+            logger.info(format(" Writing dynamics restart file to " + restartFile.getName() + " failed."));
         }
     }
 

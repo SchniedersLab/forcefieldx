@@ -95,22 +95,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * The recursion kernel stores the weight of each [lambda][Flambda] bin.
      */
-    private double recursionKernel[][];
+    private double[][] recursionKernel;
     /**
-     * The recursionWeights stores the [Lambda, FLambda] weight for each
-     * process. Therefore the array is of size [number of Processes][2].
-     * <p>
-     * Each 2 entry array must be wrapped inside a Parallel Java IntegerBuf for the
-     * All-Gather communication calls.
+     * The integration algorithm used for thermodynamic integration.
      */
-    private final double recursionWeights[][];
-    private final double myRecursionWeight[];
-    /**
-     * These DoubleBufs wrap the recursionWeight arrays.
-     */
-    private final DoubleBuf recursionWeightsBuf[];
-    private final DoubleBuf myRecursionWeightBuf;
-
+    private final IntegrationType integrationType;
     /**
      * A flag to indicate if the transition has been crossed and Dama et al.
      * transition-tempering should begin.
@@ -159,13 +148,24 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * then its statistical weight = exp(kernel * beta) will cannot be represented by a double value.
      */
     private double[] kernelValues;
-
     /**
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
      */
     private final ReceiveThread receiveThread;
-
-    private final IntegrationType integrationType;
+    /**
+     * The recursionWeights stores the [Lambda, FLambda] weight for each
+     * process. Therefore the array is of size [number of Processes][2].
+     * <p>
+     * Each 2 entry array must be wrapped inside a Parallel Java DoubleBuf for the
+     * All-Gather communication calls.
+     */
+    private final double[][] recursionWeights;
+    private final double[] myRecursionWeight;
+    /**
+     * These DoubleBufs wrap the recursionWeight arrays.
+     */
+    private final DoubleBuf[] recursionWeightsBuf;
+    private final DoubleBuf myRecursionWeightBuf;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -227,6 +227,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          */
         recursionKernel = new double[lambdaBins][FLambdaBins];
 
+        /**
+         * Allocate space to regularize kernel values.
+         */
         kernelValues = new double[FLambdaBins];
 
         /**
@@ -282,22 +285,22 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             receiveThread = null;
         }
 
-        String propString = System.getProperty("ttosrw-temperOffset", "1");
-        temperOffset = 1;
+        double defaultOffset = 20.0 * biasMag;
+        String propString = System.getProperty("ttosrw-temperOffset",   Double.toString(defaultOffset));
+        temperOffset = defaultOffset;
         try {
             temperOffset = Double.parseDouble(propString);
         } catch (NumberFormatException ex) {
             logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
-            temperOffset = 1;
+            temperOffset = defaultOffset;
         }
-
-        if (temperOffset < 0) {
-            temperOffset = 0;
+        if (temperOffset < 0.0) {
+            temperOffset = 0.0;
         }
         logger.info(format("  Coverage before tempering:     %7.4g kcal/mol", temperOffset));
 
         propString = System.getProperty("ttosrw-integrationType", "SIMPSONS");
-        IntegrationType testType = SIMPSONS;
+        IntegrationType testType;
         try {
             testType = IntegrationType.valueOf(propString.toUpperCase());
         } catch (Exception ex) {
@@ -312,6 +315,44 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (readHistogramRestart) {
             updateFLambda(true);
         }
+    }
+
+    /**
+     * Sets the Dama et al tempering parameter, as a multiple of kBT.
+     *
+     * @param temper a double.
+     */
+    public void setTemperingParameter(double temper) {
+        temperingFactor = temper;
+        if (temperingFactor > 0.0) {
+            deltaT = temperingFactor * Thermostat.R * temperature;
+        } else {
+            deltaT = Double.MAX_VALUE;
+        }
+    }
+
+    /**
+     * Set the OSRW Gaussian biasing potential magnitude (kcal/mol).
+     *
+     * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
+     */
+    public void setBiasMagnitude(double biasMag) {
+        this.biasMag = biasMag;
+        logger.info(format("\n  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
+
+        double defaultOffset = 20.0 * biasMag;
+        String propString = System.getProperty("ttosrw-temperOffset",   Double.toString(defaultOffset));
+        temperOffset = defaultOffset;
+        try {
+            temperOffset = Double.parseDouble(propString);
+        } catch (NumberFormatException ex) {
+            logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+            temperOffset = defaultOffset;
+        }
+        if (temperOffset < 0.0) {
+            temperOffset = 0.0;
+        }
+        logger.info(format("  Coverage before tempering:     %6.4f (kcal/mol)", temperOffset));
     }
 
     /**
@@ -390,7 +431,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
+
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, true);
+        }
+        biasEnergy = bias1D + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -432,256 +478,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double[] x, double[] gradient) {
-
-        forceFieldEnergy = potential.energyAndGradient(x, gradient);
-
-        /**
-         * OSRW is propagated with the slowly varying terms.
-         */
-        if (state == STATE.FAST) {
-            return forceFieldEnergy;
-        }
-
-        gLdEdL = 0.0;
-        dForceFieldEnergydL = lambdaInterface.getdEdL();
-        dUdLambda = dForceFieldEnergydL;
-
-        d2UdL2 = lambdaInterface.getd2EdL2();
-        int lambdaBin = binForLambda(lambda);
-        int FLambdaBin = binForFLambda(dUdLambda);
-
-        /**
-         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
-         * to L and F_L.
-         */
-        dGdLambda = 0.0;
-        dGdFLambda = 0.0;
-        double ls2 = (2.0 * dL) * (2.0 * dL);
-        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int lcenter = lambdaBin + iL;
-            double deltaL = lambda - (lcenter * dL);
-            double deltaL2 = deltaL * deltaL;
-            // Mirror conditions for recursion kernel counts.
-            int lcount = lcenter;
-            double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == lambdaBins - 1) {
-                mirrorFactor = 2.0;
-            } else if (lcount < 0) {
-                lcount = -lcount;
-            } else if (lcount > lambdaBins - 1) {
-                // Number of bins past the last bin
-                lcount -= (lambdaBins - 1);
-                // Mirror bin
-                lcount = lambdaBins - 1 - lcount;
-            }
-            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
-                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                    continue;
-                }
-                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
-                double deltaFL2 = deltaFL * deltaFL;
-                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                double bias = weight * biasMag
-                        * exp(-deltaL2 / (2.0 * ls2))
-                        * exp(-deltaFL2 / (2.0 * FLs2));
-                gLdEdL += bias;
-                dGdLambda -= deltaL / ls2 * bias;
-                dGdFLambda -= deltaFL / FLs2 * bias;
-            }
-        }
-
-        /**
-         * Lambda gradient due to recursion kernel G(L, F_L).
-         */
-        dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
-
-        /**
-         * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
-         */
-        fill(dUdXdL, 0.0);
-        lambdaInterface.getdEdXdL(dUdXdL);
-        for (int i = 0; i < nVariables; i++) {
-            gradient[i] += dGdFLambda * dUdXdL[i];
-        }
-
-        /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
-         */
-        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
-
-        if (print) {
-            logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
-            logger.info(String.format(" %s %16.8f  %s",
-                    "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
-        }
-
-        if (mcRestart) {
-            energyCount++;
-        }
-
-        if (propagateLambda) {
-            energyCount++;
-
-            /**
-             * Log the current Lambda state.
-             */
-            if (energyCount % printFrequency == 0) {
-                double dBdL = dUdLambda - dForceFieldEnergydL;
-                if (lambdaBins < 1000) {
-                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
-                } else {
-                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
-                }
-            }
-
-            /**
-             * Metadynamics grid counts (every 'countInterval' steps).
-             */
-            if (energyCount % countInterval == 0) {
-                addBias(dForceFieldEnergydL, x, gradient);
-            }
-
-            langevin();
-        }
-
-        totalEnergy = forceFieldEnergy + biasEnergy;
-
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addBias(double dEdU, double[] x, double[] gradient) {
-
-        if (asynchronous) {
-            asynchronousSend(lambda, dEdU);
-        } else {
-            synchronousSend(lambda, dEdU);
-        }
-
-        biasCount++;
-
-        /**
-         * Update F(L)
-         */
-        fLambdaUpdates++;
-        boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-        totalFreeEnergy = updateFLambda(printFLambda);
-
-        /**
-         * Calculating Moving Average & Standard Deviation
-         */
-        totalAverage += totalFreeEnergy;
-        totalSquare += pow(totalFreeEnergy, 2);
-        periodCount++;
-        if (periodCount == window - 1) {
-            lastAverage = totalAverage / window;
-            lastStdDev = sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
-            logger.info(format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.", lastAverage, lastStdDev));
-            totalAverage = 0;
-            totalSquare = 0;
-            periodCount = 0;
-        }
-
-        if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-            optimization(forceFieldEnergy, x, gradient);
-        }
-
-        if (mcRestart) {
-            return;
-        }
-
-        /**
-         * Write out restart files.
-         */
-        if (energyCount > 0 && energyCount % saveFrequency == 0) {
-            if (algorithmListener != null) {
-                algorithmListener.algorithmUpdate(molecularAssembly);
-            }
-            /**
-             * Only the rank 0 process writes the histogram restart file.
-             */
-            if (rank == 0) {
-                try {
-                    TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
-                            new BufferedWriter(new FileWriter(histogramFile)));
-                    ttOSRWHistogramRestart.writeHistogramFile();
-                    ttOSRWHistogramRestart.flush();
-                    ttOSRWHistogramRestart.close();
-                    logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
-                } catch (IOException ex) {
-                    String message = " Exception writing TTOSRW histogram restart file.";
-                    logger.log(Level.INFO, message, ex);
-                }
-            }
-            /**
-             * All ranks write a lambda restart file.
-             */
-            try {
-                TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-                ttOSRWLambdaRestart.writeLambdaFile();
-                ttOSRWLambdaRestart.flush();
-                ttOSRWLambdaRestart.close();
-                logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
-            } catch (IOException ex) {
-                String message = " Exception writing TTOSRW lambda restart file.";
-                logger.log(Level.INFO, message, ex);
-            }
-        }
-    }
-
-    @Override
-    public void writeRestart() {
-        if (algorithmListener != null) {
-            algorithmListener.algorithmUpdate(molecularAssembly);
-        }
-        /**
-         * Only the rank 0 process writes the histogram restart file.
-         */
-        if (rank == 0) {
-            try {
-                TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
-                        new BufferedWriter(new FileWriter(histogramFile)));
-                ttOSRWHistogramRestart.writeHistogramFile();
-                ttOSRWHistogramRestart.flush();
-                ttOSRWHistogramRestart.close();
-                logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
-            } catch (IOException ex) {
-                String message = " Exception writing TTOSRW histogram restart file.";
-                logger.log(Level.INFO, message, ex);
-            }
-        }
-        /**
-         * All ranks write a lambda restart file.
-         */
-        try {
-            TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-            ttOSRWLambdaRestart.writeLambdaFile();
-            ttOSRWLambdaRestart.flush();
-            ttOSRWLambdaRestart.close();
-            logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
-        } catch (IOException ex) {
-            String message = " Exception writing TTOSRW lambda restart file.";
-            logger.log(Level.INFO, message, ex);
-        }
     }
 
     public double computeBiasEnergy(double currentLambda, double currentdUdL) {
@@ -730,13 +526,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
 
         /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
+         * Compute the energy for the recursion slave at F(L) using interpolation.
          */
-        return current1DBiasEnergy(currentLambda, false) + gLdEdL;
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, false);
+        }
+
+        return bias1D + gLdEdL;
     }
 
-    private void optimization(double e, double x[], double gradient[]) {
+    private void optimization(double e, double[] x, double[] gradient) {
         if (energyCount % osrwOptimizationFrequency == 0) {
             logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
 
@@ -799,6 +599,97 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                         " TT-OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
             }
         }
+    }
+
+    /**
+     * Evaluate the kernel across dU/dL values at given value of lambda. The largest kernel value V
+     * is used to define an offset (-V), which is added to all to kernel values. Then,
+     * the largest kernel value is zero, and will result in a statistical weight of 1.
+     * <p>
+     * The offset avoids the recursion kernel becoming too large for some combinations of (Lambda, dU/dL).
+     * This can result in its statistical weight = exp(kernel * beta)
+     * exceeding the maximum representable double value.
+     *
+     * @param lambda Value of Lambda to evaluate the kernal for.
+     * @param llFL   Lower FLambda bin.
+     * @param ulFL   Upper FLambda bin.
+     * @return the applied offset.
+     */
+    private double evaluateKernelforLambda(int lambda, int llFL, int ulFL) {
+        double maxKernel = Double.MIN_VALUE;
+        for (int jFL = llFL; jFL <= ulFL; jFL++) {
+            double value = evaluateKernel(lambda, jFL);
+            kernelValues[jFL] = value;
+            if (value > maxKernel) {
+                maxKernel = value;
+            }
+        }
+        double offset = -maxKernel;
+        for (int jFL = llFL; jFL <= ulFL; jFL++) {
+            kernelValues[jFL] += offset;
+        }
+        return offset;
+    }
+
+    /**
+     * Integrates dUdL over lambda using more sophisticated techniques than midpoint rectangular integration.
+     * <p>
+     * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids
+     *
+     * @param dUdLs dUdL at the midpoint of each bin.
+     * @param type  Integration type to use.
+     * @return Current delta-G estimate.
+     */
+    private double integrateNumeric(double[] dUdLs, IntegrationType type) {
+        // Integrate between the second bin midpoint and the second-to-last bin midpoint.
+        double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0 - dL, (lambdaBins - 2), false);
+        double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
+        DataSet dSet = new DoublesDataSet(midLams, midVals, false);
+
+        double val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
+
+        double dL_4 = dL_2 * 0.5;
+
+        // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
+        double val0 = 0;
+        double val1 = 0;
+
+        // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
+        if (!lambdaInterface.dEdLZeroAtEnds()) {
+            double recipSlopeLen = 1.0 / (dL * 0.75);
+
+            double slope = dUdLs[0] - dUdLs[1];
+            slope *= recipSlopeLen;
+            val0 = dUdLs[0] + (slope * dL_4);
+
+            slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
+            slope *= recipSlopeLen;
+            val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
+            logger.fine(String.format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
+        }
+
+        // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
+        val += trapezoid(0, dL_4, val0, dUdLs[0]);
+        val += trapezoid(dL_4, dL, dUdLs[0], dUdLs[1]);
+        val += trapezoid(1.0 - dL, 1.0 - dL_4, dUdLs[lambdaBins - 2], dUdLs[lambdaBins - 1]);
+        val += trapezoid(1.0 - dL_4, 1.0, dUdLs[lambdaBins - 1], val1);
+
+        return val;
+    }
+
+    /**
+     * Integrates a trapezoid.
+     *
+     * @param x0  First x point
+     * @param x1  Second x point
+     * @param fX1 First f(x) point
+     * @param fX2 Second f(x) point
+     * @return The area under a trapezoid.
+     */
+    private double trapezoid(double x0, double x1, double fX1, double fX2) {
+        double val = 0.5 * (fX1 + fX2);
+        val *= (x1 - x0);
+        return val;
     }
 
     /**
@@ -1065,108 +956,387 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * Evaluate the kernel across dU/dL values at given value of lambda. The largest kernel value V
-     * is used to define an offset (-V), which is added to all to kernel values. Then,
-     * the largest kernel value is zero, and will result in a statistical weight of 1.
-     * <p>
-     * The offset avoids the recursion kernel becoming too large for some combinations of (Lambda, dU/dL).
-     * This can result in its statistical weight = exp(kernel * beta)
-     * exceeding the maximum representable double value.
-     *
-     * @param lambda Value of Lambda to evaluate the kernal for.
-     * @param llFL   Lower FLambda bin.
-     * @param ulFL   Upper FLambda bin.
-     * @return the applied offset.
+     * {@inheritDoc}
      */
-    private double evaluateKernelforLambda(int lambda, int llFL, int ulFL) {
-        double maxKernel = Double.MIN_VALUE;
-        for (int jFL = llFL; jFL <= ulFL; jFL++) {
-            double value = evaluateKernel(lambda, jFL);
-            kernelValues[jFL] = value;
-            if (value > maxKernel) {
-                maxKernel = value;
+    @Override
+    public double energyAndGradient(double[] x, double[] gradient) {
+
+        forceFieldEnergy = potential.energyAndGradient(x, gradient);
+
+        /**
+         * OSRW is propagated with the slowly varying terms.
+         */
+        if (state == STATE.FAST) {
+            return forceFieldEnergy;
+        }
+
+        gLdEdL = 0.0;
+        dForceFieldEnergydL = lambdaInterface.getdEdL();
+        dUdLambda = dForceFieldEnergydL;
+
+        d2UdL2 = lambdaInterface.getd2EdL2();
+        int lambdaBin = binForLambda(lambda);
+        int FLambdaBin = binForFLambda(dUdLambda);
+
+        /**
+         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
+         * to L and F_L.
+         */
+        dGdLambda = 0.0;
+        dGdFLambda = 0.0;
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = lambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                gLdEdL += bias;
+                dGdLambda -= deltaL / ls2 * bias;
+                dGdFLambda -= deltaFL / FLs2 * bias;
             }
         }
-        double offset = -maxKernel;
-        for (int jFL = llFL; jFL <= ulFL; jFL++) {
-            kernelValues[jFL] += offset;
-        }
-        return offset;
-    }
 
-    /**
-     * Integrates dUdL over lambda using more sophisticated techniques than midpoint rectangular integration.
-     * <p>
-     * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids
-     *
-     * @param dUdLs dUdL at the midpoint of each bin.
-     * @param type  Integration type to use.
-     * @return Current delta-G estimate.
-     */
-    private double integrateNumeric(double[] dUdLs, IntegrationType type) {
-        // Integrate between the second bin midpoint and the second-to-last bin midpoint.
-        double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0 - dL, (lambdaBins - 2), false);
-        double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
-        DataSet dSet = new DoublesDataSet(midLams, midVals, false);
+        /**
+         * Lambda gradient due to recursion kernel G(L, F_L).
+         */
+        dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
-        double val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
-
-        double dL_4 = dL_2 * 0.5;
-
-        // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
-        double val0 = 0;
-        double val1 = 0;
-
-        // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
-        if (!lambdaInterface.dEdLZeroAtEnds()) {
-            double recipSlopeLen = 1.0 / (dL * 0.75);
-
-            double slope = dUdLs[0] - dUdLs[1];
-            slope *= recipSlopeLen;
-            val0 = dUdLs[0] + (slope * dL_4);
-
-            slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
-            slope *= recipSlopeLen;
-            val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
-            logger.fine(String.format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
+        /**
+         * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
+         */
+        fill(dUdXdL, 0.0);
+        lambdaInterface.getdEdXdL(dUdXdL);
+        for (int i = 0; i < nVariables; i++) {
+            gradient[i] += dGdFLambda * dUdXdL[i];
         }
 
-        // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
-        val += trapezoid(0, dL_4, val0, dUdLs[0]);
-        val += trapezoid(dL_4, dL, dUdLs[0], dUdLs[1]);
-        val += trapezoid(1.0 - dL, 1.0 - dL_4, dUdLs[lambdaBins - 2], dUdLs[lambdaBins - 1]);
-        val += trapezoid(1.0 - dL_4, 1.0, dUdLs[lambdaBins - 1], val1);
+        /**
+         * Compute the energy and gradient for the recursion slave at F(L) using
+         * interpolation.
+         */
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, true);
+        }
+        biasEnergy = bias1D + gLdEdL;
 
-        return val;
+        if (print) {
+            logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
+            logger.info(String.format(" %s %16.8f  %s",
+                    "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
+        }
+
+        if (mcRestart) {
+            energyCount++;
+        }
+
+        if (propagateLambda) {
+            energyCount++;
+
+            /**
+             * Log the current Lambda state.
+             */
+            if (energyCount % printFrequency == 0) {
+                double dBdL = dUdLambda - dForceFieldEnergydL;
+                if (lambdaBins < 1000) {
+                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                } else {
+                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                }
+            }
+
+            /**
+             * Metadynamics grid counts (every 'countInterval' steps).
+             */
+            if (energyCount % countInterval == 0) {
+                addBias(dForceFieldEnergydL, x, gradient);
+            }
+
+            langevin();
+        }
+
+        totalEnergy = forceFieldEnergy + biasEnergy;
+
+        return totalEnergy;
     }
 
     /**
-     * Integrates a trapezoid.
-     *
-     * @param x0  First x point
-     * @param x1  Second x point
-     * @param fX1 First f(x) point
-     * @param fX2 Second f(x) point
-     * @return The area under a trapezoid.
+     * {@inheritDoc}
      */
-    private double trapezoid(double x0, double x1, double fX1, double fX2) {
-        double val = 0.5 * (fX1 + fX2);
-        val *= (x1 - x0);
-        return val;
-    }
+    @Override
+    public void addBias(double dEdU, double[] x, double[] gradient) {
 
-    /**
-     * Sets the Dama et al tempering parameter, as a multiple of kBT.
-     *
-     * @param temper a double.
-     */
-    public void setTemperingParameter(double temper) {
-        temperingFactor = temper;
-        if (temperingFactor > 0.0) {
-            deltaT = temperingFactor * Thermostat.R * temperature;
+        if (asynchronous) {
+            asynchronousSend(lambda, dEdU);
         } else {
-            deltaT = Double.MAX_VALUE;
+            synchronousSend(lambda, dEdU);
         }
+
+        biasCount++;
+
+        /**
+         * Update F(L)
+         */
+        fLambdaUpdates++;
+        boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
+        totalFreeEnergy = updateFLambda(printFLambda);
+
+        if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
+            optimization(forceFieldEnergy, x, gradient);
+        }
+
+        if (mcRestart) {
+            return;
+        }
+
+        /**
+         * Write out restart files.
+         */
+        if (energyCount > 0 && energyCount % saveFrequency == 0) {
+            if (algorithmListener != null) {
+                algorithmListener.algorithmUpdate(molecularAssembly);
+            }
+            /**
+             * Only the rank 0 process writes the histogram restart file.
+             */
+            if (rank == 0) {
+                try {
+                    TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
+                            new BufferedWriter(new FileWriter(histogramFile)));
+                    ttOSRWHistogramRestart.writeHistogramFile();
+                    ttOSRWHistogramRestart.flush();
+                    ttOSRWHistogramRestart.close();
+                    logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
+                } catch (IOException ex) {
+                    String message = " Exception writing TTOSRW histogram restart file.";
+                    logger.log(Level.INFO, message, ex);
+                }
+            }
+            /**
+             * All ranks write a lambda restart file.
+             */
+            try {
+                TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+                ttOSRWLambdaRestart.writeLambdaFile();
+                ttOSRWLambdaRestart.flush();
+                ttOSRWLambdaRestart.close();
+                logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
+            } catch (IOException ex) {
+                String message = " Exception writing TTOSRW lambda restart file.";
+                logger.log(Level.INFO, message, ex);
+            }
+        }
+    }
+
+    @Override
+    public void writeRestart() {
+        if (algorithmListener != null) {
+            algorithmListener.algorithmUpdate(molecularAssembly);
+        }
+        /**
+         * Only the rank 0 process writes the histogram restart file.
+         */
+        if (rank == 0) {
+            try {
+                TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
+                        new BufferedWriter(new FileWriter(histogramFile)));
+                ttOSRWHistogramRestart.writeHistogramFile();
+                ttOSRWHistogramRestart.flush();
+                ttOSRWHistogramRestart.close();
+                logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
+            } catch (IOException ex) {
+                String message = " Exception writing TTOSRW histogram restart file.";
+                logger.log(Level.INFO, message, ex);
+            }
+        }
+        /**
+         * All ranks write a lambda restart file.
+         */
+        try {
+            TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+            ttOSRWLambdaRestart.writeLambdaFile();
+            ttOSRWLambdaRestart.flush();
+            ttOSRWLambdaRestart.close();
+            logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
+        } catch (IOException ex) {
+            String message = " Exception writing TTOSRW lambda restart file.";
+            logger.log(Level.INFO, message, ex);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        if (receiveThread != null && receiveThread.isAlive()) {
+            double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
+            DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
+            try {
+                logger.fine(" Sending the termination message.");
+                world.send(rank, killBuf);
+                logger.fine(" Termination message was sent successfully.");
+                logger.fine(String.format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
+            } catch (Exception ex) {
+                String message = String.format(" Asynchronous Multiwalker OSRW termination signal " +
+                        "failed to be sent for process %d.", rank);
+                logger.log(Level.SEVERE, message, ex);
+            }
+        } else {
+            logger.fine(" ReceiveThread was either not initialized, or is not alive. This is the case for the Histogram script.");
+        }
+        return potential.destroy();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        return getTotaldEdLambda();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        // TODO: Add in a finite-difference implementation of d2U/dL2.
+        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
+        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
+        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        // TODO: Add in a finite-difference implementation of d2U/dXdL.
+        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
+        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
+        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        return false;
+    }
+
+    @Override
+    public void setLambdaWriteOut(double lambdaWriteOut) {
+        this.lambdaWriteOut = lambdaWriteOut;
+    }
+
+    /**
+     * The ReceiveThread accumulates TT-OSRW statistics from multiple asynchronous walkers.
+     */
+    private class ReceiveThread extends Thread {
+
+        final double recursionCount[];
+        final DoubleBuf recursionCountBuf;
+
+        public ReceiveThread() {
+            recursionCount = new double[3];
+            recursionCountBuf = DoubleBuf.buffer(recursionCount);
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    world.receive(null, recursionCountBuf);
+                } catch (InterruptedIOException ioe) {
+                    logger.log(Level.WARNING, " ReceiveThread was interrupted at world.receive; " +
+                            "future message passing may be in an error state!", ioe);
+                    break;
+                } catch (IOException e) {
+                    String message = e.getMessage();
+                    logger.log(Level.WARNING, message, e);
+                }
+
+                // 3x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
+                boolean terminateSignal = Arrays.stream(recursionCount).allMatch(Double::isNaN);
+                if (terminateSignal) {
+                    logger.fine(" Termination signal (3x NaN) received; ReceiveThread shutting down");
+                    break;
+                }
+
+                /**
+                 * Check that the FLambda range of the Recursion kernel includes
+                 * both the minimum and maximum FLambda value.
+                 */
+                checkRecursionKernelSize(recursionCount[1]);
+
+                /**
+                 * Increment the Recursion Kernel based on the input of current
+                 * walker.
+                 */
+                int walkerLambda = binForLambda(recursionCount[0]);
+                int walkerFLambda = binForFLambda(recursionCount[1]);
+                double weight = recursionCount[2];
+
+                /**
+                 * If the weight is less than 1.0, then a walker has activated
+                 * tempering.
+                 */
+                if (!tempering && weight < 1.0) {
+                    tempering = true;
+                    logger.info(String.format(" Tempering activated due to recieved weight of (%8.6f)", weight));
+                }
+
+                if (resetStatistics && recursionCount[0] > lambdaResetValue) {
+                    recursionKernel = new double[lambdaBins][FLambdaBins];
+                    resetStatistics = false;
+                    logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
+                }
+
+                /**
+                 * Increase the Recursion Kernel based on the input of current
+                 * walker.
+                 */
+                recursionKernel[walkerLambda][walkerFLambda] += weight;
+                if (this.isInterrupted()) {
+                    logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution");
+                    // No pending message receipt, so no warning.
+                    break;
+                }
+            }
+        }
+
     }
 
     /**
@@ -1253,148 +1423,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 logger.log(Level.SEVERE, message, ex);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        if (receiveThread != null && receiveThread.isAlive()) {
-            double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
-            DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
-            try {
-                logger.fine(" Sending the termination message.");
-                world.send(rank, killBuf);
-                logger.fine(" Termination message was sent successfully.");
-                logger.fine(String.format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
-            } catch (Exception ex) {
-                String message = String.format(" Asynchronous Multiwalker OSRW termination signal " +
-                        "failed to be sent for process %d.", rank);
-                logger.log(Level.SEVERE, message, ex);
-            }
-        } else {
-            logger.fine(" ReceiveThread was either not initialized, or is not alive. This is the case for the Histogram script.");
-        }
-        return potential.destroy();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getdEdL() {
-        return getTotaldEdLambda();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getd2EdL2() {
-        // TODO: Add in a finite-difference implementation of d2U/dL2.
-        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
-        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
-        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void getdEdXdL(double[] gradient) {
-        // TODO: Add in a finite-difference implementation of d2U/dXdL.
-        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
-        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
-        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean dEdLZeroAtEnds() {
-        return false;
-    }
-
-    @Override
-    public void setLambdaWriteOut(double lambdaWriteOut) {
-        this.lambdaWriteOut = lambdaWriteOut;
-    }
-
-    private class ReceiveThread extends Thread {
-
-        final double recursionCount[];
-        final DoubleBuf recursionCountBuf;
-
-        public ReceiveThread() {
-            recursionCount = new double[3];
-            recursionCountBuf = DoubleBuf.buffer(recursionCount);
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    world.receive(null, recursionCountBuf);
-                } catch (InterruptedIOException ioe) {
-                    logger.log(Level.WARNING, " ReceiveThread was interrupted at world.receive; " +
-                            "future message passing may be in an error state!", ioe);
-                    break;
-                } catch (IOException e) {
-                    String message = e.getMessage();
-                    logger.log(Level.WARNING, message, e);
-                }
-
-                // 3x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
-                boolean terminateSignal = Arrays.stream(recursionCount).allMatch(Double::isNaN);
-                if (terminateSignal) {
-                    logger.fine(" Termination signal (3x NaN) received; ReceiveThread shutting down");
-                    break;
-                }
-
-                /**
-                 * Check that the FLambda range of the Recursion kernel includes
-                 * both the minimum and maximum FLambda value.
-                 */
-                checkRecursionKernelSize(recursionCount[1]);
-
-                /**
-                 * Increment the Recursion Kernel based on the input of current
-                 * walker.
-                 */
-                int walkerLambda = binForLambda(recursionCount[0]);
-                int walkerFLambda = binForFLambda(recursionCount[1]);
-                double weight = recursionCount[2];
-
-                /**
-                 * If the weight is less than 1.0, then a walker has activated
-                 * tempering.
-                 */
-                if (!tempering && weight < 1.0) {
-                    tempering = true;
-                    logger.info(String.format(" Tempering activated due to recieved weight of (%8.6f)", weight));
-                }
-
-                if (resetStatistics && recursionCount[0] > lambdaResetValue) {
-                    recursionKernel = new double[lambdaBins][FLambdaBins];
-                    resetStatistics = false;
-                    logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
-                }
-
-                /**
-                 * Increase the Recursion Kernel based on the input of current
-                 * walker.
-                 */
-                recursionKernel[walkerLambda][walkerFLambda] += weight;
-                if (this.isInterrupted()) {
-                    logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution");
-                    // No pending message receipt, so no warning.
-                    break;
-                }
-            }
-        }
-
     }
 
     /**

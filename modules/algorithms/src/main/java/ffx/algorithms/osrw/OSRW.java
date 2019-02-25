@@ -78,21 +78,20 @@ public class OSRW extends AbstractOSRW {
      * The recursion kernel stores the number of visits to each
      * [lambda][Flambda] bin.
      */
-    private int recursionKernel[][];
+    private int[][] recursionKernel;
     /**
      * The recursionCount stores the [Lambda, FLambda] count for each process.
      * Therefore the array is of size [number of Processes][2]. Each 2 entry
      * array must be wrapped inside a Parallel Java IntegerBuf for the
      * All-Gather communication calls.
      */
-    private final double recursionCounts[][];
-    private final double myRecursionCount[];
+    private final double[][] recursionCounts;
+    private final double[] myRecursionCount;
     /**
      * These DoubleBufs wrap the recusionCount arrays.
      */
-    private final DoubleBuf recursionCountsBuf[];
+    private final DoubleBuf[] recursionCountsBuf;
     private final DoubleBuf myRecursionCountBuf;
-
     /**
      * Total histogram counts.
      */
@@ -106,25 +105,25 @@ public class OSRW extends AbstractOSRW {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous,
-            AlgorithmListener algorithmListener) {
+                File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                double temperature, double dt, double printInterval,
+                double saveInterval, boolean asynchronous,
+                AlgorithmListener algorithmListener) {
         this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
                 temperature, dt, printInterval, saveInterval, asynchronous,
                 true, algorithmListener);
@@ -133,26 +132,26 @@ public class OSRW extends AbstractOSRW {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
-     * @param resetNumSteps whether to reset energy counts to 0
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
+     * @param resetNumSteps     whether to reset energy counts to 0
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous, boolean resetNumSteps,
-            AlgorithmListener algorithmListener) {
+                File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                double temperature, double dt, double printInterval,
+                double saveInterval, boolean asynchronous, boolean resetNumSteps,
+                AlgorithmListener algorithmListener) {
         super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
 
         /**
@@ -315,22 +314,6 @@ public class OSRW extends AbstractOSRW {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
                 totalFreeEnergy = updateFLambda(printFLambda);
-                /**
-                 * Calculating Moving Average & Standard Deviation
-                 */
-                totalAverage += totalFreeEnergy;
-                totalSquare += Math.pow(totalFreeEnergy, 2);
-                periodCount++;
-                if (periodCount == window - 1) {
-                    lastAverage = totalAverage / window;
-                    //lastStdDev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
-                    lastStdDev = Math.sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
-                    logger.info(String.format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.",
-                            lastAverage, lastStdDev));
-                    totalAverage = 0;
-                    totalSquare = 0;
-                    periodCount = 0;
-                }
             }
             if (energyCount % saveFrequency == 0) {
                 if (algorithmListener != null) {
@@ -372,7 +355,11 @@ public class OSRW extends AbstractOSRW {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, true);
+        }
+        biasEnergy = bias1D + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -421,58 +408,6 @@ public class OSRW extends AbstractOSRW {
         totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
-    }
-
-    public double computeBiasEnergy(double currentLambda, double currentdUdL) {
-
-        int lambdaBin = binForLambda(currentLambda);
-        int FLambdaBin = binForFLambda(currentdUdL);
-
-        double gLdEdL = 0.0;
-
-        double ls2 = (2.0 * dL) * (2.0 * dL);
-        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int lcenter = lambdaBin + iL;
-            double deltaL = currentLambda - (lcenter * dL);
-            double deltaL2 = deltaL * deltaL;
-            // Mirror conditions for recursion kernel counts.
-            int lcount = lcenter;
-            double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == lambdaBins - 1) {
-                mirrorFactor = 2.0;
-            } else if (lcount < 0) {
-                lcount = -lcount;
-            } else if (lcount > lambdaBins - 1) {
-                // Number of bins past the last bin
-                lcount -= (lambdaBins - 1);
-                // Mirror bin
-                lcount = lambdaBins - 1 - lcount;
-            }
-            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
-                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                    continue;
-                }
-                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
-                double deltaFL2 = deltaFL * deltaFL;
-                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                double bias = weight * biasMag
-                        * exp(-deltaL2 / (2.0 * ls2))
-                        * exp(-deltaFL2 / (2.0 * FLs2));
-                gLdEdL += bias;
-            }
-        }
-
-        /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
-         */
-        return current1DBiasEnergy(currentLambda, false) + gLdEdL;
     }
 
     /**
@@ -578,22 +513,6 @@ public class OSRW extends AbstractOSRW {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
                 totalFreeEnergy = updateFLambda(printFLambda);
-                /**
-                 * Calculating Moving Average & Standard Deviation
-                 */
-                totalAverage += totalFreeEnergy;
-                totalSquare += Math.pow(totalFreeEnergy, 2);
-                periodCount++;
-                if (periodCount == window - 1) {
-                    lastAverage = totalAverage / window;
-                    //lastStdDev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
-                    lastStdDev = Math.sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
-                    logger.info(String.format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.",
-                            lastAverage, lastStdDev));
-                    totalAverage = 0;
-                    totalSquare = 0;
-                    periodCount = 0;
-                }
             }
             if (energyCount % saveFrequency == 0) {
                 if (algorithmListener != null) {
@@ -635,7 +554,11 @@ public class OSRW extends AbstractOSRW {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy = current1DBiasEnergy(lambda, true) + gLdEdL;
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, true);
+        }
+        biasEnergy = bias1D + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -686,6 +609,59 @@ public class OSRW extends AbstractOSRW {
         return totalEnergy;
     }
 
+    public double computeBiasEnergy(double currentLambda, double currentdUdL) {
+
+        int lambdaBin = binForLambda(currentLambda);
+        int FLambdaBin = binForFLambda(currentdUdL);
+
+        double gLdEdL = 0.0;
+
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = currentLambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                gLdEdL += bias;
+            }
+        }
+
+        double bias1D = 0.0;
+        if (include1DBias) {
+            bias1D = current1DBiasEnergy(lambda, false);
+        }
+
+        return bias1D + gLdEdL;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -698,9 +674,8 @@ public class OSRW extends AbstractOSRW {
             synchronousSend(lambda, dEdU);
         }
 
-        biasCount++;  
+        biasCount++;
     }
-    
 
     @Override
     public void writeRestart() {
@@ -711,7 +686,7 @@ public class OSRW extends AbstractOSRW {
          * Only the rank 0 process writes the histogram restart file.
          */
         if (rank == 0) {
-            try {              
+            try {
                 OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
                         new BufferedWriter(new FileWriter(histogramFile)));
                 osrwHistogramRestart.writeHistogramFile();
@@ -1082,21 +1057,23 @@ public class OSRW extends AbstractOSRW {
         }
         return sum;
     }
+
     @Override
-    public void setLambdaWriteOut(double lambdaWriteOut){
+    public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
     }
 
+    /**
+     * The ReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
+     */
     private class ReceiveThread extends Thread {
 
-        final double recursionCount[];
+        final double[] recursionCount;
         final DoubleBuf recursionCountBuf;
-        private int countsReceived;
 
         public ReceiveThread() {
             recursionCount = new double[2];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
-            countsReceived = 0;
         }
 
         @Override
@@ -1104,7 +1081,6 @@ public class OSRW extends AbstractOSRW {
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
-                    ++countsReceived;
                 } catch (InterruptedIOException ioe) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
                     break;
@@ -1142,12 +1118,11 @@ public class OSRW extends AbstractOSRW {
                 }
             }
         }
-
-        int getCountsReceived() {
-            return countsReceived;
-        }
     }
 
+    /**
+     * Write out the OSRW Histogram.
+     */
     private class OSRWHistogramWriter extends PrintWriter {
 
         public OSRWHistogramWriter(Writer writer) {
@@ -1175,6 +1150,9 @@ public class OSRW extends AbstractOSRW {
         }
     }
 
+    /**
+     * Write out the current value of Lambda, its velocity and the number of counts.
+     */
     private class OSRWLambdaWriter extends PrintWriter {
 
         public OSRWLambdaWriter(Writer writer) {
@@ -1188,6 +1166,9 @@ public class OSRW extends AbstractOSRW {
         }
     }
 
+    /**
+     * Read in the OSRW Histogram.
+     */
     private class OSRWHistogramReader extends BufferedReader {
 
         public OSRWHistogramReader(Reader reader) {
@@ -1227,14 +1208,13 @@ public class OSRW extends AbstractOSRW {
         }
     }
 
+    /**
+     * Read in the current value of Lambda, its velocity and the number of counts.
+     */
     private class OSRWLambdaReader extends BufferedReader {
 
         public OSRWLambdaReader(Reader reader) {
             super(reader);
-        }
-
-        public void readLambdaFile() {
-            readLambdaFile(true);
         }
 
         public void readLambdaFile(boolean resetEnergyCount) {

@@ -41,6 +41,8 @@ import java.io.File;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -207,10 +209,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double maxFLambda;
     /**
-     * Atom gradient array for use if "energy" is called.
-     */
-    private double grad[] = null;
-    /**
      * Force Field Potential Energy (i.e. with no bias terms added).
      */
     protected double forceFieldEnergy;
@@ -234,7 +232,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Mixed second partial derivative with respect to coordinates and lambda.
      */
-    protected double dUdXdL[];
+    protected double[] dUdXdL;
     /**
      * Magnitude of each hill (not including tempering).
      * <p>
@@ -244,7 +242,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * 1D PMF with respect to lambda F(L).
      */
-    protected double FLambda[];
+    protected double[] FLambda;
     /**
      * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
      */
@@ -257,8 +255,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * First derivative of the 2D bias with respect to  dU/dL.
      */
     protected double dGdFLambda;
-
-    private double theta;
     /**
      * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
      */
@@ -268,17 +264,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double thetaMass = 1.0e-18;
     protected double halfThetaVelocity = 0.0;
-    private final Random stochasticRandom;
-    /**
-     * Random force conversion to kcal/mol/A;
-     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
-     */
-    private static final double randomConvert = sqrt(4.184) / 10e9;
-    /**
-     * randomConvert squared.
-     * Units: Joule per calorie / (nanometer per meter)^2
-     */
-    private static final double randomConvert2 = randomConvert * randomConvert;
     /**
      * Time step in picoseconds.
      */
@@ -311,7 +296,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * lambdaResetValue.
      */
     protected boolean resetStatistics = false;
-
     /**
      * Flag to turn on OSRW optimization.
      * <p>
@@ -328,7 +312,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Holds the lowest potential-energy parameters for loopBuilder runs from
      * all visits to lambda &gt; osrwOptimizationLambdaCutoff.
      */
-    protected double osrwOptimumCoords[];
+    protected double[] osrwOptimumCoords;
     /**
      * The lowest energy found via optimizations.
      * <p>
@@ -361,7 +345,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * SystemFilter used to save optimized structures.
      */
     protected SystemFilter osrwOptimizationFilter;
-
     /**
      * Interval between how often the 1D histogram is printed to screen versus
      * silently updated in background.
@@ -396,9 +379,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * where the free energy has changed.
      */
     protected double previousFreeEnergy = 0.0;
-    protected double lastAverage = 0.0;
-    protected double lastStdDev = 0.0;
-
     /**
      * Equilibration counts.
      */
@@ -416,16 +396,37 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * self-consistent fields to interpolate polarization.
      */
     protected final boolean asynchronous;
-
     /**
-     * Running average and standard deviation.
+     * Write out structures only for lambda values greater than or equal to this threshold.
      */
-    protected double totalAverage = 0;
-    protected double totalSquare = 0;
-    protected int periodCount = 0;
-    protected int window = 1000;
-    
-    protected double lambdaWriteOut = -1.0;
+    protected double lambdaWriteOut = 0.0;
+    /**
+     * Should the 1D OSRW bias be included in the target function.
+     */
+    protected boolean include1DBias;
+    /**
+     * Atom gradient array for use if "energy" is called.
+     */
+    private double[] grad = null;
+    /**
+     * Map lambda to a periodic variable theta.
+     *
+     * <code>theta = asin(sqrt(lambda))</code>
+     *
+     * <code>lambda = sin^2 (theta).</code>
+     */
+    private double theta;
+    private final Random stochasticRandom;
+    /**
+     * Random force conversion to kcal/mol/A;
+     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
+     */
+    private static final double randomConvert = sqrt(4.184) / 10e9;
+    /**
+     * randomConvert squared.
+     * Units: Joule per calorie / (nanometer per meter)^2
+     */
+    private static final double randomConvert2 = randomConvert * randomConvert;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -514,7 +515,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         }
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        biasMag = properties.getDouble("bias-gaussian-mag", 0.050);
+        biasMag = properties.getDouble("bias-gaussian-mag", 0.05);
         dL = properties.getDouble("lambda-bin-width", 0.005);
         dFL = properties.getDouble("flambda-bin-width", 2.0);
 
@@ -565,46 +566,81 @@ public abstract class AbstractOSRW implements CrystalPotential {
         rank = world.rank();
         jobBackend = JobBackend.getJobBackend();
 
+        include1DBias = properties.getBoolean("osrw-1D-bias", true);
+
         /**
          * Log OSRW parameters.
          */
         logger.info("\n Orthogonal Space Random Walk Parameters");
-        logger.info(String.format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
-        logger.info(String.format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
-        logger.info(String.format("  Print Interval:                 %6.3f psec", printInterval));
-        logger.info(String.format("  Save Interval:                  %6.3f psec", checkpointInterval));
-    }
-
-    /**
-     * <p>Setter for the field <code>propagateLambda</code>.</p>
-     *
-     * @param propagateLambda a boolean.
-     */
-    public void setPropagateLambda(boolean propagateLambda) {
-        this.propagateLambda = propagateLambda;
+        logger.info(format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
+        logger.info(format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
+        logger.info(format("  Print Interval:                 %6.3f psec", printInterval));
+        logger.info(format("  Save Interval:                  %6.3f psec", checkpointInterval));
+        logger.info(format("  Include 1D OSRW Bias:           %6b", include1DBias));
     }
 
     /**
      * <p>addBias.</p>
      *
-     * @param dUdL     a double.
-     * @param x        an array of {@link double} objects.
-     * @param gradient an array of {@link double} objects.
+     * @param dUdL     The current value of dU/dL
+     * @param x        Atomic coordinate array.
+     * @param gradient Gradient array.
      */
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
-    
+
+    /**
+     * Write out OSRW restart files.
+     */
     public abstract void writeRestart();
+
     /**
      * Abstract method used to set the lambda threshold controlled write out of snapshots.
-     * @param lambdaWriteOut 
+     *
+     * @param lambdaWriteOut
      */
     public abstract void setLambdaWriteOut(double lambdaWriteOut);
-    
-    public void setMCRestartWriter(boolean mcRestart){
-        this.mcRestart = mcRestart;
-    }
 
+    /**
+     * Compute the OSRW bias energy at (lambda, dU/dL).
+     *
+     * @param currentLambda The value of lambda.
+     * @param currentdUdL   The value of dU/dL.
+     * @return The value of the bias.
+     */
     public abstract double computeBiasEnergy(double currentLambda, double currentdUdL);
+
+    /**
+     * <p>evaluateKernel.</p>
+     *
+     * @param cLambda   the current Lambda bin.
+     * @param cF_Lambda the current dU/dL bin.
+     * @return The value of the recursion kernel.
+     */
+    protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
+
+    /**
+     * Update the 1D Bias based on the recursion kernel.
+     *
+     * @param print True requests verbose logging.
+     * @return The current free energy.
+     */
+    protected abstract double updateFLambda(boolean print);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Shuts down resources associated with this OSRW; primarily the receive
+     * thread.
+     */
+    @Override
+    public abstract boolean destroy();
+
+    /**
+     * <p>checkRecursionKernelSize.</p>
+     *
+     * @param dudl a double.
+     */
+    protected abstract void checkRecursionKernelSize(double dudl);
 
     /**
      * <p>checkRecursionKernelSize.</p>
@@ -619,11 +655,76 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * <p>checkRecursionKernelSize.</p>
+     * Specify if MC-OSRW restart files should be written.
+     * TODO: move this method to MC-OSRW.
      *
-     * @param dudl a double.
+     * @param mcRestart True to indicate writing MC OSRW restart files.
      */
-    protected abstract void checkRecursionKernelSize(double dudl);
+    public void setMCRestartWriter(boolean mcRestart) {
+        this.mcRestart = mcRestart;
+    }
+
+    /**
+     * Indicate if the Lambda extended system particle should be propagated using Langevin dynamics.
+     *
+     * @param propagateLambda If true, Lambda will be propagated using Langevin dynamics.
+     */
+    public void setPropagateLambda(boolean propagateLambda) {
+        this.propagateLambda = propagateLambda;
+    }
+
+    /**
+     * Propagate Lambda using Langevin dynamics.
+     */
+    protected void langevin() {
+        /**
+         * Compute the random force pre-factor (kcal/mol * psec^-2).
+         */
+        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
+
+        /**
+         * Compute the random force.
+         */
+        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
+
+        /**
+         * Compute dEdL (kcal/mol).
+         */
+        double dEdL = -dUdLambda * sin(2.0 * theta);
+
+        /**
+         * Update halfThetaVelocity (ps-1).
+         */
+        halfThetaVelocity =
+                (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
+                        + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
+                        / (2.0 * thetaMass + thetaFriction * dt);
+
+        /**
+         * Update theta.
+         */
+        theta = theta + dt * halfThetaVelocity;
+
+        /**
+         * Maintain theta in the interval PI to -PI.
+         */
+        if (theta > PI) {
+            theta -= 2.0 * PI;
+        } else if (theta <= -PI) {
+            theta += 2.0 * PI;
+        }
+
+        /**
+         * Compute the sin(theta).
+         */
+        double sinTheta = sin(theta);
+
+        /**
+         * Compute lambda as sin(theta)^2.
+         */
+        lambda = sinTheta * sinTheta;
+        lambdaInterface.setLambda(lambda);
+    }
 
     /**
      * <p>binForLambda.</p>
@@ -711,6 +812,9 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * @return a double.
      */
     protected double current1DBiasEnergy(double currentLambda, boolean gradient) {
+        if (!include1DBias) {
+            return 0.0;
+        }
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
@@ -769,7 +873,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
             for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
                 double bias = -evaluateKernel(lambdaBin, fLambdaBin);
-                sb.append(String.format(" %16.8f", bias));
+                sb.append(format(" %16.8f", bias));
             }
             sb.append("\n");
         }
@@ -786,39 +890,12 @@ public abstract class AbstractOSRW implements CrystalPotential {
                 lambda = lambdaBin * dL + dL_2;
                 double bias1D = -current1DBiasEnergy(lambda, false);
                 double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
-                sb.append(String.format(" %16.8f", totalBias));
+                sb.append(format(" %16.8f", totalBias));
             }
             sb.append("\n");
         }
         logger.info(sb.toString());
     }
-
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Shuts down resources associated with this OSRW, primarily the receive
-     * thread.
-     */
-    @Override
-    public abstract boolean destroy();
-
-    /**
-     * <p>evaluateKernel.</p>
-     *
-     * @param cLambda   a int.
-     * @param cF_Lambda a int.
-     * @return a double.
-     */
-    protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
-
-    /**
-     * <p>updateFLambda.</p>
-     *
-     * @param print a boolean.
-     * @return a double.
-     */
-    protected abstract double updateFLambda(boolean print);
 
     /**
      * <p>Setter for the field <code>lambda</code>.</p>
@@ -883,7 +960,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public void setBiasMagnitude(double biasMag) {
         this.biasMag = biasMag;
-        logger.info(String.format(" Gaussian Bias Magnitude: %6.4f (kcal/mol)", biasMag));
+        logger.info(format(" Gaussian Bias Magnitude: %6.4f (kcal/mol)", biasMag));
     }
 
     /**
@@ -900,83 +977,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
         } else {
             logger.info(" OSRW count interval must be greater than 0.");
         }
-    }
-
-    /**
-     * Propagate Lambda using Langevin dynamics.
-     */
-    protected void langevin() {
-        /**
-         * Compute the random force pre-factor (kcal/mol * psec^-2).
-         */
-        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
-
-        /**
-         * Compute the random force.
-         */
-        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
-
-        /**
-         * Compute dEdL (kcal/mol).
-         */
-        double dEdL = -dUdLambda * sin(2.0 * theta);
-
-        /**
-         * Update halfThetaVelocity (ps-1).
-         */
-        halfThetaVelocity =
-                (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
-                        + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
-                        / (2.0 * thetaMass + thetaFriction * dt);
-
-        /**
-         * Update theta.
-         */
-        theta = theta + dt * halfThetaVelocity;
-
-        /**
-         * Maintain theta in the interval PI to -PI.
-         */
-        if (theta > PI) {
-            theta -= 2.0 * PI;
-        } else if (theta <= -PI) {
-            theta += 2.0 * PI;
-        }
-
-        /**
-         * Compute the sin(theta).
-         */
-        double sinTheta = sin(theta);
-
-        /**
-         * Compute lambda as sin(theta)^2.
-         */
-        lambda = sinTheta * sinTheta;
-        lambdaInterface.setLambda(lambda);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        potential.setScaling(scaling);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return potential.getScaling();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] doubles) {
-        return potential.getCoordinates(doubles);
     }
 
     /**
@@ -1038,6 +1038,30 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public int getEnergyCount() {
         return energyCount;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        potential.setScaling(scaling);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return potential.getScaling();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] doubles) {
+        return potential.getCoordinates(doubles);
     }
 
     /**

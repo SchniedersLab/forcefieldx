@@ -83,6 +83,7 @@ public class MDMove implements MCMove {
     private File dyn;
 
     private int mdMoveCounter = 0;
+    private double energyChange;
     private double energyDriftTotalAbs;
     private double energyDriftTotalNet;
 
@@ -167,7 +168,8 @@ public class MDMove implements MCMove {
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
             energyDriftTotalNet += molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
             double energyDriftAverageNet = energyDriftTotalNet / mdMoveCounter;
-            energyDriftTotalAbs += abs(molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy());
+            energyChange = molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy();
+            energyDriftTotalAbs += abs(energyChange);
             double energyDriftAverageAbs = energyDriftTotalAbs / mdMoveCounter;
             logger.fine(format(" Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
                     energyDriftAverageNet, energyDriftAverageAbs));
@@ -228,6 +230,10 @@ public class MDMove implements MCMove {
      */
     public long getMDTime() {
         return molecularDynamics.getMDTime();
+    }
+
+    public double getEnergyChange() {
+        return energyChange;
     }
 
     /**
