@@ -12,6 +12,8 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -60,7 +62,7 @@ class Minimizer extends AlgorithmsScript {
             return this
         }
 
-        List<String> arguments = filenames;
+        List<String> arguments = filenames
         // Check nArgs should either be number of arguments (min 1), else 1.
         int nArgs = arguments ? arguments.size() : 1
         nArgs = (nArgs < 1) ? 1 : nArgs
@@ -98,8 +100,8 @@ class Minimizer extends AlgorithmsScript {
                 logger.info(helpString())
                 return this
             }
-            arguments = new ArrayList<>();
-            arguments.add(mola.getFile().getName());
+            arguments = new ArrayList<>()
+            arguments.add(mola.getFile().getName())
             topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0))
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
@@ -132,9 +134,30 @@ class Minimizer extends AlgorithmsScript {
         potential.getCoordinates(x)
         potential.energy(x, true)
 
-        for (mola in topologies) {
-            String modelFilename = mola.getFile().getAbsolutePath()
+        if (topologies.length > 1) {
+            // Handle Multiple Topology Cases.
+            for (mola in topologies) {
+                String modelFilename = mola.getFile().getAbsolutePath()
 
+                if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+                    saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+                }
+
+                String dirName = saveDir.toString() + File.separator
+                String fileName = FilenameUtils.getName(modelFilename)
+                String ext = FilenameUtils.getExtension(fileName)
+                fileName = FilenameUtils.removeExtension(fileName)
+
+                if (ext.toUpperCase().contains("XYZ")) {
+                    algorithmFunctions.saveAsXYZ(mola, new File(dirName + fileName + ".xyz"))
+                } else {
+                    algorithmFunctions.saveAsPDB(mola, new File(dirName + fileName + ".pdb"))
+                }
+            }
+        } else {
+            // Handle Single Topology Cases.
+            activeAssembly = topologies[0]
+            String modelFilename = activeAssembly.getFile().getAbsolutePath()
             if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
                 saveDir = new File(FilenameUtils.getFullPath(modelFilename))
             }
@@ -144,10 +167,28 @@ class Minimizer extends AlgorithmsScript {
             String ext = FilenameUtils.getExtension(fileName)
             fileName = FilenameUtils.removeExtension(fileName)
 
+            File saveFile
             if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(mola, new File(dirName + fileName + ".xyz"))
+                saveFile = new File(dirName + fileName + ".xyz")
+                algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
+            } else if (ext.toUpperCase().contains("ARC")) {
+                saveFile = new File(dirName + fileName + ".arc")
+                algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
             } else {
-                algorithmFunctions.saveAsPDB(mola, new File(dirName + fileName + ".pdb"))
+                saveFile = new File(dirName + fileName + ".pdb")
+                algorithmFunctions.saveAsPDB(activeAssembly, saveFile)
+            }
+
+            SystemFilter systemFilter = algorithmFunctions.getFilter()
+            saveFile = activeAssembly.getFile()
+
+            if (systemFilter instanceof XYZFilter) {
+                XYZFilter xyzFilter = (XYZFilter) systemFilter
+                while (xyzFilter.readNext()) {
+                    minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                    boolean append = true
+                    xyzFilter.writeFile(saveFile, append)
+                }
             }
         }
 
@@ -155,7 +196,7 @@ class Minimizer extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         return potential == null ? Collections.emptyList() : Collections.singletonList(potential)
     }
 }

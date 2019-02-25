@@ -83,6 +83,9 @@ public class MinimizeOpenMM {
             ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) forceFieldEnergy;
             PointerByReference context = forceFieldEnergyOpenMM.getContext();
 
+            double[] x = forceFieldEnergyOpenMM.getCoordinates(null);
+            forceFieldEnergyOpenMM.setOpenMMPositions(x, x.length);
+
             // Run the OpenMM minimization.
             OpenMM_LocalEnergyMinimizer_minimize(context, eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
 
@@ -95,7 +98,6 @@ public class MinimizeOpenMM {
 
             // Load updated coordinate position.
             int numParticles = forceFieldEnergyOpenMM.getNumParticles();
-            double x[] = new double[numParticles * 3];
             forceFieldEnergyOpenMM.getOpenMMPositions(positions, numParticles, x);
 
             // Compute the RMS gradient.

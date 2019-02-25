@@ -9,6 +9,8 @@ import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -48,10 +50,10 @@ class MinimizerOpenMM extends AlgorithmsScript {
         if (!init()) {
             return this
         }
-        
-        if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()){
+
+        if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()) {
             System.setProperty("platform", System.getProperty("platform"))
-        } else{
+        } else {
             System.setProperty("platform", "OMM")
         }
 
@@ -84,7 +86,7 @@ class MinimizerOpenMM extends AlgorithmsScript {
         if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
             MinimizeOpenMM minimizeOpenMM = new MinimizeOpenMM(activeAssembly)
             minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
-            
+
             if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
                 saveDir = new File(FilenameUtils.getFullPath(modelFilename))
             }
@@ -94,10 +96,28 @@ class MinimizerOpenMM extends AlgorithmsScript {
             String ext = FilenameUtils.getExtension(fileName)
             fileName = FilenameUtils.removeExtension(fileName)
 
+            File saveFile
             if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(activeAssembly, new File(dirName + fileName + ".xyz"))
+                saveFile = new File(dirName + fileName + ".xyz")
+                algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
+            } else if (ext.toUpperCase().contains("ARC")) {
+                saveFile = new File(dirName + fileName + ".arc")
+                algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
             } else {
-                algorithmFunctions.saveAsPDB(activeAssembly, new File(dirName + fileName + ".pdb"))
+                saveFile = new File(dirName + fileName + ".pdb")
+                algorithmFunctions.saveAsPDB(activeAssembly, saveFile)
+            }
+
+            SystemFilter systemFilter = algorithmFunctions.getFilter()
+            saveFile = activeAssembly.getFile()
+
+            if (systemFilter instanceof XYZFilter) {
+                XYZFilter xyzFilter = (XYZFilter) systemFilter
+                while (xyzFilter.readNext()) {
+                    minimizeOpenMM.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+                    boolean append = true
+                    xyzFilter.writeFile(saveFile, append)
+                }
             }
         } else {
             logger.severe(" Could not start OpenMM minimization.")
