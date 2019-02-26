@@ -103,8 +103,14 @@ public class OSRWOptions {
     /**
      * --mcL or --mcLambdaStd sets the standard deviation for lambda.
      */
-    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.1", description = "Standard deviation for lambda move")
+    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.1", description = "Standard deviation for lambda move.")
     private double mcL = 0.1;
+
+    /**
+     * --ts or --twoStep Sample MC-OSRW using separate lambda and MD moves.
+     */
+    @CommandLine.Option(names = {"--ts", "--twoStep"}, description = "Sample MC-OSRW using separate lambda and MD moves.")
+    private boolean ts = false;
 
     /**
      * <p>Getter for the field <code>temperParam</code>.</p>
@@ -313,7 +319,11 @@ public class OSRWOptions {
         logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
         mcOSRW.setLambdaStdDev(mcL);
         mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt);
-        mcOSRW.sampleTwoStep();
+        if (ts) {
+            mcOSRW.sampleTwoStep();
+        } else {
+            mcOSRW.sampleOneStep();
+        }
     }
 
     private void runDynamics(MolecularDynamics molDyn, int numSteps, DynamicsOptions dynamics, WriteoutOptions writeout, boolean initVelocities, File dyn) {
