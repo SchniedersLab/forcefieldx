@@ -60,8 +60,12 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 
 /**
- * The PotentialsUtils class provides a local implementation, independent of the
- * User Interfaces module, of PotentialsFunctions methods such as file opening.
+ * <p>
+ * PotentialsUtils implements core functionality for many Force Field X algorithms and
+ * scripts, such as opening and closing structure files, basic force field evaluations,
+ * etc. This implementation does not do anything on top of what is specified by the
+ * interface, and is used primarily by tests. It is also potentially useful for third
+ * parties who would like to use FFX without its graphical user interface.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders

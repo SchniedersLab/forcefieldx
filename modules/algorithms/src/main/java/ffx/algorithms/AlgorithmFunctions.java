@@ -44,11 +44,22 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
 
 /**
- * The AlgorithmFunctions interface specifies default methods for L-BFGS
- * minimization and molecular dynamics, similar to pre-existing Groovy method
- * closures. Enables FFX classes and scripts to perform these functions using
- * either default FFX methods, a local implementation, or another implementation
- * replacing User Interfaces.
+ * <p>
+ * AlgorithmFunctions, on top of the core functionality of PotentialsFunctions, describes
+ * additional functionality such as molecular dynamics and L-BFGS local optimization.
+ *
+ * <p>
+ * This is implemented in two locations: UIUtils in the User Interfaces package, and in
+ * AlgorithmsUtils in the Algorithm package.
+ *
+ * <p>
+ * The UIUtils implementation is the default for Force Field X; on top of the core
+ * functionality, it also updates the FFX graphical user interface and tree structure.
+ *
+ * <p>
+ * The AlgorithmUtils implementation lacks the extra functionality of the UIUtils
+ * implementation, and simply accomplishes the required task. This is used by our tests, and is
+ * also potentially useful for third parties who would like to use FFX without its GUI.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
@@ -67,7 +78,7 @@ public interface AlgorithmFunctions extends PotentialsFunctions {
      * @param initVelocities Initialize velocities from Maxwell-Boltzmann distribution
      * @param dyn            Dynamics file
      */
-    public void md(MolecularAssembly assembly, int nStep, double timeStep,
+    void md(MolecularAssembly assembly, int nStep, double timeStep,
                             double printInterval, double saveInterval, double temperature,
                             boolean initVelocities, File dyn);
 
@@ -78,14 +89,14 @@ public interface AlgorithmFunctions extends PotentialsFunctions {
      * @param eps      RMS gradient convergence criteria
      * @return A <code>Potential</code>
      */
-    public Potential minimize(MolecularAssembly assembly, double eps);
+    Potential minimize(MolecularAssembly assembly, double eps);
 
     /**
      * Returns a default Listener if available (null by default).
      *
      * @return An AlgorithmListener or null.
      */
-    default public AlgorithmListener getDefaultListener() {
+    default AlgorithmListener getDefaultListener() {
         return null;
     }
 }

@@ -50,8 +50,12 @@ import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Keyword;
 
 /**
- * The AlgorithmUtils class provides a local implementation, independent of the
- * User Interfaces module, of AlgorithmFunctions methods (MD, minimization).
+ * <p>
+ * PotentialsUtils, on top of the core functionality of PotentialsUtils, implements
+ * additional functionality such as molecular dynamics and L-BFGS local optimization.
+ * This implementation does not do anything on top of what is specified by the
+ * interface, and is used primarily by tests. It is also potentially useful for third
+ * parties who would like to use FFX without its graphical user interface.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders

@@ -50,14 +50,13 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
 
 /**
- * The UIUtils class implements all Function interfaces, enabling lower modules
- * to be blind to the existence of User Interfaces but still update the GUI and
- * be in communication with User Interfaces.
- *
- * It presently gets away with simply implementing AlgorithmFunctions; if the
- * Automatic Parametrization method closures are similarly re-implemented, it
- * will probably be necessary to implement a new interface which extends both
- * AlgorithmFunctions and AutomaticParamFunctions interfaces.
+ * <p>
+ * UIUtils implements core and extended functionality for many Force Field X algorithms and
+ * scripts, such as opening and closing structure files, basic force field evaluations,
+ * molecular dynamics, etc. This implementation performs additional tasks for the FFX graphical
+ * user interface, such as updating the GUI and tree structure. This is widely used by our
+ * scripts. The AlgorithmUtils and PotentialsUtils implementations of their respective
+ * interfaces lack the additional functionality provided here.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
