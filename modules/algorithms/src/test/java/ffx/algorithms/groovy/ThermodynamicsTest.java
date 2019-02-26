@@ -579,7 +579,7 @@ public class ThermodynamicsTest extends PJDependentTest {
     }
 
     Binding binding;
-    NewThermodynamics thermo;
+    Thermodynamics thermo;
 
     private final String info;
     private final ThermoTestMode mode;
@@ -798,7 +798,7 @@ public class ThermodynamicsTest extends PJDependentTest {
     @Before
     public void before() {
         binding = new Binding();
-        thermo = new NewThermodynamics();
+        thermo = new Thermodynamics();
         thermo.setBinding(binding);
     }
 
@@ -867,7 +867,7 @@ public class ThermodynamicsTest extends PJDependentTest {
     private void assembleThermo() {
         String[] args = assembleArgs();
         binding.setVariable("args", args);
-        thermo = new NewThermodynamics();
+        thermo = new Thermodynamics();
         thermo.setBinding(binding);
         thermo.setProperties(algorithmConfig);
     }
