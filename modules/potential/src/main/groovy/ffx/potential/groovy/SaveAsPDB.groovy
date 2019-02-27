@@ -1,6 +1,7 @@
 package ffx.potential.groovy
 
 import ffx.numerics.Potential
+import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 
 import ffx.potential.MolecularAssembly
@@ -73,14 +74,29 @@ class SaveAsPDB extends PotentialScript {
         PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
         saveFilter.setModelNumbering(true)
 
-        if (openFilter != null) {
+        //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
+        File arcFile = potentialFunctions.versionFile(new File(dirName + FilenameUtils.removeExtension(fileName) + ".arc"))
+        if (openFilter != null && openFilter instanceof XYZFilter) {
             try {
+                arcFile.append("MODEL        1\n")
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(saveFile));
+                String line = bufferedReader.readLine()
+                while(line!=null) {
+                    if(!line.contentEquals("END")){
+                        arcFile.append(line+"\n")
+                    }
+                    line=bufferedReader.readLine()
+                }
+                bufferedReader.close()
+
                 while (openFilter.readNext(false)) {
-                    saveFilter.writeFile(saveFile, true)
+                    arcFile.append("ENDMDL\n")
+                    saveFilter.writeFile(arcFile, true, true, false)
                 }
             } catch (Exception e) {
                 // Do nothing.
             }
+            arcFile.append("END\n")
         }
 
         return this
