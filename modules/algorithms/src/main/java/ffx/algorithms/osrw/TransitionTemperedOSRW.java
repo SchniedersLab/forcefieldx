@@ -515,12 +515,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
-                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
+                double currentFL = minFLambda + FLcenter * dFL + dFL_2;
+                double deltaFL = currentdUdL - currentFL;
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
+
+                // logger.info(format("(L=%6.4f FL=%8.2f) L=%6.4f Bin=%3d; FL=%8.3f Bin=%6d; Bias: %8.6f",
+                //        currentLambda, currentdUdL, lcenter * dL, lcount, currentFL, FLcenter, bias));
+
                 gLdEdL += bias;
             }
         }
@@ -530,7 +535,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          */
         double bias1D = 0.0;
         if (include1DBias) {
-            bias1D = current1DBiasEnergy(lambda, false);
+            bias1D = current1DBiasEnergy(currentLambda, false);
         }
 
         return bias1D + gLdEdL;
@@ -931,9 +936,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
                 double midLambda = (llL + ulL) / 2.0;
                 double bias1D = current1DBiasEnergy(midLambda, false);
-                double bias2D = computeBiasEnergy(midLambda, FLambda[iL]);
+                double bias2D = computeBiasEnergy(midLambda, FLambda[iL]) - bias1D;
 
-                stringBuilder.append(String.format(" %6.2e %6.4f %6.4f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f\n",
+                stringBuilder.append(format(" %6.2e %6.4f %6.4f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f\n",
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], bias1D, bias2D, bias1D + bias2D, freeEnergy));
             }

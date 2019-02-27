@@ -3651,7 +3651,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     lambdaElec = 0.0;
                     // AMOEBA Case
                     if (amoebaVDWForce != null) {
-
                         double turnOnRange = softcoreAMOEBAvdWMidPoint;
                         double turnOffRange = 1.0 - softcoreAMOEBAvdWMidPoint;
                         if (lambda < softcoreAMOEBAvdWMidPoint) {
@@ -3665,7 +3664,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                                 lambdaVDW = (1.0 - lambda) / turnOffRange;
                             }
                         }
-
                         lambdaAmoebaVDW = 0.0;
                         if (lambda > nonSoftcoreAMOEBAvdWStart) {
                             lambdaAmoebaVDW = (lambda - nonSoftcoreAMOEBAvdWStart) / (1.0 - nonSoftcoreAMOEBAvdWStart);
