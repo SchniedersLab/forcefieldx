@@ -47,13 +47,23 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
 
 /**
- * The PotentialsFunctions interface specifies utility methods such as opening
- * files into MolecularAssemblys, evaluating energy, and saving assemblies to
- * files. Intended to be analogous to existing Groovy method closures, with both
- * local implementation and a User Interfaces implementation which interacts
- * with our GUI and underlying data structure. This should enable other users to
- * import only Potentials and its dependencies, and slide in their own UI and
- * data structure on top of Potentials.
+ * <p>
+ * PotentialsFunctions describes core functionality for many Force Field X algorithms and
+ * scripts, such as opening and closing structure files, basic force field energy evaluations,
+ * etc.
+ *
+ * <p>
+ * This is implemented in two locations: UIUtils in the User Interfaces package, and in
+ * PotentialsUtils in the Potentials package.
+ *
+ * <p>
+ * The UIUtils implementation is the default for Force Field X; on top of the core
+ * functionality, it also updates the FFX graphical user interface and tree structure.
+ *
+ * <p>
+ * The PotentialsUtils implementation lacks the extra functionality of the UIUtils
+ * implementation, and simply accomplishes the required task. This is used by our tests, and is
+ * also potentially useful for third parties who would like to use FFX without its GUI.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
@@ -61,14 +71,14 @@ import ffx.potential.parsers.SystemFilter;
  */
 public interface PotentialsFunctions {
     /** Constant <code>logger</code> */
-    static final Logger logger = Logger.getLogger(PotentialsFunctions.class.getName());
+    Logger logger = Logger.getLogger(PotentialsFunctions.class.getName());
 
     /**
      * True if using a local implementation (not in a user interfaces module).
      *
      * @return If a local implementation
      */
-    public boolean isLocal(); // Return true if the local implementation from Potentials.
+    boolean isLocal(); // Return true if the local implementation from Potentials.
 
     /**
      * <p>open.</p>
@@ -76,7 +86,7 @@ public interface PotentialsFunctions {
      * @param filename a {@link java.lang.String} object.
      * @return a {@link ffx.potential.MolecularAssembly} object.
      */
-    default public MolecularAssembly open(String filename) {
+    default MolecularAssembly open(String filename) {
         MolecularAssembly[] assemblies = openAll(filename);
         if (assemblies.length > 1) {
             logger.log(Level.WARNING, " Found multiple assemblies in file {0}, opening first.", filename);
@@ -90,7 +100,7 @@ public interface PotentialsFunctions {
      * @param file Filename to open
      * @return Array of MolecularAssembly.
      */
-    public MolecularAssembly[] openAll(String file);
+    MolecularAssembly[] openAll(String file);
 
     /**
      * Opens an array of files and returns the created MolecularAssembly
@@ -99,7 +109,7 @@ public interface PotentialsFunctions {
      * @param files Filenames to open.
      * @return Array of MolecularAssembly.
      */
-    public MolecularAssembly[] openAll(String[] files);
+    MolecularAssembly[] openAll(String[] files);
 
     /**
      * Opens a file and returns all created MolecularAssembly objects, setting
@@ -110,7 +120,7 @@ public interface PotentialsFunctions {
      * @param nThreads Use non-default num threads
      * @return Array of MolecularAssembly.
      */
-    default public MolecularAssembly[] openAll(String file, int nThreads) {
+    default MolecularAssembly[] openAll(String file, int nThreads) {
         return openAll(file);
     }
 
@@ -123,7 +133,7 @@ public interface PotentialsFunctions {
      * @param nThreads Use non-default num threads
      * @return Array of MolecularAssembly.
      */
-    default public MolecularAssembly[] open(String[] files, int nThreads) {
+    default MolecularAssembly[] open(String[] files, int nThreads) {
         return openAll(files);
     }
 
@@ -134,7 +144,7 @@ public interface PotentialsFunctions {
      * @param data Structure to convert
      * @return Array of MolecularAssembly
      */
-    public MolecularAssembly[] convertDataStructure(Object data);
+    MolecularAssembly[] convertDataStructure(Object data);
 
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
@@ -144,7 +154,7 @@ public interface PotentialsFunctions {
      * @param file Source file
      * @return Array of MolecularAssembly
      */
-    public MolecularAssembly[] convertDataStructure(Object data, File file);
+    MolecularAssembly[] convertDataStructure(Object data, File file);
 
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
@@ -154,7 +164,7 @@ public interface PotentialsFunctions {
      * @param filename Source file
      * @return Array of MolecularAssembly
      */
-    public MolecularAssembly[] convertDataStructure(Object data, String filename);
+    MolecularAssembly[] convertDataStructure(Object data, String filename);
 
     /**
      * Performs any necessary shutdown operations on a MolecularAssembly,
@@ -163,7 +173,7 @@ public interface PotentialsFunctions {
      *
      * @param assembly Assembly to close.
      */
-    public void close(MolecularAssembly assembly);
+    void close(MolecularAssembly assembly);
 
     /**
      * Performs any necessary shutdown operations on an array of
@@ -172,14 +182,14 @@ public interface PotentialsFunctions {
      *
      * @param assemblies Assemblies to close.
      */
-    public void closeAll(MolecularAssembly[] assemblies);
+    void closeAll(MolecularAssembly[] assemblies);
 
     /**
      * Logs time elapsed since last call.
      *
      * @return Time.
      */
-    public double time();
+    double time();
 
     /**
      * Saves the current state of a MolecularAssembly to an XYZ file.
@@ -187,7 +197,7 @@ public interface PotentialsFunctions {
      * @param assembly MolecularAssembly to save
      * @param file Destination .xyz
      */
-    public void save(MolecularAssembly assembly, File file);
+    void save(MolecularAssembly assembly, File file);
 
     /**
      * Saves the current state of a MolecularAssembly to an XYZ file.
@@ -195,7 +205,7 @@ public interface PotentialsFunctions {
      * @param assembly MolecularAssembly to save
      * @param file Destination .xyz
      */
-    public void saveAsXYZ(MolecularAssembly assembly, File file);
+    void saveAsXYZ(MolecularAssembly assembly, File file);
 
     /**
      * Saves the current state of a MolecularAssembly to an XYZ file as a P1
@@ -204,7 +214,7 @@ public interface PotentialsFunctions {
      * @param assembly MolecularAssembly to save
      * @param file Destination .xyz
      */
-    public void saveAsP1(MolecularAssembly assembly, File file);
+    void saveAsP1(MolecularAssembly assembly, File file);
 
     /**
      * Saves the current state of a MolecularAssembly to a PDB file.
@@ -212,7 +222,7 @@ public interface PotentialsFunctions {
      * @param assembly MolecularAssembly to save
      * @param file Destination .pdb
      */
-    public void saveAsPDB(MolecularAssembly assembly, File file);
+    void saveAsPDB(MolecularAssembly assembly, File file);
 
     /**
      * Saves the current state of an array of MolecularAssemblys to a PDB file.
@@ -220,7 +230,7 @@ public interface PotentialsFunctions {
      * @param assemblies MolecularAssembly array to save
      * @param file Destination .pdb
      */
-    public void saveAsPDB(MolecularAssembly[] assemblies, File file);
+    void saveAsPDB(MolecularAssembly[] assemblies, File file);
 
     /**
      * Saves the symmetry mates of a MolecularAssembly to PDB files.
@@ -228,7 +238,7 @@ public interface PotentialsFunctions {
      * @param assembly To save
      * @param file Destination file
      */
-    public void savePDBSymMates(MolecularAssembly assembly, File file);
+    void savePDBSymMates(MolecularAssembly assembly, File file);
     // Will use default suffix of _symMate
 
     /**
@@ -238,7 +248,7 @@ public interface PotentialsFunctions {
      * @param file Destination file
      * @param suffix Custom file suffix
      */
-    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
+    void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
 
     /**
      * Saves SIFT info to the b-factor column of a PDB files.
@@ -247,7 +257,7 @@ public interface PotentialsFunctions {
      * @param file Destination file
      * @param resAndScore SIFT data
      */
-    public void saveAsSIFTPDB(MolecularAssembly assembly, File file, String[] resAndScore);
+    void saveAsSIFTPDB(MolecularAssembly assembly, File file, String[] resAndScore);
 
     /**
      * Evaluates the energy of a MolecularAssembly and returns its
@@ -256,7 +266,7 @@ public interface PotentialsFunctions {
      * @param assembly To evaluate
      * @return assembly's ForceFieldEnergy.
      */
-    public ForceFieldEnergy energy(MolecularAssembly assembly);
+    ForceFieldEnergy energy(MolecularAssembly assembly);
 
     /**
      * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
@@ -265,14 +275,14 @@ public interface PotentialsFunctions {
      * @param assembly To evaluate energy of
      * @return Potential energy (kcal/mol)
      */
-    public double returnEnergy(MolecularAssembly assembly);
+    double returnEnergy(MolecularAssembly assembly);
 
     /**
      * Returns the last SystemFilter created by this (may be null).
      *
      * @return Last SystemFilter
      */
-    public SystemFilter getFilter();
+    SystemFilter getFilter();
 
     /**
      * Returns either the active assembly from the overlying UI, or the "active"
@@ -280,7 +290,7 @@ public interface PotentialsFunctions {
      *
      * @return A MolecularAssembly or null
      */
-    default public MolecularAssembly getActiveAssembly() {
+    default MolecularAssembly getActiveAssembly() {
         SystemFilter filt = getFilter();
         if (filt != null) {
             return filt.getActiveMolecularSystem();
@@ -297,7 +307,7 @@ public interface PotentialsFunctions {
      * @throws java.lang.UnsupportedOperationException If unimplemented
      * @throws java.lang.UnsupportedOperationException if any.
      */
-    default public List<String> getArguments() throws UnsupportedOperationException {
+    default List<String> getArguments() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
@@ -308,7 +318,7 @@ public interface PotentialsFunctions {
      * @param filename To version
      * @return Versioned filename.
      */
-    default public String versionFile(String filename) {
+    default String versionFile(String filename) {
         if (filename == null) {
             throw new IllegalArgumentException("Filename must not be null!");
         }
@@ -322,7 +332,7 @@ public interface PotentialsFunctions {
      * @param file To version
      * @return Versioned file
      */
-    default public File versionFile(File file) {
+    default File versionFile(File file) {
         if (file == null) {
             throw new IllegalArgumentException("File must not be null!");
         }
