@@ -2234,6 +2234,16 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @since 1.0
      */
     public void saveAsPDB(File file) {
+        saveAsPDB(file, true);
+    }
+
+    /**
+     * Save the currently selected FFXSystem to a PDB file.
+     *
+     * @param file File to save the system to.
+     * @since 1.0
+     */
+    public void saveAsPDB(File file, boolean writeEnd) {
         FFXSystem system = hierarchy.getActive();
         if (system == null) {
             logger.log(Level.INFO, " No active system to save.");
@@ -2260,7 +2270,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             return;
         }
         PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
-        if (pdbFilter.writeFile(saveFile, false)) {
+        if (pdbFilter.writeFile(saveFile, false, false, writeEnd)) {
             // Refresh Panels with the new System name
             hierarchy.setActive(system);
             activeFilter = pdbFilter;
