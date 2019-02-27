@@ -55,6 +55,7 @@ import static java.util.Arrays.fill;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
+import static java.lang.String.format;
 
 import edu.rit.mp.DoubleBuf;
 
@@ -644,19 +645,24 @@ public class OSRW extends AbstractOSRW {
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
-                double deltaFL = currentdUdL - (minFLambda + FLcenter * dFL + dFL_2);
+                double currentFL = minFLambda + FLcenter * dFL + dFL_2;
+                double deltaFL = currentdUdL - currentFL;
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
+
+                logger.info(format("(L=%6.4f FL=%8.2f) L=%6.4f Bin=%3d; FL=%8.3f Bin=%6d; Bias: %8.6f",
+                        currentLambda, currentdUdL, lcenter * dL, lcount, currentFL, FLcenter, bias));
+
                 gLdEdL += bias;
             }
         }
 
         double bias1D = 0.0;
         if (include1DBias) {
-            bias1D = current1DBiasEnergy(lambda, false);
+            bias1D = current1DBiasEnergy(currentLambda, false);
         }
 
         return bias1D + gLdEdL;
