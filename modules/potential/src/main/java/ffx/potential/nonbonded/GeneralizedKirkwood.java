@@ -1140,10 +1140,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             if (use[i]) {
                 double borni = born[i];
                 if (Double.isInfinite(borni) || Double.isNaN(borni)) {
-                    //logger.severe(String.format(" %s\n Born radii %d %8.3f", atoms[i], i, born[i]));
-                    throw new EnergyException(String.format(" %s\n Born radii %d %8.3f", atoms[i], i, born[i]), true);
+                    throw new EnergyException(format(" %s\n Born radii %d %8.3f", atoms[i], i, born[i]), true);
                 }
             }
+            // logger.info(format(" %s Born radii %d %8.3f", atoms[i], i, born[i]));
         }
     }
 
@@ -1253,6 +1253,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 String message = "Fatal exception computing Born radii chain rule term.";
                 logger.log(Level.SEVERE, message, e);
             }
+
+            for (int i = 0; i < nAtoms; i++) {
+                double borni = sharedBornGrad.get(i);
+                if (use[i]) {
+                    if (Double.isInfinite(borni) || Double.isNaN(borni)) {
+                        throw new EnergyException(format(" %s\n Born radii %d %8.3f", atoms[i], i, borni), true);
+                    }
+                }
+                logger.info(format(" %s Born radius grad %d %8.3f", atoms[i], i, borni));
+            }
+
         }
 
         if (print) {
@@ -1494,7 +1505,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class BornRadiiRegion extends ParallelRegion {
 
-        private final BornRadiiLoop bornRadiiLoop[];
+        private final BornRadiiLoop[] bornRadiiLoop;
         private SharedDoubleArray sharedBorn;
         private SharedDouble ecavTot;
 
@@ -1570,11 +1581,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class BornRadiiLoop extends IntegerForLoop {
 
-            private double localBorn[];
+            private double[] localBorn;
+            private double ecav;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-            private double ecav;
 
             public BornRadiiLoop() {
                 ecav = 0.0;
@@ -4054,7 +4065,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class BornCRRegion extends ParallelRegion {
 
-        private final BornCRLoop bornCRLoop[];
+        private final BornCRLoop[] bornCRLoop;
         private final SharedDouble ecavTot;
 
         public BornCRRegion(int nt) {
@@ -4085,13 +4096,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private class BornCRLoop extends IntegerForLoop {
 
             private final double factor = -pow(PI, oneThird) * pow(6.0, (2.0 * oneThird)) / 9.0;
-            private final double dx_local[];
-            private double gX[];
-            private double gY[];
-            private double gZ[];
-            private double lgX[];
-            private double lgY[];
-            private double lgZ[];
+            private final double[] dx_local;
+            private double[] gX;
+            private double[] gY;
+            private double[] gZ;
+            private double[] lgX;
+            private double[] lgY;
+            private double[] lgZ;
             private double ecav;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -4125,7 +4136,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param scaledRadius scaled radius descreening atom.
              * @return the derivative.
              */
-            public double integralDerivative(double r, double r2, double radius, double scaledRadius) {
+            private double integralDerivative(double r, double r2, double radius, double scaledRadius) {
                 double de = 0.0;
                 // Descreen only if the descreened atom does not engulf the descreener.
                 if (radius < r + scaledRadius) {
@@ -4178,7 +4189,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param yr y-component of the separation vector.
              * @param zr z-component of the separation vector.
              */
-            private void incrementGradient(int i, int k, double dE, double xr, double yr, double zr, double transOp[][]) {
+            private void incrementGradient(int i, int k, double dE, double xr, double yr, double zr, double[][] transOp) {
                 double dedx = dE * xr;
                 double dedy = dE * yr;
                 double dedz = dE * zr;
@@ -4208,8 +4219,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 int nSymm = crystal.spaceGroup.symOps.size();
                 for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
                     SymOp symOp = crystal.spaceGroup.symOps.get(iSymOp);
-                    double transOp[][] = new double[3][3];
-                    double xyz[][] = sXYZ[iSymOp];
+                    double[][] transOp = new double[3][3];
+                    double[][] xyz = sXYZ[iSymOp];
                     crystal.getTransformationOperator(symOp, transOp);
                     for (int i = lb; i <= ub; i++) {
                         if (!nativeEnvironmentApproximation && !use[i]) {

@@ -3930,7 +3930,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public double[] fillGradients(PointerByReference forces, double[] g) {
         assert (g != null);
         int n = getNumberOfVariables();
-        if (g.length < n) {
+        if (g == null || g.length < n) {
             g = new double[n];
         }
         int index = 0;

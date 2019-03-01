@@ -853,7 +853,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         double beta = 1.0 / (Thermostat.R * temperature);
         StringBuilder stringBuilder = new StringBuilder();
         if (print) {
-            stringBuilder.append("  Weight   Lambda Bins     dU/dL Bins    <dU/dL>    g(L) f(L,<dU/dL>)  Bias    dG(L)\n");
+            stringBuilder.append("  Weight   Lambda Bins      dU/dL Bins   <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)\n");
         }
 
         for (int iL = 0; iL < lambdaBins; iL++) {
@@ -938,9 +938,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 double bias1D = current1DBiasEnergy(midLambda, false);
                 double bias2D = computeBiasEnergy(midLambda, FLambda[iL]) - bias1D;
 
-                stringBuilder.append(format(" %6.2e %6.4f %6.4f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f\n",
+                stringBuilder.append(format(" %6.2e %6.4f %6.4f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n",
                         lambdaCount, llL, ulL, lla, ula,
-                        FLambda[iL], bias1D, bias2D, bias1D + bias2D, freeEnergy));
+                        FLambda[iL], bias1D, bias2D, bias1D + bias2D, freeEnergy, bias1D + bias2D + freeEnergy));
             }
         }
 
