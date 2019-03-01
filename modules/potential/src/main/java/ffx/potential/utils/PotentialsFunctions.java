@@ -232,6 +232,8 @@ public interface PotentialsFunctions {
      */
     void saveAsPDB(MolecularAssembly[] assemblies, File file);
 
+    void saveAsPDB(MolecularAssembly assembly, File file, boolean writeEnd);
+
     /**
      * Saves the symmetry mates of a MolecularAssembly to PDB files.
      *

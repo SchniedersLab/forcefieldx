@@ -51,7 +51,7 @@ import ffx.utilities.Keyword;
 
 /**
  * <p>
- * PotentialsUtils, on top of the core functionality of PotentialsUtils, implements
+ * AlgorithmUtils, on top of the core functionality of PotentialsUtils, implements
  * additional functionality such as molecular dynamics and L-BFGS local optimization.
  * This implementation does not do anything on top of what is specified by the
  * interface, and is used primarily by tests. It is also potentially useful for third

@@ -408,13 +408,23 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     @Override
     public void saveAsPDB(MolecularAssembly assembly, File file) {
+        saveAsPDB(assembly, file, true);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Saves the current state of a MolecularAssembly to a PDB file.
+     */
+    @Override
+    public void saveAsPDB(MolecularAssembly assembly, File file, boolean writeEnd) {
         if (assembly == null) {
             logger.info(" Assembly to save was null.");
         } else if (file == null) {
             logger.info(" No valid file provided to save assembly to.");
         } else {
             PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
-            if (!pdbFilter.writeFile(file, false)) {
+            if (!pdbFilter.writeFile(file, false, false, writeEnd)) {
                 logger.info(String.format(" Save failed for %s", assembly.toString()));
             }
             lastFilter = pdbFilter;

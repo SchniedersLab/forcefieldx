@@ -58,6 +58,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -87,6 +88,7 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
+
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.bonded.AminoAcidUtils.renameArginineHydrogens;
@@ -370,7 +372,7 @@ public final class PDBFilter extends SystemFilter {
      * @param set a boolean.
      */
     public void setModelNumbering(boolean set) {
-        modelsWritten = 0;
+        modelsWritten = 1;
     }
 
     /**
@@ -1323,8 +1325,8 @@ public final class PDBFilter extends SystemFilter {
      * @param printLinear Whether to print atoms linearly or by element.
      * @return Success of writing.
      */
-    public boolean writeFile(File saveFile, boolean append, boolean printLinear) {
-        return writeFile(saveFile, append, printLinear, Collections.emptySet());
+    public boolean writeFile(File saveFile, boolean append, boolean printLinear, boolean writeEnd) {
+        return writeFile(saveFile, append, printLinear, Collections.emptySet(), writeEnd);
     }
 
     /**
@@ -1337,7 +1339,7 @@ public final class PDBFilter extends SystemFilter {
      * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
      * @return Success of writing.
      */
-    public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude) {
+    public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude, boolean writeEnd) {
         if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
             renameAtomsToPDBStandard(activeMolecularAssembly);
         }
@@ -1470,7 +1472,7 @@ public final class PDBFilter extends SystemFilter {
                             Atom SG1 = null;
                             for (Atom atom : cysAtoms) {
                                 String atName = atom.getName().toUpperCase();
-                                if (atName.equals("SG") || atName.equals("SH")) {
+                                if (atName.equals("SG") || atName.equals("SH") || atom.getAtomType().atomicNumber == 16) {
                                     SG1 = atom;
                                     break;
                                 }
@@ -1743,12 +1745,14 @@ public final class PDBFilter extends SystemFilter {
                 resID++;
             }
 
-            String end = model != null ? "ENDMDL" : "END";
-            if (!listMode) {
-                bw.write(end);
-                bw.newLine();
-            } else {
-                listOutput.add(end);
+            if (writeEnd) {
+                String end = model != null ? "ENDMDL" : "END";
+                if (!listMode) {
+                    bw.write(end);
+                    bw.newLine();
+                } else {
+                    listOutput.add(end);
+                }
             }
             bw.close();
         } catch (Exception e) {
@@ -2149,7 +2153,7 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
-        return writeFile(saveFile, append, false);
+        return writeFile(saveFile, append, false, true);
     }
 
     /**

@@ -7389,7 +7389,7 @@ public class RotamerOptimization implements Terminatable {
         PDBFilter pdbFilter = new PDBFilter(file, molecularAssembly, null, null);
         boolean writeSuccess = false;
         try {
-            writeSuccess = pdbFilter.writeFile(file, false, false, exclusions);
+            writeSuccess = pdbFilter.writeFile(file, false, false, exclusions, true);
         } finally {
             molecularAssembly.setFile(origFile);
         }

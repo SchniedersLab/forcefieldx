@@ -173,6 +173,14 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
         switchBack(origSys);
     }
 
+    @Override
+    public void saveAsPDB(MolecularAssembly assembly, File file, boolean writeEnd) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        mainPanel.saveAsPDB(file, false);
+        lastFilter = mainPanel.getFilter();
+        switchBack(origSys);
+    }
+
     /**
      * Switches the hierarchy's active system to assembly if assembly is present
      * inside the hierarchy; returns an Optional FFXSystem of the prior active
