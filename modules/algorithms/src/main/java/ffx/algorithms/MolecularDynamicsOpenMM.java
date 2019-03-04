@@ -291,8 +291,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
         currentTemperature = 2.0 * currentKineticEnergy * convert / (kB * dof);
 
-        // logger.info(format(" MDOpenMM getE P=%16.8f K=%16.8f", currentPotentialEnergy, currentKineticEnergy));
-
         OpenMM_State_destroy(state);
     }
 
@@ -307,8 +305,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
         currentTemperature = 2.0 * currentKineticEnergy * convert / (kB * dof);
 
-        // logger.info(format(" MDOpenMM getEandP P=%16.8f K=%16.8f", currentPotentialEnergy, currentKineticEnergy));
-
         positions = OpenMM_State_getPositions(state);
         forceFieldEnergyOpenMM.getOpenMMPositions(positions, numParticles * 3, x);
 
@@ -319,7 +315,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Set to OpenMM positions and velocities.
      */
     private void setOpenMMState(boolean setPositions, boolean setVelocities) {
-        Atom atoms[] = molecularAssembly.getAtomArray();
+        Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
 
         if (setPositions) {
@@ -338,7 +334,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         }
 
         if (setVelocities) {
-            double velocity[] = new double[3];
+            double[] velocity = new double[3];
             for (int i = 0; i < nAtoms; i++) {
                 int index = i * 3;
                 Atom atom = atoms[i];
@@ -411,9 +407,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
              */
             if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000) == 0 && i != 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.info(format(" Wrote dynamics restart file to " + restartFile.getName()));
+                    logger.info(format(" Wrote dynamics restart file to %s", restartFile.getName()));
                 } else {
-                    logger.info(format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+                    logger.info(format(" Writing dynamics restart file to %s failed.", restartFile.getName()));
                 }
             }
         }
@@ -545,10 +541,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                         long ommSetVelTime = 0;
                         ommSetVelTime = -System.nanoTime();
                         OpenMM_Context_setVelocitiesToTemperature(context, targetTemperature, randomSeed);
-                        logger.info(String.format(" OpenMM set velocities to target temperature %f with random seed %d",
+                        logger.info(format(" OpenMM set velocities to target temperature %f with random seed %d",
                                 targetTemperature, randomSeed));
                         ommSetVelTime += System.nanoTime();
-                        logger.info(String.format(" Set velocites with OpenMM in %6.3f", ommSetVelTime * NS2SEC));
+                        logger.info(format(" Set velocites with OpenMM in %6.3f", ommSetVelTime * NS2SEC));
                         setVelocities = false;
                     } else {
                         getThermostat().setQuiet(true);

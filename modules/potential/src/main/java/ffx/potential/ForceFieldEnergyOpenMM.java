@@ -895,16 +895,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         switch (integratorString) {
             case "LANGEVIN":
                 createLangevinIntegrator(temperature, frictionCoeff, dt);
-                if (properties.containsKey("randomseed")) {
-                    int randomSeed = properties.getInt("randomseed", 0);
-                    logger.info(String.format(" Setting random seed %d for Langevin dynamics", randomSeed));
-                    OpenMM_LangevinIntegrator_setRandomNumberSeed(integrator, randomSeed);
-                }
                 break;
             case "RESPA":
                 // Read in the inner time step in fsec, then convert to psec.
                 int in = molecularAssembly.getProperties().getInt("respa-dt", 4);
-                //double in = molecularAssembly.getProperties().getDouble("respa-dt",0.1);
                 if (in < 2) {
                     in = 2;
                 }
@@ -1162,6 +1156,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public void addMonteCarloBarostat(double targetPressure, double targetTemp, int frequency) {
         if (ommBarostat == null) {
             ommBarostat = OpenMM_MonteCarloBarostat_create(targetPressure, targetTemp, frequency);
+
             CompositeConfiguration properties = molecularAssembly.getProperties();
             if (properties.containsKey("randomseed")) {
                 int randomSeed = properties.getInt("randomseed", 0);
@@ -4555,6 +4550,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public void createLangevinIntegrator(double temperature, double frictionCoeff, double dt) {
         integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+
+        CompositeConfiguration properties = molecularAssembly.getProperties();
+        if (properties.containsKey("randomseed")) {
+            int randomSeed = properties.getInt("randomseed", 0);
+            logger.info(String.format(" Setting random seed %d for Langevin dynamics", randomSeed));
+            OpenMM_LangevinIntegrator_setRandomNumberSeed(integrator, randomSeed);
+        }
+
         OpenMM_Integrator_setConstraintTolerance(integrator, constraintTolerance);
     }
 
