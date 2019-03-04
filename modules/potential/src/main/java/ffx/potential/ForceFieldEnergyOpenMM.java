@@ -952,7 +952,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int infoMask = OpenMM_State_Positions;
         PointerByReference state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         PointerByReference positions = OpenMM_State_getPositions(state);
-        getOpenMMPositions(positions, numParticles, x);
+        getOpenMMPositions(positions, numParticles * 3, x);
         OpenMM_State_destroy(state);
 
         logger.info(format(" Context created (integrator=%s, time step=%6.2f, temperature=%6.2f).\n",
@@ -4028,6 +4028,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public double[] getOpenMMPositions(PointerByReference positions, int numberOfVariables, double x[]) {
         assert numberOfVariables == getNumberOfVariables();
+
         if (x == null || x.length < numberOfVariables) {
             x = new double[numberOfVariables];
         }
