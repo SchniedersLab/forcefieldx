@@ -1101,7 +1101,7 @@
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.7</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
-        <groovy-all.version>2.5.3.1</groovy-all.version>
+        <groovy-all.version>2.5.6.1</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.6.0</java3d.version>
         <jogamp-fat.version>2.3.2</jogamp-fat.version>
@@ -1114,7 +1114,7 @@
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.1.0</clustering.version>
         <fastutil.version>8.2.1</fastutil.version>
-        <picocli.version>3.6.0</picocli.version>
+        <picocli.version>3.9.2</picocli.version>
         <!-- Maven Core Plugin Versions -->
         <clean.version>3.1.0</clean.version>
         <compiler.version>3.8.0</compiler.version>

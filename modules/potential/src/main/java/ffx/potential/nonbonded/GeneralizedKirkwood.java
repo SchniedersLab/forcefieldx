@@ -1261,7 +1261,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         throw new EnergyException(format(" %s\n Born radii %d %8.3f", atoms[i], i, borni), true);
                     }
                 }
-                logger.info(format(" %s Born radius grad %d %8.3f", atoms[i], i, borni));
+                // logger.info(format(" %s Born radius grad %d %8.3f", atoms[i], i, borni));
             }
 
         }
