@@ -310,7 +310,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         // logger.info(format(" MDOpenMM getEandP P=%16.8f K=%16.8f", currentPotentialEnergy, currentKineticEnergy));
 
         positions = OpenMM_State_getPositions(state);
-        forceFieldEnergyOpenMM.getOpenMMPositions(positions, numParticles, x);
+        forceFieldEnergyOpenMM.getOpenMMPositions(positions, numParticles * 3, x);
 
         OpenMM_State_destroy(state);
     }
