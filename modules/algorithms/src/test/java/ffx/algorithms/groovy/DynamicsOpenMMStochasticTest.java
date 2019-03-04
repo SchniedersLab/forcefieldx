@@ -48,7 +48,8 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
                         // 11796.9508,  endKineticEnergy
                         // -36782.1559, endPotentialEnergy
                         // -24985.2051  endTotalEnergy
-                        11017.6784, -36276.1969, -25258.5186
+                        // 11017.6784, -36276.1969, -25258.5186
+                        11794.3675,  -36783.0695,  -24988.7020
                 }
         });
     }
