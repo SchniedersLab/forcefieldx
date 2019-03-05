@@ -64,15 +64,15 @@ public abstract class Integrator {
             return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
         } catch (Exception e) {
             logger.info(String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
-            return IntegratorEnum.VELOCITYVERLET;
+            return IntegratorEnum.VERLET;
         }
     }
 
-    protected double x[];
-    protected double v[];
-    protected double a[];
-    protected double aPrevious[];
-    protected double mass[];
+    protected double[] x;
+    protected double[] v;
+    protected double[] a;
+    protected double[] aPrevious;
+    protected double[] mass;
     protected int nVariables;
     /**
      * Time step (psec).
@@ -94,8 +94,8 @@ public abstract class Integrator {
      * @param aPrevious  Previous Accelerations.
      * @param mass       Mass.
      */
-    public Integrator(int nVariables, double x[], double v[], double a[],
-                      double aPrevious[], double mass[]) {
+    public Integrator(int nVariables, double[] x, double[] v, double[] a,
+                      double[] aPrevious, double[] mass) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
@@ -115,13 +115,12 @@ public abstract class Integrator {
      * @param a          Accelerations.
      * @param mass       Mass.
      */
-    public Integrator(int nVariables, double x[], double v[], double a[], double mass[]) {
+    public Integrator(int nVariables, double[] x, double[] v, double[] a, double[] mass) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
         this.a = a;
         this.mass = mass;
-        //this.aPrevious = null;
         this.aPrevious = new double[nVariables];
         dt = 1.0e-3;
     }
@@ -137,8 +136,8 @@ public abstract class Integrator {
      * @param aPrevious  the previous acceleration of each variable.
      * @param mass       the mass for each variable.
      */
-    public void setNumberOfVariables(int nVariables, double x[], double v[],
-                                     double a[], double aPrevious[], double mass[]) {
+    public void setNumberOfVariables(int nVariables, double[] x, double[] v,
+                                     double[] a, double[] aPrevious, double[] mass) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
@@ -156,8 +155,8 @@ public abstract class Integrator {
      * @param a          the current acceleration of each variable.
      * @param mass       the mass for each variable.
      */
-    public void setNumberOfVariables(int nVariables, double x[], double v[],
-                                     double a[], double mass[]) {
+    public void setNumberOfVariables(int nVariables, double[] x, double[] v,
+                                     double[] a, double[] mass) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;

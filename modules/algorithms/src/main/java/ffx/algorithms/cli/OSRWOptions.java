@@ -252,6 +252,9 @@ public class OSRWOptions {
         // Create the MolecularDynamics instance.
         MolecularAssembly firstTop = topologies[0];
         CompositeConfiguration props = firstTop.getProperties();
+
+        dynamics.init();
+
         MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, potential, props,
                 aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
         for (int i = 1; i < topologies.length; i++) {
@@ -302,6 +305,8 @@ public class OSRWOptions {
     public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
                             DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermodynamics,
                             File dyn, AlgorithmListener aListener) {
+
+        dynamics.init();
 
         MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
                 topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator);

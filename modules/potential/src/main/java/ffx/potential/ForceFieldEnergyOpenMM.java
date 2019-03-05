@@ -884,8 +884,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         this.timeStep = timeStep;
         this.temperature = temperature;
 
-        CompositeConfiguration properties = molecularAssembly.getProperties();
-
         if (context != null) {
             OpenMM_Context_destroy(context);
             context = null;

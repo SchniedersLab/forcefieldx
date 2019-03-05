@@ -44,6 +44,6 @@ package ffx.algorithms.integrators;
  */
 public enum IntegratorEnum {
 
-    BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET
+    BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET, VERLET
 };
 

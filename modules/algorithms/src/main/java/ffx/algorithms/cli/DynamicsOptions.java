@@ -76,11 +76,11 @@ public class DynamicsOptions {
 
     /**
      * -i or --integrator sets the desired integrator: current choices are
-     * Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
+     * Beeman, RESPA, Stochastic (i.e. Langevin dynamics) or Verlet.
      */
-    @Option(names = {"-i", "--integrator"}, paramLabel = "VelocityVerlet",
-            description = "Integrator: [Beeman / Respa / Stochastic / VelocityVerlet].")
-    String integratorString = "VelocityVerlet";
+    @Option(names = {"-i", "--integrator"}, paramLabel = "Verlet",
+            description = "Integrator: [Beeman / Respa / Stochastic / Verlet].")
+    String integratorString = "Verlet";
 
     /**
      * -r or --report sets the thermodynamics reporting frequency in picoseconds

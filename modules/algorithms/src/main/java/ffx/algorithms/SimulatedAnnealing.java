@@ -83,7 +83,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
                               AlgorithmListener listener) {
 
         this(assembly, potentialEnergy, properties, listener,
-                ThermostatEnum.BERENDSEN, IntegratorEnum.BEEMAN);
+                ThermostatEnum.BERENDSEN, IntegratorEnum.VERLET);
     }
 
     /**

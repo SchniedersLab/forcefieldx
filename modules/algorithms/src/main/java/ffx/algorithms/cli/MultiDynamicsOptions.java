@@ -71,7 +71,7 @@ import picocli.CommandLine;
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class MultiDynamicsOptions {
+public class  MultiDynamicsOptions {
 
     private static final Logger logger = Logger.getLogger(MultiDynamicsOptions.class.getName());
 

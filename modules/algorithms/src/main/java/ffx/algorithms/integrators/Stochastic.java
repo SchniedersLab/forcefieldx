@@ -38,6 +38,7 @@
 package ffx.algorithms.integrators;
 
 import java.util.Random;
+import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -60,8 +61,8 @@ import ffx.numerics.Potential;
  */
 public class Stochastic extends Integrator {
 
-    private double vfric[];
-    private double vrand[];
+    private double[] vfric;
+    private double[] vrand;
     private final double friction;
     private double inverseFriction;
     private double fdt;
@@ -79,8 +80,8 @@ public class Stochastic extends Integrator {
      * @param a          Current accelerations.
      * @param mass       Mass of the variables.
      */
-    public Stochastic(double friction, int nVariables, double x[],
-                      double v[], double a[], double mass[]) {
+    public Stochastic(double friction, int nVariables, double[] x,
+                      double[] v, double[] a, double[] mass) {
         super(nVariables, x, v, a, mass);
         this.friction = friction;
         if (friction >= 0) {
@@ -239,7 +240,7 @@ public class Stochastic extends Integrator {
         if (aPrevious == null || aPrevious.length < a.length) {
             aPrevious = new double[a.length];
         }
-        System.arraycopy(a, 0, aPrevious, 0, nVariables);
+        arraycopy(a, 0, aPrevious, 0, nVariables);
         for (int i = 0; i < nVariables; i++) {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
@@ -254,8 +255,8 @@ public class Stochastic extends Integrator {
      * can be resized.
      */
     @Override
-    public void setNumberOfVariables(int nVariables, double x[], double v[],
-                                     double a[], double aPrevious[], double mass[]) {
+    public void setNumberOfVariables(int nVariables, double[] x, double[] v,
+                                     double[] a, double[] aPrevious, double[] mass) {
         super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
         if (nVariables > vfric.length) {
             vfric = new double[nVariables];

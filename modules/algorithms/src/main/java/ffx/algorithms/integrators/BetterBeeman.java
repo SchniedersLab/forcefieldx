@@ -37,6 +37,8 @@
  */
 package ffx.algorithms.integrators;
 
+import static java.lang.System.arraycopy;
+
 import ffx.numerics.Potential;
 import static ffx.algorithms.thermostats.Thermostat.convert;
 
@@ -60,11 +62,10 @@ public class BetterBeeman extends Integrator {
      * @param v          Velocities.
      * @param a          Accelerations.
      * @param aPrevious  Previous Accelerations.
-     * @param aPrevious  Previous Accelerations.
      * @param mass       Mass.
      */
-    public BetterBeeman(int nVariables, double x[], double v[], double a[],
-                        double aPrevious[], double mass[]) {
+    public BetterBeeman(int nVariables, double[] x, double[] v, double[] a,
+                        double[] aPrevious, double[] mass) {
         super(nVariables, x, v, a, aPrevious, mass);
         dt_8 = 0.125 * dt;
         dt2_8 = dt * dt_8;
@@ -92,11 +93,11 @@ public class BetterBeeman extends Integrator {
      * full-step velocities using the Beeman recusion.
      */
     @Override
-    public void postForce(double gradient[]) {
+    public void postForce(double[] gradient) {
         if (aPrevious == null || aPrevious.length < a.length) {
             aPrevious = new double[a.length];
         }
-        System.arraycopy(a, 0, aPrevious, 0, nVariables);
+        arraycopy(a, 0, aPrevious, 0, nVariables);
         for (int i = 0; i < nVariables; i++) {
             a[i] = -convert * gradient[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
