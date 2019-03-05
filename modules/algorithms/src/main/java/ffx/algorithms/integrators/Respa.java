@@ -37,6 +37,9 @@
  */
 package ffx.algorithms.integrators;
 
+import java.util.logging.Logger;
+import static java.lang.String.format;
+
 import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
 
@@ -59,6 +62,8 @@ import ffx.numerics.Potential;
  * @since 1.0
  */
 public class Respa extends Integrator {
+
+    private static final Logger logger = Logger.getLogger(Respa.class.getName());
 
     /**
      * Number of inner time steps.
@@ -88,8 +93,8 @@ public class Respa extends Integrator {
      * @param aPrevious  Previous accelerations.
      * @param mass       Mass of the variables.
      */
-    public Respa(int nVariables, double x[], double v[], double a[],
-                 double aPrevious[], double mass[]) {
+    public Respa(int nVariables, double[] x, double[] v, double[] a,
+                 double[] aPrevious, double[] mass) {
         super(nVariables, x, v, a, aPrevious, mass);
 
         innerSteps = 4;
@@ -113,7 +118,7 @@ public class Respa extends Integrator {
      */
     @Override
     public void preForce(Potential potential) {
-        double gradient[] = new double[nVariables];
+        double[] gradient = new double[nVariables];
 
         /**
          * Find half-step velocities via velocity Verlet recursion
@@ -194,8 +199,7 @@ public class Respa extends Integrator {
         innerTimeStep = dt / innerSteps;
         halfInnerTimeStep = 0.5 * innerTimeStep;
 
-
-        System.out.printf(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, innerTimeStep);
+        logger.info(format(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, innerTimeStep));
     }
 
     /**

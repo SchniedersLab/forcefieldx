@@ -37,6 +37,8 @@
  */
 package ffx.algorithms.integrators;
 
+import static java.lang.System.arraycopy;
+
 import ffx.numerics.Potential;
 
 /**
@@ -57,8 +59,8 @@ public class VelocityVerlet extends Integrator {
      * @param a          Accelerations.
      * @param mass       Mass.
      */
-    public VelocityVerlet(int nVariables, double x[], double v[], double a[],
-                          double mass[]) {
+    public VelocityVerlet(int nVariables, double[] x, double[] v, double[] a,
+                          double[] mass) {
         super(nVariables, x, v, a, null, mass);
     }
 
@@ -82,11 +84,11 @@ public class VelocityVerlet extends Integrator {
      * then full-step velocities.
      */
     @Override
-    public void postForce(double gradient[]) {
+    public void postForce(double[] gradient) {
         if (aPrevious == null || aPrevious.length < a.length) {
             aPrevious = new double[a.length];
         }
-        System.arraycopy(a, 0, aPrevious, 0, nVariables);
+        arraycopy(a, 0, aPrevious, 0, nVariables);
         for (int i = 0; i < nVariables; i++) {
             a[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
             v[i] = v[i] + a[i] * dt_2;

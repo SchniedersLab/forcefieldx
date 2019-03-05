@@ -38,6 +38,7 @@
 package ffx.algorithms;
 
 import java.io.File;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -50,7 +51,6 @@ import org.apache.commons.io.FilenameUtils;
 
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState_2;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocitiesToTemperature;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setStepSize;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
@@ -75,7 +75,6 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import static ffx.algorithms.thermostats.Thermostat.convert;
 import static ffx.algorithms.thermostats.Thermostat.kB;
-import java.util.Random;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation
@@ -193,31 +192,32 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * dynamics using native OpenMM routines, avoiding the cost of communicating
      * coordinates, gradients, and energies back and forth across the PCI bus.
      *
-     * @param assembly MolecularAssembly to operate on
+     * @param assembly               MolecularAssembly to operate on
      * @param forceFieldEnergyOpenMM ForceFieldEnergyOpenMM Potential. Cannot be
-     * any other type of Potential.
-     * @param properties Associated properties
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param thermostat May have to be slightly modified for native OpenMM
-     * routines
-     * @param integratorMD May have to be slightly modified for native OpenMM
-     * routines
+     *                               any other type of Potential.
+     * @param properties             Associated properties
+     * @param listener               a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param thermostat             May have to be slightly modified for native OpenMM
+     *                               routines
+     * @param integratorMD           May have to be slightly modified for native OpenMM
+     *                               routines
      */
     public MolecularDynamicsOpenMM(MolecularAssembly assembly, ForceFieldEnergyOpenMM forceFieldEnergyOpenMM,
-            CompositeConfiguration properties, AlgorithmListener listener,
-            ThermostatEnum thermostat, IntegratorEnum integratorMD) {
+                                   CompositeConfiguration properties, AlgorithmListener listener,
+                                   ThermostatEnum thermostat, IntegratorEnum integratorMD) {
         super(assembly, forceFieldEnergyOpenMM, properties, listener, thermostat, integratorMD);
 
         /**
          * Initialization specific to MolecularDynamicsOpenMM
          */
+        running = false;
         this.forceFieldEnergyOpenMM = forceFieldEnergyOpenMM;
         numParticles = forceFieldEnergyOpenMM.getNumParticles();
         forceFieldEnergyOpenMM.addCOMMRemover(false);
         thermostatType = thermostat;
         integratorType = integratorMD;
-        running = false;
-        integratorToString(integratorMD);
+        integratorToString(integratorType);
+
         this.properties = properties;
 
         random = new Random();
@@ -420,7 +420,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     @Override
     public void init(int numSteps, double timeStep, double printInterval, double saveInterval,
-            String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
+                     String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
         this.targetTemperature = temperature;
         this.dt = timeStep;
         this.printFrequency = (int) printInterval;
@@ -676,23 +676,23 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * integratorToString.</p>
      *
      * @param integrator a {@link ffx.algorithms.integrators.IntegratorEnum}
-     * object.
+     *                   object.
      */
     public final void integratorToString(IntegratorEnum integrator) {
         if (integrator == null) {
             integratorString = "VERLET";
-            logger.info(String.format(" No specified integrator, will use Verlet"));
+            logger.info(" No specified integrator, will use Verlet");
         } else {
             switch (integratorType) {
                 case STOCHASTIC:
                     integratorString = "LANGEVIN";
                     break;
+                case VERLET:
                 case VELOCITYVERLET:
                     integratorString = "VERLET";
                     break;
                 case RESPA:
                     integratorString = "RESPA";
-                    //logger.info(String.format(" In RESPA integrator case"));
                     break;
                 default:
                     integratorString = "VERLET";
@@ -707,9 +707,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * <p>
      * setMonteCarloBarostat.</p>
      *
-     * @param pressure a double.
+     * @param pressure    a double.
      * @param temperature a double.
-     * @param frequency a int.
+     * @param frequency   a int.
      */
     public void setMonteCarloBarostat(double pressure, double temperature, int frequency) {
         forceFieldEnergyOpenMM.addMonteCarloBarostat(pressure, temperature, frequency);

@@ -185,7 +185,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
                                                     ThermostatEnum requestedThermostat,
                                                     IntegratorEnum requestedIntegrator) {
 
-        return dynamicsFactory(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator, defaultEngine(potentialEnergy));
+        return dynamicsFactory(assembly, potentialEnergy, properties, listener,
+                requestedThermostat, requestedIntegrator, defaultEngine(potentialEnergy));
     }
 
     /**
@@ -281,11 +282,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * specified as a property.
          */
         if (requestedIntegrator == null) {
-            String integrate = properties.getString("integrate", "beeman").trim();
+            String integrate = properties.getString("integrate", "verlet").trim();
             try {
                 requestedIntegrator = IntegratorEnum.valueOf(integrate);
             } catch (Exception e) {
-                requestedIntegrator = IntegratorEnum.BEEMAN;
+                requestedIntegrator = IntegratorEnum.VERLET;
             }
         }
         if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
@@ -323,6 +324,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             case BEEMAN:
                 integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
                 break;
+            case VERLET:
             case VELOCITYVERLET:
             default:
                 integrator = new VelocityVerlet(numberOfVariables, x, v, a, mass);
