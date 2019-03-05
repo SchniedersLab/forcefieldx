@@ -8,8 +8,8 @@ import org.apache.commons.io.FilenameUtils
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.SystemFilter
-
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
@@ -23,6 +23,13 @@ import static java.lang.String.format
  */
 @Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
 class Superpose extends PotentialScript {
+
+    /**
+     * --atoms defines which atoms to calculate RMSD on. 0 is RMSD on heavy atoms only; 1 is RMSD on all atoms; and 2 is RMSD on alpha carbons only.
+     */
+    @Option(names = ['--rA', '--rmsdAtoms'], paramLabel = "0",
+            description = 'Starting no-electrostatics atom for 1st topology')
+    private int rmsdAtoms = 0
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -79,87 +86,99 @@ class Superpose extends PotentialScript {
                 mass[i] = atoms[i].getMass()
             }
 
-            //Get heavy atom masses.
-            int nHeavyVars = forceFieldEnergy.getNumberOfHeavyAtomVariables()
-            double[] massHeavy = new double [nHeavyVars/3]
-            for (int i=0; i<nHeavyVars/3; i++){
-                if(!atoms[i].isHydrogen()) {
-                    massHeavy[i] = atoms[i].getMass()
+            // Calculate RMSD only on heavy atoms.
+            if(rmsdAtoms==0) {
+                //Get heavy atom masses.
+                int nHeavyVars = forceFieldEnergy.getNumberOfHeavyAtomVariables()
+                double[] massHeavy = new double[nHeavyVars / 3]
+                for (int i = 0; i < nHeavyVars / 3; i++) {
+                    if (!atoms[i].isHydrogen()) {
+                        massHeavy[i] = atoms[i].getMass()
+                    }
+                }
+
+                //Array containing heavy atom indices.
+                double[] heavyAtomPositions = new double[nHeavyVars / 3];
+                int j = 0;
+                for (int i = 0; i < nVars / 3; i++) {
+                    if (!atoms[i].isHydrogen()) {
+                        heavyAtomPositions[j] = i
+                        j++
+                    }
+                }
+
+                while (xyzFilter.readNext()) {
+                    //Arrays for holding coordinates of heavy atoms after rotation and translation.
+                    double[] xHeavy = new double[nHeavyVars]
+                    double[] x2Heavy = new double[nHeavyVars]
+
+                    forceFieldEnergy.getCoordinates(x2)
+
+                    //Original RMSD.
+                    for (int i = 0; i < nHeavyVars / 3; i++) {
+                        int positionOfHeavyAtom = heavyAtomPositions[i]
+                        xHeavy[i * 3] = x[positionOfHeavyAtom]
+                        xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
+                        xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
+                        x2Heavy[i * 3] = x2[positionOfHeavyAtom]
+                        x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
+                        x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
+                    }
+                    double origRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy);
+
+                    //Translated RMSD.
+                    ffx.potential.utils.Superpose.translate(x, mass, x2, mass)
+                    for (int i = 0; i < nHeavyVars / 3; i++) {
+                        int positionOfHeavyAtom = heavyAtomPositions[i]
+                        xHeavy[i * 3] = x[positionOfHeavyAtom]
+                        xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
+                        xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
+                        x2Heavy[i * 3] = x2[positionOfHeavyAtom]
+                        x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
+                        x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
+                    }
+                    double transRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
+
+                    //Rotated RMSD.
+                    ffx.potential.utils.Superpose.rotate(x, x2, mass)
+                    for (int i = 0; i < nHeavyVars / 3; i++) {
+                        int positionOfHeavyAtom = heavyAtomPositions[i]
+                        xHeavy[i * 3] = x[positionOfHeavyAtom]
+                        xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
+                        xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
+                        x2Heavy[i * 3] = x2[positionOfHeavyAtom]
+                        x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
+                        x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
+                    }
+                    double rotRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
+                    logger.info(format(
+                            "\n Coordinate RMSD Based On Heavy Atoms (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
+                            origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
                 }
             }
 
-            //Array containing heavy atom indices.
-            double[] heavyAtomPositions = new double[nHeavyVars/3];
-            int j = 0;
-            for(int i=0; i<nVars/3; i++){
-                if(!atoms[i].isHydrogen()){
-                    heavyAtomPositions[j]=i
-                    j++
+            // Calculate RMSD on all atoms.
+            if(rmsdAtoms==1) {
+                while (xyzFilter.readNext()) {
+                    forceFieldEnergy.getCoordinates(x2)
+
+                    //Original RMSD.
+                    double origRMSDHeavy = ffx.potential.utils.Superpose.rmsd(x, x2, mass);
+
+                    //Translated RMSD.
+                    ffx.potential.utils.Superpose.translate(x, mass, x2, mass)
+                    double transRMSDHeavy = ffx.potential.utils.Superpose.rmsd(x, x2, mass)
+
+                    //Rotated RMSD.
+                    ffx.potential.utils.Superpose.rotate(x, x2, mass)
+                    double rotRMSDHeavy = ffx.potential.utils.Superpose.rmsd(x, x2, mass)
+
+                    logger.info(format(
+                            "\n Coordinate RMSD Based On All Atoms (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
+                            origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
                 }
-            }
-
-            while (xyzFilter.readNext()) {
-                //Arrays for holding coordinates of heavy atoms after rotation and translation.
-                double[] xHeavy = new double[nHeavyVars]
-                double[] x2Heavy = new double[nHeavyVars]
-
-                forceFieldEnergy.getCoordinates(x2)
-
-                //Original RMSD.
-                for(int i = 0; i < nHeavyVars/3; i++){
-                    int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i*3]=x[positionOfHeavyAtom]
-                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
-                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
-                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
-                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
-                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
-                }
-                double origRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy);
-
-                //Translated RMSD.
-                ffx.potential.utils.Superpose.translate(x, mass, x2, mass)
-                for(int i = 0; i < nHeavyVars/3; i++){
-                    int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i*3]=x[positionOfHeavyAtom]
-                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
-                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
-                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
-                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
-                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
-                }
-                double transRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
-
-                //Rotated RMSD.
-                ffx.potential.utils.Superpose.rotate(x, x2, mass)
-                for(int i = 0; i < nHeavyVars/3; i++){
-                    int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i*3]=x[positionOfHeavyAtom]
-                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
-                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
-                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
-                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
-                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
-                }
-                double rotRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
-                logger.info(format(
-                        "\n Coordinate RMSD Based On Heavy Atoms (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                        origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
             }
         }
-
-        logger.info("\n Saving ARC for " + modelFilename)
-
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-        String dirName = saveDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(modelFilename)
-        fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-        File saveFile = potentialFunctions.versionFile(new File(dirName + fileName));
-        potentialFunctions.saveAsPDB(activeAssembly, saveFile)
-
         return this
     }
 }
