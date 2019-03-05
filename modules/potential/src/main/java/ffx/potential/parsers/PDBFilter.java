@@ -4135,7 +4135,7 @@ public final class PDBFilter extends SystemFilter {
      * <p>
      * Will not work if a force field definition botches its atomic numbers.
      * <p>
-     * Only implemented for amino acids at this time.
+     * Only implemented for amino acids and nucleic acids at this time.
      *
      * @param assembly MolecularAssembly to fix.
      */
@@ -4272,7 +4272,6 @@ public final class PDBFilter extends SystemFilter {
                     has.get(0).setName("HA");
                     break;
             }
-            CA.setName("CA");
 
             Atom C = null;
             Atom CB = null;
@@ -4372,6 +4371,8 @@ public final class PDBFilter extends SystemFilter {
                 if (hasAttachedAtom(SG, 1)) {
                     assert aa3 == AminoAcid3.CYS;
                     findBondedAtoms(SG, 1).get(0).setName("HG");
+                } else if (hasAttachedAtom(SG, 16)) {
+                    logger.finer(String.format(" SG atom %s likely part of a disulfide bond.", SG));
                 } else {
                     residue.setName("CYD");
                 }
@@ -4383,7 +4384,7 @@ public final class PDBFilter extends SystemFilter {
                 CG.setName("CG");
                 List<Atom> ODs = findBondedAtoms(CG, 8);
 
-                int protonatedOD = -1; // If it remains -1, deprotonated ASP, else ASH.
+                int protonatedOD = -1; // -1: Deprotonated ASP. 0/1: Index of protonated oxygen (ASH).
                 for (int i = 0; i < 2; i++) {
                     if (hasAttachedAtom(ODs.get(i), 1)) {
                         protonatedOD = i;
@@ -4828,6 +4829,8 @@ public final class PDBFilter extends SystemFilter {
             case GLN: {
                 /**
                  * Find a bonded carbon that is not bonded to an oxygen.
+                 * Both N and ND/NE have an attached carbonyl carbon.
+                 * Only N will have CA attached.
                  */
                 List<Atom> nitrogens = findAtomsOfElement(residue, 7);
                 for (Atom nitrogen : nitrogens) {
