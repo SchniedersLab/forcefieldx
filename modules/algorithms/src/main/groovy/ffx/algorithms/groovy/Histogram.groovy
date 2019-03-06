@@ -25,25 +25,11 @@ import picocli.CommandLine.Parameters
 class Histogram extends AlgorithmsScript {
 
     /**
-     * -b or --bias2D Write out the potential of mean force from the 2D bias.
-     */
-    @Option(names = ['-b', '--bias2D'], paramLabel = 'false',
-            description = 'Write out the potential of mean force from the 2D bias.')
-    boolean pmf2D = false
-
-    /**
-     * -p or --pmf Write out potential of mean force from the total bias (1D + 2D).
+     * -p or --pmf Save the histogram, PMF and 2D bias to files.
      */
     @Option(names = ['-p', '--pmf'], paramLabel = 'false',
-            description = 'Write out potential of mean force from the total bias (1D + 2D).')
-    boolean pmf = false
-
-    /**
-     * -s or --save Save the bias histogram to a file.
-     */
-    @Option(names = ['-s', '--save'], paramLabel = 'false',
             description = 'Save the bias histogram to a file.')
-    boolean save = false
+    boolean pmf = false
 
     /**
      * -u or --untempered Histogram for untempered OSRW.
@@ -105,32 +91,27 @@ class Histogram extends AlgorithmsScript {
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
-
         String dirName = saveDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(modelFilename)
-        fileName = FilenameUtils.removeExtension(fileName)
 
         if (!untempered) {
             TransitionTemperedOSRW osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
-            if (save) {
+            if (pmf) {
                 osrw.setMolecularAssembly(activeAssembly)
                 osrw.updateFLambda(false, true)
-            }
-            if (pmf) {
+
                 StringBuffer sb = osrw.evaluateTotalPMF()
                 String file = dirName + "pmf.txt"
                 logger.info(" Writing " + file)
                 FileWriter fileWriter = new FileWriter(file)
                 fileWriter.write(sb.toString())
                 fileWriter.close()
-            }
-            if (pmf2D) {
-                StringBuffer sb = osrw.evaluate2DPMF()
-                String file = dirName + "pmf.2D.txt"
+
+                sb = osrw.evaluate2DPMF()
+                file = dirName + "pmf.2D.txt"
                 logger.info(" Writing " + file)
-                FileWriter fileWriter = new FileWriter(file)
+                fileWriter = new FileWriter(file)
                 fileWriter.write(sb.toString())
                 fileWriter.close()
             }
@@ -139,23 +120,21 @@ class Histogram extends AlgorithmsScript {
             OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
-            if (save) {
+            if (pmf) {
                 osrw.setMolecularAssembly(activeAssembly)
                 osrw.updateFLambda(false, true)
-            }
-            if (pmf) {
+
                 StringBuffer sb = osrw.evaluateTotalPMF()
                 String file = dirName + "pmf.txt"
                 logger.info(" Writing " + file)
                 FileWriter fileWriter = new FileWriter(file)
                 fileWriter.write(sb.toString())
                 fileWriter.close()
-            }
-            if (pmf2D) {
-                StringBuffer sb = osrw.evaluate2DPMF()
-                String file = dirName + "pmf.2D.txt"
+
+                sb = osrw.evaluate2DPMF()
+                file = dirName + "pmf.2D.txt"
                 logger.info(" Writing " + file)
-                FileWriter fileWriter = new FileWriter(file)
+                fileWriter = new FileWriter(file)
                 fileWriter.write(sb.toString())
                 fileWriter.close()
             }
