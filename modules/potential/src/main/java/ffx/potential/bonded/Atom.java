@@ -652,6 +652,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
+     * <p>
+     * isHeavy checks whether this Atom is a heavy (non-hydrogen) atom.</p>
+     *
+     * @return True if this is a heavy atom.
+     */
+    public boolean isHeavy() {
+        return (atomType != null) && (atomType.atomicNumber != 1);
+    }
+
+    /**
      * If true, this atom should be used in potential energy functions.
      *
      * @return true if this atom should be included in the potential energy.
