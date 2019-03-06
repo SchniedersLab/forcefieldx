@@ -13,6 +13,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.util.stream.IntStream
+
 import static java.lang.String.format
 
 /**
@@ -26,11 +28,11 @@ import static java.lang.String.format
 class Superpose extends PotentialScript {
 
     /**
-     * --atoms defines which atoms to calculate RMSD on. 0 is RMSD on heavy atoms only; 1 is RMSD on all atoms; and 2 is RMSD on alpha carbons only.
+     * --atoms defines which atoms to calculate RMSD on.
      */
-    @Option(names = ['--rA', '--rmsdAtoms'], paramLabel = "0",
-            description = 'Atoms to be included in RMSD calculation.')
-    private int rmsdAtoms = 0
+    @Option(names = ['--rA', '--rmsdAtoms'], paramLabel = "ALL",
+            description = 'Atoms to be included in RMSD calculation. Select [ALL/HEAVY/ALPHA] to choose which atoms are used for RMSD (nucleic acids will use N1 or N9 in place of alpha carbons).')
+    private String atomSelection;
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -87,171 +89,77 @@ class Superpose extends PotentialScript {
                 mass[i] = atoms[i].getMass()
             }
 
-            // Calculate RMSD only on heavy atoms.
-            if(rmsdAtoms==0) {
-                //Get heavy atom masses.
-                int nHeavyVars = forceFieldEnergy.getNumberOfHeavyAtomVariables()
-                double[] massHeavy = new double[nHeavyVars / 3]
-                for (int i = 0; i < nHeavyVars / 3; i++) {
-                    if (!atoms[i].isHydrogen()) {
-                        massHeavy[i] = atoms[i].getMass()
-                    }
-                }
+            // Begin streaming the possible atom indices, filtering out inactive atoms.
+            // TODO: Decide if we only want active atoms.
+            IntStream atomIndexStream = IntStream.range(0, atoms.length).
+                    filter({ int i -> return atoms[i].isActive() });
+            // String describing the selection type.
+            String selectionType = "All Atoms";
 
-                //Array containing heavy atom indices.
-                double[] heavyAtomPositions = new double[nHeavyVars / 3];
-                int j = 0;
-                for (int i = 0; i < nVars / 3; i++) {
-                    if (!atoms[i].isHydrogen()) {
-                        heavyAtomPositions[j] = i
-                        j++
-                    }
-                }
+            // Switch on what type of atoms to select, filtering as appropriate. Support the old integer indices.
+            switch (atomSelection.toUpperCase()) {
+                case "HEAVY":
+                case "0":
+                    // Filter only for heavy (non-hydrogen) atoms.
+                    atomIndexStream = atomIndexStream.filter({ int i -> atoms[i].isHeavy() });
+                    selectionType = "Heavy Atoms";
+                    break;
 
-                while (xyzFilter.readNext()) {
-                    //Arrays for holding coordinates of heavy atoms after rotation and translation.
-                    double[] xHeavy = new double[nHeavyVars]
-                    double[] x2Heavy = new double[nHeavyVars]
+                case "ALPHA":
+                case "2":
+                    // Filter only for reference atoms: carbons named CA (protein) or nitrogens named N1 or N9 (nucleic acids).
+                    atomIndexStream = atomIndexStream.filter({ int i ->
+                        Atom ati = atoms[i];
+                        String atName = ati.getName().toUpperCase();
+                        boolean proteinReference = atName.equals("CA") && ati.getAtomType().atomicNumber == 6;
+                        boolean naReference = (atName.equals("N1") || atName.equals("N9")) && ati.getAtomType().atomicNumber == 7;
+                        return proteinReference || naReference;
+                    });
+                    selectionType = "Reference Atoms (i.e. alpha carbons and N1/N9 for nucleic acids)";
+                    break;
 
-                    forceFieldEnergy.getCoordinates(x2)
+                case "ALL":
+                case "1":
+                    selectionType = "All Atoms";
+                    // Unmodified stream; we have just checked for active atoms.
+                    break;
 
-                    //Original RMSD.
-                    for (int i = 0; i < nHeavyVars / 3; i++) {
-                        int positionOfHeavyAtom = heavyAtomPositions[i]
-                        xHeavy[i * 3] = x[positionOfHeavyAtom]
-                        xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
-                        xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
-                        x2Heavy[i * 3] = x2[positionOfHeavyAtom]
-                        x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
-                        x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
-                    }
-                    double origRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy);
-
-                    //Translated RMSD.
-                    ffx.potential.utils.Superpose.translate(x, mass, x2, mass)
-                    for (int i = 0; i < nHeavyVars / 3; i++) {
-                        int positionOfHeavyAtom = heavyAtomPositions[i]
-                        xHeavy[i * 3] = x[positionOfHeavyAtom]
-                        xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
-                        xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
-                        x2Heavy[i * 3] = x2[positionOfHeavyAtom]
-                        x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
-                        x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
-                    }
-                    double transRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
-
-                    //Rotated RMSD.
-                    ffx.potential.utils.Superpose.rotate(x, x2, mass)
-                    for (int i = 0; i < nHeavyVars / 3; i++) {
-                        int positionOfHeavyAtom = heavyAtomPositions[i]
-                        xHeavy[i * 3] = x[positionOfHeavyAtom]
-                        xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
-                        xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
-                        x2Heavy[i * 3] = x2[positionOfHeavyAtom]
-                        x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
-                        x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
-                    }
-                    double rotRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
-                    logger.info(format(
-                            "\n Coordinate RMSD Based On Heavy Atoms (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                            origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
-                }
+                default:
+                    logger.severe(String.format(" Could not parse %s as an atom selection! Must be ALL, HEAVY, or ALPHA", atomSelection));
+                    break;
             }
 
-            // Calculate RMSD on all atoms.
-            if(rmsdAtoms==1) {
-                while (xyzFilter.readNext()) {
-                    forceFieldEnergy.getCoordinates(x2)
+            // Indices of atoms used in alignment and RMSD calculations.
+            int[] usedIndices = atomIndexStream.toArray();
+            int nUsed = usedIndices.length;
+            int nUsedVars = nUsed * 3;
+            double[] massUsed = Arrays.stream(usedIndices).
+                    mapToDouble({ int i -> atoms[i].getAtomType().atomicWeight }).
+                    toArray();
+            double[] xUsed = new double[nUsedVars];
+            double[] x2Used = new double[nUsedVars];
 
-                    //Original RMSD.
-                    double origRMSDHeavy = ffx.potential.utils.Superpose.rmsd(x, x2, mass);
+            while (xyzFilter.readNext()) {
+                forceFieldEnergy.getCoordinates(x2);
 
-                    //Translated RMSD.
-                    ffx.potential.utils.Superpose.translate(x, mass, x2, mass)
-                    double transRMSDHeavy = ffx.potential.utils.Superpose.rmsd(x, x2, mass)
-
-                    //Rotated RMSD.
-                    ffx.potential.utils.Superpose.rotate(x, x2, mass)
-                    double rotRMSDHeavy = ffx.potential.utils.Superpose.rmsd(x, x2, mass)
-
-                    logger.info(format(
-                            "\n Coordinate RMSD Based On All Atoms (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                            origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
-                }
-            }
-
-            // Calculate RMSD on alpha carbons only.
-            if(rmsdAtoms==2){
-                PDBFilter.renameAtomsToPDBStandard(activeAssembly)
-                int nAlphaCarbonsVars = forceFieldEnergy.getNumberOfAlphaCarbonVariables()
-
-                //Array of alpha carbon masses.
-                double[] massAlphas = new double[nAlphaCarbonsVars / 3]
-                for (int i = 0; i < nAlphaCarbonsVars / 3; i++) {
-                    if (atoms[i].getName().equals("CA")) {
-                        massAlphas[i] = atoms[i].getMass()
+                for (int i = 0; i < nUsed; i++) {
+                    int index3 = 3 * usedIndices[i];
+                    int i3 = 3 * i;
+                    for (int j = 0; j < 3; j++) {
+                        xUsed[i3 + j] = x[index3 + j];
+                        x2Used[i3 + j] = x2[index3 + j];
                     }
                 }
 
-                //Array containing alpha carbon indices.
-                double[] alphaCarbonPositions = new double[nAlphaCarbonsVars / 3];
-                int j = 0;
-                for (int i = 0; i < nVars / 3; i++) {
-                    if (atoms[i].getName().equals("CA")) {
-                        alphaCarbonPositions[j] = i
-                        j++
-                    }
-                }
+                double origRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed);
+                ffx.potential.utils.Superpose.translate(xUsed, massUsed, x2Used, massUsed);
+                double translatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed);
+                ffx.potential.utils.Superpose.rotate(xUsed, x2Used, massUsed);
+                double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed);
 
-                while (xyzFilter.readNext()) {
-                    //Arrays for holding coordinates of heavy atoms after rotation and translation.
-                    double[] xAlphas = new double[nAlphaCarbonsVars]
-                    double[] x2Alphas = new double[nAlphaCarbonsVars]
-
-                    forceFieldEnergy.getCoordinates(x2)
-
-                    //Original RMSD.
-                    for (int i = 0; i < nAlphaCarbonsVars / 3; i++) {
-                        int positionOfAlphaC = alphaCarbonPositions[i]
-                        xAlphas[i * 3] = x[positionOfAlphaC]
-                        xAlphas[i * 3 + 1] = x[positionOfAlphaC + 1]
-                        xAlphas[i * 3 + 2] = x[positionOfAlphaC + 2]
-                        x2Alphas[i * 3] = x2[positionOfAlphaC]
-                        x2Alphas[i * 3 + 1] = x2[positionOfAlphaC + 1]
-                        x2Alphas[i * 3 + 2] = x2[positionOfAlphaC + 2]
-                    }
-                    double origRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xAlphas, x2Alphas, massAlphas);
-
-                    //Translated RMSD.
-                    ffx.potential.utils.Superpose.translate(x, mass, x2, mass)
-                    for (int i = 0; i < nAlphaCarbonsVars / 3; i++) {
-                        int positionOfAlphaC = alphaCarbonPositions[i]
-                        xAlphas[i * 3] = x[positionOfAlphaC]
-                        xAlphas[i * 3 + 1] = x[positionOfAlphaC + 1]
-                        xAlphas[i * 3 + 2] = x[positionOfAlphaC + 2]
-                        x2Alphas[i * 3] = x2[positionOfAlphaC]
-                        x2Alphas[i * 3 + 1] = x2[positionOfAlphaC + 1]
-                        x2Alphas[i * 3 + 2] = x2[positionOfAlphaC + 2]
-                    }
-                    double transRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xAlphas, x2Alphas, massAlphas)
-
-                    //Rotated RMSD.
-                    ffx.potential.utils.Superpose.rotate(x, x2, mass)
-                    for (int i = 0; i < nAlphaCarbonsVars / 3; i++) {
-                        int positionOfAlphaC = alphaCarbonPositions[i]
-                        xAlphas[i * 3] = x[positionOfAlphaC]
-                        xAlphas[i * 3 + 1] = x[positionOfAlphaC + 1]
-                        xAlphas[i * 3 + 2] = x[positionOfAlphaC + 2]
-                        x2Alphas[i * 3] = x2[positionOfAlphaC]
-                        x2Alphas[i * 3 + 1] = x2[positionOfAlphaC + 1]
-                        x2Alphas[i * 3 + 2] = x2[positionOfAlphaC + 2]
-                    }
-                    double rotRMSDHeavy = ffx.potential.utils.Superpose.rmsd(xAlphas, x2Alphas, massAlphas)
-                    logger.info(format(
-                            "\n Coordinate RMSD Based On Alpha Carbons (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                            origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
-                }
-
+                logger.info(format(
+                        "\n Coordinate RMSD Based On %s (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
+                        selectionType, origRMSD, translatedRMSD, rotatedRMSD));
             }
         }
         return this
