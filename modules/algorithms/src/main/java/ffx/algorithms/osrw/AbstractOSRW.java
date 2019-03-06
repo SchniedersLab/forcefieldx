@@ -40,7 +40,6 @@ package ffx.algorithms.osrw;
 import java.io.File;
 import java.util.Random;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -622,9 +621,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Update the 1D Bias based on the recursion kernel.
      *
      * @param print True requests verbose logging.
+     * @param save  True requests saving the histogram.
      * @return The current free energy.
      */
-    protected abstract double updateFLambda(boolean print);
+    public abstract double updateFLambda(boolean print, boolean save);
 
     /**
      * {@inheritDoc}
@@ -868,24 +868,30 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * <p>evaluate2DPMF.</p>
      */
-    public void evaluate2DPMF() {
+    public StringBuffer evaluate2DPMF() {
         StringBuffer sb = new StringBuffer();
         for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+            double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+            sb.append(format(" %16.8f", currentFL));
             for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
                 double bias = -evaluateKernel(lambdaBin, fLambdaBin);
                 sb.append(format(" %16.8f", bias));
             }
             sb.append("\n");
         }
-        logger.info(sb.toString());
+        return sb;
     }
 
     /**
      * <p>evaluateTotalPMF.</p>
      */
-    public void evaluateTotalPMF() {
+    public StringBuffer evaluateTotalPMF() {
         StringBuffer sb = new StringBuffer();
         for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+
+            double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+            sb.append(format(" %16.8f", currentFL));
+
             for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
                 lambda = lambdaBin * dL + dL_2;
                 double bias1D = -current1DBiasEnergy(lambda, false);
@@ -894,7 +900,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
             }
             sb.append("\n");
         }
-        logger.info(sb.toString());
+        return sb;
     }
 
     /**
@@ -1003,6 +1009,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
             logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
             return null;
         }
+    }
+
+    public void setMolecularAssembly(MolecularAssembly molecularAssembly) {
+        this.molecularAssembly = molecularAssembly;
     }
 
     /**

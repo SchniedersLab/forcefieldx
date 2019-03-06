@@ -103,10 +103,10 @@ class Energy extends PotentialScript {
             double[] g = new double[nVars]
             int nAts = nVars / 3
             energy = pe.energyAndGradient(x, g, true)
-            logger.info(String.format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
+            logger.info(format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
             for (int i = 0; i < nAts; i++) {
                 int i3 = 3 * i
-                logger.info(String.format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
+                logger.info(format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
             }
         } else {
             energy = forceFieldEnergy.energy(x, true)
