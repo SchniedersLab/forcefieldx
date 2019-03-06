@@ -55,12 +55,11 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 
@@ -286,7 +285,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
 
         double defaultOffset = 20.0 * biasMag;
-        String propString = System.getProperty("ttosrw-temperOffset",   Double.toString(defaultOffset));
+        String propString = System.getProperty("ttosrw-temperOffset", Double.toString(defaultOffset));
         temperOffset = defaultOffset;
         try {
             temperOffset = Double.parseDouble(propString);
@@ -313,7 +312,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          * Update and print out the recursion slave.
          */
         if (readHistogramRestart) {
-            updateFLambda(true);
+            updateFLambda(true, false);
         }
     }
 
@@ -341,7 +340,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         logger.info(format("\n  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
 
         double defaultOffset = 20.0 * biasMag;
-        String propString = System.getProperty("ttosrw-temperOffset",   Double.toString(defaultOffset));
+        String propString = System.getProperty("ttosrw-temperOffset", Double.toString(defaultOffset));
         temperOffset = defaultOffset;
         try {
             temperOffset = Double.parseDouble(propString);
@@ -782,7 +781,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
 
-            double origDeltaG = updateFLambda(false);
+            double origDeltaG = updateFLambda(false, false);
 
             int newFLambdaBins = FLambdaBins;
             while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
@@ -803,14 +802,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false));
+            assert (origDeltaG == updateFLambda(false, false));
 
         }
         if (dEdLambda < minFLambda) {
             logger.info(String.format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
                     dEdLambda, minFLambda));
 
-            double origDeltaG = updateFLambda(false);
+            double origDeltaG = updateFLambda(false, false);
 
             int offset = 100;
             while (dEdLambda < minFLambda - offset * dFL) {
@@ -834,7 +833,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false));
+            assert (origDeltaG == updateFLambda(false, false));
         }
     }
 
@@ -844,7 +843,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
      */
     @Override
-    protected double updateFLambda(boolean print) {
+    public double updateFLambda(boolean print, boolean save) {
         double freeEnergy = 0.0;
         double minFL = Double.MAX_VALUE;
 
@@ -852,9 +851,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         double totalWeight = 0;
         double beta = 1.0 / (Thermostat.R * temperature);
         StringBuilder stringBuilder = new StringBuilder();
-        if (print) {
-            stringBuilder.append("  Weight   Lambda Bins      dU/dL Bins   <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)\n");
-        }
 
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
@@ -924,7 +920,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             freeEnergy += deltaFreeEnergy;
             totalWeight += lambdaCount;
 
-            if (print) {
+            if (print || save) {
                 double llL = iL * dL - dL_2;
                 double ulL = llL + dL;
                 if (llL < 0.0) {
@@ -952,14 +948,30 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         freeEnergy = integrateNumeric(FLambda, integrationType);
 
         if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
+            logger.info( "  Weight   Lambda Bins      dU/dL Bins   <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)\n");
             logger.info(stringBuilder.toString());
             logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
                     freeEnergy, totalWeight, temperingWeight));
             logger.info(format(" Minimum Bias %8.3f", minFL));
             previousFreeEnergy = freeEnergy;
-        } else if (print || biasCount % printFrequency == 0) {
+        } else if (!save && (print || biasCount % printFrequency == 0)) {
             logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
                     freeEnergy, totalWeight, temperingWeight));
+        }
+
+        if (save) {
+            String modelFilename = molecularAssembly.getFile().getAbsolutePath();
+            File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
+            String dirName = saveDir.toString() + File.separator;
+            String fileName = dirName + "histogram.txt";
+            try {
+                logger.info(" Writing " + fileName);
+                PrintWriter printWriter = new PrintWriter(new File(fileName));
+                printWriter.write(stringBuilder.toString());
+                printWriter.close();
+            } catch (Exception e) {
+                logger.info(format(" Failed to write %s.", fileName));
+            }
         }
 
         return freeEnergy;
@@ -1119,7 +1131,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
          */
         fLambdaUpdates++;
         boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-        totalFreeEnergy = updateFLambda(printFLambda);
+        totalFreeEnergy = updateFLambda(printFLambda, false);
 
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
             optimization(forceFieldEnergy, x, gradient);

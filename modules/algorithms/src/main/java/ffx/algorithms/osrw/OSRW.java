@@ -53,6 +53,7 @@ import java.util.logging.Logger;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static java.lang.String.format;
@@ -216,7 +217,7 @@ public class OSRW extends AbstractOSRW {
          * Update and print out the recursion slave.
          */
         if (readHistogramRestart) {
-            updateFLambda(true);
+            updateFLambda(true, false);
         }
 
     }
@@ -314,7 +315,7 @@ public class OSRW extends AbstractOSRW {
             if (energyCount % 10 == 0) {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-                totalFreeEnergy = updateFLambda(printFLambda);
+                totalFreeEnergy = updateFLambda(printFLambda, false);
             }
             if (energyCount % saveFrequency == 0) {
                 if (algorithmListener != null) {
@@ -513,7 +514,7 @@ public class OSRW extends AbstractOSRW {
             if (energyCount % 10 == 0) {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-                totalFreeEnergy = updateFLambda(printFLambda);
+                totalFreeEnergy = updateFLambda(printFLambda, false);
             }
             if (energyCount % saveFrequency == 0) {
                 if (algorithmListener != null) {
@@ -853,7 +854,7 @@ public class OSRW extends AbstractOSRW {
             logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
 
-            double origDeltaG = updateFLambda(false);
+            double origDeltaG = updateFLambda(false, false);
 
             int newFLambdaBins = FLambdaBins;
             while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
@@ -873,14 +874,14 @@ public class OSRW extends AbstractOSRW {
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false));
+            assert (origDeltaG == updateFLambda(false, false));
 
         }
         if (dEdLambda < minFLambda) {
             logger.info(String.format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
                     dEdLambda, minFLambda));
 
-            double origDeltaG = updateFLambda(false);
+            double origDeltaG = updateFLambda(false, false);
 
             int offset = 100;
             while (dEdLambda < minFLambda - offset * dFL) {
@@ -901,7 +902,7 @@ public class OSRW extends AbstractOSRW {
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false));
+            assert (origDeltaG == updateFLambda(false, false));
         }
     }
 
@@ -911,12 +912,12 @@ public class OSRW extends AbstractOSRW {
      * Eq. 7 from the Xtal Thermodynamics paper.
      */
     @Override
-    protected double updateFLambda(boolean print) {
+    public double updateFLambda(boolean print, boolean save) {
         double freeEnergy = 0.0;
         totalCounts = 0;
-        if (print) {
-            logger.info(" Count   Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
-        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
             int llFL = -1;
@@ -978,9 +979,30 @@ public class OSRW extends AbstractOSRW {
                 if (ulL > 1.0) {
                     ulL = 1.0;
                 }
-                logger.info(String.format(" %6d  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f %8.3f",
+
+                stringBuilder.append(format(" %6d  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f %8.3f",
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
+            }
+        }
+
+        if (print) {
+            logger.info(" Count   Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
+            logger.info(stringBuilder.toString());
+        }
+
+        if (save) {
+            String modelFilename = molecularAssembly.getFile().getAbsolutePath();
+            File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
+            String dirName = saveDir.toString() + File.separator;
+            String fileName = dirName + "histogram.txt";
+            try {
+                logger.info(" Writing " + fileName);
+                PrintWriter printWriter = new PrintWriter(new File(fileName));
+                printWriter.write(stringBuilder.toString());
+                printWriter.close();
+            } catch (Exception e) {
+                logger.info(format(" Failed to write %s.", fileName));
             }
         }
 

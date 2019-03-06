@@ -25,18 +25,25 @@ import picocli.CommandLine.Parameters
 class Histogram extends AlgorithmsScript {
 
     /**
-     * -b or --bias2D Print out the potential of mean force from the 2D bias.
+     * -b or --bias2D Write out the potential of mean force from the 2D bias.
      */
     @Option(names = ['-b', '--bias2D'], paramLabel = 'false',
-            description = 'Print out the potential of mean force from the 2D bias.')
+            description = 'Write out the potential of mean force from the 2D bias.')
     boolean pmf2D = false
 
     /**
-     * -p or --pmf Print out potential of mean force from the total bias (1D + 2D).
+     * -p or --pmf Write out potential of mean force from the total bias (1D + 2D).
      */
     @Option(names = ['-p', '--pmf'], paramLabel = 'false',
-            description = 'Print out potential of mean force from the total bias (1D + 2D).')
+            description = 'Write out potential of mean force from the total bias (1D + 2D).')
     boolean pmf = false
+
+    /**
+     * -s or --save Save the bias histogram to a file.
+     */
+    @Option(names = ['-s', '--save'], paramLabel = 'false',
+            description = 'Save the bias histogram to a file.')
+    boolean save = false
 
     /**
      * -u or --untempered Histogram for untempered OSRW.
@@ -50,7 +57,9 @@ class Histogram extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
     private List<String> filenames
-    private AbstractOSRW abstractOSRW;
+
+    private AbstractOSRW abstractOSRW
+    private File saveDir = null
 
     @Override
     Histogram run() {
@@ -92,27 +101,63 @@ class Histogram extends AlgorithmsScript {
         double saveInterval = 100.0
         double temperature = 298.15
 
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+
+        String dirName = saveDir.toString() + File.separator
+        String fileName = FilenameUtils.getName(modelFilename)
+        fileName = FilenameUtils.removeExtension(fileName)
 
         if (!untempered) {
             TransitionTemperedOSRW osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
+            if (save) {
+                osrw.setMolecularAssembly(activeAssembly)
+                osrw.updateFLambda(false, true)
+            }
             if (pmf) {
-                osrw.evaluateTotalPMF()
+                StringBuffer sb = osrw.evaluateTotalPMF()
+                String file = dirName + "pmf.txt"
+                logger.info(" Writing " + file)
+                FileWriter fileWriter = new FileWriter(file)
+                fileWriter.write(sb.toString())
+                fileWriter.close()
             }
             if (pmf2D) {
-                osrw.evaluate2DPMF()
+                StringBuffer sb = osrw.evaluate2DPMF()
+                String file = dirName + "pmf.2D.txt"
+                logger.info(" Writing " + file)
+                FileWriter fileWriter = new FileWriter(file)
+                fileWriter.write(sb.toString())
+                fileWriter.close()
             }
             abstractOSRW = osrw
         } else {
             OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
+            if (save) {
+                osrw.setMolecularAssembly(activeAssembly)
+                osrw.updateFLambda(false, true)
+            }
             if (pmf) {
-                osrw.evaluateTotalPMF()
+                StringBuffer sb = osrw.evaluateTotalPMF()
+                String file = dirName + "pmf.txt"
+                logger.info(" Writing " + file)
+                FileWriter fileWriter = new FileWriter(file)
+                fileWriter.write(sb.toString())
+                fileWriter.close()
             }
             if (pmf2D) {
-                osrw.evaluate2DPMF()
+                StringBuffer sb = osrw.evaluate2DPMF()
+                String file = dirName + "pmf.2D.txt"
+                logger.info(" Writing " + file)
+                FileWriter fileWriter = new FileWriter(file)
+                fileWriter.write(sb.toString())
+                fileWriter.close()
             }
             abstractOSRW = osrw
         }
