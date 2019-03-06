@@ -30,9 +30,9 @@ class Superpose extends PotentialScript {
     /**
      * --atoms defines which atoms to calculate RMSD on.
      */
-    @Option(names = ['--rA', '--rmsdAtoms'], paramLabel = "ALL",
+    @Option(names = ['--rA', '--rmsdAtoms'], paramLabel = "HEAVY",
             description = 'Atoms to be included in RMSD calculation. Select [ALL/HEAVY/ALPHA] to choose which atoms are used for RMSD (nucleic acids will use N1 or N9 in place of alpha carbons).')
-    private String atomSelection;
+    private String atomSelection="HEAVY"
 
     /**
      * The final argument(s) should be one or more filenames.
