@@ -2883,6 +2883,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return nActive * 3;
     }
 
+    public int getNumberOfAlphaCarbonVariables() {
+        int nActive = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            if(atoms[i].getName().equals("CA")){
+                if (atoms[i].isActive() && !atoms[i].isBackground()) {
+                    nActive++;
+                }
+            }
+        }
+        return nActive * 3;
+    }
+
     /**
      * {@inheritDoc}
      */
