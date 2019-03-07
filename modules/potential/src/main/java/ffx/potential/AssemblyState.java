@@ -100,6 +100,34 @@ public class AssemblyState {
     }
 
     /**
+     * <p>
+     * Copies an AssemblyState. Note: side effects possible if they occur between
+     * applying the state to be copied and reverting to the pre-method-call state.
+     * </p>
+     *
+     * @param state AssemblyState to copy.
+     * @return A copied AssemblyState.
+     */
+    public static AssemblyState copyState(AssemblyState state) {
+        MolecularAssembly assembly = state.getMolecularAssembly();
+        AssemblyState orig = new AssemblyState(assembly);
+        state.revertState();
+        AssemblyState copiedState = new AssemblyState(assembly);
+        orig.revertState();
+        return copiedState;
+    }
+
+    /**
+     * <p>
+     * Returns the MolecularAssembly associated with this AssemblyState.
+     * </p>
+     * @return The associated MolecularAssembly.
+     */
+    public MolecularAssembly getMolecularAssembly() {
+        return mola;
+    }
+
+    /**
      * Revert the state of the associated MolecularAssembly, assuming no chemical
      * changes were made except to MultiResidues.
      */
