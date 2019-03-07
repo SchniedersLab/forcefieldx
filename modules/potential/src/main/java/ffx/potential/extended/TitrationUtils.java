@@ -653,7 +653,8 @@ public class TitrationUtils {
                         inactiveAtom.setPreviousAcceleration(activePrevAcc);
                     }
                 } else {
-                    if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") || activeName.equals("CA") || activeName.equals("H") || activeName.equals("HA")) {
+                    if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") ||
+                            activeName.equals("CA") || activeName.equals("H") || activeName.equals("HA")) {
                         // Backbone atoms aren't supposed to exist in inactive multiResidue components; so no problem.
                     } else if (isTitratableHydrogen(activeAtom)) {
                         /**

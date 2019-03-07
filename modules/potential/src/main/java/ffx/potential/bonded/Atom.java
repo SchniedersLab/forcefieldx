@@ -147,16 +147,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant <code>AtomVDW</code>
      */
     public static final Map<Integer, Double> AtomVDW;
-    /**
-     * Constant <code>SP3=4</code>
-     */
+    /** Constant <code>SP=2</code> */
+    public static final int SP = 2;
     /** Constant <code>SP2=3</code> */
+    public static final int SP2 = 3;
     /** Constant <code>SP3=4</code> */
-    /** Constant <code>SP2=3</code> */
-    /**
-     * Constant <code>SP3=4</code>
-     */
-    public static final int SP = 2, SP2 = 3, SP3 = 4;
+    public static final int SP3 = 4;
     /**
      * Constant <code>hybridTable</code>
      */
@@ -286,32 +282,32 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @since 1.0
      */
-    private final double xyz[] = new double[3];
+    private final double[] xyz = new double[3];
     /**
      * Array of velocities
      */
-    private final double velocity[] = new double[3];
-    private final double acceleration[] = new double[3];
-    private final double previousAcceleration[] = new double[3];
+    private final double[] velocity = new double[3];
+    private final double[] acceleration = new double[3];
+    private final double[] previousAcceleration = new double[3];
     /**
      * Array of XYZ coordinates for the electron (van der Waals) centers of each
      * atom: if null, methods will refer to xyz.
      *
      * @since 1.0
      */
-    private double redXYZ[];
+    private double[] redXYZ;
     /**
      * Array of XYZ gradient.
      *
      * @since 1.0
      */
-    private final double xyzGradient[] = new double[3];
+    private final double[] xyzGradient = new double[3];
     /**
      * Array of XYZ lambda gradient.
      *
      * @since 1.0
      */
-    private final double xyzLambdaGradient[] = new double[3];
+    private final double[] xyzLambdaGradient = new double[3];
     /**
      * Array of occupancy values for each altLoc.
      *
@@ -349,16 +345,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @since 1.0
      */
-    private double anisou[];
+    private double[] anisou;
     /**
      * Anisou gradient, velocity, accel and prev accel.
      *
      * @since 1.0
      */
-    private double anisouGradient[];
-    private double anisouVelocity[];
-    private double anisouAcceleration[];
-    private double anisouPreviousAcceleration[];
+    private double[] anisouGradient;
+    private double[] anisouVelocity;
+    private double[] anisouAcceleration;
+    private double[] anisouPreviousAcceleration;
 
     /**
      * If use is true, this atom should be included in target functions.
@@ -396,16 +392,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private PolarizeType polarizeType = null;
     private VDWType vdwType = null;
     private Atom[] multipoleReferenceSites = null;
-    private double globalDipole[] = null;
-    private double globalQuadrupole[][] = null;
+    private double[] globalDipole = null;
+    private double[][] globalQuadrupole = null;
     private boolean applyState = false;
     private boolean esvTerm = false;
     private ExtendedVariable esv = null;
     private Double scaledPolarizability = null;
     private Double unscaledPolarizability = null;
     private int moleculeNumber = 0;
-    // solvation
-    private double bornRadius;
     // Connectivity information.
     private final ArrayList<Bond> bonds = new ArrayList<>();
     private final ArrayList<Angle> angles = new ArrayList<>();
@@ -550,24 +544,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         return 0;
     }
-
-    /*
-    @Override
-    public int compareTo(Atom other) {
-        return Objects.compare(this, other, indexComparator);
-    }
-    public static IndexComparator indexComparator = new IndexComparator();
-    public static class IndexComparator implements Comparator<Atom> {
-        private IndexComparator() {}
-        @Override
-        public int compare(Atom me, Atom u) {
-            int mi = me.getIndex();
-            int ui = u.getIndex();
-            // There should not be duplicate, identical atom objects.
-            assert(mi != ui);
-            return Integer.compare(mi, ui);
-        }
-    }   */
 
     /**
      * <p>
@@ -902,26 +878,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>
-     * Getter for the field <code>bornRadius</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getBornRadius() {
-        return bornRadius;
-    }
-
-    /**
-     * <p>
-     * getBornVolume</p>
-     *
-     * @return a double.
-     */
-    public double getBornVolume() {
-        return 2.0;
-    }
-
-    /**
      * Get the chain name
      *
      * @return String
@@ -936,6 +892,23 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         chainID = p.getName().charAt(0);
         return chainID;
+    }
+
+    /**
+     * Set the chain name.
+     *
+     * @param chainID The chain ID of this atom.
+     */
+    public void setChainID(Character chainID) {
+        this.chainID = chainID;
+    }
+
+    /**
+     * Set this atom's seg ID.
+     * @param segID
+     */
+    public void setSegID(String segID) {
+        this.segID = segID;
     }
 
     /**
@@ -1246,6 +1219,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public int getResidueNumber() {
         return resSeq;
+    }
+
+    /**
+     * <p>
+     * setResidueNumber</p>
+     *
+     * @param resNumber this atom's residue number.
+     */
+    public void setResidueNumber(int resNumber) {
+        resSeq = resNumber;
     }
 
     /**
@@ -2354,15 +2337,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (a != null && !one_5s.contains(a)) {
             one_5s.add(a);
         }
-    }
-
-    /**
-     * Set the effective Born Radius.
-     *
-     * @param bornRadius a double.
-     */
-    public void setBornRadius(double bornRadius) {
-        this.bornRadius = bornRadius;
     }
 
     /**

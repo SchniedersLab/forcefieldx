@@ -92,15 +92,15 @@ public final class Utilities {
      * currently backed by ArrayLists.
      */
     public static List<List<Atom>> atomListPool = new ArrayList<>();
-    static int count = 0;
+
     /**
      * Repeating atomic numbers of an amino acid chain.
      */
-    public static final int AAPATTERN[] = {7, 6, 6};
+    public static final int[] AAPATTERN = {7, 6, 6};
     /**
      * Repeating atomic numbers of a nucleic acid chain.
      */
-    public static final int NAPATTERN[] = {8, 6, 6, 6, 8};
+    public static final int[] NAPATTERN = {8, 6, 6, 6, 8};
     /**
      * Stoichiometry of side chains can be used for identification, accept for a
      * couple cases: 1.) Proline & Valine 2.) (Iso)Leucine 3.) DNA Gaunine/RNA
@@ -109,14 +109,6 @@ public final class Utilities {
      * case.
      */
     private static final HashMap<String, String> sidechainStoichiometry = new HashMap<>();
-
-    private static final double p4 = 15.236;
-    private static final double p5 = 1.254;
-    private static final double p5inv = 1.0 / 1.254;
-    private static final double pip5 = Math.PI * p5;
-    private static final double convert = -332.05382 / 2.0;
-    private static final double[] x1 = new double[3];
-    private static final double[] x2 = new double[3];
 
     static {
         // Amino Acid Side Chains
@@ -212,8 +204,10 @@ public final class Utilities {
                                          List<Atom> atoms, List<Atom> sidePolymer) {
         Atom a;
         int atomicnum;
-        int bins[] = new int[5]; // 0 = S, 1 = P, 2 = O, 3 = N, 4 = C
-        char chars[] = {'S', 'P', 'O', 'N', 'C'};
+        char[] chars = {'S', 'P', 'O', 'N', 'C'};
+        // Bin number to atomic number => 0 = S, 1 = P, 2 = O, 3 = N, 4 = C
+        int[] bins = new int[5];
+
         for (ListIterator li = sidePolymer.listIterator(); li.hasNext(); ) {
             a = (Atom) li.next();
             atomicnum = a.getAtomicNumber();
@@ -251,18 +245,23 @@ public final class Utilities {
             if (bins[i] != 0) {
                 atomCount += bins[i];
                 key.append(chars[i]);
-                key.append(Integer.toString(bins[i]));
+                key.append(bins[i]);
             }
         }
         if (atomCount == 0) {
             key.append("H"); // Glycine
         }
+
         String resname = sidechainStoichiometry.get(key.toString());
+
         if (resname == null) {
             resname = "Unknown";
         } else {
             resname = resname.intern();
         }
+
+        // logger.info(" Pattern " + key.toString() + " Resname " + resname);
+
         if (resname.equals("1") || resname.equals("2")) {
             // Special case where atom string keys aren't unique
             Atom alpha = backbone.get(start + 1);
@@ -411,16 +410,31 @@ public final class Utilities {
                 seed = null;
                 break;
             }
-            List<Atom> backbone = findPolymer(atoms, seed, null);
+
+            // logger.info(" Seed atom: " + seed);
+
+            List<Atom> backbone = findPolymer(seed, null);
+
+            // for (Atom a : backbone) {
+            //    logger.info(" Atom " + a);
+            // }
+
             if (backbone.size() > 0) {
-                for (ListIterator li = backbone.listIterator(backbone.size()); li.hasPrevious(); ) {
-                    seed = (Atom) li.previous();
-                    if (seed.getAtomicNumber() == 7) {
-                        break;
-                    }
-                }
-                backbone = findPolymer(atoms, seed, null);
+                seed = backbone.get(backbone.size() - 1);
+                // for (ListIterator li = backbone.listIterator(backbone.size()); li.hasPrevious(); ) {
+                //    seed = (Atom) li.previous();
+                //    if (seed.getAtomicNumber() == 7) {
+                //        break;
+                //    }
+                // }
+                // logger.info(" Seed atom: " + seed);
+                backbone = findPolymer(seed, null);
             }
+
+            // for (Atom a : backbone) {
+            //    logger.info(" Atom " + a);
+            // }
+
             Character chainID = getChainID(num);
             String segID = getSegID(chainID, segIDs);
             Polymer c = new Polymer(chainID, segID, true);
@@ -501,7 +515,7 @@ public final class Utilities {
             if (nextAtom.getParent() != null) {
                 continue;
             }
-            // avoid crossing disulfides
+            // Avoid crossing disulfide bonds.
             if ((nextAtom.getAtomicNumber() != 16 || seed.getAtomicNumber() != 16) && !atoms.contains(nextAtom)) {
                 collectAtoms(nextAtom, atoms);
             }
@@ -605,7 +619,7 @@ public final class Utilities {
             Residue aa = null;
             int lastRes = 0;
             int firstRes = -1;
-            List<Residue> aaArray = new ArrayList<Residue>();
+            List<Residue> aaArray = new ArrayList<>();
             while (start < length) {
                 aa = patternMatch(start, backbone, PolymerType.AMINOACID);
                 if (aa != null) {
@@ -618,7 +632,7 @@ public final class Utilities {
                 }
                 start += 3;
             }
-            // Make sure the fisrt residue is found
+            // Make sure the first residue is found
             aa = null;
             if (carbonyl != null) {
                 alpha = findAlphaCarbon(carbonyl);
@@ -690,7 +704,7 @@ public final class Utilities {
             Atom phos = null;
             Atom oxygen1 = null;
             Atom phosphate1 = null;
-            List<Residue> na = new ArrayList<Residue>();
+            List<Residue> na = new ArrayList<>();
             while (start < length) {
                 base = patternMatch(start, backbone, PolymerType.NUCLEICACID);
                 if (base != null) {
@@ -952,42 +966,45 @@ public final class Utilities {
      * <p>
      * findPolymer</p>
      *
-     * @param atoms       List
      * @param currentAtom Atom
      * @param path        List
      * @return List
      */
-    public static List<Atom> findPolymer(List<Atom> atoms, Atom currentAtom,
-                                         List<Atom> path) {
+    public static List<Atom> findPolymer(Atom currentAtom, List<Atom> path) {
+
         // Atom has no bonds to follow
         if (currentAtom.getBonds() == null) {
             path = getAtomListFromPool();
             path.add(currentAtom);
             return path;
         }
-        // End of Recursion conditions
+
+        // End of Recursion condition
         if (currentAtom.getParent() != null) {
             return null;
         }
-        int anum = currentAtom.getAtomicNumber();
+
         // Only C,N,O,P in a DNA/RNA/protein backbone
+        int anum = currentAtom.getAtomicNumber();
         if (anum != 6 && anum != 7 && anum != 8 && anum != 15) {
             return null;
         }
+
         // Allow the search to make it out of side chains, but not enter them...
         if (path != null && path.size() > 7) {
-            // Oxygen is only in the backbone for Nucleic Acids in a phosphate
-            // group
+
+            // Oxygen is only in the backbone for Nucleic Acids in a phosphate group
             if (anum == 8) {
                 if (!formsBondsWith(currentAtom, 15)) {
+                    // Found an oxygen not bonded to a phosphate.
                     return null;
                 }
-                // Nitrogen is only in the backbone in peptide bonds
+                // Nitrogen is only in the backbone in peptide bonds or at an N-terminus.
             } else if (anum == 7) {
-                Atom carbonyl = findCarbonyl(currentAtom);
-                if (carbonyl == null) {
-                    return null;
-                }
+                // Atom carbonyl = findCarbonyl(currentAtom);
+                // if (carbonyl == null) {
+                //    return null;
+                // }
                 Atom alphaCarbon = findAlphaCarbon(currentAtom);
                 if (alphaCarbon == null) {
                     return null;
@@ -1012,15 +1029,19 @@ public final class Utilities {
                 }
             }
         }
-        // Atoms with only one bond are at the end of a Polymer
+
+
         Atom previousAtom = null;
         if (path != null) {
             previousAtom = path.get(path.size() - 1);
         }
+
+        // Atoms with only one bond are at the end of a Polymer
         List<Bond> bonds = currentAtom.getBonds();
         if (bonds.size() == 1 && previousAtom != null) {
             return null;
         }
+
         // Initialization
         if (path == null) {
             path = getAtomListFromPool();
@@ -1031,32 +1052,36 @@ public final class Utilities {
             pathclone.addAll(path);
             path = pathclone;
         }
+
         // Add the currentAtom to the growing path
         path.add(currentAtom);
-        // Continue search in each bond direction, but no backtracking over
-        // previousAtom
-        Atom nextAtom;
+
+        // Continue search in each bond direction, but no backtracking over previousAtom
         List<Atom> newPolymer, maxPolymer = getAtomListFromPool();
         for (Bond b : bonds) {
-            nextAtom = b.get1_2(currentAtom);
+            Atom nextAtom = b.get1_2(currentAtom);
+
             // Check to avoid returning in the same direction and loops
             if (nextAtom != previousAtom && !path.contains(nextAtom)) {
-                newPolymer = findPolymer(atoms, nextAtom, path);
+                newPolymer = findPolymer(nextAtom, path);
                 if (newPolymer != null) {
+                    // logger.info(" Next atom: " + nextAtom + " Size: " + newPolymer.size());
                     // Check to see if the Polymers contain any of the same atoms,
                     // and if so, use the shorter Polymer (avoids loops)
-                    if (haveCommonAtom(newPolymer, maxPolymer)) {
-                        if (newPolymer.size() < maxPolymer.size()) {
-                            addAtomListToPool(maxPolymer);
-                            maxPolymer = newPolymer;
-                        }
-                    } else if (newPolymer.size() > maxPolymer.size()) {
+                    // if (haveCommonAtom(newPolymer, maxPolymer)) {
+                    //    if (newPolymer.size() < maxPolymer.size()) {
+                    //        addAtomListToPool(maxPolymer);
+                    //        maxPolymer = newPolymer;
+                    //    }
+                    // } else if (newPolymer.size() > maxPolymer.size()) {
+                    if (newPolymer.size() > maxPolymer.size()) {
                         addAtomListToPool(maxPolymer);
                         maxPolymer = newPolymer;
                     }
                 }
             }
         }
+
         // Add the currentAtom to the longest discovered chain and return
         maxPolymer.add(0, currentAtom);
         return maxPolymer;
@@ -1167,11 +1192,17 @@ public final class Utilities {
         return total;
     }
 
-    // Check to see if a portion of the backbone matches that of a
-    // biological polymer, and if so determine the respective residue
+    /**
+     * Check to see if a portion of the backbone matches that of a biological polymer,
+     * and if so determine the respective residue
+     * @param start First atom.
+     * @param backbone List of backbone atoms.
+     * @param type Type of residue.
+     * @return The residue.
+     */
     private static Residue patternMatch(int start, List<Atom> backbone,
                                         PolymerType type) {
-        int pattern[];
+        int[] pattern;
         // Initialization
         if (type == PolymerType.AMINOACID) {
             pattern = AAPATTERN;

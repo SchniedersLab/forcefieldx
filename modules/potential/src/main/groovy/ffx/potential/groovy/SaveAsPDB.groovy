@@ -79,7 +79,7 @@ class SaveAsPDB extends PotentialScript {
         if (openFilter != null && openFilter instanceof XYZFilter) {
             try {
                 arcFile.append("MODEL        1\n")
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(saveFile));
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(saveFile))
                 String line = bufferedReader.readLine()
                 while(line!=null) {
                     if(!line.contentEquals("END")){
