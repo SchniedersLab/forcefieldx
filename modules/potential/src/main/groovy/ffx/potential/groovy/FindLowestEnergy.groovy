@@ -17,7 +17,8 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The FindLowestEnergy script finds the lowest potential energy in a .arc trajectory file.
+ * The FindLowestEnergy script calculates energies for all assemblies in an arc file , finds the lowest energy assembly,
+ * and saves that assembly to a pdb file.
  * <br>
  * Usage:
  * <br>
@@ -71,12 +72,12 @@ class FindLowestEnergy extends PotentialScript {
 
         if (systemFilter instanceof XYZFilter) {
             XYZFilter xyzFilter = (XYZFilter) systemFilter
-
+            //calling the next assembly of the arc file
             while (xyzFilter.readNext()) {
-                forceFieldEnergy.getCoordinates(x)
-                double newEnergy = forceFieldEnergy.energy(x, true)
+                forceFieldEnergy.getCoordinates(x) // getting the coordinates for the next assembly
+                double newEnergy = forceFieldEnergy.energy(x, true) //calculating energy for new assembly
                 if (newEnergy < energy) {
-                    assemblyState = new AssemblyState(activeAssembly)
+                    assemblyState = new AssemblyState(activeAssembly) //saving new assembly if the energy is less than the current energy
                     energy = newEnergy
                 }
             }
@@ -86,6 +87,7 @@ class FindLowestEnergy extends PotentialScript {
 
         assemblyState.revertState()
         logger.info(String.format(" The lowest potential energy found is %12.6g kcal/mol", energy))
+        //prints our final energy (which will be the lowest energy)
 
         File saveDir = baseDir
         String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
