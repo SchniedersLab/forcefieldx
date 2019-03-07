@@ -3,6 +3,7 @@ package ffx.potential.groovy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.AssemblyState
 import ffx.potential.bonded.Atom
+import ffx.potential.parsers.XYZFileFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import ffx.potential.MolecularAssembly
@@ -16,14 +17,15 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The Superpose script superposes all molecules in an arc file to the first molecule in the arc file and reports the RMSD.
+ * The FindLowestEnergy script finds the lowest potential energy in a .arc trajectory file.
  * <br>
  * Usage:
  * <br>
- * ffxc Superpose [options] &lt;filename&gt;
+ * ffxc FindLowestEnergy [options] &lt;filename&gt;
  */
-@Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
+@Command(description = " Save the system as a PDB file.", name = "ffxc FindLowestEnergy")
 class FindLowestEnergy extends PotentialScript {
+
     /**
      * The final argument(s) should be one or more filenames.
      */
@@ -37,9 +39,9 @@ class FindLowestEnergy extends PotentialScript {
         this.baseDir = baseDir
     }
 
-    public ForceFieldEnergy forceFieldEnergy = null
+    private double energy = Double.MAX_VALUE;
+    private AssemblyState assemblyState = null;
 
-    public double energy = 0.0
     /**
      * Execute the script.
      */
@@ -50,40 +52,40 @@ class FindLowestEnergy extends PotentialScript {
         }
 
         MolecularAssembly[] assemblies
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
+        if (filenames == null || filenames.size() != 1) {
+            logger.warning(" Invalid arguments provided! Must have one non-null argument.")
             logger.info(helpString())
             return this
+        } else {
+            assemblies = potentialFunctions.open(filenames.get(0));
+            activeAssembly = assemblies[0]
         }
 
-        forceFieldEnergy = activeAssembly.getPotentialEnergy()
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
         int nVars = forceFieldEnergy.getNumberOfVariables()
         double[] x = new double[nVars]
         forceFieldEnergy.getCoordinates(x)
         energy = forceFieldEnergy.energy(x, true)
-        AssemblyState assemblyState
+        assemblyState = new AssemblyState(activeAssembly)
         SystemFilter systemFilter = potentialFunctions.getFilter()
+
         if (systemFilter instanceof XYZFilter) {
             XYZFilter xyzFilter = (XYZFilter) systemFilter
 
             while (xyzFilter.readNext()) {
                 forceFieldEnergy.getCoordinates(x)
                 double newEnergy = forceFieldEnergy.energy(x, true)
-                if (energy > newEnergy) {
+                if (newEnergy < energy) {
                     assemblyState = new AssemblyState(activeAssembly)
                     energy = newEnergy
                 }
-                else if(energy < newEnergy) {
-                    return
-                }
             }
+        } else {
+            logger.severe(String.format(" System %s does not appear to be a .arc or .xyz file!", filenames.get(0)));
         }
 
-        logger.info("The lowest energy is: "+energy)
-
-
+        assemblyState.revertState()
+        logger.info(String.format(" The lowest potential energy found is %12.6g kcal/mol", energy))
 
         File saveDir = baseDir
         String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
@@ -97,6 +99,22 @@ class FindLowestEnergy extends PotentialScript {
         potentialFunctions.saveAsPDB(assemblyState.mola, saveFile)
 
         return this
+    }
+
+    /**
+     * Returns the lowest energy found.
+     * @return Lowest potential energy.
+     */
+    public double getLowestEnergy() {
+        return energy;
+    }
+
+    /**
+     * Returns a copy of the lowest-energy state found.
+     * @return Lowest-energy state found.
+     */
+    public AssemblyState getOptimumState() {
+        return AssemblyState.copyState(assemblyState);
     }
 }
 
