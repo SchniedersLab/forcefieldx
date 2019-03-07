@@ -16,11 +16,12 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The Superpose script superposes all molecules in an arc file to the first molecule in the arc file and reports the RMSD.
+ * The FindLowestEnergy script calculates energies for all assemblies in an arc file , finds the lowest energy assembly,
+ * and saves that assembly to a pdb file.
  * <br>
  * Usage:
  * <br>
- * ffxc Superpose [options] &lt;filename&gt;
+ * ffxc FindLowestEnergy [options] &lt;filename&gt;
  */
 @Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
 class FindLowestEnergy extends PotentialScript {
@@ -67,21 +68,22 @@ class FindLowestEnergy extends PotentialScript {
         SystemFilter systemFilter = potentialFunctions.getFilter()
         if (systemFilter instanceof XYZFilter) {
             XYZFilter xyzFilter = (XYZFilter) systemFilter
-
+            //calling the next assembly of the arc file
             while (xyzFilter.readNext()) {
-                forceFieldEnergy.getCoordinates(x)
-                double newEnergy = forceFieldEnergy.energy(x, true)
+                forceFieldEnergy.getCoordinates(x) // getting the coordinates for the next assembly
+                double newEnergy = forceFieldEnergy.energy(x, true) //calculating energy for new assembly
                 if (energy > newEnergy) {
-                    assemblyState = new AssemblyState(activeAssembly)
+                    assemblyState = new AssemblyState(activeAssembly) //saving new assembly if the energy is less than the current energy
                     energy = newEnergy
+
                 }
-                else if(energy < newEnergy) {
-                    return
+                else if(energy < newEnergy) { //if the current energy is less than the new energy, we keep the current energy and assembly
+                    
                 }
             }
         }
 
-        logger.info("The lowest energy is: "+energy)
+        logger.info("The lowest energy is: "+energy) //prints our final energy (which will be the lowest energy)
 
 
 
