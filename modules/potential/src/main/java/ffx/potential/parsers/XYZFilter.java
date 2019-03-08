@@ -302,6 +302,10 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
+    public int getSnapShot(){
+        return snapShot;
+    }
+
     /** {@inheritDoc} */
     @Override
     public boolean readNext() {
@@ -317,6 +321,15 @@ public class XYZFilter extends SystemFilter {
      */
     @Override
     public boolean readNext(boolean resetPosition) {
+        return readNext(false, true);
+    }
+
+    /**
+     * Reads the next snap-shot of an archive into the activeMolecularAssembly.
+     * After calling this function, a BufferedReader will remain open until the
+     * <code>close</code> method is called.
+     */
+    public boolean readNext(boolean resetPosition, boolean print) {
         try {
             String data;
             Atom atoms[] = activeMolecularAssembly.getAtomArray();
@@ -345,7 +358,9 @@ public class XYZFilter extends SystemFilter {
                 return false;
             }
 
-            logger.info(String.format(" Attempting to read snapshot %d.", snapShot));
+            if(print) {
+                logger.info(String.format(" Attempting to read snapshot %d.", snapShot));
+            }
             try {
                 int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
                 if (nArchive != nSystem) {
@@ -402,6 +417,8 @@ public class XYZFilter extends SystemFilter {
         }
         return false;
     }
+
+
 
     /** {@inheritDoc} */
     @Override

@@ -35,6 +35,13 @@ class Superpose extends PotentialScript {
     private String atomSelection="HEAVY"
 
     /**
+     * --atoms defines which atoms to calculate RMSD on.
+     */
+    @Option(names = ['--fC', '--frameComparison'], paramLabel = "ALLVSALL",
+            description = 'Frames to be compared within the arc file. Select [ALLVSALL/ONEVSALL] to choose which assemblies within the arc are used for RMSD comparisons.')
+    private String frameComparison = "AllVsAll"
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -48,7 +55,6 @@ class Superpose extends PotentialScript {
     }
 
     public ForceFieldEnergy forceFieldEnergy = null
-
 
     /**
      * Execute the script.
@@ -68,8 +74,6 @@ class Superpose extends PotentialScript {
             return this
         }
 
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
 
@@ -84,7 +88,7 @@ class Superpose extends PotentialScript {
             double[] x2 = new double[nVars]
             double[] mass = new double[nVars / 3]
 
-            int nAtoms = atoms.length;
+            int nAtoms = atoms.length
             for (int i=0; i<nAtoms; i++) {
                 mass[i] = atoms[i].getMass()
             }
@@ -92,77 +96,105 @@ class Superpose extends PotentialScript {
             // Begin streaming the possible atom indices, filtering out inactive atoms.
             // TODO: Decide if we only want active atoms.
             IntStream atomIndexStream = IntStream.range(0, atoms.length).
-                    filter({ int i -> return atoms[i].isActive() });
+                    filter({ int i -> return atoms[i].isActive() })
             // String describing the selection type.
-            String selectionType = "All Atoms";
+            String selectionType = "All Atoms"
 
             // Switch on what type of atoms to select, filtering as appropriate. Support the old integer indices.
             switch (atomSelection.toUpperCase()) {
                 case "HEAVY":
                 case "0":
                     // Filter only for heavy (non-hydrogen) atoms.
-                    atomIndexStream = atomIndexStream.filter({ int i -> atoms[i].isHeavy() });
-                    selectionType = "Heavy Atoms";
-                    break;
+                    atomIndexStream = atomIndexStream.filter({ int i -> atoms[i].isHeavy() })
+                    selectionType = "Heavy Atoms"
+                    break
 
                 case "ALPHA":
                 case "2":
                     // Filter only for reference atoms: carbons named CA (protein) or nitrogens named N1 or N9 (nucleic acids).
                     atomIndexStream = atomIndexStream.filter({ int i ->
-                        Atom ati = atoms[i];
-                        String atName = ati.getName().toUpperCase();
-                        boolean proteinReference = atName.equals("CA") && ati.getAtomType().atomicNumber == 6;
-                        boolean naReference = (atName.equals("N1") || atName.equals("N9")) && ati.getAtomType().atomicNumber == 7;
-                        return proteinReference || naReference;
+                        Atom ati = atoms[i]
+                        String atName = ati.getName().toUpperCase()
+                        boolean proteinReference = atName.equals("CA") && ati.getAtomType().atomicNumber == 6
+                        boolean naReference = (atName.equals("N1") || atName.equals("N9")) && ati.getAtomType().atomicNumber == 7
+                        return proteinReference || naReference
                     });
                     selectionType = "Reference Atoms (i.e. alpha carbons and N1/N9 for nucleic acids)";
-                    break;
+                    break
 
                 case "ALL":
                 case "1":
-                    selectionType = "All Atoms";
+                    selectionType = "All Atoms"
                     // Unmodified stream; we have just checked for active atoms.
-                    break;
+                    break
 
                 default:
-                    logger.severe(String.format(" Could not parse %s as an atom selection! Must be ALL, HEAVY, or ALPHA", atomSelection));
-                    break;
+                    logger.severe(String.format(" Could not parse %s as an atom selection! Must be ALL, HEAVY, or ALPHA", atomSelection))
+                    break
             }
 
             // Indices of atoms used in alignment and RMSD calculations.
-            int[] usedIndices = atomIndexStream.toArray();
-            int nUsed = usedIndices.length;
-            int nUsedVars = nUsed * 3;
+            int[] usedIndices = atomIndexStream.toArray()
+            int nUsed = usedIndices.length
+            int nUsedVars = nUsed * 3
             double[] massUsed = Arrays.stream(usedIndices).
                     mapToDouble({ int i -> atoms[i].getAtomType().atomicWeight }).
-                    toArray();
-            double[] xUsed = new double[nUsedVars];
-            double[] x2Used = new double[nUsedVars];
+                    toArray()
+            double[] xUsed = new double[nUsedVars]
+            double[] x2Used = new double[nUsedVars]
 
-            while (xyzFilter.readNext()) {
-                forceFieldEnergy.getCoordinates(x2);
-
-                for (int i = 0; i < nUsed; i++) {
-                    int index3 = 3 * usedIndices[i];
-                    int i3 = 3 * i;
-                    for (int j = 0; j < 3; j++) {
-                        xUsed[i3 + j] = x[index3 + j];
-                        x2Used[i3 + j] = x2[index3 + j];
+            // Switch on which molecular assemblies to do RMSD comparisons among.
+            switch(frameComparison.toUpperCase()){
+                case "ONEVSALL":
+                    // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
+                    rmsd(xyzFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+                    break
+                case "ALLVSALL":
+                    rmsd(xyzFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+                    XYZFilter xyzFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                    while (xyzFilter1.readNext(false, false)) {
+                        int snapshot1 = xyzFilter1.getSnapShot()
+                        forceFieldEnergy.getCoordinates(x)
+                        XYZFilter xyzFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                        rmsd(xyzFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
                     }
-                }
+                    break
 
-                double origRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed);
-                ffx.potential.utils.Superpose.translate(xUsed, massUsed, x2Used, massUsed);
-                double translatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed);
-                ffx.potential.utils.Superpose.rotate(xUsed, x2Used, massUsed);
-                double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed);
-
-                logger.info(format(
-                        "\n Coordinate RMSD Based On %s (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                        selectionType, origRMSD, translatedRMSD, rotatedRMSD));
+                default:
+                    logger.severe(String.format(" Could not parse %s as a frame comparison! Must be ALLVSALL or ONEVSALL", frameComparison))
             }
         }
         return this
+    }
+
+    void rmsd(XYZFilter xyzFilter2, int nUsed, int[] usedIndices, String selectionType, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1){
+        while(xyzFilter2.readNext(false, false)) {
+            int snapshot2 = xyzFilter2.getSnapShot()
+            // Only calculate RMSD for snapshots if they aren't the same snapshot.
+            // Also avoid double calculating snapshots in the matrix by only calculating the upper triangle.
+            if (snapshot1 != snapshot2 && snapshot1<snapshot2) {
+                forceFieldEnergy.getCoordinates(x2)
+                for (int i = 0; i < nUsed; i++) {
+                    int index3 = 3 * usedIndices[i]
+                    int i3 = 3 * i
+                    for (int j = 0; j < 3; j++) {
+                        xUsed[i3 + j] = x[index3 + j]
+                        x2Used[i3 + j] = x2[index3 + j]
+                    }
+                }
+
+                double origRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
+                ffx.potential.utils.Superpose.translate(xUsed, massUsed, x2Used, massUsed)
+                double translatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
+                ffx.potential.utils.Superpose.rotate(xUsed, x2Used, massUsed)
+                double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
+
+                logger.info(format(
+                        "\n Coordinate RMSD Based On %s (Angstroms) on Model %d and Model %d\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
+                         selectionType, snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
+
+            }
+        }
     }
 }
 
