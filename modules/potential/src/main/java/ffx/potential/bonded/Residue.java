@@ -567,12 +567,15 @@ public class Residue extends MSGroup {
             currentAtom = (Atom) atoms.contains(newAtom);
             if (currentAtom == null) {
                 currentAtom = newAtom;
+
+                currentAtom.setResName(getName());
+                currentAtom.setResidueNumber(resNumber);
+
                 atoms.add(newAtom);
                 setFinalized(false);
             } else {
                 /**
-                 * Allow overwriting of the root alternate conformer (' ' or
-                 * 'A').
+                 * Allow overwriting of the root alternate conformer (' ' or 'A').
                  */
                 Character currentAlt = currentAtom.getAltLoc();
                 if (currentAlt.equals(' ') || currentAlt.equals('A')) {
@@ -580,6 +583,10 @@ public class Residue extends MSGroup {
                         newAtom.setXyzIndex(currentAtom.getXyzIndex());
                         atoms.remove(currentAtom);
                         currentAtom = newAtom;
+
+                        currentAtom.setResName(getName());
+                        currentAtom.setResidueNumber(resNumber);
+
                         atoms.add(currentAtom);
                         setFinalized(false);
                     }
@@ -1161,6 +1168,9 @@ public class Residue extends MSGroup {
      */
     public void setNumber(int n) {
         resNumber = n;
+        for (Atom atom : getAtomList()) {
+            atom.setResidueNumber(n);
+        }
     }
 
     /**
@@ -1171,6 +1181,10 @@ public class Residue extends MSGroup {
      */
     public void setChainID(Character c) {
         chainID = c;
+
+        for (Atom atom : getAtomList()) {
+            atom.setChainID(c);
+        }
     }
 
     /**
@@ -1222,7 +1236,7 @@ public class Residue extends MSGroup {
     @Override
     public String toString() {
         if (shortString == null) {
-            shortString = new String("" + resNumber + "-" + getName());
+            shortString = "" + resNumber + "-" + getName();
         }
         return shortString;
     }
@@ -1280,7 +1294,7 @@ public class Residue extends MSGroup {
     /**
      * Constant <code>Ramachandran="new String[17]"</code>
      */
-    public static String Ramachandran[] = new String[17];
+    public static String[] Ramachandran = new String[17];
 
     /**
      * Converts an NA3 enum to an equivalent NA1; if simpleCodes is true,
@@ -1456,8 +1470,6 @@ public class Residue extends MSGroup {
 
         FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
     }
-
-    ;
 
     public enum AA {
 

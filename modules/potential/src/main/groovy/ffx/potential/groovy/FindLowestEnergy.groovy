@@ -1,26 +1,31 @@
 package ffx.potential.groovy
 
-import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.AssemblyState
+import ffx.potential.bonded.Atom
+import ffx.potential.parsers.XYZFileFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
-
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
-import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
-
+import ffx.potential.utils.Superpose
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static java.lang.String.format
+
 /**
- * The SaveAsPDB script saves a file as a PDB file
+ * The FindLowestEnergy script calculates energies for all assemblies in an arc file , finds the lowest energy assembly,
+ * and saves that assembly to a pdb file.
  * <br>
  * Usage:
  * <br>
- * ffxc SaveAsPDB [options] &lt;filename&gt;
+ * ffxc FindLowestEnergy [options] &lt;filename&gt;
  */
-@Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
-class SaveAsPDB extends PotentialScript {
+@Command(description = " Save the system as a PDB file.", name = "ffxc FindLowestEnergy")
+class FindLowestEnergy extends PotentialScript {
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -35,71 +40,83 @@ class SaveAsPDB extends PotentialScript {
         this.baseDir = baseDir
     }
 
+    private double energy = Double.MAX_VALUE;
+    private AssemblyState assemblyState = null;
+
     /**
      * Execute the script.
      */
     @Override
-    SaveAsPDB run() {
-
+    FindLowestEnergy run() {
         if (!init()) {
             return this
         }
 
         MolecularAssembly[] assemblies
-        SystemFilter openFilter = null
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
-            openFilter = potentialFunctions.getFilter()
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
+        if (filenames == null || filenames.size() != 1) {
+            logger.warning(" Invalid arguments provided! Must have one non-null argument.")
             logger.info(helpString())
             return this
+        } else {
+            assemblies = potentialFunctions.open(filenames.get(0));
+            activeAssembly = assemblies[0]
         }
 
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+        int nVars = forceFieldEnergy.getNumberOfVariables()
+        double[] x = new double[nVars]
+        forceFieldEnergy.getCoordinates(x)
+        energy = forceFieldEnergy.energy(x, true)
+        assemblyState = new AssemblyState(activeAssembly)
+        SystemFilter systemFilter = potentialFunctions.getFilter()
 
-        logger.info("\n Saving PDB for " + modelFilename)
+        if (systemFilter instanceof XYZFilter) {
+            XYZFilter xyzFilter = (XYZFilter) systemFilter
+            //calling the next assembly of the arc file
+            while (xyzFilter.readNext()) {
+                forceFieldEnergy.getCoordinates(x) // getting the coordinates for the next assembly
+                double newEnergy = forceFieldEnergy.energy(x, true) //calculating energy for new assembly
+                if (newEnergy < energy) {
+                    assemblyState = new AssemblyState(activeAssembly) //saving new assembly if the energy is less than the current energy
+                    energy = newEnergy
+                }
+            }
+        } else {
+            logger.severe(String.format(" System %s does not appear to be a .arc or .xyz file!", filenames.get(0)));
+        }
+
+        assemblyState.revertState()
+        logger.info(String.format(" The lowest potential energy found is %12.6g kcal/mol", energy))
+        //prints our final energy (which will be the lowest energy)
 
         File saveDir = baseDir
+        String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
         String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
         fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-        File modelFile = new File(dirName + fileName)
-        File saveFile = potentialFunctions.versionFile(modelFile);
-
-        potentialFunctions.saveAsPDB(activeAssembly, saveFile)
-        PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
-        saveFilter.setModelNumbering(true)
-
-        //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
-        File arcFile = potentialFunctions.versionFile(new File(dirName + FilenameUtils.removeExtension(fileName) + ".arc"))
-        if (openFilter != null && openFilter instanceof XYZFilter) {
-            try {
-                arcFile.append("MODEL        1\n")
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(saveFile))
-                String line = bufferedReader.readLine()
-                while(line!=null) {
-                    if(!line.contentEquals("END")){
-                        arcFile.append(line+"\n")
-                    }
-                    line=bufferedReader.readLine()
-                }
-                bufferedReader.close()
-
-                while (openFilter.readNext(false)) {
-                    arcFile.append("ENDMDL\n")
-                    saveFilter.writeFile(arcFile, true, true, false)
-                }
-            } catch (Exception e) {
-                // Do nothing.
-            }
-            arcFile.append("END\n")
-        }
+        File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+        potentialFunctions.saveAsPDB(assemblyState.mola, saveFile)
 
         return this
+    }
+
+    /**
+     * Returns the lowest energy found.
+     * @return Lowest potential energy.
+     */
+    public double getLowestEnergy() {
+        return energy;
+    }
+
+    /**
+     * Returns a copy of the lowest-energy state found.
+     * @return Lowest-energy state found.
+     */
+    public AssemblyState getOptimumState() {
+        return AssemblyState.copyState(assemblyState);
     }
 }
 
@@ -139,4 +156,4 @@ class SaveAsPDB extends PotentialScript {
  * library, you may extend this exception to your version of the library, but
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
- */
+*/

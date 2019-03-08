@@ -155,6 +155,9 @@ public class Polymer extends MSGroup {
         }
 
         getAtomNode().insert(residue, childIndex);
+
+        residue.setChainID(chainID);
+
         return msNode;
     }
 

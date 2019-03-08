@@ -1460,7 +1460,7 @@ public final class PDBFilter extends SystemFilter {
 // the SSBOND record.
 // =============================================================================
             int serNum = 1;
-            Polymer polymers[] = activeMolecularAssembly.getChains();
+            Polymer[] polymers = activeMolecularAssembly.getChains();
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     ArrayList<Residue> residues = polymer.getResidues();
@@ -1480,7 +1480,7 @@ public final class PDBFilter extends SystemFilter {
                             List<Bond> bonds = SG1.getBonds();
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
-                                if (SG2.getName().equalsIgnoreCase("SG") && !atomExclusions.contains(SG2)) {
+                                if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
                                     if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
