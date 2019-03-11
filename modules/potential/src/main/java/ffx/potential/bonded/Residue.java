@@ -681,8 +681,12 @@ public class Residue extends MSGroup {
         } else if (na == NA3.UNK) {
             return NucleicAcid3.UNK;
         }
-        return NucleicAcid3.valueOf(getName());
 
+        try {
+            return NucleicAcid3.valueOf(getName());
+        } catch (Exception e) {
+            return NucleicAcid3.UNK;
+        }
     }
 
     /**
