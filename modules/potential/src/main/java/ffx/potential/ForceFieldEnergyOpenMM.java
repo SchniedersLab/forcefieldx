@@ -179,6 +179,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 
 import ffx.crystal.Crystal;
+import ffx.numerics.switching.PowerSwitch;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
@@ -195,6 +196,7 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
+import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
@@ -3028,7 +3030,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     OpenMM_Context_reinitialize(context, preserveState);
                     OpenMM_Context_setParameter(context, "vdw_lambda", lambdaVDW);
                 }
-
                 softcoreCreated = true;
             } else {
                 if (context != null) {
@@ -3502,8 +3503,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 useFactor = 0.0;
             }
 
-            // Scale all implicit solvent terms with the lambda for electrostatics.
-            double lambdaScale = lambdaElec;
+            /**
+             * Scale all implicit solvent terms with the square of electrostatics lambda
+             * (so dUdisp / dL is 0 at lambdaElec = 0).
+             */
+            double lambdaScale = lambdaElec * lambdaElec;
             if (!atoms[i].applyLambda()) {
                 lambdaScale = 1.0;
             }
@@ -3593,7 +3597,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 // Applied to softcore vdW forces.
                 lambdaVDW = 1.0;
 
-                // Applied to noraml AMOEBA eps values for alchemical atoms.
+                // Applied to normal AMOEBA eps values for alchemical atoms.
                 lambdaAmoebaVDW = 1.0;
 
                 // Applied to normal electrostatic parameters for alchemical atoms.
@@ -3613,56 +3617,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         double elecWindow = 1.0 - electrostaticStart;
                         lambdaElec = (lambda - electrostaticStart) / elecWindow;
                     }
-
                     lambdaVDW = lambda;
-
-                    // AMOEBA Case
-                    if (amoebaVDWForce != null) {
-                        double turnOnRange = softcoreAMOEBAvdWMidPoint;
-                        double turnOffRange = 1.0 - softcoreAMOEBAvdWMidPoint;
-                        if (lambda < softcoreAMOEBAvdWMidPoint) {
-                            // Turn on softcore that lack reduction factors.
-                            lambdaVDW = lambda / turnOnRange;
-                        } else {
-                            // Turn off softcore that lack reduction factors.
-                            if (turnOffRange <= 0.0) {
-                                lambdaVDW = 0.0;
-                            } else {
-                                lambdaVDW = (1.0 - lambda) / turnOffRange;
-                            }
-                        }
-                        lambdaAmoebaVDW = 0.0;
-                        if (lambda > nonSoftcoreAMOEBAvdWStart) {
-                            lambdaAmoebaVDW = (lambda - nonSoftcoreAMOEBAvdWStart) / (1.0 - nonSoftcoreAMOEBAvdWStart);
-                        }
-                        lambdaAmoebaVDW = lambdaAmoebaVDW * lambdaAmoebaVDW;
-                    }
-
+                    setAMOEBAVDW(lambda);
                 } else if (vdwLambdaTerm) {
                     // Lambda effects vdW, with electrostatics turned off.
-                    lambdaVDW = lambda;
                     lambdaElec = 0.0;
-                    // AMOEBA Case
-                    if (amoebaVDWForce != null) {
-                        double turnOnRange = softcoreAMOEBAvdWMidPoint;
-                        double turnOffRange = 1.0 - softcoreAMOEBAvdWMidPoint;
-                        if (lambda < softcoreAMOEBAvdWMidPoint) {
-                            // Turn on softcore that lack reduction factors.
-                            lambdaVDW = lambda / turnOnRange;
-                        } else {
-                            // Turn off softcore that lack reduction factors.
-                            if (turnOffRange <= 0.0) {
-                                lambdaVDW = 0.0;
-                            } else {
-                                lambdaVDW = (1.0 - lambda) / turnOffRange;
-                            }
-                        }
-                        lambdaAmoebaVDW = 0.0;
-                        if (lambda > nonSoftcoreAMOEBAvdWStart) {
-                            lambdaAmoebaVDW = (lambda - nonSoftcoreAMOEBAvdWStart) / (1.0 - nonSoftcoreAMOEBAvdWStart);
-                        }
-                        lambdaAmoebaVDW = lambdaAmoebaVDW * lambdaAmoebaVDW;
-                    }
+                    lambdaVDW = lambda;
+                    setAMOEBAVDW(lambda);
                 } else if (elecLambdaTerm) {
                     // Lambda effects electrostatics, but not vdW.
                     lambdaElec = lambda;
@@ -3676,6 +3637,36 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         } else {
             logger.fine(" Attempting to set a lambda value on a ForceFieldEnergyOpenMM with lambdaterm false.");
+        }
+    }
+
+    private void setAMOEBAVDW(double lambda) {
+        if (amoebaVDWForce != null) {
+            double turnOnRange = softcoreAMOEBAvdWMidPoint;
+            double turnOffRange = 1.0 - softcoreAMOEBAvdWMidPoint;
+            if (lambda < softcoreAMOEBAvdWMidPoint) {
+                // Turn on softcore that lack reduction factors.
+                lambdaVDW = lambda / turnOnRange;
+            } else {
+                // Turn off softcore that lack reduction factors.
+                if (turnOffRange <= 0.0) {
+                    lambdaVDW = 0.0;
+                } else {
+                    lambdaVDW = (1.0 - lambda) / turnOffRange;
+                }
+            }
+
+            /**
+             * Apply a switched dependence to lambda so that the vdW dU/dL derivative is smooth near L=0.5.
+             */
+            MultiplicativeSwitch multiplicativeSwitch = new MultiplicativeSwitch();
+            lambdaVDW = multiplicativeSwitch.taper(lambdaVDW);
+
+            lambdaAmoebaVDW = 0.0;
+            if (lambda > nonSoftcoreAMOEBAvdWStart) {
+                lambdaAmoebaVDW = (lambda - nonSoftcoreAMOEBAvdWStart) / (1.0 - nonSoftcoreAMOEBAvdWStart);
+            }
+            lambdaAmoebaVDW = lambdaAmoebaVDW * lambdaAmoebaVDW;
         }
     }
 

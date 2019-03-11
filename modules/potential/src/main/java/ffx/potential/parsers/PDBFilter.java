@@ -4944,7 +4944,8 @@ public final class PDBFilter extends SystemFilter {
         }
         assert residue.getResidueType() == Residue.ResidueType.NA;
         NucleicAcid3 na3 = residue.getNucleicAcid3(true);
-        logger.info(residue.toString());
+        residue.setName(na3.toString());
+        // logger.info(residue.toString());
         switch (na3) {
             case ADE:
             case DAD:
@@ -5020,15 +5021,12 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
 
-            boolean deoxy;
             if (hasAttachedAtom(C2s, 8)) {
-                deoxy = false;
                 Atom O2s = findBondedAtoms(C2s, 8).get(0);
                 O2s.setName("O2\'");
                 findBondedAtoms(O2s, 1).get(0).setName("HO2\'");
                 findBondedAtoms(C2s, 1).get(0).setName("H2\'");
             } else {
-                deoxy = true;
                 List<Atom> bothH2List = findBondedAtoms(C2s, 1);
                 Atom[] bothH2 = bothH2List.toArray(new Atom[bothH2List.size()]);
                 sortAtomsByDistance(H1s, bothH2);
@@ -5037,7 +5035,7 @@ public final class PDBFilter extends SystemFilter {
                 bothH2[1].setName("H2\'");
             }
 
-            logger.info(String.format(" C5\' null: %b", C5s == null));
+            // logger.info(String.format(" C5\' null: %b", C5s == null));
             Atom O5s = findBondedAtoms(C5s, 8).get(0);
             O5s.setName("O5\'");
 
