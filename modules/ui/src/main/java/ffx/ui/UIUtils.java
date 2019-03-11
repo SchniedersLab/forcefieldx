@@ -174,9 +174,9 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     }
 
     @Override
-    public void saveAsPDB(MolecularAssembly assembly, File file, boolean writeEnd) {
+    public void saveAsPDB(MolecularAssembly assembly, File file, boolean writeEnd, boolean append) {
         Optional<FFXSystem> origSys = switchTo(assembly);
-        mainPanel.saveAsPDB(file, false);
+        mainPanel.saveAsPDB(file, false, append);
         lastFilter = mainPanel.getFilter();
         switchBack(origSys);
     }

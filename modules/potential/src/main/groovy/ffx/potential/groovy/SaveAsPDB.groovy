@@ -66,39 +66,43 @@ class SaveAsPDB extends PotentialScript {
         }
         String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
+        String extension = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
         File modelFile = new File(dirName + fileName)
-        File saveFile = potentialFunctions.versionFile(modelFile);
+        File saveFile = potentialFunctions.versionFile(modelFile)
 
-        potentialFunctions.saveAsPDB(activeAssembly, saveFile)
-        PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
+        PDBFilter saveFilter
+        if (extension == "arc"){
+            BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile))
+            bw.write("MODEL        1\n")
+            bw.flush()
+            potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
+            bw.close()
+        }
+        else{
+            potentialFunctions.saveAsPDB(activeAssembly, saveFile)
+        }
+        try {
+            saveFilter = (PDBFilter) potentialFunctions.getFilter()
+        } catch (Throwable t) {
+            logger.info(String.format(" The type of %s is %s", potentialFunctions.getFilter(), potentialFunctions.getFilter().class.getName()))
+            throw t
+        }
+
         saveFilter.setModelNumbering(true)
 
         //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
-        File arcFile = potentialFunctions.versionFile(new File(dirName + FilenameUtils.removeExtension(fileName) + ".arc"))
-        if (openFilter != null && openFilter instanceof XYZFilter) {
+        if (openFilter != null && openFilter instanceof XYZFilter && extension=="arc") {
             try {
-                arcFile.append("MODEL        1\n")
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(saveFile))
-                String line = bufferedReader.readLine()
-                while(line!=null) {
-                    if(!line.contentEquals("END")){
-                        arcFile.append(line+"\n")
-                    }
-                    line=bufferedReader.readLine()
-                }
-                bufferedReader.close()
-
                 while (openFilter.readNext(false)) {
-                    arcFile.append("ENDMDL\n")
-                    saveFilter.writeFile(arcFile, true, true, false)
+                    saveFile.append("ENDMDL\n")
+                    saveFilter.writeFile(saveFile, true, true, false)
                 }
             } catch (Exception e) {
                 // Do nothing.
             }
-            arcFile.append("END\n")
+            saveFile.append("END\n")
         }
-
         return this
     }
 }
