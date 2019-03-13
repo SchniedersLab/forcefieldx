@@ -1089,6 +1089,7 @@ public class OSRW extends AbstractOSRW {
     @Override
     public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
+        logger.info(String.format(" Set lambda write out threshold to %f lambda", lambdaWriteOut));
     }
 
     /**

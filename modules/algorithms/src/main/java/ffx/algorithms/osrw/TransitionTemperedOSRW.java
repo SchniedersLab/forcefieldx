@@ -1281,6 +1281,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
+        logger.info(String.format(" Set lambda write out threshold to %f lambda", lambdaWriteOut));
     }
 
     /**
