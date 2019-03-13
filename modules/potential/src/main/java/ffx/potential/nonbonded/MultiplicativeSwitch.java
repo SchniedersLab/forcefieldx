@@ -37,6 +37,8 @@
  */
 package ffx.potential.nonbonded;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.numerics.switching.UnivariateSwitchingFunction;
@@ -228,10 +230,6 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double secondDerivative(double x) {
-        /*double val = 20.0 * c5 * x*x*x;
-        val += c4 * 12.0 * x*x;
-        val += c3 * 6.0 *x;
-        val += c2 * 2.0;*/
         double x2 = x * x;
         double val = 20.0 * c5 * x2 * x;
         val += 12.0 * c4 * x2;
@@ -274,7 +272,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public String toString() {
-        return String.format("Multiplicative switch of form f(x) = %8.4g*x^5 + "
+        return format("Multiplicative switch of form f(x) = %8.4g*x^5 + "
                         + "%8.4g*x^4 + %8.4g*x^3 + %8.4g*x^2 + %8.4g*x + %8.4g",
                 c5, c4, c3, c2, c1, c0);
     }

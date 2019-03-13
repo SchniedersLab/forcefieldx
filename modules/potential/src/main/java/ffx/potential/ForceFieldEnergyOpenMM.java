@@ -179,7 +179,8 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.switching.PowerSwitch;
+import ffx.numerics.switching.SquaredTrigSwitch;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
@@ -196,7 +197,6 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
-import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
@@ -450,8 +450,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * for alchemical atoms.
      * <p>
      * If this value is set to 1.0, non-softcored AMOEBA vdW will not be turned on.
+     * <p>
+     * Testing shows this value needs to be at least L=~0.3 to prevent large dU/dL values (i.e. due to
+     * the softcore vdW not being sufficiently grown in yet).
      */
-    private double nonSoftcoreAMOEBAvdWStart = 1.0 / 3.0;
+    private double nonSoftcoreAMOEBAvdWStart = 0.3;
     /**
      * The lambda value that defines when softcore AMOEBA vdW will finish om and begin turning off for alchemical atoms.
      * These must be turned off because they do not include hydrogen reduction factors.
@@ -460,9 +463,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double softcoreAMOEBAvdWMidPoint = 0.5;
     /**
-     * The lambda value that defines when the electrostatics will start to turn on for full path non bonded term scaling.
+     * The switching function used to turn on/off the softcore AMOEBA vdW.
      */
-    private double electrostaticStart = 0.5;
+    private UnivariateSwitchingFunction softcoreAMOEBASwitch = null;
+    /**
+     * The lambda value that defines when the electrostatics will start to turn on for full path non-bonded term scaling.
+     * <p>
+     * A value of 0.4 is quite conservative (i.e. the vdW repulsion is strong enough by L=0.4 to promote a smooth dU/dL).
+     */
+    private double electrostaticStart = 0.4;
     /**
      * Lambda step size for finite difference dU/dL.
      */
@@ -639,16 +648,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.info(format(" Lambda scales vdW interactions:  %s", vdwLambdaTerm));
             logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
 
-            if (amoebaVDWForce != null && vdwLambdaTerm) {
+            // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
+            lambdaStart = forceField.getDouble(
+                    ForceFieldDouble.LAMBDA_START, 0.0);
+            if (lambdaStart > 1.0) {
+                lambdaStart = 1.0;
+            } else if (lambdaStart < 0.0) {
+                lambdaStart = 0.0;
+            }
+            logger.info(format(" Lambda path start:             %6.3f", lambdaStart));
 
-                lambdaStart = forceField.getDouble(
-                        ForceFieldDouble.LAMBDA_START, 0.0);
-                if (lambdaStart > 1.0) {
-                    lambdaStart = 1.0;
-                } else if (lambdaStart < 0.0) {
-                    lambdaStart = 0.0;
-                }
-
+            // Define AMOEBA specific vdW lambda path details.
+            if (vdwLambdaTerm && amoebaVDWForce != null) {
                 softcoreAMOEBAvdWMidPoint = forceField.getDouble(
                         ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MIDPOINT, softcoreAMOEBAvdWMidPoint);
                 if (softcoreAMOEBAvdWMidPoint > 1.0) {
@@ -665,29 +676,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     nonSoftcoreAMOEBAvdWStart = 0.0;
                 }
 
-                if (elecLambdaTerm) {
-                    electrostaticStart = forceField.getDouble(
-                            ForceFieldDouble.ELEC_START, electrostaticStart);
-                    if (electrostaticStart > 1.0) {
-                        electrostaticStart = 1.0;
-                    } else if (electrostaticStart < 0.0) {
-                        electrostaticStart = 0.0;
-                    }
-                }
+                softcoreAMOEBASwitch = new SquaredTrigSwitch(false);
 
-                logger.info(format(" Lambda path start:             %6.3f", lambdaStart));
                 logger.info(format(" Softcore AMOEBA vdW midpoint:  %6.3f", softcoreAMOEBAvdWMidPoint));
-                logger.info(format(" Non-Softcore AMOEBA vdW start: %6.3f ", nonSoftcoreAMOEBAvdWStart));
-                if (elecLambdaTerm) {
-                    logger.info(format(" Electrostatics start: %6.3f", electrostaticStart));
-                }
-            } else if (elecLambdaTerm && vdwLambdaTerm) {
+                logger.info(format(" Non-Softcore AMOEBA vdW start: %6.3f", nonSoftcoreAMOEBAvdWStart));
+            }
+
+            // Define electrostatics to turn on at a value different from 0.5.
+            if (vdwLambdaTerm && elecLambdaTerm) {
                 electrostaticStart = forceField.getDouble(
                         ForceFieldDouble.ELEC_START, electrostaticStart);
-                logger.info(format(" Electrostatic start: %6.3f", electrostaticStart));
+                if (electrostaticStart > 1.0) {
+                    electrostaticStart = 1.0;
+                } else if (electrostaticStart < 0.0) {
+                    electrostaticStart = 0.0;
+                }
+                logger.info(format(" Electrostatics start:          %6.3f", electrostaticStart));
             }
         }
-
 //        CompositeConfiguration properties = molecularAssembly.getProperties();
 //        if (properties.containsKey("openMMdEdL")) {
 //            doOpenMMdEdL = true;
@@ -1091,7 +1097,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
             numParticles++;
         }
-        logger.log(Level.INFO, "  Atoms {0}", nAtoms);
+        logger.log(Level.INFO, format("  Atoms \t\t%6d", nAtoms));
     }
 
     /**
@@ -2523,6 +2529,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         amoebaMultipoleForce = OpenMM_AmoebaMultipoleForce_create();
 
         double polarScale = 1.0;
+        ParticleMeshEwald.SCFAlgorithm scfAlgorithm = null;
+
         if (pme.getPolarizationType() != Polarization.MUTUAL) {
             OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Direct);
             if (pme.getPolarizationType() == Polarization.NONE) {
@@ -2530,8 +2538,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         } else {
             String algorithm = forceField.getString(ForceField.ForceFieldString.SCF_ALGORITHM, "CG");
-            ParticleMeshEwald.SCFAlgorithm scfAlgorithm;
-
             try {
                 algorithm = algorithm.replaceAll("-", "_").toUpperCase();
                 scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.valueOf(algorithm);
@@ -2541,7 +2547,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             switch (scfAlgorithm) {
                 case EPT:
-                    logger.info(" Using extrapolated perturbation theory approximation instead of full SCF calculations. Not supported in FFX reference implementation.");
                     OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Extrapolated);
                     PointerByReference exptCoefficients = OpenMM_DoubleArray_create(4);
                     OpenMM_DoubleArray_set(exptCoefficients, 0, -0.154);
@@ -2765,6 +2770,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             addGKForce(forceField);
         }
 
+        if (scfAlgorithm == ParticleMeshEwald.SCFAlgorithm.EPT) {
+            logger.info("   Using extrapolated perturbation theory for polarization energy.");
+        }
     }
 
     private void addGKForce(ForceField forceField) {
@@ -3021,9 +3029,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 } else if (fixedChargeNonBondedForce != null) {
                     addCustomNonbondedSoftcoreForce(forceField);
                 }
-
-                //createContext(integratorString, timeStep, temperature);
-
                 // Re-initialize the context.
                 if (context != null) {
                     int preserveState = 1;
@@ -3659,8 +3664,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             /**
              * Apply a switched dependence to lambda so that the vdW dU/dL derivative is smooth near L=0.5.
              */
-            MultiplicativeSwitch multiplicativeSwitch = new MultiplicativeSwitch();
-            lambdaVDW = multiplicativeSwitch.taper(lambdaVDW);
+            lambdaVDW = softcoreAMOEBASwitch.valueAt(lambdaVDW);
 
             lambdaAmoebaVDW = 0.0;
             if (lambda > nonSoftcoreAMOEBAvdWStart) {
