@@ -59,7 +59,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
 
     /**
      * Default constructor, creating a switch sin^2(pi*x/2), or cos^2 if
-     * flag set.
+     * flag set. The sine form will switch 0-1, and the cosine form switch 1-0.
      *
      * @param cosine Use a cos^2(pi*x/2) transform instead of sin^2(pi*x/2).
      */
@@ -69,7 +69,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
 
     /**
      * Constructor permitting a custom frequency a in the form sin^2(a*x) or
-     * cos^2(a*x)
+     * cos^2(a*x). The sine form will switch 0-1, and the cosine form switch 1-0.
      *
      * @param mult   Value of a
      * @param cosine Use a cos^2(ax) transform instead of sin^2(ax).
