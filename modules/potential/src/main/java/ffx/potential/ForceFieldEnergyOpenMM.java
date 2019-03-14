@@ -454,7 +454,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Testing shows this value needs to be at least L=~0.3 to prevent large dU/dL values (i.e. due to
      * the softcore vdW not being sufficiently grown in yet).
      */
-    private double nonSoftcoreAMOEBAvdWStart = 0.3;
+    private double nonSoftcoreAMOEBAvdWStart = 0.4;
     /**
      * The lambda value that defines when softcore AMOEBA vdW will finish om and begin turning off for alchemical atoms.
      * These must be turned off because they do not include hydrogen reduction factors.
@@ -471,7 +471,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * <p>
      * A value of 0.4 is quite conservative (i.e. the vdW repulsion is strong enough by L=0.4 to promote a smooth dU/dL).
      */
-    private double electrostaticStart = 0.4;
+    private double electrostaticStart = 0.3;
     /**
      * Lambda step size for finite difference dU/dL.
      */
@@ -3608,8 +3608,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 // Applied to normal electrostatic parameters for alchemical atoms.
                 lambdaElec = 1.0;
 
+                // Multiply torsional potentials by L^2 (dU/dL = 0 at L=0).
                 if (torsionLambdaTerm) {
-                    lambdaTorsion = lambda;
+                    lambdaTorsion = lambda * lambda;
                 }
 
                 if (elecLambdaTerm && vdwLambdaTerm) {
