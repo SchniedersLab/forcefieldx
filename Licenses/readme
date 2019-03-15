@@ -38,3 +38,5 @@ javahelp-license.txt: GNU GPL 2.0 with classpath exception: Listed license for J
 
 MRJ Toolkit Stubs: License could not be found.
 
+guava-license.txt: Apache 2.0 license: covers Guava (Google core utils for Java).
+
