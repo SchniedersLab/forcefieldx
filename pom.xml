@@ -1111,7 +1111,7 @@
         <jopenmm.version>7.3.0</jopenmm.version>
         <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
-        <biojava.version>5.2.0</biojava.version>
+        <biojava.version>5.2.1</biojava.version>
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.1.0</clustering.version>
         <fastutil.version>8.2.1</fastutil.version>
