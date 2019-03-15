@@ -460,6 +460,17 @@ public abstract class SystemFilter {
      */
     public abstract boolean readNext(boolean resetPosition);
 
+
+    public abstract boolean readNext(boolean resetPosition, boolean print);
+
+    /**
+     *
+     * @return
+     */
+    public int getSnapshot(){
+        return -1;
+    }
+
     /**
      * Attempts to close any open resources associated with the underlying file;
      * primarily to be used when finished reading a trajectory.

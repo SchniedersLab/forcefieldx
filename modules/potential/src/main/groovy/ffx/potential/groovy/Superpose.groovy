@@ -4,8 +4,6 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
-import org.apache.commons.io.FilenameUtils
-
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.SystemFilter
@@ -82,9 +80,7 @@ class Superpose extends PotentialScript {
         forceFieldEnergy.getCoordinates(x)
 
         SystemFilter systemFilter = potentialFunctions.getFilter()
-        if (systemFilter instanceof XYZFilter) {
-            XYZFilter xyzFilter = (XYZFilter) systemFilter
-
+        if (systemFilter instanceof PDBFilter || systemFilter instanceof XYZFilter) {
             double[] x2 = new double[nVars]
             double[] mass = new double[nVars / 3]
 
@@ -147,16 +143,28 @@ class Superpose extends PotentialScript {
             switch(frameComparison.toUpperCase()){
                 case "ONEVSALL":
                     // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
-                    rmsd(xyzFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+                    rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
                     break
                 case "ALLVSALL":
-                    rmsd(xyzFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
-                    XYZFilter xyzFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                    while (xyzFilter1.readNext(false, false)) {
-                        int snapshot1 = xyzFilter1.getSnapShot()
+                    rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+                    SystemFilter systemFilter1
+                    if(systemFilter instanceof PDBFilter){
+                        systemFilter1 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                        systemFilter1.readFile()
+                    } else if (systemFilter instanceof XYZFilter){
+                        systemFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                    }
+                    while (systemFilter1.readNext(false, false)) {
+                        int snapshot1 = systemFilter1.getSnapshot()
                         forceFieldEnergy.getCoordinates(x)
-                        XYZFilter xyzFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                        rmsd(xyzFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
+                        SystemFilter systemFilter2
+                        if(systemFilter instanceof PDBFilter){
+                            systemFilter2 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                            systemFilter2.readFile()
+                        } else if (systemFilter instanceof XYZFilter){
+                            systemFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                        }
+                        rmsd(systemFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
                     }
                     break
 
@@ -167,9 +175,9 @@ class Superpose extends PotentialScript {
         return this
     }
 
-    void rmsd(XYZFilter xyzFilter2, int nUsed, int[] usedIndices, String selectionType, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1){
-        while(xyzFilter2.readNext(false, false)) {
-            int snapshot2 = xyzFilter2.getSnapShot()
+    void rmsd(SystemFilter systemFilter, int nUsed, int[] usedIndices, String selectionType, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1){
+        while(systemFilter.readNext(false, false)) {
+            int snapshot2 = systemFilter.getSnapshot()
             // Only calculate RMSD for snapshots if they aren't the same snapshot.
             // Also avoid double calculating snapshots in the matrix by only calculating the upper triangle.
             if (snapshot1 != snapshot2 && snapshot1<snapshot2) {
@@ -191,7 +199,7 @@ class Superpose extends PotentialScript {
 
                 logger.info(format(
                         "\n Coordinate RMSD Based On %s (Angstroms) on Model %d and Model %d\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                         selectionType, snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
+                        selectionType, snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
 
             }
         }

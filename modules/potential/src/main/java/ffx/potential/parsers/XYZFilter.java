@@ -302,7 +302,8 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
-    public int getSnapShot(){
+    @Override
+    public int getSnapshot(){
         return snapShot;
     }
 

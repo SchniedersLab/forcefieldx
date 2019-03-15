@@ -94,6 +94,12 @@ public class MergeFilter extends SystemFilter {
 
     /** {@inheritDoc} */
     @Override
+    public boolean readNext(boolean resetPosition, boolean print) {
+        return false;
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void closeReader() {
         //logger.fine(" Reading trajectories not yet supported for MergeFilter");
         // No logger set for MergeFilter.

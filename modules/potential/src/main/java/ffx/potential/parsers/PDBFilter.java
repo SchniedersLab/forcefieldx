@@ -3300,6 +3300,11 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
+    @Override
+    public int getSnapshot(){
+        return modelsRead;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -3313,11 +3318,18 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean readNext(boolean resetPosition) {
+        return readNext(resetPosition, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean readNext(boolean resetPosition, boolean print) {
         // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
         Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
         modelsRead = resetPosition ? 1 : modelsRead + 1;
         boolean eof = true;
-
         for (MolecularAssembly system : systems) {
             File file = system.getFile();
             currentFile = file;
@@ -3341,14 +3353,15 @@ public final class PDBFilter extends SystemFilter {
                     if (m.find()) {
                         int modelNum = Integer.parseInt(m.group(1));
                         if (modelNum == modelsRead) {
-                            logger.log(Level.INFO, String.format(" Reading model %d for %s", modelNum, currentFile));
+                            if(print) {
+                                logger.log(Level.INFO, String.format(" Reading model %d for %s", modelNum, currentFile));
+                            }
                             eof = false;
                             break;
                         }
                     }
                     line = currentReader.readLine();
                 }
-
                 if (eof) {
                     logger.log(Level.INFO, String.format(" End of file reached for %s", file));
                     currentReader.close();
