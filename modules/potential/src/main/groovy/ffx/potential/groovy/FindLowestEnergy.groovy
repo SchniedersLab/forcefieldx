@@ -5,14 +5,17 @@ import ffx.potential.AssemblyState
 import ffx.potential.bonded.Atom
 import ffx.potential.parsers.XYZFileFilter
 import ffx.potential.parsers.XYZFilter
+import ffx.potential.utils.PotentialsUtils
 import org.apache.commons.io.FilenameUtils
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.Superpose
+import org.checkerframework.checker.units.qual.K
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import com.google.common.collect.MinMaxPriorityQueue
 
 import static java.lang.String.format
 
@@ -34,6 +37,13 @@ class FindLowestEnergy extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    /**
+     * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
+     */
+    @Option(names = ['-K', '--nlowest'], paramLabel = "1",
+            description = 'allows you to get the n lowest energy structures in an arc file')
+    int numSnaps = 1
+
     private File baseDir = null
 
     void setBaseDir(File baseDir) {
@@ -42,6 +52,29 @@ class FindLowestEnergy extends PotentialScript {
 
     private double energy = Double.MAX_VALUE;
     private AssemblyState assemblyState = null;
+
+    private class StateContainer implements Comparable<StateContainer> {
+        private final AssemblyState state;
+        private final double e;
+
+        StateContainer(AssemblyState state, double e) {
+            this.state = state;
+            this.e = e;
+
+        }
+
+        AssemblyState getState() {
+            return state;
+        }
+        double getEnergy() {
+            return e;
+        }
+
+        @Override
+        int compareTo(StateContainer o) {
+            return Double.compare(e, o.getEnergy());
+        }
+    }
 
     /**
      * Execute the script.
@@ -70,24 +103,90 @@ class FindLowestEnergy extends PotentialScript {
         assemblyState = new AssemblyState(activeAssembly)
         SystemFilter systemFilter = potentialFunctions.getFilter()
 
+
+        int maxnum= 1
+
+        /**
+         * Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size N/
+         */
+
+        if (numSnaps < 1 ) {
+            numSnaps = 1
+            logger.info(String.format(" Warning!!! Cannot request 0 lowest enrgies! System will return 1 lowest energies and PDB file"))
+        }
+
+        MinMaxPriorityQueue<StateContainer> energyQueue;
+        energyQueue = MinMaxPriorityQueue
+                .maximumSize(numSnaps)
+                .create()
+        StateContainer firstContainer;
+        firstContainer = new StateContainer(assemblyState, energy)
+        energyQueue.add(firstContainer)
+
         if (systemFilter instanceof XYZFilter) {
             XYZFilter xyzFilter = (XYZFilter) systemFilter
             //calling the next assembly of the arc file
             while (xyzFilter.readNext()) {
                 forceFieldEnergy.getCoordinates(x) // getting the coordinates for the next assembly
-                double newEnergy = forceFieldEnergy.energy(x, true) //calculating energy for new assembly
-                if (newEnergy < energy) {
-                    assemblyState = new AssemblyState(activeAssembly) //saving new assembly if the energy is less than the current energy
-                    energy = newEnergy
-                }
+                energy= forceFieldEnergy.energy(x, true) //calculating energy for new assembly
+                assemblyState = new AssemblyState(activeAssembly) //saving new assembly if the energy is less than the current energy
+                energyQueue.add(new StateContainer(assemblyState, energy))
+                maxnum = maxnum + 1
+
             }
         } else {
             logger.severe(String.format(" System %s does not appear to be a .arc or .xyz file!", filenames.get(0)));
         }
 
+        /**File saveDir = baseDir
+        *String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
+        *if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        *}
+        *String dirName = saveDir.toString() + File.separator
+        *String fileName = FilenameUtils.getName(modelFilename)
+        *\\fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+        *String arcFileName = fileName + ".arc"
+        **/
+
+
+        if (numSnaps > maxnum ) {
+            logger.info(String.format(" Warning!!! System does not appear to contain enough entries! All %d energies will be reported", maxnum))
+            numSnaps = maxnum
+
+        }
+
+        for (int i = 0; i < numSnaps-1; i++) {
+            StateContainer savedState = energyQueue.removeLast()
+            AssemblyState finalAssembly = savedState.getState()
+            finalAssembly.revertState();
+            double finalEnergy = savedState.getEnergy()
+            logger.info(String.format("The potential energy found is %12.6g kcal/mol", finalEnergy))
+
+
+
+            File saveDir = baseDir
+            String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
+            if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+                saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+            }
+            String dirName = saveDir.toString() + File.separator
+            String fileName = FilenameUtils.getName(modelFilename)
+            //fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+            String arcFileName = fileName + ".arc"
+            File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+            potentialFunctions.saveAsPDB(assemblyState.mola, saveFile)
+
+        }
+
+
+        StateContainer savedState = energyQueue.removeLast()
+        AssemblyState lowestAssembly = savedState.getState()
+        lowestEnergy = savedState.getEnergy()
+
         assemblyState.revertState()
-        logger.info(String.format(" The lowest potential energy found is %12.6g kcal/mol", energy))
-        //prints our final energy (which will be the lowest energy)
+        logger.info(String.format(" The lowest potential energy found is %12.6g kcal/mol", lowestEnergy))
+        //prints our final energy (which will be the lowest energy
 
         File saveDir = baseDir
         String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
@@ -96,7 +195,8 @@ class FindLowestEnergy extends PotentialScript {
         }
         String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
-        fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+        //fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+        String arcFileName = fileName + ".arc"
         File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
         potentialFunctions.saveAsPDB(assemblyState.mola, saveFile)
 
