@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -54,19 +54,17 @@ package ffx.numerics.fft;
  * <p>
  *
  * @author Michal J. Schnieders
- *
- * @since 1.0
- *
  * @see Complex
+ * @since 1.0
  */
 public class Complex3D {
 
     private final int nX, nY, nZ;
     private final int nZ2;
     private final int nextX, nextY, nextZ;
-    private final double work[];
+    private final double[] work;
     private final Complex fftX, fftY, fftZ;
-    private final double recip[];
+    private final double[] recip;
 
     /**
      * Initialize the 3D FFT for complex 3D matrix.
@@ -97,13 +95,13 @@ public class Complex3D {
      *
      * @param input The input array must be of size 2 * nX * nY * nZ.
      */
-    public void fft(final double input[]) {
+    public void fft(final double[] input) {
         for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
-                fftX.fft(input, offset, stride);
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                fftX.fft(input, offset, nextX);
             }
-            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
-                fftY.fft(input, offset, stride);
+            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
+                fftY.fft(input, offset, nextY);
             }
         }
         for (int x = 0, offset = 0; x < nX; x++) {
@@ -126,7 +124,7 @@ public class Complex3D {
      *
      * @param input The input array must be of size 2 * nX * nY * nZ.
      */
-    public void ifft(final double input[]) {
+    public void ifft(final double[] input) {
         for (int offset = 0, x = 0; x < nX; x++) {
             for (int y = 0; y < nY; y++, offset += nextX) {
                 for (int i = 0, z = offset; i < nZ2; i += 2, z += nextZ) {
@@ -141,11 +139,11 @@ public class Complex3D {
             }
         }
         for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
-                fftY.ifft(input, offset, stride);
+            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
+                fftY.ifft(input, offset, nextY);
             }
-            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
-                fftX.ifft(input, offset, stride);
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                fftX.ifft(input, offset, nextX);
             }
         }
     }
@@ -156,11 +154,8 @@ public class Complex3D {
      *
      * @param recip an array of double.
      */
-    public void setRecip(double recip[]) {
-        /**
-         * Reorder the reciprocal space data into the order it is needed by the
-         * convolution routine.
-         */
+    public void setRecip(double[] recip) {
+        // Reorder the reciprocal space data into the order it is needed by the convolution routine.
         for (int offset = 0, index = 0, y = 0; y < nY; y++) {
             for (int x = 0; x < nX; x++, offset += 1) {
                 for (int i = 0, z = offset; i < nZ2; i += 2, z += nX * nY) {
@@ -176,13 +171,13 @@ public class Complex3D {
      *
      * @param input an array of double.
      */
-    public void convolution(final double input[]) {
+    public void convolution(final double[] input) {
         for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
-                fftX.fft(input, offset, stride);
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                fftX.fft(input, offset, nextX);
             }
-            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
-                fftY.fft(input, offset, stride);
+            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
+                fftY.fft(input, offset, nextY);
             }
         }
         for (int offset = 0, index = 0, y = 0; y < nY; y++) {
@@ -205,11 +200,11 @@ public class Complex3D {
             }
         }
         for (int z = 0; z < nZ; z++) {
-            for (int offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
-                fftY.ifft(input, offset, stride);
+            for (int offset = z * nextZ, x = 0; x < nX; x++, offset += nextX) {
+                fftY.ifft(input, offset, nextY);
             }
-            for (int offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
-                fftX.ifft(input, offset, stride);
+            for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
+                fftX.ifft(input, offset, nextX);
             }
         }
     }
@@ -218,9 +213,9 @@ public class Complex3D {
      * <p>
      * iComplex3D</p>
      *
-     * @param i a int.
-     * @param j a int.
-     * @param k a int.
+     * @param i  a int.
+     * @param j  a int.
+     * @param k  a int.
      * @param nX a int.
      * @param nY a int.
      * @return a int.

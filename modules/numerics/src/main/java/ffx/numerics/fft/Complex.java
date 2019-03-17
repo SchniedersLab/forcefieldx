@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -58,9 +58,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * Contribution of the National Institute of Standards and Technology, not
  * subject to copyright.<br> Derived from:<br> GSL (Gnu Scientific Library) FFT
  * Code by Brian Gough (bjg@network-theory.co.uk)
- *
- * @see
- * <ul>
+ * @see <ul>
  * <li>
  * <a href="http://dx.doi.org/10.1016/0021-9991(83)90013-X" target="_blank">
  * Clive Temperton. Self-sorting mixed-radix fast fourier transforms. Journal of
@@ -78,19 +76,19 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * </a>
  * </li>
  * </ul>
- *
  * @since 1.0
  */
 public class Complex {
 
     private static final Logger logger = Logger.getLogger(Complex.class.getName());
     private final int n;
-    private final int factors[];
-    private final double twiddle[][][];
-    private final double scratch[];
+    private final int[] factors;
+    private final double[][][] twiddle;
+    private final double[] scratch;
     // TINKER v. 5.0 factors to achieve exact numerical agreement.
-    private static final int availableFactors[] = {5, 4, 3, 2};
+    private static final int[] availableFactors = {5, 4, 3, 2};
     private static final int firstUnavailablePrime = 7;
+
     //private static final int availableFactors[] = { 7, 6, 5, 4, 3, 2 };
     //private static final int firstUnavailablePrime = 11;
 
@@ -122,11 +120,9 @@ public class Complex {
         if (dim < 2) {
             return false;
         }
-        /**
-         * Apply perferred factors.
-         */
-        for (int i = 0; i < availableFactors.length; i++) {
-            int factor = availableFactors[i];
+
+        // Apply preferred factors.
+        for (int factor : availableFactors) {
             while ((dim % factor) == 0) {
                 dim /= factor;
             }
@@ -147,21 +143,17 @@ public class Complex {
         }
         Vector<Integer> v = new Vector<>();
         int ntest = n;
-        int factor;
-        /**
-         * Use the preferred factors first
-         */
-        for (int i = 0; i < availableFactors.length; i++) {
-            factor = availableFactors[i];
+
+        // Use the preferred factors first
+        for (int factor : availableFactors) {
             while ((ntest % factor) == 0) {
                 ntest /= factor;
                 v.add(factor);
             }
         }
-        /**
-         * Unavailable odd prime factors.
-         */
-        factor = firstUnavailablePrime;
+
+        // Unavailable odd prime factors.
+        int factor = firstUnavailablePrime;
         while (ntest > 1) {
             while ((ntest % factor) != 0) {
                 factor += 2;
@@ -171,14 +163,13 @@ public class Complex {
         }
         int product = 1;
         int nf = v.size();
-        int ret[] = new int[nf];
+        int[] ret = new int[nf];
         for (int i = 0; i < nf; i++) {
             ret[i] = v.get(i);
             product *= ret[i];
         }
-        /**
-         * Report a failed factorization.
-         */
+
+        // Report a failed factorization.
         if (product != n) {
             StringBuilder sb = new StringBuilder(
                     " FFT factorization failed for " + n + "\n");
@@ -226,11 +217,11 @@ public class Complex {
      * Im(d[i]) = data[offset + stride*i+1]
      * </PRE>
      *
-     * @param data an array of double.
-     * @param offset a int.
-     * @param stride a int.
+     * @param data   an array of double.
+     * @param offset the offset to the beginning of the data.
+     * @param stride the stride between data points.
      */
-    public void fft(double data[], int offset, int stride) {
+    public void fft(double[] data, int offset, int stride) {
         transformInternal(data, offset, stride, -1);
     }
 
@@ -240,15 +231,15 @@ public class Complex {
      * following locations:
      *
      * <PRE>
-     *    Re(D[i]) = data[offset + stride*i]
-     *    Im(D[i]) = data[offset + stride*i+1]
+     * Re(D[i]) = data[offset + stride*i]
+     * Im(D[i]) = data[offset + stride*i+1]
      * </PRE>
      *
-     * @param data an array of double.
-     * @param offset a int.
-     * @param stride a int.
+     * @param data   an array of double.
+     * @param offset the offset to the beginning of the data.
+     * @param stride the stride between data points.
      */
-    public void ifft(double data[], int offset, int stride) {
+    public void ifft(double[] data, int offset, int stride) {
         transformInternal(data, offset, stride, +1);
     }
 
@@ -261,15 +252,14 @@ public class Complex {
      * Im(D[i]) = data[offset + stride*i+1]
      * </PRE>
      *
-     * @param data an array of double.
-     * @param offset a int.
-     * @param stride a int.
+     * @param data   an array of double.
+     * @param offset the offset to the beginning of the data.
+     * @param stride the stride between data points.
      */
-    public void inverse(double data[], int offset, int stride) {
+    public void inverse(double[] data, int offset, int stride) {
         ifft(data, offset, stride);
-        /**
-         * normalize inverse FFT with 1/n.
-         */
+
+        // Normalize inverse FFT with 1/n.
         double norm = normalization();
         for (int i = 0; i < n; i++) {
             final int index = offset + stride * i;
@@ -281,17 +271,17 @@ public class Complex {
     /**
      * Compute the Fast Fourier Transform of data leaving the result in data.
      *
-     * @param data
-     * @param offset
-     * @param stride
-     * @param sign
+     * @param data   data an array of double.
+     * @param offset the offset to the beginning of the data.
+     * @param stride the stride between data points.
+     * @param sign   the sign to apply.
      */
-    private void transformInternal(final double data[], final int offset,
-            final int stride, final int sign) {
+    private void transformInternal(final double[] data, final int offset,
+                                   final int stride, final int sign) {
         int product = 1;
         int state = 0;
-        double in[];
-        double out[];
+        double[] in;
+        double[] out;
         int inStride;
         int outStride;
         int inStart;
@@ -364,38 +354,37 @@ public class Complex {
      *
      * @return a double.
      */
-    public double normalization() {
+    private double normalization() {
         return 1.0 / n;
     }
 
     /**
      * Handle factors of 2.
      *
-     * @param fi
-     * @param data
-     * @param dataOffset
-     * @param dataStride
-     * @param ret
-     * @param retOffset
-     * @param retStride
-     * @param sign
-     * @param product
+     * @param fi         Twiddle factor to use.
+     * @param data       The data to transform.
+     * @param dataOffset Offset to the beginning of the data.
+     * @param dataStride Stride between data points.
+     * @param ret        The transformed data.
+     * @param retOffset  Offset to the returned data.
+     * @param retStride  Stride between returned data points.
+     * @param sign       Sign to apply.
+     * @param product    Product to apply.
      */
-    private void pass2(final int fi, final double data[], final int dataOffset,
-            final int dataStride, final double ret[], final int retOffset,
-            final int retStride, final int sign, final int product) {
+    private void pass2(final int fi, final double[] data, final int dataOffset,
+                       final int dataStride, final double[] ret, final int retOffset,
+                       final int retStride, final int sign, final int product) {
         final int factor = 2;
         final int m = n / factor;
         final int q = n / product;
         final int product_1 = product / factor;
         final int di = dataStride * m;
         final int dj = retStride * product_1;
-        final int jstep = dj;
-        final double twiddles[][] = twiddle[fi];
+        final double[][] twiddles = twiddle[fi];
         int i = dataOffset;
         int j = retOffset;
         for (int k = 0; k < q; k++) {
-            final double twids[] = twiddles[k];
+            final double[] twids = twiddles[k];
             final double w_r = twids[0];
             final double w_i = -sign * twids[1];
             for (int k1 = 0; k1 < product_1; k1++) {
@@ -414,26 +403,26 @@ public class Complex {
                 ret[jdj + 1] = w_r * x_i + w_i * x_r;
                 j += retStride;
             }
-            j += jstep;
+            j += dj;
         }
     }
 
     /**
      * Handle factors of 3.
      *
-     * @param fi
-     * @param data
-     * @param dataOffset
-     * @param dataStride
-     * @param ret
-     * @param retOffset
-     * @param retStride
-     * @param sign
-     * @param product
+     * @param fi         Twiddle factor to use.
+     * @param data       The data to transform.
+     * @param dataOffset Offset to the beginning of the data.
+     * @param dataStride Stride between data points.
+     * @param ret        The transformed data.
+     * @param retOffset  Offset to the returned data.
+     * @param retStride  Stride between returned data points.
+     * @param sign       Sign to apply.
+     * @param product    Product to apply.
      */
-    private void pass3(final int fi, final double data[], final int dataOffset,
-            final int dataStride, final double ret[], final int retOffset,
-            final int retStride, final int sign, final int product) {
+    private void pass3(final int fi, final double[] data, final int dataOffset,
+                       final int dataStride, final double[] ret, final int retOffset,
+                       final int retStride, final int sign, final int product) {
         final int factor = 3;
         final int m = n / factor;
         final int q = n / product;
@@ -442,11 +431,11 @@ public class Complex {
         final int di = dataStride * m;
         final int dj = retStride * product_1;
         final int jstep = (factor - 1) * dj;
-        final double twiddles[][] = twiddle[fi];
+        final double[][] twiddles = twiddle[fi];
         int i = dataOffset;
         int j = retOffset;
         for (int k = 0; k < q; k++) {
-            final double twids[] = twiddles[k];
+            final double[] twids = twiddles[k];
             final double w1_r = twids[0];
             final double w1_i = -sign * twids[1];
             final double w2_r = twids[2];
@@ -488,19 +477,19 @@ public class Complex {
     /**
      * Handle factors of 4.
      *
-     * @param fi
-     * @param data
-     * @param dataOffset
-     * @param dataStride
-     * @param ret
-     * @param retOffset
-     * @param retStride
-     * @param sign
-     * @param product
+     * @param fi         Twiddle factor to use.
+     * @param data       The data to transform.
+     * @param dataOffset Offset to the beginning of the data.
+     * @param dataStride Stride between data points.
+     * @param ret        The transformed data.
+     * @param retOffset  Offset to the returned data.
+     * @param retStride  Stride between returned data points.
+     * @param sign       Sign to apply.
+     * @param product    Product to apply.
      */
-    private void pass4(final int fi, final double data[], final int dataOffset,
-            final int dataStride, final double ret[], final int retOffset,
-            final int retStride, final int sign, final int product) {
+    private void pass4(final int fi, final double[] data, final int dataOffset,
+                       final int dataStride, final double[] ret, final int retOffset,
+                       final int retStride, final int sign, final int product) {
         final int factor = 4;
         final int m = n / factor;
         final int q = n / product;
@@ -508,11 +497,11 @@ public class Complex {
         final int di = dataStride * m;
         final int dj = retStride * p_1;
         final int jstep = (factor - 1) * dj;
-        final double twiddles[][] = twiddle[fi];
+        final double[][] twiddles = twiddle[fi];
         int i = dataOffset;
         int j = retOffset;
         for (int k = 0; k < q; k++) {
-            final double twids[] = twiddles[k];
+            final double[] twids = twiddles[k];
             final double w1_r = twids[0];
             final double w1_i = -sign * twids[1];
             final double w2_r = twids[2];
@@ -566,19 +555,19 @@ public class Complex {
     /**
      * Handle factors of 5.
      *
-     * @param fi
-     * @param data
-     * @param dataOffset
-     * @param dataStride
-     * @param ret
-     * @param retOffset
-     * @param retStride
-     * @param sign
-     * @param product
+     * @param fi         Twiddle factor to use.
+     * @param data       The data to transform.
+     * @param dataOffset Offset to the beginning of the data.
+     * @param dataStride Stride between data points.
+     * @param ret        The transformed data.
+     * @param retOffset  Offset to the returned data.
+     * @param retStride  Stride between returned data points.
+     * @param sign       Sign to apply.
+     * @param product    Product to apply.
      */
-    private void pass5(final int fi, final double data[], final int dataOffset,
-            final int dataStride, final double ret[], final int retOffset,
-            final int retStride, final int sign, final int product) {
+    private void pass5(final int fi, final double[] data, final int dataOffset,
+                       final int dataStride, final double[] ret, final int retOffset,
+                       final int retStride, final int sign, final int product) {
         final int factor = 5;
         final int m = n / factor;
         final int q = n / product;
@@ -589,11 +578,11 @@ public class Complex {
         final int di = dataStride * m;
         final int dj = retStride * p_1;
         final int jstep = (factor - 1) * dj;
-        final double twiddles[][] = twiddle[fi];
+        final double[][] twiddles = twiddle[fi];
         int i = dataOffset;
         int j = retOffset;
         for (int k = 0; k < q; k++) {
-            final double twids[] = twiddles[k];
+            final double[] twids = twiddles[k];
             final double w1r = twids[0];
             final double w1i = -sign * twids[1];
             final double w2r = twids[2];
@@ -671,32 +660,32 @@ public class Complex {
     /**
      * Handle factors of 6.
      *
-     * @param fi
-     * @param data
-     * @param dataOffset
-     * @param dataStride
-     * @param ret
-     * @param retOffset
-     * @param retSride
-     * @param sign
-     * @param product
+     * @param fi         Twiddle factor to use.
+     * @param data       The data to transform.
+     * @param dataOffset Offset to the beginning of the data.
+     * @param dataStride Stride between data points.
+     * @param ret        The transformed data.
+     * @param retOffset  Offset to the returned data.
+     * @param retStride  Stride between returned data points.
+     * @param sign       Sign to apply.
+     * @param product    Product to apply.
      */
-    private void pass6(final int fi, final double data[], final int dataOffset,
-            final int dataStride, final double ret[], final int retOffset,
-            final int retSride, final int sign, final int product) {
+    private void pass6(final int fi, final double[] data, final int dataOffset,
+                       final int dataStride, final double[] ret, final int retOffset,
+                       final int retStride, final int sign, final int product) {
         final int factor = 6;
         final int m = n / factor;
         final int q = n / product;
         final int p_1 = product / factor;
         final double tau = sign * sqrt3_2;
         final int di = dataStride * m;
-        final int dj = retSride * p_1;
+        final int dj = retStride * p_1;
         final int jstep = (factor - 1) * dj;
-        final double twiddles[][] = twiddle[fi];
+        final double[][] twiddles = twiddle[fi];
         int i = dataOffset;
         int j = retOffset;
         for (int k = 0; k < q; k++) {
-            final double twids[] = twiddles[k];
+            final double[] twids = twiddles[k];
             final double w1r = twids[0];
             final double w1i = -sign * twids[1];
             final double w2r = twids[2];
@@ -777,7 +766,7 @@ public class Complex {
                 jdj += dj;
                 ret[jdj] = w5r * xr - w5i * xi;
                 ret[jdj + 1] = w5r * xi + w5i * xr;
-                j += retSride;
+                j += retStride;
             }
             j += jstep;
         }
@@ -786,19 +775,19 @@ public class Complex {
     /**
      * Handle factors of 7.
      *
-     * @param fi
-     * @param data
-     * @param dataOffset
-     * @param dataStride
-     * @param ret
-     * @param retOffset
-     * @param retStride
-     * @param sign
-     * @param product
+     * @param fi         Twiddle factor to use.
+     * @param data       The data to transform.
+     * @param dataOffset Offset to the beginning of the data.
+     * @param dataStride Stride between data points.
+     * @param ret        The transformed data.
+     * @param retOffset  Offset to the returned data.
+     * @param retStride  Stride between returned data points.
+     * @param sign       Sign to apply.
+     * @param product    Product to apply.
      */
-    private void pass7(final int fi, final double data[], final int dataOffset,
-            final int dataStride, final double ret[], final int retOffset,
-            final int retStride, final int sign, final int product) {
+    private void pass7(final int fi, final double[] data, final int dataOffset,
+                       final int dataStride, final double[] ret, final int retOffset,
+                       final int retStride, final int sign, final int product) {
         final int factor = 7;
         final int m = n / factor;
         final int q = n / product;
@@ -812,11 +801,11 @@ public class Complex {
         final int di = dataStride * m;
         final int dj = retStride * p_1;
         final int jstep = (factor - 1) * dj;
-        final double twiddles[][] = twiddle[fi];
+        final double[][] twiddles = twiddle[fi];
         int i = dataOffset;
         int j = retOffset;
         for (int k = 0; k < q; k++) {
-            final double twids[] = twiddles[k];
+            final double[] twids = twiddles[k];
             final double w1r = twids[0];
             final double w1i = -sign * twids[1];
             final double w2r = twids[2];
@@ -953,21 +942,20 @@ public class Complex {
      * Note that passOdd is only intended for odd factors (and fails for even
      * factors).
      *
-     * @param fi
-     * @param data
-     * @param dataOffset
-     * @param dataStride
-     * @param ret
-     * @param retOffset
-     * @param retStride
-     * @param sign
-     * @param factor
-     * @param product
+     * @param fi         Twiddle factor to use.
+     * @param data       The data to transform.
+     * @param dataOffset Offset to the beginning of the data.
+     * @param dataStride Stride between data points.
+     * @param ret        The transformed data.
+     * @param retOffset  Offset to the returned data.
+     * @param retStride  Stride between returned data points.
+     * @param sign       Sign to apply.
+     * @param factor     Factor to apply.
+     * @param product    Product to apply.
      */
-    private void passOdd(final int fi, final double data[],
-            final int dataOffset, final int dataStride, final double ret[],
-            final int retOffset, final int retStride, final int sign,
-            final int factor, final int product) {
+    private void passOdd(final int fi, final double[] data, final int dataOffset, final int dataStride,
+                         final double[] ret, final int retOffset, final int retStride, final int sign,
+                         final int factor, final int product) {
         final int m = n / factor;
         final int q = n / product;
         final int p_1 = product / factor;
@@ -1008,7 +996,7 @@ public class Complex {
                         + retStride * (i + e1 * m) + 1];
             }
         }
-        double twiddl[] = twiddle[fi][q];
+        double[] twiddl = twiddle[fi][q];
         for (int e = 1; e < (factor - 1) / 2 + 1; e++) {
             int idx = e;
             double wr, wi;
@@ -1111,7 +1099,7 @@ public class Complex {
             return null;
         }
         final double d_theta = -2.0 * PI / n;
-        final double ret[][][] = new double[factors.length][][];
+        final double[][][] ret = new double[factors.length][][];
         int product = 1;
         for (int i = 0; i < factors.length; i++) {
             int factor = factors[i];
@@ -1119,7 +1107,7 @@ public class Complex {
             product *= factor;
             final int q = n / product;
             ret[i] = new double[q + 1][2 * (factor - 1)];
-            final double twid[][] = ret[i];
+            final double[][] twid = ret[i];
             for (int j = 0; j < factor - 1; j++) {
                 twid[0][2 * j] = 1.0;
                 twid[0][2 * j + 1] = 0.0;
@@ -1137,6 +1125,7 @@ public class Complex {
         }
         return ret;
     }
+
     private static final double oneThird = 1.0 / 3.0;
     private static final double sqrt3_2 = sqrt(3.0) / 2.0;
     private static final double sqrt5_4 = sqrt(5.0) / 4.0;

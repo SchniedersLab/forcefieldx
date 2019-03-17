@@ -44,20 +44,29 @@ import java.util.concurrent.atomic.DoubleAdder;
  * <code>java.util.concurrent.atomic.DoubleAdder</code>.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class AdderDoubleArray implements AtomicDoubleArray {
 
-    private DoubleAdder array[];
+    /**
+     * Atomic operations are handled by an Array of DoubleAdder instances.
+     */
+    private DoubleAdder[] array;
 
-    public AdderDoubleArray(int nThreads, int size) {
+    /**
+     * Construct an AdderDoubleArray.
+     * @param size Size of the array.
+     */
+    public AdderDoubleArray(int size) {
         array = new DoubleAdder[size];
         for (int i = 0; i < size; i++) {
             array[i] = new DoubleAdder();
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void alloc(int size) {
         if (array.length < size) {
@@ -68,6 +77,9 @@ public class AdderDoubleArray implements AtomicDoubleArray {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void reset(int threadID, int lb, int ub) {
         for (int i = lb; i <= ub; i++) {
@@ -75,21 +87,33 @@ public class AdderDoubleArray implements AtomicDoubleArray {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void add(int threadID, int index, double value) {
         array[index].add(value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void sub(int threadID, int index, double value) {
         array[index].add(-value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void reduce(int lb, int ub) {
         // Nothing to do.
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double get(int index) {
         return array[index].sum();

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -52,9 +52,7 @@ import static org.apache.commons.math3.util.FastMath.sin;
  * Contribution of the National Institute of Standards and Technology, not
  * subject to copyright.<br> Derived from:<br> GSL (Gnu Scientific Library) FFT
  * Code by Brian Gough bjg@vvv.lanl.gov
- *
- * @see
- * <ul>
+ * @see <ul>
  * <li>
  * Complex
  * </li>
@@ -76,7 +74,6 @@ import static org.apache.commons.math3.util.FastMath.sin;
  * </a>
  * </li>
  * </ul>
- *
  * @since 1.0
  */
 public class Real {
@@ -84,10 +81,9 @@ public class Real {
     private final Complex complexFFT;
     private final int n;
     private final int halfN;
-    private final double theta;
     private final double cosTheta;
     private final double sinTheta;
-    private final double work[];
+    private final double[] work;
 
     /**
      * Constructs a Complex FFT of length (n / 2) for real data of length n.
@@ -95,10 +91,9 @@ public class Real {
      * @param n a int.
      */
     public Real(int n) {
-        //assert (n % 2 == 0);
         this.n = n;
         halfN = n / 2;
-        theta = PI / halfN;
+        double theta = PI / halfN;
         cosTheta = cos(theta);
         sinTheta = sin(theta);
         complexFFT = new Complex(halfN);
@@ -109,10 +104,10 @@ public class Real {
      * <p>
      * fft</p>
      *
-     * @param data an array of double.
-     * @param offset a int.
+     * @param data   Input data.
+     * @param offset Offset to the beginning of the data.
      */
-    public void fft(double data[], int offset) {
+    public void fft(double[] data, int offset) {
         complexFFT.fft(data, offset, 2);
         unpack(data, offset);
     }
@@ -121,10 +116,10 @@ public class Real {
      * <p>
      * ifft</p>
      *
-     * @param data an array of double.
-     * @param offset a int.
+     * @param data   Input data.
+     * @param offset Offset to the beginning of the data.
      */
-    public void ifft(double data[], int offset) {
+    public void ifft(double[] data, int offset) {
         pack(data, offset);
         complexFFT.ifft(data, offset, 2);
         // Renormalize the 1/2 length fft.
@@ -140,7 +135,7 @@ public class Real {
      *
      * @return a double.
      */
-    public double normalization() {
+    private double normalization() {
         return 1.0 / n;
     }
 
@@ -148,14 +143,13 @@ public class Real {
      * <p>
      * inverse</p>
      *
-     * @param data an array of double.
-     * @param offset a int.
+     * @param data   Input data.
+     * @param offset Offset to the beginning of the data.
      */
-    public void inverse(double data[], int offset) {
+    public void inverse(double[] data, int offset) {
         ifft(data, offset);
-        /**
-         * normalize inverse FFT with 1/n.
-         */
+
+        // normalize inverse FFT with 1/n.
         double norm = normalization();
         for (int i = 0; i < n; i++) {
             final int index = offset + i;
@@ -163,7 +157,13 @@ public class Real {
         }
     }
 
-    private void unpack(double data[], int offset) {
+    /**
+     * Unpack following the forward Complex FFT.
+     *
+     * @param data   Input data.
+     * @param offset Offset to the beginning of the data.
+     */
+    private void unpack(double[] data, int offset) {
         for (int i = 0; i < n; i++) {
             work[i] = data[i + offset];
         }
@@ -200,7 +200,13 @@ public class Real {
         }
     }
 
-    private void pack(double data[], int offset) {
+    /**
+     * Pack prior to inverse Complex FFT.
+     *
+     * @param data   Input data.
+     * @param offset Offset to the beginning of the data.
+     */
+    private void pack(double[] data, int offset) {
         for (int i = 0; i < n + 2; i++) {
             work[i] = data[i + offset];
         }

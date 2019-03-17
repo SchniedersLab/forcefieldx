@@ -508,24 +508,24 @@ public class VanDerWaals implements MaskingInterface,
                     }
                     break;
                 case PJ:
-                    gradX = new PJDoubleArray(threadCount, nAtoms);
-                    gradY = new PJDoubleArray(threadCount, nAtoms);
-                    gradZ = new PJDoubleArray(threadCount, nAtoms);
+                    gradX = new PJDoubleArray(nAtoms);
+                    gradY = new PJDoubleArray(nAtoms);
+                    gradZ = new PJDoubleArray(nAtoms);
                     if (lambdaTerm) {
-                        lambdaGradX = new PJDoubleArray(threadCount, nAtoms);
-                        lambdaGradY = new PJDoubleArray(threadCount, nAtoms);
-                        lambdaGradZ = new PJDoubleArray(threadCount, nAtoms);
+                        lambdaGradX = new PJDoubleArray(nAtoms);
+                        lambdaGradY = new PJDoubleArray(nAtoms);
+                        lambdaGradZ = new PJDoubleArray(nAtoms);
                     }
                     break;
                 case ADDER:
                 default:
-                    gradX = new AdderDoubleArray(threadCount, nAtoms);
-                    gradY = new AdderDoubleArray(threadCount, nAtoms);
-                    gradZ = new AdderDoubleArray(threadCount, nAtoms);
+                    gradX = new AdderDoubleArray(nAtoms);
+                    gradY = new AdderDoubleArray(nAtoms);
+                    gradZ = new AdderDoubleArray(nAtoms);
                     if (lambdaTerm) {
-                        lambdaGradX = new AdderDoubleArray(threadCount, nAtoms);
-                        lambdaGradY = new AdderDoubleArray(threadCount, nAtoms);
-                        lambdaGradZ = new AdderDoubleArray(threadCount, nAtoms);
+                        lambdaGradX = new AdderDoubleArray(nAtoms);
+                        lambdaGradY = new AdderDoubleArray(nAtoms);
+                        lambdaGradZ = new AdderDoubleArray(nAtoms);
                     }
                     break;
             }

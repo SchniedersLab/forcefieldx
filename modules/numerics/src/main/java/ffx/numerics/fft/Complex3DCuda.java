@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -103,23 +103,18 @@ public class Complex3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(Complex3DCuda.class.getName());
     private final int nX, nY, nZ, len;
-    private MODE mode = null;
-    private boolean free = false;
+    private MODE mode;
+    private boolean free;
     private boolean dead = false;
-    CUfunction function;
+    private CUfunction function;
     CUmodule module;
-    cufftHandle plan;
-    Pointer pinnedMemory;
-    DoubleBuffer pinnedMemoryBuffer;
-    Pointer recipCPUPtr;
-    Pointer dataGPUPtr, recipGPUPtr;
-    CUdeviceptr dataDevice, recipDevice;
-    private final boolean usePinnedMemory = false;
+    private DoubleBuffer pinnedMemoryBuffer;
+    private Pointer recipCPUPtr;
 
     private enum MODE {
 
         FFT, IFFT, CONVOLUTION, RECIP
-    };
+    }
 
     public DoubleBuffer getDoubleBuffer() {
         return pinnedMemoryBuffer;
@@ -147,7 +142,7 @@ public class Complex3DCuda implements Runnable {
      * @param data The input data array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
-    public void fft(final double data[]) {
+    public void fft(final double[] data) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -162,7 +157,7 @@ public class Complex3DCuda implements Runnable {
      * @param data The input data array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
-    public void ifft(final double data[]) {
+    public void ifft(final double[] data) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -176,7 +171,7 @@ public class Complex3DCuda implements Runnable {
      *
      * @param data Input/output data array.
      */
-    public void convolution(double data[]) {
+    public void convolution(double[] data) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -192,7 +187,7 @@ public class Complex3DCuda implements Runnable {
      *
      * @param recip an array of double.
      */
-    public void setRecip(double recip[]) {
+    public void setRecip(double[] recip) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -270,6 +265,7 @@ public class Complex3DCuda implements Runnable {
         logger.log(Level.INFO, "   CUDA {0}", prop.toFormattedString());
         cuDeviceGet(dev, 0);
 
+        boolean usePinnedMemory = false;
         // Create a context that allows the GPU to map pinned host memory.
         if (usePinnedMemory) {
             cuCtxCreate(pctx, CUctx_flags.CU_CTX_MAP_HOST, dev);
@@ -293,8 +289,7 @@ public class Complex3DCuda implements Runnable {
             logger.log(Level.SEVERE, message, e);
         }
 
-        pinnedMemory = new Pointer();
-
+        Pointer pinnedMemory = new Pointer();
         if (usePinnedMemory) {
             // Allocate pinned memory mapped into the GPU address space.
             cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, CU_MEMHOSTALLOC_DEVICEMAP);
@@ -308,21 +303,21 @@ public class Complex3DCuda implements Runnable {
         pinnedMemoryBuffer = byteBuffer.asDoubleBuffer();
 
         // Allocate a work array on the device.
-        dataDevice = new CUdeviceptr();
+        CUdeviceptr dataDevice = new CUdeviceptr();
         cuMemAlloc(dataDevice, len * 2 * Sizeof.DOUBLE);
 
         // Allocate memory on the device for the reciprocal space array.
-        recipDevice = new CUdeviceptr();
+        CUdeviceptr recipDevice = new CUdeviceptr();
         cuMemAlloc(recipDevice, len * Sizeof.DOUBLE);
 
         // Create and execute a JCufft plan for the data
-        plan = new cufftHandle();
+        cufftHandle plan = new cufftHandle();
 
         cufftPlan3d(plan, nZ, nY, nX, cufftType.CUFFT_Z2Z);
         //cufftSetCompatibilityMode(plan, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
 
-        dataGPUPtr = Pointer.to(dataDevice);
-        recipGPUPtr = Pointer.to(recipDevice);
+        Pointer dataGPUPtr = Pointer.to(dataDevice);
+        Pointer recipGPUPtr = Pointer.to(recipDevice);
 
         int threads = prop.maxThreadsPerBlock;
         int nBlocks = len / threads + (len % threads == 0 ? 0 : 1);
@@ -442,9 +437,8 @@ public class Complex3DCuda implements Runnable {
      * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
-     * @throws java.lang.Exception if any.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         int dimNotFinal = 64;
         int reps = 10;
         if (args != null) {
@@ -458,24 +452,23 @@ public class Complex3DCuda implements Runnable {
                     reps = 10;
                 }
             } catch (Exception e) {
+                //
             }
         }
         final int dim = dimNotFinal;
 
         System.out.println(String.format(
                 " Initializing a %d cubed grid.\n"
-                + " The best timing out of %d repititions will be used.",
+                        + " The best timing out of %d repititions will be used.",
                 dim, reps));
 
         final int dimCubed = dim * dim * dim;
 
-        /**
-         * Create an array to save the initial input and result.
-         */
-        double orig[] = new double[dimCubed];
-        double answer[] = new double[dimCubed];
-        double data[] = new double[dimCubed * 2];
-        double recip[] = new double[dimCubed];
+        // Create an array to save the initial input and result.
+        double[] orig = new double[dimCubed];
+        double[] answer = new double[dimCubed];
+        double[] data = new double[dimCubed * 2];
+        double[] recip = new double[dimCubed];
 
         Random random = new Random(1);
         int index = 0;
@@ -590,7 +583,6 @@ public class Complex3DCuda implements Runnable {
         logger.info(String.format(" CUDA RMSE:   %12.10f, Max: %12.10f, Avg: %12.10f", rmse, maxError, avg));
 
         complex3DCUDA.free();
-        complex3DCUDA = null;
 
         System.out.println(String.format(" Best Sequential Time:  %8.3f",
                 toSeconds * seqTime));

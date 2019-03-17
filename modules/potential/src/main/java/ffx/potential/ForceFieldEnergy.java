@@ -4278,13 +4278,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     }
                     break;
                 case PJ:
-                    gradX = new PJDoubleArray(nThreads, nAtoms);
-                    gradY = new PJDoubleArray(nThreads, nAtoms);
-                    gradZ = new PJDoubleArray(nThreads, nAtoms);
+                    gradX = new PJDoubleArray(nAtoms);
+                    gradY = new PJDoubleArray(nAtoms);
+                    gradZ = new PJDoubleArray(nAtoms);
                     if (lambdaTerm) {
-                        lambdaGradX = new PJDoubleArray(nThreads, nAtoms);
-                        lambdaGradY = new PJDoubleArray(nThreads, nAtoms);
-                        lambdaGradZ = new PJDoubleArray(nThreads, nAtoms);
+                        lambdaGradX = new PJDoubleArray(nAtoms);
+                        lambdaGradY = new PJDoubleArray(nAtoms);
+                        lambdaGradZ = new PJDoubleArray(nAtoms);
                     } else {
                         lambdaGradX = null;
                         lambdaGradY = null;
@@ -4292,13 +4292,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     }
                     break;
                 case ADDER:
-                    gradX = new AdderDoubleArray(nThreads, nAtoms);
-                    gradY = new AdderDoubleArray(nThreads, nAtoms);
-                    gradZ = new AdderDoubleArray(nThreads, nAtoms);
+                    gradX = new AdderDoubleArray(nAtoms);
+                    gradY = new AdderDoubleArray(nAtoms);
+                    gradZ = new AdderDoubleArray(nAtoms);
                     if (lambdaTerm) {
-                        lambdaGradX = new AdderDoubleArray(nThreads, nAtoms);
-                        lambdaGradY = new AdderDoubleArray(nThreads, nAtoms);
-                        lambdaGradZ = new AdderDoubleArray(nThreads, nAtoms);
+                        lambdaGradX = new AdderDoubleArray(nAtoms);
+                        lambdaGradY = new AdderDoubleArray(nAtoms);
+                        lambdaGradZ = new AdderDoubleArray(nAtoms);
                     } else {
                         lambdaGradX = null;
                         lambdaGradY = null;

@@ -42,10 +42,10 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 /**
  * PJDoubleArray implements the AtomicDoubleArray interface using the Parallel
  * Java class SharedDoubleArray.
- *
+ * <p>
  * SharedDoubleArray is multiple thread safe and uses lock-free atomic
  * compare-and-set.
- *
+ * <p>
  * Note: Class SharedDoubleArray is implemented using class
  * java.util.concurrent.atomic.AtomicLongArray. Each double array element is
  * stored as a long whose bit pattern is the same as the double value.
@@ -60,14 +60,15 @@ public class PJDoubleArray implements AtomicDoubleArray {
     /**
      * <p>Constructor for PJDoubleArray.</p>
      *
-     * @param nThreads a int.
-     * @param size a int.
+     * @param size     a int.
      */
-    public PJDoubleArray(int nThreads, int size) {
+    public PJDoubleArray(int size) {
         array = new SharedDoubleArray(size);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void alloc(int size) {
         if (array.length() < size) {
@@ -75,7 +76,9 @@ public class PJDoubleArray implements AtomicDoubleArray {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void reset(int threadID, int lb, int ub) {
         for (int i = lb; i <= ub; i++) {
@@ -83,13 +86,17 @@ public class PJDoubleArray implements AtomicDoubleArray {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void add(int threadID, int index, double value) {
         array.getAndAdd(index, value);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void sub(int threadID, int index, double value) {
         array.getAndAdd(index, -value);
@@ -97,7 +104,7 @@ public class PJDoubleArray implements AtomicDoubleArray {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Reduction is handled atomically by the PJ SharedDoubleArray.
      */
     @Override
@@ -105,7 +112,9 @@ public class PJDoubleArray implements AtomicDoubleArray {
         // Nothing to do.
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double get(int index) {
         return array.get(index);

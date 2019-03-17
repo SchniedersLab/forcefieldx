@@ -49,7 +49,7 @@ import java.util.Arrays;
 public class MultiDoubleArray implements AtomicDoubleArray {
 
     private final int threadCount;
-    private final double array[][];
+    private final double[][] array;
 
     /**
      * <p>Constructor for MultiDoubleArray.</p>
@@ -108,9 +108,9 @@ public class MultiDoubleArray implements AtomicDoubleArray {
      */
     @Override
     public void reduce(int lb, int ub) {
-        double gx[] = array[0];
+        double[] gx = array[0];
         for (int t = 1; t < threadCount; t++) {
-            double gxt[] = array[t];
+            double[] gxt = array[t];
             for (int i = lb; i <= ub; i++) {
                 gx[i] += gxt[i];
             }

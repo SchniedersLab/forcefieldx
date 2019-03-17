@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -98,16 +98,12 @@ public class Real3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(Real3DCuda.class.getName());
     private final int nX, nY, nZ, len;
-    private float data[], recip[];
-    private boolean doConvolution = false;
-    private boolean free = false;
+    private float[] data, recip;
+    private boolean doConvolution;
+    private boolean free;
     private boolean dead = false;
-    CUfunction function;
+    private CUfunction function;
     CUmodule module;
-    cufftHandle planR2C, planC2R;
-    Pointer dataPtr, recipPtr;
-    CUdeviceptr dataDevice, recipDevice;
-    Pointer dataDevicePtr, recipDevicePtr;
 
     /**
      * Blocking convolution method.
@@ -115,7 +111,7 @@ public class Real3DCuda implements Runnable {
      * @param data an array of float.
      * @return A status flag (0 for success, -1 for failure).
      */
-    public int convolution(float data[]) {
+    public int convolution(float[] data) {
         // This would be a programming error.
         if (dead || doConvolution) {
             return -1;
@@ -202,29 +198,29 @@ public class Real3DCuda implements Runnable {
         }
 
         // Copy the data array to the device.
-        dataDevice = new CUdeviceptr();
+        CUdeviceptr dataDevice = new CUdeviceptr();
         cuMemAlloc(dataDevice, len * Sizeof.FLOAT);
-        dataPtr = Pointer.to(data);
+        Pointer dataPtr = Pointer.to(data);
         cuMemcpyHtoD(dataDevice, dataPtr, len * Sizeof.FLOAT);
 
         // Copy the recip array to the device.
-        recipDevice = new CUdeviceptr();
+        CUdeviceptr recipDevice = new CUdeviceptr();
         cuMemAlloc(recipDevice, len * Sizeof.FLOAT);
-        recipPtr = Pointer.to(recip);
+        Pointer recipPtr = Pointer.to(recip);
         cuMemcpyHtoD(recipDevice, recipPtr, len * Sizeof.FLOAT);
 
         // Create a Real to Complex CUFFT plan
-        planR2C = new cufftHandle();
+        cufftHandle planR2C = new cufftHandle();
         cufftPlan3d(planR2C, nX, nY, nZ, cufftType.CUFFT_R2C);
         cufftSetCompatibilityMode(planR2C, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
 
         // Create a Complex to Real CUFFT plan
-        planC2R = new cufftHandle();
+        cufftHandle planC2R = new cufftHandle();
         cufftPlan3d(planC2R, nX, nY, nZ, cufftType.CUFFT_C2R);
         cufftSetCompatibilityMode(planC2R, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
 
-        dataDevicePtr = Pointer.to(dataDevice);
-        recipDevicePtr = Pointer.to(recipDevice);
+        Pointer dataDevicePtr = Pointer.to(dataDevice);
+        Pointer recipDevicePtr = Pointer.to(recipDevice);
 
         int threads = 512;
         int nBlocks = len / threads + (len % threads == 0 ? 0 : 1);
@@ -293,7 +289,7 @@ public class Real3DCuda implements Runnable {
      * @param data an array of float.
      * @param recip an array of float.
      */
-    public Real3DCuda(int nX, int nY, int nZ, float data[], float recip[]) {
+    public Real3DCuda(int nX, int nY, int nZ, float[] data, float[] recip) {
         this.nX = nX;
         this.nY = nY;
         this.nZ = nZ;
@@ -321,9 +317,8 @@ public class Real3DCuda implements Runnable {
      * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
-     * @throws java.lang.Exception if any.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         int dimNotFinal = 64;
         int reps = 10;
         if (args != null) {
@@ -337,6 +332,7 @@ public class Real3DCuda implements Runnable {
                     reps = 5;
                 }
             } catch (Exception e) {
+                //
             }
         }
         if (dimNotFinal % 2 != 0) {
@@ -345,31 +341,27 @@ public class Real3DCuda implements Runnable {
         final int dim = dimNotFinal;
         System.out.println(String.format(
                 "Initializing a %d cubed grid.\n"
-                + "The best timing out of %d repititions will be used.",
+                        + "The best timing out of %d repititions will be used.",
                 dim, reps));
 
         final int dimCubed = dim * dim * dim;
         final int dimCubed2 = (dim + 2) * dim * dim;
 
-        /**
-         * Create an array to save the initial input and result.
-         */
-        final double orig[] = new double[dimCubed2];
-        final double answer[] = new double[dimCubed2];
-        final double data[] = new double[dimCubed2];
-        final double recip[] = new double[dimCubed];
+        // Create an array to save the initial input and result.
+        final double[] orig = new double[dimCubed2];
+        final double[] answer = new double[dimCubed2];
+        final double[] data = new double[dimCubed2];
+        final double[] recip = new double[dimCubed];
 
-        final float origf[] = new float[dimCubed2];
-        final float dataf[] = new float[dimCubed2];
-        final float recipf[] = new float[dimCubed];
+        final float[] origf = new float[dimCubed2];
+        final float[] dataf = new float[dimCubed2];
+        final float[] recipf = new float[dimCubed];
 
         Random randomNumberGenerator = new Random(1);
         int index = 0;
         int index2 = 0;
 
-        /**
-         * Row-major order.
-         */
+        // Row-major order.
         for (int x = 0; x < dim; x++) {
             for (int y = 0; y < dim; y++) {
                 for (int z = 0; z < dim; z++) {
@@ -390,7 +382,7 @@ public class Real3DCuda implements Runnable {
         Real3D real3D = new Real3D(dim, dim, dim);
         Real3DParallel real3DParallel
                 = new Real3DParallel(dim, dim, dim, new ParallelTeam(),
-                        IntegerSchedule.fixed());
+                IntegerSchedule.fixed());
         Real3DCuda real3DCUDA = new Real3DCuda(dim, dim, dim, dataf, recipf);
 
         Thread cudaThread = new Thread(real3DCUDA);
@@ -457,7 +449,6 @@ public class Real3DCuda implements Runnable {
             }
         }
         real3DCUDA.free();
-        real3DCUDA = null;
 
         maxError = Double.MIN_VALUE;
         double avg = 0.0;

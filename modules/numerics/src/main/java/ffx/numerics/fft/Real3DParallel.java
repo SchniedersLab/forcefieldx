@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -52,10 +52,8 @@ import edu.rit.pj.ParallelTeam;
  * <p>
  *
  * @author Michal J. Schnieders
- *
- * @since 1.0
- *
  * @see Real
+ * @since 1.0
  */
 public class Real3DParallel {
 
@@ -67,17 +65,17 @@ public class Real3DParallel {
     private final ParallelIFFT parallelIFFT;
     private final ParallelFFT parallelFFT;
     private final ParallelConvolution parallelConvolution;
-    private final double recip[];
+    private final double[] recip;
     private final IntegerSchedule schedule;
 
     /**
      * Initialize the FFT for real input.
      *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
-     * @since 1.0
+     * @param nX           X-dimension.
+     * @param nY           Y-dimension.
+     * @param nZ           Z-dimension.
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+     * @since 1.0
      */
     public Real3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam) {
         this.nX = nX / 2;
@@ -101,15 +99,15 @@ public class Real3DParallel {
     /**
      * Initialize the FFT for real input.
      *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
-     * @param parallelTeam The ParallelTeam that will execute the transforms.
+     * @param nX              X-dimension.
+     * @param nY              Y-dimension.
+     * @param nZ              Z-dimension.
+     * @param parallelTeam    The ParallelTeam that will execute the transforms.
      * @param integerSchedule The IntegerSchedule to use.
      * @since 1.0
      */
     public Real3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
-            IntegerSchedule integerSchedule) {
+                          IntegerSchedule integerSchedule) {
         this.nX = nX / 2;
         this.nY = nY;
         this.nZ = nZ;
@@ -138,7 +136,7 @@ public class Real3DParallel {
      * @param input The input array must be of size (nX + 2) * nY * nZ.
      * @since 1.0
      */
-    public void fft(final double input[]) {
+    public void fft(final double[] input) {
         parallelFFT.input = input;
         try {
             parallelTeam.execute(parallelFFT);
@@ -155,7 +153,7 @@ public class Real3DParallel {
      * @param input The input array must be of size (nX + 2) * nY * nZ.
      * @since 1.0
      */
-    public void ifft(final double input[]) {
+    public void ifft(final double[] input) {
         parallelIFFT.input = input;
         try {
             parallelTeam.execute(parallelIFFT);
@@ -172,7 +170,7 @@ public class Real3DParallel {
      * @param input The input array must be of size (nX + 2) * nY * nZ.
      * @since 1.0
      */
-    public void convolution(final double input[]) {
+    public void convolution(final double[] input) {
         parallelConvolution.input = input;
         try {
             parallelTeam.execute(parallelConvolution);
@@ -189,11 +187,8 @@ public class Real3DParallel {
      *
      * @param recip The recip array must be of size [(nX/2 + 1) * nY * nZ].
      */
-    public void setRecip(double recip[]) {
-        /**
-         * Reorder the reciprocal space data into the order it is needed by the
-         * convolution routine.
-         */
+    public void setRecip(double[] recip) {
+        // Reorder the reciprocal space data into the order it is needed by the convolution routine.
         for (int index = 0, offset = 0, y = 0; y < nY; y++) {
             for (int x = 0; x < nX1; x++, offset += 1) {
                 for (int i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
@@ -212,12 +207,12 @@ public class Real3DParallel {
      */
     private class ParallelFFT extends ParallelRegion {
 
-        public double input[];
+        public double[] input;
         private final int nZm1;
-        private final FFTXYLoop fftXYLoop[];
-        private final FFTZLoop fftZLoop[];
+        private final FFTXYLoop[] fftXYLoop;
+        private final FFTZLoop[] fftZLoop;
 
-        public ParallelFFT() {
+        private ParallelFFT() {
             nZm1 = nZ - 1;
             fftXYLoop = new FFTXYLoop[threadCount];
             fftZLoop = new FFTZLoop[threadCount];
@@ -243,7 +238,7 @@ public class Real3DParallel {
 
         private class FFTXYLoop extends IntegerForLoop {
 
-            public double input[];
+            public double[] input;
             private final Real fftX;
             private final Complex fftY;
 
@@ -259,12 +254,12 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (int stride = nextY, z = lb; z <= ub; z++) {
+                for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.fft(input, offset);
                     }
                     for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.fft(input, offset, stride);
+                        fftY.fft(input, offset, nextY);
                     }
                 }
             }
@@ -272,8 +267,8 @@ public class Real3DParallel {
 
         private class FFTZLoop extends IntegerForLoop {
 
-            public double input[];
-            private final double work[];
+            public double[] input;
+            private final double[] work;
             private final Complex fft;
 
             private FFTZLoop() {
@@ -313,12 +308,12 @@ public class Real3DParallel {
      */
     private class ParallelIFFT extends ParallelRegion {
 
-        public double input[];
+        public double[] input;
         private final int nZm1;
-        private final IFFTXYLoop ifftXYLoop[];
-        private final IFFTZLoop ifftZLoop[];
+        private final IFFTXYLoop[] ifftXYLoop;
+        private final IFFTZLoop[] ifftZLoop;
 
-        public ParallelIFFT() {
+        private ParallelIFFT() {
             nZm1 = nZ - 1;
             ifftXYLoop = new IFFTXYLoop[threadCount];
             ifftZLoop = new IFFTZLoop[threadCount];
@@ -344,8 +339,8 @@ public class Real3DParallel {
 
         private class IFFTZLoop extends IntegerForLoop {
 
-            public double input[];
-            private final double work[];
+            public double[] input;
+            private final double[] work;
             private final Complex fft;
 
             private IFFTZLoop() {
@@ -378,7 +373,7 @@ public class Real3DParallel {
 
         private class IFFTXYLoop extends IntegerForLoop {
 
-            public double input[];
+            public double[] input;
             private final Real fftX;
             private final Complex fftY;
 
@@ -394,9 +389,9 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (int stride = nextY, z = lb; z <= ub; z++) {
+                for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.ifft(input, offset, stride);
+                        fftY.ifft(input, offset, nextY);
                     }
                     for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.ifft(input, offset);
@@ -414,13 +409,13 @@ public class Real3DParallel {
      */
     private class ParallelConvolution extends ParallelRegion {
 
-        public double input[];
+        public double[] input;
         private final int nZm1, nYm1, nX1nZ;
-        private final FFTXYLoop fftXYLoop[];
-        private final FFTZ_Multiply_IFFTZLoop fftZ_Multiply_ifftZLoop[];
-        private final IFFTXYLoop ifftXYLoop[];
+        private final FFTXYLoop[] fftXYLoop;
+        private final FFTZ_Multiply_IFFTZLoop[] fftZ_Multiply_ifftZLoop;
+        private final IFFTXYLoop[] ifftXYLoop;
 
-        public ParallelConvolution() {
+        private ParallelConvolution() {
             nZm1 = nZ - 1;
             nYm1 = nY - 1;
             nX1nZ = nX1 * nZ;
@@ -451,7 +446,7 @@ public class Real3DParallel {
 
         private class FFTXYLoop extends IntegerForLoop {
 
-            public double input[];
+            public double[] input;
             private final Real fftX;
             private final Complex fftY;
 
@@ -467,12 +462,12 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (int stride = nextY, z = lb; z <= ub; z++) {
+                for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.fft(input, offset);
                     }
                     for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.fft(input, offset, stride);
+                        fftY.fft(input, offset, nextY);
                     }
                 }
             }
@@ -480,8 +475,8 @@ public class Real3DParallel {
 
         private class FFTZ_Multiply_IFFTZLoop extends IntegerForLoop {
 
-            public double input[];
-            private final double work[];
+            public double[] input;
+            private final double[] work;
             private final Complex fft;
 
             private FFTZ_Multiply_IFFTZLoop() {
@@ -521,7 +516,7 @@ public class Real3DParallel {
 
         private class IFFTXYLoop extends IntegerForLoop {
 
-            public double input[];
+            public double[] input;
             private final Real fftX;
             private final Complex fftY;
 
@@ -537,9 +532,9 @@ public class Real3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
-                for (int stride = nextY, z = lb; z <= ub; z++) {
+                for (int z = lb; z <= ub; z++) {
                     for (int offset = z * nextZ, x = 0; x < nX1; x++, offset += nextX) {
-                        fftY.ifft(input, offset, stride);
+                        fftY.ifft(input, offset, nextY);
                     }
                     for (int offset = z * nextZ, y = 0; y < nY; y++, offset += nextY) {
                         fftX.ifft(input, offset);
@@ -553,10 +548,9 @@ public class Real3DParallel {
      * Test the real 3D FFT.
      *
      * @param args an array of {@link java.lang.String} objects.
-     * @throws java.lang.Exception if any.
      * @since 1.0
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         int dimNotFinal = 128;
         int ncpu = ParallelTeam.getDefaultThreadCount();
         int reps = 5;
@@ -575,6 +569,7 @@ public class Real3DParallel {
                     reps = 5;
                 }
             } catch (Exception e) {
+                //
             }
         }
         if (dimNotFinal % 2 != 0) {
@@ -583,7 +578,7 @@ public class Real3DParallel {
         final int dim = dimNotFinal;
         System.out.println(String.format(
                 "Initializing a %d cubed grid for %d CPUs.\n"
-                + "The best timing out of %d repititions will be used.",
+                        + "The best timing out of %d repititions will be used.",
                 dim, ncpu, reps));
 
         Real3D real3D = new Real3D(dim, dim, dim);
@@ -592,8 +587,8 @@ public class Real3DParallel {
                 parallelTeam);
 
         final int dimCubed = (dim + 2) * dim * dim;
-        final double data[] = new double[dimCubed];
-        final double work[] = new double[dimCubed];
+        final double[] data = new double[dimCubed];
+        final double[] work = new double[dimCubed];
 
         // Parallel Array Initialization.
         try {

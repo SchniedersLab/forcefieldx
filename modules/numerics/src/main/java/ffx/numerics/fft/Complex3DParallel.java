@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -66,10 +66,8 @@ import edu.rit.pj.ParallelTeam;
  * <br>
  *
  * @author Michal J. Schnieders
- *
- * @since 1.0
- *
  * @see Complex
+ * @since 1.0
  */
 public class Complex3DParallel {
 
@@ -78,26 +76,26 @@ public class Complex3DParallel {
     private final int nY2, nZ2;
     private final int strideX, strideY, strideZ;
     private final double[] recip;
-    private final long convolutionTime[];
+    private final long[] convolutionTime;
     private final int threadCount;
     private final ParallelTeam parallelTeam;
-    private final Complex fftX[];
-    private final Complex fftY[];
-    private final Complex fftZ[];
+    private final Complex[] fftX;
+    private final Complex[] fftY;
+    private final Complex[] fftZ;
     private final IntegerSchedule schedule;
 
-    public double input[];
-    public final int nXm1, nYm1, nZm1;
-    public final FFTRegion fftRegion;
-    public final IFFTRegion ifftRegion;
-    public final ConvolutionRegion convRegion;
+    public double[] input;
+    private final int nXm1, nYm1, nZm1;
+    private final FFTRegion fftRegion;
+    private final IFFTRegion ifftRegion;
+    private final ConvolutionRegion convRegion;
 
     /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
+     * @param nX           X-dimension.
+     * @param nY           Y-dimension.
+     * @param nZ           Z-dimension.
      * @param parallelTeam A ParallelTeam instance.
      * @since 1.0
      */
@@ -108,15 +106,15 @@ public class Complex3DParallel {
     /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
-     * @param parallelTeam A ParallelTeam instance.
+     * @param nX              X-dimension.
+     * @param nY              Y-dimension.
+     * @param nZ              Z-dimension.
+     * @param parallelTeam    A ParallelTeam instance.
      * @param integerSchedule The IntegerSchedule to use.
      * @since 1.0
      */
     public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
-            IntegerSchedule integerSchedule) {
+                             IntegerSchedule integerSchedule) {
         this.nX = nX;
         this.nY = nY;
         this.nZ = nZ;
@@ -166,7 +164,7 @@ public class Complex3DParallel {
      * @param input The input array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
-    public void fft(final double input[]) {
+    public void fft(final double[] input) {
         this.input = input;
         try {
             parallelTeam.execute(fftRegion);
@@ -182,7 +180,7 @@ public class Complex3DParallel {
      * @param input The input array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
-    public void ifft(final double input[]) {
+    public void ifft(final double[] input) {
         this.input = input;
         try {
             parallelTeam.execute(ifftRegion);
@@ -200,7 +198,7 @@ public class Complex3DParallel {
      * @param input The input array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
-    public void convolution(final double input[]) {
+    public void convolution(final double[] input) {
         this.input = input;
         try {
             parallelTeam.execute(convRegion);
@@ -216,13 +214,10 @@ public class Complex3DParallel {
      *
      * @param recip an array of double.
      */
-    public void setRecip(double recip[]) {
+    public void setRecip(double[] recip) {
         int offset, y, x, z, i;
 
-        /**
-         * Reorder the reciprocal space data into the order it is needed by the
-         * convolution routine.
-         */
+        // Reorder the reciprocal space data into the order it is needed by the convolution routine.
         int index = 0;
         for (offset = 0, y = 0; y < nY; y++) {
             for (x = 0; x < nX; x++, offset += 1) {
@@ -238,20 +233,20 @@ public class Complex3DParallel {
      *
      * <code>
      * start() {
-     *  fftRegion.input = input;
+     * fftRegion.input = input;
      * }
      * run(){
-     *  execute(0, nZm1, fftRegion.fftXYLoop[threadID]);
-     *  execute(0, nXm1, fftRegion.fftZLoop[threadID]);
+     * execute(0, nZm1, fftRegion.fftXYLoop[threadID]);
+     * execute(0, nXm1, fftRegion.fftZLoop[threadID]);
      * }
      * </code>
      */
     public class FFTRegion extends ParallelRegion {
 
-        public final FFTXYLoop fftXYLoop[];
-        public final FFTZLoop fftZLoop[];
+        private final FFTXYLoop[] fftXYLoop;
+        private final FFTZLoop[] fftZLoop;
 
-        public FFTRegion() {
+        private FFTRegion() {
             fftXYLoop = new FFTXYLoop[threadCount];
             fftZLoop = new FFTZLoop[threadCount];
             for (int i = 0; i < threadCount; i++) {
@@ -277,20 +272,20 @@ public class Complex3DParallel {
      *
      * <code>
      * start() {
-     *  ifftRegion.input = input;
+     * ifftRegion.input = input;
      * }
      * run(){
-     *  execute(0, nXm1, ifftRegion.ifftZLoop[threadID]);
-     *  execute(0, nZm1, ifftRegion.ifftXYLoop[threadID]);
+     * execute(0, nXm1, ifftRegion.ifftZLoop[threadID]);
+     * execute(0, nZm1, ifftRegion.ifftXYLoop[threadID]);
      * }
      * </code>
      */
     public class IFFTRegion extends ParallelRegion {
 
-        public final IFFTXYLoop ifftXYLoop[];
-        public final IFFTZLoop ifftZLoop[];
+        private final IFFTXYLoop[] ifftXYLoop;
+        private final IFFTZLoop[] ifftZLoop;
 
-        public IFFTRegion() {
+        private IFFTRegion() {
             ifftXYLoop = new IFFTXYLoop[threadCount];
             ifftZLoop = new IFFTZLoop[threadCount];
             for (int i = 0; i < threadCount; i++) {
@@ -316,22 +311,22 @@ public class Complex3DParallel {
      *
      * <code>
      * start() {
-     *  convRegion.input = input;
+     * convRegion.input = input;
      * }
      * run(){
-     *  execute(0, nZm1, convRegion.fftXYLoop[threadID]);
-     *  execute(0, nYm1, convRegion.fftZIZLoop[threadID]);
-     *  execute(0, nZm1, convRegion.ifftXYLoop[threadID]);
+     * execute(0, nZm1, convRegion.fftXYLoop[threadID]);
+     * execute(0, nYm1, convRegion.fftZIZLoop[threadID]);
+     * execute(0, nZm1, convRegion.ifftXYLoop[threadID]);
      * }
      * </code>
      */
     public class ConvolutionRegion extends ParallelRegion {
 
-        private final FFTXYLoop fftXYLoop[];
-        private final FFTZIZLoop fftZIZLoop[];
-        private final IFFTXYLoop ifftXYLoop[];
+        private final FFTXYLoop[] fftXYLoop;
+        private final FFTZIZLoop[] fftZIZLoop;
+        private final IFFTXYLoop[] ifftXYLoop;
 
-        public ConvolutionRegion() {
+        private ConvolutionRegion() {
             fftXYLoop = new FFTXYLoop[threadCount];
             fftZIZLoop = new FFTZIZLoop[threadCount];
             ifftXYLoop = new IFFTXYLoop[threadCount];
@@ -388,7 +383,7 @@ public class Complex3DParallel {
 
     public class FFTZLoop extends IntegerForLoop {
 
-        private final double work[];
+        private final double[] work;
         private Complex localFFTZ;
 
         private FFTZLoop() {
@@ -454,7 +449,7 @@ public class Complex3DParallel {
 
     public class IFFTZLoop extends IntegerForLoop {
 
-        private final double work[];
+        private final double[] work;
         private Complex localFFTZ;
 
         private IFFTZLoop() {
@@ -491,7 +486,7 @@ public class Complex3DParallel {
 
     public class FFTZIZLoop extends IntegerForLoop {
 
-        private final double work[];
+        private final double[] work;
         private Complex localFFTZ;
 
         private FFTZIZLoop() {
@@ -559,12 +554,13 @@ public class Complex3DParallel {
                     reps = 5;
                 }
             } catch (Exception e) {
+                //
             }
         }
         final int dim = dimNotFinal;
         System.out.println(String.format(
                 "Initializing a %d cubed grid for %d CPUs.\n"
-                + "The best timing out of %d repititions will be used.",
+                        + "The best timing out of %d repititions will be used.",
                 dim, ncpu, reps));
         // One dimension of the serial array divided by the number of threads.
         Complex3D complexDoubleFFT3D = new Complex3D(dim, dim, dim);
@@ -572,8 +568,8 @@ public class Complex3DParallel {
         Complex3DParallel parallelComplexDoubleFFT3D = new Complex3DParallel(
                 dim, dim, dim, parallelTeam);
         final int dimCubed = dim * dim * dim;
-        final double data[] = new double[dimCubed * 2];
-        final double work[] = new double[dimCubed * 2];
+        final double[] data = new double[dimCubed * 2];
+        final double[] work = new double[dimCubed * 2];
         // Parallel Array Initialization.
         try {
             parallelTeam.execute(new ParallelRegion() {

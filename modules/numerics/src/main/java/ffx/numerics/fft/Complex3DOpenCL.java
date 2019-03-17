@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -74,8 +74,8 @@ public final class Complex3DOpenCL implements Runnable {
     private final int nY;
     private final int nZ;
     private final int len;
-    private double data[];
-    private double recip[];
+    private double[] data;
+    private double[] recip;
     private MODE mode;
     private boolean free;
     private boolean dead;
@@ -107,7 +107,7 @@ public final class Complex3DOpenCL implements Runnable {
         this.transferOnly = transferOnly;
     }
 
-    public void fft(final double data[]) {
+    public void fft(final double[] data) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -117,7 +117,7 @@ public final class Complex3DOpenCL implements Runnable {
         execute();
     }
 
-    public void ifft(final double data[]) {
+    public void ifft(final double[] data) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -127,7 +127,7 @@ public final class Complex3DOpenCL implements Runnable {
         execute();
     }
 
-    public void convolution(double data[]) {
+    public void convolution(double[] data) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -137,7 +137,7 @@ public final class Complex3DOpenCL implements Runnable {
         execute();
     }
 
-    public void setRecip(double recip[]) {
+    public void setRecip(double[] recip) {
         // This would be a programming error.
         if (dead || mode != null) {
             return;
@@ -219,7 +219,7 @@ public final class Complex3DOpenCL implements Runnable {
 
             logger.info(String.format("   Platform: %s", platform));
             // Choose a device.
-            CLDevice devices[] = platform.listCLDevices(CLDevice.Type.ACCELERATOR, CLDevice.Type.GPU);
+            CLDevice[] devices = platform.listCLDevices(CLDevice.Type.ACCELERATOR, CLDevice.Type.GPU);
             CLDevice device = devices[0];
             for (CLDevice dev : devices) {
                 if (dev.getVendor().startsWith("NV")) {
@@ -249,7 +249,7 @@ public final class Complex3DOpenCL implements Runnable {
 
             // Initialize the OpenCL FFT library.
             setup();
-            int dims[] = {nX, nY, nZ};
+            int[] dims = {nX, nY, nZ};
             planHandle = createDefaultPlan(context, Complex3DOpenCL_DIMENSION.Complex3DOpenCL_3D, dims);
 
             // Initialize the Reciprocal Space Multitply Kernal
@@ -345,7 +345,7 @@ public final class Complex3DOpenCL implements Runnable {
     private enum MODE {
 
         FFT, IFFT, CONVOLUTION, RECIP
-    };
+    }
 
     private class PlanHandle {
 
@@ -401,7 +401,7 @@ public final class Complex3DOpenCL implements Runnable {
         }
     }
 
-    private static void fillBuffer(double buffer[], int seed) {
+    private static void fillBuffer(double[] buffer, int seed) {
         Random rnd = new Random(seed);
         for (int i = 0; i < buffer.length; i++) {
             buffer[i] = rnd.nextDouble() * 100;
@@ -421,7 +421,7 @@ public final class Complex3DOpenCL implements Runnable {
         return (setupNative());
     }
 
-    private PlanHandle createDefaultPlan(CLContext context, Complex3DOpenCL_DIMENSION dimension, int dimLengths[]) {
+    private PlanHandle createDefaultPlan(CLContext context, Complex3DOpenCL_DIMENSION dimension, int[] dimLengths) {
         int dimX = 0, dimY = 0, dimZ = 0;
         switch (dimLengths.length) {
             case 3:
@@ -444,7 +444,7 @@ public final class Complex3DOpenCL implements Runnable {
     }
 
     private int executeTransform(Complex3DOpenCL_DIRECTION direction, CLCommandQueue queue,
-            CLBuffer<DoubleBuffer> rBuffer, CLBuffer<DoubleBuffer> cBuffer) {
+                                 CLBuffer<DoubleBuffer> rBuffer, CLBuffer<DoubleBuffer> cBuffer) {
         return (executeTransformNative(planHandle.ID, direction.ID, queue.ID, rBuffer.ID, cBuffer.ID));
     }
 
@@ -475,9 +475,8 @@ public final class Complex3DOpenCL implements Runnable {
      * main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
-     * @throws java.lang.Exception if any.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         int dimNotFinal = 64;
         int reps = 10;
         boolean transferOnly = false;
@@ -496,24 +495,23 @@ public final class Complex3DOpenCL implements Runnable {
                     transferOnly = true;
                 }
             } catch (Exception e) {
+                //
             }
         }
         final int dim = dimNotFinal;
 
         System.out.println(String.format(
                 " Initializing a %d cubed grid.\n"
-                + " The best timing out of %d repititions will be used.",
+                        + " The best timing out of %d repititions will be used.",
                 dim, reps));
 
         final int dimCubed = dim * dim * dim;
 
-        /**
-         * Create an array to save the initial input and result.
-         */
-        double orig[] = new double[dimCubed];
-        double answer[] = new double[dimCubed];
-        double data[] = new double[dimCubed * 2];
-        double recip[] = new double[dimCubed];
+        // Create an array to save the initial input and result.
+        double[] orig = new double[dimCubed];
+        double[] answer = new double[dimCubed];
+        double[] data = new double[dimCubed * 2];
+        double[] recip = new double[dimCubed];
 
         Random random = new Random(1);
         int index = 0;
@@ -635,7 +633,6 @@ public final class Complex3DOpenCL implements Runnable {
         logger.info(String.format(" OpenCL RMSE:   %12.10f, Max: %12.10f, Avg: %12.10f", rmse, maxError, avg));
 
         complex3DOpenCL.free();
-        complex3DOpenCL = null;
 
         System.out.println(String.format(" Best Sequential Time:  %8.3f", toSeconds * seqTime));
         System.out.println(String.format(" Best Parallel Time:    %8.3f", toSeconds * parTime));
