@@ -164,11 +164,11 @@ public class MDMove implements MCMove {
         mdMoveCounter++;
 
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
+        energyChange = molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy();
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
             energyDriftTotalNet += molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
             double energyDriftAverageNet = energyDriftTotalNet / mdMoveCounter;
-            energyChange = molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy();
             energyDriftTotalAbs += abs(energyChange);
             double energyDriftAverageAbs = energyDriftTotalAbs / mdMoveCounter;
             logger.fine(format(" Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
@@ -176,9 +176,9 @@ public class MDMove implements MCMove {
 
             double dt = molecularDynamics.getTimeStep();
             int intervalSteps = molecularDynamics.getIntervalSteps();
-            int natoms = molecularDynamics.getNumAtoms();
-            double normalizedEnergyDriftNet = (energyDriftAverageNet / (dt * intervalSteps * natoms)) * 1000;
-            double normalizedEnergyDriftAbs = (energyDriftAverageAbs / (dt * intervalSteps * natoms)) * 1000;
+            int nAtoms = molecularDynamics.getNumAtoms();
+            double normalizedEnergyDriftNet = (energyDriftAverageNet / (dt * intervalSteps * nAtoms)) * 1000;
+            double normalizedEnergyDriftAbs = (energyDriftAverageAbs / (dt * intervalSteps * nAtoms)) * 1000;
             logger.fine(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
                     normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
         }

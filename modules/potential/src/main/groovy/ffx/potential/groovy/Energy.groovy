@@ -1,5 +1,8 @@
 package ffx.potential.groovy
 
+import java.util.logging.Level
+import static java.lang.String.format
+
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -8,8 +11,6 @@ import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 import ffx.potential.utils.Superpose
-
-import static java.lang.String.format
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -87,12 +88,13 @@ class Energy extends PotentialScript {
         noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop
 
         if (noElecStart <= noElecStop) {
-            logger.info(String.format(" Disabling electrostatics for atoms %d (%s) to %d (%s).", noElecStart, atoms[noElecStart - 1], noElecStop, atoms[noElecStop - 1]))
+            logger.info(format(" Disabling electrostatics for atoms %d (%s) to %d (%s).",
+                    noElecStart, atoms[noElecStart - 1], noElecStop, atoms[noElecStop - 1]))
         }
         for (int i = noElecStart; i <= noElecStop; i++) {
             Atom ai = atoms[i - 1]
             ai.setElectrostatics(false)
-            ai.print(java.util.logging.Level.FINE)
+            ai.print(Level.FINE)
         }
 
         int nVars = forceFieldEnergy.getNumberOfVariables()
@@ -102,7 +104,7 @@ class Energy extends PotentialScript {
         if (gradient) {
             double[] g = new double[nVars]
             int nAts = nVars / 3
-            energy = pe.energyAndGradient(x, g, true)
+            energy = forceFieldEnergy.energyAndGradient(x, g, true)
             logger.info(format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
             for (int i = 0; i < nAts; i++) {
                 int i3 = 3 * i
@@ -120,25 +122,25 @@ class Energy extends PotentialScript {
             double[] mass = new double[nVars / 3]
 
             int nAtoms = atoms.length;
-            for (int i=0; i<nAtoms; i++) {
+            for (int i = 0; i < nAtoms; i++) {
                 mass[i] = atoms[i].getMass()
             }
 
             //Get heavy atom masses.
             int nHeavyVars = forceFieldEnergy.getNumberOfHeavyAtomVariables()
-            double[] massHeavy = new double [nHeavyVars/3]
-            for (int i=0; i<nHeavyVars/3; i++){
-                if(!atoms[i].isHydrogen()) {
+            double[] massHeavy = new double[nHeavyVars / 3]
+            for (int i = 0; i < nHeavyVars / 3; i++) {
+                if (!atoms[i].isHydrogen()) {
                     massHeavy[i] = atoms[i].getMass()
                 }
             }
 
             //Array containing heavy atom indices.
-            double[] heavyAtomPositions = new double[nHeavyVars/3];
+            int[] heavyAtomPositions = new int[nHeavyVars / 3];
             int j = 0;
-            for(int i=0; i<nVars/3; i++){
-                if(!atoms[i].isHydrogen()){
-                    heavyAtomPositions[j]=i
+            for (int i = 0; i < nVars / 3; i++) {
+                if (!atoms[i].isHydrogen()) {
+                    heavyAtomPositions[j] = i
                     j++
                 }
             }
@@ -152,40 +154,40 @@ class Energy extends PotentialScript {
                 energy = forceFieldEnergy.energy(x2, true)
 
                 //Original RMSD.
-                for(int i = 0; i < nHeavyVars/3; i++){
+                for (int i = 0; i < nHeavyVars / 3; i++) {
                     int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i*3]=x[positionOfHeavyAtom]
-                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
-                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
-                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
-                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
-                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
+                    xHeavy[i * 3] = x[positionOfHeavyAtom]
+                    xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
+                    xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
+                    x2Heavy[i * 3] = x2[positionOfHeavyAtom]
+                    x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
+                    x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
                 }
                 double origRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy);
 
                 //Translated RMSD.
                 Superpose.translate(x, mass, x2, mass)
-                for(int i = 0; i < nHeavyVars/3; i++){
+                for (int i = 0; i < nHeavyVars / 3; i++) {
                     int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i*3]=x[positionOfHeavyAtom]
-                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
-                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
-                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
-                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
-                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
+                    xHeavy[i * 3] = x[positionOfHeavyAtom]
+                    xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
+                    xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
+                    x2Heavy[i * 3] = x2[positionOfHeavyAtom]
+                    x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
+                    x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
                 }
                 double transRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
 
                 //Rotated RMSD.
                 Superpose.rotate(x, x2, mass)
-                for(int i = 0; i < nHeavyVars/3; i++){
+                for (int i = 0; i < nHeavyVars / 3; i++) {
                     int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i*3]=x[positionOfHeavyAtom]
-                    xHeavy[i*3+1]=x[positionOfHeavyAtom+1]
-                    xHeavy[i*3+2]=x[positionOfHeavyAtom+2]
-                    x2Heavy[i*3]=x2[positionOfHeavyAtom]
-                    x2Heavy[i*3+1]=x2[positionOfHeavyAtom+1]
-                    x2Heavy[i*3+2]=x2[positionOfHeavyAtom+2]
+                    xHeavy[i * 3] = x[positionOfHeavyAtom]
+                    xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
+                    xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
+                    x2Heavy[i * 3] = x2[positionOfHeavyAtom]
+                    x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
+                    x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
                 }
                 double rotRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
                 logger.info(format(

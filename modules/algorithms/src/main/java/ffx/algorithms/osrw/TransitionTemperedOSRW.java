@@ -934,9 +934,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 double bias1D = current1DBiasEnergy(midLambda, false);
                 double bias2D = computeBiasEnergy(midLambda, FLambda[iL]) - bias1D;
 
-                stringBuilder.append(format(" %6.2e %6.4f %6.4f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n",
-                        lambdaCount, llL, ulL, lla, ula,
-                        FLambda[iL], bias1D, bias2D, bias1D + bias2D, freeEnergy, bias1D + bias2D + freeEnergy));
+                stringBuilder.append(format(" %6.2e %7.5f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n",
+                        lambdaCount, midLambda, lla, ula, FLambda[iL], bias1D, bias2D, bias1D + bias2D,
+                        freeEnergy, bias1D + bias2D + freeEnergy));
             }
         }
 
@@ -948,7 +948,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         freeEnergy = integrateNumeric(FLambda, integrationType);
 
         if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
-            logger.info( "  Weight   Lambda Bins      dU/dL Bins   <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)\n");
+            logger.info("  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
             logger.info(stringBuilder.toString());
             logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
                     freeEnergy, totalWeight, temperingWeight));

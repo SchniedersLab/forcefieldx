@@ -3,6 +3,7 @@ package ffx.potential.groovy.test
 import edu.rit.pj.ParallelTeam
 
 import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
@@ -144,6 +145,10 @@ class LambdaGradient extends PotentialScript {
          */
         StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
         potential = topology.assemblePotential(topologies, threadsAvail, sb)
+
+        if (potential instanceof ForceFieldEnergyOpenMM) {
+            skipSecondDerivatives = true
+        }
 
         logger.info(sb.toString())
 
@@ -398,7 +403,7 @@ class LambdaGradient extends PotentialScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
     }
 }

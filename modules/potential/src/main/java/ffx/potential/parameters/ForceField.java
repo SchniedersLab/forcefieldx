@@ -1767,7 +1767,7 @@ public class ForceField {
         /* Term-specific flags for softcoring. Any will imply LAMBDATERM is true. */
         ELEC_LAMBDATERM, GK_LAMBDATERM, VDW_LAMBDATERM,
         /* Flag to set Hydrogen bonds to rigid and flag to signify alchemical behavior*/
-        RIGID_HYDROGEN, RIGID_BONDS, RIGID_HYDROGEN_ANGLES, VOLUME
+        RIGID_HYDROGEN, RIGID_BONDS, RIGID_HYDROGEN_ANGLES, VOLUME, FD_TWO_SIDED
     }
 
     public enum ForceFieldType {
