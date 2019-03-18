@@ -180,6 +180,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 
 import ffx.crystal.Crystal;
+import ffx.numerics.switching.LinearDerivativeSwitch;
 import ffx.numerics.switching.SquaredTrigSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Angle;
@@ -612,7 +613,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     nonSoftcoreAMOEBAvdWStart = 0.0;
                 }
 
-                softcoreAMOEBASwitch = new SquaredTrigSwitch(false);
+                softcoreAMOEBASwitch = new LinearDerivativeSwitch();
 
                 logger.info(format(" Softcore AMOEBA vdW midpoint:  %6.3f", softcoreAMOEBAvdWMidPoint));
                 logger.info(format(" Non-Softcore AMOEBA vdW start: %6.3f", nonSoftcoreAMOEBAvdWStart));

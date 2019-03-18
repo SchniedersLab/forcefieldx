@@ -230,8 +230,17 @@ public abstract class MSGroup extends MSNode {
         Atom a2 = bond.get1_2(a1);
 
         String resName = a1.getResidueName();
-        if (!resName.equals(a2.getResidueName())) {
+        if (resName == null) {
+            logger.warning(String.format(" Residue name of atom1 %s is null!", a1));
             return false;
+        } else {
+            String r2name = a2.getResidueName();
+            if (r2name == null) {
+                logger.warning(String.format(" Residue name of atom2 %s is null!", a2));
+                return false;
+            } else if (!resName.equals(r2name)) {
+                return false;
+            }
         }
         String name1 = a1.getName();
         String name2 = a2.getName();
