@@ -69,6 +69,7 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.lang.String.format;
 
 import com.sun.j3d.utils.picking.PickTool;
@@ -93,6 +94,7 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
+
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
@@ -1288,7 +1290,9 @@ public class MolecularAssembly extends MSGroup {
                 String chainName = node.getName();
                 if (chainName.equalsIgnoreCase(name)) {
                     return (Polymer) node;
-                }
+                } else if (name.contentEquals(" ")) {
+                    return (Polymer) node;
+                } /* TODO: Right now if a molecular assembly has no chain ID, the first node is returned. This functionality will not work for cases where multiple chains exist and one of those chains has no name.*/
             }
         }
         return null;
