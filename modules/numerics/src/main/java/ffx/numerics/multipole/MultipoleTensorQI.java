@@ -176,7 +176,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
     @Override
     public double getd2EdZ2() {
         if (order < 6) {
-            logger.warning("Use sixth-order tensor to get second lambda derivative from QI.");
+            //logger.warning("Use sixth-order tensor to get second lambda derivative from QI.");
+            // TODO: Actually fix this, probably by ensuring order >= 6 for all calculations requiring d2E/dZ2.
+            logger.fine(" Use sixth-order tensor to get second lambda derivative from QI.");
         }
         return d2EdZ2;
     }
