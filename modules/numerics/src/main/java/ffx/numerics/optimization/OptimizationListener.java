@@ -44,25 +44,24 @@ import ffx.numerics.optimization.LineSearch.LineSearchResult;
  * successful steps. Currently only one listener is supported.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public interface OptimizationListener {
 
     /**
      * This method is called by the optimizer after each step.
-     *
+     * <p>
      * It can be used to log status messages, update the user interface, or
      * gracefully terminate the optimizer.
      *
-     * @param iter Number of iterations.
-     * @param nfun Number of function evaluations.
-     * @param grms RMS gradient at current solution.
-     * @param xrms RMS coordinate change at current solution.
-     * @param f Function value at current solution.
-     * @param df Change in the function value compared to the previous solution.
+     * @param iter  Number of iterations.
+     * @param nfun  Number of function evaluations.
+     * @param grms  RMS gradient at current solution.
+     * @param xrms  RMS coordinate change at current solution.
+     * @param f     Function value at current solution.
+     * @param df    Change in the function value compared to the previous solution.
      * @param angle Current angle between gradient and search direction.
-     * @param info Result of the line search (null at iteraction == 0).
+     * @param info  Result of the line search (null at iteraction == 0).
      * @return A return value of false will terminate the optimization.
      * @since 1.0
      */

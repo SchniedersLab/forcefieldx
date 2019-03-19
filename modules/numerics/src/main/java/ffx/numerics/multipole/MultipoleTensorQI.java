@@ -71,7 +71,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     @Override
-    public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
+    public double multipoleEnergy(double[] Fi, double[] Ti, double[] Tk) {
         // Compute the potential due to site I at site K.
         multipoleIField();
 
@@ -109,15 +109,13 @@ public class MultipoleTensorQI extends MultipoleTensor {
 
     @Override
     public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
-                                     double Fi[], double Ti[], double Tk[]) {
+                                     double[] Fi, double[] Ti, double[] Tk) {
         // Find the potential, field, etc at k due to the induced dipole i.
         inducedIField();
         // Energy of multipole k in the field of induced dipole i.
         double energy = scaleEnergy * dotMultipoleK();
 
-        /**
-         * Get the induced-induced portion of the force.
-         */
+        // Get the induced-induced portion of the force.
         Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
         Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
         Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
@@ -127,17 +125,15 @@ public class MultipoleTensorQI extends MultipoleTensor {
         // Energy of multipole i in the field of induced dipole k.
         energy += scaleEnergy * dotMultipoleI();
 
-        /**
-         * Get the induced-induced portion of the force.
-         */
+        // Get the induced-induced portion of the force.
         Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
         Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
         Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
 
-        /**
-         * Apply scale factors directly to induced dipole components for
-         * efficiency and convenience in computing remaining force terms and
-         * torques.
+        /*
+          Apply scale factors directly to induced dipole components for
+          efficiency and convenience in computing remaining force terms and
+          torques.
          */
         scaleInduced(scaleField, scaleEnergy);
 
@@ -180,7 +176,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     @Override
     public double getd2EdZ2() {
         if (order < 6) {
-//            logger.warning("Use sixth-order tensor to get second lambda derivative from QI.");
+            logger.warning("Use sixth-order tensor to get second lambda derivative from QI.");
         }
         return d2EdZ2;
     }
@@ -189,7 +185,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
      * @return Whether anything changed as a result.
      */
     @Override
-    protected boolean setR(double r[], double lambdaFunction) {
+    protected boolean setR(double[] r, double lambdaFunction) {
         if (rprev != null && r[0] == rprev[0] && r[1] == rprev[1]
                 && r[2] == rprev[2] && lambdaFunction == rprev[3]) {
             return true;
@@ -220,7 +216,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
      * @param tensor double[] length must be at least binomial(order + 3, 3).
      */
     @Override
-    protected void noStorageRecursion(double r[], double tensor[]) {
+    protected void noStorageRecursion(double[] r, double[] tensor) {
         setR(r);
         r = new double[]{x, y, z};
         assert (r[0] == 0.0 && r[1] == 0.0);
@@ -248,7 +244,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     @Override
-    protected void recursion(final double r[], final double tensor[]) {
+    protected void recursion(final double[] r, final double[] tensor) {
         setR(r);
         assert (x == 0.0 && y == 0.0);
         source(work);
@@ -1013,8 +1009,8 @@ public class MultipoleTensorQI extends MultipoleTensor {
      */
     private void setQIRotationMatrix(double dx, double dy, double dz) {
 
-        double zAxis[] = {dx, dy, dz};
-        double xAxis[] = {dx, dy, dz};
+        double[] zAxis = {dx, dy, dz};
+        double[] xAxis = {dx, dy, dz};
         if (dy != 0.0 || dz != 0.0) {
             xAxis[0] += 1.0;
         } else {
@@ -1051,7 +1047,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     @Override
-    protected void setDipoleI(double Ui[], double UiCR[]) {
+    protected void setDipoleI(double[] Ui, double[] UiCR) {
         double dx = Ui[0];
         double dy = Ui[1];
         double dz = Ui[2];
@@ -1067,7 +1063,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     @Override
-    protected void setDipoleK(double Uk[], double UkCR[]) {
+    protected void setDipoleK(double[] Uk, double[] UkCR) {
         double dx = Uk[0];
         double dy = Uk[1];
         double dz = Uk[2];
@@ -1083,7 +1079,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     @Override
-    protected void setMultipoleI(double Qi[]) {
+    protected void setMultipoleI(double[] Qi) {
 
         qi = Qi[0];
 
@@ -1144,7 +1140,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     @Override
-    protected void setMultipoleK(double Qk[]) {
+    protected void setMultipoleK(double[] Qk) {
 
         qk = Qk[0];
 
@@ -1204,8 +1200,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     @Override
-    protected void qiToGlobal(double v1[], double v2[],
-                              double v3[]) {
+    protected void qiToGlobal(double[] v1, double[] v2, double[] v3) {
         double vx = v1[0];
         double vy = v1[1];
         double vz = v1[2];
@@ -1229,12 +1224,12 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     // Rotation Matrix from Global to QI.
-    protected double r00, r01, r02;
-    protected double r10, r11, r12;
-    protected double r20, r21, r22;
+    private double r00, r01, r02;
+    private double r10, r11, r12;
+    private double r20, r21, r22;
 
     // Rotation Matrix from QI to Global.
-    protected double ir00, ir01, ir02;
-    protected double ir10, ir11, ir12;
-    protected double ir20, ir21, ir22;
+    private double ir00, ir01, ir02;
+    private double ir10, ir11, ir12;
+    private double ir20, ir21, ir22;
 }

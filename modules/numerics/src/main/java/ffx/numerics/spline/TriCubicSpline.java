@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -42,38 +42,39 @@ package ffx.numerics.spline;
  * TriCubicSpline class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @see <a href="http://www.cs.cmu.edu/~fp/courses/graphics/asst5/catmullRom.pdf" target="_blank">Catmull-Rom splines</a>
- *
  * @since 1.0
  */
 public class TriCubicSpline {
 
-    private final double p[];
-    private final double q[];
-    private final double r[];
-    private final double u[];
-    private final double v[];
-    private final double w[];
-    private final double dp[];
-    private final double dq[];
-    private final double dr[];
-    private final double du[];
-    private final double dv[];
-    private final double dw[];
+    private final double[] p;
+    private final double[] q;
+    private final double[] r;
+    private final double[] u;
+    private final double[] v;
+    private final double[] w;
+    private final double[] dp;
+    private final double[] dq;
+    private final double[] dr;
+    private final double[] du;
+    private final double[] dv;
+    private final double[] dw;
     /**
-     * smoothing matrix: Catmull-Rom spline with tau=0.25
+     * Tau for the smoothing matrix.
      */
     private static final double tau = 0.25;
-    private static final double catmullRomMat[][] = new double[][]{
-        {0.0, 1.0, 0.0, 0.0},
-        {-tau, 0.0, tau, 0.0},
-        {2.0 * tau, tau - 3.0, 3.0 - 2.0 * tau, -tau},
-        {-tau, 2.0 - tau, tau - 2.0, tau}
+    /**
+     * Smoothing matrix: Catmull-Rom spline with tau=0.25
+     */
+    private static final double[][] catmullRomMat = new double[][]{
+            {0.0, 1.0, 0.0, 0.0},
+            {-tau, 0.0, tau, 0.0},
+            {2.0 * tau, tau - 3.0, 3.0 - 2.0 * tau, -tau},
+            {-tau, 2.0 - tau, tau - 2.0, tau}
     };
 
     /**
-     * initialize Spline function
+     * Initialize Spline function.
      */
     public TriCubicSpline() {
         dw = new double[4];
@@ -93,19 +94,17 @@ public class TriCubicSpline {
     /**
      * Determine the spline value at a given point.
      *
-     * @param dx delta between point and previous grid point in X
-     * @param dy delta between point and previous grid point in Y
-     * @param dz delta between point and previous grid point in Z
+     * @param dx     delta between point and previous grid point in X
+     * @param dy     delta between point and previous grid point in Y
+     * @param dz     delta between point and previous grid point in Z
      * @param scalar 3d array in x,y,z order of 3D scalar data
-     * @param g gradient array (can be null)
+     * @param g      gradient array (can be null)
      * @return the interpolated scalar value at the requested point
      */
     public double spline(double dx, double dy, double dz,
-            double scalar[][][], double g[]) {
+                         double[][][] scalar, double[] g) {
 
-        /**
-         * p(s) = u . catmull-rom matrix . p^T applied in 3 dimensions (u, v, w)
-         */
+        // p(s) = u . catmull-rom matrix . p^T applied in 3 dimensions (u, v, w)
         u[0] = 1.0;
         v[0] = 1.0;
         w[0] = 1.0;
@@ -115,9 +114,7 @@ public class TriCubicSpline {
             w[i] = w[i - 1] * dz;
         }
 
-        /**
-         * Derivatives
-         */
+        // Derivatives
         du[0] = dv[0] = dw[0] = 0.0;
         du[1] = dv[1] = dw[1] = 1.0;
         du[2] = 2.0 * dx;
@@ -127,9 +124,7 @@ public class TriCubicSpline {
         dw[2] = 2.0 * dz;
         dw[3] = 3.0 * dz * dz;
 
-        /**
-         * vec4mat4 - could put this in VectorMath class
-         */
+        // vec4mat4 - could put this in VectorMath class
         for (int i = 0; i < 4; i++) {
             p[i] = q[i] = r[i] = 0.0;
             dp[i] = dq[i] = dr[i] = 0.0;
@@ -143,9 +138,7 @@ public class TriCubicSpline {
             }
         }
 
-        /**
-         * Tensor products
-         */
+        // Tensor products
         double sum = 0.0;
         double gx = 0.0, gy = 0.0, gz = 0.0;
         for (int i = 0; i < 4; i++) {

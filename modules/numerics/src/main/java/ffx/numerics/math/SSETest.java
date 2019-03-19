@@ -39,6 +39,8 @@ package ffx.numerics.math;
 
 import java.util.Random;
 
+import static org.apache.commons.math3.util.FastMath.floor;
+
 /**
  * java -cp target/numerics-1.0.0-beta.jar -XX:+UnlockDiagnosticVMOptions
  * -XX:+PrintAssembly -Djava.libraryath=hsdis-amd64.dylib ffx.numerics.SSETest
@@ -52,7 +54,7 @@ public class SSETest {
      *
      * @param args an array of {@link java.lang.String} objects.
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 
         int m = 500;
         int n = 500;
@@ -71,9 +73,9 @@ public class SSETest {
         long time = 0;
         for (int i = 1; i <= nLoops; i++) {
             time -= System.nanoTime();
-            double y[] = test.matVec(test.A, test.x, m, n);
+            double[] y = test.matVec(test.A, test.x, m, n);
             time += System.nanoTime();
-            int j = (int) Math.floor(m * r.nextDouble());
+            int j = (int) floor(m * r.nextDouble());
             temp += y[j];
             if (i % 10000 == 0) {
                 System.out.println(" Nested: " + temp + " " + time * 1.0e-9);
@@ -87,9 +89,9 @@ public class SSETest {
         time = 0;
         for (int i = 1; i <= nLoops; i++) {
             time -= System.nanoTime();
-            double y[] = test.matVec(test.flatA, test.x, m, n);
+            double[] y = test.matVec(test.flatA, test.x, m, n);
             time += System.nanoTime();
-            int j = (int) Math.floor(m * r.nextDouble());
+            int j = (int) floor(m * r.nextDouble());
             temp += y[j];
             if (i % 10000 == 0) {
                 System.out.println(" Flat: " + temp + " " + time * 1.0e-9);
@@ -98,9 +100,9 @@ public class SSETest {
         }
     }
 
-    public final double A[][];
-    public final double flatA[];
-    public final double x[];
+    public final double[][] A;
+    public final double[] x;
+    private final double[] flatA;
 
     /**
      * <p>Constructor for SSETest.</p>
@@ -108,7 +110,7 @@ public class SSETest {
      * @param m a int.
      * @param n a int.
      */
-    public SSETest(int m, int n) {
+    private SSETest(int m, int n) {
         A = new double[m][n];
         flatA = new double[m * n];
         x = new double[n];
@@ -140,8 +142,8 @@ public class SSETest {
      * @param n a int.
      * @return an array of {@link double} objects.
      */
-    public final double[] matVec(final double[][] A, final double[] x,
-                                 final int m, final int n) {
+    private double[] matVec(final double[][] A, final double[] x,
+                            final int m, final int n) {
         double[] y = new double[m];
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
@@ -160,8 +162,8 @@ public class SSETest {
      * @param n a int.
      * @return an array of {@link double} objects.
      */
-    public final double[] matVec(final double A[], final double[] x,
-                                 final int m, final int n) {
+    private double[] matVec(final double[] A, final double[] x,
+                            final int m, final int n) {
         double[] y = new double[m];
         final int extra = n - n % 8;
         final int ub = ((n / 8) * 8) - 1;

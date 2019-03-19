@@ -4116,12 +4116,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     collect(Collectors.joining(" "));
         }
         availDeviceProp = availDeviceProp.trim();
+
         String[] availDevices = availDeviceProp.split("\\s+");
         int nDevs = availDevices.length;
         int[] devs = new int[nDevs];
         for (int i = 0; i < nDevs; i++) {
             devs[i] = Integer.parseInt(availDevices[i]);
         }
+
+        logger.info(format(" Number of CUDA devices: %d.", nDevs));
+
         int index = 0;
         try {
             Comm world = Comm.world();

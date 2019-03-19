@@ -46,7 +46,7 @@ package ffx.numerics.math;
  */
 public class Scalar {
 
-    private final double xyz[];
+    private final double[] xyz;
     private double scalar;
 
     /**
@@ -64,7 +64,7 @@ public class Scalar {
      * @param xyz    an array of double.
      * @param scalar a double.
      */
-    public Scalar(double xyz[], double scalar) {
+    public Scalar(double[] xyz, double scalar) {
         this(xyz[0], xyz[1], xyz[2], scalar);
     }
 
@@ -75,7 +75,7 @@ public class Scalar {
      * @param xyz    an array of int.
      * @param scalar a double.
      */
-    public Scalar(int xyz[], double scalar) {
+    public Scalar(int[] xyz, double scalar) {
         this((double) xyz[0], (double) xyz[1], (double) xyz[2], scalar);
     }
 
@@ -125,7 +125,7 @@ public class Scalar {
      *
      * @param xyz an array of double.
      */
-    public void setXYZ(double xyz[]) {
+    public void setXYZ(double[] xyz) {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];
