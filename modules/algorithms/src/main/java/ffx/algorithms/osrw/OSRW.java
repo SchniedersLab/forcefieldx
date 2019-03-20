@@ -50,13 +50,14 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
-import static java.lang.String.format;
 
 import edu.rit.mp.DoubleBuf;
 
@@ -94,10 +95,6 @@ public class OSRW extends AbstractOSRW {
      */
     private final DoubleBuf[] recursionCountsBuf;
     private final DoubleBuf myRecursionCountBuf;
-    /**
-     * Total histogram counts.
-     */
-    private int totalCounts;
     /**
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous
      * walkers.
@@ -154,16 +151,13 @@ public class OSRW extends AbstractOSRW {
                 double temperature, double dt, double printInterval,
                 double saveInterval, boolean asynchronous, boolean resetNumSteps,
                 AlgorithmListener algorithmListener) {
-        super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
+        super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt,
+                printInterval, saveInterval, asynchronous, algorithmListener);
 
-        /**
-         * Allocate space for the recursion kernel that stores counts.
-         */
+        // Allocate space for the recursion kernel that stores counts.
         recursionKernel = new int[lambdaBins][FLambdaBins];
 
-        /**
-         * Load the OSRW histogram restart file if it exists.
-         */
+        // Load the OSRW histogram restart file if it exists.
         boolean readHistogramRestart = false;
         if (histogramFile != null && histogramFile.exists()) {
             try {
@@ -176,9 +170,7 @@ public class OSRW extends AbstractOSRW {
             }
         }
 
-        /**
-         * Load the OSRW lambda restart file if it exists.
-         */
+        // Load the OSRW lambda restart file if it exists.
         if (lambdaFile != null && lambdaFile.exists()) {
             try {
                 OSRWLambdaReader osrwLambdaReader = new OSRWLambdaReader(new FileReader(lambdaFile));
@@ -190,9 +182,7 @@ public class OSRW extends AbstractOSRW {
         }
 
         if (asynchronous) {
-            /**
-             * Use asynchronous communication.
-             */
+            // Use asynchronous communication.
             myRecursionCount = new double[2];
             myRecursionCountBuf = DoubleBuf.buffer(myRecursionCount);
             receiveThread = new ReceiveThread();
@@ -200,9 +190,7 @@ public class OSRW extends AbstractOSRW {
             recursionCounts = null;
             recursionCountsBuf = null;
         } else {
-            /**
-             * Use synchronous communication.
-             */
+            // Use synchronous communication.
             recursionCounts = new double[numProc][2];
             recursionCountsBuf = new DoubleBuf[numProc];
             for (int i = 0; i < numProc; i++) {
@@ -213,9 +201,7 @@ public class OSRW extends AbstractOSRW {
             receiveThread = null;
         }
 
-        /**
-         * Update and print out the recursion slave.
-         */
+        // Update and print out the recursion slave.
         if (readHistogramRestart) {
             updateFLambda(true, false);
         }
@@ -232,9 +218,7 @@ public class OSRW extends AbstractOSRW {
 
         forceFieldEnergy = potential.energy(x);
 
-        /**
-         * OSRW is propagated with the slowly varying terms.
-         */
+        // OSRW is propagated with the slowly varying terms.
         if (state == STATE.FAST) {
             return forceFieldEnergy;
         }
@@ -256,10 +240,7 @@ public class OSRW extends AbstractOSRW {
             energyCount++;
         }
 
-        /**
-         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
-         * to L and F_L.
-         */
+        // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
         gLdEdL = 0.0;
         dGdLambda = 0.0;
         dGdFLambda = 0.0;
@@ -284,10 +265,8 @@ public class OSRW extends AbstractOSRW {
             }
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
                 int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
+                // If either of the following FL edge conditions are true,
+                // then there are no counts and we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -303,15 +282,11 @@ public class OSRW extends AbstractOSRW {
             }
         }
 
-        /**
-         * Lambda gradient due to recursion kernel G(L, F_L).
-         */
+        // Lambda gradient due to recursion kernel G(L, F_L).
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
         if (propagateLambda && energyCount > 0) {
-            /**
-             * Update free energy F(L) every ~10 steps.
-             */
+            // Update free energy F(L) every ~10 steps.
             if (energyCount % 10 == 0) {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
@@ -321,9 +296,7 @@ public class OSRW extends AbstractOSRW {
                 if (algorithmListener != null) {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
-                /**
-                 * Only the rank 0 process writes the histogram restart file.
-                 */
+                // Only the rank 0 process writes the histogram restart file.
                 if (rank == 0) {
                     try {
                         OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
@@ -337,9 +310,7 @@ public class OSRW extends AbstractOSRW {
                         logger.log(Level.INFO, message, ex);
                     }
                 }
-                /**
-                 * All ranks write a lambda restart file.
-                 */
+                // All ranks write a lambda restart file.
                 try {
                     OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
                     osrwLambdaRestart.writeLambdaFile();
@@ -353,10 +324,7 @@ public class OSRW extends AbstractOSRW {
             }
         }
 
-        /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
-         */
+        // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
         if (include1DBias) {
             bias1D = current1DBiasEnergy(lambda, true);
@@ -370,16 +338,12 @@ public class OSRW extends AbstractOSRW {
         }
 
         if (propagateLambda && energyCount > 0) {
-            /**
-             * Metadynamics grid counts (every 'countInterval' steps).
-             */
+            // Metadynamics grid counts (every 'countInterval' steps).
             if (energyCount % countInterval == 0) {
                 addBias(dEdU, x, null);
             }
 
-            /**
-             * Log the current Lambda state.
-             */
+            // Log the current Lambda state.
             if (energyCount % printFrequency == 0) {
                 if (lambdaBins < 1000) {
                     logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
@@ -392,9 +356,7 @@ public class OSRW extends AbstractOSRW {
 
         }
 
-        /**
-         * Propagate the Lambda particle.
-         */
+        // Propagate the Lambda particle.
         if (propagateLambda) {
             langevin();
         } else {
@@ -422,9 +384,7 @@ public class OSRW extends AbstractOSRW {
 
         forceFieldEnergy = potential.energyAndGradient(x, gradient);
 
-        /**
-         * OSRW is propagated with the slowly varying terms.
-         */
+        // OSRW is propagated with the slowly varying terms.
         if (state == STATE.FAST) {
             return forceFieldEnergy;
         }
@@ -446,10 +406,7 @@ public class OSRW extends AbstractOSRW {
             energyCount++;
         }
 
-        /**
-         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
-         * to L and F_L.
-         */
+        // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
         gLdEdL = 0.0;
         double dGdLambda = 0.0;
         double dGdFLambda = 0.0;
@@ -474,10 +431,7 @@ public class OSRW extends AbstractOSRW {
             }
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
                 int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
+                // If either of the following FL edge conditions are true, then there are no counts and we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -493,14 +447,10 @@ public class OSRW extends AbstractOSRW {
             }
         }
 
-        /**
-         * Lambda gradient due to recursion kernel G(L, F_L).
-         */
+        // Lambda gradient due to recursion kernel G(L, F_L).
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
-        /**
-         * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
-         */
+        // Cartesian coordinate gradient due to recursion kernel G(L, F_L).
         fill(dUdXdL, 0.0);
         lambdaInterface.getdEdXdL(dUdXdL);
         for (int i = 0; i < nVariables; i++) {
@@ -508,9 +458,7 @@ public class OSRW extends AbstractOSRW {
         }
 
         if (propagateLambda && energyCount > 0) {
-            /**
-             * Update free energy F(L) every ~10 steps.
-             */
+            // Update free energy F(L) every ~10 steps.
             if (energyCount % 10 == 0) {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
@@ -520,9 +468,7 @@ public class OSRW extends AbstractOSRW {
                 if (algorithmListener != null) {
                     algorithmListener.algorithmUpdate(molecularAssembly);
                 }
-                /**
-                 * Only the rank 0 process writes the histogram restart file.
-                 */
+                // Only the rank 0 process writes the histogram restart file.
                 if (rank == 0) {
                     try {
                         OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
@@ -536,9 +482,7 @@ public class OSRW extends AbstractOSRW {
                         logger.log(Level.INFO, message, ex);
                     }
                 }
-                /**
-                 * All ranks write a lambda restart file.
-                 */
+                // All ranks write a lambda restart file.
                 try {
                     OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
                     osrwLambdaRestart.writeLambdaFile();
@@ -552,10 +496,7 @@ public class OSRW extends AbstractOSRW {
             }
         }
 
-        /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
-         */
+        // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
         if (include1DBias) {
             bias1D = current1DBiasEnergy(lambda, true);
@@ -569,16 +510,12 @@ public class OSRW extends AbstractOSRW {
         }
 
         if (propagateLambda && energyCount > 0) {
-            /**
-             * Metadynamics grid counts (every 'countInterval' steps).
-             */
+            // Metadynamics grid counts (every 'countInterval' steps).
             if (energyCount % countInterval == 0) {
                 addBias(dEdU, x, gradient);
             }
 
-            /**
-             * Log the current Lambda state.
-             */
+            // Log the current Lambda state.
             if (energyCount % printFrequency == 0) {
                 if (lambdaBins < 1000) {
                     logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
@@ -591,9 +528,7 @@ public class OSRW extends AbstractOSRW {
 
         }
 
-        /**
-         * Propagate the Lambda particle.
-         */
+        // Propagate the Lambda particle.
         if (propagateLambda) {
             langevin();
         } else {
@@ -639,10 +574,8 @@ public class OSRW extends AbstractOSRW {
             }
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
                 int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
+                // If either of the following FL edge conditions are true,
+                // then there are no counts and we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -689,9 +622,7 @@ public class OSRW extends AbstractOSRW {
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
         }
-        /**
-         * Only the rank 0 process writes the histogram restart file.
-         */
+        // Only the rank 0 process writes the histogram restart file.
         if (rank == 0) {
             try {
                 OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
@@ -705,9 +636,7 @@ public class OSRW extends AbstractOSRW {
                 logger.log(Level.INFO, message, ex);
             }
         }
-        /**
-         * All ranks write a lambda restart file.
-         */
+        // All ranks write a lambda restart file.
         try {
             OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
             osrwLambdaRestart.writeLambdaFile();
@@ -723,11 +652,11 @@ public class OSRW extends AbstractOSRW {
     /**
      * Periodically minimize and save a snapshot.
      *
-     * @param e
-     * @param x
-     * @param gradient
+     * @param e        The current energy.
+     * @param x        The atomic coordinates.
+     * @param gradient The current coordinates gradient.
      */
-    private void minimize(double e, double x[], double gradient[]) {
+    private void minimize(double e, double[] x, double[] gradient) {
         if (energyCount % osrwOptimizationFrequency == 0) {
             logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
 
@@ -745,12 +674,12 @@ public class OSRW extends AbstractOSRW {
             // If a new minimum has been found, save its coordinates.
             if (minEnergy < osrwOptimum) {
                 osrwOptimum = minEnergy;
-                logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                logger.info(format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
                 int n = potential.getNumberOfVariables();
                 osrwOptimumCoords = new double[n];
                 osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                 if (osrwOptimizationFilter.writeFile(osrwOptimizationFile, false)) {
-                    logger.info(String.format(" Wrote PDB file to " + osrwOptimizationFile.getName()));
+                    logger.info(" Wrote PDB file to " + osrwOptimizationFile.getName());
                 }
             }
 
@@ -764,8 +693,7 @@ public class OSRW extends AbstractOSRW {
             double eCheck = potential.energyAndGradient(x, gradient);
 
             if (abs(eCheck - e) > osrwOptimizationTolerance) {
-                logger.warning(String.format(
-                        " OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
+                logger.warning(format(" OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
             }
         }
     }
@@ -774,15 +702,13 @@ public class OSRW extends AbstractOSRW {
      * Send an OSRW count to all other processes while also receiving an OSRW
      * count from all other processes.
      *
-     * @param lambda
-     * @param dEdU
+     * @param lambda current value of lambda.
+     * @param dUdL   current value of dU/dL.
      */
-    private void synchronousSend(double lambda, double dEdU) {
-        /**
-         * All-Gather counts from each walker.
-         */
+    private void synchronousSend(double lambda, double dUdL) {
+        // All-Gather counts from each walker.
         myRecursionCount[0] = lambda;
-        myRecursionCount[1] = dEdU;
+        myRecursionCount[1] = dUdL;
         try {
             world.allGather(myRecursionCountBuf, recursionCountsBuf);
         } catch (IOException ex) {
@@ -790,9 +716,7 @@ public class OSRW extends AbstractOSRW {
             logger.log(Level.SEVERE, message, ex);
         }
 
-        /**
-         * Find the minimum and maximum FLambda bin for the gathered counts.
-         */
+        // Find the minimum and maximum FLambda bin for the gathered counts.
         double minRequired = Double.MAX_VALUE;
         double maxRequired = Double.MIN_VALUE;
         for (int i = 0; i < numProc; i++) {
@@ -800,16 +724,11 @@ public class OSRW extends AbstractOSRW {
             maxRequired = Math.max(maxRequired, recursionCounts[i][1]);
         }
 
-        /**
-         * Check that the FLambda range of the Recursion kernel includes both
-         * the minimum and maximum FLambda value.
-         */
+        // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
         checkRecursionKernelSize(minRequired);
         checkRecursionKernelSize(maxRequired);
 
-        /**
-         * Increment the Recursion Kernel based on the input of each walker.
-         */
+        // Increment the Recursion Kernel based on the input of each walker.
         for (int i = 0; i < numProc; i++) {
             int walkerLambda = binForLambda(recursionCounts[i][0]);
             int walkerFLambda = binForFLambda(recursionCounts[i][1]);
@@ -817,7 +736,7 @@ public class OSRW extends AbstractOSRW {
             if (resetStatistics && recursionCounts[i][0] > lambdaResetValue) {
                 recursionKernel = new int[lambdaBins][FLambdaBins];
                 resetStatistics = false;
-                logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCounts[i][0]));
+                logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCounts[i][0]));
             }
 
             recursionKernel[walkerLambda][walkerFLambda]++;
@@ -827,12 +746,12 @@ public class OSRW extends AbstractOSRW {
     /**
      * Send an OSRW count to all other processes.
      *
-     * @param lambda
-     * @param dEdU
+     * @param lambda The current value of lambda.
+     * @param dUdL   The current dU/dL.
      */
-    private void asynchronousSend(double lambda, double dEdU) {
+    private void asynchronousSend(double lambda, double dUdL) {
         myRecursionCount[0] = lambda;
-        myRecursionCount[1] = dEdU;
+        myRecursionCount[1] = dUdL;
         for (int i = 0; i < numProc; i++) {
             try {
                 world.send(i, myRecursionCountBuf);
@@ -851,7 +770,7 @@ public class OSRW extends AbstractOSRW {
     @Override
     protected void checkRecursionKernelSize(double dEdLambda) {
         if (dEdLambda > maxFLambda) {
-            logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
+            logger.info(format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
 
             double origDeltaG = updateFLambda(false, false);
@@ -860,13 +779,11 @@ public class OSRW extends AbstractOSRW {
             while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
                 newFLambdaBins += 100;
             }
-            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
-            /**
-             * We have added bins above the indeces of the current counts just
-             * copy them into the new array.
-             */
+            int[][] newRecursionKernel = new int[lambdaBins][newFLambdaBins];
+
+            // We have added bins above the indeces of the current counts just copy them into the new array.
             for (int i = 0; i < lambdaBins; i++) {
-                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
+                arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
             }
             recursionKernel = newRecursionKernel;
             FLambdaBins = newFLambdaBins;
@@ -874,7 +791,8 @@ public class OSRW extends AbstractOSRW {
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false, false));
+            double newFreeEnergy = updateFLambda(false, false);
+            assert (origDeltaG == newFreeEnergy);
 
         }
         if (dEdLambda < minFLambda) {
@@ -888,13 +806,10 @@ public class OSRW extends AbstractOSRW {
                 offset += 100;
             }
             int newFLambdaBins = FLambdaBins + offset;
-            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
-            /**
-             * We have added bins below the current counts, so their indeces
-             * must be increased by: offset = newFLBins - FLBins
-             */
+            int[][] newRecursionKernel = new int[lambdaBins][newFLambdaBins];
+            // We have added bins below the current counts, so their indices must be increased by: offset = newFLBins - FLBins
             for (int i = 0; i < lambdaBins; i++) {
-                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
+                arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
             }
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
@@ -902,7 +817,8 @@ public class OSRW extends AbstractOSRW {
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false, false));
+            double newFreeEnergy = updateFLambda(false, false);
+            assert (origDeltaG == newFreeEnergy);
         }
     }
 
@@ -914,7 +830,7 @@ public class OSRW extends AbstractOSRW {
     @Override
     public double updateFLambda(boolean print, boolean save) {
         double freeEnergy = 0.0;
-        totalCounts = 0;
+        int totalCounts = 0;
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -1030,14 +946,11 @@ public class OSRW extends AbstractOSRW {
      */
     @Override
     protected double evaluateKernel(int cLambda, int cF_Lambda) {
-        /**
-         * Compute the value of L and FL for the center of the current bin.
-         */
+        // Compute the value of L and FL for the center of the current bin.
         double vL = cLambda * dL;
         double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
-        /**
-         * Set the variances for the Gaussian bias.
-         */
+
+        // Set the variances for the Gaussian bias.
         double Ls2 = 2.0 * dL * 2.0 * dL;
         double FLs2 = 2.0 * dFL * 2.0 * dFL;
         double sum = 0.0;
@@ -1050,10 +963,8 @@ public class OSRW extends AbstractOSRW {
             int lcount = Lcenter;
             double mirrorFactor = 1.0;
             if (lcount == 0 || lcount == lambdaBins - 1) {
-                /**
-                 * The width of the first and last bins is dLambda_2, so the
-                 * mirror condition is to double their counts.
-                 */
+                // The width of the first and last bins is dLambda_2,
+                // so the mirror condition is to double their counts.
                 mirrorFactor = 2.0;
             } else if (lcount < 0) {
                 lcount = -lcount;
@@ -1066,10 +977,8 @@ public class OSRW extends AbstractOSRW {
 
             for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
                 int FLcenter = cF_Lambda + jFL;
-                /**
-                 * For FLambda outside the count matrix the weight is 0 so we
-                 * continue.
-                 */
+
+                // For FLambda outside the count matrix the weight is 0 so we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -1100,7 +1009,7 @@ public class OSRW extends AbstractOSRW {
         final double[] recursionCount;
         final DoubleBuf recursionCountBuf;
 
-        public ReceiveThread() {
+        ReceiveThread() {
             recursionCount = new double[2];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
         }
@@ -1117,16 +1026,10 @@ public class OSRW extends AbstractOSRW {
                     String message = e.getMessage();
                     logger.log(Level.WARNING, message, e);
                 }
-                /**
-                 * Check that the FLambda range of the Recursion kernel includes
-                 * both the minimum and maximum FLambda value.
-                 */
+                // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
                 checkRecursionKernelSize(recursionCount[1]);
 
-                /**
-                 * Increment the Recursion Kernel based on the input of current
-                 * walker.
-                 */
+                // Increment the Recursion Kernel based on the input of current walker.
                 int walkerLambda = binForLambda(recursionCount[0]);
                 int walkerFLambda = binForFLambda(recursionCount[1]);
 
@@ -1136,10 +1039,7 @@ public class OSRW extends AbstractOSRW {
                     logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
                 }
 
-                /**
-                 * Increment the Recursion Kernel based on the input of current
-                 * walker.
-                 */
+                // Increment the Recursion Kernel based on the input of current walker.
                 recursionKernel[walkerLambda][walkerFLambda]++;
                 if (this.isInterrupted()) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution");
@@ -1154,11 +1054,11 @@ public class OSRW extends AbstractOSRW {
      */
     private class OSRWHistogramWriter extends PrintWriter {
 
-        public OSRWHistogramWriter(Writer writer) {
+        OSRWHistogramWriter(Writer writer) {
             super(writer);
         }
 
-        public void writeHistogramFile() {
+        void writeHistogramFile() {
             printf("Temperature     %15.3f\n", temperature);
             printf("Lambda-Mass     %15.8e\n", thetaMass);
             printf("Lambda-Friction %15.8e\n", thetaFriction);
@@ -1184,11 +1084,11 @@ public class OSRW extends AbstractOSRW {
      */
     private class OSRWLambdaWriter extends PrintWriter {
 
-        public OSRWLambdaWriter(Writer writer) {
+        OSRWLambdaWriter(Writer writer) {
             super(writer);
         }
 
-        public void writeLambdaFile() {
+        void writeLambdaFile() {
             printf("Lambda          %15.8f\n", lambda);
             printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
             printf("Steps-Taken     %15d\n", energyCount);
@@ -1200,11 +1100,11 @@ public class OSRW extends AbstractOSRW {
      */
     private class OSRWHistogramReader extends BufferedReader {
 
-        public OSRWHistogramReader(Reader reader) {
+        OSRWHistogramReader(Reader reader) {
             super(reader);
         }
 
-        public void readHistogramFile() {
+        void readHistogramFile() {
             try {
                 temperature = Double.parseDouble(readLine().split(" +")[1]);
                 thetaMass = Double.parseDouble(readLine().split(" +")[1]);
@@ -1225,7 +1125,7 @@ public class OSRW extends AbstractOSRW {
                 // Allocate memory for the recursion kernel.
                 recursionKernel = new int[lambdaBins][FLambdaBins];
                 for (int i = 0; i < lambdaBins; i++) {
-                    String counts[] = readLine().split(" +");
+                    String[] counts = readLine().split(" +");
                     for (int j = 0; j < FLambdaBins; j++) {
                         recursionKernel[i][j] = Integer.parseInt(counts[j]);
                     }
@@ -1242,11 +1142,11 @@ public class OSRW extends AbstractOSRW {
      */
     private class OSRWLambdaReader extends BufferedReader {
 
-        public OSRWLambdaReader(Reader reader) {
+        OSRWLambdaReader(Reader reader) {
             super(reader);
         }
 
-        public void readLambdaFile(boolean resetEnergyCount) {
+        void readLambdaFile(boolean resetEnergyCount) {
             try {
                 lambda = Double.parseDouble(readLine().split(" +")[1]);
                 halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
@@ -1259,7 +1159,7 @@ public class OSRW extends AbstractOSRW {
                 try {
                     energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
                 } catch (Exception e) {
-                    logger.log(Level.FINE, String.format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString()));
+                    logger.log(Level.FINE, format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString()));
                 }
             }
         }

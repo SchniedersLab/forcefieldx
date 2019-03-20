@@ -52,7 +52,9 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
+import static java.util.Arrays.stream;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -167,12 +169,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     private final DoubleBuf myRecursionWeightBuf;
 
     /**
-     * OSRW Asynchronous MultiWalker Constructor.
+     * Transition Tempered OSRW Constructor.
      *
      * @param lambdaInterface   defines Lambda and dU/dL.
      * @param potential         defines the Potential energy.
-     * @param lambdaFile        contains the current Lambda particle position and
-     *                          velocity.
+     * @param lambdaFile        contains the current Lambda particle position and velocity.
      * @param histogramFile     contains the Lambda and dU/dL histogram.
      * @param properties        defines System properties.
      * @param temperature       the simulation temperature.
@@ -194,12 +195,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * OSRW Asynchronous MultiWalker Constructor.
+     * Transition Tempered OSRW Constructor.
      *
      * @param lambdaInterface   defines Lambda and dU/dL.
      * @param potential         defines the Potential energy.
-     * @param lambdaFile        contains the current Lambda particle position and
-     *                          velocity.
+     * @param lambdaFile        contains the current Lambda particle position and velocity.
      * @param histogramFile     contains the Lambda and dU/dL histogram.
      * @param properties        defines System properties.
      * @param temperature       the simulation temperature.
@@ -217,23 +217,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                                   double saveInterval, boolean asynchronous, boolean resetNumSteps,
                                   AlgorithmListener algorithmListener) {
         super(lambdaInterface, potential, lambdaFile, histogramFile, properties,
-                temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
+                temperature, dt, printInterval, saveInterval, asynchronous, algorithmListener);
 
         deltaT = temperingFactor * Thermostat.R * this.temperature;
 
-        /**
-         * Allocate space for the recursion kernel that stores weights.
-         */
+        // Allocate space for the recursion kernel that stores weights.
         recursionKernel = new double[lambdaBins][FLambdaBins];
 
-        /**
-         * Allocate space to regularize kernel values.
-         */
+        // Allocate space to regularize kernel values.
         kernelValues = new double[FLambdaBins];
 
-        /**
-         * Load the OSRW histogram restart file if it exists.
-         */
+        // Load the OSRW histogram restart file if it exists.
         boolean readHistogramRestart = false;
         if (histogramFile != null && histogramFile.exists()) {
             try {
@@ -246,9 +240,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
         }
 
-        /**
-         * Load the OSRW lambda restart file if it exists.
-         */
+        // Load the OSRW lambda restart file if it exists.
         if (lambdaFile != null && lambdaFile.exists()) {
             try {
                 TTOSRWLambdaReader osrwLambdaReader = new TTOSRWLambdaReader(new FileReader(lambdaFile));
@@ -260,20 +252,15 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
 
         if (asynchronous) {
-            /**
-             * Use asynchronous communication.
-             */
+            // Use asynchronous communication.
             myRecursionWeight = new double[3];
             myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
-
             receiveThread = new ReceiveThread();
             receiveThread.start();
             recursionWeights = null;
             recursionWeightsBuf = null;
         } else {
-            /**
-             * Use synchronous communication.
-             */
+            // Use synchronous communication.
             recursionWeights = new double[numProc][3];
             recursionWeightsBuf = new DoubleBuf[numProc];
             for (int i = 0; i < numProc; i++) {
@@ -308,9 +295,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
         integrationType = testType;
 
-        /**
-         * Update and print out the recursion slave.
-         */
+        // Update and print out the recursion slave.
         if (readHistogramRestart) {
             updateFLambda(true, false);
         }
@@ -361,9 +346,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         forceFieldEnergy = potential.energy(x);
 
-        /**
-         * OSRW is propagated with the slowly varying terms.
-         */
+        // OSRW is propagated with the slowly varying terms.
         if (state == STATE.FAST) {
             return forceFieldEnergy;
         }
@@ -375,10 +358,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         int FLambdaBin = binForFLambda(dUdLambda);
         dForceFieldEnergydL = dUdLambda;
 
-        /**
-         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
-         * to L and F_L.
-         */
+        // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
         double dGdLambda = 0.0;
         double dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
@@ -402,10 +382,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
                 int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
+
+                // If either of the following FL edge conditions are true,
+                // then there are no counts and we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -421,16 +400,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
         }
 
-        /**
-         * Lambda gradient due to recursion kernel G(L, F_L).
-         */
+        // Lambda gradient due to recursion kernel G(L, F_L).
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
-        /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
-         */
-
+        // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
         if (include1DBias) {
             bias1D = current1DBiasEnergy(lambda, true);
@@ -450,9 +423,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (propagateLambda) {
             energyCount++;
 
-            /**
-             * Log the current Lambda state.
-             */
+            // Log the current Lambda state.
             if (energyCount % printFrequency == 0) {
                 double dBdL = dUdLambda - dForceFieldEnergydL;
                 if (lambdaBins < 1000) {
@@ -464,9 +435,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 }
             }
 
-            /**
-             * Metadynamics grid counts (every 'countInterval' steps).
-             */
+            // Metadynamics grid counts (every 'countInterval' steps).
             if (energyCount % countInterval == 0) {
                 addBias(dForceFieldEnergydL, x, null);
             }
@@ -507,10 +476,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
                 int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
+
+                // If either of the following FL edge conditions are true,
+                // then there are no counts and we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -529,9 +497,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
         }
 
-        /**
-         * Compute the energy for the recursion slave at F(L) using interpolation.
-         */
+        // Compute the energy for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
         if (include1DBias) {
             bias1D = current1DBiasEnergy(currentLambda, false);
@@ -557,7 +523,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 // Optimize the system.
                 double startingEnergy = potential.energy(x);
 
-                Minimize minimize = new Minimize(null, potential, null);
+                Minimize minimize = new Minimize(molecularAssembly, potential, algorithmListener);
                 minimize.minimize(osrwOptimizationEps);
 
                 // Collect the minimum energy.
@@ -575,13 +541,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                     double density = crystal.getDensity(mass);
                     osrwOptimizationFilter.writeFile(osrwOptimizationFile, false);
                     Crystal uc = crystal.getUnitCell();
-                    logger.info(String.format(" Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
+                    logger.info(format(" Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
                             minEnergy, uc.toShortString(), density, startingEnergy, energyCount));
                 }
             } catch (EnergyException ex) {
                 String message = ex.getMessage();
                 logger.info(format(" Energy exception minimizing coordinates at lambda=%8.6f\n %s.", lambda, message));
-                logger.info(format(" TT-OSRW sampling will continue."));
+                logger.info(" TT-OSRW sampling will continue.");
             }
 
             // Set the underlying Potential's Lambda value back to current lambda value.
@@ -703,20 +669,15 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     @Override
     protected double evaluateKernel(int cLambda, int cF_Lambda) {
-        /**
-         * Compute the value of L and FL for the center of the current bin.
-         */
+        // Compute the value of L and FL for the center of the current bin.
         double vL = cLambda * dL;
         double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
 
-        /**
-         * Set the variances for the Gaussian bias.
-         */
+        // Set the variances for the Gaussian bias.
         double Ls2 = 2.0 * dL * 2.0 * dL;
         double FLs2 = 2.0 * dFL * 2.0 * dFL;
-        /**
-         * Variances are only used when dividing by twice their value, so pre-compute!
-         */
+
+        // Variances are only used when dividing by twice their value, so pre-compute!
         double invLs2 = 0.5 / Ls2;
         double invFLs2 = 0.5 / FLs2;
 
@@ -733,10 +694,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             int lcount = Lcenter;
             double mirrorFactor = 1.0;
             if (lcount == 0 || lcount == lambdaBins - 1) {
-                /**
-                 * The width of the first and last bins is dLambda_2, so the
-                 * mirror condition is to double their counts.
-                 */
+                // The width of the first and last bins is dLambda_2,
+                // so the mirror condition is to double their counts.
                 mirrorFactor = 2.0;
             } else if (lcount < 0) {
                 lcount = -lcount;
@@ -749,10 +708,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
             for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
                 int FLcenter = cF_Lambda + jFL;
-                /**
-                 * For FLambda outside the count matrix the weight is 0 so we
-                 * continue.
-                 */
+                // For FLambda outside the count matrix the weight is 0 so we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -787,13 +743,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
                 newFLambdaBins += 100;
             }
-            double newRecursionKernel[][] = new double[lambdaBins][newFLambdaBins];
-            /**
-             * We have added bins above the indeces of the current counts just
-             * copy them into the new array.
-             */
+            double[][] newRecursionKernel = new double[lambdaBins][newFLambdaBins];
+
+            // We have added bins above the indeces of the current counts just copy them into the new array.
             for (int i = 0; i < lambdaBins; i++) {
-                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
+                arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
             }
             recursionKernel = newRecursionKernel;
             FLambdaBins = newFLambdaBins;
@@ -802,7 +756,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false, false));
+            double newFreeEnergy = updateFLambda(false, false);
+            assert (origDeltaG == newFreeEnergy);
 
         }
         if (dEdLambda < minFLambda) {
@@ -816,14 +771,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 offset += 100;
             }
             int newFLambdaBins = FLambdaBins + offset;
-            double newRecursionKernel[][] = new double[lambdaBins][newFLambdaBins];
+            double[][] newRecursionKernel = new double[lambdaBins][newFLambdaBins];
 
-            /**
-             * We have added bins below the current counts, so their indeces
-             * must be increased by: offset = newFLBins - FLBins
-             */
+            // We have added bins below the current counts,
+            // so their indeces must be increased by: offset = newFLBins - FLBins
             for (int i = 0; i < lambdaBins; i++) {
-                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
+                arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
             }
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
@@ -833,7 +786,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFLambda(false, false));
+            double newFreeEnergy = updateFLambda(false, false);
+            assert (origDeltaG == newFreeEnergy);
         }
     }
 
@@ -985,9 +939,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         forceFieldEnergy = potential.energyAndGradient(x, gradient);
 
-        /**
-         * OSRW is propagated with the slowly varying terms.
-         */
+        // OSRW is propagated with the slowly varying terms.
         if (state == STATE.FAST) {
             return forceFieldEnergy;
         }
@@ -1000,10 +952,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dUdLambda);
 
-        /**
-         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
-         * to L and F_L.
-         */
+        // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
         dGdLambda = 0.0;
         dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
@@ -1027,10 +976,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
                 int FLcenter = FLambdaBin + iFL;
-                /**
-                 * If either of the following FL edge conditions are true, then
-                 * there are no counts and we continue.
-                 */
+
+                // If either of the following FL edge conditions are true,
+                // then there are no counts and we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -1046,24 +994,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
         }
 
-        /**
-         * Lambda gradient due to recursion kernel G(L, F_L).
-         */
+        // Lambda gradient due to recursion kernel G(L, F_L).
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
-        /**
-         * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
-         */
+        // Cartesian coordinate gradient due to recursion kernel G(L, F_L).
         fill(dUdXdL, 0.0);
         lambdaInterface.getdEdXdL(dUdXdL);
         for (int i = 0; i < nVariables; i++) {
             gradient[i] += dGdFLambda * dUdXdL[i];
         }
 
-        /**
-         * Compute the energy and gradient for the recursion slave at F(L) using
-         * interpolation.
-         */
+        // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
         if (include1DBias) {
             bias1D = current1DBiasEnergy(lambda, true);
@@ -1083,9 +1024,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (propagateLambda) {
             energyCount++;
 
-            /**
-             * Log the current Lambda state.
-             */
+            // Log the current Lambda state.
             if (energyCount % printFrequency == 0) {
                 double dBdL = dUdLambda - dForceFieldEnergydL;
                 if (lambdaBins < 1000) {
@@ -1097,9 +1036,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 }
             }
 
-            /**
-             * Metadynamics grid counts (every 'countInterval' steps).
-             */
+            // Metadynamics grid counts (every 'countInterval' steps).
             if (energyCount % countInterval == 0) {
                 addBias(dForceFieldEnergydL, x, gradient);
             }
@@ -1126,9 +1063,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         biasCount++;
 
-        /**
-         * Update F(L)
-         */
+        // Update F(L)
         fLambdaUpdates++;
         boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
         totalFreeEnergy = updateFLambda(printFLambda, false);
@@ -1141,42 +1076,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             return;
         }
 
-        /**
-         * Write out restart files.
-         */
+        // Write out restart files.
         if (energyCount > 0 && energyCount % saveFrequency == 0) {
-            if (algorithmListener != null) {
-                algorithmListener.algorithmUpdate(molecularAssembly);
-            }
-            /**
-             * Only the rank 0 process writes the histogram restart file.
-             */
-            if (rank == 0) {
-                try {
-                    TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
-                            new BufferedWriter(new FileWriter(histogramFile)));
-                    ttOSRWHistogramRestart.writeHistogramFile();
-                    ttOSRWHistogramRestart.flush();
-                    ttOSRWHistogramRestart.close();
-                    logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
-                } catch (IOException ex) {
-                    String message = " Exception writing TTOSRW histogram restart file.";
-                    logger.log(Level.INFO, message, ex);
-                }
-            }
-            /**
-             * All ranks write a lambda restart file.
-             */
-            try {
-                TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-                ttOSRWLambdaRestart.writeLambdaFile();
-                ttOSRWLambdaRestart.flush();
-                ttOSRWLambdaRestart.close();
-                logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
-            } catch (IOException ex) {
-                String message = " Exception writing TTOSRW lambda restart file.";
-                logger.log(Level.INFO, message, ex);
-            }
+            writeRestart();
         }
     }
 
@@ -1185,9 +1087,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
         }
-        /**
-         * Only the rank 0 process writes the histogram restart file.
-         */
+
+        // Only the rank 0 process writes the histogram restart file.
         if (rank == 0) {
             try {
                 TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
@@ -1195,21 +1096,20 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 ttOSRWHistogramRestart.writeHistogramFile();
                 ttOSRWHistogramRestart.flush();
                 ttOSRWHistogramRestart.close();
-                logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
+                logger.info(format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
             } catch (IOException ex) {
                 String message = " Exception writing TTOSRW histogram restart file.";
                 logger.log(Level.INFO, message, ex);
             }
         }
-        /**
-         * All ranks write a lambda restart file.
-         */
+
+        // All ranks write a lambda restart file.
         try {
             TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
             ttOSRWLambdaRestart.writeLambdaFile();
             ttOSRWLambdaRestart.flush();
             ttOSRWLambdaRestart.close();
-            logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
+            logger.info(format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
         } catch (IOException ex) {
             String message = " Exception writing TTOSRW lambda restart file.";
             logger.log(Level.INFO, message, ex);
@@ -1253,9 +1153,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     @Override
     public double getd2EdL2() {
-        // TODO: Add in a finite-difference implementation of d2U/dL2.
-        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
-        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
         throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
     }
 
@@ -1264,9 +1161,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        // TODO: Add in a finite-difference implementation of d2U/dXdL.
-        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
-        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
         throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
     }
 
@@ -1289,10 +1183,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private class ReceiveThread extends Thread {
 
-        final double recursionCount[];
+        final double[] recursionCount;
         final DoubleBuf recursionCountBuf;
 
-        public ReceiveThread() {
+        ReceiveThread() {
             recursionCount = new double[3];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
         }
@@ -1303,8 +1197,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 try {
                     world.receive(null, recursionCountBuf);
                 } catch (InterruptedIOException ioe) {
-                    logger.log(Level.WARNING, " ReceiveThread was interrupted at world.receive; " +
-                            "future message passing may be in an error state!", ioe);
+                    String message = " ReceiveThread was interrupted at world.receive; " +
+                            "future message passing may be in an error state.";
+                    logger.log(Level.WARNING, message, ioe);
                     break;
                 } catch (IOException e) {
                     String message = e.getMessage();
@@ -1312,48 +1207,36 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 }
 
                 // 3x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
-                boolean terminateSignal = Arrays.stream(recursionCount).allMatch(Double::isNaN);
+                boolean terminateSignal = stream(recursionCount).allMatch(Double::isNaN);
                 if (terminateSignal) {
-                    logger.fine(" Termination signal (3x NaN) received; ReceiveThread shutting down");
+                    logger.fine(" Termination signal (3x NaN) received; ReceiveThread shutting down.");
                     break;
                 }
 
-                /**
-                 * Check that the FLambda range of the Recursion kernel includes
-                 * both the minimum and maximum FLambda value.
-                 */
+                // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
                 checkRecursionKernelSize(recursionCount[1]);
 
-                /**
-                 * Increment the Recursion Kernel based on the input of current
-                 * walker.
-                 */
+                // Increment the Recursion Kernel based on the input of current walker.
                 int walkerLambda = binForLambda(recursionCount[0]);
                 int walkerFLambda = binForFLambda(recursionCount[1]);
                 double weight = recursionCount[2];
 
-                /**
-                 * If the weight is less than 1.0, then a walker has activated
-                 * tempering.
-                 */
+                // If the weight is less than 1.0, then a walker has activated tempering.
                 if (!tempering && weight < 1.0) {
                     tempering = true;
-                    logger.info(String.format(" Tempering activated due to recieved weight of (%8.6f)", weight));
+                    logger.info(format(" Tempering activated due to received weight of (%8.6f)", weight));
                 }
 
                 if (resetStatistics && recursionCount[0] > lambdaResetValue) {
                     recursionKernel = new double[lambdaBins][FLambdaBins];
                     resetStatistics = false;
-                    logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
+                    logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
                 }
 
-                /**
-                 * Increase the Recursion Kernel based on the input of current
-                 * walker.
-                 */
+                // Increase the Recursion Kernel based on the input of current walker.
                 recursionKernel[walkerLambda][walkerFLambda] += weight;
-                if (this.isInterrupted()) {
-                    logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution");
+                if (isInterrupted()) {
+                    logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution.");
                     // No pending message receipt, so no warning.
                     break;
                 }
@@ -1366,15 +1249,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * Send an OSRW count to all other processes while also receiving an OSRW
      * count from all other processes.
      *
-     * @param lambda
-     * @param dEdU
+     * @param lambda Current value of lambda.
+     * @param dUdL   Current value of dU/dL.
      */
-    private void synchronousSend(double lambda, double dEdU) {
-        /**
-         * All-Gather counts from each walker.
-         */
+    private void synchronousSend(double lambda, double dUdL) {
+
+        // All-Gather counts from each walker.
         myRecursionWeight[0] = lambda;
-        myRecursionWeight[1] = dEdU;
+        myRecursionWeight[1] = dUdL;
         myRecursionWeight[2] = temperingWeight;
         try {
             world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
@@ -1383,9 +1265,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.log(Level.SEVERE, message, ex);
         }
 
-        /**
-         * Find the minimum and maximum FLambda bin for the gathered counts.
-         */
+        // Find the minimum and maximum FLambda bin for the gathered counts.
         double minRequired = Double.MAX_VALUE;
         double maxRequired = Double.MIN_VALUE;
         for (int i = 0; i < numProc; i++) {
@@ -1393,34 +1273,26 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             maxRequired = max(maxRequired, recursionWeights[i][1]);
         }
 
-        /**
-         * Check that the FLambda range of the Recursion kernel includes both
-         * the minimum and maximum FLambda value.
-         */
+        // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
         checkRecursionKernelSize(minRequired);
         checkRecursionKernelSize(maxRequired);
 
-        /**
-         * Increment the Recursion Kernel based on the input of each walker.
-         */
+        // Increment the Recursion Kernel based on the input of each walker.
         for (int i = 0; i < numProc; i++) {
             int walkerLambda = binForLambda(recursionWeights[i][0]);
             int walkerFLambda = binForFLambda(recursionWeights[i][1]);
             double weight = recursionWeights[i][2];
 
-            /**
-             * If the weight is less than 1.0, then a walker has activated
-             * tempering.
-             */
-            if (tempering == false && weight < 1.0) {
+            // If the weight is less than 1.0, then a walker has activated tempering.
+            if (!tempering && weight < 1.0) {
                 tempering = true;
-                logger.info(String.format(" Tempering activated due to recieved weight of (%8.6f)", weight));
+                logger.info(String.format(" Tempering activated due to received weight of (%8.6f)", weight));
             }
 
             if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
                 recursionKernel = new double[lambdaBins][FLambdaBins];
                 resetStatistics = false;
-                logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionWeights[i][0]));
+                logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionWeights[i][0]));
             }
 
             recursionKernel[walkerLambda][walkerFLambda] += weight;
@@ -1430,12 +1302,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * Send an OSRW count to all other processes.
      *
-     * @param lambda
-     * @param dEdU
+     * @param lambda Current value of lambda.
+     * @param dUdL   Current value of dU/dL.
      */
-    private void asynchronousSend(double lambda, double dEdU) {
+    private void asynchronousSend(double lambda, double dUdL) {
         myRecursionWeight[0] = lambda;
-        myRecursionWeight[1] = dEdU;
+        myRecursionWeight[1] = dUdL;
         myRecursionWeight[2] = temperingWeight;
 
         for (int i = 0; i < numProc; i++) {
@@ -1453,11 +1325,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private class TTOSRWHistogramWriter extends PrintWriter {
 
-        public TTOSRWHistogramWriter(Writer writer) {
+        TTOSRWHistogramWriter(Writer writer) {
             super(writer);
         }
 
-        public void writeHistogramFile() {
+        void writeHistogramFile() {
             printf("Temperature     %15.3f\n", temperature);
             printf("Lambda-Mass     %15.8e\n", thetaMass);
             printf("Lambda-Friction %15.8e\n", thetaFriction);
@@ -1489,11 +1361,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private class TTOSRWLambdaWriter extends PrintWriter {
 
-        public TTOSRWLambdaWriter(Writer writer) {
+        TTOSRWLambdaWriter(Writer writer) {
             super(writer);
         }
 
-        public void writeLambdaFile() {
+        void writeLambdaFile() {
             printf("Lambda          %15.8f\n", lambda);
             printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
             printf("Steps-Taken     %15d\n", energyCount);
@@ -1505,11 +1377,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private class TTOSRWHistogramReader extends BufferedReader {
 
-        public TTOSRWHistogramReader(Reader reader) {
+        TTOSRWHistogramReader(Reader reader) {
             super(reader);
         }
 
-        public void readHistogramFile() {
+        void readHistogramFile() {
             try {
                 temperature = Double.parseDouble(readLine().split(" +")[1]);
                 thetaMass = Double.parseDouble(readLine().split(" +")[1]);
@@ -1529,18 +1401,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 dFL_2 = dFL / 2.0;
 
                 int flag = Integer.parseInt(readLine().split(" +")[1]);
-                if (flag != 0) {
-                    tempering = true;
-                } else {
-                    tempering = false;
-                }
+                tempering = flag != 0;
 
                 // Allocate memory for the recursion kernel.
                 recursionKernel = new double[lambdaBins][FLambdaBins];
                 kernelValues = new double[FLambdaBins];
 
                 for (int i = 0; i < lambdaBins; i++) {
-                    String counts[] = readLine().split(" +");
+                    String[] counts = readLine().split(" +");
                     for (int j = 0; j < FLambdaBins; j++) {
                         recursionKernel[i][j] = Double.parseDouble(counts[j]);
                     }
@@ -1558,15 +1426,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private class TTOSRWLambdaReader extends BufferedReader {
 
-        public TTOSRWLambdaReader(Reader reader) {
+        TTOSRWLambdaReader(Reader reader) {
             super(reader);
         }
 
-        public void readLambdaFile() {
-            readLambdaFile(true);
-        }
-
-        public void readLambdaFile(boolean resetEnergyCount) {
+        void readLambdaFile(boolean resetEnergyCount) {
             try {
                 lambda = Double.parseDouble(readLine().split(" +")[1]);
                 halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
@@ -1579,7 +1443,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 try {
                     energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, String.format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString()));
+                    String message = format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString());
+                    logger.log(Level.WARNING, message);
                 }
             }
         }
