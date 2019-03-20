@@ -34,7 +34,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
      * {@inheritDoc}
      */
     @Override
-    public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
+    public double multipoleEnergy(double[] Fi, double[] Ti, double[] Tk) {
         multipoleIField();
         double energy = dotMultipoleK();
         multipoleKField();
@@ -59,16 +59,15 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
      */
     @Override
     public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
-                                     double Fi[], double Ti[], double Tk[]) {
+                                     double[] Fi, double[] Ti, double[] Tk) {
 
         // Find the potential, field, etc at k due to the induced dipole i.
         inducedIField();
         // Energy of multipole k in the field of induced dipole i.
         double energy = scaleEnergy * dotMultipoleK();
 
-        /**
-         * Get the induced-induced portion of the force.
-         */
+
+        // Get the induced-induced portion of the force.
         Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
         Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
         Fi[2] = -0.5 * scaleMutual * (pxk * E101 + pyk * E011 + pzk * E002);
@@ -78,17 +77,15 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         // Energy of multipole i in the field of induced dipole k.
         energy += scaleEnergy * dotMultipoleI();
 
-        /**
-         * Get the induced-induced portion of the force.
-         */
+        // Get the induced-induced portion of the force.
         Fi[0] += 0.5 * scaleMutual * (pxi * E200 + pyi * E110 + pzi * E101);
         Fi[1] += 0.5 * scaleMutual * (pxi * E110 + pyi * E020 + pzi * E011);
         Fi[2] += 0.5 * scaleMutual * (pxi * E101 + pyi * E011 + pzi * E002);
 
-        /**
-         * Apply scale factors directly to induced dipole components for
-         * efficiency and convenience in computing remaining force terms and
-         * torques.
+        /*
+          Apply scale factors directly to induced dipole components for
+          efficiency and convenience in computing remaining force terms and
+          torques.
          */
         scaleInduced(scaleField, scaleEnergy);
 
@@ -194,7 +191,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
      * recursion.
      */
     @Override
-    protected void noStorageRecursion(double r[], double tensor[]) {
+    protected void noStorageRecursion(double[] r, double[] tensor) {
         setR(r);
         source(T000);
         // 1/r
@@ -341,7 +338,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
      * @since 1.0
      */
     @Override
-    protected String codeTensorRecursion(final double r[], final double tensor[]) {
+    protected String codeTensorRecursion(final double[] r, final double[] tensor) {
         setR(r);
         source(work);
         StringBuilder sb = new StringBuilder();
@@ -392,7 +389,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
                         rlmn(l, 0, 0), term(l - 1, 0, 0, 1), (l - 1), term(l - 2, 0, 0, 1)));
             } else {
                 sb.append(format("%s = x * %s + %s;\n",
-                        rlmn(l, 0, 0), term(l - 1, 0, 0, 1), term(l - 2, 0, 0, 1), l, 0, 0));
+                        rlmn(l, 0, 0), term(l - 1, 0, 0, 1), term(l - 2, 0, 0, 1)));
             }
         }
         // Find (d/dx)^l * (d/dy)^m for l+m = 1..order (m > 0, n = 0)
@@ -453,7 +450,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
                 final int lilmim = l * il + m * im;
                 previous = work[lilmim + 1];
                 tensor[ti(l, m, 1)] = z * previous;
-                sb.append(format("%s = z * %s;\n", rlmn(l, m, 1), term(l, m, 0, 1), l, m, 1));
+                sb.append(format("%s = z * %s;\n", rlmn(l, m, 1), term(l, m, 0, 1)));
                 for (int n = 2; lm + n < o1; n++) {
                     // Tlm1(n-1) = z * Tlm0n;
                     int iw = lilmim + n;
@@ -484,10 +481,10 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
                     previous = current;
                     if (n > 2) {
                         sb.append(format("%s = z * %s + %d * %s;\n",
-                                rlmn(l, m, n), term(l, m, n - 1, 1), (n - 1), term(l, m, n - 2, 1), l, m, n));
+                                rlmn(l, m, n), term(l, m, n - 1, 1), (n - 1), term(l, m, n - 2, 1)));
                     } else {
                         sb.append(format("%s = z * %s + %s;\n",
-                                rlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1), l, m, n));
+                                rlmn(l, m, n), term(l, m, n - 1, 1), term(l, m, n - 2, 1)));
                     }
                 }
             }

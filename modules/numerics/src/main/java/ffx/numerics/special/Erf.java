@@ -69,18 +69,18 @@ public class Erf {
     /**
      * xsmall argument below which erf(x) may be represented by 2*x/sqrt(pi) and
      * above which x*x won't underflow.
-     *
+     * <p>
      * A conservative value is the largest machine number X such that 1.0 + X =
      * 1.0 to machine precision
      */
     private static final double xsmall = 1.11e-16;
     /**
      * xbig largest argument acceptable for erfc.
-     *
+     * <p>
      * Solution to the equation:
-     *
+     * <p>
      * W(x) * (1-0.5/x**2) = XMIN, where
-     *
+     * <p>
      * W(x) = exp(-x*x)/[x*sqrt(pi)]
      */
     private static final double xbig = 26.543;
@@ -111,22 +111,19 @@ public class Erf {
      * Evaluates erf(x) or erfc(x) for a real argument x. When called with mode
      * = false, erf is returned, while with mode = true, erfc is returned.
      *
-     * @param arg the value to evaluate erf or erfc at.
+     * @param arg  the value to evaluate erf or erfc at.
      * @param mode if mode is true, evaluate erfc, otherwise evaluate erf.
      * @return if (!mode) erf(arg), else erfc(arg)
-     *
      * @since 1.0
      */
     private static double erfCore(double arg, boolean mode) {
-        /**
-         * Store the argument and its absolute value.
-         */
+
+        // Store the argument and its absolute value.
         final double x = arg;
         final double y = abs(x);
         double result = 0.0;
-        /**
-         * Evaluate error function for |x| less than 0.46875.
-         */
+
+        // Evaluate error function for |x| less than 0.46875.
         if (y <= thresh) {
             double ysq = 0.0;
             if (y > xsmall) {
@@ -146,9 +143,7 @@ public class Erf {
                 result = 1.0 - result;
             }
         } else if (y <= 4.0) {
-            /**
-             * Get complementary error function for 0.46875 <= |x| <= 4.0.
-             */
+            // Get complementary error function for 0.46875 <= |x| <= 4.0.
             double xnum = 2.15311535474403846e-8 * y;
             double xden = y;
             xnum = (xnum + 5.64188496988670089e-1) * y;
@@ -179,9 +174,7 @@ public class Erf {
                 result = 2.0 - result;
             }
         } else {
-            /**
-             * Get complementary error function for |x| greater than 4.0.
-             */
+            // Get complementary error function for |x| greater than 4.0.
             if (y < xbig) {
                 double iy = 1.0 / y;
                 double ysq = iy * iy;

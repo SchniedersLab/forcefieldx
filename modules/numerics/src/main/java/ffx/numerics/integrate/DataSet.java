@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -44,31 +44,35 @@ package ffx.numerics.integrate;
  * @author Jacob M. Litman
  */
 public interface DataSet {
-    
+
     /**
      * Lower bound of the points along x.
      *
      * @return a double.
      */
     double lowerBound();
+
     /**
      * Upper bound of the points along x.
      *
      * @return a double.
      */
     double upperBound();
+
     /**
      * Number of points along x.
      *
      * @return a int.
      */
     int numPoints();
+
     /**
      * Separation between points along x; should be uniform.
      *
      * @return a double.
      */
     double binWidth();
+
     /**
      * Point f(x) at index.
      *
@@ -76,18 +80,21 @@ public interface DataSet {
      * @return a double.
      */
     double getFxPoint(int index);
+
     /**
      * Returns copy of the array of points f(x) to integrate (y-axis).
      *
      * @return an array of {@link double} objects.
      */
     double[] getAllFxPoints();
+
     /**
      * Returns copy of the array of points x (x-axis).
      *
      * @return an array of {@link double} objects.
      */
     double[] getX();
+
     /**
      * Does this data set have half-width start/end bins. Intended for OSRW,
      * where the first and last bins are half the regular width.

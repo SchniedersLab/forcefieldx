@@ -76,17 +76,13 @@ public class UniformBSpline {
      * @since 1.0
      */
     public static void bSpline(final double x, final int order,
-                               final double coefficients[]) {
+                               final double[] coefficients) {
 
-        /**
-         * Initialization to get to a linear b-Spline (degree 1).
-         */
+        // Initialization to get to a linear b-Spline (degree 1).
         coefficients[0] = 1.0 - x;
         coefficients[1] = x;
 
-        /**
-         * Apply b-Spline recursion to desired degree.
-         */
+        // Apply b-Spline recursion to desired degree.
         for (int k = 2; k < order; k++) {
             bSplineRecursion(x, k, coefficients, coefficients);
         }
@@ -102,7 +98,7 @@ public class UniformBSpline {
      * @since 1.0
      */
     private static void bSplineRecursion(final double x, final int order,
-                                         final double coefficients[], final double newCoefficients[]) {
+                                         final double[] coefficients, final double[] newCoefficients) {
 
         final double div = 1.0 / order;
         final double k1mw = order + 1 - x;
@@ -136,31 +132,27 @@ public class UniformBSpline {
      * @since 1.0
      */
     public static void bSplineDerivatives(final double x, final int order,
-                                          final int deriveOrder, final double coefficients[][],
-                                          final double work[][]) {
+                                          final int deriveOrder, final double[][] coefficients,
+                                          final double[][] work) {
 
         assert (deriveOrder <= order - 1 && deriveOrder <= 5);
 
-        /**
-         * Initialization to get to 2nd order.
-         */
+        // Initialization to get to 2nd order.
         work[1][0] = 1.0 - x;
         work[1][1] = x;
-        /**
-         * Perform one pass to get to 3rd order.
-         */
+
+        // Perform one pass to get to 3rd order.
         work[2][0] = 0.5 * (1.0 - x) * work[1][0];
         work[2][1] = 0.5 * ((x + 1.0) * work[1][0] + (2.0 - x) * work[1][1]);
         work[2][2] = 0.5 * x * work[1][1];
-        /**
-         * Compute standard B-spline recursion to desired order.
-         */
+
+        // Compute standard B-spline recursion to desired order.
         for (int k = 3; k < order; k++) {
             bSplineRecursion(x, k, work[k - 1], work[k]);
         }
         int o1 = order - 1;
-        // do derivatives
 
+        // do derivatives
         try {
             if (deriveOrder > 0) {
                 int o2 = order - 2;
@@ -188,7 +180,7 @@ public class UniformBSpline {
                                 bSplineDiff(work[o6], o2);
                                 bSplineDiff(work[o6], o1);
                                 if (deriveOrder > 5) {
-                                    //throw new Exception("Unsupported option: dr_ord > 5");
+                                    throw new Exception(" Unsupported option: dr_ord > 5");
                                 }
                             }
                         }
@@ -201,7 +193,7 @@ public class UniformBSpline {
 
         int deriveOrder1 = deriveOrder + 1;
         for (int k = 0; k < order; k++) {
-            double tk[] = coefficients[k];
+            double[] tk = coefficients[k];
             try {
                 for (int j = 0; j < deriveOrder1; j++) {
                     tk[j] = work[o1 - j][k];
@@ -219,7 +211,7 @@ public class UniformBSpline {
      * @param order        B-Spline order.
      * @since 1.0
      */
-    private static void bSplineDiff(final double coefficients[], final int order) {
+    private static void bSplineDiff(final double[] coefficients, final int order) {
         final int order1 = order - 1;
         coefficients[order] = coefficients[order1];
         for (int i = order1; i > 0; i--) {

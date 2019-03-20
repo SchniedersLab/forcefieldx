@@ -39,6 +39,8 @@ package ffx.numerics.optimization;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -78,7 +80,7 @@ public class LBFGS {
      * small value. A typical small value is 0.1. Restriction:
      * <code>CAPPA</code> should be greater than 1e-4.
      */
-    public static final double CAPPA = 0.9;
+    static final double CAPPA = 0.9;
     /**
      * This specifies the lower bound for the step in the line search.
      * <p>
@@ -86,7 +88,7 @@ public class LBFGS {
      * problem is extremely badly scaled (in which case the exponent should be
      * increased).
      */
-    public static final double STEPMIN = 1.0e-16;
+    static final double STEPMIN = 1.0e-16;
     /**
      * This specifies the upper bound for the step in the line search.
      * <p>
@@ -94,19 +96,19 @@ public class LBFGS {
      * problem is extremely badly scaled (in which case the exponent should be
      * increased).
      */
-    public static final double STEPMAX = 5.0;
+    static final double STEPMAX = 5.0;
     /**
      * Constant <code>SLOPEMAX=1.0e4</code>
      */
-    public static final double SLOPEMAX = 1.0e4;
+    static final double SLOPEMAX = 1.0e4;
     /**
      * Constant <code>ANGLEMAX=180.0</code>
      */
-    public static final double ANGLEMAX = 180.0;
+    static final double ANGLEMAX = 180.0;
     /**
      * Constant <code>INTMAX=5</code>
      */
-    public static final int INTMAX = 5;
+    static final int INTMAX = 5;
 
     /**
      * Make the constructor private so that the L-BFGS cannot be instantiated.
@@ -181,17 +183,15 @@ public class LBFGS {
         int maxErrors = 2;
 
         double rms = sqrt(n);
-        double scaling[] = potential.getScaling();
+        double[] scaling = potential.getScaling();
         if (scaling == null) {
             scaling = new double[n];
             fill(scaling, 1.0);
         }
 
-        /**
-         * Initial search direction is the steepest decent direction.
-         */
-        double s[][] = new double[mSave][n];
-        double y[][] = new double[mSave][n];
+        // Initial search direction is the steepest decent direction.
+        double[][] s = new double[mSave][n];
+        double[][] y = new double[mSave][n];
         for (int i = 0; i < n; i++) {
             s[0][i] = -g[i];
         }
@@ -200,11 +200,8 @@ public class LBFGS {
         double gnorm = 0.0;
         for (int i = 0; i < n; i++) {
             double gi = g[i];
-            if (gi == Double.NaN
-                    || gi == Double.NEGATIVE_INFINITY
-                    || gi == Double.POSITIVE_INFINITY) {
-                String message = format("The gradient of variable %d is %8.3f.", i, gi);
-                logger.warning(message);
+            if (isNaN(gi) || isInfinite(gi)) {
+                logger.warning(format("The gradient of variable %d is %8.3f.", i, gi));
                 return 1;
             }
             double gis = gi * scaling[i];
@@ -214,44 +211,36 @@ public class LBFGS {
         gnorm = sqrt(gnorm);
         grms = sqrt(grms) / rms;
 
-        /**
-         * Notify the listeners of initial conditions.
-         */
+        // Notify the listeners of initial conditions.
         if (listener != null) {
             if (!listener.optimizationUpdate(iterations, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
-                /**
-                 * Terminate the optimization.
-                 */
+                // Terminate the optimization.
                 return 1;
             }
         } else {
             log(iterations, evaluations, grms, 0.0, f, 0.0, 0.0, null);
         }
 
-        /**
-         * The convergence criteria may already be satisfied.
-         */
+        // The convergence criteria may already be satisfied.
         if (grms <= eps) {
             return 0;
         }
 
-        final double prevX[] = new double[n];
-        final double prevG[] = new double[n];
-        final double r[] = new double[n];
-        final double p[] = new double[n];
-        final double h0[] = new double[n];
-        final double q[] = new double[n];
-        final double alpha[] = new double[mSave];
-        final double rho[] = new double[mSave];
+        final double[] prevX = new double[n];
+        final double[] prevG = new double[n];
+        final double[] r = new double[n];
+        final double[] p = new double[n];
+        final double[] h0 = new double[n];
+        final double[] q = new double[n];
+        final double[] alpha = new double[mSave];
+        final double[] rho = new double[mSave];
         double gamma = 1.0;
 
-        /**
-         * Line search parameters.
-         */
+        // Line search parameters.
         final LineSearch lineSearch = new LineSearch(n);
-        final LineSearchResult info[] = {LineSearchResult.Success};
-        final int nFunctionEvals[] = {0};
-        final double angle[] = {0.0};
+        final LineSearchResult[] info = {LineSearchResult.Success};
+        final int[] nFunctionEvals = {0};
+        final double[] angle = {0.0};
         double df = 0.5 * STEPMAX * gnorm;
         int m = -1;
 
@@ -269,9 +258,7 @@ public class LBFGS {
                 m = 0;
             }
 
-            /**
-             * Estimate the Hessian Diagonal.
-             */
+            // Estimate the Hessian Diagonal.
             fill(h0, gamma);
             arraycopy(g, 0, q, 0, n);
             int k = m;
@@ -280,56 +267,48 @@ public class LBFGS {
                 if (k < 0) {
                     k = mSave - 1;
                 }
-                alpha[k] = XdotY(n, s[k], 0, 1, q, 0, 1);
+                alpha[k] = v1DotV2(n, s[k], 0, 1, q, 0, 1);
                 alpha[k] *= rho[k];
-                aXplusY(n, -alpha[k], y[k], 0, 1, q, 0, 1);
+                aV1PlusV2(n, -alpha[k], y[k], 0, 1, q, 0, 1);
             }
             for (int i = 0; i < n; i++) {
                 r[i] = h0[i] * q[i];
             }
             for (int j = 0; j < muse; j++) {
-                double beta = XdotY(n, r, 0, 1, y[k], 0, 1);
+                double beta = v1DotV2(n, r, 0, 1, y[k], 0, 1);
                 beta *= rho[k];
-                aXplusY(n, alpha[k] - beta, s[k], 0, 1, r, 0, 1);
+                aV1PlusV2(n, alpha[k] - beta, s[k], 0, 1, r, 0, 1);
                 k++;
                 if (k > mSave - 1) {
                     k = 0;
                 }
             }
 
-            /**
-             * Set the search direction.
-             */
+            // Set the search direction.
             for (int i = 0; i < n; i++) {
                 p[i] = -r[i];
             }
             arraycopy(x, 0, prevX, 0, n);
             arraycopy(g, 0, prevG, 0, n);
 
-            /**
-             * Perform the line search along the new conjugate direction.
-             */
+            // Perform the line search along the new conjugate direction.
             nFunctionEvals[0] = 0;
             double prevF = f;
             f = lineSearch.search(n, x, f, g, p, angle, df,
                     info, nFunctionEvals, potential);
             evaluations += nFunctionEvals[0];
 
-            /**
-             * Update variables based on the results of this iteration.
-             */
+            // Update variables based on the results of this iteration.
             for (int i = 0; i < n; i++) {
                 s[m][i] = x[i] - prevX[i];
                 y[m][i] = g[i] - prevG[i];
             }
-            double ys = XdotY(n, y[m], 0, 1, s[m], 0, 1);
-            double yy = XdotY(n, y[m], 0, 1, y[m], 0, 1);
+            double ys = v1DotV2(n, y[m], 0, 1, s[m], 0, 1);
+            double yy = v1DotV2(n, y[m], 0, 1, y[m], 0, 1);
             gamma = abs(ys / yy);
             rho[m] = 1.0 / ys;
 
-            /**
-             * Get the sizes of the moves made during this iteration.
-             */
+            // Get the sizes of the moves made during this iteration.
             df = prevF - f;
             double xrms = 0.0;
             grms = 0.0;
@@ -357,18 +336,16 @@ public class LBFGS {
             if (listener != null) {
                 if (!listener.optimizationUpdate(iterations, evaluations,
                         grms, xrms, f, df, angle[0], info[0])) {
-                    /**
-                     * Terminate the optimization.
-                     */
+                    // Terminate the optimization.
                     return 1;
                 }
             } else {
                 log(iterations, evaluations, grms, xrms, f, df, angle[0], info[0]);
             }
 
-            /**
-             * Terminate the optimization if the line search failed or upon
-             * satisfying the convergence criteria.
+            /*
+              Terminate the optimization if the line search failed or upon
+              satisfying the convergence criteria.
              */
             if (done) {
                 return -1;
@@ -436,7 +413,7 @@ public class LBFGS {
      * @param grms  Gradient RMS at current solution.
      * @param xrms  Coordinate change RMS at current solution.
      * @param f     Function value at current solution.
-     * @param f     Change in the function value compared to the previous solution.
+     * @param df    Change in the function value compared to the previous solution.
      * @param angle Current angle between gradient and search direction.
      * @since 1.0
      */
@@ -458,59 +435,59 @@ public class LBFGS {
     /**
      * Compute the sum of a vector times a scalar plus another vector.
      *
-     * @param n  The number of points.
-     * @param a  The scalar.
-     * @param x  The X array.
-     * @param x0 The first point in the X array.
-     * @param dx The X array increment.
-     * @param y  The Y array.
-     * @param y0 The first point in the Y array.
-     * @param dy The Y array increment.
+     * @param n       The number of points.
+     * @param a       The scalar.
+     * @param v1      The X array.
+     * @param v1Start The first point in the X array.
+     * @param v1Step  The X array increment.
+     * @param v2      The Y array.
+     * @param v2Start The first point in the Y array.
+     * @param v2Step  The Y array increment.
      * @since 1.0
      */
-    public static void aXplusY(final int n, final double a, final double[] x,
-                               final int x0, final int dx, final double[] y, final int y0, final int dy) {
-        /**
-         * Require the number of entries (n) to be greater than zero. If the
-         * scalar (a) is zero, then the Y array is unchanged.
+    static void aV1PlusV2(final int n, final double a,
+                          final double[] v1, final int v1Start, final int v1Step,
+                          final double[] v2, final int v2Start, final int v2Step) {
+        /*
+          Require the number of entries (n) to be greater than zero. If the
+          scalar (a) is zero, then the v2 array is unchanged.
          */
         if (n <= 0 || a == 0) {
             return;
         }
 
-        int stop = x0 + dx * n;
-        for (int i = x0, j = y0; i != stop; i += dx, j += dy) {
-            y[j] += a * x[i];
+        int stop = v1Start + v1Step * n;
+        for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
+            v2[j] += a * v1[i];
         }
     }
 
     /**
      * Compute the dot product of two vectors.
      *
-     * @param n  Number of entries to include.
-     * @param x  The X array.
-     * @param x0 The first point in the X array.
-     * @param dx The X array increment.
-     * @param y  The Y array.
-     * @param y0 The first point in the Y array.
-     * @param dy The Y increment.
+     * @param n       Number of entries to include.
+     * @param v1      The X array.
+     * @param v1Start The first point in the X array.
+     * @param v1Step  The X array increment.
+     * @param v2      The Y array.
+     * @param v2Start The first point in the Y array.
+     * @param v2Step  The Y increment.
      * @return dot product
      * @since 1.0
      */
-    public static double XdotY(final int n, final double[] x, final int x0,
-                               final int dx, final double[] y, final int y0, final int dy) {
+    static double v1DotV2(final int n,
+                          final double[] v1, final int v1Start, final int v1Step,
+                          final double[] v2, final int v2Start, final int v2Step) {
 
-        /**
-         * Require the number of entries to be greater than zero.
-         */
+        // Require the number of entries to be greater than zero.
         if (n <= 0) {
             return 0;
         }
 
         double sum = 0.0;
-        int stop = x0 + dx * n;
-        for (int i = x0, j = y0; i != stop; i += dx, j += dy) {
-            sum += x[i] * y[j];
+        int stop = v1Start + v1Step * n;
+        for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
+            sum += v1[i] * v2[j];
         }
         return sum;
     }

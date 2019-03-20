@@ -152,9 +152,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
         this.potential = potentialEnergy;
         this.osrw = osrw;
 
-        /**
-         * Create the MC MD and Lambda moves.
-         */
+        // Create the MC MD and Lambda moves.
         mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator);
         if (properties.containsKey("randomseed")) {
             int randomSeed = properties.getInt("randomseed", 0);
@@ -165,10 +163,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             lambdaMove = new LambdaMove(lambda, osrw);
         }
 
-        /**
-         * Changing the value of lambda will be handled by this class, as well
-         * as adding the time dependent bias.
-         */
+        // Changing the value of lambda will be handled by this class, as well as adding the time dependent bias.
         osrw.setPropagateLambda(false);
 
     }
@@ -268,9 +263,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
         double currentForceFieldEnergy = osrw.getForceFieldEnergy();
         double currentBiasEnergy = osrw.getBiasEnergy();
 
-        /**
-         * Initialize MC move instances.
-         */
+        // Initialize MC move instances.
         for (int imove = 0; imove < numMoves; imove++) {
             long totalMoveTime = -System.nanoTime();
             long mdMoveAndEvalTime = -System.nanoTime();
@@ -281,10 +274,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.info(String.format("\n MC Orthogonal Space Sampling Round %d\n  MC MD Step", imove + 1));
             }
 
-            /**
-             * Run MD in an approximate potential U* (U star) that does not
-             * include the OSRW bias.
-             */
+            // Run MD in an approximate potential U* (U star) that does not include the OSRW bias.
             long mdMoveTime = -System.nanoTime();
             mdMove.move();
             mdMoveTime += System.nanoTime();
@@ -302,7 +292,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
             long proposedOSRWEnergyTime = -System.nanoTime();
 
-            double proposedOSRWEnergy = 0;
+            double proposedOSRWEnergy;
             try {
                 proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
@@ -344,9 +334,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             }
 
             if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
-                /**
-                 * Accept MD move.
-                 */
+                // Accept MD move.
                 acceptMD++;
                 double percent = (acceptMD * 100.0) / (imove + 1);
                 logger.info(String.format("\n  Accept [FL=%8.3f,E=%12.4f]\n     -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
@@ -368,14 +356,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.fine(String.format("\n  Total time to run and evaluate MD move: %6.3f", mdMoveAndEvalTime * NS2SEC));
             }
 
-            /**
-             * During equilibration, do not change Lambda or contribute to the
-             * OSRW bias.
-             */
+            // During equilibration, do not change Lambda or contribute to the OSRW bias.
             if (!equilibration) {
-                /**
-                 * Update Lambda.
-                 */
+                // Update Lambda.
                 logger.info("\n  MC Lambda Step");
 
                 long lambdaMoveTime = -System.nanoTime();
@@ -421,9 +404,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     logger.fine(String.format("  Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
                 }
 
-                /**
-                 * Update time dependent bias.
-                 */
+                // Update time dependent bias.
                 osrw.addBias(currentdUdL, currentCoordinates, null);
 
                 if (logger.isLoggable(Level.FINE)) {
@@ -485,9 +466,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
         double currentForceFieldEnergy = osrw.getForceFieldEnergy();
         double currentBiasEnergy = osrw.getBiasEnergy();
 
-        /**
-         * Initialize MC move instances.
-         */
+        // Initialize MC move instances.
         for (int imove = 0; imove < numMoves; imove++) {
             long totalMoveTime = -System.nanoTime();
 
@@ -507,10 +486,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.fine(String.format(" Starting force field energy for move %16.8f", currentForceFieldEnergy));
             }
 
-            /**
-             * Run MD in an approximate potential U* (U star) that does not
-             * include the OSRW bias.
-             */
+            // Run MD in an approximate potential U* (U star) that does not include the OSRW bias.
             long mdMoveTime = -System.nanoTime();
             mdMove.move();
             mdMoveTime += System.nanoTime();
@@ -525,11 +501,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
             // Get the new coordinates.
             potential.getCoordinates(proposedCoordinates);
 
-            long proposedOSRWEnergyTime = 0;
-            proposedOSRWEnergyTime = -System.nanoTime();
+            long proposedOSRWEnergyTime = -System.nanoTime();
 
             // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
-            double proposedOSRWEnergy = 0.0;
+            double proposedOSRWEnergy;
             try {
                 proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
@@ -580,9 +555,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
             if (equilibration) {
                 if (evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
-                    /**
-                     * Accept MD.
-                     */
+                    // Accept MD.
                     acceptMD++;
                     double percent = (acceptMD * 100.0) / (imove + 1);
                     logger.info(String.format("\n Accept [ FL=%8.3f, E=%12.4f]\n     -> [ FL=%8.3f, E=%12.4f] (%5.1f%%)",
@@ -617,9 +590,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     mdMove.revertMove();
                 }
 
-                /**
-                 * Update time-dependent bias.
-                 */
+                // Update time-dependent bias.
                 osrw.addBias(currentdUdL, currentCoordinates, null);
 
                 if (logger.isLoggable(Level.FINE)) {

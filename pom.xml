@@ -559,7 +559,7 @@
                                     <version>3.0</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[1.8,11.1]</version>
+                                    <version>[1.8,12.1]</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
@@ -1131,7 +1131,7 @@
         <!-- Maven Reporting Plugin Versions -->
         <changes.version>2.12.1</changes.version>
         <checkstyle.version>3.0.0</checkstyle.version>
-        <javadoc.version>3.0.1</javadoc.version>
+        <javadoc.version>3.1.0</javadoc.version>
         <jxr.version>3.0.0</jxr.version>
         <linkcheck.version>1.2</linkcheck.version>
         <pmd.version>3.11.0</pmd.version>

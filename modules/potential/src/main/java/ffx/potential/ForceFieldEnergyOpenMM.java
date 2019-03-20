@@ -770,8 +770,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private void addAtoms() throws Exception {
         numParticles = 0;
+        boolean heavyHydrogen = forceField.getBoolean(ForceFieldBoolean.HEAVY_HYDROGENS,false);
         for (Atom atom : atoms) {
-            OpenMM_System_addParticle(system, atom.getMass());
+            double mass = atom.getMass();
+            // Increase the mass of hydrogen atoms to that of carbon atoms.
+            if (heavyHydrogen && atom.isHydrogen()) {
+                mass = 12.0110;
+            }
+            OpenMM_System_addParticle(system, mass);
             if (atom.getMass() <= 0.0) {
                 throw new Exception(" Atom without mass greater than 0.");
             }
@@ -4116,12 +4122,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     collect(Collectors.joining(" "));
         }
         availDeviceProp = availDeviceProp.trim();
+
         String[] availDevices = availDeviceProp.split("\\s+");
         int nDevs = availDevices.length;
         int[] devs = new int[nDevs];
         for (int i = 0; i < nDevs; i++) {
             devs[i] = Integer.parseInt(availDevices[i]);
         }
+
+        logger.info(format(" Number of CUDA devices: %d.", nDevs));
+
         int index = 0;
         try {
             Comm world = Comm.world();

@@ -275,7 +275,7 @@ class Alchemical extends AlgorithmsScript {
         boolean asynchronous = true
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
-                dynamicsOptions.write, asynchronous, false, algorithmFunctions.getDefaultListener())
+                dynamicsOptions.write, asynchronous,  algorithmFunctions.getDefaultListener())
 
         osrw.setLambda(lambda);
         osrw.setThetaMass(5.0e-19);

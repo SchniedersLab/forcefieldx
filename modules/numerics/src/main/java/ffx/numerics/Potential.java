@@ -61,7 +61,7 @@ public interface Potential {
      * @return Function value at <code>x</code>.
      * @since 1.0
      */
-    double energy(double x[]);
+    double energy(double[] x);
 
     /**
      * This method is called repeatedly to compute the function energy and
@@ -72,13 +72,13 @@ public interface Potential {
      * @return Function value at <code>x</code>.
      * @since 1.0
      */
-    double energyAndGradient(double x[], double g[]);
+    double energyAndGradient(double[] x, double[] g);
 
     /**
      * This method is called repeatedly to compute the function energy. The
      * verbose flag may not be used by all implementations.
      *
-     * @param x Input parameters.
+     * @param x       Input parameters.
      * @param verbose Display extra information.
      * @return Function value at <code>x</code>
      */
@@ -90,8 +90,8 @@ public interface Potential {
      * This method is called repeatedly to compute the function energy and
      * gradient. The verbose flag may not be used by all implementations.
      *
-     * @param x Input parameters.
-     * @param g Output gradients with respect to each parameter.
+     * @param x       Input parameters.
+     * @param g       Output gradients with respect to each parameter.
      * @param verbose Display extra information.
      * @return Function value at <code>x</code>.
      * @since 1.0
@@ -107,7 +107,7 @@ public interface Potential {
      * @param scaling The scaling value to use for each variable.
      * @since 1.0
      */
-    void setScaling(double scaling[]);
+    void setScaling(double[] scaling);
 
     /**
      * Get the problem scaling.
@@ -161,21 +161,21 @@ public interface Potential {
      *
      * @param velocity an array of {@link double} objects.
      */
-    void setVelocity(double velocity[]);
+    void setVelocity(double[] velocity);
 
     /**
      * <p>setAcceleration.</p>
      *
      * @param acceleration an array of {@link double} objects.
      */
-    void setAcceleration(double acceleration[]);
+    void setAcceleration(double[] acceleration);
 
     /**
      * <p>setPreviousAcceleration.</p>
      *
      * @param previousAcceleration an array of {@link double} objects.
      */
-    void setPreviousAcceleration(double previousAcceleration[]);
+    void setPreviousAcceleration(double[] previousAcceleration);
 
     /**
      * <p>getVelocity.</p>
@@ -183,7 +183,7 @@ public interface Potential {
      * @param velocity an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    double[] getVelocity(double velocity[]);
+    double[] getVelocity(double[] velocity);
 
     /**
      * <p>getAcceleration.</p>
@@ -191,7 +191,7 @@ public interface Potential {
      * @param acceleration an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    double[] getAcceleration(double acceleration[]);
+    double[] getAcceleration(double[] acceleration);
 
     /**
      * <p>getPreviousAcceleration.</p>
@@ -199,7 +199,7 @@ public interface Potential {
      * @param previousAcceleration an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    double[] getPreviousAcceleration(double previousAcceleration[]);
+    double[] getPreviousAcceleration(double[] previousAcceleration);
 
     /**
      * Set the state of the Potential to include FAST varying energy terms, SLOW
@@ -214,7 +214,7 @@ public interface Potential {
      * Set the Potential Energy terms that should be active.
      *
      * @param state include FAST varying energy terms, SLOW varying energy terms
-     * or BOTH.
+     *              or BOTH.
      */
     void setEnergyTermState(STATE state);
 

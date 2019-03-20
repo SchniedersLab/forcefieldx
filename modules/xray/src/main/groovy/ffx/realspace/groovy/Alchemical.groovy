@@ -263,7 +263,7 @@ class Alchemical extends AlgorithmsScript {
 
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
-                dynamicsOptions.write, true, false, algorithmFunctions.getDefaultListener())
+                dynamicsOptions.write, true, algorithmFunctions.getDefaultListener())
 
         osrw.setLambda(lambda);
         osrw.setThetaMass(5.0e-19);
