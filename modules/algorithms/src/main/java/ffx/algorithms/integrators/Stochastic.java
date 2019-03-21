@@ -38,7 +38,6 @@
 package ffx.algorithms.integrators;
 
 import java.util.Random;
-import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -61,13 +60,37 @@ import ffx.numerics.Potential;
  */
 public class Stochastic extends Integrator {
 
-    private double[] vfric;
-    private double[] vrand;
+    /**
+     * Per degree of freedom friction.
+     */
+    private double[] vFriction;
+    /**
+     * Per degree of freedom random velocity change.
+     */
+    private double[] vRandom;
+    /**
+     * Friction coefficient.
+     */
     private final double friction;
+    /**
+     * Inverse friction coefficient.
+     */
     private double inverseFriction;
+    /**
+     * Friction coefficient multiplied by time step.
+     */
     private double fdt;
+    /**
+     * Exp(-fdt).
+     */
     private double efdt;
+    /**
+     * Simulation temperature.
+     */
     private double temperature;
+    /**
+     * Random number generator.
+     */
     private final Random random;
 
     /**
@@ -89,8 +112,8 @@ public class Stochastic extends Integrator {
         } else {
             inverseFriction = Double.POSITIVE_INFINITY;
         }
-        vfric = new double[nVariables];
-        vrand = new double[nVariables];
+        vFriction = new double[nVariables];
+        vRandom = new double[nVariables];
         fdt = friction * dt;
         efdt = exp(-fdt);
         temperature = 298.15;
@@ -148,49 +171,40 @@ public class Stochastic extends Integrator {
             double afric;
             double prand;
             if (fdt <= 0.0) {
-                /**
-                 * In the limit of no friction, SD recovers normal molecular
-                 * dynamics.
-                 */
+                // In the limit of no friction, SD recovers normal molecular dynamics.
                 pfric = 1.0;
-                vfric[i] = dt;
+                vFriction[i] = dt;
                 afric = 0.5 * dt * dt;
                 prand = 0.0;
-                vrand[i] = 0.0;
+                vRandom[i] = 0.0;
             } else {
                 double pterm;
                 double vterm;
                 double rho;
                 if (fdt >= 0.05) {
-                    /**
-                     * Analytical expressions when the friction coefficient is
-                     * large.
-                     */
+                    // Analytical expressions when the friction coefficient is large.
                     pfric = efdt;
-                    vfric[i] = (1.0 - efdt) * inverseFriction;
-                    afric = (dt - vfric[i]) * inverseFriction;
+                    vFriction[i] = (1.0 - efdt) * inverseFriction;
+                    afric = (dt - vFriction[i]) * inverseFriction;
                     pterm = 2.0 * fdt - 3.0 + (4.0 - efdt) * efdt;
                     vterm = 1.0 - efdt * efdt;
                     rho = (1.0 - efdt) * (1.0 - efdt) / sqrt(pterm * vterm);
                 } else {
-                    /**
-                     * Use a series expansions when friction coefficient is
-                     * small.
-                     */
+                    // Use a series expansions when friction coefficient is small.
                     double fdt2 = fdt * fdt;
                     double fdt3 = fdt * fdt2;
-                    double fdt4 = fdt2 * fdt2;
-                    double fdt5 = fdt2 * fdt3;
-                    double fdt6 = fdt3 * fdt3;
-                    double fdt7 = fdt3 * fdt4;
-                    double fdt8 = fdt4 * fdt4;
-                    double fdt9 = fdt4 * fdt5;
+                    double fdt4 = fdt * fdt3;
+                    double fdt5 = fdt * fdt4;
+                    double fdt6 = fdt * fdt5;
+                    double fdt7 = fdt * fdt6;
+                    double fdt8 = fdt * fdt7;
+                    double fdt9 = fdt * fdt8;
                     afric = (fdt2 / 2.0 - fdt3 / 6.0 + fdt4 / 24.0
                             - fdt5 / 120.0 + fdt6 / 720.0
                             - fdt7 / 5040.0 + fdt8 / 40320.0
                             - fdt9 / 362880.0) / (friction * friction);
-                    vfric[i] = dt - friction * afric;
-                    pfric = 1.0 - friction * vfric[i];
+                    vFriction[i] = dt - friction * afric;
+                    pfric = 1.0 - friction * vFriction[i];
                     pterm = 2.0 * fdt3 / 3.0 - fdt4 / 2.0
                             + 7.0 * fdt5 / 30.0 - fdt6 / 12.0
                             + 31.0 * fdt7 / 1260.0 - fdt8 / 160.0
@@ -207,9 +221,7 @@ public class Stochastic extends Integrator {
                             - 1429487.0 * fdt6 / 13212057600.0
                             + 1877509.0 * fdt7 / 105696460800.0);
                 }
-                /**
-                 * Compute random terms to thermostat the nonzero friction case.
-                 */
+                // Compute random terms to thermostat the nonzero friction case.
                 double ktm = Thermostat.kB * temperature / m;
                 double psig = sqrt(ktm * pterm) / friction;
                 double vsig = sqrt(ktm * vterm);
@@ -217,15 +229,13 @@ public class Stochastic extends Integrator {
                 double pnorm = random.nextGaussian();
                 double vnorm = random.nextGaussian();
                 prand = psig * pnorm;
-                vrand[i] = vsig * (rho * pnorm + rhoc * vnorm);
+                vRandom[i] = vsig * (rho * pnorm + rhoc * vnorm);
             }
 
-            /**
-             * Store the current atom positions, then find new atom positions
-             * and half-step velocities via Verlet recursion.
-             */
-            x[i] += (v[i] * vfric[i] + a[i] * afric + prand);
-            v[i] = v[i] * pfric + 0.5 * a[i] * vfric[i];
+            // Store the current atom positions,
+            // then find new atom positions and half-step velocities via Verlet recursion.
+            x[i] += (v[i] * vFriction[i] + a[i] * afric + prand);
+            v[i] = v[i] * pfric + 0.5 * a[i] * vFriction[i];
         }
     }
 
@@ -237,13 +247,10 @@ public class Stochastic extends Integrator {
      */
     @Override
     public void postForce(double[] gradient) {
-        if (aPrevious == null || aPrevious.length < a.length) {
-            aPrevious = new double[a.length];
-        }
-        arraycopy(a, 0, aPrevious, 0, nVariables);
+        copyAccelerationToPrevious();
         for (int i = 0; i < nVariables; i++) {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
-            v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
+            v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
         }
     }
 
@@ -251,16 +258,16 @@ public class Stochastic extends Integrator {
      * {@inheritDoc}
      * <p>
      * Update the integrator to be consistent with chemical perturbations. This
-     * overrides the default implementation so that the vfric and vrand arrays
+     * overrides the default implementation so that the vFriction and vRandom arrays
      * can be resized.
      */
     @Override
     public void setNumberOfVariables(int nVariables, double[] x, double[] v,
                                      double[] a, double[] aPrevious, double[] mass) {
         super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
-        if (nVariables > vfric.length) {
-            vfric = new double[nVariables];
-            vrand = new double[nVariables];
+        if (nVariables > vFriction.length) {
+            vFriction = new double[nVariables];
+            vRandom = new double[nVariables];
         }
     }
 

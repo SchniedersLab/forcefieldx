@@ -37,8 +37,6 @@
  */
 package ffx.algorithms.integrators;
 
-import static java.lang.System.arraycopy;
-
 import ffx.numerics.Potential;
 import static ffx.algorithms.thermostats.Thermostat.convert;
 
@@ -94,10 +92,7 @@ public class BetterBeeman extends Integrator {
      */
     @Override
     public void postForce(double[] gradient) {
-        if (aPrevious == null || aPrevious.length < a.length) {
-            aPrevious = new double[a.length];
-        }
-        arraycopy(a, 0, aPrevious, 0, nVariables);
+        copyAccelerationToPrevious();
         for (int i = 0; i < nVariables; i++) {
             a[i] = -convert * gradient[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;

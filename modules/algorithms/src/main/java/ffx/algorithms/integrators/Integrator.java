@@ -38,6 +38,7 @@
 package ffx.algorithms.integrators;
 
 import java.util.logging.Logger;
+import static java.lang.System.arraycopy;
 
 import ffx.numerics.Potential;
 
@@ -68,12 +69,31 @@ public abstract class Integrator {
         }
     }
 
-    protected double[] x;
-    protected double[] v;
-    protected double[] a;
-    protected double[] aPrevious;
-    protected double[] mass;
+    /**
+     * Number of variables.
+     */
     protected int nVariables;
+    /**
+     * Mass of each degree of freedom.
+     */
+    protected double[] mass;
+    /**
+     * Coordinates for each degree of freedom.
+     */
+    protected double[] x;
+    /**
+     * Velocity of each degree of freedom.
+     */
+    protected double[] v;
+    /**
+     * Acceleration of each degree of freedom.
+     */
+    protected double[] a;
+    /**
+     * Acceleration of each degree of freedom for the previous step.
+     */
+    double[] aPrevious;
+
     /**
      * Time step (psec).
      */
@@ -81,7 +101,7 @@ public abstract class Integrator {
     /**
      * Half the time step (psec).
      */
-    protected double dt_2;
+    double dt_2;
 
     /**
      * Constructor for Integrator.
@@ -90,7 +110,6 @@ public abstract class Integrator {
      * @param x          Cartesian coordinates (Angstroms).
      * @param v          Velocities.
      * @param a          Accelerations.
-     * @param aPrevious  Previous Accelerations.
      * @param aPrevious  Previous Accelerations.
      * @param mass       Mass.
      */
@@ -133,7 +152,6 @@ public abstract class Integrator {
      * @param v          the current velocity of each variable.
      * @param a          the current acceleration of each variable.
      * @param aPrevious  the previous acceleration of each variable.
-     * @param aPrevious  the previous acceleration of each variable.
      * @param mass       the mass for each variable.
      */
     public void setNumberOfVariables(int nVariables, double[] x, double[] v,
@@ -165,6 +183,16 @@ public abstract class Integrator {
     }
 
     /**
+     * Copy acceleration to previous acceleration.
+     */
+    public void copyAccelerationToPrevious() {
+        if (aPrevious == null || aPrevious.length < a.length) {
+            aPrevious = new double[a.length];
+        }
+        arraycopy(a, 0, aPrevious, 0, nVariables);
+    }
+
+    /**
      * Get the time step.
      *
      * @return the time step (psec).
@@ -192,6 +220,6 @@ public abstract class Integrator {
      *
      * @param gradient the gradient for the post-force operation.
      */
-    abstract public void postForce(double gradient[]);
+    abstract public void postForce(double[] gradient);
 
 }

@@ -37,8 +37,7 @@
  */
 package ffx.algorithms.integrators;
 
-import static java.lang.System.arraycopy;
-
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
 
 /**
@@ -85,12 +84,9 @@ public class VelocityVerlet extends Integrator {
      */
     @Override
     public void postForce(double[] gradient) {
-        if (aPrevious == null || aPrevious.length < a.length) {
-            aPrevious = new double[a.length];
-        }
-        arraycopy(a, 0, aPrevious, 0, nVariables);
+        copyAccelerationToPrevious();
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] = v[i] + a[i] * dt_2;
         }
     }

@@ -90,7 +90,6 @@ public class Respa extends Integrator {
      * @param v          Current velocities.
      * @param a          Current accelerations.
      * @param aPrevious  Previous accelerations.
-     * @param aPrevious  Previous accelerations.
      * @param mass       Mass of the variables.
      */
     public Respa(int nVariables, double[] x, double[] v, double[] a,
@@ -120,53 +119,41 @@ public class Respa extends Integrator {
     public void preForce(Potential potential) {
         double[] gradient = new double[nVariables];
 
-        /**
-         * Find half-step velocities via velocity Verlet recursion
-         */
+        // Find half-step velocities via velocity Verlet recursion
         for (int i = 0; i < nVariables; i++) {
             v[i] += a[i] * dt_2;
         }
 
-        /**
-         * Initialize accelerations due to fast-evolving forces.
-         */
+        // Initialize accelerations due to fast-evolving forces.
         potential.setEnergyTermState(Potential.STATE.FAST);
         halfStepEnergy = potential.energyAndGradient(x, gradient);
         for (int i = 0; i < nVariables; i++) {
             aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
         }
 
-        /**
-         * Complete the inner RESPA loop.
-         */
+        // Complete the inner RESPA loop.
         for (int j = 0; j < innerSteps; j++) {
 
-            /**
-             * Find fast-evolving velocities and positions via Verlet recursion.
-             */
+            // Find fast-evolving velocities and positions via Verlet recursion.
             for (int i = 0; i < nVariables; i++) {
                 v[i] += aPrevious[i] * halfInnerTimeStep;
                 x[i] += v[i] * innerTimeStep;
             }
 
-            /**
-             * Update accelerations from fast varying forces.
-             */
+            // Update accelerations from fast varying forces.
             halfStepEnergy = potential.energyAndGradient(x, gradient);
             for (int i = 0; i < nVariables; i++) {
 
-                /**
-                 * Use Newton's second law to get fast-evolving accelerations.
-                 * Update fast-evolving velocities using the Verlet recursion.
+                /*
+                  Use Newton's second law to get fast-evolving accelerations.
+                  Update fast-evolving velocities using the Verlet recursion.
                  */
                 aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
                 v[i] += aPrevious[i] * halfInnerTimeStep;
             }
         }
 
-        /**
-         * Revert to computing slowly varying forces.
-         */
+        // Revert to computing slowly varying forces.
         potential.setEnergyTermState(Potential.STATE.SLOW);
     }
 
