@@ -5330,13 +5330,14 @@ public final class PDBFilter extends SystemFilter {
         final char chainChar;
 
         public Mutation(int resID, char chainChar, String newResName) {
+            newResName = newResName.toUpperCase();
             if (newResName == null || newResName.length() != 3) {
-                logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
+                logger.log(Level.WARNING, String.format("Invalid mutation target: %s.", newResName));
             }
             try {
                 AminoAcid3.valueOf(newResName);
             } catch (IllegalArgumentException ex) {
-                logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
+                logger.log(Level.WARNING, String.format("Invalid mutation target: %s.", newResName));
             }
             this.resID = resID;
             this.chainChar = chainChar;
