@@ -39,8 +39,8 @@ package ffx.algorithms.mc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.Random;
+import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 
@@ -60,7 +60,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
     /**
      * Constant <code>BOLTZMANN=0.0019872041</code>
      */
-    public static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
+    static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
 
     private double temperature = 298.15; // Room temperature (also SATP).
     private double kbTinv = -1.0 / (BOLTZMANN * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
@@ -176,16 +176,13 @@ public abstract class BoltzmannMC implements MetropolisMC {
         e1 = en1;
 
         int nMoves = moves.size();
-        for (int i = 0; i < nMoves; i++) {
-            MCMove movei = moves.get(i);
-            movei.move();
+        for (MCMove move : moves) {
+            move.move();
         }
 
         lastE = currentEnergy(); // Is reset to e1 if move rejected.
         e2 = lastE;
-        //++nTotal;
         if (evaluateMove(e1, e2)) {
-            //++nAccept;
             lastAccept = true;
             if (print) {
                 logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", e1, e2));
@@ -220,7 +217,12 @@ public abstract class BoltzmannMC implements MetropolisMC {
         return lastAccept;
     }
 
-    public void setRandomSeed(int randomseed) {
+    /**
+     * Set the random seed.
+     *
+     * @param randomseed The seed.
+     */
+    protected void setRandomSeed(int randomseed) {
         random.setSeed(randomseed);
     }
 

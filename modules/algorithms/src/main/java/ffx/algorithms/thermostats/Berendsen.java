@@ -37,6 +37,8 @@
  */
 package ffx.algorithms.thermostats;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
@@ -63,16 +65,16 @@ public class Berendsen extends Thermostat {
      * <p>
      * Constructor for Berendsen.</p>
      *
-     * @param n                 a int.
-     * @param x                 an array of double.
-     * @param v                 an array of double.
-     * @param mass              an array of double.
-     * @param type              the VARIABLE_TYPE of each variable.
-     * @param targetTemperature a double.
-     * @param tau               a double.
+     * @param n                 Number of degrees of freedom.
+     * @param x                 Atomic coordinates.
+     * @param v                 Velocities.
+     * @param mass              Mass of each degrees of freedom.
+     * @param type              The VARIABLE_TYPE of each variable.
+     * @param targetTemperature The target temperatures.
+     * @param tau               Berendsen thermostat time constant (psec).
      */
-    public Berendsen(int n, double x[], double v[], double mass[],
-                     VARIABLE_TYPE type[], double targetTemperature, double tau) {
+    public Berendsen(int n, double[] x, double[] v, double[] mass,
+                     VARIABLE_TYPE[] type, double targetTemperature, double tau) {
         super(n, x, v, mass, type, targetTemperature);
         this.name = ThermostatEnum.BERENDSEN;
         this.tau = tau;
@@ -82,15 +84,15 @@ public class Berendsen extends Thermostat {
      * <p>
      * Constructor for Berendsen.</p>
      *
-     * @param n                 a int.
-     * @param x                 an array of double.
-     * @param v                 an array of double.
-     * @param mass              an array of double.
-     * @param type              the VARIABLE_TYPE of each variable.
-     * @param targetTemperature a double.
+     * @param n                 Number of degrees of freedom.
+     * @param x                 Atomic coordinates.
+     * @param v                 Velocities.
+     * @param mass              Mass of each degrees of freedom.
+     * @param type              The VARIABLE_TYPE of each variable.
+     * @param targetTemperature The target temperatures.
      */
-    public Berendsen(int n, double x[], double v[], double mass[],
-                     VARIABLE_TYPE type[], double targetTemperature) {
+    public Berendsen(int n, double[] x, double[] v, double[] mass,
+                     VARIABLE_TYPE[] type, double targetTemperature) {
         this(n, x, v, mass, type, targetTemperature, 0.2e0);
     }
 
@@ -119,7 +121,7 @@ public class Berendsen extends Thermostat {
      */
     @Override
     public String toString() {
-        return String.format(" Berendsen Thermostat (tau = %8.3f psec)", tau);
+        return format(" Berendsen Thermostat (tau = %8.3f psec)", tau);
     }
 
     /**
@@ -130,7 +132,6 @@ public class Berendsen extends Thermostat {
      */
     @Override
     public void halfStep(double dt) {
-        return;
     }
 
     /**

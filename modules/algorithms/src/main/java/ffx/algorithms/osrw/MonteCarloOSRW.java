@@ -157,10 +157,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
         if (properties.containsKey("randomseed")) {
             int randomSeed = properties.getInt("randomseed", 0);
             logger.info(String.format(" Setting random seed for lambdaMove to %d ", randomSeed));
-            lambdaMove = new LambdaMove(randomSeed, lambda, osrw);
+            lambdaMove = new LambdaMove(randomSeed, osrw);
             setRandomSeed(randomSeed);
         } else {
-            lambdaMove = new LambdaMove(lambda, osrw);
+            lambdaMove = new LambdaMove(osrw);
         }
 
         // Changing the value of lambda will be handled by this class, as well as adding the time dependent bias.

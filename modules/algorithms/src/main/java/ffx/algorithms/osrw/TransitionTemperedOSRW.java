@@ -37,24 +37,19 @@
  */
 package ffx.algorithms.osrw;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
-import static java.util.Arrays.stream;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -150,9 +145,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private double[] kernelValues;
     /**
-     * The ReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
+     * The TTOSRWReceiveThread accumulates OSRW statistics from multiple asynchronous walkers.
      */
-    private final ReceiveThread receiveThread;
+    private final TTOSRWReceiveThread receiveThread;
     /**
      * The recursionWeights stores the [Lambda, FLambda] weight for each
      * process. Therefore the array is of size [number of Processes][2].
@@ -231,7 +226,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         boolean readHistogramRestart = false;
         if (histogramFile != null && histogramFile.exists()) {
             try {
-                TTOSRWHistogramReader osrwHistogramReader = new TTOSRWHistogramReader(new FileReader(histogramFile));
+                TTOSRWHistogramReader osrwHistogramReader = new TTOSRWHistogramReader(this, new FileReader(histogramFile));
                 osrwHistogramReader.readHistogramFile();
                 logger.info(String.format("\n Continuing OSRW histogram from %s.", histogramFile.getName()));
                 readHistogramRestart = true;
@@ -243,7 +238,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         // Load the OSRW lambda restart file if it exists.
         if (lambdaFile != null && lambdaFile.exists()) {
             try {
-                TTOSRWLambdaReader osrwLambdaReader = new TTOSRWLambdaReader(new FileReader(lambdaFile));
+                TTOSRWLambdaReader osrwLambdaReader = new TTOSRWLambdaReader(this, new FileReader(lambdaFile));
                 osrwLambdaReader.readLambdaFile(resetNumSteps);
                 logger.info(String.format("\n Continuing OSRW lambda from %s.", lambdaFile.getName()));
             } catch (FileNotFoundException ex) {
@@ -255,7 +250,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             // Use asynchronous communication.
             myRecursionWeight = new double[3];
             myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
-            receiveThread = new ReceiveThread();
+            receiveThread = new TTOSRWReceiveThread(this);
             receiveThread.start();
             recursionWeights = null;
             recursionWeightsBuf = null;
@@ -313,6 +308,65 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         } else {
             deltaT = Double.MAX_VALUE;
         }
+    }
+
+    /**
+     * Check if tempering has started.
+     *
+     * @return True if tempering has begun.
+     */
+    boolean isTempering() {
+        return tempering;
+    }
+
+    /**
+     * Set the tempering flag.
+     *
+     * @param tempering True to indicate tempering.
+     */
+    void setTempering(boolean tempering) {
+        this.tempering = tempering;
+    }
+
+    /**
+     * Return the value of a recursion kernel bin.
+     *
+     * @param lambdaBin  The lambda bin.
+     * @param fLambdaBin The dU/dL bin.
+     * @return The value of the bin.
+     */
+    double getRecursionKernelValue(int lambdaBin, int fLambdaBin) {
+        return recursionKernel[lambdaBin][fLambdaBin];
+    }
+
+    /**
+     * Set the value of a recursion kernel bin.
+     *
+     * @param lambdaBin  The lambda bin.
+     * @param fLambdaBin The dU/dL bin.
+     * @param value      The value of the bin.
+     */
+    void setRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
+        recursionKernel[lambdaBin][fLambdaBin] = value;
+    }
+
+    /**
+     * Set the value of a recursion kernel bin.
+     *
+     * @param lambdaBin  The lambda bin.
+     * @param fLambdaBin The dU/dL bin.
+     * @param value      The value of the bin.
+     */
+    void addToRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
+        recursionKernel[lambdaBin][fLambdaBin] += value;
+    }
+
+    /**
+     * Allocate memory for the recursion kernel.
+     */
+    void allocateRecursionKernel() {
+        recursionKernel = new double[lambdaBins][FLambdaBins];
+        kernelValues = new double[FLambdaBins];
     }
 
     /**
@@ -660,6 +714,81 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         double val = 0.5 * (fX1 + fX2);
         val *= (x1 - x0);
         return val;
+    }
+
+    /**
+     * Send an OSRW count to all other processes while also receiving an OSRW
+     * count from all other processes.
+     *
+     * @param lambda Current value of lambda.
+     * @param dUdL   Current value of dU/dL.
+     */
+    private void synchronousSend(double lambda, double dUdL) {
+
+        // All-Gather counts from each walker.
+        myRecursionWeight[0] = lambda;
+        myRecursionWeight[1] = dUdL;
+        myRecursionWeight[2] = temperingWeight;
+        try {
+            world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
+        } catch (IOException ex) {
+            String message = " Multi-walker OSRW allGather failed.";
+            logger.log(Level.SEVERE, message, ex);
+        }
+
+        // Find the minimum and maximum FLambda bin for the gathered counts.
+        double minRequired = Double.MAX_VALUE;
+        double maxRequired = Double.MIN_VALUE;
+        for (int i = 0; i < numProc; i++) {
+            minRequired = min(minRequired, recursionWeights[i][1]);
+            maxRequired = max(maxRequired, recursionWeights[i][1]);
+        }
+
+        // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
+        checkRecursionKernelSize(minRequired);
+        checkRecursionKernelSize(maxRequired);
+
+        // Increment the Recursion Kernel based on the input of each walker.
+        for (int i = 0; i < numProc; i++) {
+            int walkerLambda = binForLambda(recursionWeights[i][0]);
+            int walkerFLambda = binForFLambda(recursionWeights[i][1]);
+            double weight = recursionWeights[i][2];
+
+            // If the weight is less than 1.0, then a walker has activated tempering.
+            if (!tempering && weight < 1.0) {
+                tempering = true;
+                logger.info(String.format(" Tempering activated due to received weight of (%8.6f)", weight));
+            }
+
+            if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
+                recursionKernel = new double[lambdaBins][FLambdaBins];
+                resetStatistics = false;
+                logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionWeights[i][0]));
+            }
+
+            recursionKernel[walkerLambda][walkerFLambda] += weight;
+        }
+    }
+
+    /**
+     * Send an OSRW count to all other processes.
+     *
+     * @param lambda Current value of lambda.
+     * @param dUdL   Current value of dU/dL.
+     */
+    private void asynchronousSend(double lambda, double dUdL) {
+        myRecursionWeight[0] = lambda;
+        myRecursionWeight[1] = dUdL;
+        myRecursionWeight[2] = temperingWeight;
+
+        for (int i = 0; i < numProc; i++) {
+            try {
+                world.send(i, myRecursionWeightBuf);
+            } catch (Exception ex) {
+                String message = " Asynchronous Multiwalker OSRW send failed.";
+                logger.log(Level.SEVERE, message, ex);
+            }
+        }
     }
 
     /**
@@ -1091,7 +1220,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         // Only the rank 0 process writes the histogram restart file.
         if (rank == 0) {
             try {
-                TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
+                TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(this,
                         new BufferedWriter(new FileWriter(histogramFile)));
                 ttOSRWHistogramRestart.writeHistogramFile();
                 ttOSRWHistogramRestart.flush();
@@ -1105,7 +1234,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         // All ranks write a lambda restart file.
         try {
-            TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+            TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(this, new BufferedWriter(new FileWriter(lambdaFile)));
             ttOSRWLambdaRestart.writeLambdaFile();
             ttOSRWLambdaRestart.flush();
             ttOSRWLambdaRestart.close();
@@ -1135,7 +1264,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 logger.log(Level.SEVERE, message, ex);
             }
         } else {
-            logger.fine(" ReceiveThread was either not initialized, or is not alive. This is the case for the Histogram script.");
+            logger.fine(" TTOSRWReceiveThread was either not initialized, or is not alive. This is the case for the Histogram script.");
         }
         return potential.destroy();
     }
@@ -1176,278 +1305,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
         logger.info(String.format(" Set lambda write out threshold to %f lambda", lambdaWriteOut));
-    }
-
-    /**
-     * The ReceiveThread accumulates TT-OSRW statistics from multiple asynchronous walkers.
-     */
-    private class ReceiveThread extends Thread {
-
-        final double[] recursionCount;
-        final DoubleBuf recursionCountBuf;
-
-        ReceiveThread() {
-            recursionCount = new double[3];
-            recursionCountBuf = DoubleBuf.buffer(recursionCount);
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    world.receive(null, recursionCountBuf);
-                } catch (InterruptedIOException ioe) {
-                    String message = " ReceiveThread was interrupted at world.receive; " +
-                            "future message passing may be in an error state.";
-                    logger.log(Level.WARNING, message, ioe);
-                    break;
-                } catch (IOException e) {
-                    String message = e.getMessage();
-                    logger.log(Level.WARNING, message, e);
-                }
-
-                // 3x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
-                boolean terminateSignal = stream(recursionCount).allMatch(Double::isNaN);
-                if (terminateSignal) {
-                    logger.fine(" Termination signal (3x NaN) received; ReceiveThread shutting down.");
-                    break;
-                }
-
-                // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
-                checkRecursionKernelSize(recursionCount[1]);
-
-                // Increment the Recursion Kernel based on the input of current walker.
-                int walkerLambda = binForLambda(recursionCount[0]);
-                int walkerFLambda = binForFLambda(recursionCount[1]);
-                double weight = recursionCount[2];
-
-                // If the weight is less than 1.0, then a walker has activated tempering.
-                if (!tempering && weight < 1.0) {
-                    tempering = true;
-                    logger.info(format(" Tempering activated due to received weight of (%8.6f)", weight));
-                }
-
-                if (resetStatistics && recursionCount[0] > lambdaResetValue) {
-                    recursionKernel = new double[lambdaBins][FLambdaBins];
-                    resetStatistics = false;
-                    logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
-                }
-
-                // Increase the Recursion Kernel based on the input of current walker.
-                recursionKernel[walkerLambda][walkerFLambda] += weight;
-                if (isInterrupted()) {
-                    logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution.");
-                    // No pending message receipt, so no warning.
-                    break;
-                }
-            }
-        }
-
-    }
-
-    /**
-     * Send an OSRW count to all other processes while also receiving an OSRW
-     * count from all other processes.
-     *
-     * @param lambda Current value of lambda.
-     * @param dUdL   Current value of dU/dL.
-     */
-    private void synchronousSend(double lambda, double dUdL) {
-
-        // All-Gather counts from each walker.
-        myRecursionWeight[0] = lambda;
-        myRecursionWeight[1] = dUdL;
-        myRecursionWeight[2] = temperingWeight;
-        try {
-            world.allGather(myRecursionWeightBuf, recursionWeightsBuf);
-        } catch (IOException ex) {
-            String message = " Multi-walker OSRW allGather failed.";
-            logger.log(Level.SEVERE, message, ex);
-        }
-
-        // Find the minimum and maximum FLambda bin for the gathered counts.
-        double minRequired = Double.MAX_VALUE;
-        double maxRequired = Double.MIN_VALUE;
-        for (int i = 0; i < numProc; i++) {
-            minRequired = min(minRequired, recursionWeights[i][1]);
-            maxRequired = max(maxRequired, recursionWeights[i][1]);
-        }
-
-        // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
-        checkRecursionKernelSize(minRequired);
-        checkRecursionKernelSize(maxRequired);
-
-        // Increment the Recursion Kernel based on the input of each walker.
-        for (int i = 0; i < numProc; i++) {
-            int walkerLambda = binForLambda(recursionWeights[i][0]);
-            int walkerFLambda = binForFLambda(recursionWeights[i][1]);
-            double weight = recursionWeights[i][2];
-
-            // If the weight is less than 1.0, then a walker has activated tempering.
-            if (!tempering && weight < 1.0) {
-                tempering = true;
-                logger.info(String.format(" Tempering activated due to received weight of (%8.6f)", weight));
-            }
-
-            if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
-                recursionKernel = new double[lambdaBins][FLambdaBins];
-                resetStatistics = false;
-                logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionWeights[i][0]));
-            }
-
-            recursionKernel[walkerLambda][walkerFLambda] += weight;
-        }
-    }
-
-    /**
-     * Send an OSRW count to all other processes.
-     *
-     * @param lambda Current value of lambda.
-     * @param dUdL   Current value of dU/dL.
-     */
-    private void asynchronousSend(double lambda, double dUdL) {
-        myRecursionWeight[0] = lambda;
-        myRecursionWeight[1] = dUdL;
-        myRecursionWeight[2] = temperingWeight;
-
-        for (int i = 0; i < numProc; i++) {
-            try {
-                world.send(i, myRecursionWeightBuf);
-            } catch (Exception ex) {
-                String message = " Asynchronous Multiwalker OSRW send failed.";
-                logger.log(Level.SEVERE, message, ex);
-            }
-        }
-    }
-
-    /**
-     * Write out the TT-OSRW Histogram.
-     */
-    private class TTOSRWHistogramWriter extends PrintWriter {
-
-        TTOSRWHistogramWriter(Writer writer) {
-            super(writer);
-        }
-
-        void writeHistogramFile() {
-            printf("Temperature     %15.3f\n", temperature);
-            printf("Lambda-Mass     %15.8e\n", thetaMass);
-            printf("Lambda-Friction %15.8e\n", thetaFriction);
-            printf("Bias-Mag        %15.8e\n", biasMag);
-            printf("Bias-Cutoff     %15d\n", biasCutoff);
-            printf("Count-Interval  %15d\n", countInterval);
-            printf("Lambda-Bins     %15d\n", lambdaBins);
-            printf("FLambda-Bins    %15d\n", FLambdaBins);
-            printf("Flambda-Min     %15.8e\n", minFLambda);
-            printf("Flambda-Width   %15.8e\n", dFL);
-            int flag = 0;
-            if (tempering) {
-                flag = 1;
-            }
-            printf("Tempering       %15d\n", flag);
-            for (int i = 0; i < lambdaBins; i++) {
-                printf("%g", recursionKernel[i][0]);
-                for (int j = 1; j < FLambdaBins; j++) {
-                    printf(" %g", recursionKernel[i][j]);
-                }
-                println();
-            }
-        }
-    }
-
-    /**
-     * Write out the current value of Lambda, its velocity and the number of
-     * counts.
-     */
-    private class TTOSRWLambdaWriter extends PrintWriter {
-
-        TTOSRWLambdaWriter(Writer writer) {
-            super(writer);
-        }
-
-        void writeLambdaFile() {
-            printf("Lambda          %15.8f\n", lambda);
-            printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
-            printf("Steps-Taken     %15d\n", energyCount);
-        }
-    }
-
-    /**
-     * Read in the TT-OSRW Histogram.
-     */
-    private class TTOSRWHistogramReader extends BufferedReader {
-
-        TTOSRWHistogramReader(Reader reader) {
-            super(reader);
-        }
-
-        void readHistogramFile() {
-            try {
-                temperature = Double.parseDouble(readLine().split(" +")[1]);
-                thetaMass = Double.parseDouble(readLine().split(" +")[1]);
-                thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
-                biasMag = Double.parseDouble(readLine().split(" +")[1]);
-                biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
-                countInterval = Integer.parseInt(readLine().split(" +")[1]);
-
-                lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-                FLambda = new double[lambdaBins];
-                dL = 1.0 / (lambdaBins - 1);
-                dL_2 = dL / 2.0;
-
-                FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-                minFLambda = Double.parseDouble(readLine().split(" +")[1]);
-                dFL = Double.parseDouble(readLine().split(" +")[1]);
-                dFL_2 = dFL / 2.0;
-
-                int flag = Integer.parseInt(readLine().split(" +")[1]);
-                tempering = flag != 0;
-
-                // Allocate memory for the recursion kernel.
-                recursionKernel = new double[lambdaBins][FLambdaBins];
-                kernelValues = new double[FLambdaBins];
-
-                for (int i = 0; i < lambdaBins; i++) {
-                    String[] counts = readLine().split(" +");
-                    for (int j = 0; j < FLambdaBins; j++) {
-                        recursionKernel[i][j] = Double.parseDouble(counts[j]);
-                    }
-                }
-            } catch (Exception e) {
-                String message = " Invalid OSRW Histogram file.";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-    }
-
-    /**
-     * Read in the current value of Lambda, its velocity and the number of
-     * counts.
-     */
-    private class TTOSRWLambdaReader extends BufferedReader {
-
-        TTOSRWLambdaReader(Reader reader) {
-            super(reader);
-        }
-
-        void readLambdaFile(boolean resetEnergyCount) {
-            try {
-                lambda = Double.parseDouble(readLine().split(" +")[1]);
-                halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
-                setLambda(lambda);
-            } catch (Exception e) {
-                String message = " Invalid OSRW Lambda file.";
-                logger.log(Level.SEVERE, message, e);
-            }
-            if (!resetEnergyCount) {
-                try {
-                    energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
-                } catch (Exception e) {
-                    String message = format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString());
-                    logger.log(Level.WARNING, message);
-                }
-            }
-        }
     }
 
 }

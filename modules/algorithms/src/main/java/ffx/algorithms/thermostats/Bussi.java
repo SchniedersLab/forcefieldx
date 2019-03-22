@@ -38,6 +38,7 @@
 package ffx.algorithms.thermostats;
 
 import java.util.Random;
+import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -72,21 +73,37 @@ public class Bussi extends Thermostat {
      * <p>
      * Constructor for Bussi.</p>
      *
-     * @param dof               a int.
-     * @param x                 an array of double.
-     * @param v                 an array of double.
-     * @param mass              an array of double.
+     * @param n                 Number of degrees of freedom.
+     * @param x                 Atomic coordinates.
+     * @param v                 Velocities.
+     * @param mass              Mass of each degrees of freedom.
      * @param type              the VARIABLE_TYPE of each variable.
-     * @param targetTemperature a double.
-     * @param tau               a double.
+     * @param targetTemperature The target temperature.
+     * @param tau               Bussi thermostat time constant (psec).
      */
-    public Bussi(int dof, double x[], double v[], double mass[],
-                 VARIABLE_TYPE type[], double targetTemperature,
+    public Bussi(int n, double[] x, double[] v, double[] mass,
+                 VARIABLE_TYPE[] type, double targetTemperature,
                  double tau) {
-        super(dof, x, v, mass, type, targetTemperature);
+        super(n, x, v, mass, type, targetTemperature);
         this.name = ThermostatEnum.BUSSI;
         this.tau = tau;
         this.bussiRandom = new Random();
+    }
+
+    /**
+     * <p>
+     * Constructor for Bussi.</p>
+     *
+     * @param n                 Number of degrees of freedom.
+     * @param x                 Atomic coordinates.
+     * @param v                 Velocities.
+     * @param mass              Mass of each degrees of freedom.
+     * @param type              the VARIABLE_TYPE of each variable.
+     * @param targetTemperature a double.
+     */
+    public Bussi(int n, double[] x, double[] v, double[] mass,
+                 VARIABLE_TYPE[] type, double targetTemperature) {
+        this(n, x, v, mass, type, targetTemperature, 0.2e0);
     }
 
     /**
@@ -97,22 +114,6 @@ public class Bussi extends Thermostat {
      */
     public void setRandomSeed(long seed) {
         bussiRandom.setSeed(seed);
-    }
-
-    /**
-     * <p>
-     * Constructor for Bussi.</p>
-     *
-     * @param dof               a int.
-     * @param x                 an array of double.
-     * @param v                 an array of double.
-     * @param mass              an array of double.
-     * @param type              the VARIABLE_TYPE of each variable.
-     * @param targetTemperature a double.
-     */
-    public Bussi(int dof, double x[], double v[], double mass[],
-                 VARIABLE_TYPE type[], double targetTemperature) {
-        this(dof, x, v, mass, type, targetTemperature, 0.2e0);
     }
 
     /**
@@ -140,7 +141,7 @@ public class Bussi extends Thermostat {
      */
     @Override
     public String toString() {
-        return String.format(" Bussi Thermostat (tau = %8.3f psec)", tau);
+        return format(" Bussi Thermostat (tau = %8.3f psec)", tau);
     }
 
     /**
@@ -150,7 +151,6 @@ public class Bussi extends Thermostat {
      */
     @Override
     public void halfStep(double dt) {
-        return;
     }
 
     /**

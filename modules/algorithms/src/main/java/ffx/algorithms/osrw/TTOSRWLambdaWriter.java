@@ -35,15 +35,39 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms.thermostats;
+package ffx.algorithms.osrw;
+
+import java.io.PrintWriter;
+import java.io.Writer;
 
 /**
- * An enumeration of available Thermostats.
- *
- * @author Michael J. Schnieders
+ * Write out the current value of Lambda, its velocity and the number of
+ * counts.
  */
-public enum ThermostatEnum {
+class TTOSRWLambdaWriter extends PrintWriter {
 
-    ADIABATIC, BERENDSEN, BUSSI;
+    /**
+     * Private reference to the TTOSRW instance.
+     */
+    private TransitionTemperedOSRW transitionTemperedOSRW;
+
+    /**
+     * Constructor.
+     *
+     * @param transitionTemperedOSRW The parent TTOSRW instance.
+     * @param writer                 The Writer to use.
+     */
+    TTOSRWLambdaWriter(TransitionTemperedOSRW transitionTemperedOSRW, Writer writer) {
+        super(writer);
+        this.transitionTemperedOSRW = transitionTemperedOSRW;
+    }
+
+    /**
+     * Write the Lambda restart file.
+     */
+    void writeLambdaFile() {
+        printf("Lambda          %15.8f\n", transitionTemperedOSRW.lambda);
+        printf("Lambda-Velocity %15.8e\n", transitionTemperedOSRW.halfThetaVelocity);
+        printf("Steps-Taken     %15d\n", transitionTemperedOSRW.energyCount);
+    }
 }
-

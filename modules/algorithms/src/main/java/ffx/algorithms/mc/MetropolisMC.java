@@ -61,7 +61,7 @@ public interface MetropolisMC {
      * @return If move accepted
      */
     boolean evaluateMove(double e1, double e2);
-    
+
     /**
      * Sets temperature of Monte Carlo criterion.
      *
@@ -82,7 +82,6 @@ public interface MetropolisMC {
      * @param print Print energies, accept/reject, etc.
      */
     void setPrint(boolean print);
-    // Might want to set false for non-master nodes in certain algorithms.
 
     /**
      * Return starting energy from last attempted step.
@@ -110,11 +109,6 @@ public interface MetropolisMC {
      * If possible, reverts the last successful Monte Carlo step taken.
      */
     void revertStep();
-
-    // The easiest way to implement the next three methods is to follow the
-    // pattern of BoltzmannMC; calculate en1 via currentEnergy() if necessary,
-    // and construct a single-member List<MCMove> if necessary, and pass it
-    // through to mcStep(List<MCMove> moves, double en1).
 
     /**
      * Calculates the current system energy and performs an MCMove.

@@ -64,6 +64,10 @@ public class MDMove implements MCMove {
     private static final Logger logger = Logger.getLogger(MDMove.class.getName());
 
     /**
+     * THe MD instance that executes the move.
+     */
+    private final MolecularDynamics molecularDynamics;
+    /**
      * Number of MD steps per move.
      */
     private int mdSteps = 50;
@@ -79,16 +83,27 @@ public class MDMove implements MCMove {
      * Temperature in Kelvin.
      */
     private double temperature = 298.15;
-    private boolean initVelocities = true;
-    private File dyn;
-
+    /**
+     * Number of MD moves.
+     */
     private int mdMoveCounter = 0;
-    private double energyChange;
-    private double energyDriftTotalAbs;
-    private double energyDriftTotalNet;
-
+    /**
+     * MD save interval.
+     */
     private final double saveInterval = 10000.0;
-    private final MolecularDynamics molecularDynamics;
+    /**
+     * The total energy change for the current move.
+     */
+    private double energyChange;
+    /**
+     * Absolute energy drift over all moves.
+     */
+    private double energyDriftAbs;
+    /**
+     * Net energy drift over all moves.
+     */
+    private double energyDriftNet;
+
 
     /**
      * <p>Constructor for MDMove.</p>
@@ -107,16 +122,14 @@ public class MDMove implements MCMove {
         molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
 
-        /**
-         * Ensure at least one interval is printed.
-         */
+        // Ensure at least one interval is printed.
         if (printInterval < mdSteps * timeStep) {
             printInterval = mdSteps * timeStep;
         }
 
 
         String name = assembly.getFile().getAbsolutePath();
-        dyn = new File(FilenameUtils.removeExtension(name) + ".dyn");
+        File dyn = new File(FilenameUtils.removeExtension(name) + ".dyn");
         if (!dyn.exists()) {
             dyn = null;
         }
@@ -132,15 +145,6 @@ public class MDMove implements MCMove {
      */
     public void setTemperature(double temperature) {
         this.temperature = temperature;
-    }
-
-    /**
-     * <p>initVelocities.</p>
-     *
-     * @param initVelocities a boolean.
-     */
-    public void initVelocities(boolean initVelocities) {
-        this.initVelocities = initVelocities;
     }
 
     /**
@@ -163,14 +167,15 @@ public class MDMove implements MCMove {
 
         mdMoveCounter++;
 
+        boolean initVelocities = true;
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
-        energyChange = molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy();
+        energyChange = molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
-            energyDriftTotalNet += molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
-            double energyDriftAverageNet = energyDriftTotalNet / mdMoveCounter;
-            energyDriftTotalAbs += abs(energyChange);
-            double energyDriftAverageAbs = energyDriftTotalAbs / mdMoveCounter;
+            energyDriftNet += energyChange;
+            energyDriftAbs += abs(energyChange);
+            double energyDriftAverageNet = energyDriftNet / mdMoveCounter;
+            double energyDriftAverageAbs = energyDriftAbs / mdMoveCounter;
             logger.fine(format(" Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
                     energyDriftAverageNet, energyDriftAverageAbs));
 
@@ -224,14 +229,10 @@ public class MDMove implements MCMove {
     }
 
     /**
-     * <p>getMDTime.</p>
+     * Get the total energy change for the current move.
      *
-     * @return a long.
+     * @return Total energy change.
      */
-    public long getMDTime() {
-        return molecularDynamics.getMDTime();
-    }
-
     public double getEnergyChange() {
         return energyChange;
     }

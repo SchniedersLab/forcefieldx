@@ -35,66 +35,59 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms.thermostats;
+package ffx.algorithms.osrw;
 
-import ffx.numerics.Potential.VARIABLE_TYPE;
+import java.io.BufferedReader;
+import java.io.Reader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.String.format;
 
 /**
- * The Adiabatic thermostat is for NVE simulations and does not alter particle
- * velocities.
- *
- * @author Michael J. Schnieders
- * @since 1.0
+ * Read in the current value of Lambda, its velocity and the number of
+ * counts.
  */
-public class Adiabatic extends Thermostat {
+class TTOSRWLambdaReader extends BufferedReader {
+
+    private static final Logger logger = Logger.getLogger(TTOSRWLambdaReader.class.getName());
 
     /**
-     * <p>
-     * Constructor for Adiabatic.</p>
+     * Private reference to the TTOSRW instance.
+     */
+    private TransitionTemperedOSRW transitionTemperedOSRW;
+
+    /**
+     * Constructor.
      *
-     * @param n    Number of degrees of freedom.
-     * @param x    Atomic coordinates.
-     * @param v    Velocities.
-     * @param mass Mass of each degrees of freedom.
-     * @param type the VARIABLE_TYPE of each variable.
+     * @param transitionTemperedOSRW The parent TTOSRW instance.
+     * @param reader                 The Reader to use.
      */
-    public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type) {
-        super(n, x, v, mass, type, 1.0);
-        this.name = ThermostatEnum.ADIABATIC;
+    TTOSRWLambdaReader(TransitionTemperedOSRW transitionTemperedOSRW, Reader reader) {
+        super(reader);
+        this.transitionTemperedOSRW = transitionTemperedOSRW;
     }
 
     /**
-     * {@inheritDoc}
+     * Read the Lambda restart file.
+     *
+     * @param resetEnergyCount Flag to indicate if the energy count should be read in.
      */
-    @Override
-    public String toString() {
-        return " Adiabatic thermostat";
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No half-step velocity modifications are made.
-     */
-    @Override
-    public void halfStep(double dt) {
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No full-step velocity modifications are made.
-     */
-    @Override
-    public void fullStep(double dt) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setTargetTemperature(double t) {
-        targetTemperature = t;
-        kT = t * kB;
+    void readLambdaFile(boolean resetEnergyCount) {
+        try {
+            transitionTemperedOSRW.lambda = Double.parseDouble(readLine().split(" +")[1]);
+            transitionTemperedOSRW.halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
+            transitionTemperedOSRW.setLambda(transitionTemperedOSRW.lambda);
+        } catch (Exception e) {
+            String message = " Invalid OSRW Lambda file.";
+            logger.log(Level.SEVERE, message, e);
+        }
+        if (!resetEnergyCount) {
+            try {
+                transitionTemperedOSRW.energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
+            } catch (Exception e) {
+                String message = format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString());
+                logger.log(Level.WARNING, message);
+            }
+        }
     }
 }

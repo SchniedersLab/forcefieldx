@@ -70,7 +70,7 @@ public abstract class Thermostat {
         try {
             return ThermostatEnum.valueOf(str.toUpperCase());
         } catch (Exception e) {
-            logger.info(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
+            logger.info(format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
             return ThermostatEnum.BERENDSEN;
         }
     }
@@ -95,11 +95,11 @@ public abstract class Thermostat {
     /**
      * The target temperature that this thermostat should maintain.
      */
-    protected double targetTemperature;
+    double targetTemperature;
     /**
      * The current temperature of the degrees of freedom.
      */
-    protected double currentTemperature;
+    double currentTemperature;
     /**
      * The value of kT in kcal/mol at the target temperature.
      */
@@ -107,7 +107,7 @@ public abstract class Thermostat {
     /**
      * The current kinetic energy of the system.
      */
-    protected double currentKineticEnergy;
+    private double currentKineticEnergy;
     /**
      * Number of variables.
      */
@@ -117,43 +117,39 @@ public abstract class Thermostat {
      * variables. For example, removing translational motion removes 3 degrees
      * of freedom.
      */
-    protected int dof;
+    int dof;
     /**
      * Current values of variables.
      */
-    protected double x[];
+    protected double[] x;
     /**
      * Current velocity of the variables.
      */
-    protected double v[];
+    protected double[] v;
     /**
      * Mass for each variable.
      */
-    protected double mass[];
+    protected double[] mass;
     /**
      * The type of each variable.
      */
-    protected VARIABLE_TYPE type[];
-    /**
-     * The total mass of the system.
-     */
-    protected double totalMass;
+    protected VARIABLE_TYPE[] type;
     /**
      * The center of mass coordinates.
      */
-    protected final double centerOfMass[] = new double[3];
+    private final double[] centerOfMass = new double[3];
     /**
      * The linear momentum.
      */
-    protected final double linearMomentum[] = new double[3];
+    private final double[] linearMomentum = new double[3];
     /**
      * The angular momentum.
      */
-    protected final double angularMomentum[] = new double[3];
+    private final double[] angularMomentum = new double[3];
     /**
      * Flag to indicate that center of mass motion should be removed.
      */
-    protected boolean removeCenterOfMassMotion;
+    private boolean removeCenterOfMassMotion;
     /**
      * The random number generator that the Thermostat will use to initialize velocities.
      */
@@ -161,24 +157,24 @@ public abstract class Thermostat {
     /**
      * Reduce logging.
      */
-    protected boolean quiet = false;
+    private boolean quiet = false;
 
     /**
      * <p>
      * Constructor for Thermostat.</p>
      *
-     * @param nVariables        a int.
-     * @param x                 an array of double.
-     * @param v                 an array of double.
-     * @param mass              an array of double.
+     * @param n                 Number of degrees of freedom.
+     * @param x                 Atomic coordinates.
+     * @param v                 Velocities.
+     * @param mass              Mass of each degrees of freedom.
      * @param type              the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      */
-    public Thermostat(int nVariables, double x[], double v[], double mass[],
-                      VARIABLE_TYPE type[], double targetTemperature) {
-        assert (nVariables > 3);
+    public Thermostat(int n, double[] x, double[] v, double[] mass,
+                      VARIABLE_TYPE[] type, double targetTemperature) {
+        assert (n > 3);
 
-        this.nVariables = nVariables;
+        this.nVariables = n;
         this.x = x;
         this.v = v;
         this.mass = mass;
@@ -189,32 +185,28 @@ public abstract class Thermostat {
         assert (type.length == nVariables);
         random = new Random();
         setTargetTemperature(targetTemperature);
-        /**
-         * Set the degrees of freedom to nVariables - 3 because we will remove
-         * center of mass motion.
-         */
+
+        // Set the degrees of freedom to nVariables - 3 because we will remove center of mass motion.
         removeCenterOfMassMotion = true;
         dof = nVariables - 3;
 
-        /**
-         * Update the kinetic energy.
-         */
+        // Update the kinetic energy.
         kineticEnergy();
     }
 
     /**
      * To allow chemical perturbations during MD.
      *
-     * @param nVariables               a int.
-     * @param x                        an array of {@link double} objects.
-     * @param v                        an array of {@link double} objects.
-     * @param mass                     an array of {@link double} objects.
-     * @param type                     an array of {@link ffx.numerics.Potential.VARIABLE_TYPE} objects.
+     * @param n                        Number of degrees of freedom.
+     * @param x                        Atomic coordinates.
+     * @param v                        Velocities.
+     * @param mass                     Mass of each degrees of freedom.
+     * @param type                     the VARIABLE_TYPE of each variable.
      * @param removeCenterOfMassMotion a boolean.
      */
-    public void setNumberOfVariables(int nVariables, double x[], double v[],
-                                     double mass[], VARIABLE_TYPE type[], boolean removeCenterOfMassMotion) {
-        this.nVariables = nVariables;
+    public void setNumberOfVariables(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
+                                     boolean removeCenterOfMassMotion) {
+        this.nVariables = n;
         this.x = x;
         this.v = v;
         this.mass = mass;
@@ -331,9 +323,7 @@ public abstract class Thermostat {
      * @since 1.0
      */
     public void setTargetTemperature(double t) {
-        /**
-         * Obey the Third Law of Thermodynamics.
-         */
+        // Obey the Third Law of Thermodynamics.
         assert (t > 0.0);
         targetTemperature = t;
         kT = t * kB;
@@ -347,7 +337,7 @@ public abstract class Thermostat {
      * @return three velocity components.
      */
     public double[] maxwellIndividual(double mass) {
-        double vv[] = new double[3];
+        double[] vv = new double[3];
         for (int i = 0; i < 3; i++) {
             vv[i] = random.nextGaussian() * sqrt(kB * targetTemperature / mass);
         }
@@ -371,34 +361,27 @@ public abstract class Thermostat {
             v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
         }
 
-        /**
-         * Remove the center of mass motion.
-         */
-
+        // Remove the center of mass motion.
         if (removeCenterOfMassMotion) {
             centerOfMassMotion(true, !quiet);
         }
 
-        /**
-         * Find the current kinetic energy and temperature.
-         */
+        // Find the current kinetic energy and temperature.
         kineticEnergy();
 
-        /**
-         * The current temperature will deviate slightly from the target
-         * temperature if the center of mass motion was removed and/or due to
-         * finite system size.
-         *
-         * Scale the velocities to enforce the target temperature.
+        /*
+          The current temperature will deviate slightly from the target
+          temperature if the center of mass motion was removed and/or due to
+          finite system size.
+
+          Scale the velocities to enforce the target temperature.
          */
         double scale = sqrt(targetTemperature / currentTemperature);
         for (int i = 0; i < nVariables; i++) {
             v[i] *= scale;
         }
 
-        /**
-         * Update the kinetic energy and current temperature.
-         */
+        // Update the kinetic energy and current temperature.
         kineticEnergy();
 
         log(Level.INFO);
@@ -419,7 +402,7 @@ public abstract class Thermostat {
      * @param print  If true, the center of mass and momenta will be printed.
      */
     public void centerOfMassMotion(boolean remove, boolean print) {
-        totalMass = 0.0;
+        double totalMass = 0.0;
         for (int i = 0; i < 3; i++) {
             centerOfMass[i] = 0.0;
             linearMomentum[i] = 0.0;
@@ -514,7 +497,7 @@ public abstract class Thermostat {
             yz += yi * zi * m;
         }
 
-        /**
+        /*
          * RealMatrix inertia = new Array2DRowRealMatrix(3, 3);
          * inertia.setEntry(0, 0, yy + zz); inertia.setEntry(1, 0, -xy);
          * inertia.setEntry(2, 0, -xz); inertia.setEntry(0, 1, -xy);
@@ -531,9 +514,8 @@ public abstract class Thermostat {
          * angularMomentum[0] * xz + angularMomentum[1] * yz +
          * angularMomentum[2] * zz;
          */
-        /**
-         * Remove center of mass translational momentum.
-         */
+
+        // Remove center of mass translational momentum.
         index = 0;
         while (index < nVariables) {
             if (type[index] == VARIABLE_TYPE.OTHER) {
@@ -545,11 +527,11 @@ public abstract class Thermostat {
             v[index++] -= linearMomentum[2];
         }
 
-        /**
+        /*
          * Only remove center of mass rotational momentum for non-periodic
          * systems.
          */
-        /**
+        /*
          * if (false) { index = 0; while (index < nVariables) { if (type[index]
          * == VARIABLE_TYPE.OTHER) { index++; continue; } double xi = x[index++]
          * - centerOfMass[0]; double yi = x[index++] - centerOfMass[1]; double

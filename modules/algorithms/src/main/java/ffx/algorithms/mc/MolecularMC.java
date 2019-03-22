@@ -38,6 +38,7 @@
 package ffx.algorithms.mc;
 
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import ffx.numerics.Potential;
 import ffx.potential.AssemblyState;
@@ -56,9 +57,25 @@ import ffx.potential.MolecularAssembly;
 public class MolecularMC extends BoltzmannMC {
 
     private static final Logger logger = Logger.getLogger(MolecularMC.class.getName());
-    private final MolecularAssembly mola;
+
+    /**
+     * The MolecularAssembly to operate on.
+     */
+    private final MolecularAssembly molecularAssembly;
+
+    /**
+     * The potential energy for the molecular assembly.
+     */
     private final Potential potential;
+
+    /**
+     * Atomic coordinates.
+     */
     private double[] x;
+
+    /**
+     * Initial state of the MolecularAssembly.
+     */
     private AssemblyState initialState;
 
     /**
@@ -66,21 +83,21 @@ public class MolecularMC extends BoltzmannMC {
      * PotentialEnergy. Fancy footwork will be required if we ever need to use
      * multiple assemblies at once.
      *
-     * @param ma MolecularAssembly to operate on.
+     * @param molecularAssembly MolecularAssembly to operate on.
      */
-    public MolecularMC(MolecularAssembly ma) {
-        this(ma, ma.getPotentialEnergy());
+    public MolecularMC(MolecularAssembly molecularAssembly) {
+        this(molecularAssembly, molecularAssembly.getPotentialEnergy());
     }
 
     /**
      * Constructs a DefaultMC instance with a molecular assembly and a specific
      * Potential.
      *
-     * @param ma        MolecularAssembly to operate on.
-     * @param potential a {@link ffx.numerics.Potential} object.
+     * @param molecularAssembly MolecularAssembly to operate on.
+     * @param potential         a {@link ffx.numerics.Potential} object.
      */
-    public MolecularMC(MolecularAssembly ma, Potential potential) {
-        mola = ma;
+    public MolecularMC(MolecularAssembly molecularAssembly, Potential potential) {
+        this.molecularAssembly = molecularAssembly;
         this.potential = potential;
     }
 
@@ -90,7 +107,7 @@ public class MolecularMC extends BoltzmannMC {
      * @return MolecularAssembly
      */
     public MolecularAssembly getMolecularAssembly() {
-        return mola;
+        return molecularAssembly;
     }
 
     /**
@@ -138,8 +155,8 @@ public class MolecularMC extends BoltzmannMC {
     public String toString() {
         StringBuilder sb = new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");
         sb.append(getTemperature());
-        sb.append(String.format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
-        sb.append(mola.toString()).append("\nPotential: ").append(potential.toString());
+        sb.append(format("\ne1: %10.6f   e2: %10.6f\nMolecular Assembly", getE1(), getE2()));
+        sb.append(molecularAssembly.toString()).append("\nPotential: ").append(potential.toString());
         return sb.toString();
     }
 
@@ -148,6 +165,6 @@ public class MolecularMC extends BoltzmannMC {
      */
     @Override
     protected void storeState() {
-        initialState = new AssemblyState(mola);
+        initialState = new AssemblyState(molecularAssembly);
     }
 }

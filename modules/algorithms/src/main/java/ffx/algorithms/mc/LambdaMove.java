@@ -52,26 +52,44 @@ public class LambdaMove implements MCMove {
 
     private static final Logger logger = Logger.getLogger(LambdaMove.class.getName());
 
-    private double currentLambda = 0.0;
+    /**
+     * Current value of lambda, which always refreshed from the OSRW instance.
+     */
+    private double currentLambda;
+
+    /**
+     * Apply the Lambda move to an OSRW instance.
+     */
     private final AbstractOSRW osrw;
+
+    /**
+     * Random number generator.
+     */
     private Random random;
+
+    /**
+     * Lambda move standard deviation.
+     */
     private double stdDev = 0.1;
 
     /**
      * <p>Constructor for LambdaMove.</p>
      *
-     * @param currentLambda a double.
-     * @param osrw          a {@link AbstractOSRW} object.
+     * @param osrw a {@link AbstractOSRW} object.
      */
-    public LambdaMove(double currentLambda, AbstractOSRW osrw) {
+    public LambdaMove(AbstractOSRW osrw) {
         this.osrw = osrw;
-        currentLambda = osrw.getLambda();
         random = new Random();
     }
 
-    public LambdaMove(int randomSeed, double currentLambda, AbstractOSRW osrw) {
+    /**
+     * <p>Constructor for LambdaMove.</p>
+     *
+     * @param randomSeed Random seed to use.
+     * @param osrw       OSRW instance.
+     */
+    public LambdaMove(int randomSeed, AbstractOSRW osrw) {
         this.osrw = osrw;
-        currentLambda = osrw.getLambda();
         random = new Random(randomSeed);
     }
 
@@ -93,7 +111,6 @@ public class LambdaMove implements MCMove {
 
         // Draw a trial move from the distribution.
         double dL = random.nextGaussian() * stdDev;
-
         double newLambda = currentLambda + dL;
 
         // Map values into the range 0.0 .. 1.0 using mirror boundary conditions.
@@ -102,6 +119,8 @@ public class LambdaMove implements MCMove {
         } else if (newLambda < 0.0) {
             newLambda = abs(newLambda);
         }
+
+        // Update the OSRW instance.
         osrw.setLambda(newLambda);
     }
 
@@ -113,6 +132,11 @@ public class LambdaMove implements MCMove {
         osrw.setLambda(currentLambda);
     }
 
+    /**
+     * Get the Lambda move standard deviation.
+     *
+     * @return The standard deviation of the lambda move.
+     */
     public double getStandardDeviation() {
         return stdDev;
     }

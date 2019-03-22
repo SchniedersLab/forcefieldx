@@ -37,6 +37,8 @@
  */
 package ffx.algorithms.mc;
 
+import static java.lang.System.arraycopy;
+
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 import ffx.potential.MolecularAssembly;
@@ -76,7 +78,7 @@ public class CoordShakeMove implements MCMove {
     public CoordShakeMove(Atom[] atoms) {
         int nAtoms = atoms.length;
         this.atoms = new Atom[nAtoms];
-        System.arraycopy(atoms, 0, this.atoms, 0, nAtoms);
+        arraycopy(atoms, 0, this.atoms, 0, nAtoms);
         originalCoords = ResidueState.storeAtomicCoordinates(this.atoms);
         dist = new NormalDistribution(0, sigma);
     }
@@ -99,8 +101,8 @@ public class CoordShakeMove implements MCMove {
     public void setAtoms(Atom[] atoms) {
         int nAtoms = atoms.length;
         this.atoms = new Atom[nAtoms];
-        System.arraycopy(atoms, 0, this.atoms, 0, nAtoms);
-        originalCoords = ResidueState.storeAtomicCoordinates(this.atoms);
+        arraycopy(atoms, 0, this.atoms, 0, nAtoms);
+        originalCoords = ResidueState.storeAtomicCoordinates(atoms);
     }
 
     /**
@@ -108,18 +110,15 @@ public class CoordShakeMove implements MCMove {
      */
     @Override
     public void move() {
-        originalCoords = ResidueState.storeAtomicCoordinates(this.atoms);
-        int nAtoms = atoms.length;
-
+        originalCoords = ResidueState.storeAtomicCoordinates(atoms);
         // Perform the shake.
-        // At some point, I really should change this to a move in polar coordinates.
-        for (int i = 0; i < nAtoms; i++) {
+        for (Atom atom : atoms) {
             double[] xyz = new double[3];
-            atoms[i].getXYZ(xyz);
+            atom.getXYZ(xyz);
             for (int j = 0; j < 3; j++) {
                 xyz[j] += dist.sample();
             }
-            atoms[i].setXYZ(xyz);
+            atom.setXYZ(xyz);
         }
     }
 
@@ -136,6 +135,6 @@ public class CoordShakeMove implements MCMove {
      */
     @Override
     public String toString() {
-        return String.format("Coordinate randomization: normal distribution with sigma %10.6f", sigma);
+        return String.format(" Coordinate randomization: normal distribution with sigma %10.6f.", sigma);
     }
 }
