@@ -1143,7 +1143,7 @@
         <enforcer.version>3.0.0-M2</enforcer.version>
         <jarsigner.version>3.0.0</jarsigner.version>
         <release.version>2.5.3</release.version>
-        <scm.version>1.11.1</scm.version>
+        <scm.version>1.11.2</scm.version>
         <!-- MojoHaus Plugins -->
         <jdepend.version>2.0</jdepend.version>
         <appassembler.version>1.10</appassembler.version>
