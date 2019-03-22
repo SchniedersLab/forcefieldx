@@ -2,27 +2,19 @@ package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
+import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
-import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.ResidueEnumerations
-import ffx.potential.bonded.ResidueState
-import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.parsers.PDBFilter
-import org.apache.commons.io.FilenameUtils
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
-
-import java.lang.reflect.Array
-import java.util.stream.Collectors
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -157,7 +149,7 @@ class ManyBody extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         return potentialEnergy == null ? Collections.emptyList() : Collections.singletonList(potentialEnergy);
     }
 

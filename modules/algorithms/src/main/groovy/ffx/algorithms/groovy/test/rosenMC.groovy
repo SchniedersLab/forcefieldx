@@ -43,7 +43,7 @@ import org.apache.commons.io.FilenameUtils
 import groovy.cli.picocli.CliBuilder
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.MonteCarloListener
+import ffx.algorithms.mc.MonteCarloListener
 import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.mc.RosenbluthCBMC

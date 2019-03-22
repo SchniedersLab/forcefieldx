@@ -13,8 +13,8 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
 import ffx.potential.ForceFieldEnergyOpenMM
+import ffx.potential.MolecularAssembly
 import ffx.potential.parameters.ForceField
 
 import picocli.CommandLine.Command
@@ -55,17 +55,19 @@ class Dynamics extends AlgorithmsScript {
             description = "XYZ or PDB input files.")
     private List<String> filenames
 
-    // Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field. Originally it is declared in
-    // the run method
-    public Potential potential = null;
-    public MolecularDynamics molDyn = null;
+    /**
+     * Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field.
+     * Originally it is declared in the run method
+     */
+    public Potential potential = null
+    public MolecularDynamics molDyn = null
 
-    public MolecularDynamics getMolecularDynamics() {
-        return molDyn;
+    MolecularDynamics getMolecularDynamics() {
+        return molDyn
     }
 
-    public Potential getPotentialObject() {
-        return potential;
+    Potential getPotentialObject() {
+        return potential
     }
 
     @Override
@@ -125,7 +127,7 @@ class Dynamics extends AlgorithmsScript {
             }
 
             molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
-            
+
             molDyn.dynamic(dynamics.steps, dynamics.dt,
                     dynamics.report, dynamics.write, dynamics.temp, true, dyn)
 
@@ -160,7 +162,7 @@ class Dynamics extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
     }
 }

@@ -3,10 +3,10 @@ package ffx.algorithms.groovy
 import org.apache.commons.io.FilenameUtils
 import static org.apache.commons.math3.util.FastMath.abs
 
-import ffx.algorithms.CrystalMinimize
-import ffx.algorithms.Minimize
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
+import ffx.algorithms.optimize.CrystalMinimize
+import ffx.algorithms.optimize.Minimize
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -149,7 +149,7 @@ class CrystalMin extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         return xtalEnergy == null ? Collections.emptyList() : Collections.singletonList(xtalEnergy);
     }
 }

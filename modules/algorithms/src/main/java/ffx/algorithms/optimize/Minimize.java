@@ -35,16 +35,18 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.optimize;
 
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Terminatable;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
-import ffx.numerics.optimization.LineSearch.LineSearchResult;
+import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -59,34 +61,74 @@ import ffx.potential.MolecularAssembly;
 public class Minimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(Minimize.class.getName());
-    private final int n;
-    private final double[] x;
-    private final double[] grad;
-    private final double[] scaling;
-    private final MolecularAssembly molecularAssembly;
-    private final Potential potential;
-    private final AlgorithmListener algorithmListener;
-    private boolean done = false;
-    private boolean terminate = false;
-    private long time;
-    private double energy;
-    private double grms;
-    private int status;
-    private int nSteps;
+
+    /**
+     * The MolecularAssembly being operated on.
+     */
+    protected final MolecularAssembly molecularAssembly;
+    /**
+     * The potential energy to optimize.
+     */
+    protected final Potential potential;
+    /**
+     * The AlgorithmListener to update the UI.
+     */
+    protected final AlgorithmListener algorithmListener;
+    /**
+     * Number of variables.
+     */
+    protected final int n;
+    /**
+     * Current value of each variable.
+     */
+    protected final double[] x;
+    /**
+     * The gradient.
+     */
+    protected final double[] grad;
+    /**
+     * Scaling applied to each variable.
+     */
+    protected final double[] scaling;
+    /**
+     * A flag to indicate the algorithm is done.
+     */
+    protected boolean done = false;
+    /**
+     * A flag to indicate the algorithm should be terminated.
+     */
+    protected boolean terminate = false;
+    /**
+     * Minimization time in nanoseconds.
+     */
+    protected long time;
+    /**
+     * The final potential energy.
+     */
+    protected double energy;
+    /**
+     * The final RMS gradient.
+     */
+    protected double rmsGradient;
+    /**
+     * The return status of the optimization.
+     */
+    protected int status;
+    /**
+     * The number of optimization steps taken.
+     */
+    protected int nSteps;
 
     /**
      * <p>
      * Constructor for Minimize.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potential         a {@link ffx.numerics.Potential} object.
-     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     *                          object.
+     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public Minimize(MolecularAssembly molecularAssembly, Potential potential,
                     AlgorithmListener algorithmListener) {
-        assert (molecularAssembly != null);
         this.molecularAssembly = molecularAssembly;
         this.algorithmListener = algorithmListener;
         this.potential = potential;
@@ -94,20 +136,17 @@ public class Minimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
-        Arrays.fill(scaling, 12.0);
+        fill(scaling, 12.0);
     }
 
     /**
      * <p>
      * Constructor for Minimize.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
-     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     *                          object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public Minimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener) {
-        assert (molecularAssembly != null);
         this.molecularAssembly = molecularAssembly;
         this.algorithmListener = algorithmListener;
         if (molecularAssembly.getPotentialEnergy() == null) {
@@ -118,51 +157,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
-        Arrays.fill(scaling, 12.0);
-    }
-
-    /**
-     * <p>getGRMS.</p>
-     *
-     * @return a double.
-     */
-    public double getGRMS() {
-        return grms;
-    }
-
-    /**
-     * <p>Getter for the field <code>status</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getStatus() {
-        return status;
-    }
-
-    /**
-     * <p>Getter for the field <code>energy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getEnergy() {
-        return energy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void terminate() {
-        terminate = true;
-        while (!done) {
-            synchronized (this) {
-                try {
-                    wait(1);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
-                }
-            }
-        }
+        fill(scaling, 12.0);
     }
 
     /**
@@ -212,9 +207,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         potential.getCoordinates(x);
         potential.setScaling(scaling);
 
-        /**
-         * Scale coordinates.
-         */
+        // Scale coordinates.
         for (int i = 0; i < n; i++) {
             x[i] *= scaling[i];
         }
@@ -231,7 +224,7 @@ public class Minimize implements OptimizationListener, Terminatable {
 
         switch (status) {
             case 0:
-                logger.info(format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+                logger.info(format("\n Optimization achieved convergence criteria: %8.5f\n", rmsGradient));
                 break;
             case 1:
                 logger.info(format("\n Optimization terminated at step %d.\n", nSteps));
@@ -245,6 +238,50 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
+     * <p>getRMSGradient.</p>
+     *
+     * @return a double.
+     */
+    public double getRMSGradient() {
+        return rmsGradient;
+    }
+
+    /**
+     * <p>Getter for the field <code>status</code>.</p>
+     *
+     * @return a int.
+     */
+    public int getStatus() {
+        return status;
+    }
+
+    /**
+     * <p>Getter for the field <code>energy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getEnergy() {
+        return energy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void terminate() {
+        terminate = true;
+        while (!done) {
+            synchronized (this) {
+                try {
+                    wait(1);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
+                }
+            }
+        }
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Implement the OptimizationListener interface.
@@ -252,34 +289,36 @@ public class Minimize implements OptimizationListener, Terminatable {
      * @since 1.0
      */
     @Override
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df,
-                                      double angle, LineSearchResult info) {
+    public boolean optimizationUpdate(int iteration, int functionEvaluations, double rmsGradient,
+                                      double rmsCoordinateChange, double energy, double energyChange,
+                                      double angle, LineSearch.LineSearchResult lineSearchResult) {
         long currentTime = System.nanoTime();
         Double seconds = (currentTime - time) * 1.0e-9;
         time = currentTime;
-        this.grms = grms;
-        this.nSteps = iter;
-        this.energy = f;
+        this.rmsGradient = rmsGradient;
+        this.nSteps = iteration;
+        this.energy = energy;
 
-        if (iter == 0) {
+        if (iteration == 0) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
         }
-        if (info == null) {
-            logger.info(format("%6d%13.4f%11.4f", iter, f, grms));
+        if (lineSearchResult == null) {
+            logger.info(format("%6d%13.4f%11.4f", iteration, energy, rmsGradient));
         } else {
-            if (info == LineSearchResult.Success) {
+            if (lineSearchResult == LineSearch.LineSearchResult.Success) {
                 logger.info(format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
-                        iter, f, grms, df, xrms, angle, nfun, seconds));
+                        iteration, energy, rmsGradient, energyChange, rmsCoordinateChange, angle, functionEvaluations, seconds));
             } else {
                 logger.info(format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
-                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
+                        iteration, energy, rmsGradient, energyChange, rmsCoordinateChange, angle, functionEvaluations, lineSearchResult.toString()));
             }
         }
         // Update the listener and check for an termination request.
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
         }
+
         if (terminate) {
             logger.info(" The optimization recieved a termination request.");
             // Tell the L-BFGS optimizer to terminate.
@@ -288,41 +327,5 @@ public class Minimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /**
-     * Implement the OptimizationListener interface.
-     *
-     * @param iter Number of iterations so far.
-     * @param nfun Number of function evaluations so far.
-     * @param grms Gradient RMS at current solution.
-     * @param xrms Coordinate change RMS at current solution.
-     * @param f    Function value at current solution.
-     * @param df   Change in the function value compared to the previous solution.
-     * @return a boolean.
-     * @since 1.0
-     */
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df) {
-        long currentTime = System.nanoTime();
-        Double seconds = (currentTime - time) * 1.0e-9;
-        time = currentTime;
-        this.grms = grms;
-        this.nSteps = iter;
-        this.energy = f;
 
-        if (iter == 1) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Evals     Time\n");
-        }
-        logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%7d %8.3f",
-                iter, f, grms, df, xrms, nfun, seconds));
-        // Update the listener and check for a termination request.
-        if (algorithmListener != null) {
-            algorithmListener.algorithmUpdate(molecularAssembly);
-        }
-        if (terminate) {
-            logger.info(" The optimization recieved a termination request.");
-            // Tell the optimizer to terminate.
-            return false;
-        }
-        return true;
-    }
 }

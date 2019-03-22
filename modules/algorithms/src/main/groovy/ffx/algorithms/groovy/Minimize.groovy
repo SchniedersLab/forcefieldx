@@ -4,9 +4,9 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.ParallelTeam
 
-import ffx.algorithms.Minimize
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
+import ffx.algorithms.optimize.Minimize
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface

@@ -35,22 +35,26 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.optimize;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.ToDoubleFunction;
 import java.util.logging.Level;
@@ -58,28 +62,41 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import edu.rit.pj.*;
-import ffx.potential.*;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.commons.math3.util.FastMath;
-
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.MultipleParallelException;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.WorkerIntegerForLoop;
+import edu.rit.pj.WorkerRegion;
+import edu.rit.pj.WorkerTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Terminatable;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.mc.MCMove;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
+import ffx.potential.DualTopologyEnergy;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.ForceFieldEnergyOpenMM;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.QuadTopologyEnergy;
+import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
@@ -93,11 +110,8 @@ import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.ObjectPair;
-
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-
-// FastUtil libraries for large collections.
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -172,7 +186,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Self-energy of each residue for each rotamer. [residue][rotamer]
      */
-    protected double selfEnergy[][];
+    protected double[][] selfEnergy;
     /**
      * Two-Body cutoff distance.
      */
@@ -183,7 +197,7 @@ public class RotamerOptimization implements Terminatable {
      * Two-body energies for each pair of residues and pair of rotamers.
      * [residue1][rotamer1][residue2][rotamer2]
      */
-    protected double twoBodyEnergy[][][][];
+    protected double[][][][] twoBodyEnergy;
     /**
      * Flag to control use of 3-body terms.
      */
@@ -196,7 +210,7 @@ public class RotamerOptimization implements Terminatable {
      * Trimer-energies for each trimer of rotamers.
      * [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
      */
-    protected double threeBodyEnergy[][][][][][];
+    protected double[][][][][][] threeBodyEnergy;
     /**
      * Interaction partners of a Residue that come after it.
      */
@@ -220,16 +234,16 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Eliminated rotamers. [residue][rotamer]
      */
-    protected boolean eliminatedSingles[][];
+    protected boolean[][] eliminatedSingles;
     /**
      * *
      * Pruned rotamers. Only for JUnit testing purposes.
      */
-    protected boolean onlyPrunedSingles[][];
+    protected boolean[][] onlyPrunedSingles;
     /**
      * Pruned rotamer pairs. Only for JUnit testing purposes.
      */
-    protected boolean onlyPrunedPairs[][][][];
+    protected boolean[][][][] onlyPrunedPairs;
     /**
      * RotamerLibrary instance.
      */
@@ -266,7 +280,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * In sliding window, whether to revert an unfavorable change.
      */
-    private boolean revert = true;
+    private boolean revert;
     /**
      * The distance that the distance matrix checks for.
      */
@@ -325,7 +339,7 @@ public class RotamerOptimization implements Terminatable {
      * <p>
      * [residue1][rotamer1][residue2][rotamer2]
      */
-    private double distanceMatrix[][][][];
+    private double[][][][] distanceMatrix;
     /**
      * Flag to load the distance matrix as needed; if false, matrix is prefilled
      * at the beginning of rotamer optimization.
@@ -363,7 +377,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * An array of atomic coordinates (length 3 * the number of atoms).
      */
-    private double x[] = null;
+    private double[] x = null;
     /**
      * A flag to indicate use of the full N-Body AMOEBA potential energy during
      * the rotamer optimization.
@@ -401,7 +415,7 @@ public class RotamerOptimization implements Terminatable {
      * An array of all residues being optimized. Note that Box and Window
      * optimizations operate on subsets of this list.
      */
-    private Residue allResiduesArray[] = null;
+    private Residue[] allResiduesArray = null;
     /**
      * Number of residues being optimized.
      */
@@ -409,7 +423,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * The array of optimum rotamers for each residue.
      */
-    private int optimum[];
+    private int[] optimum;
     /**
      * If true, write out an energy restart file.
      */
@@ -426,11 +440,6 @@ public class RotamerOptimization implements Terminatable {
      * ParallelTeam instance.
      */
     private ParallelTeam parallelTeam;
-    /**
-     * ParallelJava construct used for executing the various EnergyRegions.
-     * Declared as a field so as to be reused during box optimization.
-     */
-    //private final WorkerTeam energyWorkerTeam;
     /**
      * Map of self-energy values to compute.
      */
@@ -616,7 +625,6 @@ public class RotamerOptimization implements Terminatable {
      * If greater than or equal to 0, test the specified residues.
      */
     private int testTripleEnergyEliminations2 = -1;
-
     /**
      * Default value for the ommRecalculateThreshold in kcal/mol.
      */
@@ -646,15 +654,6 @@ public class RotamerOptimization implements Terminatable {
      * Writes energies to restart file.
      */
     private BufferedWriter energyWriter;
-    /**
-     * Stores eliminated residue and rotamer singles and pairs.
-     */
-    /*public List<Integer> eliminatedResidue = new ArrayList<>();
-    public List<Integer> eliminatedRotamer = new ArrayList<>();
-    public List<Integer> eliminatedResidue1 = new ArrayList<>();
-    public List<Integer> eliminatedRotamer1 = new ArrayList<>();
-    public List<Integer> eliminatedResidue2 = new ArrayList<>();
-    public List<Integer> eliminatedRotamer2 = new ArrayList<>();*/
     /**
      * Stores the number of box iterations for single and pair elimination.
      */
@@ -2073,7 +2072,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Perform the rotamer optimization using the specified algorithm.
      *
-     * @param algorithm a {@link ffx.algorithms.RotamerOptimization.Algorithm}
+     * @param algorithm a {@link RotamerOptimization.Algorithm}
      *                  object.
      * @return the lowest energy found.
      */
@@ -2283,7 +2282,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Set the optimization direction to forward or backward.
      *
-     * @param direction a {@link ffx.algorithms.RotamerOptimization.Direction}
+     * @param direction a {@link RotamerOptimization.Direction}
      *                  object.
      */
     public void setDirection(Direction direction) {
@@ -8912,7 +8911,7 @@ public class RotamerOptimization implements Terminatable {
                         // Skip for padded result.
                         if (resi >= 0 && roti >= 0) {
                             if (Double.isNaN(energy)) {
-                                logger.info(" Rotamer  eliminated: " + resi +", " + roti);
+                                logger.info(" Rotamer  eliminated: " + resi + ", " + roti);
                                 eliminateRotamer(residues, resi, roti, false);
                             }
                             setSelf(resi, roti, energy);
@@ -8974,7 +8973,7 @@ public class RotamerOptimization implements Terminatable {
         @Override
         public void run() throws Exception {
             if (!keySet.isEmpty()) {
-                execute(0, keySet.size() - 1, new TwoBodyEnergyLoop ());
+                execute(0, keySet.size() - 1, new TwoBodyEnergyLoop());
             }
         }
 
@@ -9116,7 +9115,7 @@ public class RotamerOptimization implements Terminatable {
                         // Skip for padded result.
                         if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0) {
                             if (!Double.isFinite(energy)) {
-                                logger.info(" Rotamer pair eliminated: " + resi +", " + roti +", "+ resj +", "+ rotj);
+                                logger.info(" Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
                                 eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                             }
                             set2Body(resi, roti, resj, rotj, energy);
@@ -9339,7 +9338,7 @@ public class RotamerOptimization implements Terminatable {
                         // Skip for padded result.
                         if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0 && resk >= 0 && rotk >= 0) {
                             if (!Double.isFinite(energy)) {
-                                logger.info(" Rotamer pair eliminated: " + resi +", " + roti +", "+ resj +", "+ rotj);
+                                logger.info(" Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
                                 eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                             }
                             set3Body(residues, resi, roti, resj, rotj, resk, rotk, energy);

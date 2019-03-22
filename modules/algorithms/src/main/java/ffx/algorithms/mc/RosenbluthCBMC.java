@@ -46,7 +46,6 @@ import static java.lang.String.format;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.min;
 
-import ffx.algorithms.MonteCarloListener;
 import ffx.algorithms.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;

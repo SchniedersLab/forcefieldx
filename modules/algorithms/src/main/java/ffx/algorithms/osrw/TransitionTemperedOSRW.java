@@ -61,7 +61,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 import edu.rit.mp.DoubleBuf;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.Minimize;
+import ffx.algorithms.optimize.Minimize;
 import ffx.algorithms.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;

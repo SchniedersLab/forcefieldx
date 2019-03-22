@@ -35,9 +35,6 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-
-// Solve the crystal structure prediction problem using a random search.
-
 package ffx.algorithms.groovy.test;
 
 import org.apache.commons.io.FilenameUtils
@@ -45,7 +42,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Rotation
 
 import groovy.cli.picocli.CliBuilder
 
-import ffx.algorithms.Minimize
+import ffx.algorithms.optimize.Minimize
 import ffx.crystal.Crystal
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly

@@ -35,20 +35,19 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.optimize;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Terminatable;
 import ffx.algorithms.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
-import ffx.numerics.optimization.LBFGS;
-import ffx.numerics.optimization.LineSearch.LineSearchResult;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -61,24 +60,11 @@ import ffx.potential.XtalEnergy;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class CrystalMinimize implements OptimizationListener, Terminatable {
+public class CrystalMinimize extends Minimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(CrystalMinimize.class.getName());
-    private final int n;
-    private final double[] x;
-    private final double[] grad;
-    private final double[] scaling;
-    private final MolecularAssembly molecularAssembly;
+
     private final ForceFieldEnergy forceFieldEnergy;
-    private final XtalEnergy xtalEnergy;
-    private final AlgorithmListener algorithmListener;
-    private boolean done = false;
-    private boolean terminate = false;
-    private long time;
-    private double energy;
-    private double grms;
-    private int status;
-    private int nSteps;
     private Crystal crystal;
     private Crystal unitCell;
 
@@ -86,26 +72,17 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * <p>
      * Constructor for Minimize.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param xtalEnergy        a {@link ffx.potential.XtalEnergy} object.
-     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     *                          object.
+     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public CrystalMinimize(MolecularAssembly molecularAssembly, XtalEnergy xtalEnergy,
                            AlgorithmListener algorithmListener) {
-        assert (molecularAssembly != null);
-        this.molecularAssembly = molecularAssembly;
-        this.algorithmListener = algorithmListener;
-        this.xtalEnergy = xtalEnergy;
-        n = xtalEnergy.getNumberOfVariables();
-        x = new double[n];
-        grad = new double[n];
+        super(molecularAssembly, xtalEnergy, algorithmListener);
         crystal = molecularAssembly.getCrystal();
         unitCell = crystal.getUnitCell();
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
 
-        scaling = new double[n];
         for (int i = 0; i < n - 6; i += 3) {
             scaling[i] = 12.0 * crystal.a;
             scaling[i + 1] = 12.0 * crystal.b;
@@ -117,129 +94,6 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         scaling[n - 3] = 0.02 * sqrt(crystal.volume);
         scaling[n - 2] = 0.02 * sqrt(crystal.volume);
         scaling[n - 1] = 0.02 * sqrt(crystal.volume);
-    }
-
-    /**
-     * <p>
-     * Constructor for Minimize.</p>
-     *
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
-     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     *                          object.
-     */
-    public CrystalMinimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener) {
-        assert (molecularAssembly != null);
-        this.molecularAssembly = molecularAssembly;
-        this.algorithmListener = algorithmListener;
-        if (molecularAssembly.getPotentialEnergy() == null) {
-            molecularAssembly.setPotential(ForceFieldEnergy.energyFactory(molecularAssembly));
-        }
-        forceFieldEnergy = molecularAssembly.getPotentialEnergy();
-        xtalEnergy = new XtalEnergy(forceFieldEnergy, molecularAssembly);
-
-        n = xtalEnergy.getNumberOfVariables();
-        x = new double[n];
-        grad = new double[n];
-        crystal = molecularAssembly.getCrystal();
-        scaling = new double[n];
-        for (int i = 0; i < n - 6; i += 3) {
-            scaling[i] = 12.0 * crystal.a;
-            scaling[i + 1] = 12.0 * crystal.b;
-            scaling[i + 2] = 12.0 * crystal.c;
-        }
-        scaling[n - 6] = 4.0 * sqrt(crystal.a);
-        scaling[n - 5] = 4.0 * sqrt(crystal.b);
-        scaling[n - 4] = 4.0 * sqrt(crystal.c);
-        scaling[n - 3] = 0.02 * sqrt(crystal.volume);
-        scaling[n - 2] = 0.02 * sqrt(crystal.volume);
-        scaling[n - 1] = 0.02 * sqrt(crystal.volume);
-    }
-
-    /**
-     * <p>setFractionalCoordinateMode.</p>
-     *
-     * @param fractionalMode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
-     */
-    public void setFractionalCoordinateMode(FractionalMode fractionalMode) {
-        molecularAssembly.setFractionalMode(fractionalMode);
-    }
-
-    /**
-     * <p>getGRMS.</p>
-     *
-     * @return a double.
-     */
-    public double getGRMS() {
-        return grms;
-    }
-
-    /**
-     * <p>Getter for the field <code>status</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getStatus() {
-        return status;
-    }
-
-    /**
-     * <p>Getter for the field <code>energy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getEnergy() {
-        return energy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void terminate() {
-        terminate = true;
-        while (!done) {
-            synchronized (this) {
-                try {
-                    wait(1);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
-                }
-            }
-        }
-    }
-
-    /**
-     * <p>
-     * minimize</p>
-     *
-     * @return a {@link ffx.numerics.Potential} object.
-     */
-    public Potential minimize() {
-        return minimize(1.0);
-    }
-
-    /**
-     * <p>
-     * minimize</p>
-     *
-     * @param eps The minimization convergence criteria.
-     * @return a {@link ffx.numerics.Potential} object.
-     */
-    public Potential minimize(double eps) {
-        return minimize(7, eps, Integer.MAX_VALUE);
-    }
-
-    /**
-     * <p>
-     * minimize</p>
-     *
-     * @param eps           The minimization convergence criteria.
-     * @param maxIterations The maximum number of minimization steps.
-     * @return a {@link ffx.numerics.Potential} object.
-     */
-    public Potential minimize(double eps, int maxIterations) {
-        return minimize(7, eps, maxIterations);
     }
 
     /**
@@ -249,43 +103,15 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * @param m             The number of previous steps used to estimate the Hessian.
      * @param maxIterations The maximum number of minimization steps.
      * @param eps           The minimization convergence criteria.
-     * @param maxIterations The maximum number of minimization steps.
      * @return a {@link ffx.numerics.Potential} object.
      */
     public Potential minimize(int m, double eps, int maxIterations) {
-        time = System.nanoTime();
+        super.minimize(m, eps, maxIterations);
 
-        xtalEnergy.setScaling(scaling);
-
-        xtalEnergy.getCoordinates(x);
-        /**
-         * Scale coordinates.
-         */
-        for (int i = 0; i < n; i++) {
-            x[i] *= scaling[i];
-        }
-
-        done = false;
-        energy = xtalEnergy.energyAndGradient(x, grad);
-        status = LBFGS.minimize(n, m, x, energy, grad, eps, maxIterations, xtalEnergy, this);
-        done = true;
-
-        switch (status) {
-            case 0:
-                logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
-                break;
-            case 1:
-                logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
-                break;
-            default:
-                logger.warning("\n Optimization failed.\n");
-        }
         crystal = molecularAssembly.getCrystal();
-        logger.info(String.format("\n Final lattice parameters" + crystal));
+        logger.info("\n Final lattice parameters" + crystal);
 
-        xtalEnergy.setScaling(null);
-
-        return xtalEnergy;
+        return potential;
     }
 
     /**
@@ -303,7 +129,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      */
     public void computeElasticityTensor(boolean verbose) {
 
-        double xOrig[] = new double[forceFieldEnergy.getNumberOfVariables()];
+        double[] xOrig = new double[forceFieldEnergy.getNumberOfVariables()];
         forceFieldEnergy.getCoordinates(xOrig);
 
         forceFieldEnergy.energy(xOrig, verbose);
@@ -313,14 +139,10 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         molecularAssembly.setFractionalMode(FractionalMode.MOLECULE);
         molecularAssembly.computeFractionalCoordinates();
 
-        /**
-         * Conversion from kcal/mol/Ang^3 to Atm.
-         */
+        // Conversion from kcal/mol/Ang^3 to Atm.
         double PRESCON = 6.85684112e4;
 
-        /**
-         * Conversion from Atm to GPa.
-         */
+        // Conversion from Atm to GPa.
         double GPA = 101325 * 1.0e-9;
 
         double volume = crystal.getUnitCell().volume / crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
@@ -571,7 +393,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         }
     }
 
-    public void computeStressTensor(boolean verbose) {
+    private void computeStressTensor(boolean verbose) {
 
         double x[] = new double[forceFieldEnergy.getNumberOfVariables()];
         forceFieldEnergy.getCoordinates(x);
@@ -584,7 +406,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         molecularAssembly.computeFractionalCoordinates();
 
         double delta = 1.0e-5;
-        double dEdV[][] = new double[3][3];
+        double[][] dEdV = new double[3][3];
 
         dEdV[0][0] = dEdA(0, 0, delta, x);
         dEdV[0][1] = dEdA(0, 1, delta, x);
@@ -604,10 +426,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         dEdV[2][0] = dEdV[0][2];
         dEdV[2][1] = dEdV[1][2];
 
-        /**
-         * Compute a numerical virial.
-         */
-        double virial[][] = new double[3][3];
+        // Compute a numerical virial.
+        double[][] virial = new double[3][3];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j <= i; j++) {
                 virial[j][i] = 0.0;
@@ -626,9 +446,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
 
         double dedv = (virial[0][0] + virial[1][1] + virial[2][2]) / (3 * unitCell.volume);
 
-        /**
-         * Conversion from kcal/mol/Ang^3 to Atm.
-         */
+        // Conversion from kcal/mol/Ang^3 to Atm.
         double PRESCON = 6.85684112e4;
         double temperature = 298.15;
         int nAtoms = molecularAssembly.getAtomArray().length;
@@ -714,7 +532,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         double gamma = unitCell.gamma;
 
         // F(1,1)
-        double dStrain[][] = new double[3][3];
+        double[][] dStrain = new double[3][3];
         applyStrain(voight1, delta, dStrain);
         applyStrain(voight2, delta, dStrain);
         try {
@@ -816,85 +634,4 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         return (e11 - e1m1 - em11 + em1m1) / (4 * delta * delta);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implement the OptimizationListener interface.
-     *
-     * @since 1.0
-     */
-    @Override
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms,
-                                      double f, double df, double angle, LineSearchResult info) {
-        long currentTime = System.nanoTime();
-        Double seconds = (currentTime - time) * 1.0e-9;
-        time = currentTime;
-        this.grms = grms;
-        this.nSteps = iter;
-        this.energy = f;
-
-        if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
-        }
-        if (info == null) {
-            logger.info(String.format("%6d%13.4f%11.4f", iter, f, grms));
-        } else {
-            if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
-                        iter, f, grms, df, xrms, angle, nfun, seconds));
-            } else {
-                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
-                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
-            }
-        }
-        // Update the listener and check for an termination request.
-        if (algorithmListener != null) {
-            algorithmListener.algorithmUpdate(molecularAssembly);
-        }
-        if (terminate) {
-            logger.info(" The optimization recieved a termination request.");
-            // Tell the L-BFGS optimizer to terminate.
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Implement the OptimizationListener interface.
-     *
-     * @param iter Number of iterations so far.
-     * @param nfun Number of function evaluations so far.
-     * @param grms Gradient RMS at current solution.
-     * @param xrms Coordinate change RMS at current solution.
-     * @param f    Function value at current solution.
-     * @param df   Change in the function value compared to the previous solution.
-     * @return a boolean.
-     * @since 1.0
-     */
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df) {
-        long currentTime = System.nanoTime();
-        Double seconds = (currentTime - time) * 1.0e-9;
-        time = currentTime;
-        this.grms = grms;
-        this.nSteps = iter;
-        this.energy = f;
-
-        if (iter == 1) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Evals     Time\n");
-        }
-        logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%7d %8.3f",
-                iter, f, grms, df, xrms, nfun, seconds));
-        // Update the listener and check for a termination request.
-        if (algorithmListener != null) {
-            algorithmListener.algorithmUpdate(molecularAssembly);
-        }
-        if (terminate) {
-            logger.info(" The optimization recieved a termination request.");
-            // Tell the optimizer to terminate.
-            return false;
-        }
-        return true;
-    }
 }

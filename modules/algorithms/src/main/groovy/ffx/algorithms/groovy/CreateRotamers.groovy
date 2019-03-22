@@ -1,8 +1,12 @@
 package ffx.algorithms.groovy
 
-import ffx.algorithms.Minimize
+import java.util.stream.Collectors
+
+import org.apache.commons.io.FilenameUtils
+
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
+import ffx.algorithms.optimize.Minimize
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Polymer
@@ -10,14 +14,11 @@ import ffx.potential.bonded.Residue
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.bonded.RotamerLibrary.ProteinLibrary
-import org.apache.commons.io.FilenameUtils
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.util.logging.Level
-import java.util.stream.Collectors
 
 /**
  * The CreateRotamers script creates a set of conformation dependent rotamers.
@@ -38,7 +39,7 @@ class CreateRotamers extends AlgorithmsScript {
      * -L or --library Choose either Ponder and Richards (1) or Richardson (2)
      * rotamer library.
      */
-    @Option(names = ["-L" , "--library"], paramLabel = "2",
+    @Option(names = ["-L", "--library"], paramLabel = "2",
             description = "Ponder and Richards (1) or Richardson (2) rotamer library.")
     int library = 2
 
@@ -86,7 +87,7 @@ class CreateRotamers extends AlgorithmsScript {
 
         // Get the residue list.
         List<Residue> residues = activeAssembly.getResidueList().stream().
-                filter({ Residue r -> Rotamer[] rots = r.getRotamers(rotamerLibrary); return rots != null && rots.length > 1;}).
+                filter({ Residue r -> Rotamer[] rots = r.getRotamers(rotamerLibrary); return rots != null && rots.length > 1; }).
                 collect(Collectors.toList());
 
         logger.info(String.format(" Number of residues: %d\n", residues.size()));

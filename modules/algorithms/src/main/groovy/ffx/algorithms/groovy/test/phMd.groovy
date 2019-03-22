@@ -36,16 +36,16 @@
  * exception statement from your version.
  */
 
-package ffx.algorithms.groovy.test;
+package ffx.algorithms.groovy.test
 
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.picocli.CliBuilder
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.PhMD
 import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.ph.PhMD
 import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.potential.MolecularAssembly
@@ -126,9 +126,6 @@ cli.pH(longOpt: 'pH', args: 1, argName: '7.4', 'Constant simulation pH.');
 cli.mc(longOpt: 'mc-frequency', args: 1, argName: '10', '[DISCRETE only] Number of MD steps between Monte-Carlo attempts.')
 cli.nomd(longOpt: 'no-dynamics', 'Testing; no movement.');
 cli.noref(longOpt: 'no-references', 'Testing; zero out reference energies.')
-
-// cli.mcr(longOpt:'rotamerStepFreq', args:1, argName:'0', 'Number of MD steps between Monte-Carlo rotamer changes.')
-// cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 
 def options = cli.parse(args);
 if (options.h) {

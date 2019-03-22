@@ -36,16 +36,16 @@
  * exception statement from your version.
  */
 
-package ffx.algorithms.groovy.test;
+package ffx.algorithms.groovy.test
 
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.picocli.CliBuilder
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.PhDiscount
 import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.ph.PhDiscount
 import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.potential.MolecularAssembly
@@ -53,46 +53,45 @@ import ffx.potential.extended.ExtendedSystem
 import ffx.potential.extended.TitrationUtils
 
 // Number of molecular dynamics steps
-int nSteps = 1000000;
+int nSteps = 1000000
 
 // Time step in femtoseconds.
-double dt = 1.0;
+double dt = 1.0
 
 // Frequency to print out thermodynamics information in picoseconds.
-double printInterval = 0.01;
+double printInterval = 0.01
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 0.1;
+double saveInterval = 0.1
 
 // Temperature in degrees Kelvin.
-double temperature = 298.15;
+double temperature = 298.15
 
 // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
-ThermostatEnum thermostat = null;
+ThermostatEnum thermostat = null
 
 // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
-IntegratorEnum integrator = null;
+IntegratorEnum integrator = null
 
 // Reset velocities (ignored if a restart file is given)
-boolean initVelocities = true;
+boolean initVelocities = true
 
 // Interval to write out restart file (psec)
-double restartFrequency = 1000;
+double restartFrequency = 1000
 
 // File type of snapshots.
-String fileType = "PDB";
+String fileType = "PDB"
 
 // Monte-Carlo step frequencies for titration and rotamer moves.
-int moveFrequency = 10;
-int stepsPerMove = 100;
-int rotamerMoveRatio = 0;
+int moveFrequency = 10
+int stepsPerMove = 100
 
 // Simulation pH
-Double pH;
+Double pH
 
 // Titrating residue list.
-List<String> rlTokens = new ArrayList<>();
-double cutoffs = 10.0;
+List<String> rlTokens = new ArrayList<>()
+double cutoffs = 10.0
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -114,11 +113,6 @@ cli.mc(longOpt: 'titrationFrequency', args: 1, argName: '100', 'Number of steps 
 cli.mcd(longOpt: 'titrationDuration', args: 1, argName: '100', 'Number of steps for which to run continuous proton dynamics during MC move.');
 cli.mcr(longOpt: 'rotamerMoveRatio', args: 1, argName: '0', 'Number of steps between Monte-Carlo rotamer attempts.')
 cli.cut(longOpt: 'cutoff', args: 1, argName: '1000', 'Value of vdw-cutoff and pme-cutoff.');
-
-//cli.ra(longOpt:'resAll', 'Titrate all residues.');
-//cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
-//cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
-//cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 
 def options = cli.parse(args);
 

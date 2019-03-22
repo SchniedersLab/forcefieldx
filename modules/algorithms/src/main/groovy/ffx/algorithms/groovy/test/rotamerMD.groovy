@@ -49,8 +49,8 @@ import groovy.cli.picocli.CliBuilder
 import edu.rit.pj.Comm
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.RotamerOptimization
-import ffx.algorithms.RotamerOptimization.Direction
+import ffx.algorithms.optimize.RotamerOptimization
+import ffx.algorithms.optimize.RotamerOptimization.Direction
 import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.thermostats.Thermostat

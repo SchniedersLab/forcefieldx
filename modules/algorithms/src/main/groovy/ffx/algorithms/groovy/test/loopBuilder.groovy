@@ -47,7 +47,7 @@ import edu.rit.mp.IntegerBuf
 import edu.rit.pj.Comm
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.SimulatedAnnealing
 import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.mc.MCLoop

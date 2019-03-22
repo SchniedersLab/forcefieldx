@@ -45,9 +45,8 @@ import java.util.logging.Logger;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
-import ffx.algorithms.Minimize;
+import ffx.algorithms.optimize.Minimize;
 import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.MonteCarloListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;

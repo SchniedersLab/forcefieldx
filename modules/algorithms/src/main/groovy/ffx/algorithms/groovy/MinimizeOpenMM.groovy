@@ -2,9 +2,9 @@ package ffx.algorithms.groovy
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.MinimizeOpenMM
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
+import ffx.algorithms.optimize.MinimizeOpenMM
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM

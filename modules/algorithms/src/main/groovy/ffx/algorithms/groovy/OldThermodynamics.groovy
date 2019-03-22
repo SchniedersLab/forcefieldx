@@ -573,7 +573,7 @@ class OldThermodynamics extends Script {
         }
 
         ffx.algorithms.AlgorithmListener alist = aFuncts.getDefaultListener();
-        ffx.algorithms.RotamerOptimization ropt = new ffx.algorithms.RotamerOptimization(mola, pot, alist);
+        ffx.algorithms.optimize.RotamerOptimization ropt = new ffx.algorithms.optimize.RotamerOptimization(mola, pot, alist);
         rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, false);
         ropt.setRotamerLibrary(rLib);
 
@@ -591,7 +591,7 @@ class OldThermodynamics extends Script {
         String oldLazyMat = System.getProperty("ro-lazyMatrix");
         System.setProperty("ro-lazyMatrix", "true");
 
-        ropt.optimize(ffx.algorithms.RotamerOptimization.Algorithm.ALL);
+        ropt.optimize(ffx.algorithms.optimize.RotamerOptimization.Algorithm.ALL);
         ropt.setCoordinatesToEnsemble(rank);
 
         // One final energy call to ensure the coordinates are properly set at the

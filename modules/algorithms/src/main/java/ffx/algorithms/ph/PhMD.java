@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.ph;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -52,8 +52,11 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.MolecularDynamics.MonteCarloNotification;
+import ffx.algorithms.mc.MonteCarloListener;
 import ffx.algorithms.mc.RosenbluthCBMC;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Angle;
@@ -89,7 +92,7 @@ import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
 /**
  * <p>PhMD class.</p>
  *
- * @author S. LuCore
+ * @author Stephen D. LuCore
  */
 public class PhMD implements MonteCarloListener {
     private static final Logger logger = Logger.getLogger(PhMD.class.getName());
@@ -106,15 +109,15 @@ public class PhMD implements MonteCarloListener {
     /**
      * The MolecularAssembly.
      */
-    private final MolecularAssembly mola;
+    private final MolecularAssembly molecularAssembly;
     /**
      * The MolecularDynamics object controlling the simulation.
      */
-    private MolecularDynamics molDyn;
+    private MolecularDynamics molecularDynamics;
     /**
      * The MD thermostat.
      */
-    private final ffx.algorithms.thermostats.Thermostat thermostat;
+    private final Thermostat thermostat;
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
@@ -142,7 +145,7 @@ public class PhMD implements MonteCarloListener {
     /**
      * Residues selected by user.
      */
-    private List<Residue> chosenResidues = new ArrayList<>();
+    private List<Residue> chosenResidues;
     /**
      * MultiResidue forms of entities from chosenResidues; ready to be
      * (de-/)protonated.
@@ -162,12 +165,12 @@ public class PhMD implements MonteCarloListener {
     /**
      * The forcefield being used. Needed by MultiResidue constructor.
      */
-    private final ForceField ff;
+    private final ForceField forceField;
     /**
      * The ForceFieldEnergy object being used by MD. Needed by MultiResidue
      * constructor and for reinitializing after a chemical change.
      */
-    private final ForceFieldEnergy ffe;
+    private final ForceFieldEnergy forceFieldEnergy;
     /**
      * Snapshot index for the [num] portion of filename above.
      */
@@ -179,9 +182,8 @@ public class PhMD implements MonteCarloListener {
 
     private ExtendedSystem esvSystem;
     private Object[] mdOptions;
-    private DynamicsLauncher mdLauncher;
     private RotamerLibrary library;
-    private final TitrationConfig config;
+    private final TitrationConfig titrationConfig;
 
     private final Distribution distribution;
 
@@ -192,22 +194,22 @@ public class PhMD implements MonteCarloListener {
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
      *
-     * @param mola            the molecular assembly
-     * @param mcStepFrequency number of MD steps between switch attempts
-     * @param pH              the simulation pH
-     * @param distribution    a {@link ffx.algorithms.PhMD.Distribution} object.
-     * @param molDyn          a {@link ffx.algorithms.MolecularDynamics} object.
-     * @param titrating       a {@link java.util.List} object.
+     * @param molecularAssembly the molecular assembly
+     * @param mcStepFrequency   number of MD steps between switch attempts
+     * @param pH                the simulation pH
+     * @param distribution      a {@link PhMD.Distribution} object.
+     * @param molecularDynamics a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param titrating         a {@link java.util.List} object.
      */
-    public PhMD(Distribution distribution, MolecularAssembly mola, MolecularDynamics molDyn,
+    public PhMD(Distribution distribution, MolecularAssembly molecularAssembly, MolecularDynamics molecularDynamics,
                 List<Residue> titrating, double pH, int mcStepFrequency) {
-        this.config = new TitrationConfig();
+        this.titrationConfig = new TitrationConfig();
         this.distribution = distribution;
-        this.mola = mola;
-        this.molDyn = molDyn;
-        this.thermostat = molDyn.getThermostat();
-        this.ff = mola.getForceField();
-        this.ffe = mola.getPotentialEnergy();
+        this.molecularAssembly = molecularAssembly;
+        this.molecularDynamics = molecularDynamics;
+        this.thermostat = molecularDynamics.getThermostat();
+        this.forceField = molecularAssembly.getForceField();
+        this.forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         this.mcStepFrequency = (mcStepFrequency == 0) ? Integer.MAX_VALUE : mcStepFrequency;
         this.pH = pH;
         this.numMovesAccepted = 0;
@@ -241,11 +243,11 @@ public class PhMD implements MonteCarloListener {
 
     private void readyup() {
         // Create MultiTerminus objects to wrap termini.
-        if (config.titrateTermini) {
-            for (Residue res : mola.getResidueList()) {
+        if (titrationConfig.titrateTermini) {
+            for (Residue res : molecularAssembly.getResidueList()) {
                 if (res.getPreviousResidue() == null || res.getNextResidue() == null) {
-                    MultiTerminus multiTerminus = new MultiTerminus(res, ff, ffe, mola);
-                    Polymer polymer = findResiduePolymer(res, mola);
+                    MultiTerminus multiTerminus = new MultiTerminus(res, forceField, forceFieldEnergy, molecularAssembly);
+                    Polymer polymer = findResiduePolymer(res, molecularAssembly);
                     polymer.addMultiTerminus(res, multiTerminus);
                     reInitialize(true, false);
                     titratingTermini.add(multiTerminus);
@@ -256,10 +258,10 @@ public class PhMD implements MonteCarloListener {
 
         /* Create containers for titratables: MultiResidues for discrete, ExtendedVariables for continuous. */
         if (distribution == Distribution.CONTINUOUS) {
-            esvSystem = new ExtendedSystem(mola);
+            esvSystem = new ExtendedSystem(molecularAssembly);
             esvSystem.setConstantPh(pH);
             for (Residue res : chosenResidues) {
-                MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(mola, res);
+                MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(molecularAssembly, res);
                 TitrationESV esv = new TitrationESV(esvSystem, multi);
                 titratingESVs.add(esv);
                 for (Residue background : multi.getInactive()) {
@@ -267,13 +269,13 @@ public class PhMD implements MonteCarloListener {
                 }
                 esvSystem.addVariable(esv);
             }
-            ffe.attachExtendedSystem(esvSystem);
+            forceFieldEnergy.attachExtendedSystem(esvSystem);
             logger.info(format(" Continuous pHMD readied with %d residues.", titratingESVs.size()));
         } else {
             for (Residue res : chosenResidues) {
                 // Create MultiResidue objects to wrap titratables.
-                MultiResidue multiRes = new MultiResidue(res, ff, ffe);
-                Polymer polymer = findResiduePolymer(res, mola);
+                MultiResidue multiRes = new MultiResidue(res, forceField, forceFieldEnergy);
+                Polymer polymer = findResiduePolymer(res, molecularAssembly);
                 polymer.addMultiResidue(multiRes);
                 recursiveMap(res, multiRes);
 
@@ -289,11 +291,11 @@ public class PhMD implements MonteCarloListener {
         switch (distribution) {
             default:
             case DISCRETE:
-                molDyn.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);
+                molecularDynamics.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);
                 break;
             case CONTINUOUS:
-                ffe.attachExtendedSystem(esvSystem);
-                molDyn.attachExtendedSystem(esvSystem, 100);
+                forceFieldEnergy.attachExtendedSystem(esvSystem);
+                molecularDynamics.attachExtendedSystem(esvSystem, 100);
                 break;
         }
     }
@@ -311,8 +313,8 @@ public class PhMD implements MonteCarloListener {
         // For each titration, check whether it needs added as a MultiResidue option.
         for (Titration titration : titrations) {
             // Allow manual override of Histidine treatment.
-            if ((titration.deprotForm == AminoAcid3.HID && config.histidineMode == HistidineMode.HIE_ONLY)
-                    || (titration.deprotForm == AminoAcid3.HIE && config.histidineMode == HistidineMode.HID_ONLY)) {
+            if ((titration.deprotForm == AminoAcid3.HID && titrationConfig.histidineMode == HistidineMode.HIE_ONLY)
+                    || (titration.deprotForm == AminoAcid3.HIE && titrationConfig.histidineMode == HistidineMode.HID_ONLY)) {
                 continue;
             }
             // Find all the choices currently available to this MultiResidue.
@@ -335,20 +337,20 @@ public class PhMD implements MonteCarloListener {
 
     private void meltdown() {
         writeSnapshot(".meltdown-");
-        ffe.energy(false, true);
-        if (ffe.getBondEnergy() > 1000) {
+        forceFieldEnergy.energy(false, true);
+        if (forceFieldEnergy.getBondEnergy() > 1000) {
             for (ROLS rols : previousTarget.getBondList()) {
                 ((Bond) rols).log();
             }
         }
-        if (ffe.getAngleEnergy() > 1000) {
+        if (forceFieldEnergy.getAngleEnergy() > 1000) {
             for (ROLS rols : previousTarget.getAngleList()) {
                 ((Angle) rols).log();
             }
         }
-        if (ffe.getVanDerWaalsEnergy() > 1000) {
+        if (forceFieldEnergy.getVanDerWaalsEnergy() > 1000) {
             for (Atom a1 : previousTarget.getAtomList()) {
-                for (Atom a2 : mola.getAtomArray()) {
+                for (Atom a2 : molecularAssembly.getAtomArray()) {
                     if (a1 == a2 || a1.getBond(a2) != null) {
                         continue;
                     }
@@ -371,20 +373,11 @@ public class PhMD implements MonteCarloListener {
     private void reInitialize(boolean initFFE, boolean initMolDyn) {
 //        renumberAtoms(mola);	// TODO Determine if+why this is necessary.
         if (initFFE) {
-            ffe.reInit();
+            forceFieldEnergy.reInit();
         }
         if (initMolDyn) {
-            molDyn.reInit();
+            molecularDynamics.reInit();
         }
-    }
-
-    /**
-     * <p>setDynamicsLauncher.</p>
-     *
-     * @param launcher a {@link ffx.algorithms.PhMD.DynamicsLauncher} object.
-     */
-    public void setDynamicsLauncher(DynamicsLauncher launcher) {
-        this.mdLauncher = launcher;
     }
 
     /**
@@ -411,7 +404,7 @@ public class PhMD implements MonteCarloListener {
     public void launch(MolecularDynamics md, int mcStepFrequency, double timeStep,
                        double printInterval, double saveInterval,
                        double temperature, boolean initVelocities, File dyn) {
-        this.molDyn = md;
+        this.molecularDynamics = md;
         this.mcStepFrequency = mcStepFrequency;
     }
 
@@ -423,13 +416,13 @@ public class PhMD implements MonteCarloListener {
     @Override
     public boolean mcUpdate(double temperature) {
         startTime = System.nanoTime();
-        if (thermostat.getCurrentTemperature() > config.meltdownTemperature) {
+        if (thermostat.getCurrentTemperature() > titrationConfig.meltdownTemperature) {
             meltdown();
         }
 
-        if (thermostat.getCurrentTemperature() > config.warningTemperature) {
-            Atom[] atoms = mola.getAtomArray();
-            logger.info(format(" System heating! Dumping atomic velocities for %d D.o.F.:", ffe.getNumberOfVariables()));
+        if (thermostat.getCurrentTemperature() > titrationConfig.warningTemperature) {
+            Atom[] atoms = molecularAssembly.getAtomArray();
+            logger.info(format(" System heating! Dumping atomic velocities for %d D.o.F.:", forceFieldEnergy.getNumberOfVariables()));
             double[] velocity = new double[3];
             for (Atom atom : atoms) {
                 atom.getVelocity(velocity);
@@ -451,7 +444,7 @@ public class PhMD implements MonteCarloListener {
             stepType = StepType.ROTAMER;
         } else {
             // Not yet time for an MC step, return to MD.
-            if (config.logTimings) {
+            if (titrationConfig.logTimings) {
                 long took = System.nanoTime() - startTime;
                 logger.info(String.format(" CpHMD propagation time: %.6f", took * NS_TO_SEC));
             }
@@ -461,7 +454,7 @@ public class PhMD implements MonteCarloListener {
         logger.info(format("TitratingMultis: %d", titratingMultis.size()));
 
         // Randomly choose a target titratable residue to attempt protonation switch.
-        int random = (config.titrateTermini)
+        int random = (titrationConfig.titrateTermini)
                 ? rng.nextInt(titratingMultis.size() + titratingTermini.size())
                 : rng.nextInt(titratingMultis.size());
 
@@ -470,7 +463,7 @@ public class PhMD implements MonteCarloListener {
             boolean accepted = tryTerminusTitration((MultiTerminus) target);
             snapshotIndex++;
             if (accepted) {
-                molDyn.reInit();
+                molecularDynamics.reInit();
                 previousTarget = target;
             }
             return accepted;
@@ -495,12 +488,12 @@ public class PhMD implements MonteCarloListener {
                 accepted = tryTitrationStep(targetMulti);
                 break;
             case ROTAMER:
-                accepted = (config.useConformationalBias)
+                accepted = (titrationConfig.useConformationalBias)
                         ? tryCBMCStep(targetMulti)
                         : tryRotamerStep(targetMulti);
                 break;
             case COMBO:
-                accepted = (config.useConformationalBias)
+                accepted = (titrationConfig.useConformationalBias)
                         ? tryCBMCStep(targetMulti) || tryTitrationStep(targetMulti)
                         : tryComboStep(targetMulti);
                 break;
@@ -513,7 +506,7 @@ public class PhMD implements MonteCarloListener {
         if (accepted) {
             previousTarget = targetMulti;
         }
-        if (config.logTimings) {
+        if (titrationConfig.logTimings) {
             long took = System.nanoTime() - startTime;
             logger.info(String.format(" CpHMD step time:        %.6f", took * NS_TO_SEC));
         }
@@ -528,7 +521,7 @@ public class PhMD implements MonteCarloListener {
     /**
      * Perform a titration MC move.
      *
-     * @param targetMulti
+     * @param target
      * @return accept/reject
      */
     private boolean tryTitrationStep(Residue target) {
@@ -545,11 +538,11 @@ public class PhMD implements MonteCarloListener {
             logger.warning("Improper method call.");
         }
         // Record the pre-change electrostatic energy.
-        ffe.energy(false, false);
-        final double previousElectrostaticEnergy = ffe.getElectrostaticEnergy();
+        forceFieldEnergy.energy(false, false);
+        final double previousElectrostaticEnergy = forceFieldEnergy.getElectrostaticEnergy();
 
         // Write the pre-titration change snapshot.
-        writeSnapshot(true, StepType.TITRATE, config.snapshots);
+        writeSnapshot(true, StepType.TITRATE, titrationConfig.snapshots);
         String startString = target.toString();
         String startName = target.getName();
 
@@ -576,7 +569,7 @@ public class PhMD implements MonteCarloListener {
             titration = avail.get(rng.nextInt(avail.size()));
 
             // Perform the chosen titration.
-            titrationType = performTitration(targetMulti, titration, config.inactivateBackground);
+            titrationType = performTitration(targetMulti, titration, titrationConfig.inactivateBackground);
             reInitialize(true, true);
 
             // Test the MC criterion for a titration step.
@@ -584,19 +577,19 @@ public class PhMD implements MonteCarloListener {
             dG_ref = titration.refEnergy;
         }
         // Write the post-titration change snapshot.
-        writeSnapshot(true, StepType.TITRATE, config.snapshots);
+        writeSnapshot(true, StepType.TITRATE, titrationConfig.snapshots);
 
         double temperature = thermostat.getCurrentTemperature();
         double kT = BOLTZMANN * temperature;
-        ffe.energy(false, false);
-        final double currentElectrostaticEnergy = ffe.getElectrostaticEnergy();
+        forceFieldEnergy.energy(false, false);
+        final double currentElectrostaticEnergy = forceFieldEnergy.getElectrostaticEnergy();
         final double dG_elec = currentElectrostaticEnergy - previousElectrostaticEnergy;
 
-        if (config.zeroReferenceEnergies) {
+        if (titrationConfig.zeroReferenceEnergies) {
             dG_ref = 0.0;
         }
-        if (config.refOverride.isPresent()) {
-            dG_ref = config.refOverride.getAsDouble();
+        if (titrationConfig.refOverride.isPresent()) {
+            dG_ref = titrationConfig.refOverride.getAsDouble();
         }
 
         /**
@@ -625,7 +618,7 @@ public class PhMD implements MonteCarloListener {
         sb.append(String.format("     -----\n"));
 
         // Test Monte-Carlo criterion.
-        if (dG_MC < 0 && config.mcOverride != MCOverride.REJECT) {
+        if (dG_MC < 0 && titrationConfig.mcOverride != MCOverride.REJECT) {
             sb.append(String.format("     Accepted!"));
             logger.info(sb.toString());
             numMovesAccepted++;
@@ -634,9 +627,9 @@ public class PhMD implements MonteCarloListener {
         double criterion = exp(-dG_MC / kT);
         double metropolis = random();
         sb.append(String.format("     crit:    %9.4f              rng:       %10.4f\n", criterion, metropolis));
-        if ((metropolis < criterion && config.mcOverride != MCOverride.REJECT) || config.mcOverride == MCOverride.ACCEPT) {
+        if ((metropolis < criterion && titrationConfig.mcOverride != MCOverride.REJECT) || titrationConfig.mcOverride == MCOverride.ACCEPT) {
             numMovesAccepted++;
-            molDyn.reInit();
+            molecularDynamics.reInit();
             long took = System.nanoTime() - startTime;
             sb.append(String.format("     Accepted!                                                %1.3f", took * NS_TO_SEC));
             logger.info(sb.toString());
@@ -644,7 +637,7 @@ public class PhMD implements MonteCarloListener {
         }
 
         // Move was rejected, undo the titration state change.
-        performTitration(targetMulti, titration, config.inactivateBackground);
+        performTitration(targetMulti, titration, titrationConfig.inactivateBackground);
         reInitialize(true, true);
         long took = System.nanoTime() - startTime;
         sb.append(String.format("     Denied.                                                  %1.3f", took * NS_TO_SEC));
@@ -655,7 +648,7 @@ public class PhMD implements MonteCarloListener {
     /**
      * Perform a titration MC move.
      *
-     * @param targetMulti
+     * @param target
      * @return accept/reject
      */
     private boolean tryTerminusTitration(MultiTerminus target) {
@@ -667,7 +660,7 @@ public class PhMD implements MonteCarloListener {
         double previousElectrostaticEnergy = currentElectrostaticEnergy();
 
         // Write the pre-titration change snapshot.
-        writeSnapshot(true, StepType.TITRATE, config.snapshots);
+        writeSnapshot(true, StepType.TITRATE, titrationConfig.snapshots);
         String startString = target.toString();
         String startName = target.getName();
 
@@ -688,17 +681,17 @@ public class PhMD implements MonteCarloListener {
         boolean beganCharged = target.isCharged;
         target.titrateTerminus_v1(thermostat.getCurrentTemperature());
         // Write the post-titration change snapshot.
-        writeSnapshot(true, StepType.TITRATE, config.snapshots);
+        writeSnapshot(true, StepType.TITRATE, titrationConfig.snapshots);
 
         double temperature = thermostat.getCurrentTemperature();
         double kT = BOLTZMANN * temperature;
         double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
 
-        if (config.zeroReferenceEnergies) {
+        if (titrationConfig.zeroReferenceEnergies) {
             dG_ref = 0.0;
         }
-        if (config.refOverride.isPresent()) {
-            dG_ref = config.refOverride.getAsDouble();
+        if (titrationConfig.refOverride.isPresent()) {
+            dG_ref = titrationConfig.refOverride.getAsDouble();
         }
 
         /**
@@ -739,7 +732,7 @@ public class PhMD implements MonteCarloListener {
         sb.append(String.format("     -----\n"));
 
         // Test Monte-Carlo criterion.
-        if (dG_MC < 0 && config.mcOverride != MCOverride.REJECT) {
+        if (dG_MC < 0 && titrationConfig.mcOverride != MCOverride.REJECT) {
             sb.append(String.format("     Accepted!"));
             logger.info(sb.toString());
             numMovesAccepted++;
@@ -748,15 +741,15 @@ public class PhMD implements MonteCarloListener {
         double criterion = exp(-dG_MC / kT);
         double metropolis = random();
         sb.append(String.format("     crit:    %9.4f              rng:       %10.4f\n", criterion, metropolis));
-        if ((metropolis < criterion && config.mcOverride != MCOverride.REJECT)
-                || config.mcOverride == MCOverride.ACCEPT
-                || config.mcOverride == MCOverride.ONCE) {
+        if ((metropolis < criterion && titrationConfig.mcOverride != MCOverride.REJECT)
+                || titrationConfig.mcOverride == MCOverride.ACCEPT
+                || titrationConfig.mcOverride == MCOverride.ONCE) {
             numMovesAccepted++;
             long took = System.nanoTime() - startTime;
             sb.append(String.format("     Accepted!                                                %1.3f", took * NS_TO_SEC));
             logger.info(sb.toString());
-            if (config.mcOverride == MCOverride.ONCE) {
-                config.mcOverride = MCOverride.REJECT;
+            if (titrationConfig.mcOverride == MCOverride.ONCE) {
+                titrationConfig.mcOverride = MCOverride.REJECT;
             }
             return true;
         }
@@ -780,10 +773,10 @@ public class PhMD implements MonteCarloListener {
         int mcFrequency = 1;    // irrelevant for manual step call
         boolean writeSnapshots = false;
         System.setProperty("cbmc-type", "CHEAP");
-        RosenbluthCBMC cbmc = new RosenbluthCBMC(mola, mola.getPotentialEnergy(), null,
+        RosenbluthCBMC cbmc = new RosenbluthCBMC(molecularAssembly, molecularAssembly.getPotentialEnergy(), null,
                 targets, mcFrequency, trialSetSize, writeSnapshots);
         boolean accepted = cbmc.cbmcStep();
-        if (config.logTimings) {
+        if (titrationConfig.logTimings) {
             long took = System.nanoTime() - startTime;
             logger.info(String.format(" CBMC time: %1.3f", took * NS_TO_SEC));
         }
@@ -805,7 +798,7 @@ public class PhMD implements MonteCarloListener {
         double previousTotalEnergy = currentTotalEnergy();
 
         // Write the before-step snapshot.
-        writeSnapshot(true, StepType.ROTAMER, config.snapshots);
+        writeSnapshot(true, StepType.ROTAMER, titrationConfig.snapshots);
 
         // Save coordinates so we can return to them if move is rejected.
         Residue residue = targetMulti.getActive();
@@ -821,7 +814,7 @@ public class PhMD implements MonteCarloListener {
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 
         // Write the post-rotamer change snapshot.
-        writeSnapshot(false, StepType.ROTAMER, config.snapshots);
+        writeSnapshot(false, StepType.ROTAMER, titrationConfig.snapshots);
 
         // Check the MC criterion.
         double temperature = thermostat.getCurrentTemperature();
@@ -883,7 +876,7 @@ public class PhMD implements MonteCarloListener {
         double previousElectrostaticEnergy = currentElectrostaticEnergy();
 
         // Write the pre-combo snapshot.
-        writeSnapshot(true, StepType.COMBO, config.snapshots);
+        writeSnapshot(true, StepType.COMBO, titrationConfig.snapshots);
         String startString = targetMulti.toString();
         String startName = targetMulti.getActive().getName();
 
@@ -892,7 +885,7 @@ public class PhMD implements MonteCarloListener {
         Titration titration = avail.get(rng.nextInt(avail.size()));
 
         // Perform the chosen titration.
-        TitrationType titrationType = performTitration(targetMulti, titration, config.inactivateBackground);
+        TitrationType titrationType = performTitration(targetMulti, titration, titrationConfig.inactivateBackground);
 
         // Change rotamer state, but first save coordinates so we can return to them if rejected.
         Residue residue = targetMulti.getActive();
@@ -909,7 +902,7 @@ public class PhMD implements MonteCarloListener {
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 
         // Write the post-combo snapshot.
-        writeSnapshot(false, StepType.COMBO, config.snapshots);
+        writeSnapshot(false, StepType.COMBO, titrationConfig.snapshots);
 
         // Evaluate both MC criteria.
         String endName = targetMulti.getActive().getName();
@@ -921,7 +914,7 @@ public class PhMD implements MonteCarloListener {
         double kT = BOLTZMANN * temperature;
         double dG_elec = currentElectrostaticEnergy() - previousElectrostaticEnergy;
 
-        if (config.zeroReferenceEnergies) {
+        if (titrationConfig.zeroReferenceEnergies) {
             dG_ref = 0.0;
         }
 
@@ -946,7 +939,7 @@ public class PhMD implements MonteCarloListener {
 
         // Test the combined probability of this move.
         // Automatic acceptance if both energy changes are favorable.
-        if (dG_titr < 0 && dG_rota < 0 && config.mcOverride != MCOverride.REJECT) {
+        if (dG_titr < 0 && dG_rota < 0 && titrationConfig.mcOverride != MCOverride.REJECT) {
             sb.append(String.format("     Accepted!"));
             logger.info(sb.toString());
             numMovesAccepted++;
@@ -954,13 +947,13 @@ public class PhMD implements MonteCarloListener {
             return true;
         } else {
             // Conditionally accept based on combined probabilities.
-            if (dG_titr < 0 || config.mcOverride == MCOverride.ACCEPT) {
+            if (dG_titr < 0 || titrationConfig.mcOverride == MCOverride.ACCEPT) {
                 titrCriterion = 1.0;
             }
             if (dG_rota < 0) {
                 rotaCriterion = 1.0;
             }
-            if (config.mcOverride == MCOverride.REJECT) {
+            if (titrationConfig.mcOverride == MCOverride.REJECT) {
                 titrCriterion = 0.0;
             }
             double metropolis = random();
@@ -982,9 +975,9 @@ public class PhMD implements MonteCarloListener {
 
                 // Undo both pieces of the rejected move IN THE RIGHT ORDER.
                 RotamerLibrary.applyRotamer(residue, origCoordsRotamer);
-                performTitration(targetMulti, titration, config.inactivateBackground);
-                ffe.reInit();
-                molDyn.reInit();
+                performTitration(targetMulti, titration, titrationConfig.inactivateBackground);
+                forceFieldEnergy.reInit();
+                molecularDynamics.reInit();
                 return false;
             }
         }
@@ -1007,10 +1000,10 @@ public class PhMD implements MonteCarloListener {
      * @return Energy of the current state.
      */
     private double currentElectrostaticEnergy() {
-        double x[] = new double[ffe.getNumberOfVariables() * 3];
-        ffe.getCoordinates(x);
-        ffe.energy(x);
-        return ffe.getTotalElectrostaticEnergy();
+        double x[] = new double[forceFieldEnergy.getNumberOfVariables() * 3];
+        forceFieldEnergy.getCoordinates(x);
+        forceFieldEnergy.energy(x);
+        return forceFieldEnergy.getTotalElectrostaticEnergy();
     }
 
     /**
@@ -1019,22 +1012,22 @@ public class PhMD implements MonteCarloListener {
      * @return Energy of the current state.
      */
     private double currentTotalEnergy() {
-        double x[] = new double[ffe.getNumberOfVariables() * 3];
-        ffe.getCoordinates(x);
-        ffe.energy(x);
-        return ffe.getTotalEnergy();
+        double x[] = new double[forceFieldEnergy.getNumberOfVariables() * 3];
+        forceFieldEnergy.getCoordinates(x);
+        forceFieldEnergy.energy(x);
+        return forceFieldEnergy.getTotalEnergy();
     }
 
     private void writeSnapshot(String extension) {
-        String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + extension + snapshotIndex;
-        if (config.snapshots == Snapshots.INTERLEAVED) {
-            filename = mola.getFile().getAbsolutePath();
+        String filename = FilenameUtils.removeExtension(molecularAssembly.getFile().toString()) + extension + snapshotIndex;
+        if (titrationConfig.snapshots == Snapshots.INTERLEAVED) {
+            filename = molecularAssembly.getFile().getAbsolutePath();
             if (!filename.contains("dyn")) {
                 filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
             }
         }
         File file = new File(filename);
-        PDBFilter writer = new PDBFilter(file, mola, null, null);
+        PDBFilter writer = new PDBFilter(file, molecularAssembly, null, null);
         writer.writeFile(file, false);
     }
 
@@ -1054,15 +1047,15 @@ public class PhMD implements MonteCarloListener {
                     break;
             }
             String postfixB = (beforeChange) ? "S-" : "F-";
-            String filename = FilenameUtils.removeExtension(mola.getFile().toString()) + postfixA + postfixB + snapshotIndex;
+            String filename = FilenameUtils.removeExtension(molecularAssembly.getFile().toString()) + postfixA + postfixB + snapshotIndex;
             if (snapshotsType == Snapshots.INTERLEAVED) {
-                filename = mola.getFile().getAbsolutePath();
+                filename = molecularAssembly.getFile().getAbsolutePath();
                 if (!filename.contains("dyn")) {
                     filename = FilenameUtils.removeExtension(filename) + "_dyn.pdb";
                 }
             }
             File afterFile = new File(filename);
-            PDBFilter afterWriter = new PDBFilter(afterFile, mola, null, null);
+            PDBFilter afterWriter = new PDBFilter(afterFile, molecularAssembly, null, null);
             afterWriter.writeFile(afterFile, false);
         }
     }
@@ -1075,7 +1068,7 @@ public class PhMD implements MonteCarloListener {
         private final File dynFile;
 
         public DynamicsLauncher(MolecularDynamics md, Object[] opt) {
-            molDyn = md;
+            molecularDynamics = md;
             nSteps = (int) opt[0];
             timeStep = (double) opt[1];
             print = (double) opt[2];
@@ -1093,7 +1086,7 @@ public class PhMD implements MonteCarloListener {
                                 double temperature, boolean initVelocities,
                                 String fileType, double restart,
                                 File dynFile) {
-            molDyn = md;
+            molecularDynamics = md;
             this.nSteps = nSteps;
             this.initVelocities = initVelocities;
             this.timeStep = timeStep;
@@ -1110,7 +1103,7 @@ public class PhMD implements MonteCarloListener {
                                 double print, double save,
                                 double temperature, boolean initVelocities,
                                 File dynFile) {
-            molDyn = md;
+            molecularDynamics = md;
             this.nSteps = nSteps;
             this.initVelocities = initVelocities;
             this.timeStep = timeStep;
@@ -1141,7 +1134,7 @@ public class PhMD implements MonteCarloListener {
 //            molDyn.terminate();
             discountLogger.append(format("    launching new md process...\n"));
             log();
-            molDyn.dynamic(nSteps, timeStep, print, save, temperature, initVelocities, fileType, restart, dynFile);
+            molecularDynamics.dynamic(nSteps, timeStep, print, save, temperature, initVelocities, fileType, restart, dynFile);
         }
     }
 
@@ -1149,9 +1142,4 @@ public class PhMD implements MonteCarloListener {
         TITRATE, ROTAMER, COMBO, CONTINUOUS_DYNAMICS;
     }
 
-    private void debug(int level, String message) {
-        if (config.debugLogLevel >= level) {
-            logger.info(message);
-        }
-    }
 }

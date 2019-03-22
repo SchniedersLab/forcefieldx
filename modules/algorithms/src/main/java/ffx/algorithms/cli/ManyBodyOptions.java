@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
-import ffx.algorithms.RotamerOptimization;
+import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Polymer;
@@ -320,7 +320,7 @@ public class ManyBodyOptions {
     /**
      * <p>initRotamerOptimization.</p>
      *
-     * @param rotamerOptimization a {@link ffx.algorithms.RotamerOptimization} object.
+     * @param rotamerOptimization a {@link RotamerOptimization} object.
      * @param activeAssembly      a {@link ffx.potential.MolecularAssembly} object.
      */
     public void initRotamerOptimization(RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {

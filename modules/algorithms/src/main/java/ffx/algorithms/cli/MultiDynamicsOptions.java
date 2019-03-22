@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.RotamerOptimization;
+import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.DualTopologyEnergy;

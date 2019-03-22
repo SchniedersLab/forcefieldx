@@ -5,7 +5,7 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.numerics.Potential
