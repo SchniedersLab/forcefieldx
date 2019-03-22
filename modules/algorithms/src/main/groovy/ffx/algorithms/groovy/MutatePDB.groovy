@@ -42,7 +42,7 @@ class MutatePDB extends AlgorithmsScript {
             description = 'New residue name.')
     String resName = "ALA"
     /**
-     * -c or --chain Single character chain name (default is ' ').
+     * -ch or --chain Single character chain name (default is ' ').
      */
     @Option(names = ['--chain', '--ch'], paramLabel = ' ',
             description = 'Single character chain name (default is \' \').')
@@ -52,14 +52,18 @@ class MutatePDB extends AlgorithmsScript {
      */
     @Option(names = ['--rotamer', '-R'], paramLabel = '-1', description = 'Rotamer number to apply.')
     int rotamer = -1
+    /**
+     * --allChains  Mutate all copies of a chain in a multimeric protein.
+     */
+    @Option(names = ['--allChains'], paramLabel = 'false', description = 'Mutate all copies of a chains in a multimeric protein.')
+    boolean allChains = false
 
     /**
      * One or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files", description = "A PDB input files.")
     private List<String> filenames
-    private ForceFieldEnergy forceFieldEnergy;
-    private boolean repack = false;
+    private ForceFieldEnergy forceFieldEnergy
 
     /**
      * Execute the script.
@@ -70,6 +74,8 @@ class MutatePDB extends AlgorithmsScript {
         if (!init()) {
             return this
         }
+        //Used if --allChains is true. The false assembly provides access to the chainIDs without compromising the mutated molecular assembly.
+        MolecularAssembly falseAssembly
 
         int destRotamer = 0
         if (rotamer > -1) {
@@ -93,20 +99,49 @@ class MutatePDB extends AlgorithmsScript {
         molecularAssembly.setForceField(forceField)
 
         PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties)
-        pdbFilter.mutate(chain, resID, resName)
+        if(allChains){
+            //Set false assembly.
+            if (filenames != null && filenames.size() > 0) {
+                MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+                falseAssembly = assemblies[0]
+            } else if (falseAssembly == null) {
+                logger.info(helpString())
+                return
+            }
+            //For every chain, mutate the residue.
+            Polymer[] chains = falseAssembly.getChains()
+            for(Polymer currentChain:chains){
+                pdbFilter.mutate(currentChain.chainID, resID, resName)
+            }
+        } else {
+            pdbFilter.mutate(chain, resID, resName)
+        }
         pdbFilter.readFile()
         pdbFilter.applyAtomProperties()
         molecularAssembly.finalize(true, forceField)
 
         if (destRotamer > -1) {
-            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, true);
-            Polymer polymer = molecularAssembly.getChain(chain.toString())
-            Residue residue = polymer.getResidue(resID)
-            Rotamer[] rotamers = residue.getRotamers(rLib)
-            if (rotamers != null && rotamers.length > 0) {
-                RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
+            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, true)
+            if (allChains) {
+                Polymer[] chains = molecularAssembly.getChains()
+                for (Polymer currentChain : chains) {
+                    Residue residue = currentChain.getResidue(resID)
+                    Rotamer[] rotamers = residue.getRotamers(rLib)
+                    if (rotamers != null && rotamers.length > 0) {
+                        RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
+                    } else {
+                        logger.info(" No rotamer to apply.")
+                    }
+                }
             } else {
-                logger.info(" No rotamer to apply.")
+                Polymer polymer = molecularAssembly.getChain(chain.toString())
+                Residue residue = polymer.getResidue(resID)
+                Rotamer[] rotamers = residue.getRotamers(rLib)
+                if (rotamers != null && rotamers.length > 0) {
+                    RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
+                } else {
+                    logger.info(" No rotamer to apply.")
+                }
             }
         }
         pdbFilter.writeFile(structure, false)
