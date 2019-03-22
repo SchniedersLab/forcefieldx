@@ -11,6 +11,8 @@ matrix:
     - os: linux
       jdk: oraclejdk11
     - os: linux
+      jdk: oraclejdk12
+    - os: linux
       jdk: openjdk8
     - os: linux
       jdk: openjdk9
