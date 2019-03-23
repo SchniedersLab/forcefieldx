@@ -138,7 +138,7 @@ import ffx.potential.utils.PotentialsDataConverter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
 import ffx.utilities.Resources;
-import ffx.utilities.StringUtils;
+import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 import static ffx.utilities.StringUtils.pdbForID;
 
 /**
@@ -474,7 +474,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 logger.info(url.toString());
                 File structureFile = new File(url.getFile());
                 logger.info(structureFile.toString());
-                String tempFile = StringUtils.copyInputStreamToTmpFile(url.openStream(), structureFile.getName(), "pdb");
+                String tempFile = copyInputStreamToTmpFile(url.openStream(), "ffx", structureFile.getName(), "pdb");
                 open(tempFile);
             } catch (Exception e) {
                 System.err.println("MainPanel - Menu command not found: " + arg);

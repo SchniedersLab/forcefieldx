@@ -37,47 +37,34 @@
  */
 package ffx.utilities;
 
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 
 /**
- * <p>DirectoryUtils class.</p>
+ * Port Utilities.
  *
  * @author Michael J. Schnieders
  */
-public class DirectoryUtils {
+public class PortUtils {
 
     /**
-     * Recursively delete the contents of a directory.
+     * Check if a port is available.
      *
-     * @param path a {@link java.nio.file.Path} object.
-     * @throws java.io.IOException Thrown if deletion fails.
+     * @param port The port id.
+     * @return True if the port is available.
      */
-    public static void deleteDirectoryTree(Path path) throws IOException {
-        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
+    public static boolean isTcpPortAvailable(int port) {
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            // setReuseAddress(false) is required only on OSX, otherwise the code will not work correctly on that platform
+            serverSocket.setReuseAddress(false);
 
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException e)
-                    throws IOException {
-                if (e == null) {
-                    Files.delete(dir);
-                    return FileVisitResult.CONTINUE;
-                } else {
-                    // directory iteration failed
-                    throw e;
-                }
-            }
-        });
+            // Try to bind the port.
+            serverSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), port), 1);
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
 }

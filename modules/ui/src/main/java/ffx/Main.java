@@ -46,12 +46,8 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
@@ -62,9 +58,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
@@ -80,10 +74,12 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.time.StopWatch;
 
 import edu.rit.pj.Comm;
+import edu.rit.pj.cluster.Configuration;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.OSXAdapter;
+import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 
 import sun.misc.Unsafe;
 
@@ -100,33 +96,31 @@ public final class Main extends JFrame {
     /**
      * Constant <code>stopWatch</code>
      */
-    public static StopWatch stopWatch = new StopWatch();
+    private static StopWatch stopWatch = new StopWatch();
     /**
      * This is the main application wrapper.
      */
     public static MainPanel mainPanel;
     /**
-     * An Adapter class to integrate with OSX.
+     * Handle FFX logging.
      */
-    public static OSXAdapter osxAdapter;
-    private static Level level;
     private static LogHandler logHandler;
     /**
-     * Rank of this process for a multi-process Parallel Java FFX job.
+     * The configured Scheduler port.
      */
-    private static int rank = 0;
+    private static int schedulerPort;
     /**
-     * Number of processes for a multi-process Parallel Java FFX job.
+     * Parallel Java Configuration instance.
      */
-    private static int processes = 1;
+    private static Configuration configuration = null;
+    /**
+     * Parallel Java World Communicator.
+     */
+    private static Comm world = null;
     /**
      * Name of the machine FFX is running on.
      */
     private static String hostName = null;
-    /**
-     * Force Field X base directory.
-     */
-    private static File ffxDirectory = null;
     /**
      * Force Field X process ID.
      */
@@ -152,9 +146,7 @@ public final class Main extends JFrame {
 
         // Finally, open the supplied file if necessary.
         if (commandLineFile != null && !commandLineFile.exists()) {
-            /**
-             * See if the commandLineFile is an embedded script.
-             */
+            // See if the commandLineFile is an embedded script.
             String name = commandLineFile.getName();
             name = name.replace('.', '/');
             String pathName = "ffx/scripts/" + name;
@@ -165,10 +157,10 @@ public final class Main extends JFrame {
             }
             if (embeddedScript != null) {
                 try {
-                    commandLineFile = new File(copyInputStreamToTmpFile(
-                                    embeddedScript.openStream(), commandLineFile.getName(), ".groovy"));
+                    commandLineFile = new File(copyInputStreamToTmpFile(embeddedScript.openStream(),
+                            "ffx", commandLineFile.getName(), "groovy"));
                 } catch (Exception e) {
-                    logger.info(String.format(" The embedded script %s could not be extracted.", embeddedScript));
+                    logger.info(format(" The embedded script %s could not be extracted.", embeddedScript));
                 }
             }
         }
@@ -212,8 +204,10 @@ public final class Main extends JFrame {
             Main.this.setTitle("Force Field X");
             URL iconURL = getClass().getClassLoader().getResource(
                     "ffx/ui/icons/icon64.png");
-            ImageIcon icon = new ImageIcon(iconURL);
-            Main.this.setIconImage(icon.getImage());
+            if (iconURL != null) {
+                ImageIcon icon = new ImageIcon(iconURL);
+                Main.this.setIconImage(icon.getImage());
+            }
             Main.this.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
@@ -241,7 +235,7 @@ public final class Main extends JFrame {
             // Mac OS X specific features that help Force Field X look native
             // on Macs. This needs to be done after the MainPanel is created.
             if (SystemUtils.IS_OS_MAC_OSX) {
-                osxAdapter = new OSXAdapter(mainPanel);
+                OSXAdapter osxAdapter = new OSXAdapter(mainPanel);
             }
 
             SwingUtilities.updateComponentTreeUI(SwingUtilities.getRoot(Main.this));
@@ -251,7 +245,7 @@ public final class Main extends JFrame {
     /**
      * Process any "-D" command line flags.
      */
-    private static String[] processProperties(String args[]) {
+    private static String[] processProperties(String[] args) {
         List<String> newArgs = new ArrayList<>();
         for (String arg : args) {
             arg = arg.trim();
@@ -288,7 +282,7 @@ public final class Main extends JFrame {
         // Remove all log handlers from the default logger.
         try {
             Logger defaultLogger = LogManager.getLogManager().getLogger("");
-            Handler defaultHandlers[] = defaultLogger.getHandlers();
+            Handler[] defaultHandlers = defaultLogger.getHandlers();
             for (Handler h : defaultHandlers) {
                 defaultLogger.removeHandler(h);
             }
@@ -305,16 +299,14 @@ public final class Main extends JFrame {
             tempLevel = Level.INFO;
         }
 
-        level = tempLevel;
+        Level level = tempLevel;
         logHandler = new LogHandler();
         logHandler.setLevel(level);
         Logger ffxLogger = Logger.getLogger("ffx");
         ffxLogger.addHandler(logHandler);
         ffxLogger.setLevel(level);
 
-        /**
-         * This removes logger warnings about Illegal Access.
-         */
+        // This removes logger warnings about Illegal Access.
         try {
             Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
             theUnsafe.setAccessible(true);
@@ -331,18 +323,31 @@ public final class Main extends JFrame {
     /**
      * Print out a promo.
      */
-    private static void header(String args[]) {
+    private static void header(String[] args) {
         StringBuilder sb = new StringBuilder();
         sb.append(MainPanel.border).append("\n");
         sb.append(MainPanel.title).append("\n");
         sb.append(MainPanel.aboutString).append("\n");
         sb.append(MainPanel.border);
+
         sb.append("\n ").append(new Date());
+        sb.append(format("\n Process ID %d on %s.", procID, hostName));
+
         // Print out command line arguments if the array is not null.
         if (args != null && args.length > 0) {
-            sb.append("\n Command line arguments:\n ");
+            sb.append("\n\n Command line arguments:\n ");
             sb.append(Arrays.toString(args));
+            sb.append("\n");
         }
+
+        if (schedulerPort > 1) {
+            sb.append(format("\n Parallel Java:\n %s", world.toString()));
+            if (configuration != null) {
+                sb.append(format("\n Scheduler %s on port %d.\n",
+                        configuration.getSchedulerHost(), schedulerPort));
+            }
+        }
+
         logger.info(sb.toString());
     }
 
@@ -353,18 +358,10 @@ public final class Main extends JFrame {
         logger.info("\n usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
         logger.info("\n where commands include:\n");
         if (listTestScripts) {
-            try {
-                Main.listGroovyScripts(false, true);
-            } catch (IOException e) {
-                logger.log(Level.INFO, " Exception listing scripts.", e);
-            }
+            Main.listGroovyScripts(false, true);
             logger.info("\n For help on an experimental or test command use:  ffxc <command> -h\n");
         } else {
-            try {
-                Main.listGroovyScripts(true, false);
-            } catch (IOException e) {
-                logger.log(Level.INFO, " Exception listing scripts.", e);
-            }
+            Main.listGroovyScripts(true, false);
             logger.info("\n To list experimental & test scripts: ffxc --test");
             logger.info(" For help on a specific command use:  ffxc <command> -h\n");
         }
@@ -390,6 +387,7 @@ public final class Main extends JFrame {
         }
 
         String dirString = System.getProperty("basedir");
+        File ffxDirectory;
         if (dirString != null) {
             ffxDirectory = new File(dirString);
         } else {
@@ -397,7 +395,7 @@ public final class Main extends JFrame {
         }
 
         try {
-            logger.fine(String.format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
+            logger.fine(format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
         } catch (Exception e) {
             // Do Nothing.
         }
@@ -407,14 +405,57 @@ public final class Main extends JFrame {
     /**
      * Start up the Parallel Java communication layer.
      */
-    private static void startParallelJava(String args[]) {
+    private static void startParallelJava(String[] args) {
+
+        // Try to read the PJ configuration file.
+        try {
+            configuration = new Configuration("cluster.txt");
+        } catch (IOException e) {
+            // No cluster configuration file was found.
+        }
+
+        // Attempt to read the "pj.nn" System property.
+        String numNodes = System.getProperty("pj.nn");
+        int requestedNodes = -1;
+        if (numNodes != null) {
+            try {
+                requestedNodes = Integer.parseInt(numNodes);
+            } catch (Exception e) {
+                // Error parsing the the pj.nn property.
+            }
+        }
+
+        // Attempt to read the "pj.port" System property.
+        String portString = System.getProperty("pj.port");
+        schedulerPort = -1;
+        if (portString != null) {
+            try {
+                schedulerPort = Integer.parseInt(portString);
+            } catch (Exception e) {
+                // Error parsing the the pj.nn property.
+            }
+        }
+
+        // Configure the scheduler port if it wasn't set on the command line.
+        if (schedulerPort <= 0) {
+            if (requestedNodes <= 0) {
+                // If the "pj.nn" property is not set, configure the port to 1 (no scheduler).
+                schedulerPort = 1;
+            } else if (configuration != null) {
+                // Configure the port using the Configuration.
+                schedulerPort = configuration.getSchedulerPort();
+            } else {
+                // Set the port to the PJ default.
+                schedulerPort = 20617; // Must sync this value with the Scheduler.groovy script.
+            }
+            System.setProperty("pj.port", Integer.toString(schedulerPort));
+        }
+
         try {
             Comm.init(args);
-            Comm world = Comm.world();
-            rank = world.rank();
-            processes = world.size();
+            world = Comm.world();
         } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
+            String message = " Exception starting up the Parallel Java communication layer.";
             logger.log(Level.WARNING, message, e.toString());
         }
     }
@@ -422,16 +463,14 @@ public final class Main extends JFrame {
     /**
      * Start the Force Field X command line interface.
      *
-     * @param commandLineFile
-     * @param argList
+     * @param commandLineFile The command line file.
+     * @param argList         The command line argument list.
      */
     private static void startCommandLineInterface(File commandLineFile, List<String> argList) {
-        if (processes == 1) {
-            logger.info(String.format(" Process ID %d on %s.", procID, hostName));
-            logger.info(String.format(" Starting up the command line interface.\n"));
-        } else {
-            logger.info(String.format(" Starting up rank %d on %s.\n", rank, hostName));
+        if (configuration == null) {
+            logger.info(" Starting up the command line interface.\n");
         }
+
         HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
         mainPanel = m.mainPanel;
     }
@@ -439,22 +478,19 @@ public final class Main extends JFrame {
     /**
      * Start the Force Field X graphical user interface.
      *
-     * @param commandLineFile
-     * @param argList
+     * @param commandLineFile The command line file.
+     * @param argList         The command line argument list.
      */
     private static void startGraphicalUserInterface(File commandLineFile, List<String> argList) {
-        logger.info(String.format(" Process ID %d on %s.", procID, hostName));
-        logger.info(String.format(" Starting up the graphical user interface."));
+        logger.info(" Starting up the graphical user interface.");
 
-        /**
-         * Set some Swing Constants.
-         */
+        // Set some Swing Constants.
         UIManager.put("swing.boldMetal", Boolean.FALSE);
         setDefaultLookAndFeelDecorated(false);
 
-        /**
-         * Some Mac OS X specific features that help FFX look native. These need
-         * to be set before the MainPanel is created.
+        /*
+          Some Mac OS X specific features that help FFX look native. These need
+          to be set before the MainPanel is created.
          */
         if (SystemUtils.IS_OS_MAC_OSX) {
             OSXAdapter.setOSXProperties();
@@ -465,10 +501,8 @@ public final class Main extends JFrame {
             }
         }
 
-        /**
-         * Initialize the Main frame and Force Field X MainPanel.
-         */
-        Main m = new Main(commandLineFile, argList);
+        // Initialize the Main frame and Force Field X MainPanel.
+        new Main(commandLineFile, argList);
     }
 
     /**
@@ -477,32 +511,22 @@ public final class Main extends JFrame {
      * @param args an array of {@link java.lang.String} objects.
      */
     public static void main(String[] args) {
-        /**
-         * Process any "-D" command line flags.
-         */
+        // Process any "-D" command line flags.
         args = processProperties(args);
 
-        /**
-         * Configure our logging.
-         */
+        // Configure our logging.
         startLogging();
 
-        /**
-         * Determine host name and process ID.
-         */
+        // Determine host name and process ID.
         environment();
 
-        /**
-         * Start up the Parallel Java communication layer.
-         */
+        // Start up the Parallel Java communication layer.
         startParallelJava(args);
 
         // Print the header.
         header(args);
 
-        /**
-         * Print out help for the command line interface.
-         */
+        // Print out help for the command line interface.
         if (GraphicsEnvironment.isHeadless() && args.length < 2) {
             if (args.length == 1 && args[0].toUpperCase().contains("TEST")) {
                 commandLineInterfaceHelp(true);
@@ -510,9 +534,7 @@ public final class Main extends JFrame {
             commandLineInterfaceHelp(false);
         }
 
-        /**
-         * Parse the specified command or structure file.
-         */
+        // Parse the specified command or structure file.
         File commandLineFile = null;
         int nArgs = args.length;
         if (nArgs > 0) {
@@ -524,9 +546,7 @@ public final class Main extends JFrame {
             }
         }
 
-        /**
-         * Convert the args to a List<String>.
-         */
+        // Convert the args to a List<String>.
         List<String> argList = new ArrayList<>(nArgs);
         if (nArgs > 1) {
             for (int i = 1; i < nArgs; i++) {
@@ -534,9 +554,7 @@ public final class Main extends JFrame {
             }
         }
 
-        /**
-         * Start up the GUI or CLI version of Force Field X.
-         */
+        // Start up the GUI or CLI version of Force Field X.
         if (!GraphicsEnvironment.isHeadless()) {
             startGraphicalUserInterface(commandLineFile, argList);
         } else {
@@ -556,25 +574,39 @@ public final class Main extends JFrame {
         return toStringBuilder.toString();
     }
 
-    public static Map<String, List<String>> listGroovyScripts(
-            boolean logScripts, boolean logTestScripts) throws IOException {
+    /**
+     * List the embedded FFX Groovy Scripts.
+     *
+     * @param logScripts     List Scripts.
+     * @param logTestScripts List Test Scripts.
+     */
+    private static void listGroovyScripts(
+            boolean logScripts, boolean logTestScripts) {
 
         // Find the location of ffx-all.jar
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         URL scriptURL = classLoader.getResource("ffx/scripts");
-        String ffx = scriptURL.getPath().substring(5, scriptURL.getPath().indexOf("!"));
+        if (scriptURL == null) {
+            logger.info(" The ffx/scripts resource could not be found by the classloader.");
+            return;
+        }
 
-        JarFile jar = new JarFile(URLDecoder.decode(ffx, "UTF-8"));
+        String scriptPath = scriptURL.getPath();
+        String ffx = scriptPath.substring(5, scriptURL.getPath().indexOf("!"));
 
-        Map<String, List<String>> classes = new HashMap<>();
-        List<String> scripts = new ArrayList<>();
-        List<String> testScripts = new ArrayList<>();
-        classes.put("scripts", scripts);
-        classes.put("testScripts", testScripts);
+        JarFile jar;
+        try {
+            jar = new JarFile(URLDecoder.decode(ffx, "UTF-8"));
+        } catch (Exception e) {
+            logger.info(" The ffx/scripts resource could not be decoded.");
+            return;
+        }
 
         // Getting the files into the jar
         Enumeration<? extends JarEntry> enumeration = jar.entries();
 
+        List<String> scripts = new ArrayList<>();
+        List<String> testScripts = new ArrayList<>();
         // Iterates into the files in the jar file
         while (enumeration.hasMoreElements()) {
             ZipEntry zipEntry = enumeration.nextElement();
@@ -607,52 +639,7 @@ public final class Main extends JFrame {
                 logger.info(" " + script);
             }
         }
-
-        return classes;
     }
 
-    /**
-     * Returns the file name of a temporary copy of <code>input</code> content.
-     *
-     * @param input  a {@link java.io.InputStream} object.
-     * @param name   a {@link java.lang.String} object.
-     * @param suffix a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
-     * @throws java.io.IOException if any.
-     */
-    public static String copyInputStreamToTmpFile(final InputStream input,
-                                                  String name, final String suffix) throws IOException {
-        File tmpFile = null;
-
-        try {
-            name = "ffx." + name + ".";
-            tmpFile = File.createTempFile(name, suffix);
-        } catch (IOException e) {
-            System.out.println(" Could not extract a Force Field X library.");
-            System.err.println(e.toString());
-            System.exit(-1);
-        }
-
-        tmpFile.deleteOnExit();
-
-        OutputStream output = null;
-        try {
-            output = new BufferedOutputStream(new FileOutputStream(tmpFile));
-            byte[] buffer = new byte[8192];
-            int size;
-            while ((size = input.read(buffer)) != -1) {
-                output.write(buffer, 0, size);
-            }
-        } finally {
-            if (input != null) {
-                input.close();
-            }
-            if (output != null) {
-                output.close();
-            }
-        }
-
-        return tmpFile.toString();
-    }
 }
 

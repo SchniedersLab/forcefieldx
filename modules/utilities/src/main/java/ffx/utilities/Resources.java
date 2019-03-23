@@ -72,7 +72,7 @@ public class Resources {
                 UnixOperatingSystemMXBean unixOS = (UnixOperatingSystemMXBean) os;
 
                 // CPU Time and Average System Load.
-                Long time = unixOS.getProcessCpuTime();
+                long time = unixOS.getProcessCpuTime();
                 sb.append(format("\n Total CPU time:         %6.2f (sec)", time * 1.0e-9));
                 double systemLoadAve = unixOS.getSystemLoadAverage();
                 if (systemLoadAve >= 0) {
@@ -93,17 +93,6 @@ public class Resources {
                         freePhysical, totalPhysical));
                 sb.append(format("\n System swap space:      %6d MB free out of %6d MB",
                         freeSwap, totalSwap));
-
-                // Log CPU usage.
-
-                // double sysCPULoad = unixOS.getSystemCpuLoad() * 100.0;
-                // double procCPULoad = unixOS.getProcessCpuLoad() * 100.0;
-                /**
-                 * if (procCPULoad >= 0) { sb.append(format("\n JVM CPU load:
-                 * %6.3f%%", procCPULoad)); } if (sysCPULoad >= 0) {
-                 * sb.append(format("\n System CPU load: %6.3f%%", sysCPULoad));
-                 * }
-                 */
             }
 
             // JVM Memory.

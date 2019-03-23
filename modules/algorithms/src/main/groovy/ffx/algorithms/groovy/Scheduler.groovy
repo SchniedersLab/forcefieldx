@@ -1,7 +1,9 @@
 package ffx.algorithms.groovy
 
+import static java.lang.String.format
+
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.numerics.Potential
+import ffx.utilities.PortUtils
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -39,6 +41,13 @@ class Scheduler extends AlgorithmsScript {
     @Option(names = ['-P', '--port'], paramLabel = "20617",
             description = 'Set the port the Front End server will listen on.')
     int port = 20617
+
+    /**
+     * -W or --webport to define the port the Server will serve a webpage to (generally not used).
+     */
+    @Option(names = ['-W', '--webport'], paramLabel = "8080",
+            description = 'Set the port the Server will serve a webpage to.')
+    int webport = 8080
 
     /**
      * -e or --hostfile to define the environment variable that points to the host file (default is PE_HOSTFILE).
@@ -105,17 +114,38 @@ class Scheduler extends AlgorithmsScript {
             }
         }
 
+        // Check for an invalid requested port.
+        if (port <= 1) {
+            logger.info(" The scheduler port must be greater than 1; the default of 20617 will be used.")
+            port = 20617
+        }
+
+        // Check the availability of the desired Scheduler port.
+        while (!PortUtils.isTcpPortAvailable(port)) {
+            logger.info(format(" Scheduler port %d is not available.", port))
+            port++
+        }
+        logger.info(format(" Scheduler port: %d.", port))
+        String logFile = format("scheduler.%d.log", port)
+
+        // Check the availability of the desired web port.
+        while (!PortUtils.isTcpPortAvailable(webport)) {
+            logger.info(format(" Web port %d is not available.", webport))
+            webport++
+        }
+        logger.info(format(" Web port: %d.", webport))
+
         // Create the Parallel Java cluster configuration file.
         String frontend = hostnames[0]
         StringBuffer sb = new StringBuffer()
         sb.append("# Force Field X Cluster Configuration File\n")
         sb.append("cluster Force Field X Cluster\n")
-        sb.append("logfile ffx-scheduler.log\n")
+        sb.append(format("logfile %s\n", logFile))
         sb.append("webhost 127.0.0.1\n")
-        sb.append("webport 8080\n")
+        sb.append(format("webport %d\n", webport))
         sb.append("schedulerhost localhost\n")
-        sb.append("schedulerport " + port + "\n")
-        sb.append("frontendhost " + frontend + "\n")
+        sb.append(format("schedulerport %d\n", port))
+        sb.append(format("frontendhost %s\n", frontend))
 
         // Locate the JRE being used.
         String javaHome = System.getProperty("java.home")
@@ -157,8 +187,4 @@ class Scheduler extends AlgorithmsScript {
         return this
     }
 
-    @Override
-    List<Potential> getPotentials() {
-        return new ArrayList<>()
-    }
 }

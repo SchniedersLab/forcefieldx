@@ -37,47 +37,59 @@
  */
 package ffx.utilities;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.io.InputStream;
+import java.io.OutputStream;
+import static java.lang.String.format;
 
 /**
- * <p>DirectoryUtils class.</p>
+ * <p>FileUtils class.</p>
  *
  * @author Michael J. Schnieders
  */
-public class DirectoryUtils {
+public class FileUtils {
 
     /**
-     * Recursively delete the contents of a directory.
+     * Returns the file name of a temporary copy of <code>input</code> content.
      *
-     * @param path a {@link java.nio.file.Path} object.
-     * @throws java.io.IOException Thrown if deletion fails.
+     * @param input  The input stream contents are copied to a temporary file.
+     * @param prefix Temporary file prefix.
+     * @param name   Temporary file name.
+     * @param suffix Temporary file suffix.
+     * @return The temporary file.
+     * @throws java.io.IOException An IOException is thrown if a temporary file could not be created.
      */
-    public static void deleteDirectoryTree(Path path) throws IOException {
-        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
+    public static String copyInputStreamToTmpFile(final InputStream input, String prefix,
+                                                  String name, final String suffix) throws IOException {
+        File tmpFile = null;
 
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException e)
-                    throws IOException {
-                if (e == null) {
-                    Files.delete(dir);
-                    return FileVisitResult.CONTINUE;
-                } else {
-                    // directory iteration failed
-                    throw e;
-                }
+        name = prefix + "." + name + ".";
+        try {
+            tmpFile = File.createTempFile(name, "." + suffix);
+        } catch (IOException e) {
+            System.out.println(format(" Could not extract %s.", name));
+            System.err.println(e.toString());
+            System.exit(-1);
+        }
+
+        tmpFile.deleteOnExit();
+
+        try (OutputStream output = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
+            byte[] buffer = new byte[8192];
+            int size;
+            while ((size = input.read(buffer)) != -1) {
+                output.write(buffer, 0, size);
             }
-        });
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+        }
+
+        return tmpFile.toString();
     }
 
 }

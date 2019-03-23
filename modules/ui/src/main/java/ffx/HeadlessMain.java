@@ -47,6 +47,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
+import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 
 /**
  * The HeadlessMain class is the entry point to the command line version of
@@ -62,11 +63,11 @@ public class HeadlessMain {
     /**
      * Complete initializations.
      *
-     * @param commandLineFile a {@link java.io.File} object.
-     * @param argList         a {@link java.util.List} object.
-     * @param logHandler      a {@link ffx.ui.LogHandler} object.
+     * @param commandLineFile The command line file.
+     * @param argList         The command line argument list.
+     * @param logHandler      The FFX log handler.
      */
-    public HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
+    HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
 
         // Construct the MainPanel, set it's LogHandler, and initialize then it.
         mainPanel = new MainPanel();
@@ -76,9 +77,7 @@ public class HeadlessMain {
         // Open the supplied script file.
         if (commandLineFile != null) {
             if (!commandLineFile.exists()) {
-                /**
-                 * See if the commandLineFile is an embedded script.
-                 */
+                // See if the commandLineFile is an embedded script.
                 String name = commandLineFile.getName();
                 name = name.replace('.', '/');
                 String pathName = "ffx/scripts/" + name;
@@ -106,8 +105,8 @@ public class HeadlessMain {
 
                 if (embeddedScript != null) {
                     try {
-                        commandLineFile = new File(Main.copyInputStreamToTmpFile(
-                                        embeddedScript.openStream(), commandLineFile.getName(), ".groovy"));
+                        commandLineFile = new File(copyInputStreamToTmpFile(embeddedScript.openStream(),
+                                "ffx", commandLineFile.getName(), "groovy"));
                     } catch (Exception e) {
                         logger.warning("Exception extracting embedded script "
                                 + embeddedScript.toString() + "\n" + e.toString());

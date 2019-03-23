@@ -37,16 +37,13 @@
  */
 package ffx.utilities;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
@@ -260,51 +257,9 @@ public class StringUtils {
     }
 
     /**
-     * Returns the file name of a temporary copy of <code>input</code> content.
-     *
-     * @param input  a {@link java.io.InputStream} object.
-     * @param name   a {@link java.lang.String} object.
-     * @param suffix a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
-     * @throws java.io.IOException if any.
-     */
-    public static String copyInputStreamToTmpFile(final InputStream input,
-                                                  String name, final String suffix) throws IOException {
-        File tmpFile = null;
-        try {
-            name = "ffx." + name + ".";
-            tmpFile = File.createTempFile(name, suffix);
-        } catch (Exception e) {
-            System.out.println(" Could not extract a Force Field X library.");
-            System.err.println(e.toString());
-            System.exit(-1);
-        }
-
-        tmpFile.deleteOnExit();
-        OutputStream output = null;
-        try {
-            output = new BufferedOutputStream(new FileOutputStream(tmpFile));
-            byte[] buffer = new byte[8192];
-            int size;
-            while ((size = input.read(buffer)) != -1) {
-                output.write(buffer, 0, size);
-            }
-        } finally {
-            if (input != null) {
-                input.close();
-            }
-            if (output != null) {
-                output.close();
-            }
-        }
-
-        return tmpFile.toString();
-    }
-
-    /**
      * Finds consecutive subranges in an array of ints, and returns their mins
      * and maxes. This can include singletons.
-     *
+     * <p>
      * Example: [4, 5, 6, 1, 1, 2, 5, 6, 7] would become [4,6],[1,1],[1,2],[5,7]
      *
      * @param set Array of ints to split into consecutive subranges.

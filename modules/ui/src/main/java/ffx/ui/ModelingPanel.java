@@ -101,14 +101,13 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.parsers.SystemFilter;
 import ffx.ui.commands.DTDResolver;
 import ffx.utilities.Keyword;
-import ffx.utilities.StringUtils;
+import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
 
 /**
  * The ModelingPanel class encapsulates functionality needed to run FFX Modeling
  * Commands.
  *
  * @author Michael J. Schnieders
- *
  */
 public class ModelingPanel extends JPanel implements ActionListener,
         MouseListener {
@@ -613,7 +612,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     **********************************************************************
+     * *********************************************************************
      *
      * @return a {@link java.lang.String} object.
      */
@@ -867,9 +866,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
         File scriptFile = null;
         if (embeddedScript != null) {
             try {
-                scriptFile = new File(
-                        StringUtils.copyInputStreamToTmpFile(
-                                embeddedScript.openStream(), name, ".ffx"));
+                scriptFile = new File(copyInputStreamToTmpFile(
+                        embeddedScript.openStream(), "ffx", name, "groovy"));
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Exception extracting embedded script {0}\n{1}",
                         new Object[]{embeddedScript.toString(), e.toString()});
@@ -918,7 +916,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * directory.
      *
      * @param command The command to be excuted.
-     * @param dir The directory to execute the command in.
+     * @param dir     The directory to execute the command in.
      * @return a {@link ffx.ui.FFXExec} object.
      */
     public FFXExec launch(String command, String dir) {
@@ -1582,7 +1580,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * Mouse events are used to trigger status bar updates.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -1659,7 +1657,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     **********************************************************************
+     * *********************************************************************
      */
     // Initialization code and misc. methods.
     public void selected() {
@@ -1713,7 +1711,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     **********************************************************************
+     * *********************************************************************
      *
      * @param mode a {@link java.lang.String} object.
      */
