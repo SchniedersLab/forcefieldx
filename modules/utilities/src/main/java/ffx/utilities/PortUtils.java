@@ -48,6 +48,9 @@ import java.net.ServerSocket;
  */
 public class PortUtils {
 
+    public static final int MIN_TCP_PORT = 0;
+    public static final int MAX_TCP_PORT = 65535;
+
     /**
      * Check if a port is available.
      *
@@ -65,6 +68,16 @@ public class PortUtils {
         } catch (Exception ex) {
             return false;
         }
+    }
+
+    /**
+     * Check if an int matches a valid TCP port (i.e. is a 16-bit unsigned integer).
+     *
+     * @param port A number to check.
+     * @return If port >= 0 and <= 65535
+     */
+    public static boolean tcpPortValid(int port) {
+        return port >= MIN_TCP_PORT && port <= MAX_TCP_PORT;
     }
 
 }
