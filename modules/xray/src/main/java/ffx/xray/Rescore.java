@@ -86,7 +86,7 @@ import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
-import static ffx.algorithms.ClusterStructures.generatePath;
+import static ffx.algorithms.misc.ClusterStructures.generatePath;
 import static ffx.xray.Rescore.RescoreStrategy.NO_RESCORE;
 
 /**
@@ -95,7 +95,6 @@ import static ffx.xray.Rescore.RescoreStrategy.NO_RESCORE;
  * minimization, or real-space minimization.
  *
  * @author Jacob Litman
- *
  * @since 1.0
  */
 public class Rescore {

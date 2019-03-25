@@ -41,7 +41,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
 
-import ffx.algorithms.osrw.AbstractOSRW;
+import ffx.algorithms.thermodynamics.AbstractOSRW;
 
 /**
  * Define an MC move to update lambda.

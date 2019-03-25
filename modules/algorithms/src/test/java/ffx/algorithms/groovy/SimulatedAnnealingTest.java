@@ -21,7 +21,8 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.SimulatedAnnealing;
+import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.optimize.SimulatedAnnealing;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -30,7 +31,7 @@ import groovy.lang.Binding;
  * @author hbernabe
  */
 @RunWith(Parameterized.class)
-public class SimulatedAnnealingTest extends ffx.algorithms.PJDependentTest {
+public class SimulatedAnnealingTest extends PJDependentTest {
 
     private String info;
     private String filename;

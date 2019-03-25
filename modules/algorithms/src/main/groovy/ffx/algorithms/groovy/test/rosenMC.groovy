@@ -36,19 +36,19 @@
  * exception statement from your version.
  */
 
-package ffx.algorithms.groovy.test;
+package ffx.algorithms.groovy.test
 
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.picocli.CliBuilder
 
-import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.integrators.Integrator
+import ffx.algorithms.dynamics.integrators.IntegratorEnum
+import ffx.algorithms.dynamics.thermostats.Thermostat
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MonteCarloListener
-import ffx.algorithms.integrators.Integrator
-import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.mc.RosenbluthCBMC
-import ffx.algorithms.thermostats.Thermostat
-import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.potential.bonded.Residue
 
 // Number of molecular dynamics steps

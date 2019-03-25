@@ -38,11 +38,11 @@
 package ffx.algorithms.cli;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.integrators.Integrator;
-import ffx.algorithms.integrators.IntegratorEnum;
-import ffx.algorithms.thermostats.Thermostat;
-import ffx.algorithms.thermostats.ThermostatEnum;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.integrators.Integrator;
+import ffx.algorithms.dynamics.integrators.IntegratorEnum;
+import ffx.algorithms.dynamics.thermostats.Thermostat;
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 
@@ -151,7 +151,7 @@ public class DynamicsOptions {
      * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param sh             a {@link ffx.algorithms.AlgorithmListener} object.
      * @param writeout       a {@link ffx.algorithms.cli.WriteoutOptions} object.
-     * @return a {@link ffx.algorithms.MolecularDynamics} object.
+     * @return a {@link MolecularDynamics} object.
      */
     public MolecularDynamics getDynamics(WriteoutOptions writeout,
                                          Potential potential,

@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 
-import ffx.algorithms.Barostat;
+import ffx.algorithms.dynamics.Barostat;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 

@@ -66,9 +66,9 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import ffx.algorithms.PJDependentTest;
-import ffx.algorithms.osrw.AbstractOSRW;
-import ffx.algorithms.osrw.TransitionTemperedOSRW;
+import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.thermodynamics.AbstractOSRW;
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
 

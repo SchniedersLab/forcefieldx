@@ -2,10 +2,10 @@ package ffx.algorithms.groovy
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.SimulatedAnnealing
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.optimize.SimulatedAnnealing
 import ffx.potential.MolecularAssembly
 
 import picocli.CommandLine.Command

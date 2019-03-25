@@ -48,7 +48,7 @@ import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.min;
 
-import ffx.algorithms.thermostats.Thermostat;
+import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -126,7 +126,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
      * @param trialSetSize      Larger values cost more but increase acceptance.
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param forceFieldEnergy  a {@link ffx.potential.ForceFieldEnergy} object.
-     * @param thermostat        a {@link ffx.algorithms.thermostats.Thermostat} object.
+     * @param thermostat        a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
      */
     public RosenbluthOBMC(MolecularAssembly molecularAssembly, ForceFieldEnergy forceFieldEnergy, Thermostat thermostat,
                           List<Residue> targets, int mcFrequency, int trialSetSize) {
@@ -143,7 +143,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param ffe               a {@link ffx.potential.ForceFieldEnergy} object.
-     * @param thermostat        a {@link ffx.algorithms.thermostats.Thermostat} object.
+     * @param thermostat        a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
      * @param targets           a {@link java.util.List} object.
      * @param mcFrequency       a int.
      * @param trialSetSize      a int.

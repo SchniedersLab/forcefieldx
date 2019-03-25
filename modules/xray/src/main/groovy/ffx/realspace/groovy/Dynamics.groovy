@@ -2,9 +2,9 @@ package ffx.realspace.groovy
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.realspace.RealSpaceData

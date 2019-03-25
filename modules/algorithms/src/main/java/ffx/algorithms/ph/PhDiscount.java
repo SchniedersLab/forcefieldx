@@ -50,10 +50,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.MolecularDynamics.MonteCarloNotification;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MolecularDynamics.MonteCarloNotification;
+import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.algorithms.mc.MonteCarloListener;
-import ffx.algorithms.thermostats.Thermostat;
 import ffx.potential.AssemblyState;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -117,7 +117,7 @@ public class PhDiscount implements MonteCarloListener {
      *
      * @param molecularAssembly    the molecular assembly
      * @param esvSystem            a {@link ffx.potential.extended.ExtendedSystem} object.
-     * @param molecularDynamics    a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param molecularDynamics    a {@link MolecularDynamics} object.
      * @param timeStep             a double.
      * @param printInterval        a double.
      * @param saveInterval         a double.

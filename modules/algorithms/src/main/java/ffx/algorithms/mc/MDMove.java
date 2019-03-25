@@ -47,10 +47,10 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.MolecularDynamicsOpenMM;
-import ffx.algorithms.integrators.IntegratorEnum;
-import ffx.algorithms.thermostats.ThermostatEnum;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
+import ffx.algorithms.dynamics.integrators.IntegratorEnum;
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 
@@ -112,8 +112,8 @@ public class MDMove implements MCMove {
      * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
      * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ffx.algorithms.thermostats.ThermostatEnum} object.
-     * @param requestedIntegrator a {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     * @param requestedThermostat a {@link ThermostatEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      */
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
                   CompositeConfiguration properties, AlgorithmListener listener,

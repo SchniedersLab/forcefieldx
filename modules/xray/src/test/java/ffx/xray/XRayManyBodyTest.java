@@ -10,7 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.testng.Assert;
 
-import ffx.algorithms.PJDependentTest;
+import ffx.algorithms.misc.PJDependentTest;
 import ffx.numerics.Potential;
 import ffx.utilities.DirectoryUtils;
 import ffx.xray.groovy.ManyBody;

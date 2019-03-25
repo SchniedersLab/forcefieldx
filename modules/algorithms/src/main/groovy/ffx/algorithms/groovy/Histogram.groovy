@@ -3,9 +3,9 @@ package ffx.algorithms.groovy
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.osrw.AbstractOSRW
-import ffx.algorithms.osrw.OSRW
-import ffx.algorithms.osrw.TransitionTemperedOSRW
+import ffx.algorithms.thermodynamics.AbstractOSRW
+import ffx.algorithms.thermodynamics.OSRW
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly

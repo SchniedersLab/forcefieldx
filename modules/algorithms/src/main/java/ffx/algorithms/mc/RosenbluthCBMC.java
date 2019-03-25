@@ -46,7 +46,7 @@ import static java.lang.String.format;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.min;
 
-import ffx.algorithms.thermostats.Thermostat;
+import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue;
@@ -116,7 +116,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
      * @param trialSetSize      Larger values cost more but increase acceptance.
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param ffe               a {@link ffx.potential.ForceFieldEnergy} object.
-     * @param thermostat        a {@link ffx.algorithms.thermostats.Thermostat} object.
+     * @param thermostat        a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
      * @param writeSnapshots    a boolean.
      */
     public RosenbluthCBMC(MolecularAssembly molecularAssembly, ForceFieldEnergy ffe, Thermostat thermostat,

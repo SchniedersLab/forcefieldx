@@ -39,7 +39,7 @@ package ffx.xray;
 
 import java.util.logging.Logger;
 
-import ffx.algorithms.PJDependentTest;
+import ffx.algorithms.misc.PJDependentTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

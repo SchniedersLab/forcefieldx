@@ -2,8 +2,8 @@ package ffx.algorithms.groovy
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.GenerateRotamers
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.misc.GenerateRotamers
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue

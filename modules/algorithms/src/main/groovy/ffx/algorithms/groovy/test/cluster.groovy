@@ -42,13 +42,13 @@ import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.parsers.CoordinateFileFilter
 import ffx.potential.parsers.PDBFileFilter
-import static ffx.algorithms.ClusterStructures.ClustAlg.AV_LINK
-import static ffx.algorithms.ClusterStructures.ClustAlg.CLINK
-import static ffx.algorithms.ClusterStructures.ClustAlg.SLINK
-import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.BACKBONE_DIHEDRALS
-import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.CA_RMSD
-import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.DIHEDRALS
-import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.RMSD
+import static ffx.algorithms.misc.ClusterStructures.ClustAlg.AV_LINK
+import static ffx.algorithms.misc.ClusterStructures.ClustAlg.CLINK
+import static ffx.algorithms.misc.ClusterStructures.ClustAlg.SLINK
+import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.BACKBONE_DIHEDRALS
+import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.CA_RMSD
+import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.DIHEDRALS
+import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.RMSD
 
 boolean copyFiles = true;
 boolean parallel = true;
@@ -56,8 +56,8 @@ String[] sourceFileNames;
 File[] clusterFiles;
 ffx.algorithms.AlgorithmFunctions utils;
 String outputDirectoryName = "ffx_cluster_";
-ffx.algorithms.ClusterStructures.ClustAlg algorithm = ffx.algorithms.ClusterStructures.ClustAlg.AV_LINK;
-ffx.algorithms.ClusterStructures.ClusterDistanceFunction distFunction = RMSD;
+ffx.algorithms.misc.ClusterStructures.ClustAlg algorithm = ffx.algorithms.misc.ClusterStructures.ClustAlg.AV_LINK;
+ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction distFunction = RMSD;
 int numClusters = 0;
 int cacheSize = 1000;
 double rmsdCutoff = 1.0;
@@ -350,7 +350,7 @@ if (tempDirectory != null) {
     //FileUtils.deleteDirectory(tempDirectory);
 }*/
 
-ffx.algorithms.ClusterStructures clusterer = new ffx.algorithms.ClusterStructures(utils, modelFiles);
+ffx.algorithms.misc.ClusterStructures clusterer = new ffx.algorithms.misc.ClusterStructures(utils, modelFiles);
 clusterer.setAlgorithm(algorithm);
 clusterer.setNumClusters(numClusters);
 clusterer.setOutputDirectoryPrefix(outputDirectoryName);

@@ -4,13 +4,13 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.Barostat
-import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.ReplicaExchange
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
+import ffx.algorithms.dynamics.Barostat
+import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.ReplicaExchange
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergyOpenMM

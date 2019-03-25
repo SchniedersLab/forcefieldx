@@ -17,7 +17,7 @@ import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
-import ffx.algorithms.osrw.AbstractOSRW
+import ffx.algorithms.thermodynamics.AbstractOSRW
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly

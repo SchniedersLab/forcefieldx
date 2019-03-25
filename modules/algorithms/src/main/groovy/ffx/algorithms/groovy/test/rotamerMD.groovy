@@ -36,9 +36,8 @@
  * exception statement from your version.
  */
 
-package ffx.algorithms.groovy.test;
+package ffx.algorithms.groovy.test
 
-// Apache Commons Imports
 import static java.lang.Math.exp
 import static java.lang.Math.random
 
@@ -48,13 +47,13 @@ import groovy.cli.picocli.CliBuilder
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.integrators.Integrator
+import ffx.algorithms.dynamics.integrators.IntegratorEnum
+import ffx.algorithms.dynamics.thermostats.Thermostat
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.optimize.RotamerOptimization.Direction
-import ffx.algorithms.integrators.Integrator
-import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.thermostats.Thermostat
-import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.numerics.Potential
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue

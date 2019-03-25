@@ -44,13 +44,12 @@ import java.nio.file.Path;
 
 import ffx.potential.Utilities;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.testng.Assert;
 
-import ffx.algorithms.PJDependentTest;
+import ffx.algorithms.misc.PJDependentTest;
 import ffx.potential.PotentialComponent;
 import ffx.utilities.DirectoryUtils;
 import ffx.algorithms.groovy.ManyBody;

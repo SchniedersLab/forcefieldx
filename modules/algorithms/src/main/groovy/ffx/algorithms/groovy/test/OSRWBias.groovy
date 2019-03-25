@@ -6,9 +6,9 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 
-import ffx.algorithms.osrw.AbstractOSRW
-import ffx.algorithms.osrw.OSRW
-import ffx.algorithms.osrw.TransitionTemperedOSRW
+import ffx.algorithms.thermodynamics.AbstractOSRW
+import ffx.algorithms.thermodynamics.OSRW
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.potential.DualTopologyEnergy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom

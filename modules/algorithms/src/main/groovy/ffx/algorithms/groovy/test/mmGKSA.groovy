@@ -40,7 +40,7 @@ package ffx.algorithms.groovy.test;
 
 import groovy.cli.picocli.CliBuilder
 
-import ffx.algorithms.MMgksa
+import ffx.algorithms.misc.MMgksa
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.parsers.SystemFilter

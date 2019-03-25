@@ -46,7 +46,7 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.algorithms.optimize.Minimize;
-import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -72,7 +72,7 @@ public class MCLoop implements MonteCarloListener {
     /**
      * The MD thermostat.
      */
-    private final ffx.algorithms.thermostats.Thermostat thermostat;
+    private final ffx.algorithms.dynamics.thermostats.Thermostat thermostat;
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
@@ -135,7 +135,7 @@ public class MCLoop implements MonteCarloListener {
      * @param mcStepFrequency number of MD steps between switch attempts
      * @param thermostat      the MD thermostat
      */
-    MCLoop(MolecularAssembly molAss, int mcStepFrequency, ffx.algorithms.thermostats.Thermostat thermostat, int firstResidue, int endResidue) {
+    MCLoop(MolecularAssembly molAss, int mcStepFrequency, ffx.algorithms.dynamics.thermostats.Thermostat thermostat, int firstResidue, int endResidue) {
         numMovesAccepted = 0;
 
         this.molAss = molAss;
@@ -321,7 +321,7 @@ public class MCLoop implements MonteCarloListener {
     /**
      * <p>addMolDyn.</p>
      *
-     * @param molDyn a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param molDyn a {@link MolecularDynamics} object.
      */
     public void addMolDyn(MolecularDynamics molDyn) {
         this.molDyn = molDyn;

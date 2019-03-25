@@ -44,10 +44,10 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.osrw.MonteCarloOSRW;
-import ffx.algorithms.osrw.TransitionTemperedOSRW;
-import ffx.algorithms.thermostats.ThermostatEnum;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.thermodynamics.MonteCarloOSRW;
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;

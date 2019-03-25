@@ -48,7 +48,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.PJDependentTest;
+import ffx.algorithms.misc.PJDependentTest;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;

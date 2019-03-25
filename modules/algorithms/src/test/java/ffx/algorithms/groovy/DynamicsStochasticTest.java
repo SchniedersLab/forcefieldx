@@ -49,7 +49,8 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.misc.PJDependentTest;
 
 import groovy.lang.Binding;
 
@@ -57,7 +58,7 @@ import groovy.lang.Binding;
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsStochasticTest extends ffx.algorithms.PJDependentTest {
+public class DynamicsStochasticTest extends PJDependentTest {
 
     private String info;
     private String filename;

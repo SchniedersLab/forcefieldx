@@ -42,11 +42,10 @@ import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.picocli.CliBuilder
 
-import ffx.algorithms.GenerateRotamers
+import ffx.algorithms.misc.GenerateRotamers
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
-import ffx.potential.bonded.RotamerLibrary
 
 Residue residue = null;
 int nChi;

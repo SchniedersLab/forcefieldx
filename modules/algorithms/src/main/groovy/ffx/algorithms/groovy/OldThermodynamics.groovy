@@ -14,14 +14,14 @@ import edu.rit.pj.ParallelTeam
 
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
-import ffx.algorithms.Barostat
-import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.integrators.Integrator
-import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.osrw.MonteCarloOSRW
-import ffx.algorithms.osrw.TransitionTemperedOSRW
-import ffx.algorithms.thermostats.Thermostat
-import ffx.algorithms.thermostats.ThermostatEnum
+import ffx.algorithms.dynamics.Barostat
+import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.integrators.Integrator
+import ffx.algorithms.dynamics.integrators.IntegratorEnum
+import ffx.algorithms.dynamics.thermostats.Thermostat
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum
+import ffx.algorithms.thermodynamics.MonteCarloOSRW
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.crystal.SymOp

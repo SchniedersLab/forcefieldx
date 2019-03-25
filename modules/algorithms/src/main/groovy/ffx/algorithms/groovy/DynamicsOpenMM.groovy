@@ -2,12 +2,12 @@ package ffx.algorithms.groovy
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.MolecularDynamicsOpenMM
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
+import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
@@ -65,7 +65,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
     }
 
     private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
-    
+
     private ForceFieldEnergy forceFieldEnergy;
 
     @Override
@@ -77,16 +77,16 @@ class DynamicsOpenMM extends AlgorithmsScript {
 
         dynamics.init()
 
-        if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()){
+        if (System.getProperty("platform") != null && !System.getProperty("platform").isEmpty()) {
             System.setProperty("platform", System.getProperty("platform"))
-        } else{
+        } else {
             System.setProperty("platform", "OMM")
         }
-        
+
         String modelfilename
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]            
+            activeAssembly = assemblies[0]
             modelfilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -94,7 +94,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
         } else {
             modelfilename = activeAssembly.getFile().getAbsolutePath()
         }
-        
+
         forceFieldEnergy = activeAssembly.getPotentialEnergy();
         switch (forceFieldEnergy.getPlatform()) {
             case ForceFieldEnergy.Platform.OMM:

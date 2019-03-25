@@ -71,12 +71,12 @@ import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.cli.AlgorithmsScript;
-import ffx.algorithms.integrators.IntegratorEnum;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.integrators.IntegratorEnum;
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.algorithms.optimize.Minimize;
-import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;

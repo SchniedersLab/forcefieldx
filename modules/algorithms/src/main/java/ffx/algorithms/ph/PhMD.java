@@ -52,11 +52,11 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.MolecularDynamics.MonteCarloNotification;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MolecularDynamics.MonteCarloNotification;
+import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.algorithms.mc.MonteCarloListener;
 import ffx.algorithms.mc.RosenbluthCBMC;
-import ffx.algorithms.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Angle;
@@ -198,7 +198,7 @@ public class PhMD implements MonteCarloListener {
      * @param mcStepFrequency   number of MD steps between switch attempts
      * @param pH                the simulation pH
      * @param distribution      a {@link PhMD.Distribution} object.
-     * @param molecularDynamics a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param molecularDynamics a {@link MolecularDynamics} object.
      * @param titrating         a {@link java.util.List} object.
      */
     public PhMD(Distribution distribution, MolecularAssembly molecularAssembly, MolecularDynamics molecularDynamics,
@@ -392,7 +392,7 @@ public class PhMD implements MonteCarloListener {
     /**
      * <p>launch.</p>
      *
-     * @param md              a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param md              a {@link MolecularDynamics} object.
      * @param mcStepFrequency a int.
      * @param timeStep        a double.
      * @param printInterval   a double.

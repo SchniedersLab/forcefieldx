@@ -45,7 +45,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.thermostats.Thermostat;
+import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.OptimizationListener;

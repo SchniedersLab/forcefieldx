@@ -7,13 +7,13 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.osrw.AbstractOSRW
-import ffx.algorithms.osrw.TransitionTemperedOSRW
-import ffx.algorithms.thermostats.ThermostatEnum
+import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.integrators.IntegratorEnum
+import ffx.algorithms.dynamics.thermostats.ThermostatEnum
+import ffx.algorithms.thermodynamics.AbstractOSRW
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -275,7 +275,7 @@ class Alchemical extends AlgorithmsScript {
         boolean asynchronous = true
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
-                dynamicsOptions.write, asynchronous,  algorithmFunctions.getDefaultListener())
+                dynamicsOptions.write, asynchronous, algorithmFunctions.getDefaultListener())
 
         osrw.setLambda(lambda);
         osrw.setThetaMass(5.0e-19);
