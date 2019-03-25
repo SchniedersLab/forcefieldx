@@ -131,7 +131,7 @@ class Scheduler extends AlgorithmsScript {
         String logFile = format("scheduler.%d.log", port)
 
         // Check the availability of the desired web port.
-        while (!PortUtils.isTcpPortAvailable(webport)) {
+        while (!PortUtils.isTcpPortAvailable(webport) || webport == port) {
             logger.info(format(" Web port %d is not available.", webport))
             if (++webport > PortUtils.MAX_TCP_PORT) {
                 logger.severe(" Reached port 65535 without finding an open web port!");
