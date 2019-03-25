@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import ffx.potential.Utilities;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -51,8 +50,8 @@ import org.testng.Assert;
 
 import ffx.algorithms.misc.PJDependentTest;
 import ffx.potential.PotentialComponent;
+import ffx.potential.Utilities;
 import ffx.utilities.DirectoryUtils;
-import ffx.algorithms.groovy.ManyBody;
 
 import groovy.lang.Binding;
 
@@ -214,7 +213,7 @@ public class ManyBodyTest extends PJDependentTest {
         FileUtils.copyFile(restartBackup, restart);
 
         // Set-up the input arguments for the script.
-        String[] args = {"-a", "2", "-L", "2", "--tC", "1.5", "-T", "--thC", "1.5", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
+        String[] args = {"-a", "2", "-L", "2", "--tC", "1.5", "-T", "--thC", "1.5", "--eR", "src/main/java/ffx/algorithms/structures/5awl.restart",
                 "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
@@ -227,12 +226,12 @@ public class ManyBodyTest extends PJDependentTest {
         }
 
         // Evaluate the script.
-        try{
+        try {
             manyBody.run();
-        } catch (Error error){
+        } catch (Error error) {
             System.out.println(Utilities.stackTraceToString(error));
         }
-        
+
         double expectedTotalPotential = -217.86618264654527;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
@@ -249,7 +248,6 @@ public class ManyBodyTest extends PJDependentTest {
     }
 
 
-
     /**
      * Tests the restart file functionality for box optimization. The test applies a 1.5 angstrom 2-body and 3-body cutoff but the restart
      * file was generated using 2-body and 3-body cutoffs of 2 angstroms.
@@ -261,7 +259,7 @@ public class ManyBodyTest extends PJDependentTest {
         FileUtils.copyFile(restartBoxBackup, restart);
 
         // Set-up the input arguments for the script.
-        String[] args = {"-a", "5", "--bL", "10", "--tC", "1.5", "-T", "--thC", "1.5", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
+        String[] args = {"-a", "5", "--bL", "10", "--tC", "1.5", "-T", "--thC", "1.5", "--eR", "src/main/java/ffx/algorithms/structures/5awl.restart",
                 "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
@@ -274,9 +272,9 @@ public class ManyBodyTest extends PJDependentTest {
         }
 
         // Evaluate the script.
-        try{
+        try {
             manyBody.run();
-        } catch (Error error){
+        } catch (Error error) {
             System.out.println(Utilities.stackTraceToString(error));
         }
 

@@ -8449,172 +8449,6 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Contains a cell used for box optimization, its residues, the fractional
-     * coordinates within a crystal it takes up, its overall (linear) index, and
-     * its indices along the a, b, and c crystal axes.
-     */
-    public class BoxOptCell {
-
-        /**
-         * FracCoords indexed by 1-3 min x,y,z, 4-6 are max x,y,z
-         */
-        private final double[] fracCoords = new double[6];
-        private final int[] indexXYZ = new int[3];
-        private final int linearIndex;
-        private ArrayList<Residue> residues = new ArrayList<>();
-
-        /**
-         * Constructs a BoxOptCell object, which takes up a set of fractional
-         * coordinates within the Crystal, the Residues contained within, and
-         * the index of the cell along the crystal's a, b, and c axes.
-         *
-         * @param fractionalCoordinates Fractional coordinates contained,
-         *                              indexed by 1-3 min x,y,z, 4-6 max x,y,z
-         * @param indices               Index of cell along a, b, and c (x, y, and z).
-         * @param linearIndex           Index of box in linear box array.
-         */
-        BoxOptCell(double[] fractionalCoordinates, int[] indices, int linearIndex) {
-            arraycopy(fractionalCoordinates, 0, fracCoords, 0, fracCoords.length);
-            arraycopy(indices, 0, indexXYZ, 0, indexXYZ.length);
-            this.linearIndex = linearIndex;
-        }
-
-        /**
-         * Returns an array of the Residues contained within the cell.
-         *
-         * @return Array of Residues.
-         */
-        public Residue[] getResidues() {
-            return (Residue[]) residues.toArray();
-        }
-
-        /**
-         * Directly returns the residue list. DOES NOT RETURN A COPY.
-         *
-         * @return The residue list.
-         */
-        public ArrayList<Residue> getResidueList() {
-            return residues;
-        }
-
-        /**
-         * Returns a copy of the ArrayList of residues.
-         *
-         * @return ArrayList of Residues in the cell.
-         */
-        ArrayList<Residue> getResiduesAsList() {
-            ArrayList<Residue> returnedList = new ArrayList<>(residues);
-            returnedList.addAll(residues);
-            return returnedList;
-        }
-
-        /**
-         * Add a residue to the box.
-         *
-         * @param residue Residue to be added.
-         */
-        void addResidue(Residue residue) {
-            residues.add(residue);
-        }
-
-        /**
-         * Returns the x, y, and z indices of this box.
-         *
-         * @return Box indices.
-         */
-        int[] getXYZIndex() {
-            int[] returnedIndices = new int[3];
-            arraycopy(indexXYZ, 0, returnedIndices, 0, returnedIndices.length);
-            return returnedIndices;
-        }
-
-        /**
-         * Returns the linear index of this Box.
-         *
-         * @return Linear index.
-         */
-        int getLinearIndex() {
-            return linearIndex;
-        }
-
-        /**
-         * Sorts residues in the box.
-         */
-        void sortBoxResidues() {
-            sortResidues(residues);
-        }
-
-        /**
-         * Checks if any rotamer of a Residue is inside this BoxOptCell.
-         *
-         * @param residue      Residue to check.
-         * @param crystal      A Crystal.
-         * @param symOp        A symmetry operator to apply.
-         * @param variableOnly If using only variable (protein side-chain,
-         *                     nucleic acid backbone) atoms.
-         * @return If contained inside this BoxOptCell.
-         */
-        boolean anyRotamerInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
-            ResidueState incomingState = residue.storeState();
-            Rotamer[] rotamers = residue.getRotamers(library);
-            boolean inside = Arrays.stream(rotamers).anyMatch((Rotamer r) -> {
-                RotamerLibrary.applyRotamer(residue, r);
-                return residueInsideCell(residue, crystal, symOp, variableOnly);
-            });
-            residue.revertState(incomingState);
-            return inside;
-        }
-
-        /**
-         * Checks if a Residue is inside this BoxOptCell.
-         *
-         * @param residue      Residue to check.
-         * @param crystal      A Crystal.
-         * @param symOp        A symmetry operator to apply.
-         * @param variableOnly If using only variable (protein side-chain,
-         *                     nucleic acid backbone) atoms.
-         * @return If contained inside this BoxOptCell.
-         */
-        boolean residueInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
-            List<Atom> atoms = variableOnly ? residue.getVariableAtoms() : residue.getAtomList();
-            return atoms.stream().anyMatch(a -> atomInsideCell(a, crystal, symOp));
-        }
-
-        /**
-         * Checks if an Atom would be contained inside this cell.
-         *
-         * @param atom    Atom to check.
-         * @param crystal A Crystal.
-         * @param symOp   A symmetry operator to apply.
-         * @return If contained.
-         */
-        boolean atomInsideCell(Atom atom, Crystal crystal, SymOp symOp) {
-            double[] atXYZ = new double[3];
-            atXYZ = atom.getXYZ(atXYZ);
-            crystal.toFractionalCoordinates(atXYZ, atXYZ);
-            NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
-            crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
-            return checkIfContained(atXYZ);
-        }
-
-        /**
-         * Check if an atom's fractional coordinates would be contained by the
-         * box.
-         *
-         * @param atomFracCoords Atomic fractional coordinates
-         * @return If contained.
-         */
-        boolean checkIfContained(double[] atomFracCoords) {
-            for (int i = 0; i < 3; i++) {
-                if ((fracCoords[i] > atomFracCoords[i]) || (fracCoords[i + 3] < atomFracCoords[i])) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
-    /**
      * Compute residue self-energy values in parallel across nodes.
      */
     private class SelfEnergyRegion extends WorkerRegion {
@@ -9679,6 +9513,280 @@ public class RotamerOptimization implements Terminatable {
             return "Rotamer moves utilizing a rotamer energy matrix";
         }
     }
+
+    /**
+     * Contains a cell used for box optimization, its residues, the fractional
+     * coordinates within a crystal it takes up, its overall (linear) index, and
+     * its indices along the a, b, and c crystal axes.
+     */
+    public class BoxOptCell {
+
+        // fracCoords indexed by 1-3 min x,y,z, 4-6 are max x,y,z
+        private final double[] fracCoords = new double[6];
+        private final int[] indexXYZ = new int[3];
+        private final int linearIndex;
+        private ArrayList<Residue> residues = new ArrayList<>();
+
+    /**
+     * Constructs a BoxOptCell object, which takes up a set of fractional
+     * coordinates within the Crystal, the Residues contained within, and
+     * the index of the cell along the crystal's a, b, and c axes.
+     *
+     * @param fractionalCoordinates Fractional coordinates contained,
+     *                              indexed by 1-3 min x,y,z, 4-6 max x,y,z
+     * @param indices               Index of cell along a, b, and c (x, y, and z).
+     * @param linearIndex           Index of box in linear box array.
+     */
+    public BoxOptCell(double[] fractionalCoordinates, int[] indices, int linearIndex) {
+        System.arraycopy(fractionalCoordinates, 0, fracCoords, 0, fracCoords.length);
+        System.arraycopy(indices, 0, indexXYZ, 0, indexXYZ.length);
+        this.linearIndex = linearIndex;
+    }
+
+    /**
+     * Constructs a BoxOptCell object, which takes up a set of fractional
+     * coordinates within the Crystal, the Residues contained within, and
+     * the index of the cell along the crystal's a, b, and c axes.
+     *
+     * @param fractionalCoordinates Fractional coordinates contained,
+     *                              indexed by 1-3 min x,y,z, 4-6 max x,y,z
+     * @param indices               Index of cell along a, b, and c (x, y, and z).
+     * @param linearIndex           Index of box in linear box array.
+     * @param residuesIn            Array of Residues to initialize the BoxOptCell
+     *                              with.
+     */
+    public BoxOptCell(double[] fractionalCoordinates, int[] indices, int linearIndex, Residue[] residuesIn) {
+        System.arraycopy(fractionalCoordinates, 0, fracCoords, 0, fracCoords.length);
+        System.arraycopy(indices, 0, indexXYZ, 0, indexXYZ.length);
+        this.linearIndex = linearIndex;
+        for (Residue residue : residuesIn) {
+            this.residues.add(residue);
+        }
+    }
+
+    /**
+     * Returns an array of the Residues contained within the cell.
+     *
+     * @return Array of Residues.
+     */
+    public Residue[] getResidues() {
+        Residue[] residueList = (Residue[]) residues.toArray();
+        return residueList;
+    }
+
+    /**
+     * Directly returns the residue list. DOES NOT RETURN A COPY.
+     *
+     * @return The residue list.
+     */
+    public ArrayList<Residue> getResidueList() {
+        return residues;
+    }
+
+    /**
+     * Returns a copy of the ArrayList of residues.
+     *
+     * @return ArrayList of Residues in the cell.
+     */
+    public ArrayList<Residue> getResiduesAsList() {
+        ArrayList<Residue> returnedList = new ArrayList<>();
+        for (Residue residue : residues) {
+            returnedList.add(residue);
+        }
+        return returnedList;
+    }
+
+    /**
+     * Get a residue in the list by index.
+     *
+     * @param index Index of residue to be returned.
+     * @return Residue
+     */
+    public Residue getResidue(int index) {
+        return residues.get(index);
+    }
+
+    /**
+     * Gets the index of a residue inside the cell. Throws
+     * IndexOutOfBoundsException if the residue is not contained within the
+     * cell.
+     *
+     * @param residue Residue to be searched for.
+     * @return Index of residue within the cell's residue list.
+     * @throws IndexOutOfBoundsException If cell does not contain the
+     *                                   residue.
+     */
+    public int getResidueIndex(Residue residue) throws IndexOutOfBoundsException {
+        for (int i = 0; i < residues.size(); i++) {
+            if (residue.equals(residueList.get(i))) {
+                return i;
+            }
+        }
+        throw new IndexOutOfBoundsException(" Residue list does not contain "
+                + "the specified residue.");
+    }
+
+    /**
+     * Add a residue to the box.
+     *
+     * @param residue Residue to be added.
+     */
+    public void addResidue(Residue residue) {
+        residues.add(residue);
+    }
+
+    /**
+     * Adds an array of Residues to the cell.
+     *
+     * @param residues Array of Residues to be added.
+     */
+    public void addResidues(Residue[] residues) {
+        for (Residue residue : residues) {
+            this.residues.add(residue);
+        }
+    }
+
+    /**
+     * Adds an ArrayList of Residues to the cell.
+     *
+     * @param residueList ArrayList of Residues to be added.
+     */
+    public void addResidues(ArrayList<Residue> residueList) {
+        this.residues.addAll(residueList);
+    }
+
+    /**
+     * Get the fractional coordinates which this box contains.
+     *
+     * @return Fractional coordinates contained.
+     */
+    public double[] getFracCoords() {
+        double[] returnedCoords = new double[6];
+        System.arraycopy(fracCoords, 0, returnedCoords, 0, returnedCoords.length);
+        return returnedCoords;
+    }
+
+    /**
+     * Returns the x, y, and z indices of this box.
+     *
+     * @return Box indices.
+     */
+    public int[] getXYZIndex() {
+        int[] returnedIndices = new int[3];
+        System.arraycopy(indexXYZ, 0, returnedIndices, 0, returnedIndices.length);
+        return returnedIndices;
+    }
+
+    /**
+     * Returns the linear index of this Box.
+     *
+     * @return Linear index.
+     */
+    public int getLinearIndex() {
+        return linearIndex;
+    }
+
+    /**
+     * Sorts residues in the box.
+     */
+    public void sortBoxResidues() {
+        sortResidues(residues);
+    }
+
+    /**
+     * Clears the list of residues in the cell.
+     */
+    public void clearResidues() {
+        residues = new ArrayList<>();
+    }
+
+    /**
+     * Removes a residue in the cell by index in the cell.
+     *
+     * @param index Residue to be removed.
+     */
+    public void removeResidue(int index) {
+        residues.remove(index);
+    }
+
+    /**
+     * Removes a specified residue in the cell.
+     *
+     * @param residue Removed from cell.
+     */
+    public void removeResidue(Residue residue) {
+        residues.remove(residue);
+    }
+
+    /**
+     * Checks if any rotamer of a Residue is inside this BoxOptCell.
+     *
+     * @param residue      Residue to check.
+     * @param crystal      A Crystal.
+     * @param symOp        A symmetry operator to apply.
+     * @param variableOnly If using only variable (protein side-chain,
+     *                     nucleic acid backbone) atoms.
+     * @return If contained inside this BoxOptCell.
+     */
+    public boolean anyRotamerInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
+        ResidueState incomingState = residue.storeState();
+        Rotamer[] rotamers = residue.getRotamers(library);
+        boolean inside = Arrays.stream(rotamers).anyMatch((Rotamer r) -> {
+            RotamerLibrary.applyRotamer(residue, r);
+            return residueInsideCell(residue, crystal, symOp, variableOnly);
+        });
+        residue.revertState(incomingState);
+        return inside;
+    }
+
+    /**
+     * Checks if a Residue is inside this BoxOptCell.
+     *
+     * @param residue      Residue to check.
+     * @param crystal      A Crystal.
+     * @param symOp        A symmetry operator to apply.
+     * @param variableOnly If using only variable (protein side-chain,
+     *                     nucleic acid backbone) atoms.
+     * @return If contained inside this BoxOptCell.
+     */
+    public boolean residueInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
+        List<Atom> atoms = variableOnly ? residue.getVariableAtoms() : residue.getAtomList();
+        return atoms.stream().anyMatch(a -> atomInsideCell(a, crystal, symOp));
+    }
+
+    /**
+     * Checks if an Atom would be contained inside this cell.
+     *
+     * @param atom    Atom to check.
+     * @param crystal A Crystal.
+     * @param symOp   A symmetry operator to apply.
+     * @return If contained.
+     */
+    public boolean atomInsideCell(Atom atom, Crystal crystal, SymOp symOp) {
+        double[] atXYZ = new double[3];
+        atXYZ = atom.getXYZ(atXYZ);
+        crystal.toFractionalCoordinates(atXYZ, atXYZ);
+        NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
+        crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
+        return checkIfContained(atXYZ);
+    }
+
+    /**
+     * Check if an atom's fractional coordinates would be contained by the
+     * box.
+     *
+     * @param atomFracCoords Atomic fractional coordinates
+     * @return If contained.
+     */
+    public boolean checkIfContained(double[] atomFracCoords) {
+        for (int i = 0; i < 3; i++) {
+            if ((fracCoords[i] > atomFracCoords[i]) || (fracCoords[i + 3] < atomFracCoords[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
 
 //    /**
 //     * Writes eliminated singles and pairs to a CSV file. Reads in .log file.
