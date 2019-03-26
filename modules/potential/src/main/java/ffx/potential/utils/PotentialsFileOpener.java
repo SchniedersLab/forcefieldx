@@ -276,7 +276,7 @@ public class PotentialsFileOpener implements FileOpener {
             CompositeConfiguration properties = Keyword.loadProperties(fileI);
             ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
             ForceField forceField = forceFieldFilter.parse();
-            String patches[] = properties.getStringArray("patch");
+            String[] patches = properties.getStringArray("patch");
             for (String patch : patches) {
                 logger.info(" Attempting to read force field patch from " + patch + ".");
                 CompositeConfiguration patchConfiguration = new CompositeConfiguration();
@@ -362,7 +362,6 @@ public class PotentialsFileOpener implements FileOpener {
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                             filter.applyAtomProperties();
                             newAssembly.finalize(true, assembly.getForceField());
-                            //energy = ForceFieldEnergy.energyFactory(newAssembly, filter.getCoordRestraints());
                             if (nThreads > 0) {
                                 energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(), nThreads);
                             } else {

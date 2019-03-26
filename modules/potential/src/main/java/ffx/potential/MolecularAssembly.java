@@ -69,7 +69,6 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import com.sun.j3d.utils.picking.PickTool;
@@ -94,7 +93,6 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
@@ -110,6 +108,9 @@ import static ffx.potential.extended.ExtUtils.prop;
 public class MolecularAssembly extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
+
+    public enum FractionalMode {OFF, MOLECULE, ATOM}
+
     private static final long serialVersionUID = 1L;
     /**
      * Constant <code>MultiScaleLevel=4</code>
@@ -166,12 +167,8 @@ public class MolecularAssembly extends MSGroup {
     private URL vrmlURL = null;
     private boolean visible = false;
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<>();
-
-    public enum FractionalMode {OFF, MOLECULE, ATOM}
-
-    ;
     private FractionalMode fractionalMode = FractionalMode.MOLECULE;
-    private double fractionalCoordinates[][];
+    private double[][] fractionalCoordinates;
 
     /**
      * <p>
@@ -1006,8 +1003,8 @@ public class MolecularAssembly extends MSGroup {
             piOrbitalTorsionTime = 0;
             torsionTorsionTime = 0;
             ArrayList<MSNode> Polymers = getAtomNodeList();
-            for (ListIterator<MSNode> li = Polymers.listIterator(); li.hasNext(); ) {
-                MSGroup group = (MSGroup) li.next();
+            for (MSNode msNode : Polymers) {
+                MSGroup group = (MSGroup) msNode;
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine(" Finalizing bonded terms for polymer " + group.toString());
                 }
@@ -1041,14 +1038,14 @@ public class MolecularAssembly extends MSGroup {
             }
             if (logger.isLoggable(Level.FINE)) {
                 StringBuilder sb = new StringBuilder("\n Time to create bonded energy terms\n\n");
-                sb.append(String.format(" Bond Streching     %10.3f\n", bondTime * 1.0e-9));
-                sb.append(String.format(" Angle Bending      %10.3f\n", angleTime * 1.0e-9));
-                sb.append(String.format(" Stretch-Bend       %10.3f\n", stretchBendTime * 1.0e-9));
-                sb.append(String.format(" Urey-Bradley       %10.3f\n", ureyBradleyTime * 1.0e-9));
-                sb.append(String.format(" Out-of-Plane Bend  %10.3f\n", outOfPlaneBendTime * 1.0e-9));
-                sb.append(String.format(" Torsionanl Angle   %10.3f\n", torsionTime * 1.0e-9));
-                sb.append(String.format(" Pi-Orbital Torsion %10.3f\n", piOrbitalTorsionTime * 1.0e-9));
-                sb.append(String.format(" Torsion-Torsion    %10.3f\n", torsionTorsionTime * 1.0e-9));
+                sb.append(format(" Bond Streching     %10.3f\n", bondTime * 1.0e-9));
+                sb.append(format(" Angle Bending      %10.3f\n", angleTime * 1.0e-9));
+                sb.append(format(" Stretch-Bend       %10.3f\n", stretchBendTime * 1.0e-9));
+                sb.append(format(" Urey-Bradley       %10.3f\n", ureyBradleyTime * 1.0e-9));
+                sb.append(format(" Out-of-Plane Bend  %10.3f\n", outOfPlaneBendTime * 1.0e-9));
+                sb.append(format(" Torsionanl Angle   %10.3f\n", torsionTime * 1.0e-9));
+                sb.append(format(" Pi-Orbital Torsion %10.3f\n", piOrbitalTorsionTime * 1.0e-9));
+                sb.append(format(" Torsion-Torsion    %10.3f\n", torsionTorsionTime * 1.0e-9));
                 logger.fine(sb.toString());
             }
         }
@@ -1057,7 +1054,44 @@ public class MolecularAssembly extends MSGroup {
             center();
         }
         removeLeaves();
+
+        // Apply the Heavy Hydrogen flag.
+        boolean heavyHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.HEAVY_HYDROGENS, false);
+        if (heavyHydrogen) {
+            applyHeavyHydrogens();
+        }
+
         setFinalized(true);
+    }
+
+    /**
+     * Move mass from heavy atoms to their attached hydrogens.
+     * <p>
+     * The mass of each hydrogen is scaled by a factor of 3.
+     * The mass of the heavy atom is reduced by 2 AMU.
+     */
+    private void applyHeavyHydrogens() {
+        ArrayList<ROLS> bonds = getBondList();
+        for (ROLS b : bonds) {
+            Bond bond = (Bond) b;
+            Atom a1 = bond.getAtom(0);
+            Atom a2 = bond.getAtom(1);
+            if (a1.isHydrogen() && a2.isHeavy()) {
+                double hydrogenMass = a1.getMass();
+                double heavyAtomMass = a2.getMass();
+                if (hydrogenMass < 1.1) {
+                    a2.setMass(heavyAtomMass - 2.0 * hydrogenMass);
+                    a1.setMass(3.0 * hydrogenMass);
+                }
+            } else if (a1.isHeavy() && a2.isHydrogen()) {
+                double heavyAtomMass = a1.getMass();
+                double hydrogenMass = a2.getMass();
+                if (hydrogenMass < 1.1) {
+                    a1.setMass(heavyAtomMass - 2.0 * hydrogenMass);
+                    a2.setMass(3.0 * hydrogenMass);
+                }
+            }
+        }
     }
 
     /**

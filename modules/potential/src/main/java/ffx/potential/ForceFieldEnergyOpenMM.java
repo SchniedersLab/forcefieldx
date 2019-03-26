@@ -181,7 +181,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 
 import ffx.crystal.Crystal;
 import ffx.numerics.switching.LinearDerivativeSwitch;
-import ffx.numerics.switching.SquaredTrigSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
@@ -770,26 +769,28 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private void addAtoms() throws Exception {
         numParticles = 0;
-        boolean heavyHydrogen = forceField.getBoolean(ForceFieldBoolean.HEAVY_HYDROGENS,false);
+        double totalMass = 0.0;
         for (Atom atom : atoms) {
             double mass = atom.getMass();
-            // Increase the mass of hydrogen atoms to that of carbon atoms.
-            if (heavyHydrogen && atom.isHydrogen()) {
-                mass = 12.0110;
+            totalMass += mass;
+            if (mass < 0.0) {
+                throw new Exception(" Atom with mass less than 0.");
             }
+
+            if (mass == 0.0) {
+                logger.info(format(" Atom %s has zero mass.", atom.toString()));
+            }
+
             OpenMM_System_addParticle(system, mass);
-            if (atom.getMass() <= 0.0) {
-                throw new Exception(" Atom without mass greater than 0.");
-            }
             numParticles++;
         }
-        logger.log(Level.INFO, format("  Atoms \t\t%6d", atoms.length));
+        logger.log(Level.INFO, format("  Atoms \t\t%6d\t%12.3f", atoms.length, totalMass));
     }
 
     /**
      * Adds a center-of-mass motion remover to the Potential. Not advised for
-     * anything not running MD using the OpenMM library (i.e.
-     * OpenMMMolecularDynamics). Has caused bugs with the FFX MD class.
+     * anything not running MD using the OpenMM library (i.e. OpenMMMolecularDynamics).
+     * Has caused bugs with the FFX MD class.
      *
      * @param addIfDuplicate Add a CCOM remover even if it already exists
      */
