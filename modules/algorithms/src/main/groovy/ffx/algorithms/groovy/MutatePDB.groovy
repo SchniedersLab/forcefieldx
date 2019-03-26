@@ -42,7 +42,7 @@ class MutatePDB extends AlgorithmsScript {
             description = 'New residue name.')
     String resName = "ALA"
     /**
-     * -ch or --chain Single character chain name (default is ' ').
+     * -ch or --chain Single character chain name (default is ' '). If only one chain exists, that chain will be mutated.
      */
     @Option(names = ['--chain', '--ch'], paramLabel = ' ',
             description = 'Single character chain name (default is \' \').')
@@ -76,6 +76,20 @@ class MutatePDB extends AlgorithmsScript {
         }
         //Used if --allChains is true. The false assembly provides access to the chainIDs without compromising the mutated molecular assembly.
         MolecularAssembly falseAssembly
+        //Set false assembly.
+        if (filenames != null && filenames.size() > 0) {
+            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            falseAssembly = assemblies[0]
+        } else if (falseAssembly == null) {
+            logger.info(helpString())
+            return
+        }
+        //For every chain, mutate the residue.
+        Polymer[] chains = falseAssembly.getChains()
+
+        if(chains.size() == 1 && chain== ' '){
+            chain = chains[0].getChainID()
+        }
 
         int destRotamer = 0
         if (rotamer > -1) {
@@ -100,16 +114,6 @@ class MutatePDB extends AlgorithmsScript {
 
         PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties)
         if(allChains){
-            //Set false assembly.
-            if (filenames != null && filenames.size() > 0) {
-                MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
-                falseAssembly = assemblies[0]
-            } else if (falseAssembly == null) {
-                logger.info(helpString())
-                return
-            }
-            //For every chain, mutate the residue.
-            Polymer[] chains = falseAssembly.getChains()
             for(Polymer currentChain:chains){
                 pdbFilter.mutate(currentChain.chainID, resID, resName)
             }
@@ -123,7 +127,7 @@ class MutatePDB extends AlgorithmsScript {
         if (destRotamer > -1) {
             rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, true)
             if (allChains) {
-                Polymer[] chains = molecularAssembly.getChains()
+                chains = molecularAssembly.getChains()
                 for (Polymer currentChain : chains) {
                     Residue residue = currentChain.getResidue(resID)
                     Rotamer[] rotamers = residue.getRotamers(rLib)
