@@ -426,6 +426,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         currentCol = previousCol = RendererCache.toAtomColor(name);
         redXYZ = null;
         persistentIndex = MolecularAssembly.persistentAtomIndexer++;
+        mass = 1.0080;
     }
 
     /**
@@ -441,10 +442,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this(name);
         this.xyzIndex = xyzIndex;
         this.atomType = atomType;
-        this.mass = atomType.atomicWeight;
         arraycopy(xyz, 0, this.xyz, 0, 3);
         setAllowsChildren(false);
         if (atomType != null) {
+            this.mass = atomType.atomicWeight;
             currentCol = previousCol = AtomColor.get(atomType.atomicNumber);
         }
     }
