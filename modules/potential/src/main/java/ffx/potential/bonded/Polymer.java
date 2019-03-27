@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Residue.ResidueType;
@@ -63,17 +64,16 @@ import static ffx.utilities.HashCodeUtil.hash;
 public class Polymer extends MSGroup {
 
     private static final long serialVersionUID = 1L;
+
     /**
      * Constant <code>MultiScaleLevel=3</code>
      */
     public static final int MultiScaleLevel = 3;
-    private static int count = 0;
-    private static double[] da = new double[3];
-    private static double[] db = new double[3];
+
     /**
      * Constant <code>polymerColor</code>
      */
-    public final static Map<Integer, Color3f> polymerColor = new HashMap<>();
+    private final static Map<Integer, Color3f> polymerColor = new HashMap<>();
 
     static {
         polymerColor.put(0, RendererCache.RED);
@@ -88,8 +88,21 @@ public class Polymer extends MSGroup {
         polymerColor.put(9, RendererCache.PINK);
     }
 
+    /**
+     * Polymer count.
+     */
+    private static int count = 0;
+    /**
+     * Flag to indicate the residues in the polymer should be joined.
+     */
     private boolean link = false;
+    /**
+     * The number of this Polymer.
+     */
     private int polymerNumber;
+    /**
+     * The ChainID of this Polymer.
+     */
     private Character chainID;
 
     /**
@@ -120,8 +133,7 @@ public class Polymer extends MSGroup {
      * Polymer Constructor.
      *
      * @param segID    A unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
-     * @param residues Represents a MSNode where the Polymer's residues have
-     *                 been attached.
+     * @param residues Represents a MSNode where the Polymer's residues have been attached.
      * @param chainID  a {@link java.lang.Character} object.
      */
     public Polymer(Character chainID, String segID, MSNode residues) {
@@ -169,6 +181,8 @@ public class Polymer extends MSGroup {
      */
     public Joint createJoint(Residue residue1, Residue residue2, ForceField forceField) {
         Joint joint = null;
+        double[] da = new double[3];
+        double[] db = new double[3];
         for (Enumeration e = residue1.getAtomNode().children(); e.hasMoreElements(); ) {
             Atom a1 = (Atom) e.nextElement();
             a1.getXYZ(da);
@@ -216,14 +230,14 @@ public class Polymer extends MSGroup {
      */
     @Override
     public void finalize(boolean finalizeGroups, ForceField forceField) {
-        ListIterator li;
-        ArrayList residues = getAtomNodeList();
+        ArrayList<MSNode> residues = getAtomNodeList();
         setFinalized(false);
 
         // Finalize the residues in the Polymer
         if (finalizeGroups) {
-            for (li = residues.listIterator(); li.hasNext(); ) {
-                ((Residue) li.next()).finalize(true, forceField);
+            for (MSNode node : residues) {
+                Residue residue = (Residue) node;
+                residue.finalize(true, forceField);
             }
         }
         // Join the residues in the Polymer
@@ -236,18 +250,17 @@ public class Polymer extends MSGroup {
             } else {
                 getAtomNode().setName("Residues " + "(" + residues.size() + ")");
             }
+
             Joint j;
             MSNode joints = getTermNode();
             joints.removeAllChildren();
             List<Atom> atoms = getAtomList();
-
             for (Atom a : atoms) {
                 if (a.getNumBonds() > 0) {
                     for (Bond b : a.getBonds()) {
                         if (!b.sameGroup() && b.getParent() == null) {
                             Residue r1 = (Residue) a.getMSNode(Residue.class);
-                            Residue r2 = (Residue) b.get1_2(a).getMSNode(
-                                    Residue.class);
+                            Residue r2 = (Residue) b.get1_2(a).getMSNode(Residue.class);
                             j = createJoint(b, r1, r2, forceField);
                             joints.add(j);
                         }
@@ -255,18 +268,14 @@ public class Polymer extends MSGroup {
                 }
             }
 
-            if (residue != null) {
-                if (residue.residueType == ResidueType.AA) {
-                    getTermNode().setName(
-                            "Peptide Bonds " + "(" + joints.getChildCount() + ")");
-                } else {
-                    getTermNode().setName(
-                            "Linkages " + "(" + joints.getChildCount() + ")");
-                }
+            if (residue.residueType == ResidueType.AA) {
+                getTermNode().setName(
+                        "Peptide Bonds " + "(" + joints.getChildCount() + ")");
             } else {
                 getTermNode().setName(
                         "Linkages " + "(" + joints.getChildCount() + ")");
             }
+
         } else {
             getAtomNode().setName("Sub-Groups " + "(" + residues.size() + ")");
             if (getTermNode().getParent() != null) {
@@ -387,7 +396,7 @@ public class Polymer extends MSGroup {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<Residue> getResidues() {
-        ArrayList<Residue> residues = new ArrayList<Residue>();
+        ArrayList<Residue> residues = new ArrayList<>();
         for (Enumeration e = getAtomNode().children(); e.hasMoreElements(); ) {
             Residue r = (Residue) e.nextElement();
             residues.add(r);
@@ -456,28 +465,30 @@ public class Polymer extends MSGroup {
         resName = resName.toUpperCase();
         if (resName.length() == 1) {
             try {
-                ResidueEnumerations.NucleicAcid1 na = ResidueEnumerations.NucleicAcid1.valueOf(resName);
+                ResidueEnumerations.NucleicAcid1.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
                         chainID, getName());
             } catch (Exception e) {
                 try {
-                    ResidueEnumerations.AminoAcid1 aa = ResidueEnumerations.AminoAcid1.valueOf(resName);
+                    ResidueEnumerations.AminoAcid1.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
                             chainID, getName());
                 } catch (Exception ex) {
+                    //
                 }
             }
         } else if (resName.length() >= 2) {
             try {
-                ResidueEnumerations.NucleicAcid3 na = ResidueEnumerations.NucleicAcid3.valueOf(resName);
+                ResidueEnumerations.NucleicAcid3.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
                         chainID, getName());
             } catch (Exception e) {
                 try {
-                    ResidueEnumerations.AminoAcid3 aa = ResidueEnumerations.AminoAcid3.valueOf(resName);
+                    ResidueEnumerations.AminoAcid3.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
                             chainID, getName());
                 } catch (Exception ex) {
+                    //
                 }
             }
         }
@@ -487,6 +498,16 @@ public class Polymer extends MSGroup {
         }
         addMSNode(residue);
         return residue;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>link</code>.</p>
+     *
+     * @param link a boolean.
+     */
+    public void setLink(boolean link) {
+        this.link = link;
     }
 
     /**
@@ -509,8 +530,8 @@ public class Polymer extends MSGroup {
             color = polymerColor.get(index);
             mat = RendererCache.materialFactory(color);
         }
-        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext(); ) {
-            MSGroup atomGroup = (MSGroup) li.next();
+        for (MSNode node : getAtomNodeList()) {
+            MSGroup atomGroup = (MSGroup) node;
             atomGroup.setColor(newColorModel, color, mat);
         }
         for (Enumeration e = getTermNode().children(); e.hasMoreElements(); ) {
@@ -520,23 +541,13 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>
-     * Setter for the field <code>link</code>.</p>
-     *
-     * @param t a boolean.
-     */
-    public void setLink(boolean t) {
-        link = t;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
                         List<BranchGroup> newShapes) {
-        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext(); ) {
-            MSGroup atomGroup = (MSGroup) li.next();
+        for (MSNode node : getAtomNodeList()) {
+            MSGroup atomGroup = (MSGroup) node;
             atomGroup.setView(newViewModel, newShapes);
         }
         for (Enumeration e = getTermNode().children(); e.hasMoreElements(); ) {
