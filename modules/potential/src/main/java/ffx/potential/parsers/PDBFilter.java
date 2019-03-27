@@ -58,7 +58,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -88,7 +87,6 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
-
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.bonded.AminoAcidUtils.renameArginineHydrogens;
@@ -1323,6 +1321,7 @@ public final class PDBFilter extends SystemFilter {
      * @param saveFile    a {@link java.io.File} object.
      * @param append      Whether to append to saveFile (vs over-write).
      * @param printLinear Whether to print atoms linearly or by element.
+     * @param writeEnd    True if this is the final model.
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear, boolean writeEnd) {
@@ -1337,6 +1336,7 @@ public final class PDBFilter extends SystemFilter {
      * @param append      Whether to append to saveFile (vs over-write).
      * @param printLinear Whether to print atoms linearly or by element.
      * @param toExclude   A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude from writing.
+     * @param writeEnd    True if this is the final model.
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude, boolean writeEnd) {
@@ -3301,7 +3301,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     @Override
-    public int getSnapshot(){
+    public int getSnapshot() {
         return modelsRead;
     }
 
@@ -3353,7 +3353,7 @@ public final class PDBFilter extends SystemFilter {
                     if (m.find()) {
                         int modelNum = Integer.parseInt(m.group(1));
                         if (modelNum == modelsRead) {
-                            if(print) {
+                            if (print) {
                                 logger.log(Level.INFO, String.format(" Reading model %d for %s", modelNum, currentFile));
                             }
                             eof = false;

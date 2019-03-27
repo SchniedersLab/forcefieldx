@@ -37,10 +37,12 @@
  */
 package ffx.potential.utils;
 
+import static java.lang.String.format;
+
 /**
  * <p>SystemTemperatureException class.</p>
  *
- * @author Stephen LuCore
+ * @author Stephen D. LuCore
  */
 public class SystemTemperatureException extends RuntimeException {
     final double temperature;
@@ -59,6 +61,6 @@ public class SystemTemperatureException extends RuntimeException {
      */
     @Override
     public String getMessage() {
-        return String.format("System unstable due to high temperature: %.2f", temperature);
+        return format(" System unstable due to high temperature: %6.2f", temperature);
     }
 }

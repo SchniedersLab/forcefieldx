@@ -18,7 +18,7 @@ public class Superpose {
      * @param x2    Cartesian coordinates of the second system.
      * @param mass2 The mass of each particle in the second system.
      */
-    public static void translate(double[] x1, double mass1[], double[] x2, double mass2[]) {
+    public static void translate(double[] x1, double[] mass1, double[] x2, double[] mass2) {
         // Move the first set of atoms.
         translate(x1, mass1);
         // Move the second set of atoms.
@@ -31,7 +31,7 @@ public class Superpose {
      * @param x    Cartesian coordinates of the system.
      * @param mass The mass of each particle in the system.
      */
-    private static void translate(double[] x, double mass[]) {
+    private static void translate(double[] x, double[] mass) {
         double xmid = 0.0;
         double ymid = 0.0;
         double zmid = 0.0;
@@ -63,7 +63,7 @@ public class Superpose {
      * @param x2   Cartesian coordinates of the second system.
      * @param mass The mass of each particle in the system.
      */
-    public static void rotate(double[] x1, double[] x2, double mass[]) {
+    public static void rotate(double[] x1, double[] x2, double[] mass) {
         // Build the upper triangle of the quadratic form matrix
         double xxyx = 0.0;
         double xxyy = 0.0;
@@ -149,9 +149,9 @@ public class Superpose {
      * @param x1   Cartesian coordinates of the first system.
      * @param x2   Cartesian coordinates of the second system.
      * @param mass The mass of each particle in the system.
-     * @return
+     * @return The RMSD.
      */
-    public static double rmsd(double[] x1, double[] x2, double mass[]) {
+    public static double rmsd(double[] x1, double[] x2, double[] mass) {
         double rmsfit = 0.0;
         double norm = 0.0;
         int n = x1.length / 3;

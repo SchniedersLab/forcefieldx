@@ -62,7 +62,6 @@ import ffx.potential.parameters.ForceField;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public abstract class SystemFilter {
 
@@ -91,24 +90,6 @@ public abstract class SystemFilter {
         int i = 1;
         while (newFile.exists()) {
             i = i + 1;
-            /* Lest we forget the bad old days:
-            int thousand = i / 1000;
-            int hundred = (i - 1000 * thousand) / 100;
-            int tens = (i - 1000 * thousand - 100 * hundred) / 10;
-            int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
-            StringBuilder newFileString = new StringBuilder(oldFile.getAbsolutePath());
-            if (thousand != 0) {
-                newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
-            } else if (hundred != 0) {
-                newFileString.append('_').append(hundred).append(tens).append(
-                        ones);
-            } else if (tens != 0) {
-                newFileString.append('_').append(tens).append(ones);
-            } else {
-                newFileString.append('_').append(ones);
-            }
-            newFile = new File(newFileString.toString());   */
-            /* The new way: */
             String newFileString = String.format("%s_%d", oldFile.getAbsolutePath(), i);
             newFile = new File(newFileString);
         }
@@ -285,7 +266,9 @@ public abstract class SystemFilter {
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
 
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
-    /** Constant <code>dieOnMissingAtom=</code> */
+    /**
+     * Constant <code>dieOnMissingAtom=</code>
+     */
     protected static final boolean dieOnMissingAtom; // Defaults to false.
 
     static {
@@ -310,7 +293,7 @@ public abstract class SystemFilter {
      * MolecularAssembly should be defined for PDB files with alternate
      * locations.
      */
-    protected MolecularAssembly activeMolecularAssembly = null;
+    protected MolecularAssembly activeMolecularAssembly;
     /**
      * All MolecularAssembly instances defined. More than one MolecularAssembly
      * should be defined for PDB entries with alternate locations.
@@ -323,7 +306,7 @@ public abstract class SystemFilter {
     /**
      * Append multiple files into one MolecularAssembly.
      */
-    protected List<File> files = null;
+    protected List<File> files;
     /**
      * The file format being handled.
      */
@@ -335,7 +318,7 @@ public abstract class SystemFilter {
     /**
      * The molecular mechanics force field being used.
      */
-    protected ForceField forceField = null;
+    protected ForceField forceField;
     /**
      * True after the file has been read successfully.
      */
@@ -344,7 +327,7 @@ public abstract class SystemFilter {
      * True if atoms are to be printed to their van der Waals centers instead of
      * nuclear centers (applies primarily to hydrogens).
      */
-    protected boolean vdwH = false;
+    protected boolean vdwH;
     /**
      * A set of coordinate restraints obtained from the properties.
      */
@@ -354,12 +337,10 @@ public abstract class SystemFilter {
      * <p>
      * Constructor for SystemFilter.</p>
      *
-     * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param files             a {@link java.util.List} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}  object.
+     * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public SystemFilter(List<File> files, MolecularAssembly molecularAssembly,
                         ForceField forceField, CompositeConfiguration properties) {
@@ -382,16 +363,14 @@ public abstract class SystemFilter {
      * <p>
      * Constructor for SystemFilter.</p>
      *
-     * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param file              a {@link java.io.File} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}  object.
+     * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public SystemFilter(File file, MolecularAssembly molecularAssembly,
                         ForceField forceField, CompositeConfiguration properties) {
-        files = new ArrayList<File>();
+        files = new ArrayList<>();
         if (file != null) {
             files.add(file);
         }
@@ -411,11 +390,10 @@ public abstract class SystemFilter {
      * <p>
      * Constructor for SystemFilter.</p>
      *
-     * @param file a {@link java.io.File} object.
+     * @param file                a {@link java.io.File} object.
      * @param molecularAssemblies a {@link java.util.List} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param forceField          a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies,
                         ForceField forceField, CompositeConfiguration properties) {
@@ -461,13 +439,21 @@ public abstract class SystemFilter {
     public abstract boolean readNext(boolean resetPosition);
 
 
+    /**
+     * Reads the next model if applicable (currently, ARC files only).
+     *
+     * @param resetPosition Resets to first frame.
+     * @param print         Flag to print.
+     * @return If next model read.
+     */
     public abstract boolean readNext(boolean resetPosition, boolean print);
 
     /**
+     * Return snapshot number.
      *
-     * @return
+     * @return The snapshot number.
      */
-    public int getSnapshot(){
+    public int getSnapshot() {
         return -1;
     }
 
@@ -600,7 +586,7 @@ public abstract class SystemFilter {
      * Setter for the field <code>properties</code>.</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public void setProperties(CompositeConfiguration properties) {
         this.properties = properties;
@@ -611,7 +597,7 @@ public abstract class SystemFilter {
      * setMolecularSystem</p>
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
+     *                          object.
      */
     public void setMolecularSystem(MolecularAssembly molecularAssembly) {
         activeMolecularAssembly = molecularAssembly;
@@ -635,7 +621,7 @@ public abstract class SystemFilter {
      */
     public void setFile(File file) {
         this.currentFile = file;
-        files = new ArrayList<File>();
+        files = new ArrayList<>();
         if (file != null) {
             files.add(file);
         }
@@ -662,28 +648,17 @@ public abstract class SystemFilter {
      * readFile() implementations.
      */
     public void applyAtomProperties() {
-        /**
-         * What may be a more elegant implementation is to make readFile() a
-         * public concrete, but skeletal method, and then have readFile() call a
-         * protected abstract readFile method for each implementation.
-         */
+        /*
+          What may be a more elegant implementation is to make readFile() a
+          public concrete, but skeletal method, and then have readFile() call a
+          protected abstract readFile method for each implementation.
+        */
 
         Atom[] molaAtoms = activeMolecularAssembly.getAtomArray();
         int nmolaAtoms = molaAtoms.length;
         String[] nouseKeys = properties.getStringArray("nouse");
         for (String nouseKey : nouseKeys) {
-            /*try {
-                int[] nouseRange = parseAtNumArg("nouse", nouseKey, nmolaAtoms);
-                logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
-                        + "used", nouseRange[0] + 1, nouseRange[1] + 1));
-                for (int i = nouseRange[0]; i <= nouseRange[1]; i++) {
-                    molaAtoms[i].setUse(false);
-                }
-            } catch (IllegalArgumentException ex) {
-                logger.log(Level.INFO, ex.getLocalizedMessage());
-            }*/
             String[] toks = nouseKey.split("\\s+");
-
             for (String tok : toks) {
                 try {
                     int[] nouseRange = parseAtNumArg("restraint", tok, nmolaAtoms);
@@ -721,50 +696,6 @@ public abstract class SystemFilter {
             } catch (IllegalArgumentException ex) {
                 logger.log(Level.INFO, ex.getLocalizedMessage());
             }
-            /*Matcher m = intrangePattern.matcher(inactiveKey);
-            if (m.matches()) {
-                int start = Integer.parseInt(m.group(1)) - 1;
-                int end = Integer.parseInt(m.group(2)) - 1;
-                if (start > end) {
-                    logger.log(Level.INFO, String.format(" Input %s not valid; "
-                            + "start > end", inactiveKey));
-                } else if (start < 0) {
-                    logger.log(Level.INFO, String.format(" Input %s not valid; "
-                            + "atoms should be indexed starting from 1", inactiveKey));
-                } else {
-                    logger.log(Level.INFO, String.format(" Atoms %s set to be "
-                            + "inactive", inactiveKey));
-                    for (int i = start; i <= end; i++) {
-                        if (i >= nmolaAtoms) {
-                            logger.log(Level.INFO, String.format(" Atom index %d is "
-                                    + "out of bounds for molecular assembly of "
-                                    + "length %d", i + 1, nmolaAtoms));
-                            break;
-                        }
-                        molaAtoms[i].setActive(false);
-                    }
-                }
-            } else {
-                try {
-                    int atNum = Integer.parseUnsignedInt(inactiveKey) - 1;
-                    if (atNum >= nmolaAtoms) {
-                        logger.log(Level.INFO, String.format(" Atom index %d is "
-                                + "out of bounds for molecular assembly of "
-                                + "length %d", atNum + 1, nmolaAtoms));
-                    } else if (atNum < 0) {
-                        logger.log(Level.INFO, String.format(" Input %s not valid; "
-                                + "atoms should be indexed starting from 1", inactiveKey));
-                    } else {
-                        logger.log(Level.INFO, String.format(" Atom %s set to be "
-                                + "inactive", inactiveKey));
-                        molaAtoms[atNum].setActive(false);
-                    }
-                } catch (NumberFormatException ex) {
-                    logger.log(Level.INFO, String.format(" inactive key %s cannot "
-                            + "be interpreted as an atom number or range of atom "
-                            + "numbers.", inactiveKey));
-                }
-            }*/
         }
 
         coordRestraints = new ArrayList<>();
@@ -978,11 +909,10 @@ public abstract class SystemFilter {
      * should be 1-indexed (user end), output 0-indexed.
      *
      * @param keyType Type of key
-     * @param st Input string
-     * @param nAtoms Number of atoms in the MolecularAssembly
-     * @throws java.lang.IllegalArgumentException if an invalid argument
+     * @param st      Input string
+     * @param nAtoms  Number of atoms in the MolecularAssembly
      * @return An int[2] with start, end indices (inclusive).
-     * @throws java.lang.IllegalArgumentException if any.
+     * @throws java.lang.IllegalArgumentException if an invalid argument
      */
     public static int[] parseAtNumArg(String keyType, String st, int nAtoms) throws IllegalArgumentException {
         Matcher m = intrangePattern.matcher(st);
@@ -999,14 +929,6 @@ public abstract class SystemFilter {
                 throw new IllegalArgumentException(String.format(" %s input %s not "
                         + "valid; atom range is out of bounds for assembly of "
                         + "length %d", keyType, st, nAtoms));
-                /*for (int j = start; j <= end; j++) {
-                    if (j >= nAtoms) {
-                        logger.log(Level.INFO, String.format(" Atom index %d is "
-                                + "out of bounds for molecular assembly of "
-                                + "length %d", j + 1, nAtoms));
-                        break;
-                    }
-                }*/
             } else {
                 if (end >= nAtoms) {
                     logger.log(Level.INFO, String.format(" Truncating range %s "
@@ -1036,12 +958,12 @@ public abstract class SystemFilter {
 
     /**
      * This method is different for each subclass and must be overidden.
-     *
+     * <p>
      * If the append flag is true, "saveFile" will be appended to. Otherwise the
      * default versioning scheme will be applied.
      *
      * @param saveFile a {@link java.io.File} object.
-     * @param append a boolean.
+     * @param append   a boolean.
      * @return a boolean.
      */
     public abstract boolean writeFile(File saveFile, boolean append);
