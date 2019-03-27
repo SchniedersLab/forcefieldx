@@ -150,44 +150,47 @@ import static ffx.utilities.StringUtils.pdbForID;
 public final class MainPanel extends JPanel implements ActionListener,
         ChangeListener {
 
-    // Static Variables
     private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
-    // Panel Order in the TabbedPane
     /**
      * Constant <code>GRAPHICS=0</code>
      */
-    public static final int GRAPHICS = 0;
+    private static final int GRAPHICS = 0;
     /**
      * Constant <code>KEYWORDS=1</code>
      */
-    public static final int KEYWORDS = 1;
+    static final int KEYWORDS = 1;
     /**
      * Constant <code>MODELING=2</code>
      */
-    public static final int MODELING = 2;
+    static final int MODELING = 2;
     /**
      * Constant <code>classpath=""</code>
      */
-    public static String classpath;
+    static String classpath;
     /**
      * Constant <code>ffxDir</code>
      */
-    public static File ffxDir;
+    static File ffxDir;
+    /**
+     * Present working directory.
+     */
     private static File pwd;
-    // FileFilters for filtering file selection in the JFileChooser
+    /**
+     * JFileChooser for choosing a file.
+     */
     private static JFileChooser fileChooser = null;
     /**
      * Constant <code>xyzFileFilter</code>
      */
-    public static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
+    private static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
     /**
      * Constant <code>arcFileFilter</code>
      */
-    public static final ARCFileFilter arcFileFilter = new ARCFileFilter();
+    private static final ARCFileFilter arcFileFilter = new ARCFileFilter();
     /**
      * Constant <code>intFileFilter</code>
      */
-    public static final INTFileFilter intFileFilter = new INTFileFilter();
+    private static final INTFileFilter intFileFilter = new INTFileFilter();
     /**
      * Constant <code>dynFileFilter</code>
      */
@@ -195,27 +198,30 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Constant <code>biojavaDataFilter</code>
      */
-    public static final BiojavaDataFilter biojavaDataFilter = new BiojavaDataFilter();
+    private static final BiojavaDataFilter biojavaDataFilter = new BiojavaDataFilter();
     /**
      * Constant <code>indFileFilter</code>
      */
-    public static final InducedFileFilter indFileFilter = new InducedFileFilter();
+    private static final InducedFileFilter indFileFilter = new InducedFileFilter();
     /**
      * Constant <code>forceFieldFileFilter</code>
      */
-    public static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
+    static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
     /**
      * Constant <code>pdbFileFilter</code>
      */
-    public static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
+    private static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
     /**
      * Constant <code>keyFileFilter</code>
      */
-    public static final KeyFileFilter keyFileFilter = new KeyFileFilter();
+    static final KeyFileFilter keyFileFilter = new KeyFileFilter();
     /**
      * Constant <code>ffxFileFilter</code>
      */
-    public static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
+    private static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
+    /**
+     * Number of File Opener Threads.
+     */
     private int fileOpenerThreads = -1;
 
     static {
@@ -230,74 +236,113 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>
-     * getPWD</p>
-     *
-     * @return a {@link java.io.File} object.
+     * Main FFX JFrame.
      */
-    public static File getPWD() {
-        if (pwd == null) {
-            pwd = new File(System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath()));
-        }
-        return pwd;
-    }
-
-    /**
-     * JFileChooser
-     *
-     * @return a {@link javax.swing.JFileChooser} object.
-     */
-    public static JFileChooser resetFileChooser() {
-        if (fileChooser == null) {
-            fileChooser = new JFileChooser();
-        }
-        fileChooser.resetChoosableFileFilters();
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.setFileHidingEnabled(false);
-        fileChooser.setAcceptAllFileFilterUsed(true);
-        fileChooser.setCurrentDirectory(getPWD());
-        fileChooser.setMultiSelectionEnabled(false);
-        fileChooser.setSelectedFile(null);
-        return fileChooser;
-    }
-
-    // Force Field X Panels and Components
     private JFrame frame;
+    /**
+     * Root of the structural hierarchy.
+     */
     private MSRoot dataRoot;
+    /**
+     * The structural hierarchy.
+     */
     private Hierarchy hierarchy;
+    /**
+     * The FFX Main Menu.
+     */
     private MainMenu mainMenu;
+    /**
+     * The Graphics Panel.
+     */
     private GraphicsPanel graphicsPanel;
+    /**
+     * The Modeling Panel.
+     */
     private ModelingPanel modelingPanel;
+    /**
+     * The Keyword Panel.
+     */
     private KeywordPanel keywordPanel;
-    // private LogPanel logPanel;
-    private GraphicsCanvas graphicsCanvas;
-    // Misc. Components
-    // The SplitPane holds the Hierarchy and JTabbedPane
-    private JSplitPane splitPane;
-    private int splitPaneDivider;
-    // Holds 3D Graphics, Keyword Editor, Modeling Commands and Log Panels
-    private JTabbedPane tabbedPane;
-    private JLabel statusLabel;
-    private ForceFieldFilter forceFieldFilter;
-    private FFXLocale locale = null;
-    private JDialog aboutDialog = null;
-    private JTextArea aboutTextArea = null;
-    private Thread openThread = null;
-    private SystemFilter activeFilter = null;
-    private ConversionFilter activeConvFilter = null;
-    private boolean oscillate = false;
-    // TINKER Simulation Variables
-    private SimulationLoader simulation;
-    private String ip = new String("");
-    private int port = 2000;
-    private InetAddress address = null;
-    private InetSocketAddress socketAddress = new InetSocketAddress(port);
+    /**
+     * A reference to the Modeling Shell.
+     */
     private ModelingShell modelingShell = null;
+    // private LogPanel logPanel;
+    /**
+     * The Java3D Graphics Canvas.
+     */
+    private GraphicsCanvas graphicsCanvas;
+    /**
+     * The SplitPane holds the Hierarchy and JTabbedPane.
+     */
+    private JSplitPane splitPane;
+    /**
+     * The value fo the Split Pane Divider.
+     */
+    private int splitPaneDivider;
+    /**
+     * Status Label.
+     */
+    private JLabel statusLabel;
+    /**
+     * Filter to open a force field file.
+     */
+    private ForceFieldFilter forceFieldFilter;
+    /**
+     * The FFX Locale.
+     */
+    private FFXLocale locale = null;
+    /**
+     * The FFX About Dialog.
+     */
+    private JDialog aboutDialog = null;
+    /**
+     * The FFX About Text Area.
+     */
+    private JTextArea aboutTextArea = null;
+    /**
+     * Thread to open systems.
+     */
+    private Thread openThread = null;
+    /**
+     * The active system filter.
+     */
+    private SystemFilter activeFilter = null;
+    /**
+     * Filter to for system conversion.
+     */
+    private ConversionFilter activeConvFilter = null;
+    /**
+     * Flag to indicate oscillation.
+     */
+    private boolean oscillate = false;
+    /**
+     * Reference to a Simulation Loader.
+     */
+    private SimulationLoader simulation;
+    /**
+     * IP of the simulation.
+     */
+    private String ip = "";
+    /**
+     * Simulation port.
+     */
+    private int port = 2000;
+    /**
+     * InetAddress of the simulation.
+     */
+    private InetAddress address = null;
+    /**
+     * InetSocketAddress of the simulation.
+     */
+    private InetSocketAddress socketAddress = new InetSocketAddress(port);
     /**
      * Initialize all the sub-Panels and put them together
      */
     private boolean init = false;
-    // Indicates how FFX is terminating.
+    /**
+     * Exit status to describe how FFX is terminating.
+     */
     private ExitStatus exitType = ExitStatus.NORMAL;
 
     /**
@@ -315,6 +360,39 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public MainPanel() {
         frame = null;
+    }
+
+    /**
+     * <p>
+     * getPWD</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
+    static File getPWD() {
+        if (pwd == null) {
+            pwd = new File(System.getProperty("user.dir",
+                    FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath()));
+        }
+        return pwd;
+    }
+
+    /**
+     * JFileChooser
+     *
+     * @return a {@link javax.swing.JFileChooser} object.
+     */
+    static JFileChooser resetFileChooser() {
+        if (fileChooser == null) {
+            fileChooser = new JFileChooser();
+        }
+        fileChooser.resetChoosableFileFilters();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setFileHidingEnabled(false);
+        fileChooser.setAcceptAllFileFilterUsed(true);
+        fileChooser.setCurrentDirectory(getPWD());
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setSelectedFile(null);
+        return fileChooser;
     }
 
     /**
@@ -1128,7 +1206,8 @@ public final class MainPanel extends JPanel implements ActionListener,
             graphicsPanel = new GraphicsPanel(graphicsCanvas, statusPanel);
         }
 
-        tabbedPane = new JTabbedPane();
+        // Holds 3D Graphics, Keyword Editor, Modeling Commands and Log Panels
+        JTabbedPane tabbedPane = new JTabbedPane();
         // ClassLoader loader = getClass().getClassLoader();
         // ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
         // ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
@@ -2240,7 +2319,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Save the currently selected FFXSystem to a PDB file.
      *
-     * @param file File to save the system to.
+     * @param file     File to save the system to.
+     * @param writeEnd Flag to indicate this is the last snapshot.
      * @since 1.0
      */
     public void saveAsPDB(File file, boolean writeEnd) {
@@ -2250,7 +2330,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Save the currently selected FFXSystem to a PDB file.
      *
-     * @param file File to save the system to.
+     * @param file     File to save the system to.
+     * @param writeEnd Flag to indicate this is the last snapshot.
+     * @param append   Flag to indicate appending this snapshot.
      * @since 1.0
      */
     public void saveAsPDB(File file, boolean writeEnd, boolean append) {

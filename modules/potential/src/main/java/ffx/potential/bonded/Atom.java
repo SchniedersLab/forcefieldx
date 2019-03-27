@@ -91,14 +91,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         Default, Trim, XyzIndex_Name, ArrayIndex_Name, Resnum_Name;
     }
 
-    public enum Resolution {
-        FIXEDCHARGE, AMOEBA;
-    }
-
-    public enum Indexing {
-        XYZ, PERSIST
-    }
-
     /**
      * Element symbols for the first 109 elements.
      */
@@ -111,6 +103,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
         Er, Tm, Yb, Lu, Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At,
         Rn, Fr, Ra, Ac, Th, Pa, U, Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr,
         Rf, Db, Sg, Bh, Hs, Mt;
+    }
+
+    public enum Indexing {
+        XYZ, PERSIST
+    }
+
+    public enum Resolution {
+        FIXEDCHARGE, AMOEBA;
     }
 
     /**
@@ -515,14 +515,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (a == this) {
             return 0;
         }
-        int a0 = a.xyzIndex;
-        if (xyzIndex < a0) {
-            return -1;
-        }
-        if (xyzIndex > a0) {
-            return 1;
-        }
-        return 0;
+        return Integer.compare(xyzIndex, a.xyzIndex);
     }
 
     /**
@@ -534,7 +527,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     void addTrajectoryCoords(Vector3d coords, int position) {
         if (trajectory == null) {
-            trajectory = new ArrayList<Vector3d>();
+            trajectory = new ArrayList<>();
             trajectory.add(0, new Vector3d(xyz));
         }
         trajectory.add(position, coords);
@@ -586,7 +579,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public Atom copy() {
-        double coords[] = {xyz[0], xyz[1], xyz[2]};
+        double[] coords = {xyz[0], xyz[1], xyz[2]};
         Atom atom = new Atom(getIndex(), getName(), getAltLoc(), coords,
                 getResidueName(), getResidueNumber(), getChainID(),
                 getOccupancy(), getTempFactor(), getSegID());
@@ -782,7 +775,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a {@link javax.media.j3d.Appearance} object.
      */
-    public Appearance getAtomAppearance() {
+    Appearance getAtomAppearance() {
         if (appearance == null) {
             appearance = RendererCache.appearanceFactory(currentCol,
                     polygonType);
@@ -796,7 +789,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a {@link javax.vecmath.Color3f} object.
      */
-    public Color3f getAtomColor() {
+    Color3f getAtomColor() {
         return currentCol;
     }
 
@@ -814,7 +807,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     @Override
     public ArrayList<Atom> getAtomList() {
-        ArrayList<Atom> atoms = new ArrayList<Atom>();
+        ArrayList<Atom> atoms = new ArrayList<>();
         atoms.add(this);
         return atoms;
     }
@@ -837,9 +830,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a {@link ffx.potential.bonded.Bond} object.
      */
     public Bond getBond(Atom a) {
-        if (bonds == null) {
-            return null;
-        }
         for (Bond bond : bonds) {
             if (bond.get1_2(a) == this) {
                 return bond;
@@ -886,7 +876,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Set this atom's seg ID.
      *
-     * @param segID
+     * @param segID The segID of this atom.
      */
     public void setSegID(String segID) {
         this.segID = segID;
@@ -1103,6 +1093,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * Set the Atomic Mass.
+     *
+     * @param mass The mass of the atom.
      */
     public void setMass(double mass) {
         this.mass = mass;
@@ -1135,9 +1127,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a int.
      */
     public final int getNumAngles() {
-        if (angles == null) {
-            return 0;
-        }
         return angles.size();
     }
 
@@ -1147,9 +1136,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return Number of atoms bonded to this atom
      */
     public final int getNumBonds() {
-        if (bonds == null) {
-            return 0;
-        }
         return bonds.size();
     }
 
@@ -1160,9 +1146,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a int.
      */
     public final int getNumDihedrals() {
-        if (torsions == null) {
-            return 0;
-        }
         return torsions.size();
     }
 
@@ -1314,7 +1297,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return the original array with updated coordinates, or a new array if
      * xyz was null.
      */
-    public double[] getXYZ(double xyz[]) {
+    public double[] getXYZ(double[] xyz) {
         if (xyz == null) {
             xyz = Arrays.copyOf(this.xyz, 3);
         } else {
@@ -1473,10 +1456,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a boolean.
      */
     public boolean is_12_or_13(Atom a) {
-        if (isBonded(a) || is_1_3(a)) {
-            return true;
-        }
-        return false;
+        return isBonded(a) || is_1_3(a);
     }
 
     /**
@@ -1484,7 +1464,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return True if the atom is under-constrained (ie has can accept bonds)
      */
-    public boolean isDangeling() {
+    boolean isDangeling() {
         Integer hybrid = hybridTable.get("" + atomType.atomicNumber);
         if (hybrid == null) {
             return false;
@@ -1500,10 +1480,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a boolean.
      */
     public boolean isTrigonal() {
-        if (bonds != null && bonds.size() == 3) {
-            return true;
-        }
-        return false;
+        return bonds.size() == 3;
     }
 
     /**
@@ -1519,7 +1496,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * <p>
      * isVisible</p>
-     *
+     * <p>
      * True if this Atom's Sphere or Vector is visible
      *
      * @return a boolean.
@@ -1588,7 +1565,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setXYZ(double[] xyz) {
         assert Arrays.stream(xyz).allMatch(Double::isFinite);
-        if (active && xyz != null) {
+        if (active) {
             arraycopy(xyz, 0, this.xyz, 0, 3);
         }
     }
@@ -1686,12 +1663,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     @Override
     public void removeFromParent() {
         super.removeFromParent();
-        if (angles != null) {
-            angles.clear();
-        }
-        if (torsions != null) {
-            torsions.clear();
-        }
+        angles.clear();
+        torsions.clear();
         if (trajectory != null) {
             trajectory.clear();
         }
@@ -2196,7 +2169,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public void addToAnisouGradient(double[] anisouGradient) {
         if (active) {
             if (anisouGradient == null) {
-            } else if (this.anisouGradient == null) {
+                return;
+            }
+            if (this.anisouGradient == null) {
                 this.anisouGradient = Arrays.copyOf(anisouGradient, 6);
             } else {
                 for (int i = 0; i < 6; i++) {
@@ -2265,9 +2240,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setAngle(Angle a) {
         if (a != null && a.containsAtom(this)) {
-            /**
-             * for (Angle angle : angles) { if (angle == a) { return; } }
-             */
+            // for (Angle angle : angles) { if (angle == a) { return; } }
             angles.add(a);
         }
     }
@@ -2279,7 +2252,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setBond(Bond b) {
         if (b != null && b.containsAtom(this)) {
-
             for (Bond bond : bonds) {
                 if (bond == b) {
                     return;
@@ -2291,21 +2263,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * <p>
-     * removeBond</p>
-     *
-     * @param b a {@link ffx.potential.bonded.Bond} object.
-     */
-    public void removeBond(Bond b) {
-        bonds.remove(b);
-    }
-
-    /**
-     * <p>
      * set1_5</p>
      *
      * @param a a {@link ffx.potential.bonded.Atom} object.
      */
-    public void set1_5(Atom a) {
+    private void set1_5(Atom a) {
         if (a != null && !one_5s.contains(a)) {
             one_5s.add(a);
         }
@@ -2384,11 +2346,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (branchGroup != null && viewModel != ViewModel.INVISIBLE) {
             sphere.setAppearance(appearance);
         }
-        if (bonds != null) {
-            for (Bond bond : bonds) {
-                bond.setColor(this);
-            }
+
+        for (Bond bond : bonds) {
+            bond.setColor(this);
         }
+
     }
 
     /**
@@ -2451,7 +2413,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Clear out the geometry lists for this atom.
      */
-    public void clearGeometry() {
+    void clearGeometry() {
         bonds.clear();
         angles.clear();
         torsions.clear();
@@ -2705,7 +2667,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param sphereVisible a boolean.
      * @param newShapes     a {@link java.util.List} object.
      */
-    public void setSphereVisible(boolean sphereVisible, List<BranchGroup> newShapes) {
+    private void setSphereVisible(boolean sphereVisible, List<BranchGroup> newShapes) {
         if (!sphereVisible) {
             // Make this atom invisible.
             if (branchGroup != null) {
@@ -2915,7 +2877,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return A short string representation of this.
      */
-    @Deprecated
     public String toShortString() {
         return describe(Descriptions.XyzIndex_Name);
     }
@@ -2955,7 +2916,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * <p>
      * updateSphere</p>
      */
-    public void updateSphere() {
+    private void updateSphere() {
         if (branchGroup != null && viewModel != ViewModel.INVISIBLE) {
             vector3d.set(xyz);
             transform3D.setTranslation(vector3d);

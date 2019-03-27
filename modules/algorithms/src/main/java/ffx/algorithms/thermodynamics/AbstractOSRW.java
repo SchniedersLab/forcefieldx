@@ -807,6 +807,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     /**
      * <p>evaluate2DPMF.</p>
+     *
+     * @return A StringBuffer with 2D Bias PMF.
      */
     public StringBuffer evaluate2DPMF() {
         StringBuffer sb = new StringBuffer();
@@ -824,6 +826,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     /**
      * <p>evaluateTotalPMF.</p>
+     *
+     * @return A StringBuffer the total 2D PMF.
      */
     public StringBuffer evaluateTotalPMF() {
         StringBuffer sb = new StringBuffer();
