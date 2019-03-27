@@ -5126,9 +5126,8 @@ public final class PDBFilter extends SystemFilter {
                         findBondedAtoms(op, 1).get(0).setName("H" + op.getName());
                     }
                 }
-                renameCommonNucleobase(residue, N19, C1s, na3);
             }
-
+            renameCommonNucleobase(residue, N19, C1s, na3);
         } else {
             logger.warning(" Could not find O4\' for residue " + residue);
         }
@@ -5158,6 +5157,9 @@ public final class PDBFilter extends SystemFilter {
                 Atom C5 = findBondedAtoms(C4, 6).get(0);
                 C5.setName("C5");
                 keyAtoms.put("C5", C5);
+                if (hasAttachedAtom(C5, 1)) {
+                    findBondedAtoms(C5, 1).get(0).setName("H5");
+                }
             } else {
                 Atom C6 = c;
                 C6.setName("C6");
