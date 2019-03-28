@@ -56,11 +56,11 @@ public class Joint extends MSNode {
     /**
      * First group forming this Joint
      */
-    protected MSGroup group1 = null;
+    private MSGroup group1;
     /**
      * Second group forming this Joint
      */
-    protected MSGroup group2 = null;
+    private MSGroup group2;
 
     /**
      * Default Constructor

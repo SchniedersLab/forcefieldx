@@ -9252,6 +9252,7 @@ public class RotamerOptimization implements Terminatable {
                 execute(0, nResidues - 1, distanceLoops[threadID]);
             } catch (Exception e) {
                 String message = " Exception computing residue-residue distances.";
+                e.printStackTrace();
                 logger.log(Level.SEVERE, message, e);
             }
         }
@@ -9302,7 +9303,13 @@ public class RotamerOptimization implements Terminatable {
 
                         // Loop over Residue i's rotamers
                         for (int ri = 0; ri < lengthRi; ri++) {
-                            double[][] xi = getCoordinates(residuei, rotamersi[ri], forcedResidueI);
+                            double[][] xi;
+                            if(forcedResidueI){
+                                 xi = getCoordinates(residuei, null, forcedResidueI);
+                            } else{
+                                xi = getCoordinates(residuei, rotamersi[ri], forcedResidueI);
+                            }
+
                             // Loop over Residue i's neighbors.
                             for (int j : list) {
                                 if (i == j) {
@@ -9326,8 +9333,12 @@ public class RotamerOptimization implements Terminatable {
 
                                 // Loop over the neighbor's rotamers
                                 for (int rj = 0; rj < lengthRj; rj++) {
-                                    double[][] xj = getCoordinates(residuej, rotamersj[rj], forcedResidueJ);
-
+                                    double[][] xj;
+                                    if(forcedResidueJ){
+                                        xj = getCoordinates(residuej, null, forcedResidueJ);
+                                    } else{
+                                        xj = getCoordinates(residuej, rotamersj[rj], forcedResidueJ);
+                                    }
                                     if (getThreadIndex() == 0 && algorithmListener != null) {
                                         algorithmListener.algorithmUpdate(molecularAssembly);
                                     }

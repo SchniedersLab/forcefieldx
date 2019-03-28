@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -91,16 +92,16 @@ public final class Utilities {
      * performance win - although better algorithms probably exist. This is
      * currently backed by ArrayLists.
      */
-    public static List<List<Atom>> atomListPool = new ArrayList<>();
+    private static List<List<Atom>> atomListPool = new ArrayList<>();
 
     /**
      * Repeating atomic numbers of an amino acid chain.
      */
-    public static final int[] AAPATTERN = {7, 6, 6};
+    private static final int[] AAPATTERN = {7, 6, 6};
     /**
      * Repeating atomic numbers of a nucleic acid chain.
      */
-    public static final int[] NAPATTERN = {8, 6, 6, 6, 8};
+    private static final int[] NAPATTERN = {8, 6, 6, 6, 8};
     /**
      * Stoichiometry of side chains can be used for identification, accept for a
      * couple cases: 1.) Proline & Valine 2.) (Iso)Leucine 3.) DNA Gaunine/RNA
@@ -148,7 +149,7 @@ public final class Utilities {
      *
      * @param a a {@link java.util.List} object.
      */
-    public static void addAtomListToPool(List<Atom> a) {
+    private static void addAtomListToPool(List<Atom> a) {
         a.clear();
         atomListPool.add(a);
     }
@@ -162,7 +163,7 @@ public final class Utilities {
      * @param seed    Atom
      * @param residue Residue
      */
-    public static void addCap(Atom end, Atom seed, Residue residue) {
+    private static void addCap(Atom end, Atom seed, Residue residue) {
         List<Atom> cap = getAtomListFromPool();
         cap.add(end);
         collectAtoms(seed, cap);
@@ -181,7 +182,7 @@ public final class Utilities {
      * @param phosphate Atom
      * @param residue   Residue
      */
-    public static void addPhosphate(Atom phosphate, Residue residue) {
+    private static void addPhosphate(Atom phosphate, Residue residue) {
         if (phosphate == null) {
             return;
         }
@@ -202,14 +203,12 @@ public final class Utilities {
 
     private static Residue assignResidue(List<Atom> backbone, int start,
                                          List<Atom> atoms, List<Atom> sidePolymer) {
-        Atom a;
         int atomicnum;
         char[] chars = {'S', 'P', 'O', 'N', 'C'};
         // Bin number to atomic number => 0 = S, 1 = P, 2 = O, 3 = N, 4 = C
         int[] bins = new int[5];
 
-        for (ListIterator li = sidePolymer.listIterator(); li.hasNext(); ) {
-            a = (Atom) li.next();
+        for (Atom a : sidePolymer) {
             atomicnum = a.getAtomicNumber();
             switch (atomicnum) {
                 case 1:
@@ -330,10 +329,11 @@ public final class Utilities {
         if (residue == null) {
             residue = new Residue(resname, Residue.ResidueType.UNK);
         }
+
         // Create the Residue group
-        for (ListIterator li = atoms.listIterator(); li.hasNext(); ) {
-            a = (Atom) li.next();
+        for (Atom a : atoms) {
             residue.addMSNode(a);
+            // logger.info(a.toString());
         }
         return residue;
     }
@@ -354,9 +354,9 @@ public final class Utilities {
         int moleculeNum = 0;
         List<String> segIDs = new ArrayList<>();
         while (atoms.size() > 0) {
-            /**
-             * Nitrogen is used to "seed" a backbone search because carbon can
-             * be separated from the backbone by a sulfur (ie. MET).
+            /*
+              Nitrogen is used to "seed" a backbone search because carbon can
+              be separated from the backbone by a sulfur (ie. MET).
              */
             for (Atom a : atoms) {
                 seed = a;
@@ -364,9 +364,7 @@ public final class Utilities {
                     break;
                 }
             }
-            /**
-             * If no nitrogen atoms remain, there are no nucleic or amino acids.
-             */
+            // If no nitrogen atoms remain, there are no nucleic or amino acids.
             if (seed.getAtomicNumber() != 7) {
                 List<Atom> moleculeAtoms;
                 while (atoms.size() > 0) {
@@ -407,33 +405,15 @@ public final class Utilities {
                     }
                     molecularAssembly.addMSNode(molecule);
                 }
-                seed = null;
                 break;
             }
 
-            // logger.info(" Seed atom: " + seed);
-
             List<Atom> backbone = findPolymer(seed, null);
-
-            // for (Atom a : backbone) {
-            //    logger.info(" Atom " + a);
-            // }
 
             if (backbone.size() > 0) {
                 seed = backbone.get(backbone.size() - 1);
-                // for (ListIterator li = backbone.listIterator(backbone.size()); li.hasPrevious(); ) {
-                //    seed = (Atom) li.previous();
-                //    if (seed.getAtomicNumber() == 7) {
-                //        break;
-                //    }
-                // }
-                // logger.info(" Seed atom: " + seed);
                 backbone = findPolymer(seed, null);
             }
-
-            // for (Atom a : backbone) {
-            //    logger.info(" Atom " + a);
-            // }
 
             Character chainID = getChainID(num);
             String segID = getSegID(chainID, segIDs);
@@ -529,7 +509,7 @@ public final class Utilities {
      * @param adjacent a {@link ffx.potential.bonded.Atom} object.
      * @return a int.
      */
-    public static int countCO(Atom adjacent) {
+    private static int countCO(Atom adjacent) {
         int total = 0;
         for (Bond b : adjacent.getBonds()) {
             Atom carbonyl = b.get1_2(adjacent);
@@ -553,8 +533,9 @@ public final class Utilities {
      * @param c        a {@link ffx.potential.bonded.Polymer} object.
      * @return a boolean.
      */
-    public static boolean divideBackbone(List<Atom> backbone, Polymer c) {
+    private static boolean divideBackbone(List<Atom> backbone, Polymer c) {
         int length = backbone.size();
+
         // Try to find a Phosphorus or Nitrogen in the backbone
         int n, p;
         n = p = 0;
@@ -810,7 +791,7 @@ public final class Utilities {
             ex.printStackTrace(ps);
             return new String(baos.toByteArray(), StandardCharsets.UTF_8);
         } catch (UnsupportedEncodingException uex) {
-            logger.warning(String.format(" UTF-8 encoding somehow not " +
+            logger.warning(format(" UTF-8 encoding somehow not " +
                     "supported by PrintStream for exception %s.", ex.toString()));
             ex.printStackTrace();
             return "";
@@ -824,7 +805,7 @@ public final class Utilities {
      * @param a Atom
      * @return Atom
      */
-    public static Atom findAlphaCarbon(Atom a) {
+    private static Atom findAlphaCarbon(Atom a) {
         for (Bond b : a.getBonds()) {
             Atom alpha = b.get1_2(a);
             if (alpha.getAtomicNumber() == 6
@@ -844,7 +825,7 @@ public final class Utilities {
      * @param atomicNumber int
      * @return Atom
      */
-    public static Atom findBondWith(Atom a, int atomicNumber) {
+    private static Atom findBondWith(Atom a, int atomicNumber) {
         for (Bond b : a.getBonds()) {
             Atom other = b.get1_2(a);
             if (other.getAtomicNumber() == atomicNumber) {
@@ -861,7 +842,7 @@ public final class Utilities {
      * @param adjacent Atom
      * @return Atom
      */
-    public static Atom findC5(Atom adjacent) {
+    private static Atom findC5(Atom adjacent) {
         for (Bond b : adjacent.getBonds()) {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && numberOfBondsWith(carbon, 6) == 1 && numberOfBondsWith(carbon, 8) == 1) {
@@ -877,7 +858,7 @@ public final class Utilities {
      * @param adjacent Atom
      * @return Atom
      */
-    public static Atom findCarbonyl(Atom adjacent) {
+    private static Atom findCarbonyl(Atom adjacent) {
         for (Bond b : adjacent.getBonds()) {
             Atom carbonyl = b.get1_2(adjacent);
             if (carbonyl.getAtomicNumber() == 6) {
@@ -899,7 +880,7 @@ public final class Utilities {
      * @param adjacent Atom
      * @return Atom
      */
-    public static Atom findCCO(Atom adjacent) {
+    private static Atom findCCO(Atom adjacent) {
         for (Bond b : adjacent.getBonds()) {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && numberOfBondsWith(carbon, 6) == 2 && numberOfBondsWith(carbon, 8) >= 1) {
@@ -933,7 +914,7 @@ public final class Utilities {
      * @param adjacent Atom
      * @return Atom
      */
-    public static Atom findCO(Atom adjacent) {
+    private static Atom findCO(Atom adjacent) {
         for (Bond b : adjacent.getBonds()) {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && formsBondsWith(carbon, 8)) {
@@ -952,7 +933,7 @@ public final class Utilities {
      * @param o Atom
      * @return Atom
      */
-    public static Atom findOtherOxygen(Atom p, Atom o) {
+    private static Atom findOtherOxygen(Atom p, Atom o) {
         for (Bond b : p.getBonds()) {
             Atom oxygen = b.get1_2(p);
             if (oxygen.getAtomicNumber() == 8 && oxygen != o && formsBondsWith(oxygen, 6)) {
@@ -970,7 +951,7 @@ public final class Utilities {
      * @param path        List
      * @return List
      */
-    public static List<Atom> findPolymer(Atom currentAtom, List<Atom> path) {
+    private static List<Atom> findPolymer(Atom currentAtom, List<Atom> path) {
 
         // Atom has no bonds to follow
         if (currentAtom.getBonds() == null) {
@@ -991,7 +972,7 @@ public final class Utilities {
         }
 
         // Allow the search to make it out of side chains, but not enter them...
-        if (path != null && path.size() > 7) {
+        if (path != null && path.size() > 6) {
 
             // Oxygen is only in the backbone for Nucleic Acids in a phosphate group
             if (anum == 8) {
@@ -1012,7 +993,7 @@ public final class Utilities {
                 // Avoid more than 3 carbons in a row (phenyl groups, etc.)
             } else if (anum == 6) {
                 Atom a;
-                int anum2, anum3, anum4;
+                int anum2, anum3;
                 int size = path.size();
                 a = path.get(size - 1);
                 anum2 = a.getAtomicNumber();
@@ -1020,11 +1001,12 @@ public final class Utilities {
                     a = path.get(size - 2);
                     anum3 = a.getAtomicNumber();
                     if (anum3 == 6) {
-                        a = path.get(size - 3);
-                        anum4 = a.getAtomicNumber();
-                        if (anum4 == 6) {
-                            return null;
-                        }
+                        return null;
+                        // a = path.get(size - 3);
+                        // int anum4 = a.getAtomicNumber();
+                        // if (anum4 == 6) {
+                        //    return null;
+                        // }
                     }
                 }
             }
@@ -1112,7 +1094,7 @@ public final class Utilities {
      * @param atomicNumber int
      * @return boolean
      */
-    public static boolean formsBondsWith(Atom a, int atomicNumber) {
+    private static boolean formsBondsWith(Atom a, int atomicNumber) {
         for (Bond b : a.getBonds()) {
             Atom other = b.get1_2(a);
             if (other.getAtomicNumber() == atomicNumber) {
@@ -1128,7 +1110,7 @@ public final class Utilities {
      *
      * @return a {@link java.util.List} object.
      */
-    public static List<Atom> getAtomListFromPool() {
+    private static List<Atom> getAtomListFromPool() {
         if (atomListPool.isEmpty()) {
             return new ArrayList<Atom>();
         }
@@ -1160,7 +1142,7 @@ public final class Utilities {
      * @param a Atom
      * @return boolean
      */
-    public static boolean isWaterOxygen(Atom a) {
+    static boolean isWaterOxygen(Atom a) {
         if (a.getAtomicNumber() != 8) {
             return false;
         }
@@ -1181,7 +1163,7 @@ public final class Utilities {
      * @param atomicNumber int
      * @return int
      */
-    public static int numberOfBondsWith(Atom a, int atomicNumber) {
+    private static int numberOfBondsWith(Atom a, int atomicNumber) {
         int total = 0;
         for (Bond b : a.getBonds()) {
             Atom other = b.get1_2(a);
@@ -1195,14 +1177,16 @@ public final class Utilities {
     /**
      * Check to see if a portion of the backbone matches that of a biological polymer,
      * and if so determine the respective residue
-     * @param start First atom.
+     *
+     * @param start    First atom.
      * @param backbone List of backbone atoms.
-     * @param type Type of residue.
+     * @param type     Type of residue.
      * @return The residue.
      */
     private static Residue patternMatch(int start, List<Atom> backbone,
                                         PolymerType type) {
         int[] pattern;
+
         // Initialization
         if (type == PolymerType.AMINOACID) {
             pattern = AAPATTERN;
@@ -1226,12 +1210,13 @@ public final class Utilities {
         } else {
             return null;
         }
+
         int length = pattern.length;
         List<Atom> atoms = getAtomListFromPool();
         List<Atom> sidePolymer = getAtomListFromPool();
         for (int i = 0; i < length; i++) {
             Atom a = backbone.get(start + i);
-            // add backbone atoms to terminate sidePolymer search
+            // Add backbone atoms to terminate sidePolymer search
             sidePolymer.add(a);
             if (a.getAtomicNumber() != pattern[i]) {
                 return null;
@@ -1254,9 +1239,10 @@ public final class Utilities {
             atoms.remove(0);
             // Collect Just Side chain atoms, then remove backbone termination
         }
+
         if (type == PolymerType.AMINOACID) {
             collectAtoms(sidePolymer.get(1), sidePolymer);
-        } else if (type == PolymerType.NUCLEICACID) {
+        } else {
             Atom seed = null;
             for (Atom a : atoms) {
                 if (a.getAtomicNumber() == 7) {
@@ -1271,11 +1257,12 @@ public final class Utilities {
                 return null;
             }
         }
+
         for (int i = 0; i <= length; i++) {
             sidePolymer.remove(0);
         }
-        Residue res = assignResidue(backbone, start, atoms, sidePolymer);
-        return res;
+
+        return assignResidue(backbone, start, atoms, sidePolymer);
     }
 
     /**

@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -70,7 +71,6 @@ import ffx.potential.parameters.ForceField;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class XYZFilter extends SystemFilter {
 
@@ -82,11 +82,11 @@ public class XYZFilter extends SystemFilter {
      * <p>
      * Constructor for XYZFilter.</p>
      *
-     * @param files a {@link java.util.List} object.
-     * @param system a {@link ffx.potential.MolecularAssembly} object.
+     * @param files      a {@link java.util.List} object.
+     * @param system     a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public XYZFilter(List<File> files, MolecularAssembly system,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -98,11 +98,11 @@ public class XYZFilter extends SystemFilter {
      * <p>
      * Constructor for XYZFilter.</p>
      *
-     * @param file a {@link java.io.File} object.
-     * @param system a {@link ffx.potential.MolecularAssembly} object.
+     * @param file       a {@link java.io.File} object.
+     * @param system     a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public XYZFilter(File file, MolecularAssembly system,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -112,7 +112,7 @@ public class XYZFilter extends SystemFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Parse the XYZ File
      */
     @Override
@@ -134,7 +134,7 @@ public class XYZFilter extends SystemFilter {
             if (data == null) {
                 return false;
             }
-            String tokens[] = data.trim().split(" +", 2);
+            String[] tokens = data.trim().split(" +", 2);
             int numberOfAtoms = Integer.parseInt(tokens[0]);
             if (numberOfAtoms < 1) {
                 return false;
@@ -153,9 +153,9 @@ public class XYZFilter extends SystemFilter {
 
             // Prepare to parse atom lines.
             HashMap<Integer, Integer> labelHash = new HashMap<>();
-            int label[] = new int[numberOfAtoms];
-            int bonds[][] = new int[numberOfAtoms][8];
-            double d[][] = new double[numberOfAtoms][3];
+            int[] label = new int[numberOfAtoms];
+            int[][] bonds = new int[numberOfAtoms][8];
+            double[][] d = new double[numberOfAtoms][3];
             boolean renumber = false;
             atomList = new ArrayList<>();
             // Loop over the expected number of atoms.
@@ -170,9 +170,8 @@ public class XYZFilter extends SystemFilter {
                     return false;
                 }
                 tokens = data.trim().split(" +");
-                if (tokens == null || tokens.length < 6) {
-                    logger.warning(format(" Check atom %d in %s.", (i + 1),
-                            activeMolecularAssembly.getFile().getName()));
+                if (tokens.length < 6) {
+                    logger.warning(format(" Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
                     return false;
                 }
                 // Valid number of tokens, so try to parse this line.
@@ -182,9 +181,9 @@ public class XYZFilter extends SystemFilter {
                     renumber = true;
                 }
                 String atomName = tokens[1];
-                d[i][0] = Double.parseDouble(tokens[2]);
-                d[i][1] = Double.parseDouble(tokens[3]);
-                d[i][2] = Double.parseDouble(tokens[4]);
+                d[i][0] = parseDouble(tokens[2]);
+                d[i][1] = parseDouble(tokens[3]);
+                d[i][2] = parseDouble(tokens[4]);
                 int type = Integer.parseInt(tokens[5]);
                 AtomType atomType = forceField.getAtomType(Integer.toString(type));
                 if (atomType == null) {
@@ -211,20 +210,18 @@ public class XYZFilter extends SystemFilter {
             if (br.ready()) {
                 // Read past blank lines between archive files
                 data = br.readLine().trim();
-                while (data != null && data.equals("")) {
+                while (data.equals("")) {
                     data = br.readLine().trim();
                 }
-                if (data != null) {
-                    tokens = data.split(" +", 2);
-                    if (tokens != null && tokens.length > 0) {
-                        try {
-                            int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
-                            if (archiveNumberOfAtoms == numberOfAtoms) {
-                                setType(FileType.ARC);
-                            }
-                        } catch (NumberFormatException e) {
-                            tokens = null;
+                tokens = data.split(" +", 2);
+                if (tokens.length > 0) {
+                    try {
+                        int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
+                        if (archiveNumberOfAtoms == numberOfAtoms) {
+                            setType(FileType.ARC);
                         }
+                    } catch (NumberFormatException e) {
+                        //
                     }
                 }
             }
@@ -247,14 +244,13 @@ public class XYZFilter extends SystemFilter {
                 }
             }
             bondList = new ArrayList<>();
-            int c[] = new int[2];
-            for (int i = 1; i <= numberOfAtoms; i++) {
-                int a1 = i;
+            int[] c = new int[2];
+            for (int a1 = 1; a1 <= numberOfAtoms; a1++) {
                 int j = -1;
-                while (j < 7 && bonds[i - 1][++j] > 0) {
-                    int a2 = bonds[i - 1][j];
+                while (j < 7 && bonds[a1 - 1][++j] > 0) {
+                    int a2 = bonds[a1 - 1][j];
                     if (a1 < a2) {
-                        if (a1 > numberOfAtoms || a1 < 1 || a2 > numberOfAtoms || a2 < 1) {
+                        if (a2 > numberOfAtoms || a2 < 1) {
                             logger.warning(format(" Check the bond between %d and %d in %s.",
                                     a1, a2, activeMolecularAssembly.getFile().getName()));
                             return false;
@@ -303,11 +299,13 @@ public class XYZFilter extends SystemFilter {
     }
 
     @Override
-    public int getSnapshot(){
+    public int getSnapshot() {
         return snapShot;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readNext() {
         return readNext(false);
@@ -315,7 +313,7 @@ public class XYZFilter extends SystemFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Reads the next snap-shot of an archive into the activeMolecularAssembly.
      * After calling this function, a BufferedReader will remain open until the
      * <code>close</code> method is called.
@@ -359,7 +357,7 @@ public class XYZFilter extends SystemFilter {
                 return false;
             }
 
-            if(print) {
+            if (print) {
                 logger.info(String.format(" Attempting to read snapshot %d.", snapShot));
             }
             try {
@@ -397,9 +395,9 @@ public class XYZFilter extends SystemFilter {
                     logger.warning(message);
                     return false;
                 }
-                double x = Double.parseDouble(tokens[2]);
-                double y = Double.parseDouble(tokens[3]);
-                double z = Double.parseDouble(tokens[4]);
+                double x = parseDouble(tokens[2]);
+                double y = parseDouble(tokens[3]);
+                double z = parseDouble(tokens[4]);
                 int xyzIndex = atoms[i].getIndex();
                 if (xyzIndex != i + 1) {
                     String message = String.format("Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
@@ -420,8 +418,9 @@ public class XYZFilter extends SystemFilter {
     }
 
 
-
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         if (saveFile == null) {
@@ -503,8 +502,8 @@ public class XYZFilter extends SystemFilter {
      * writeFileAsP1</p>
      *
      * @param saveFile a {@link java.io.File} object.
-     * @param append a boolean.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param append   a boolean.
+     * @param crystal  a {@link ffx.crystal.Crystal} object.
      * @return a boolean.
      */
     public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal) {
@@ -587,7 +586,7 @@ public class XYZFilter extends SystemFilter {
      * <p>
      * readOnto</p>
      *
-     * @param newFile a {@link java.io.File} object.
+     * @param newFile   a {@link java.io.File} object.
      * @param oldSystem a {@link ffx.potential.MolecularAssembly} object.
      * @return a boolean.
      */
@@ -629,9 +628,9 @@ public class XYZFilter extends SystemFilter {
                     logger.warning(format(" Check atom %d.", (i + 1)));
                     return false;
                 }
-                d[i][0] = Double.parseDouble(tokens[2]);
-                d[i][1] = Double.parseDouble(tokens[3]);
-                d[i][2] = Double.parseDouble(tokens[4]);
+                d[i][0] = parseDouble(tokens[2]);
+                d[i][1] = parseDouble(tokens[3]);
+                d[i][2] = parseDouble(tokens[4]);
             }
             ArrayList<Atom> atoms = oldSystem.getAtomList();
             for (Atom a : atoms) {
@@ -648,7 +647,9 @@ public class XYZFilter extends SystemFilter {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void closeReader() {
         try {
@@ -699,7 +700,6 @@ public class XYZFilter extends SystemFilter {
      * Attempt to parse the String as unit cell parameters.
      *
      * @param data The String to parse.
-     *
      * @return false if the first token in the String is an integer and true
      * otherwise.
      */
@@ -712,12 +712,12 @@ public class XYZFilter extends SystemFilter {
         String tokens[] = data.trim().split(" +");
         if (tokens != null && tokens.length == 6) {
             CompositeConfiguration config = activeMolecularAssembly.getProperties();
-            double a = Double.parseDouble(tokens[0]);
-            double b = Double.parseDouble(tokens[1]);
-            double c = Double.parseDouble(tokens[2]);
-            double alpha = Double.parseDouble(tokens[3]);
-            double beta = Double.parseDouble(tokens[4]);
-            double gamma = Double.parseDouble(tokens[5]);
+            double a = parseDouble(tokens[0]);
+            double b = parseDouble(tokens[1]);
+            double c = parseDouble(tokens[2]);
+            double alpha = parseDouble(tokens[3]);
+            double beta = parseDouble(tokens[4]);
+            double gamma = parseDouble(tokens[5]);
             config.setProperty("a-axis", a);
             config.setProperty("b-axis", b);
             config.setProperty("c-axis", c);

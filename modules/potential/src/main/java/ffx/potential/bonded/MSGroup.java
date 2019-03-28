@@ -81,14 +81,21 @@ public abstract class MSGroup extends MSNode {
     private MSNode piOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
     private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
     private MSNode improperTorsionNode = new MSNode("Improper Torsions");
-
+    /**
+     * List of Joints.
+     */
     private ArrayList<Joint> joints = new ArrayList<>();
-
-    // Whether the terms are current
+    /**
+     * Whether the terms are current.
+     */
     private boolean finalized;
-    // Center of the MultiScaleGroup
+    /**
+     * Center of the MultiScaleGroup
+     */
     private double[] center;
-    // List of underconstrained Atoms
+    /**
+     * List of underconstrained Atoms
+     */
     private ArrayList<Atom> dangelingatoms;
     /**
      * Constant <code>bondTime=0</code>
@@ -554,6 +561,10 @@ public abstract class MSGroup extends MSNode {
      * @return Joint the created Joint.
      */
     public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2, ForceField forceField) {
+        if (bond == null || group1 == null || group2 == null) {
+            return null;
+        }
+
         MSNode newBondNode = new MSNode("Bonds");
         MSNode newAngleNode = new MSNode("Angles");
         MSNode newStretchBendNode = new MSNode("Stretch-Bends");
@@ -614,9 +625,8 @@ public abstract class MSGroup extends MSNode {
                 "Urey-Bradleys (" + newUreyBradleyNode.getChildCount() + ")");
         newOutOfPlaneNode.setName(
                 "Out-of-Plane Bends (" + newOutOfPlaneNode.getChildCount() + ")");
-        /**
-         * Find torsions across the joint.
-         */
+
+        // Find torsions across the joint.
         atom1 = bond.getAtom(0);
         atom2 = bond.getAtom(1);
         ArrayList<Torsion> torsions = new ArrayList<>();
@@ -651,18 +661,15 @@ public abstract class MSGroup extends MSNode {
         newStretchTorsionNode.setName("Stretch-Torsions (" + stretchTorsionNode.getChildCount() + ")");
         newAngleTorsionNode.setName("Angle-Torsions (" + angleTorsionNode.getChildCount() + ")");
 
-        /**
-         * Find Pi-Orbital Torsions across the joint.
-         */
+        // Find Pi-Orbital Torsions across the joint.
         PiOrbitalTorsion piOrbitalTorsion = PiOrbitalTorsion.piOrbitalTorsionFactory(bond, forceField);
         if (piOrbitalTorsion != null) {
             newPiOrbitalTorsionNode.add(piOrbitalTorsion);
         }
         newPiOrbitalTorsionNode.setName(
                 "Pi-Orbital Torsions (" + newPiOrbitalTorsionNode.getChildCount() + ")");
-        /**
-         * Find Torsion-Torsions across the joint.
-         */
+
+        // Find Torsion-Torsions across the joint.
         for (Angle angle : angles) {
             atom1 = angle.atoms[0];
             atom2 = angle.atoms[1];
