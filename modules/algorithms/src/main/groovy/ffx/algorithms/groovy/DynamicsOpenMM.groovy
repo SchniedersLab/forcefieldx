@@ -95,6 +95,8 @@ class DynamicsOpenMM extends AlgorithmsScript {
             modelfilename = activeAssembly.getFile().getAbsolutePath()
         }
 
+
+
         forceFieldEnergy = activeAssembly.getPotentialEnergy();
         switch (forceFieldEnergy.getPlatform()) {
             case ForceFieldEnergy.Platform.OMM:
