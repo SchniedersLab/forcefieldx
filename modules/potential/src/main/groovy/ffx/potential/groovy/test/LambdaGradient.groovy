@@ -34,8 +34,15 @@ class LambdaGradient extends PotentialScript {
     private TopologyOptions topology
 
     @Mixin
-    GradientOptions gradientOptions
+    private GradientOptions gradientOptions
 
+
+    /**
+     * --ls or --lambdaScan Scan lambda values.
+     */
+    @Option(names = ['--ls', '--lambdaScan'], paramLabel = 'false',
+            description = 'Scan lambda values.')
+    boolean lambdaScan = false
 
     /**
      * --lm or --lambdaMoveSize Size of the lambda moves during the test.
@@ -167,20 +174,33 @@ class LambdaGradient extends PotentialScript {
         assert (n % 3 == 0)
         int nAtoms = n / 3
 
-        // Compute the Lambda = 1.0 energy.
-        double lambda = 1.0
+        // Compute the Lambda = 0.0 energy.
+        double lambda = 0.0
         linter.setLambda(lambda)
         potential.getCoordinates(x)
-        e1 = potential.energy(x, true)
 
-        // Compute the Lambda = 0.0 energy.
-        lambda = 0.0
+        e0 = potential.energyAndGradient(x, gradient)
+        double dEdL = linter.getdEdL()
+        logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e0, dEdL))
+
+        // Scan intermediate lambda values.
+        if (lambdaScan) {
+            for (int i=1; i<=8; i++) {
+                lambda = i * 0.1;
+                linter.setLambda(lambda)
+                double e = potential.energyAndGradient(x, gradient)
+                dEdL = linter.getdEdL()
+                logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e, dEdL))
+            }
+        }
+
+        // Compute the Lambda = 1.0 energy.
+        lambda = 1.0
         linter.setLambda(lambda)
-        e0 = potential.energy(x, true)
-
-        logger.info(String.format(" E(0):      %20.8f.", e0))
-        logger.info(String.format(" E(1):      %20.8f.", e1))
-        logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1 - e0))
+        e1 = potential.energyAndGradient(x, gradient)
+        dEdL = linter.getdEdL()
+        logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e1, dEdL))
+        logger.info(String.format(" E(1)-E(0): %12.6f.\n", e1 - e0))
 
         // Finite-difference step size.
         double width = 2.0 * gradientOptions.dx
@@ -209,7 +229,7 @@ class LambdaGradient extends PotentialScript {
             double e = potential.energyAndGradient(x, gradient)
 
             // Analytic dEdL, d2E/dL2 and dE/dL/dX
-            double dEdL = linter.getdEdL()
+            dEdL = linter.getdEdL()
 
             double d2EdL2 = linter.getd2EdL2()
             for (int i = 0; i < n; i++) {

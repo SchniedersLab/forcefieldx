@@ -434,6 +434,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private double softcoreAMOEBAvdWMidPoint = 0.5;
     /**
+     * The lambda value that defines when softcore AMOEBA vdW will finish om and begin turning off for alchemical atoms.
+     * These must be turned off because they do not include hydrogen reduction factors.
+     * <p>
+     * If this value is set to 1.0, softcored AMOEBA vdw will not be turned off.
+     */
+    private double softcoreAMOEBAvdWMax = 1.0;
+    /**
      * The switching function used to turn on/off the softcore AMOEBA vdW.
      */
     private UnivariateSwitchingFunction softcoreAMOEBASwitch = null;
@@ -592,7 +599,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             } else if (lambdaStart < 0.0) {
                 lambdaStart = 0.0;
             }
-            logger.info(format(" Lambda path start:             %6.3f", lambdaStart));
+            logger.info(format(" Lambda path start:              %6.3f", lambdaStart));
 
             // Define AMOEBA specific vdW lambda path details.
             if (vdwLambdaTerm && amoebaVDWForce != null) {
@@ -614,8 +621,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 softcoreAMOEBASwitch = new LinearDerivativeSwitch();
 
-                logger.info(format(" Softcore AMOEBA vdW midpoint:  %6.3f", softcoreAMOEBAvdWMidPoint));
-                logger.info(format(" Non-Softcore AMOEBA vdW start: %6.3f", nonSoftcoreAMOEBAvdWStart));
+                softcoreAMOEBAvdWMax = forceField.getDouble(
+                        ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MAX, softcoreAMOEBAvdWMax);
+                if (softcoreAMOEBAvdWMax > 1.0) {
+                    softcoreAMOEBAvdWMax = 1.0;
+                } else if (softcoreAMOEBAvdWMax < 0.1) {
+                    softcoreAMOEBAvdWMax = 0.1;
+                }
+
+                logger.info(format(" Softcore AMOEBA vdW midpoint:   %6.3f", softcoreAMOEBAvdWMidPoint));
+                logger.info(format(" Softcore AMOEBA vdW max lambda: %6.3f", softcoreAMOEBAvdWMax));
+                logger.info(format(" Non-Softcore AMOEBA vdW start:  %6.3f", nonSoftcoreAMOEBAvdWStart));
             }
 
             // Define electrostatics to turn on at a value different from 0.5.
@@ -627,7 +643,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 } else if (electrostaticStart < 0.0) {
                     electrostaticStart = 0.0;
                 }
-                logger.info(format(" Electrostatics start:          %6.3f", electrostaticStart));
+                logger.info(format(" Electrostatics start:           %6.3f", electrostaticStart));
             }
         }
     }
@@ -3311,8 +3327,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             }
 
-            // Apply a switched dependence to lambda so that the vdW dU/dL derivative is smooth near L=0.5.
+            // Apply a switched dependence to lambda so that the vdW dU/dL derivative is 0 at the midpoint.
             lambdaVDW = softcoreAMOEBASwitch.valueAt(lambdaVDW);
+
+            // Scale the lambda vdW so that it doesn't reach full strength.
+            lambdaVDW = lambdaVDW * softcoreAMOEBAvdWMax;
 
             lambdaAmoebaVDW = 0.0;
             if (lambda > nonSoftcoreAMOEBAvdWStart) {

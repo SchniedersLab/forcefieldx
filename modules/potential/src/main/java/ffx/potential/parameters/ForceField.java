@@ -1639,7 +1639,7 @@ public class ForceField {
         /* Van der Waals masking rules */
         VDW_12_SCALE, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE,
         /* Van der Waals Softcore path for OpenMM */
-        SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START,
+        SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START, SOFTCORE_AMOEBA_VDW_MAX,
         /* Electrostatics switch for full path non bonded force scaling using OpenMM */
         ELEC_START,
         /* Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. */
