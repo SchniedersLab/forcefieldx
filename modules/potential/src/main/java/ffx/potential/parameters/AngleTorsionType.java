@@ -54,12 +54,11 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     /**
      * Atom classes for this stretch-torsion type.
      */
-    public final int atomClasses[];
+    public final int[] atomClasses;
     /**
      * Force constants.
      */
-    public final double forceConstants[];
-
+    public final double[] forceConstants;
     /**
      * Convert angle-torsion to kcal/mole.
      */
@@ -68,13 +67,12 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     /**
      * AngleTorsionType Constructor.
      *
-     * @param atomClasses    int[]
-     * @param forceConstants double[]
+     * @param atomClasses    Atomic classes.
+     * @param forceConstants Force constants.
      */
-    public AngleTorsionType(int atomClasses[], double forceConstants[]) {
-        /**
-         * Pass the key from sorted classes to the super constructor.
-         */
+    public AngleTorsionType(int[] atomClasses, double[] forceConstants) {
+
+        // Pass the key from sorted classes to the super constructor.
         super(ForceField.ForceFieldType.ANGTORS, sortKey(atomClasses));
 
         this.atomClasses = atomClasses;
@@ -103,21 +101,20 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     public AngleTorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
         int len = atomClasses.length;
-        /**
-         * Check if this Type contain 1 or 2 mapped atom classes.
-         */
+
+        // Check if this Type contain 1 or 2 mapped atom classes.
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < len; i++) {
-                if (atomClasses[i] == newType.atomClass) {
+
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
                     count++;
                 }
             }
         }
-        /**
-         * If found, create a new AngleTorsionType that bridges to known classes.
-         */
+
+        // If found, create a new AngleTorsionType that bridges to known classes.
         if (count == 1 || count == 2) {
-            int newClasses[] = copyOf(atomClasses, len);
+            int[] newClasses = copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
@@ -138,42 +135,33 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
      * @return lookup key
      * @since 1.0
      */
-    public static String sortKey(int c[]) {
+    public static String sortKey(int[] c) {
+        return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
+    }
 
-//        if (c == null || c.length != 4) {
-//            return null;
-//        }
-//        if (c[1] < c[2]) {
-//            // Do nothing.
-//        } else if (c[2] < c[1]) {
-//            // Reverse the order.
-//            int temp = c[0];
-//            c[0] = c[3];
-//            c[3] = temp;
-//            temp = c[1];
-//            c[1] = c[2];
-//            c[2] = temp;
-//        } else if (c[1] == c[2]) {
-//            if (c[0] > c[3]) {
-//                // Reverse the order.
-//                int temp = c[0];
-//                c[0] = c[3];
-//                c[3] = temp;
-//            }
-//        } else if (c[0] <= c[3]) {
-//            // Do nothing.
-//        } else {
-//            // Reverse the order.
-//            int temp = c[0];
-//            c[0] = c[3];
-//            c[3] = temp;
-//            temp = c[1];
-//            c[1] = c[2];
-//            c[2] = temp;
-//        }
-
-        String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
-        return key;
+    /**
+     * <p>average.</p>
+     *
+     * @param angleTorsionType1 a {@link ffx.potential.parameters.AngleTorsionType} object.
+     * @param angleTorsionType2 a {@link ffx.potential.parameters.AngleTorsionType} object.
+     * @param atomClasses       an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
+     */
+    public static AngleTorsionType average(AngleTorsionType angleTorsionType1,
+                                           AngleTorsionType angleTorsionType2, int[] atomClasses) {
+        if (angleTorsionType1 == null || angleTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+        int len = angleTorsionType1.forceConstants.length;
+        if (len != angleTorsionType2.forceConstants.length) {
+            return null;
+        }
+        double[] forceConstants = new double[len];
+        for (int i = 0; i < len; i++) {
+            forceConstants[i] = (angleTorsionType1.forceConstants[i]
+                    + angleTorsionType2.forceConstants[i]) / 2.0;
+        }
+        return new AngleTorsionType(atomClasses, forceConstants);
     }
 
     /**
@@ -195,10 +183,10 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
      */
     @Override
     public int compare(String s1, String s2) {
-        String keys1[] = s1.split(" ");
-        String keys2[] = s2.split(" ");
-        int c1[] = new int[4];
-        int c2[] = new int[4];
+        String[] keys1 = s1.split(" ");
+        String[] keys2 = s2.split(" ");
+        int[] c1 = new int[4];
+        int[] c2 = new int[4];
 
         for (int i = 0; i < 4; i++) {
             c1[i] = Integer.parseInt(keys1[i]);
@@ -234,16 +222,14 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof AngleTorsionType)) {
+        if (!(other instanceof AngleTorsionType)) {
             return false;
         }
         AngleTorsionType stretchTorsionType = (AngleTorsionType) other;
-        int c[] = stretchTorsionType.atomClasses;
-        if (c[0] == atomClasses[0] && c[1] == atomClasses[1]
-                && c[2] == atomClasses[2] && c[3] == atomClasses[3]) {
-            return true;
-        }
-        return false;
+        int[] c = stretchTorsionType.atomClasses;
+
+        return (c[0] == atomClasses[0] && c[1] == atomClasses[1]
+                && c[2] == atomClasses[2] && c[3] == atomClasses[3]);
     }
 
     /**
@@ -254,31 +240,6 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
         int hash = 3;
         hash = 29 * hash + Arrays.hashCode(atomClasses);
         return hash;
-    }
-
-    /**
-     * <p>average.</p>
-     *
-     * @param angleTorsionType1 a {@link ffx.potential.parameters.AngleTorsionType} object.
-     * @param angleTorsionType2 a {@link ffx.potential.parameters.AngleTorsionType} object.
-     * @param atomClasses       an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
-     */
-    public static AngleTorsionType average(AngleTorsionType angleTorsionType1,
-                                           AngleTorsionType angleTorsionType2, int atomClasses[]) {
-        if (angleTorsionType1 == null || angleTorsionType2 == null || atomClasses == null) {
-            return null;
-        }
-        int len = angleTorsionType1.forceConstants.length;
-        if (len != angleTorsionType2.forceConstants.length) {
-            return null;
-        }
-        double forceConstants[] = new double[len];
-        for (int i = 0; i < len; i++) {
-            forceConstants[i] = (angleTorsionType1.forceConstants[i]
-                    + angleTorsionType2.forceConstants[i]) / 2.0;
-        }
-        return new AngleTorsionType(atomClasses, forceConstants);
     }
 
 }
