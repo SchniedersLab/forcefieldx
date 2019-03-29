@@ -40,6 +40,20 @@ class Superpose extends PotentialScript {
     private String frameComparison = "AllVsAll"
 
     /**
+     * -s or --start defines which atoms in the structure will be used in RMSD calculation.
+     */
+    @Option(names = ['-s', '--start'], paramLabel = "-1",
+            description = 'Atom number where RMSD calculation of structure will begin.')
+    private int start = -1
+
+    /**
+     * --fi or --finish defines which atoms in the structure will be used in RMSD calculation.
+     */
+    @Option(names = ['-f', '--fi'], paramLabel = "Max_Value",
+            description = 'Atom number where RMSD calculation of structure will end.')
+    private int finish = Integer.MAX_VALUE
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -92,7 +106,12 @@ class Superpose extends PotentialScript {
             // Begin streaming the possible atom indices, filtering out inactive atoms.
             // TODO: Decide if we only want active atoms.
             IntStream atomIndexStream = IntStream.range(0, atoms.length).
-                    filter({ int i -> return atoms[i].isActive() })
+                    filter({ int i -> return atoms[i].isActive() }).
+                    filter({int i -> return atoms[i].xyzIndex >=start && atoms[i].xyzIndex<=finish})
+            if(start>-1 || finish < Integer.MAX_VALUE){
+                logger.info(String.format("Calculating RMSD on residues %d to %d.", start, finish))
+            }
+
             // String describing the selection type.
             String selectionType = "All Atoms"
 
@@ -114,7 +133,7 @@ class Superpose extends PotentialScript {
                         boolean proteinReference = atName.equals("CA") && ati.getAtomType().atomicNumber == 6
                         boolean naReference = (atName.equals("N1") || atName.equals("N9")) && ati.getAtomType().atomicNumber == 7
                         return proteinReference || naReference
-                    });
+                    })
                     selectionType = "Reference Atoms (i.e. alpha carbons and N1/N9 for nucleic acids)";
                     break
 
@@ -131,6 +150,7 @@ class Superpose extends PotentialScript {
 
             // Indices of atoms used in alignment and RMSD calculations.
             int[] usedIndices = atomIndexStream.toArray()
+            System.out.println("used indices length: " + usedIndices.length)
             int nUsed = usedIndices.length
             int nUsedVars = nUsed * 3
             double[] massUsed = Arrays.stream(usedIndices).
