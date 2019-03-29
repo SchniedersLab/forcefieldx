@@ -222,6 +222,11 @@ public final class PDBFilter extends SystemFilter {
     private boolean noVersioning = false;
     private final static Set<String> backboneNames;
 
+    /**
+     * Standardize atom names to PDB standard by default.
+     */
+    private static final boolean standardizeAtomNames = Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "true"));
+
     static {
         Set<String> bbAts = new HashSet<>();
         //String[] names = {"C", "CA", "N", "O", "H", "H1", "H2", "H3", "OXT", "OT2"};
@@ -1265,6 +1270,10 @@ public final class PDBFilter extends SystemFilter {
     public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
         FileWriter fw;
         BufferedWriter bw;
+        if (standardizeAtomNames) {
+            renameAtomsToPDBStandard(activeMolecularAssembly);
+        }
+
         try {
             File newFile = saveFile;
             activeMolecularAssembly.setFile(newFile);
@@ -1340,7 +1349,7 @@ public final class PDBFilter extends SystemFilter {
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude, boolean writeEnd) {
-        if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
+        if (standardizeAtomNames) {
             renameAtomsToPDBStandard(activeMolecularAssembly);
         }
 

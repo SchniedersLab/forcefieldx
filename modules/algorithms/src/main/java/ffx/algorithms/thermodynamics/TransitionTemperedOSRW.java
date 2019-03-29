@@ -1033,13 +1033,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
             logger.info("  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
             logger.info(stringBuilder.toString());
-            logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
-                    freeEnergy, totalWeight, temperingWeight));
+            logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                    freeEnergy, totalWeight, temperingWeight, biasCount));
             logger.info(format(" Minimum Bias %8.3f", minFL));
             previousFreeEnergy = freeEnergy;
         } else if (!save && (print || biasCount % printFrequency == 0)) {
-            logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
-                    freeEnergy, totalWeight, temperingWeight));
+            logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                    freeEnergy, totalWeight, temperingWeight, biasCount));
         }
 
         if (save) {
