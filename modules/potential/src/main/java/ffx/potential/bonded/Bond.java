@@ -472,9 +472,6 @@ public class Bond extends BondedTerm {
         double[] a0 = new double[3];
         double[] a1 = new double[3];
         double[] v10 = new double[3];
-
-        // Atom 0 gradient.
-        double[] g0 = new double[3];
         Atom atom0 = atoms[0];
         Atom atom1 = atoms[1];
         diff(atom0.getXYZ(a0), atom1.getXYZ(a1), v10);
@@ -503,6 +500,8 @@ public class Bond extends BondedTerm {
                     if (value > 0.0) {
                         de = deddt / value;
                     }
+                    // Atom 0 gradient.
+                    double[] g0 = new double[3];
                     // Give the gradient a vector.
                     scalar(v10, de, g0);
                     int i0 = atom0.getIndex() - 1;
@@ -527,6 +526,8 @@ public class Bond extends BondedTerm {
                     if (value > 0.0) {
                         de = deddt / value;
                     }
+                    // Atom 0 gradient.
+                    double[] g0 = new double[3];
                     // Give the gradient a vector.
                     scalar(v10, de, g0);
                     int i0 = atom0.getIndex() - 1;

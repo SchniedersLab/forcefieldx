@@ -61,11 +61,7 @@ public interface ROLS {
     /**
      * Constant <code>MaxLengthScale=5</code>
      */
-    public static final int MaxLengthScale = 5;
-    /**
-     * Constant <code>LengthScale=MaxLengthScale</code>
-     */
-    public static int LengthScale = MaxLengthScale;
+    int MaxLengthScale = 5;
 
     /**
      * <p>

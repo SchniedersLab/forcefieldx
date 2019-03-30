@@ -72,11 +72,25 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     private static StringBuilder idtemp = new StringBuilder();
 
     protected String id;
-    protected Atom atoms[]; // Atoms that are used to form this term
-    protected Bond bonds[]; // Bonds that are used to form this term
-    protected double value; // Value of the term
-    protected double energy; // Energy of the term
-
+    /**
+     * Atoms that are used to form this term.
+     */
+    protected Atom[] atoms;
+    /**
+     * Bonds that are used to form this term.
+     */
+    protected Bond[] bonds;
+    /**
+     * Value of the term (e.g. bond length, angle, dihedral angle, etc).
+     */
+    protected double value;
+    /**
+     * Energy of the term (kcal/mol).
+     */
+    protected double energy;
+    /**
+     * Flag to indicate use of extended system variables.
+     */
     protected boolean esvTerm = false;
     /**
      * Lambda value of attached ESV, if present.
@@ -86,12 +100,14 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * d(lambda_switching_function)/dL.
      * For the linear switch E=L*E1+(1-L)*E0, chain is +/- unity.
      * For other switches E=S(L)*E1+(1-S(L))*E0, set chain to dSdL.
+     * <p>
+     * Handles sign flip d.t. d[(1-L)*E]/dL.
      */
-    protected double dedesvChain = 1.0; // Handles sign flip d.t. d[(1-L)*E]/dL
+    protected double dedesvChain = 1.0;
     /**
      * Target for extended variable derivatives.
      */
-    protected double esvDerivLocal = 0.0;
+    double esvDerivLocal = 0.0;
     /**
      * Reference to the ESV derivative reduction variable.
      */
@@ -100,6 +116,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * If set, derivative components are filed by source type.
      */
     private HashMap<Class<? extends BondedTerm>, SharedDouble> decompositionMap = null;
+    /**
+     * Flag to indicate decomposition of ESV derivatives.
+     */
     private boolean decomposeEsvDeriv = false;
 
     /**
@@ -136,50 +155,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compareTo(BondedTerm t) {
-        return Objects.compare(this, t, bondedComparator);
-    }
-
-    /**
-     * Constant <code>bondedComparator</code>
-     */
-    public static BondedComparator bondedComparator = new BondedComparator();
-
-    public static class BondedComparator implements Comparator<BondedTerm> {
-        private BondedComparator() {
-        }   // singleton
-
-        private static final List<Class<? extends BondedTerm>> naturalOrder =
-                new ArrayList<Class<? extends BondedTerm>>() {{
-                    add(Bond.class);
-                    add(Angle.class);
-                    add(StretchBend.class);
-                    add(OutOfPlaneBend.class);
-                    add(Torsion.class);
-                    add(PiOrbitalTorsion.class);
-                }};
-
-        /**
-         * Sort using position in the naturalOrder list; fallback to alphabetical.
-         */
-        @Override
-        public int compare(BondedTerm me, BondedTerm other) {
-            final Class<? extends BondedTerm> oc = other.getClass();
-            final Class<? extends BondedTerm> myc = me.getClass();
-            int myidx = naturalOrder.indexOf(me.getClass());
-            int uridx = naturalOrder.indexOf(other.getClass());
-            if (myidx >= 0 && uridx >= 0) {
-                return Integer.compare(myidx, uridx);
-            } else {
-                return String.CASE_INSENSITIVE_ORDER.compare(myc.toString(), oc.toString());
-            }
-        }
-    }
-
-    /**
      * Checks if at least one atom in this BondedTerm is of the given
      * resolution.
      *
@@ -194,17 +169,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             }
         }
         return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        super.destroy();
-        id = null;
-        value = 0;
-        return true;
     }
 
     /**
@@ -228,8 +192,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * @return True if Lambda is applied to one of the BondedTerm atoms.
      */
     public boolean applyLambda() {
-        for (int i = 0; i < atoms.length; i++) {
-            if (atoms[i].applyLambda()) {
+        for (Atom atom : atoms) {
+            if (atom.applyLambda()) {
                 return true;
             }
         }
@@ -241,9 +205,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      *
      * @return True if Lambda is applied to all of the BondedTerm atoms.
      */
-    public boolean applyAllLambda() {
-        for (int i = 0; i < atoms.length; i++) {
-            if (!atoms[i].applyLambda()) {
+    boolean applyAllLambda() {
+        for (Atom atom : atoms) {
+            if (!atom.applyLambda()) {
                 return false;
             }
         }
@@ -308,7 +272,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @return a boolean.
      */
-    public boolean containsAtom(Atom atom) {
+    boolean containsAtom(Atom atom) {
         for (Atom a : atoms) {
             if (a.equals(atom)) {
                 return true;
@@ -340,21 +304,11 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Prints the toString method to stdout
-     */
-    @Override
-    public void print() {
-        logger.info(toString());
-    }
-
-    /**
      * Add a constituent Atom to the Term.
      *
      * @param a an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public void setAtoms(Atom a[]) {
+    public void setAtoms(Atom[] a) {
         atoms = a;
     }
 
@@ -363,47 +317,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      *
      * @param b an array of {@link ffx.potential.bonded.Bond} objects.
      */
-    public void setBonds(Bond b[]) {
+    public void setBonds(Bond[] b) {
         bonds = b;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
-        if (atoms == null) {
-            return;
-        }
-        for (Atom atom : atoms) {
-            atom.setColor(newColorModel, color, mat);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overridden method that returns true if object is equals to this, is of
-     * the same Class and has the same id.
-     */
-    @Override
-    public final boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        BondedTerm other = (BondedTerm) object;
-        return getID().equals(other.getID());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final int hashCode() {
-        return hash(SEED, getID().hashCode());
     }
 
     /**
@@ -447,64 +362,12 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setSelected(boolean b) {
-        super.setSelected(b);
-        if (atoms == null) {
-            return;
-        }
-        for (Atom a : atoms) {
-            a.setSelected(b);
-        }
-        if (!(this instanceof Bond)) {
-            if (bonds == null) {
-                return;
-            }
-            for (Bond bond : bonds) {
-                bond.setSelected(b);
-            }
-        }
-    }
-
-    /**
      * Sets the Term's value.
      *
      * @param v a double.
      */
     public void setValue(double v) {
         value = v;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
-        if (atoms == null) {
-            return;
-        }
-        for (Atom atom : atoms) {
-            atom.setView(newViewModel, newShapes);
-        }
-        if (bonds == null) {
-            return;
-        }
-        for (Bond bond : bonds) {
-            bond.setView(newViewModel, newShapes);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Overidden toString Method returns the Term's id.
-     */
-    @Override
-    public String toString() {
-        return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
     }
 
     /**
@@ -590,4 +453,161 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             esvDerivLocal = 0.0;
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSelected(boolean b) {
+        super.setSelected(b);
+        if (atoms == null) {
+            return;
+        }
+        for (Atom a : atoms) {
+            a.setSelected(b);
+        }
+        if (!(this instanceof Bond)) {
+            if (bonds == null) {
+                return;
+            }
+            for (Bond bond : bonds) {
+                bond.setSelected(b);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
+                         Material mat) {
+        if (atoms == null) {
+            return;
+        }
+        for (Atom atom : atoms) {
+            atom.setColor(newColorModel, color, mat);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setView(RendererCache.ViewModel newViewModel,
+                        List<BranchGroup> newShapes) {
+        if (atoms == null) {
+            return;
+        }
+        for (Atom atom : atoms) {
+            atom.setView(newViewModel, newShapes);
+        }
+        if (bonds == null) {
+            return;
+        }
+        for (Bond bond : bonds) {
+            bond.setView(newViewModel, newShapes);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Prints the toString method to stdout
+     */
+    @Override
+    public void print() {
+        logger.info(toString());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        super.destroy();
+        id = null;
+        value = 0;
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(BondedTerm t) {
+        return Objects.compare(this, t, bondedComparator);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overridden method that returns true if object is equals to this, is of
+     * the same Class and has the same id.
+     */
+    @Override
+    public final boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        BondedTerm other = (BondedTerm) object;
+        return getID().equals(other.getID());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return hash(SEED, getID().hashCode());
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overidden toString Method returns the Term's id.
+     */
+    @Override
+    public String toString() {
+        return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
+    }
+
+    /**
+     * Constant <code>bondedComparator</code>
+     */
+    private static BondedComparator bondedComparator = new BondedComparator();
+
+    public static class BondedComparator implements Comparator<BondedTerm> {
+        private BondedComparator() {
+        }   // singleton
+
+        private static final List<Class<? extends BondedTerm>> naturalOrder =
+                new ArrayList<Class<? extends BondedTerm>>() {{
+                    add(Bond.class);
+                    add(Angle.class);
+                    add(StretchBend.class);
+                    add(OutOfPlaneBend.class);
+                    add(Torsion.class);
+                    add(PiOrbitalTorsion.class);
+                }};
+
+        /**
+         * Sort using position in the naturalOrder list; fallback to alphabetical.
+         */
+        @Override
+        public int compare(BondedTerm me, BondedTerm other) {
+            final Class<? extends BondedTerm> oc = other.getClass();
+            final Class<? extends BondedTerm> myc = me.getClass();
+            int myidx = naturalOrder.indexOf(me.getClass());
+            int uridx = naturalOrder.indexOf(other.getClass());
+            if (myidx >= 0 && uridx >= 0) {
+                return Integer.compare(myidx, uridx);
+            } else {
+                return String.CASE_INSENSITIVE_ORDER.compare(myc.toString(), oc.toString());
+            }
+        }
+    }
+
 }

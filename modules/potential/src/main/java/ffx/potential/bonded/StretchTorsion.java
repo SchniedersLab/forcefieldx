@@ -37,8 +37,9 @@
  */
 package ffx.potential.bonded;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -69,56 +70,42 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(StretchTorsion.class.getName());
 
-    private static final long serialVersionUID = 1L;
+    /**
+     * Value of lambda.
+     */
     private double lambda = 1.0;
+    /**
+     * Value of dE/dL.
+     */
     private double dEdL = 0.0;
+    /**
+     * Flag to indicate lambda dependence.
+     */
     private boolean lambdaTerm = false;
-
-    public StretchTorsionType stretchTorsionType = null;
-    public TorsionType torsionType = null;
+    /**
+     * Stretch Torsion force field type.
+     */
+    private StretchTorsionType stretchTorsionType = null;
+    /**
+     * Stretch Torsion force constants (may be reversed compared to storage in the StretchTorsionType instance).
+     */
+    private double[] constants = new double[9];
+    /**
+     * Torsion force field type.
+     */
+    private TorsionType torsionType = null;
+    /**
+     * First bond force field type.
+     */
     public BondType bondType1 = null;
+    /**
+     * Second bond force field type.
+     */
     public BondType bondType2 = null;
+    /**
+     * Third bond force field type.
+     */
     public BondType bondType3 = null;
-    private double constants[] = new double[9];
-
-    private static final String mathForm;
-
-    static {
-        /**
-         * Defined constants:
-         * p1-p4 are particles 1-4.
-         * m is a bond number, from 1-3, representing bonds p1-p2, p2-p3, p3-p4.
-         * n is a periodicity, from 1-3.
-         *
-         * k[m][n] is a set of 9 energy constants defined in the parameter file for this stretch-torsion.
-         *
-         * bVal[m] is the current bond distance for bond m.
-         * b[m] is the equilibrium distance for bond m.
-         *
-         * tVal is the current value of the 1-2-3-4 dihedral angle.
-         *
-         * phi[m] is a phase offset constant; phi1 = phi3 = 0, phi2 = pi.
-         */
-
-        StringBuilder mathFormBuilder = new StringBuilder();
-
-        for (int m = 1; m < 4; m++) {
-            for (int n = 1; n < 4; n++) {
-                // kmn * (bm - bm(equil)) * (1 + cos(n*tors + phi(n)))
-                mathFormBuilder.append(String.format("k%d%d*(bVal%d-b%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
-            }
-        }
-        int lenStr = mathFormBuilder.length();
-        mathFormBuilder.replace(lenStr - 1, lenStr, ";");
-
-        for (int m = 1; m < 4; m++) {
-            mathFormBuilder.append(String.format("bVal%d=distance(p%d,p%d);", m, m, (m + 1)));
-        }
-
-        mathFormBuilder.append("tVal=dihedral(p1,p2,p3,p4)");
-
-        mathForm = mathFormBuilder.toString();
-    }
 
     /**
      * Create a StretchTorsion from 3 connected bonds (no error checking)
@@ -143,59 +130,6 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
      */
     private StretchTorsion(String n) {
         super(n);
-    }
-
-    /**
-     * <p>
-     * compare</p>
-     *
-     * @param a0 a {@link ffx.potential.bonded.Atom} object.
-     * @param a1 a {@link ffx.potential.bonded.Atom} object.
-     * @param a2 a {@link ffx.potential.bonded.Atom} object.
-     * @param a3 a {@link ffx.potential.bonded.Atom} object.
-     * @return a boolean.
-     */
-    public boolean compare(Atom a0, Atom a1, Atom a2, Atom a3) {
-        if (a0 == atoms[0] && a1 == atoms[1] && a2 == atoms[2]
-                && a3 == atoms[3]) {
-            return true;
-        } else if (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1]
-                && a3 == atoms[0]) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Initialization
-     */
-    private void initialize() {
-        atoms = new ffx.potential.bonded.Atom[4];
-        atoms[1] = bonds[0].getCommonAtom(bonds[1]);
-        atoms[0] = bonds[0].get1_2(atoms[1]);
-        atoms[2] = bonds[1].get1_2(atoms[1]);
-        atoms[3] = bonds[2].get1_2(atoms[2]);
-        setID_Key(false);
-        value = calculateDihedralAngle();
-    }
-
-    /**
-     * <p>setFlipped.</p>
-     *
-     * @param flipped a boolean.
-     */
-    public void setFlipped(boolean flipped) {
-        for (int i = 0; i < 9; i++) {
-            constants[i] = stretchTorsionType.forceConstants[i];
-        }
-        if (flipped) {
-            constants[0] = stretchTorsionType.forceConstants[6];
-            constants[1] = stretchTorsionType.forceConstants[7];
-            constants[2] = stretchTorsionType.forceConstants[8];
-            constants[6] = stretchTorsionType.forceConstants[0];
-            constants[7] = stretchTorsionType.forceConstants[1];
-            constants[8] = stretchTorsionType.forceConstants[2];
-        }
     }
 
     /**
@@ -238,6 +172,54 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
+     * <p>
+     * compare</p>
+     *
+     * @param a0 a {@link ffx.potential.bonded.Atom} object.
+     * @param a1 a {@link ffx.potential.bonded.Atom} object.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @param a3 a {@link ffx.potential.bonded.Atom} object.
+     * @return a boolean.
+     */
+    public boolean compare(Atom a0, Atom a1, Atom a2, Atom a3) {
+        if (a0 == atoms[0] && a1 == atoms[1] && a2 == atoms[2] && a3 == atoms[3]) {
+            return true;
+        }
+        return (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1] && a3 == atoms[0]);
+    }
+
+    /**
+     * Initialization
+     */
+    private void initialize() {
+        atoms = new ffx.potential.bonded.Atom[4];
+        atoms[1] = bonds[0].getCommonAtom(bonds[1]);
+        atoms[0] = bonds[0].get1_2(atoms[1]);
+        atoms[2] = bonds[1].get1_2(atoms[1]);
+        atoms[3] = bonds[2].get1_2(atoms[2]);
+        setID_Key(false);
+        value = calculateDihedralAngle();
+    }
+
+    /**
+     * <p>setFlipped.</p>
+     *
+     * @param flipped a boolean.
+     */
+    private void setFlipped(boolean flipped) {
+        if (flipped) {
+            constants[0] = stretchTorsionType.forceConstants[6];
+            constants[1] = stretchTorsionType.forceConstants[7];
+            constants[2] = stretchTorsionType.forceConstants[8];
+            constants[6] = stretchTorsionType.forceConstants[0];
+            constants[7] = stretchTorsionType.forceConstants[1];
+            constants[8] = stretchTorsionType.forceConstants[2];
+        } else {
+            arraycopy(stretchTorsionType.forceConstants, 0, constants, 0, 9);
+        }
+    }
+
+    /**
      * If the specified atom is not a central atom of <b>this</b> torsion, the
      * atom at the opposite end is returned. These atoms are said to be 1-4 to
      * each other.
@@ -260,48 +242,35 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
      *
      * @return Value of the dihedral angle.
      */
-    public double calculateDihedralAngle() {
-
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        double a3[] = new double[3];
-
-        /**
-         * Vector from Atom 0 to Atom 1.
-         */
-        double v01[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 2.
-         */
-        double v12[] = new double[3];
-        /**
-         * Vector from Atom 2 to Atom 3.
-         */
-        double v23[] = new double[3];
-        /**
-         * Vector v01 cross v12.
-         */
-        double x0112[] = new double[3];
-        /**
-         * Vector v12 cross v23.
-         */
-        double x1223[] = new double[3];
-        /**
-         * Vector x0112 cross x12_32.
-         */
-        double x[] = new double[3];
+    private double calculateDihedralAngle() {
 
         double theVal = 0.0;
 
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
+        double[] a3 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
         atoms[3].getXYZ(a3);
 
+        // Vector from Atom 0 to Atom 1.
+        double[] v01 = new double[3];
+        // Vector from Atom 1 to Atom 2.
+        double[] v12 = new double[3];
+        // Vector from Atom 2 to Atom 3.
+        double[] v23 = new double[3];
         diff(a1, a0, v01);
         diff(a2, a1, v12);
         diff(a3, a2, v23);
+
+        // Vector v01 cross v12.
+        double[] x0112 = new double[3];
+        // Vector v12 cross v23.
+        double[] x1223 = new double[3];
+        // Vector x0112 cross x12_32.
+        double[] x = new double[3];
         cross(v01, v12, x0112);
         cross(v12, v23, x1223);
         cross(x0112, x1223, x);
@@ -326,7 +295,7 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
      * @return Stretch-torsion constants.
      */
     public double[] getConstants() {
-        return Arrays.copyOf(constants, constants.length);
+        return copyOf(constants, constants.length);
     }
 
     /**
@@ -343,54 +312,25 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
                          AtomicDoubleArray lambdaGradX,
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
-
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        double a3[] = new double[3];
-
-        /**
-         * Vector from Atom 0 to Atom 1.
-         */
-        double v01[] = new double[3];
-        /**
-         * Vector from Atom 0 to Atom 2.
-         */
-        double v02[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 2.
-         */
-        double v12[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 3.
-         */
-        double v13[] = new double[3];
-        /**
-         * Vector from Atom 2 to Atom 3.
-         */
-        double v23[] = new double[3];
-        /**
-         * Vector v01 cross v12.
-         */
-        double x0112[] = new double[3];
-        /**
-         * Vector v12 cross v23.
-         */
-        double x1223[] = new double[3];
-        /**
-         * Vector x0112 cross x12_32.
-         */
-        double x[] = new double[3];
-
         energy = 0.0;
         value = 0.0;
         dEdL = 0.0;
 
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
+        double[] a3 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
         atoms[3].getXYZ(a3);
 
+        // Vector from Atom 0 to Atom 1.
+        double[] v01 = new double[3];
+        // Vector from Atom 1 to Atom 2.
+        double[] v12 = new double[3];
+        // Vector from Atom 2 to Atom 3.
+        double[] v23 = new double[3];
         diff(a1, a0, v01);
         diff(a2, a1, v12);
         diff(a3, a2, v23);
@@ -402,6 +342,12 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             return 0.0;
         }
 
+        // Vector v01 cross v12.
+        double[] x0112 = new double[3];
+        // Vector v12 cross v23.
+        double[] x1223 = new double[3];
+        // Vector x0112 cross x12_32.
+        double[] x = new double[3];
         cross(v01, v12, x0112);
         cross(v12, v23, x1223);
         cross(x0112, x1223, x);
@@ -410,6 +356,11 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         double r12_23 = dot(x1223, x1223);
         r12_23 = max(r12_23, 0.000001);
         double rr = sqrt(r01_12 * r12_23);
+
+        // Vector from Atom 0 to Atom 2.
+        double[] v02 = new double[3];
+        // Vector from Atom 1 to Atom 3.
+        double[] v13 = new double[3];
         diff(a2, a0, v02);
         diff(a3, a1, v13);
         double cosine = dot(x0112, x1223) / rr;
@@ -421,8 +372,8 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         }
 
         // Compute multiple angle trigonometry and phase terms
-        double tsin[] = torsionType.sine;
-        double tcos[] = torsionType.cosine;
+        double[] tsin = torsionType.sine;
+        double[] tcos = torsionType.cosine;
         double cosine2 = cosine * cosine - sine * sine;
         double sine2 = 2.0 * cosine * sine;
         double cosine3 = cosine * cosine2 - sine * sine2;
@@ -439,21 +390,21 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         double v2 = constants[1];
         double v3 = constants[2];
         double dr1 = r01 - bondType1.distance;
-        double e1 = stretchTorsionType.units * dr1 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
+        double e1 = StretchTorsionType.units * dr1 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
 
         // Get the stretch-torsion values for the second bond.
         double v4 = constants[3];
         double v5 = constants[4];
         double v6 = constants[5];
         double dr2 = r12 - bondType2.distance;
-        double e2 = stretchTorsionType.units * dr2 * (v4 * phi1 + v5 * phi2 + v6 * phi3);
+        double e2 = StretchTorsionType.units * dr2 * (v4 * phi1 + v5 * phi2 + v6 * phi3);
 
         // Get the stretch-torsion values for the third bond.
         double v7 = constants[6];
         double v8 = constants[7];
         double v9 = constants[8];
         double dr3 = r23 - bondType3.distance;
-        double e3 = stretchTorsionType.units * dr3 * (v7 * phi1 + v8 * phi2 + v9 * phi3);
+        double e3 = StretchTorsionType.units * dr3 * (v7 * phi1 + v8 * phi2 + v9 * phi3);
 
         energy = e1 + e2 + e3;
 
@@ -467,30 +418,26 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         if (gradient || lambdaTerm) {
 
             // Compute derivative components for the first bond.
-            double dedphi1 = stretchTorsionType.units * dr1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-            double ddr1 = stretchTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3) / r01;
+            double dedphi1 = StretchTorsionType.units * dr1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+            double ddr1 = StretchTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3) / r01;
 
-            double ddrdx[] = new double[3];
-            double dedxt[] = new double[3];
-            double dedxu[] = new double[3];
+            double[] ddrdx = new double[3];
+            double[] dedxt = new double[3];
+            double[] dedxu = new double[3];
             scalar(v01, ddr1, ddrdx);
             cross(x0112, v12, dedxt);
             scalar(dedxt, dedphi1 / (r01_12 * r12), dedxt);
             cross(x1223, v12, dedxu);
             scalar(dedxu, -dedphi1 / (r12_23 * r12), dedxu);
 
-            /**
-             * Gradient for atoms 0, 1, 2 & 3.
-             */
-            double g0[] = new double[3];
-            double g1[] = new double[3];
-            double g2[] = new double[3];
-            double g3[] = new double[3];
-            /**
-             * Work vectors.
-             */
-            double x1[] = new double[3];
-            double x2[] = new double[3];
+            // Gradient for atoms 0, 1, 2 & 3.
+            double[] g0 = new double[3];
+            double[] g1 = new double[3];
+            double[] g2 = new double[3];
+            double[] g3 = new double[3];
+            // Work vectors.
+            double[] x1 = new double[3];
+            double[] x2 = new double[3];
 
             // Determine chain rule components for the first bond.
             cross(dedxt, v12, g0);
@@ -505,8 +452,8 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             cross(dedxu, v12, g3);
 
             // Compute derivative components for the 2nd bond.
-            double dedphi2 = stretchTorsionType.units * dr2 * (v4 * dphi1 + v5 * dphi2 + v6 * dphi3);
-            double ddr2 = stretchTorsionType.units * (v4 * phi1 + v5 * phi2 + v6 * phi3) / r12;
+            double dedphi2 = StretchTorsionType.units * dr2 * (v4 * dphi1 + v5 * dphi2 + v6 * dphi3);
+            double ddr2 = StretchTorsionType.units * (v4 * phi1 + v5 * phi2 + v6 * phi3) / r12;
 
             scalar(v12, ddr2, ddrdx);
             cross(x0112, v12, dedxt);
@@ -515,10 +462,10 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             scalar(dedxu, -dedphi2 / (r12_23 * r12), dedxu);
 
             //  Partial gradient on atoms 0, 1, 2 & 3.
-            double pg0[] = new double[3];
-            double pg1[] = new double[3];
-            double pg2[] = new double[3];
-            double pg3[] = new double[3];
+            double[] pg0 = new double[3];
+            double[] pg1 = new double[3];
+            double[] pg2 = new double[3];
+            double[] pg3 = new double[3];
 
             // Compute chain rule components for the second bond.
             cross(dedxt, v12, pg0);
@@ -539,8 +486,8 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             sum(pg3, g3, g3);
 
             // Compute derivative components for the 3rd bond.
-            double dedphi3 = stretchTorsionType.units * dr3 * (v7 * dphi1 + v8 * dphi2 + v9 * dphi3);
-            double ddr3 = stretchTorsionType.units * (v7 * phi1 + v8 * phi2 + v9 * phi3) / r23;
+            double dedphi3 = StretchTorsionType.units * dr3 * (v7 * dphi1 + v8 * dphi2 + v9 * dphi3);
+            double ddr3 = StretchTorsionType.units * (v7 * phi1 + v8 * phi2 + v9 * phi3) / r23;
             scalar(v23, ddr3, ddrdx);
             cross(x0112, v12, dedxt);
             scalar(dedxt, dedphi3 / (r01_12 * r12), dedxt);
@@ -570,20 +517,24 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             scalar(g2, esvLambda, g2);
             scalar(g3, esvLambda, g3);
 
+            int i0 = atoms[0].getIndex() - 1;
+            int i1 = atoms[1].getIndex() - 1;
+            int i2 = atoms[2].getIndex() - 1;
+            int i3 = atoms[3].getIndex() - 1;
+
             if (lambdaTerm) {
-                int i0 = atoms[0].getIndex() - 1;
                 lambdaGradX.add(threadID, i0, g0[0]);
                 lambdaGradY.add(threadID, i0, g0[1]);
                 lambdaGradZ.add(threadID, i0, g0[2]);
-                int i1 = atoms[1].getIndex() - 1;
+
                 lambdaGradX.add(threadID, i1, g1[0]);
                 lambdaGradY.add(threadID, i1, g1[1]);
                 lambdaGradZ.add(threadID, i1, g1[2]);
-                int i2 = atoms[2].getIndex() - 1;
+
                 lambdaGradX.add(threadID, i2, g2[0]);
                 lambdaGradY.add(threadID, i2, g2[1]);
                 lambdaGradZ.add(threadID, i2, g2[2]);
-                int i3 = atoms[3].getIndex() - 1;
+
                 lambdaGradX.add(threadID, i3, g3[0]);
                 lambdaGradY.add(threadID, i3, g3[1]);
                 lambdaGradZ.add(threadID, i3, g3[2]);
@@ -593,19 +544,19 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
                 scalar(g1, lambda, g1);
                 scalar(g2, lambda, g2);
                 scalar(g3, lambda, g3);
-                int i0 = atoms[0].getIndex() - 1;
+
                 gradX.add(threadID, i0, g0[0]);
                 gradY.add(threadID, i0, g0[1]);
                 gradZ.add(threadID, i0, g0[2]);
-                int i1 = atoms[1].getIndex() - 1;
+
                 gradX.add(threadID, i1, g1[0]);
                 gradY.add(threadID, i1, g1[1]);
                 gradZ.add(threadID, i1, g1[2]);
-                int i2 = atoms[2].getIndex() - 1;
+
                 gradX.add(threadID, i2, g2[0]);
                 gradY.add(threadID, i2, g2[1]);
                 gradZ.add(threadID, i2, g2[2]);
-                int i3 = atoms[3].getIndex() - 1;
+
                 gradX.add(threadID, i3, g3[0]);
                 gradY.add(threadID, i3, g3[1]);
                 gradZ.add(threadID, i3, g3[2]);
@@ -635,15 +586,6 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
-    }
-
-    /**
-     * Returns the mathematical form of a stretch-torsion as an OpenMM-parsable String.
-     *
-     * @return Mathematical form of the stretch-torsion coupling.
-     */
-    public static String stretchTorsionForm() {
-        return mathForm;
     }
 
     /**
@@ -693,5 +635,55 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public void getdEdXdL(double[] gradient) {
         return;
+    }
+
+    /**
+     * Returns the mathematical form of a stretch-torsion as an OpenMM-parsable String.
+     *
+     * @return Mathematical form of the stretch-torsion coupling.
+     */
+    public static String stretchTorsionForm() {
+        return mathForm;
+    }
+
+    /**
+     * Functional form for OpenMM.
+     */
+    private static final String mathForm;
+
+    static {
+        /*
+          Defined constants:
+          p1-p4 are particles 1-4.
+          m is a bond number, from 1-3, representing bonds p1-p2, p2-p3, p3-p4.
+          n is a periodicity, from 1-3.
+
+          k[m][n] is a set of 9 energy constants defined in the parameter file for this stretch-torsion.
+
+          bVal[m] is the current bond distance for bond m.
+          b[m] is the equilibrium distance for bond m.
+
+          tVal is the current value of the 1-2-3-4 dihedral angle.
+
+          phi[m] is a phase offset constant; phi1 = phi3 = 0, phi2 = pi.
+         */
+
+        StringBuilder mathFormBuilder = new StringBuilder();
+
+        for (int m = 1; m < 4; m++) {
+            for (int n = 1; n < 4; n++) {
+                // kmn * (bm - bm(equil)) * (1 + cos(n*tors + phi(n)))
+                mathFormBuilder.append(String.format("k%d%d*(bVal%d-b%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
+            }
+        }
+        int lenStr = mathFormBuilder.length();
+        mathFormBuilder.replace(lenStr - 1, lenStr, ";");
+
+        for (int m = 1; m < 4; m++) {
+            mathFormBuilder.append(String.format("bVal%d=distance(p%d,p%d);", m, m, (m + 1)));
+        }
+
+        mathFormBuilder.append("tVal=dihedral(p1,p2,p3,p4)");
+        mathForm = mathFormBuilder.toString();
     }
 }

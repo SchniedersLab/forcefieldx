@@ -59,36 +59,18 @@ public class UreyBradley extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(UreyBradley.class.getName());
 
-    private static final long serialVersionUID = 1L;
     /**
      * Force field parameters to compute the Stretch-Bend energy.
      */
     public UreyBradleyType ureyBradleyType = null;
-    public double rigidScale = 1.0;
+    /**
+     * Scale factor to apply to Urey-Bradley term.
+     */
+    private double rigidScale = 1.0;
     /**
      * The Angle this UreyBradley term is based on.
      */
-    protected Angle angle = null;
-
-    /**
-     * <p>
-     * Setter for the field <code>ureyBradleyType</code>.</p>
-     *
-     * @param a a {@link ffx.potential.parameters.UreyBradleyType} object.
-     */
-    public void setUreyBradleyType(UreyBradleyType a) {
-        ureyBradleyType = a;
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>rigidScale</code>.</p>
-     *
-     * @param rigidScale a double.
-     */
-    public void setRigidScale(double rigidScale) {
-        this.rigidScale = rigidScale;
-    }
+    protected Angle angle;
 
     /**
      * Constructor for the UreyBradley class.
@@ -124,6 +106,37 @@ public class UreyBradley extends BondedTerm {
     }
 
     /**
+     * <p>
+     * Setter for the field <code>ureyBradleyType</code>.</p>
+     *
+     * @param a a {@link ffx.potential.parameters.UreyBradleyType} object.
+     */
+    public void setUreyBradleyType(UreyBradleyType a) {
+        ureyBradleyType = a;
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
+    }
+
+    /**
+     * <p>
+     * log</p>
+     */
+    public void log() {
+        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
+                "Urey-Bradley", atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[2].getIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
+                energy));
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Evaluate the Urey-Bradley energy.
@@ -137,20 +150,13 @@ public class UreyBradley extends BondedTerm {
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
 
-        double a0[] = new double[3];
-        double a2[] = new double[3];
-        /**
-         * The vector from Atom 2 to Atom 0.
-         */
-        double v20[] = new double[3];
-        /**
-         * Gradient on Atoms 0 & 2.
-         */
-        double g0[] = new double[3];
-        double g2[] = new double[3];
-
+        double[] a0 = new double[3];
+        double[] a2 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[2].getXYZ(a2);
+
+        // The vector from Atom 2 to Atom 0.
+        double[] v20 = new double[3];
         diff(a0, a2, v20);
         value = r(v20);
         double dv = value - ureyBradleyType.distance;
@@ -162,10 +168,13 @@ public class UreyBradley extends BondedTerm {
             if (value > 0.0) {
                 de = deddt / value;
             }
+
+            // Gradient on Atoms 0 & 2.
+            double[] g0 = new double[3];
+            double[] g2 = new double[3];
             scalar(v20, de, g0);
             scalar(v20, -de, g2);
-            // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-            // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
+
             int i0 = atoms[0].getIndex() - 1;
             gradX.add(threadID, i0, g0[0]);
             gradY.add(threadID, i0, g0[1]);
@@ -180,21 +189,6 @@ public class UreyBradley extends BondedTerm {
             setEsvDeriv(energy * dedesvChain * esvLambdaInv);
         }
         return energy;
-    }
-
-    /*
-     * Log details for this Angle energy term.
-     */
-
-    /**
-     * <p>
-     * log</p>
-     */
-    public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Urey-Bradley", atoms[0].getIndex(), atoms[0].getAtomType().name,
-                atoms[2].getIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
-                energy));
     }
 
     /**

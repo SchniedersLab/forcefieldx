@@ -63,8 +63,6 @@ import static ffx.utilities.HashCodeUtil.hash;
  */
 public class Polymer extends MSGroup {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constant <code>MultiScaleLevel=3</code>
      */

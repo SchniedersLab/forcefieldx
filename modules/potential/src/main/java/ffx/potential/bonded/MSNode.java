@@ -66,22 +66,20 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
     private static final long serialVersionUID = 1L;
     /**
-     * Constant <code>UNIT_TESTING=false</code>
+     * The multiscale level of this node.
      */
-    public static boolean UNIT_TESTING = false;
-
-    static {
-        try {
-            boolean b = Boolean.parseBoolean(System.getProperty("ffx.junit", "false"));
-            UNIT_TESTING = b;
-        } catch (Exception e) {
-            UNIT_TESTING = false;
-        }
-    }
-
-    public final int MultiScaleLevel;
+    private final int MultiScaleLevel;
+    /**
+     * The name of this node.
+     */
     private String name;
+    /**
+     * True if this node is selected.
+     */
     protected boolean selected = false;
+    /**
+     * Total mass of this node and its children.
+     */
     private double totalMass;
 
     /**
@@ -115,24 +113,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns true if Class c can be below this Class in the Hierarchy
-     *
-     * @param c Class
-     * @return boolean
-     */
-    public boolean canBeChild(Class<?> c) {
-        try {
-            int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(null);
-            if (multiScaleLevel >= this.MultiScaleLevel) {
-                return false;
-            }
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            return true;
-        }
-        return true;
-    }
-
-    /**
      * <p>
      * destroy</p>
      *
@@ -145,45 +125,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         name = null;
         selected = false;
         return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node) {
-        if (!isSelected()) {
-            return;
-        }
-        MSNode dataNode;
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            dataNode = (MSNode) e.nextElement();
-            dataNode.drawLabel(graphics, g2d, node);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * MSNode equality := same class and same name.
-     * Consider replacing with a Comparator&lt;MSNode&gt; for cases where
-     * non-reference equality is desired.
-     */
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        MSNode other = (MSNode) object;
-        if (name == null && other.getName() == null) {
-            return true;
-        } else if (name != null && other.getName() != null) {
-            return name.equals(other.getName());
-        } else {
-            return false;
-        }
     }
 
     /**
@@ -348,32 +289,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCenter(boolean w) {
-        double[] Rc = {0, 0, 0};
-        double sum = 0, mass = 1;
-        ArrayList<Atom> atomList = getAtomList();
-        for (Atom a : atomList) {
-            if (w) {
-                mass = a.getMass();
-                sum += mass;
-            }
-            Rc[0] += mass * a.getX();
-            Rc[1] += mass * a.getY();
-            Rc[2] += mass * a.getZ();
-        }
-        if (!w) {
-            sum = atomList.size();
-        }
-        for (int i = 0; i < 3; i++) {
-            Rc[i] /= sum;
-        }
-        return Rc;
-    }
-
-    /**
      * Returns an ArrayList of the MSNode's Children (instead of using an
      * Enumeration).
      *
@@ -393,7 +308,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ListIterator} object.
      */
-    public ListIterator<MSNode> getChildListIterator() {
+    ListIterator<MSNode> getChildListIterator() {
         return getChildList().listIterator();
     }
 
@@ -413,24 +328,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
             }
         }
         return extent;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ArrayList<ROLS> getList(Class<?> c, ArrayList<ROLS> nodes) {
-        if (c.isInstance(this)) {
-            nodes.add(this);
-        }
-        if (isLeaf() || !canBeChild(c)) {
-            return nodes;
-        }
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            ROLS node = (ROLS) e.nextElement();
-            node.getList(c, nodes);
-        }
-        return nodes;
     }
 
     /**
@@ -462,39 +359,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public long getMSCount(Class<?> c, long count) {
-        if (c.isInstance(this)) {
-            count++;
-        }
-        if (!canBeChild(c)) {
-            return count;
-        }
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            count += node.getMSCount(c, count);
-        }
-        return count;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ROLS getMSNode(Class<?> c) {
-        TreeNode[] nodes = getPath();
-        for (TreeNode n : nodes) {
-            if (c.isInstance(n)) {
-                ROLS msm = (ROLS) n;
-                return msm;
-            }
-        }
-        return null;
-    }
-
-    /**
      * <p>
      * getMultiScaleLevel</p>
      *
@@ -502,18 +366,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     public int getMultiScaleLevel() {
         return MultiScaleLevel;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getMW() {
-        double weight = 0.0;
-        for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext(); ) {
-            weight += li.next().getMass();
-        }
-        return weight;
     }
 
     /**
@@ -530,80 +382,12 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Calculates the total mass of all atoms in the MolecularAssembly, using
-     * either a simple addition or the Kahan summation algorithm. The simple
-     * algorithm is a standard loop to add up the masses.
-     *
-     * @param recalculate Force recalculation
-     * @param useKahan    Use Kahan or simple addition algorithms
-     * @return Total mass of all atoms in system.
-     */
-    public double getTotalMass(boolean recalculate, boolean useKahan) {
-        if (recalculate) {
-            ArrayList<Atom> atoms = getAtomList();
-            if (atoms.isEmpty()) {
-                totalMass = 0.0;
-            } else if (useKahan) {
-                totalMass = kahanSumMasses(atoms);
-            } else {
-                totalMass = sumMasses(atoms);
-            }
-        }
-        return totalMass;
-    }
-
-    /**
-     * Iterative summation of atomic masses.
-     *
-     * @param atoms
-     * @return Mass of atoms.
-     */
-    private double sumMasses(List<Atom> atoms) {
-        double sumMasses = 0.0;
-        for (Atom atom : atoms) {
-            sumMasses += atom.getMass();
-        }
-        return sumMasses;
-    }
-
-    /**
-     * Implements the Kahan algorithm to very accurately sum the masses of all
-     * the atoms provided, minimizing rounding error.
-     *
-     * @param atoms Atoms to sum the mass of.
-     * @return Total mass.
-     */
-    public double kahanSumMasses(List<Atom> atoms) {
-        double sum = 0.0;
-        double comp = 0.0; // Running compensation
-        for (Atom atom : atoms) {
-            double atomMass = atom.getMass() - comp;
-            double temp = sum + atomMass;
-            comp = (temp - sum) - atomMass;
-            sum = temp;
-        }
-        return sum;
-    }
-
-    /**
      * Returns the name of this MSNode.
      *
      * @return a {@link java.lang.String} object.
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        if (name != null) {
-            return hash(SEED, name.hashCode());
-        } else {
-            return SEED;
-        }
     }
 
     /**
@@ -635,18 +419,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setColor(RendererCache.ColorModel colorModel, Color3f color,
-                         Material mat) {
-        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            MSNode node = (MSNode) e.nextElement();
-            node.setColor(colorModel, color, mat);
-        }
-    }
-
-    /**
      * Sets the name of this NodeObect to n.
      *
      * @param n a {@link java.lang.String} object.
@@ -666,6 +438,106 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
             MSNode node = (MSNode) e.nextElement();
             node.setSelected(b);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getMSCount(Class<?> c, long count) {
+        if (c.isInstance(this)) {
+            count++;
+        }
+        if (!canBeChild(c)) {
+            return count;
+        }
+        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+            MSNode node = (MSNode) e.nextElement();
+            count += node.getMSCount(c, count);
+        }
+        return count;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ROLS getMSNode(Class<?> c) {
+        TreeNode[] nodes = getPath();
+        for (TreeNode n : nodes) {
+            if (c.isInstance(n)) {
+                return (ROLS) n;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ArrayList<ROLS> getList(Class<?> c, ArrayList<ROLS> nodes) {
+        if (c.isInstance(this)) {
+            nodes.add(this);
+        }
+        if (isLeaf() || !canBeChild(c)) {
+            return nodes;
+        }
+        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+            ROLS node = (ROLS) e.nextElement();
+            node.getList(c, nodes);
+        }
+        return nodes;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCenter(boolean w) {
+        double[] Rc = {0, 0, 0};
+        double sum = 0, mass = 1;
+        ArrayList<Atom> atomList = getAtomList();
+        for (Atom a : atomList) {
+            if (w) {
+                mass = a.getMass();
+                sum += mass;
+            }
+            Rc[0] += mass * a.getX();
+            Rc[1] += mass * a.getY();
+            Rc[2] += mass * a.getZ();
+        }
+        if (!w) {
+            sum = atomList.size();
+        }
+        for (int i = 0; i < 3; i++) {
+            Rc[i] /= sum;
+        }
+        return Rc;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getMW() {
+        double weight = 0.0;
+        for (Atom atom : getAtomList()) {
+            weight += atom.getMass();
+        }
+        return weight;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setColor(RendererCache.ColorModel colorModel, Color3f color,
+                         Material mat) {
+        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+            MSNode node = (MSNode) e.nextElement();
+            node.setColor(colorModel, color, mat);
         }
     }
 
@@ -701,4 +573,130 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
             node.update();
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node) {
+        if (!isSelected()) {
+            return;
+        }
+        MSNode dataNode;
+        for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+            dataNode = (MSNode) e.nextElement();
+            dataNode.drawLabel(graphics, g2d, node);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * MSNode equality := same class and same name.
+     * Consider replacing with a Comparator&lt;MSNode&gt; for cases where
+     * non-reference equality is desired.
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        MSNode other = (MSNode) object;
+        if (name == null && other.getName() == null) {
+            return true;
+        } else if (name != null && other.getName() != null) {
+            return name.equals(other.getName());
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        if (name != null) {
+            return hash(SEED, name.hashCode());
+        } else {
+            return SEED;
+        }
+    }
+
+    /**
+     * Calculates the total mass of all atoms in the MolecularAssembly, using
+     * either a simple addition or the Kahan summation algorithm. The simple
+     * algorithm is a standard loop to add up the masses.
+     *
+     * @param recalculate Force recalculation
+     * @param useKahan    Use Kahan or simple addition algorithms
+     * @return Total mass of all atoms in system.
+     */
+    private double getTotalMass(boolean recalculate, boolean useKahan) {
+        if (recalculate) {
+            ArrayList<Atom> atoms = getAtomList();
+            if (atoms.isEmpty()) {
+                totalMass = 0.0;
+            } else if (useKahan) {
+                totalMass = kahanSumMasses(atoms);
+            } else {
+                totalMass = sumMasses(atoms);
+            }
+        }
+        return totalMass;
+    }
+
+    /**
+     * Iterative summation of atomic masses.
+     *
+     * @param atoms List of atoms.
+     * @return Mass of atoms.
+     */
+    private double sumMasses(List<Atom> atoms) {
+        double sumMasses = 0.0;
+        for (Atom atom : atoms) {
+            sumMasses += atom.getMass();
+        }
+        return sumMasses;
+    }
+
+    /**
+     * Implements the Kahan algorithm to very accurately sum the masses of all
+     * the atoms provided, minimizing rounding error.
+     *
+     * @param atoms Atoms to sum the mass of.
+     * @return Total mass.
+     */
+    private double kahanSumMasses(List<Atom> atoms) {
+        double sum = 0.0;
+        double comp = 0.0; // Running compensation
+        for (Atom atom : atoms) {
+            double atomMass = atom.getMass() - comp;
+            double temp = sum + atomMass;
+            comp = (temp - sum) - atomMass;
+            sum = temp;
+        }
+        return sum;
+    }
+
+    /**
+     * Returns true if Class c can be below this Class in the Hierarchy
+     *
+     * @param c Class
+     * @return boolean
+     */
+    private boolean canBeChild(Class<?> c) {
+        try {
+            int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(null);
+            if (multiScaleLevel >= this.MultiScaleLevel) {
+                return false;
+            }
+        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            return true;
+        }
+        return true;
+    }
+
 }

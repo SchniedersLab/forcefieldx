@@ -40,6 +40,7 @@ package ffx.potential.bonded;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -115,7 +116,7 @@ public class BondedUtils {
      * @param chiral 0, 1, -1, or 3.
      * @return A double[] with XYZ coordinates at which an atom would be placed.
      */
-    public static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
+    static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
         if (chiral == 3) {
             double[] negChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, -1);
             double[] posChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, 1);
@@ -157,17 +158,15 @@ public class BondedUtils {
             x[0] = x[1] = x[2] = 0.0;
         } else if (ib == null) {
             double xa[] = new double[3];
-            for (int i = 0; i < ia.length; i++) {
-                xa[i] = ia[i];
-            }
+            arraycopy(ia, 0, xa, 0, ia.length);
             // One partner - place on the z-axis
             x[0] = xa[0];
             x[1] = xa[1];
             x[2] = xa[2] + bond;
         } else if (ic == null) {
-            double xa[] = new double[3];
-            double xb[] = new double[3];
-            double xab[] = new double[3];
+            double[] xa = new double[3];
+            double[] xb = new double[3];
+            double[] xab = new double[3];
             for (int i = 0; i < ia.length; i++) {
                 xa[i] = ia[i];
                 xb[i] = ib[i];
@@ -192,13 +191,13 @@ public class BondedUtils {
             x[1] = xb[1] - xtmp * sing + ztmp * cosg * sinb;
             x[2] = xb[2] + ztmp * cosb;
         } else if (chiral == 0) {
-            double xa[] = new double[3];
-            double xb[] = new double[3];
-            double xc[] = new double[3];
-            double xab[] = new double[3];
-            double xbc[] = new double[3];
-            double xt[] = new double[3];
-            double xu[] = new double[3];
+            double[] xa = new double[3];
+            double[] xb = new double[3];
+            double[] xc = new double[3];
+            double[] xab = new double[3];
+            double[] xbc = new double[3];
+            double[] xt = new double[3];
+            double[] xu = new double[3];
             for (int i = 0; i < ia.length; i++) {
                 xa[i] = ia[i];
                 xb[i] = ib[i];
@@ -225,12 +224,12 @@ public class BondedUtils {
             x[1] = xa[1] + bond * (xu[1] * zsin0 * zcos1 + xt[1] * zsin0 * zsin1 - xab[1] * zcos0);
             x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
         } else if (abs(chiral) == 1) {
-            double xa[] = new double[3];
-            double xb[] = new double[3];
-            double xc[] = new double[3];
-            double xba[] = new double[3];
-            double xac[] = new double[3];
-            double xt[] = new double[3];
+            double[] xa = new double[3];
+            double[] xb = new double[3];
+            double[] xc = new double[3];
+            double[] xba = new double[3];
+            double[] xac = new double[3];
+            double[] xt = new double[3];
             for (int i = 0; i < ia.length; i++) {
                 xa[i] = ia[i];
                 xb[i] = ib[i];
@@ -254,7 +253,9 @@ public class BondedUtils {
             if (c > eps) {
                 c = chiral * sqrt(c);
             } else if (c < -eps) {
-                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0]) + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1]) + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
+                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0])
+                        + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1])
+                        + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
                 a /= c;
                 b /= c;
                 c = 0.0d;
@@ -265,9 +266,7 @@ public class BondedUtils {
             x[1] = xa[1] + bond * (a * xac[1] + b * xba[1] + c * xt[1]);
             x[2] = xa[2] + bond * (a * xac[2] + b * xba[2] + c * xt[2]);
         }
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = x[i];
-        }
+        arraycopy(x, 0, ret, 0, ret.length);
         return ret;
     }
 
@@ -303,7 +302,7 @@ public class BondedUtils {
      */
     public static Bond buildBond(Atom a1, Atom a2, ForceField forceField, ArrayList<Bond> bondList) {
         Bond bond = new Bond(a1, a2);
-        int c[] = new int[2];
+        int[] c = new int[2];
         c[0] = a1.getAtomType().atomClass;
         c[1] = a2.getAtomType().atomClass;
         String key = BondType.sortKey(c);
@@ -333,14 +332,12 @@ public class BondedUtils {
      * @return a {@link ffx.potential.bonded.Atom} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
-    public static Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key, ForceField forceField,
-                                  ArrayList<Bond> bondList)
+    public static Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key, ForceField forceField, ArrayList<Bond> bondList)
             throws MissingHeavyAtomException {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         AtomType atomType = findAtomType(key, forceField);
         if (atom == null) {
-            MissingHeavyAtomException missingHeavyAtom = new MissingHeavyAtomException(atomName, atomType, bondedTo);
-            throw missingHeavyAtom;
+            throw new MissingHeavyAtomException(atomName, atomType, bondedTo);
         }
         atom.setAtomType(atomType);
         if (bondedTo != null) {
@@ -366,8 +363,8 @@ public class BondedUtils {
      * @param bondList   a {@link java.util.ArrayList} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
-    public static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-                                      Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
+    private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+                                       Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         if (atomType == null) {
             return null;
@@ -529,7 +526,7 @@ public class BondedUtils {
 
         public final String atomName;
         public final AtomType atomType;
-        public final Atom bondedTo;
+        final Atom bondedTo;
 
         public MissingHeavyAtomException(String atomName, AtomType atomType, Atom bondedTo) {
             this.atomName = atomName;

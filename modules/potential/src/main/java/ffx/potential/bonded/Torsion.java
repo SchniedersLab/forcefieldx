@@ -65,12 +65,25 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(Torsion.class.getName());
 
-    private static final long serialVersionUID = 1L;
+    /**
+     * Value of lambda.
+     */
     private double lambda = 1.0;
+    /**
+     * Value of dE/dL.
+     */
     private double dEdL = 0.0;
+    /**
+     * Flag to indicate lambda dependence.
+     */
     private boolean lambdaTerm = false;
-
+    /**
+     * The force field Torsion type in use.
+     */
     public TorsionType torsionType = null;
+    /**
+     * Unit coversion.
+     */
     public double units = 0.5;
 
     /**
@@ -89,6 +102,69 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
+     * Attempt to create a new Torsion based on the supplied bonds. There is no
+     * error checking to enforce that the bonds make up a linear series of 4
+     * bonded atoms.
+     *
+     * @param bond1      the first Bond.
+     * @param middleBond the middle Bond.
+     * @param bond3      the last Bond.
+     * @param forceField the ForceField parameters to apply.
+     * @return a new Torsion, or null.
+     */
+    public static Torsion torsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {
+        Atom atom1 = middleBond.getAtom(0);
+        Atom atom2 = middleBond.getAtom(1);
+        int c[] = new int[4];
+        c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
+        c[1] = atom1.getAtomType().atomClass;
+        c[2] = atom2.getAtomType().atomClass;
+        c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+        String key = TorsionType.sortKey(c);
+        TorsionType torsionType = forceField.getTorsionType(key);
+        if (torsionType == null) {
+            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = 0;
+            key = TorsionType.sortKey(c);
+            torsionType = forceField.getTorsionType(key);
+        }
+        if (torsionType == null) {
+            c[0] = 0;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+            key = TorsionType.sortKey(c);
+            torsionType = forceField.getTorsionType(key);
+        }
+        if (torsionType == null) {
+            c[0] = 0;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = 0;
+            key = TorsionType.sortKey(c);
+            torsionType = forceField.getTorsionType(key);
+        }
+        if (torsionType == null) {
+            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
+            c[1] = atom1.getAtomType().atomClass;
+            c[2] = atom2.getAtomType().atomClass;
+            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+            key = TorsionType.sortKey(c);
+            logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n",
+                    key, bond1.toString(), middleBond.toString(), bond3.toString()));
+            return null;
+        }
+
+        Torsion torsion = new Torsion(bond1, middleBond, bond3);
+        torsion.torsionType = torsionType;
+        torsion.units = forceField.getDouble(ForceField.ForceFieldDouble.TORSIONUNIT, 0.5);
+
+        return torsion;
+    }
+
+    /**
      * <p>
      * compare</p>
      *
@@ -99,14 +175,10 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      * @return a boolean.
      */
     public boolean compare(Atom a0, Atom a1, Atom a2, Atom a3) {
-        if (a0 == atoms[0] && a1 == atoms[1] && a2 == atoms[2]
-                && a3 == atoms[3]) {
-            return true;
-        } else if (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1]
-                && a3 == atoms[0]) {
+        if (a0 == atoms[0] && a1 == atoms[1] && a2 == atoms[2] && a3 == atoms[3]) {
             return true;
         }
-        return false;
+        return (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1] && a3 == atoms[0]);
     }
 
     /**
@@ -174,69 +246,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
-     * Attempt to create a new Torsion based on the supplied bonds. There is no
-     * error checking to enforce that the bonds make up a linear series of 4
-     * bonded atoms.
-     *
-     * @param bond1      the first Bond.
-     * @param middleBond the middle Bond.
-     * @param bond3      the last Bond.
-     * @param forceField the ForceField parameters to apply.
-     * @return a new Torsion, or null.
-     */
-    public static Torsion torsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {
-        Atom atom1 = middleBond.getAtom(0);
-        Atom atom2 = middleBond.getAtom(1);
-        int c[] = new int[4];
-        c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-        c[1] = atom1.getAtomType().atomClass;
-        c[2] = atom2.getAtomType().atomClass;
-        c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-        String key = TorsionType.sortKey(c);
-        TorsionType torsionType = forceField.getTorsionType(key);
-        if (torsionType == null) {
-            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = 0;
-            key = TorsionType.sortKey(c);
-            torsionType = forceField.getTorsionType(key);
-        }
-        if (torsionType == null) {
-            c[0] = 0;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-            key = TorsionType.sortKey(c);
-            torsionType = forceField.getTorsionType(key);
-        }
-        if (torsionType == null) {
-            c[0] = 0;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = 0;
-            key = TorsionType.sortKey(c);
-            torsionType = forceField.getTorsionType(key);
-        }
-        if (torsionType == null) {
-            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-            key = TorsionType.sortKey(c);
-            logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n",
-                    key, bond1.toString(), middleBond.toString(), bond3.toString()));
-            return null;
-        }
-
-        Torsion torsion = new Torsion(bond1, middleBond, bond3);
-        torsion.torsionType = torsionType;
-        torsion.units = forceField.getDouble(ForceField.ForceFieldDouble.TORSIONUNIT, 0.5);
-
-        return torsion;
-    }
-
-    /**
      * If the specified atom is not a central atom of <b>this</b> torsion, the
      * atom at the opposite end is returned. These atoms are said to be 1-4 to
      * each other.
@@ -259,48 +268,35 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      *
      * @return Value of the dihedral angle.
      */
-    public double calculateDihedralAngle() {
-
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        double a3[] = new double[3];
-
-        /**
-         * Vector from Atom 0 to Atom 1.
-         */
-        double v01[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 2.
-         */
-        double v12[] = new double[3];
-        /**
-         * Vector from Atom 2 to Atom 3.
-         */
-        double v23[] = new double[3];
-        /**
-         * Vector v01 cross v12.
-         */
-        double x0112[] = new double[3];
-        /**
-         * Vector v12 cross v23.
-         */
-        double x1223[] = new double[3];
-        /**
-         * Vector x0112 cross x12_32.
-         */
-        double x[] = new double[3];
+    private double calculateDihedralAngle() {
 
         double theVal = 0.0;
 
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
+        double[] a3 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
         atoms[3].getXYZ(a3);
 
+        // Vector from Atom 0 to Atom 1.
+        double[] v01 = new double[3];
+        // Vector from Atom 1 to Atom 2.
+        double[] v12 = new double[3];
+        // Vector from Atom 2 to Atom 3.
+        double[] v23 = new double[3];
         diff(a1, a0, v01);
         diff(a2, a1, v12);
         diff(a3, a2, v23);
+
+        // Vector v01 cross v12.
+        double[] x0112 = new double[3];
+        // Vector v12 cross v23.
+        double[] x1223 = new double[3];
+        // Vector x0112 cross x12_32.
+        double[] x = new double[3];
         cross(v01, v12, x0112);
         cross(v12, v23, x1223);
         cross(x0112, x1223, x);
@@ -333,69 +329,35 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                          AtomicDoubleArray lambdaGradX,
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
-
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        double a3[] = new double[3];
-
-        /**
-         * Vector from Atom 0 to Atom 1.
-         */
-        double v01[] = new double[3];
-        /**
-         * Vector from Atom 0 to Atom 2.
-         */
-        double v02[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 2.
-         */
-        double v12[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 3.
-         */
-        double v13[] = new double[3];
-        /**
-         * Vector from Atom 2 to Atom 3.
-         */
-        double v23[] = new double[3];
-        /**
-         * Vector v01 cross v12.
-         */
-        double x0112[] = new double[3];
-        /**
-         * Vector v12 cross v23.
-         */
-        double x1223[] = new double[3];
-        /**
-         * Vector x0112 cross x12_32.
-         */
-        double x[] = new double[3];
-        /**
-         * Gradient on atoms 0, 1, 2 & 3.
-         */
-        double g0[] = new double[3];
-        double g1[] = new double[3];
-        double g2[] = new double[3];
-        double g3[] = new double[3];
-        /**
-         * Work vectors.
-         */
-        double x1[] = new double[3];
-        double x2[] = new double[3];
-
         energy = 0.0;
         value = 0.0;
         dEdL = 0.0;
 
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
+        double[] a3 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
         atoms[3].getXYZ(a3);
 
+        // Vector from Atom 0 to Atom 1.
+        double[] v01 = new double[3];
+        // Vector from Atom 1 to Atom 2.
+        double[] v12 = new double[3];
+        // Vector from Atom 2 to Atom 3.
+        double[] v23 = new double[3];
         diff(a1, a0, v01);
         diff(a2, a1, v12);
         diff(a3, a2, v23);
+
+        // Vector v01 cross v12.
+        double[] x0112 = new double[3];
+        // Vector v12 cross v23.
+        double[] x1223 = new double[3];
+        // Vector x0112 cross x12_32.
+        double[] x = new double[3];
         cross(v01, v12, x0112);
         cross(v12, v23, x1223);
         cross(x0112, x1223, x);
@@ -410,9 +372,9 @@ public class Torsion extends BondedTerm implements LambdaInterface {
             if (sine < 0.0) {
                 value = -value;
             }
-            double amp[] = torsionType.amplitude;
-            double tsin[] = torsionType.sine;
-            double tcos[] = torsionType.cosine;
+            double[] amp = torsionType.amplitude;
+            double[] tsin = torsionType.sine;
+            double[] tcos = torsionType.cosine;
             energy = amp[0] * (1.0 + cosine * tcos[0] + sine * tsin[0]);
             double dedphi = amp[0] * (cosine * tsin[0] - sine * tcos[0]);
             double cosprev = cosine;
@@ -436,12 +398,27 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
             if (gradient || lambdaTerm) {
                 dedphi = units * dedphi * esvLambda;
+
+                // Vector from Atom 0 to Atom 2.
+                double[] v02 = new double[3];
+                // Vector from Atom 1 to Atom 3.
+                double[] v13 = new double[3];
                 diff(a2, a0, v02);
                 diff(a3, a1, v13);
+
+                // Work vectors.
+                double[] x1 = new double[3];
+                double[] x2 = new double[3];
                 cross(x0112, v12, x1);
                 cross(x1223, v12, x2);
                 scalar(x1, dedphi / (r01_12 * r12), x1);
                 scalar(x2, -dedphi / (r12_23 * r12), x2);
+
+                // Gradient on atoms 0, 1, 2 & 3.
+                double[] g0 = new double[3];
+                double[] g1 = new double[3];
+                double[] g2 = new double[3];
+                double[] g3 = new double[3];
                 cross(x1, v12, g0);
                 cross(v02, x1, g1);
                 cross(x2, v23, g2);
@@ -450,20 +427,23 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 cross(v13, x2, g3);
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
+                int i0 = atoms[0].getIndex() - 1;
+                int i1 = atoms[1].getIndex() - 1;
+                int i2 = atoms[2].getIndex() - 1;
+                int i3 = atoms[3].getIndex() - 1;
                 if (lambdaTerm) {
-                    int i0 = atoms[0].getIndex() - 1;
                     lambdaGradX.add(threadID, i0, g0[0]);
                     lambdaGradY.add(threadID, i0, g0[1]);
                     lambdaGradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i1, g1[0]);
                     lambdaGradY.add(threadID, i1, g1[1]);
                     lambdaGradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i2, g2[0]);
                     lambdaGradY.add(threadID, i2, g2[1]);
                     lambdaGradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i3, g3[0]);
                     lambdaGradY.add(threadID, i3, g3[1]);
                     lambdaGradZ.add(threadID, i3, g3[2]);
@@ -473,19 +453,19 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                     scalar(g1, lambda, g1);
                     scalar(g2, lambda, g2);
                     scalar(g3, lambda, g3);
-                    int i0 = atoms[0].getIndex() - 1;
+
                     gradX.add(threadID, i0, g0[0]);
                     gradY.add(threadID, i0, g0[1]);
                     gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getIndex() - 1;
+
                     gradX.add(threadID, i1, g1[0]);
                     gradY.add(threadID, i1, g1[1]);
                     gradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
+
                     gradX.add(threadID, i2, g2[0]);
                     gradY.add(threadID, i2, g2[1]);
                     gradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
+
                     gradX.add(threadID, i3, g3[0]);
                     gradY.add(threadID, i3, g3[1]);
                     gradZ.add(threadID, i3, g3[2]);
@@ -559,6 +539,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        return;
+        // The chain rule term is zero.
     }
 }

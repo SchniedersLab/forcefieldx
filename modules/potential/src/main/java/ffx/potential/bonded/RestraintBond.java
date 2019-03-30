@@ -71,10 +71,13 @@ import static ffx.potential.parameters.BondType.units;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ *
+ * TODO: RestraintBond should extend the Bond class.
  */
 public class RestraintBond extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(RestraintBond.class.getName());
+
     private double lambda = 1.0;
     private double restraintLambda = 1.0;
     private double rL3 = 1.0;
@@ -85,7 +88,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
     private double restraintLambdaWindow = (restraintLambdaStop - restraintLambdaStart);
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
-    private double dEdXdL[][] = new double[2][3];
+    private double[][] dEdXdL = new double[2][3];
 
     /**
      * {@inheritDoc}
@@ -147,14 +150,6 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         gradient[index++] += dEdXdL[1][0];
         gradient[index++] += dEdXdL[1][1];
         gradient[index] += dEdXdL[1][2];
-    }
-
-    /**
-     * Bonding Character
-     */
-    public enum BondCharacter {
-
-        SINGLEBOND, DOUBLEBOND, TRIPLEBOND;
     }
 
     private static final long serialVersionUID = 1L;

@@ -37,7 +37,8 @@
  */
 package ffx.potential.bonded;
 
-import java.util.Arrays;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.max;
 
@@ -65,29 +66,16 @@ public class Rotamer {
      * Torsions chi 5-7 are only currently used for nucleic acids.
      */
     public final double chi5;
-    public final double chi6;
-    public final double chi7;
-    public final double angles[];
-    public final double sigmas[];
-    public final AminoAcid3 name;
-    public final NucleicAcid3 nucleicName;
-    public final int length;
-    public final ResidueState originalState;
-    public final boolean isState;
+    final double chi6;
+    final double chi7;
 
-    /**
-     * Factory method to construct an original-coordinates Rotamer from a residue.
-     * Intended to address a bug in decompose-original.
-     *
-     * @param res Residue to construct default rotamer for.
-     * @return Original-coordinates rotamer.
-     */
-    public static Rotamer defaultRotamerFactory(Residue res) {
-        ResidueState origState = res.storeState();
-        double[] chi = RotamerLibrary.measureRotamer(res, false);
-        double[] sigmas = new double[chi.length];
-        return new Rotamer(res, chi, sigmas);
-    }
+    public final double[] angles;
+    public final double[] sigmas;
+    public final int length;
+    public final AminoAcid3 name;
+    final ResidueState originalState;
+    final boolean isState;
+    private final NucleicAcid3 nucleicName;
 
     /**
      * Constructs a Rotamer from a Residue, an array of torsions, and optionally
@@ -101,13 +89,13 @@ public class Rotamer {
     public Rotamer(Residue res, double[] chis, double[] sigmas) {
         int nChi = chis.length;
         angles = new double[nChi];
-        Arrays.fill(angles, 0);
-        System.arraycopy(chis, 0, angles, 0, nChi);
+        fill(angles, 0);
+        arraycopy(chis, 0, angles, 0, nChi);
 
         // Hooray, 
         double[] tempVals = new double[7];
-        Arrays.fill(tempVals, 0);
-        System.arraycopy(chis, 0, tempVals, 0, nChi);
+        fill(tempVals, 0);
+        arraycopy(chis, 0, tempVals, 0, nChi);
 
         chi1 = tempVals[0];
         chi2 = tempVals[1];
@@ -119,9 +107,9 @@ public class Rotamer {
 
         this.sigmas = new double[nChi];
         if (sigmas != null) {
-            System.arraycopy(sigmas, 0, this.sigmas, 0, nChi);
+            arraycopy(sigmas, 0, this.sigmas, 0, nChi);
         } else {
-            Arrays.fill(sigmas, 0);
+            fill(sigmas, 0);
         }
 
         switch (res.getResidueType()) {
@@ -254,26 +242,6 @@ public class Rotamer {
     }
 
     /**
-     * Constructs a Rotamer from a ResidueState.
-     *
-     * @param resState Residue state to be represented by this Rotamer.
-     * @return A Rotamer wrapping a ResidueState.
-     */
-    public static Rotamer stateToRotamer(ResidueState resState) {
-        Residue res = resState.getStateResidue();
-        double[] vals = RotamerLibrary.measureRotamer(res, false);
-        switch (res.getResidueType()) {
-            case AA:
-                return new Rotamer(res.getAminoAcid3(), resState, vals);
-            case NA:
-                return new Rotamer(res.getNucleicAcid3(), resState, vals);
-            case UNK:
-            default:
-                return new Rotamer(resState, vals);
-        }
-    }
-
-    /**
      * <p>Constructor for Rotamer.</p>
      *
      * @param name         a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
@@ -360,5 +328,39 @@ public class Rotamer {
             sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
         }
         return sb.toString();
+    }
+
+    /**
+     * Factory method to construct an original-coordinates Rotamer from a residue.
+     * Intended to address a bug in decompose-original.
+     *
+     * @param res Residue to construct default rotamer for.
+     * @return Original-coordinates rotamer.
+     */
+    public static Rotamer defaultRotamerFactory(Residue res) {
+        ResidueState origState = res.storeState();
+        double[] chi = RotamerLibrary.measureRotamer(res, false);
+        double[] sigmas = new double[chi.length];
+        return new Rotamer(res, chi, sigmas);
+    }
+
+    /**
+     * Constructs a Rotamer from a ResidueState.
+     *
+     * @param resState Residue state to be represented by this Rotamer.
+     * @return A Rotamer wrapping a ResidueState.
+     */
+    static Rotamer stateToRotamer(ResidueState resState) {
+        Residue res = resState.getStateResidue();
+        double[] vals = RotamerLibrary.measureRotamer(res, false);
+        switch (res.getResidueType()) {
+            case AA:
+                return new Rotamer(res.getAminoAcid3(), resState, vals);
+            case NA:
+                return new Rotamer(res.getNucleicAcid3(), resState, vals);
+            case UNK:
+            default:
+                return new Rotamer(resState, vals);
+        }
     }
 }

@@ -67,14 +67,31 @@ import static ffx.potential.parameters.TorsionTorsionType.units;
 public class TorsionTorsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(TorsionTorsion.class.getName());
-    private static final long serialVersionUID = 1L;
-    public TorsionTorsionType torsionTorsionType = null;
-    public final Torsion torsions[] = new Torsion[2];
-    protected final boolean reversed;
 
-    private boolean lambdaTerm = false;
+    /**
+     * The force field Torsion-Torsion type in use.
+     */
+    public TorsionTorsionType torsionTorsionType = null;
+    /**
+     * The two torsions that are coupled.
+     */
+    public final Torsion[] torsions = new Torsion[2];
+    /**
+     * Reversed order relative to the TorsionTorsionType.
+     */
+    protected final boolean reversed;
+    /**
+     * Value of lambda.
+     */
     private double lambda = 1.0;
+    /**
+     * Value of dE/dL.
+     */
     private double dEdL = 0.0;
+    /**
+     * Flag to indicate lambda dependence.
+     */
+    private boolean lambdaTerm = false;
 
     /**
      * Torsion-Torsion constructor.
@@ -128,7 +145,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      */
     public static TorsionTorsion torsionTorsionFactory(Bond firstBond,
                                                        Angle angle, Bond lastBond, ForceField forceField) {
-        int c5[] = new int[5];
+        int[] c5 = new int[5];
         Atom atom1 = angle.atoms[0];
         Atom atom3 = angle.atoms[2];
         c5[0] = firstBond.get1_2(atom1).getAtomType().atomClass;
@@ -167,124 +184,39 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                          AtomicDoubleArray lambdaGradX,
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
-
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        double a3[] = new double[3];
-        double a4[] = new double[3];
-        /**
-         * Constant <code>v01=new double[3]</code>
-         */
-        double v01[] = new double[3];
-        /**
-         * Constant <code>v12=new double[3]</code>
-         */
-        double v12[] = new double[3];
-        /**
-         * Constant <code>v23=new double[3]</code>
-         */
-        double v23[] = new double[3];
-        /**
-         * Constant <code>v34=new double[3]</code>
-         */
-        double v34[] = new double[3];
-        /**
-         * Constant <code>v02=new double[3]</code>
-         */
-        double[] v02 = new double[3];
-        /**
-         * Constant <code>v13=new double[3]</code>
-         */
-        double[] v13 = new double[3];
-        /**
-         * Constant <code>v24=new double[3]</code>
-         */
-        double[] v24 = new double[3];
-        /**
-         * Constant <code>t=new double[3]</code>
-         */
-        double t[] = new double[3];
-        /**
-         * Constant <code>u=new double[3]</code>
-         */
-        double u[] = new double[3];
-        /**
-         * Constant <code>v=new double[3]</code>
-         */
-        double v[] = new double[3];
-        /**
-         * Constant <code>x1=new double[3]</code>
-         */
-        double[] x1 = new double[3];
-        /**
-         * Constant <code>x2=new double[3]</code>
-         */
-        double[] x2 = new double[3];
-        /**
-         * Constant <code>tu=new double[3]</code>
-         */
-        double tu[] = new double[3];
-        /**
-         * Constant <code>uv=new double[3]</code>
-         */
-        double uv[] = new double[3];
-        /**
-         * Array of 4 spline energies surrounding the actual Torsion-Torsion
-         * location.
-         */
-        double e[] = new double[4];
-        /**
-         * Array of 4 spline x-gradients surrounding the actual Torsion-Torsion
-         * location.
-         */
-        double dx[] = new double[4];
-        /**
-         * Array of 4 spline y-gradients surrounding the actual Torsion-Torsion
-         * location.
-         */
-        double dy[] = new double[4];
-        /**
-         * Array of 4 spline xy-gradients surrounding the actual Torsion-Torsion
-         * location.
-         */
-        double dxy[] = new double[4];
-        /**
-         * Gradient on atom 0.
-         */
-        double g0[] = new double[3];
-        /**
-         * Gradient on Atom 1.
-         */
-        double g1[] = new double[3];
-        /**
-         * Gradient on Atom 2.
-         */
-        double g2[] = new double[3];
-        /**
-         * Gradient on Atom 3.
-         */
-        double g3[] = new double[3];
-        /**
-         * Constant <code>g4=new double[3]</code>
-         */
-        double g4[] = new double[3];
-
         energy = 0.0;
         value = 0.0;
         dEdL = 0.0;
+
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
+        double[] a3 = new double[3];
+        double[] a4 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
         atoms[3].getXYZ(a3);
         atoms[4].getXYZ(a4);
+
+        double[] v01 = new double[3];
+        double[] v12 = new double[3];
+        double[] v23 = new double[3];
+        double[] v34 = new double[3];
         diff(a1, a0, v01);
         diff(a2, a1, v12);
         diff(a3, a2, v23);
         diff(a4, a3, v34);
+
+        double[] t = new double[3];
+        double[] u = new double[3];
+        double[] v = new double[3];
         cross(v01, v12, t);
         cross(v12, v23, u);
         cross(v23, v34, v);
+
+        double[] tu = new double[3];
+        double[] uv = new double[3];
         cross(t, u, tu);
         cross(u, v, uv);
         double rt2 = dot(t, t);
@@ -314,9 +246,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             sign = chktor();
             t1 *= sign;
             t2 *= sign;
-            /**
-             * Use bicubic interpolation to compute the spline values.
-             */
+
+            // Use bicubic interpolation to compute the spline values.
             int nx = torsionTorsionType.nx;
             int ny = torsionTorsionType.ny;
             int nlow = 0;
@@ -347,22 +278,32 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             double y1u = torsionTorsionType.ty[ylow + 1];
             int pos2 = (ylow + 1) * nx + xlow;
             int pos1 = pos2 - nx;
+
+            // Array of 4 spline energies surrounding the actual Torsion-Torsion location.
+            double[] e = new double[4];
             e[0] = torsionTorsionType.energy[pos1];
             e[1] = torsionTorsionType.energy[pos1 + 1];
             e[2] = torsionTorsionType.energy[pos2 + 1];
             e[3] = torsionTorsionType.energy[pos2];
+            // Array of 4 spline x-gradients surrounding the actual Torsion-Torsion location.
+            double[] dx = new double[4];
             dx[0] = torsionTorsionType.dx[pos1];
             dx[1] = torsionTorsionType.dx[pos1 + 1];
             dx[2] = torsionTorsionType.dx[pos2 + 1];
             dx[3] = torsionTorsionType.dx[pos2];
+            // Array of 4 spline y-gradients surrounding the actual Torsion-Torsion location.
+            double[] dy = new double[4];
             dy[0] = torsionTorsionType.dy[pos1];
             dy[1] = torsionTorsionType.dy[pos1 + 1];
             dy[2] = torsionTorsionType.dy[pos2 + 1];
             dy[3] = torsionTorsionType.dy[pos2];
+            // Array of 4 spline xy-gradients surrounding the actual Torsion-Torsion location.
+            double[] dxy = new double[4];
             dxy[0] = torsionTorsionType.dxy[pos1];
             dxy[1] = torsionTorsionType.dxy[pos1 + 1];
             dxy[2] = torsionTorsionType.dxy[pos2 + 1];
             dxy[3] = torsionTorsionType.dxy[pos2];
+
             if (!gradient && !lambdaTerm) {
                 double bcu = bcuint(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy);
                 energy = units * bcu * esvLambda * lambda;
@@ -371,7 +312,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 }
                 dEdL = units * bcu * esvLambda;
             } else {
-                double ansy[] = new double[2];
+                double[] ansy = new double[2];
                 double bcu1 = bcuint1(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy, ansy);
                 energy = units * bcu1 * esvLambda * lambda;
                 if (esvTerm) {
@@ -380,15 +321,26 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 dEdL = units * bcu1 * esvLambda;
                 double dedang1 = sign * units * toDegrees(ansy[0]) * esvLambda * lambda;
                 double dedang2 = sign * units * toDegrees(ansy[1]) * esvLambda * lambda;
-                /**
-                 * Derivative components for the first angle.
-                 */
+
+                // Derivative components for the first angle.
+                double[] v02 = new double[3];
+                double[] v13 = new double[3];
                 diff(a2, a0, v02);
                 diff(a3, a1, v13);
+
+                double[] x1 = new double[3];
+                double[] x2 = new double[3];
                 cross(t, v12, x1);
                 cross(u, v12, x2);
                 scalar(x1, dedang1 / (rt2 * r12), x1);
                 scalar(x2, -dedang1 / (ru2 * r12), x2);
+
+                // Gradients on each atom.
+                double[] g0 = new double[3];
+                double[] g1 = new double[3];
+                double[] g2 = new double[3];
+                double[] g3 = new double[3];
+                double[] g4 = new double[3];
                 cross(x1, v12, g0);
                 cross(v02, x1, g1);
                 cross(x2, v23, g2);
@@ -397,57 +349,55 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 cross(v13, x2, g3);
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
+
+                int i0 = atoms[0].getIndex() - 1;
+                int i1 = atoms[1].getIndex() - 1;
+                int i2 = atoms[2].getIndex() - 1;
+                int i3 = atoms[3].getIndex() - 1;
+                int i4 = atoms[4].getIndex() - 1;
+
                 if (lambdaTerm) {
-                    // atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
-                    // atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
-                    // atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
-                    // atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
-                    int i0 = atoms[0].getIndex() - 1;
                     lambdaGradX.add(threadID, i0, g0[0]);
                     lambdaGradY.add(threadID, i0, g0[1]);
                     lambdaGradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i1, g1[0]);
                     lambdaGradY.add(threadID, i1, g1[1]);
                     lambdaGradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i2, g2[0]);
                     lambdaGradY.add(threadID, i2, g2[1]);
                     lambdaGradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i3, g3[0]);
                     lambdaGradY.add(threadID, i3, g3[1]);
                     lambdaGradZ.add(threadID, i3, g3[2]);
                 }
                 if (gradient) {
-                    // atoms[0].addToXYZGradient(lambda * g0[0], lambda * g0[1], lambda * g0[2]);
-                    // atoms[1].addToXYZGradient(lambda * g1[0], lambda * g1[1], lambda * g1[2]);
-                    // atoms[2].addToXYZGradient(lambda * g2[0], lambda * g2[1], lambda * g2[2]);
-                    // atoms[3].addToXYZGradient(lambda * g3[0], lambda * g3[1], lambda * g3[2]);
                     scalar(g0, lambda, g0);
                     scalar(g1, lambda, g1);
                     scalar(g2, lambda, g2);
                     scalar(g3, lambda, g3);
-                    int i0 = atoms[0].getIndex() - 1;
+
                     gradX.add(threadID, i0, g0[0]);
                     gradY.add(threadID, i0, g0[1]);
                     gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getIndex() - 1;
+
                     gradX.add(threadID, i1, g1[0]);
                     gradY.add(threadID, i1, g1[1]);
                     gradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
+
                     gradX.add(threadID, i2, g2[0]);
                     gradY.add(threadID, i2, g2[1]);
                     gradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
+
                     gradX.add(threadID, i3, g3[0]);
                     gradY.add(threadID, i3, g3[1]);
                     gradZ.add(threadID, i3, g3[2]);
                 }
-                /**
-                 * Derivative components for the 2nd angle.
-                 */
+
+                // Derivative components for the 2nd angle.
+                double[] v24 = new double[3];
                 diff(a4, a2, v24);
                 cross(u, v23, x1);
                 cross(v, v23, x2);
@@ -462,49 +412,40 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 sum(g3, g4, g3);
                 cross(x2, v23, g4);
                 if (lambdaTerm) {
-                    // atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
-                    // atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
-                    // atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
-                    // atoms[4].addToLambdaXYZGradient(g4[0], g4[1], g4[2]);
-                    int i1 = atoms[1].getIndex() - 1;
                     lambdaGradX.add(threadID, i1, g1[0]);
                     lambdaGradY.add(threadID, i1, g1[1]);
                     lambdaGradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i2, g2[0]);
                     lambdaGradY.add(threadID, i2, g2[1]);
                     lambdaGradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i3, g3[0]);
                     lambdaGradY.add(threadID, i3, g3[1]);
                     lambdaGradZ.add(threadID, i3, g3[2]);
-                    int i4 = atoms[4].getIndex() - 1;
+
                     lambdaGradX.add(threadID, i4, g4[0]);
                     lambdaGradY.add(threadID, i4, g4[1]);
                     lambdaGradZ.add(threadID, i4, g4[2]);
                 }
                 if (gradient) {
-                    // atoms[1].addToXYZGradient(g1[0] * lambda, g1[1] * lambda, g1[2] * lambda);
-                    // atoms[2].addToXYZGradient(g2[0] * lambda, g2[1] * lambda, g2[2] * lambda);
-                    // atoms[3].addToXYZGradient(g3[0] * lambda, g3[1] * lambda, g3[2] * lambda);
-                    // atoms[4].addToXYZGradient(g4[0] * lambda, g4[1] * lambda, g4[2] * lambda);
                     scalar(g1, lambda, g1);
                     scalar(g2, lambda, g2);
                     scalar(g3, lambda, g3);
                     scalar(g4, lambda, g4);
-                    int i1 = atoms[1].getIndex() - 1;
+
                     gradX.add(threadID, i1, g1[0]);
                     gradY.add(threadID, i1, g1[1]);
                     gradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
+
                     gradX.add(threadID, i2, g2[0]);
                     gradY.add(threadID, i2, g2[1]);
                     gradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
+
                     gradX.add(threadID, i3, g3[0]);
                     gradY.add(threadID, i3, g3[1]);
                     gradZ.add(threadID, i3, g3[2]);
-                    int i4 = atoms[4].getIndex() - 1;
+
                     gradX.add(threadID, i4, g4[0]);
                     gradY.add(threadID, i4, g4[1]);
                     gradZ.add(threadID, i4, g4[2]);
@@ -514,13 +455,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
         return energy;
     }
 
-    /*
-     * Log details for this Torsion-Torsion energy term.
-     */
-
     /**
-     * <p>
-     * log</p>
+     * Log details for this Torsion-Torsion energy term.
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
@@ -548,13 +484,10 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     public Atom getChiralAtom() {
         Atom atom = null;
         ArrayList<Bond> bnds = atoms[2].getBonds();
-        /**
-         * To be chiral, the central atom must have 4 bonds.
-         */
+
+        // To be chiral, the central atom must have 4 bonds.
         if (bnds.size() == 4) {
-            /**
-             * Find the two atoms that are not part of the dihedral.
-             */
+            // Find the two atoms that are not part of the dihedral.
             Atom atom1 = null;
             Atom atom2 = null;
             for (Bond b : bnds) {
@@ -567,9 +500,9 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                     }
                 }
             }
-            /**
-             * Choose atom1 or atom2 to use for the chiral check, depending on
-             * their atom types and atomic number.
+            /*
+              Choose atom1 or atom2 to use for the chiral check, depending on
+              their atom types and atomic number.
              */
             if (atom1.getType() > atom2.getType()) {
                 atom = atom1;
@@ -593,29 +526,19 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      * @return The sign convention - if negative the torsion angle signs are
      * inverted.
      */
-    protected double chktor() {
+    private double chktor() {
 
-        /**
-         * Vector from the central atom to site 0.
-         */
+        // Vector from the central atom to site 0.
         double[] vc0 = new double[3];
-        /**
-         * Vector from the central atom to site 1.
-         */
+        // Vector from the central atom to site 1.
         double[] vc1 = new double[3];
-        /**
-         * Vector from the central atom to site 2.
-         */
+        // Vector from the central atom to site 2.
         double[] vc2 = new double[3];
 
         ArrayList<Bond> bnds = atoms[2].getBonds();
-        /**
-         * To be chiral, the central atom must have 4 bonds.
-         */
+        // To be chiral, the central atom must have 4 bonds.
         if (bnds.size() == 4) {
-            /**
-             * Find the two atoms that are not part of the dihedral.
-             */
+            // Find the two atoms that are not part of the dihedral.
             Atom atom1 = null;
             Atom atom2 = null;
             for (Bond b : bnds) {
@@ -628,9 +551,9 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                     }
                 }
             }
-            /**
-             * Choose atom1 or atom2 to use for the chiral check, depending on
-             * their atom types and atomic number.
+            /*
+              Choose atom1 or atom2 to use for the chiral check, depending on
+              their atom types and atomic number.
              */
             Atom atom = null;
             if (atom1.getType() > atom2.getType()) {
@@ -645,14 +568,13 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             if (atom2.getAtomicNumber() > atom1.getAtomicNumber()) {
                 atom = atom2;
             }
-            /**
-             * Compute the signed parallelpiped volume at the central site.
-             */
+
+            // Compute the signed parallelpiped volume at the central site.
             if (atom != null) {
-                double ad[] = new double[3];
-                double a1[] = new double[3];
-                double a2[] = new double[3];
-                double a3[] = new double[3];
+                double[] ad = new double[3];
+                double[] a1 = new double[3];
+                double[] a2 = new double[3];
+                double[] a3 = new double[3];
                 atom.getXYZ(ad);
                 atoms[1].getXYZ(a1);
                 atoms[2].getXYZ(a2);
@@ -660,7 +582,9 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 diff(ad, a2, vc0);
                 diff(a1, a2, vc1);
                 diff(a3, a2, vc2);
-                double volume = vc0[0] * (vc1[1] * vc2[2] - vc1[2] * vc2[1]) + vc1[0] * (vc2[1] * vc0[2] - vc2[2] * vc0[1]) + vc2[0] * (vc0[1] * vc1[2] - vc0[2] * vc1[1]);
+                double volume = vc0[0] * (vc1[1] * vc2[2] - vc1[2] * vc2[1])
+                        + vc1[0] * (vc2[1] * vc0[2] - vc2[2] * vc0[1])
+                        + vc2[0] * (vc0[1] * vc1[2] - vc0[2] * vc1[1]);
                 if (volume < 0.0) {
                     return -1.0;
                 }
@@ -685,11 +609,11 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      * @param dxy an array of {@link double} objects.
      * @return a double.
      */
-    protected double bcuint(double x1l, double x1u, double y1l, double y1u,
-                            double t1, double t2,
-                            double e[], double dx[], double dy[], double dxy[]) {
+    private double bcuint(double x1l, double x1u, double y1l, double y1u,
+                          double t1, double t2,
+                          double[] e, double[] dx, double[] dy, double[] dxy) {
 
-        double c[][] = new double[4][4];
+        double[][] c = new double[4][4];
 
         double deltax = x1u - x1l;
         double deltay = y1u - y1l;
@@ -720,12 +644,12 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      * @param ansy an array of {@link double} objects.
      * @return a double.
      */
-    protected double bcuint1(double x1l, double x1u, double y1l, double y1u,
-                             double t1, double t2,
-                             double e[], double dx[], double dy[], double dxy[],
-                             double ansy[]) {
+    private double bcuint1(double x1l, double x1u, double y1l, double y1u,
+                           double t1, double t2,
+                           double[] e, double[] dx, double[] dy, double[] dxy,
+                           double[] ansy) {
 
-        double c[][] = new double[4][4];
+        double[][] c = new double[4][4];
 
         double deltax = x1u - x1l;
         double deltay = y1u - y1l;
@@ -746,25 +670,23 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     }
 
     private static void bcucof(double t1, double t2,
-                               double e[], double dx[], double dy[], double dxy[],
-                               double c[][]) {
+                               double[] e, double[] dx, double[] dy, double[] dxy,
+                               double[][] c) {
 
-        double x16[] = new double[16];
-        double cl[] = new double[16];
+        double[] x16 = new double[16];
+        double[] cl = new double[16];
 
         double t1t2 = t1 * t2;
-        /**
-         * Pack a temporary vector of corner values.
-         */
+
+        // Pack a temporary vector of corner values.
         for (int i = 0; i < 4; i++) {
             x16[i] = e[i];
             x16[i + 4] = dx[i] * t1;
             x16[i + 8] = dy[i] * t2;
             x16[i + 12] = dxy[i] * t1t2;
         }
-        /**
-         * Matrix multiply by the stored weight table.
-         */
+
+        // Matrix multiply by the stored weight table.
         for (int i = 0; i < 16; i++) {
             double xx = 0.0;
             for (int k = 0; k < 16; k++) {
@@ -772,9 +694,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             }
             cl[i] = xx;
         }
-        /**
-         * Unpack the results into the coefficient table.
-         */
+
+        // Unpack the results into the coefficient table.
         int j = 0;
         for (int i = 0; i < 4; i++) {
             for (int k = 0; k < 4; k++) {
@@ -782,40 +703,6 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             }
         }
     }
-
-    private static final double wt[][] = {
-            {1.0, 0.0, -3.0, 2.0, 0.0, 0.0, 0.0, 0.0, -3.0, 0.0, 9.0, -6.0,
-                    2.0, 0.0, -6.0, 4.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, -9.0, 6.0,
-                    -2.0, 0.0, 6.0, -4.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0, -6.0, 0.0,
-                    0.0, -6.0, 4.0},
-            {0.0, 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -9.0, 6.0,
-                    0.0, 0.0, 6.0, -4.0},
-            {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -3.0, 2.0, -2.0, 0.0, 6.0, -4.0,
-                    1.0, 0.0, -3.0, 2.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 3.0, -2.0,
-                    1.0, 0.0, -3.0, 2.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 2.0, 0.0,
-                    0.0, 3.0, -2.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -2.0, 0.0, 0.0, -6.0, 4.0,
-                    0.0, 0.0, 3.0, -2.0},
-            {0.0, 1.0, -2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 6.0, -3.0,
-                    0.0, 2.0, -4.0, 2.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -6.0, 3.0, 0.0,
-                    -2.0, 4.0, -2.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 3.0, 0.0,
-                    0.0, 2.0, -2.0},
-            {0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -3.0,
-                    0.0, 0.0, -2.0, 2.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -2.0, 1.0, 0.0, -2.0, 4.0, -2.0,
-                    0.0, 1.0, -2.0, 1.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 2.0, -1.0,
-                    0.0, 1.0, -2.0, 1.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0,
-                    0.0, -1.0, 1.0},
-            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2.0, -2.0,
-                    0.0, 0.0, -1.0, 1.0}};
 
     /**
      * {@inheritDoc}
@@ -864,6 +751,40 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        return;
+        // This chain rule term is zero.
     }
+
+    private static final double[][] wt = {
+            {1.0, 0.0, -3.0, 2.0, 0.0, 0.0, 0.0, 0.0, -3.0, 0.0, 9.0, -6.0,
+                    2.0, 0.0, -6.0, 4.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, -9.0, 6.0,
+                    -2.0, 0.0, 6.0, -4.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0, -6.0, 0.0,
+                    0.0, -6.0, 4.0},
+            {0.0, 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -9.0, 6.0,
+                    0.0, 0.0, 6.0, -4.0},
+            {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -3.0, 2.0, -2.0, 0.0, 6.0, -4.0,
+                    1.0, 0.0, -3.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 3.0, -2.0,
+                    1.0, 0.0, -3.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 2.0, 0.0,
+                    0.0, 3.0, -2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -2.0, 0.0, 0.0, -6.0, 4.0,
+                    0.0, 0.0, 3.0, -2.0},
+            {0.0, 1.0, -2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 6.0, -3.0,
+                    0.0, 2.0, -4.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -6.0, 3.0, 0.0,
+                    -2.0, 4.0, -2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 3.0, 0.0,
+                    0.0, 2.0, -2.0},
+            {0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -3.0,
+                    0.0, 0.0, -2.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -2.0, 1.0, 0.0, -2.0, 4.0, -2.0,
+                    0.0, 1.0, -2.0, 1.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 2.0, -1.0,
+                    0.0, 1.0, -2.0, 1.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0,
+                    0.0, -1.0, 1.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2.0, -2.0,
+                    0.0, 0.0, -1.0, 1.0}};
 }

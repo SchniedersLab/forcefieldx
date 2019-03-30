@@ -41,6 +41,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.RelativeSolvationType;
 
@@ -52,8 +54,32 @@ import ffx.potential.parameters.RelativeSolvationType;
  * @since 1.0
  */
 public class RelativeSolvation {
+
     private static final Logger logger = Logger.getLogger(RelativeSolvation.class.getName());
+
+    public enum SolvationLibrary {
+        WOLFENDEN, CABANI, EXPLICIT, GK, MACCALLUM_SPC, MACCALLUM_TIP4P, OPLS_EXPLICIT,
+        OPLS_GK, AUTO, NONE
+        /**
+         * Citations:
+         * Wolfenden et al:
+         * Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C. B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
+         *
+         * Cabani et al:
+         * Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
+         *
+         * MacCallum OPLS libraries:
+         * Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
+         */
+    }
+
+    /**
+     * Solvation library in use.
+     */
     private SolvationLibrary solvationLibrary;
+    /**
+     * Look-up of non-standard energies.
+     */
     private final Map<String, Double> nonStdEnergies;
 
     /**
@@ -78,7 +104,7 @@ public class RelativeSolvation {
             String resName = rsType.getResName();
             double e = rsType.getSolvEnergy();
             if (nonStdEnergies.put(resName, e) != null) {
-                logger.warning(String.format(" Repeat relative solvation for %s", resName));
+                logger.warning(format(" Repeat relative solvation for %s", resName));
             }
         }
     }
@@ -114,7 +140,7 @@ public class RelativeSolvation {
      */
     public double getSolvationEnergy(Residue residue, boolean checkZeroes) throws IllegalArgumentException {
         String resName = "";
-        double energy = 0;
+        double energy;
         Residue theRes = (residue instanceof MultiResidue) ? ((MultiResidue) residue).getActive() : residue;
         switch (theRes.getResidueType()) {
             case AA:
@@ -123,7 +149,6 @@ public class RelativeSolvation {
                 } else {
                     resName = theRes.getName();
                 }
-
                 energy = getAASolvationEnergy(theRes);
                 break;
             case NA:
@@ -132,15 +157,14 @@ public class RelativeSolvation {
                 } else {
                     resName = theRes.getName();
                 }
-
                 energy = getNASolvationEnergy(theRes);
                 break;
             default:
                 energy = 0;
         }
         if (checkZeroes && energy == 0) {
-            throw new IllegalArgumentException(String.format(" Zero desolvation "
-                    + "energy for residue %s: likely not in solvation library.", resName));
+            throw new IllegalArgumentException(format(
+                    " Zero desolvation energy for residue %s: likely not in solvation library.", resName));
         }
         return energy;
     }
@@ -151,7 +175,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
-    public double getAASolvationEnergy(Residue residue) {
+    private double getAASolvationEnergy(Residue residue) {
         switch (solvationLibrary) {
             case WOLFENDEN:
                 return getWolfendenSolvationEnergy(residue);
@@ -177,7 +201,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Relative solvation energy
      */
-    public double getNASolvationEnergy(Residue residue) {
+    private double getNASolvationEnergy(Residue residue) {
         return 0;
     }
 
@@ -188,7 +212,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Relative solvation energy
      */
-    public double getGKSolvationEnergy(Residue residue) {
+    private double getGKSolvationEnergy(Residue residue) {
         return getExplicitSolvationEnergy(residue);
     }
 
@@ -200,7 +224,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Relative solvation energy
      */
-    public double getExplicitSolvationEnergy(Residue residue) {
+    private double getExplicitSolvationEnergy(Residue residue) {
         ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
@@ -269,7 +293,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
-    public double getMacCallumTIP4PSolvationEnergy(Residue residue) {
+    private double getMacCallumTIP4PSolvationEnergy(Residue residue) {
         ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
@@ -324,7 +348,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
-    public double getMacCallumSPCSolvationEnergy(Residue residue) {
+    private double getMacCallumSPCSolvationEnergy(Residue residue) {
         ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
@@ -379,7 +403,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
-    public double getCabaniSolvationEnergy(Residue residue) {
+    private double getCabaniSolvationEnergy(Residue residue) {
         ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
@@ -434,7 +458,7 @@ public class RelativeSolvation {
      * @param residue a {@link ffx.potential.bonded.Residue} object.
      * @return Solvation energy
      */
-    public double getWolfendenSolvationEnergy(Residue residue) {
+    private double getWolfendenSolvationEnergy(Residue residue) {
         ResidueEnumerations.AminoAcid3 name = residue.getAminoAcid3();
         switch (name) {
             case ALA:
@@ -482,7 +506,6 @@ public class RelativeSolvation {
         }
     }
 
-
     /**
      * {@inheritDoc}
      */
@@ -491,19 +514,4 @@ public class RelativeSolvation {
         return "Relative solvation library: " + solvationLibrary.toString();
     }
 
-    public enum SolvationLibrary {
-        WOLFENDEN, CABANI, EXPLICIT, GK, MACCALLUM_SPC, MACCALLUM_TIP4P, OPLS_EXPLICIT,
-        OPLS_GK, AUTO, NONE
-        /**
-         * Citations:
-         * Wolfenden et al:
-         * Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C. B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
-         *
-         * Cabani et al:
-         * Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
-         *
-         * MacCallum OPLS libraries:
-         * Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
-         */
-    }
 }

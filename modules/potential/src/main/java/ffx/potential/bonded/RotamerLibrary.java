@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
@@ -72,120 +73,106 @@ import static ffx.potential.bonded.BondedUtils.intxyz;
 public class RotamerLibrary {
 
     private static final Logger logger = Logger.getLogger(RotamerLibrary.class.getName());
-    /**
-     * Number of amino acid residues types currently recognized, although there
-     * are not rotamer libraries for each yet.
-     */
-    private static final int numberOfAminoAcids = AminoAcid3.values().length;
-    /**
-     * Number of nucleic acid residues types currently recognized, although
-     * there are not rotamer libraries for each yet.
-     */
-    private static final int numberOfNucleicAcids = NucleicAcid3.values().length;
-    /**
-     * The first time rotamers are requested for an amino acid type, they are
-     * instantiated into an array, which is stored in the cache. Subsequently
-     * the reference is simply returned.
-     */
-    private final Rotamer[][] aminoAcidRotamerCache = new Rotamer[numberOfAminoAcids][];
-    /**
-     * The first time rotamers are requested for a nucleic acid type, they are
-     * instantiated into an array, which is stored in the cache. Subsequently
-     * the reference is simply returned.
-     */
-    private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
 
-    /**
-     * The idealized amino acid rotamer library in use. Defaults to the Richardson library.
-     */
-    private final ProteinLibrary proteinLibrary;
-    private static final ProteinLibrary DEFAULT_PROTEIN_LIB = ProteinLibrary.Richardson;
+    public enum ProteinLibrary {
 
-    /**
-     * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library... partially because there's no other library.
-     */
-    private final NucleicAcidLibrary nucleicAcidLibrary;
-    private static final NucleicAcidLibrary DEFAULT_NA_LIB = NucleicAcidLibrary.RICHARDSON;
+        PonderAndRichards(1), Richardson(2), None(-1);
 
-    // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
-    private boolean useOrigCoordsRotamer = false;
+        private final int oldIntegerConstant;
 
-    // May have to become instance variable, would break staticness of measureRotamer methods.
-    private static final Map<String, NonstandardRotLibrary> nonstdRotCache = new HashMap<>();
+        ProteinLibrary(int oldConst) {
+            this.oldIntegerConstant = oldConst;
+        }
 
-    private static final RotamerLibrary defaultRotamerLibrary = new RotamerLibrary(ProteinLibrary.PonderAndRichards, false);
+        /**
+         * Parses a String input to a ProteinLibrary. Can be either a name, or an integer constant.
+         * <p>
+         * The name is preferred, but the integer constant is allowed for legacy reasons.
+         *
+         * @param input Input to parse.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        public static ProteinLibrary getProteinLibrary(String input) throws IllegalArgumentException {
+            if (input.matches("^\\d+$")) {
+                return int2Library(Integer.parseInt(input));
+            } else {
+                return Arrays.stream(ProteinLibrary.values()).
+                        filter((ProteinLibrary pl) -> pl.toString().equalsIgnoreCase(input)).
+                        findAny().
+                        orElseThrow(() -> new IllegalArgumentException(" No protein library found that corresponds to " + input));
+            }
+        }
 
-    private static final boolean useIdealRingGeometries = Boolean.parseBoolean(System.getProperty("useIdealRingGeo", "true"));
+        /**
+         * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the actual name.
+         *
+         * @param library Index of the library.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        @Deprecated
+        public static ProteinLibrary intToProteinLibrary(int library) throws IllegalArgumentException {
+            return int2Library(library);
+        }
 
-    private static final Map<AminoAcid3, Map<String, Double>> idealAngleGeometries;
+        /**
+         * Converts an integer to a corresponding ProteinLibrary. Wrapped by deprecated intToProteinLibrary.
+         *
+         * @param library Index of the library.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        private static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
+            for (ProteinLibrary lib : ProteinLibrary.values()) {
+                if (library == lib.oldIntegerConstant) {
+                    return lib;
+                }
+            }
+            throw new IllegalArgumentException(format(" Could not find a " +
+                    "protein rotamer library to correspond with %d!", library));
+        }
+    }
 
-    static {
-        Map<AminoAcid3, Map<String, Double>> angleGeos = new HashMap<>();
+    public enum NucleicAcidLibrary {
+        RICHARDSON
+    }
 
-        Map<String, Double> pheMap = new HashMap<>();
-        pheMap.put("CD1-CG-CB", 120.3);
-        pheMap.put("CD2-CG-CB", 120.3);
-        pheMap.put("CE1-CD1-CG", 120.3);
-        pheMap.put("CE2-CD2-CG", 120.3);
-        pheMap.put("CZ-CE1-CD1", 120.0);
-        pheMap.put("CZ-CE2-CD2", 120.0);
-        angleGeos.put(AminoAcid3.PHE, Collections.unmodifiableMap(pheMap));
+    public enum NucleicSugarPucker {
+        // Used to be 2, 1, and 3 respectively.
+        C2_ENDO("south"), C3_ENDO("north"), C3_EXO();
+        private final List<String> alternateNames;
 
-        Map<String, Double> tyrMap = new HashMap<>();
-        tyrMap.put("CD1-CG-CB", 120.3);
-        tyrMap.put("CD2-CG-CB", 120.3);
-        tyrMap.put("CE1-CD1-CG", 120.3);
-        tyrMap.put("CE2-CD2-CG", 120.3);
-        tyrMap.put("CZ-CE1-CD1", 120.0);
-        tyrMap.put("CZ-CE2-CD2", 120.0);
-        angleGeos.put(AminoAcid3.TYR, Collections.unmodifiableMap(tyrMap));
+        NucleicSugarPucker() {
+            alternateNames = Collections.emptyList();
+        }
 
-        Map<String, Double> tydMap = new HashMap<>();
-        tydMap.put("CD1-CG-CB", 120.5);
-        tydMap.put("CD2-CG-CB", 120.5);
-        tydMap.put("CE1-CD1-CG", 120.4);
-        tydMap.put("CE2-CD2-CG", 120.4);
-        tydMap.put("CZ-CE1-CD1", 120.8);
-        tydMap.put("CZ-CE2-CD2", 120.8);
-        angleGeos.put(AminoAcid3.TYD, Collections.unmodifiableMap(tydMap));
+        NucleicSugarPucker(String aName) {
+            alternateNames = Collections.singletonList(aName);
+        }
 
-        Map<String, Double> hisMap = new HashMap<>();
-        hisMap.put("ND1-CG-CB", 122.1);
-        hisMap.put("CD2-CG-CB", 131.0);
-        hisMap.put("CD2-CG-ND1", 106.8);
-        hisMap.put("CE1-ND1-CG", 109.5);
-        hisMap.put("NE2-CD2-CG", 107.1);
-        angleGeos.put(AminoAcid3.HIS, Collections.unmodifiableMap(hisMap));
-
-        Map<String, Double> hidMap = new HashMap<>();
-        hidMap.put("ND1-CG-CB", 123.5);
-        hidMap.put("CD2-CG-CB", 132.3);
-        hidMap.put("CD2-CG-ND1", 104.2);
-        hidMap.put("CE1-ND1-CG", 108.8);
-        hidMap.put("NE2-CD2-CG", 111.2);
-        angleGeos.put(AminoAcid3.HID, Collections.unmodifiableMap(hidMap));
-
-        Map<String, Double> hieMap = new HashMap<>();
-        hieMap.put("ND1-CG-CB", 120.2);
-        hieMap.put("CD2-CG-CB", 129.1);
-        hieMap.put("CD2-CG-ND1", 110.7);
-        hieMap.put("CE1-ND1-CG", 105.1);
-        hieMap.put("NE2-CD2-CG", 104.6);
-        angleGeos.put(AminoAcid3.HIE, Collections.unmodifiableMap(hieMap));
-
-        Map<String, Double> trpMap = new HashMap<>();
-        trpMap.put("CD1-CG-CB", 126.4);
-        trpMap.put("CD2-CG-CB", 126.5);
-        trpMap.put("CD2-CG-CD1", 107.1);
-        trpMap.put("NE1-CD1-CG", 106.9);
-        trpMap.put("CE2-NE1-CD1", 109.4);
-        trpMap.put("CE3-CD2-CE2", 121.6);
-        trpMap.put("CZ2-CE2-CD2", 123.5);
-        trpMap.put("CZ3-CE3-CD2", 116.7);
-        trpMap.put("CH2-CZ2-CE2", 116.2);
-        angleGeos.put(AminoAcid3.TRP, Collections.unmodifiableMap(trpMap));
-
-        idealAngleGeometries = Collections.unmodifiableMap(angleGeos);
+        /**
+         * Returns the sugar pucker associated with a delta torsion. Currently does
+         * not support the C3'-exo DNA-only pucker.
+         *
+         * @param delta   Delta torsion to check
+         * @param isDeoxy If DNA (vs. RNA). Presently ignored.
+         * @return Pucker
+         */
+        public static NucleicSugarPucker checkPucker(double delta, boolean isDeoxy) {
+            /*
+             * Midpoint between North, South is 115 degrees.
+             *
+             * 0-360: North is 0-115 or 295-360.
+             * -180 to 180: North is -65 to 115.
+             */
+            delta = Crystal.mod(delta, 360.0);
+            if (delta <= 115 || delta > 295) {
+                return C3_ENDO;
+            } else {
+                return C2_ENDO;
+            } // TODO: Add else-if to handle C3'-exo pucker.
+        }
     }
 
     /**
@@ -201,7 +188,7 @@ public class RotamerLibrary {
      * <p>Constructor for RotamerLibrary.</p>
      *
      * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as the idealized amino acid rotamer library.
-     * @param origCoords Whether to use original-coordinates rotamers.
+     * @param origCoords  Whether to use original-coordinates rotamers.
      */
     public RotamerLibrary(ProteinLibrary protLibrary, boolean origCoords) {
         this(protLibrary, DEFAULT_NA_LIB, origCoords);
@@ -221,8 +208,8 @@ public class RotamerLibrary {
      * <p>Constructor for RotamerLibrary.</p>
      *
      * @param protLibrary A {@link ffx.potential.bonded.RotamerLibrary.ProteinLibrary} to use as the idealized amino acid rotamer library.
-     * @param naLibrary  A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as the idealized nucleic acid rotamer library.
-     * @param origCoords Whether to use original-coordinates rotamers.
+     * @param naLibrary   A {@link ffx.potential.bonded.RotamerLibrary.NucleicAcidLibrary} to use as the idealized nucleic acid rotamer library.
+     * @param origCoords  Whether to use original-coordinates rotamers.
      */
     public RotamerLibrary(ProteinLibrary protLibrary, NucleicAcidLibrary naLibrary, boolean origCoords) {
         proteinLibrary = protLibrary;
@@ -291,8 +278,7 @@ public class RotamerLibrary {
                 switch (aa) {
                     case CYS:
                     case CYX:
-                    case CYD:
-                    {
+                    case CYD: {
                         List<Atom> cysAtoms = residue.getAtomList();
                         // First find the sulfur on atomic number, then on starting with S.
                         Optional<Atom> s = cysAtoms.stream().
@@ -311,7 +297,7 @@ public class RotamerLibrary {
                                 return null;
                             }
                         } else {
-                            logger.warning(String.format(" No sulfur atom found attached to %s residue %s!", aa, residue));
+                            logger.warning(format(" No sulfur atom found attached to %s residue %s!", aa, residue));
                         }
                     }
                     break;
@@ -327,17 +313,6 @@ public class RotamerLibrary {
                 }
                 return null;
         }
-    }
-
-    /**
-     * Checks if a Residue has a PTM.
-     *
-     * @param residue
-     * @return
-     */
-    private static boolean isModRes(Residue residue) {
-        List<Atom> resatoms = residue.getAtomList();
-        return (resatoms != null && !resatoms.isEmpty() && resatoms.get(0).isModRes());
     }
 
     /**
@@ -402,689 +377,28 @@ public class RotamerLibrary {
     }
 
     /**
-     * Fills the idealized amino acid rotamer cache with the Ponder and Richards rotamers.
-     *
-     * Ponder, J. W.; Richards, F. M., Tertiary templates for proteins:
-     * Use of packing criteria in the enumeration of allowed sequences
-     * for different structural classes Journal of Molecular Biology
-     * 1987, 193 (4), 775-791
-     *
-     * @param name Type of amino acid.
-     * @return Rotamer cache (double[] of torsions).
-     */
-    private Rotamer[] getPonderAndRichardsRotamers(AminoAcid3 name) {
-        int n = name.ordinal();
-        if (aminoAcidRotamerCache[n] != null) {
-            return aminoAcidRotamerCache[n];
-        }
-        switch (name) {
-            case VAL:
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 173.5, 9.0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -63.4, 8.1);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 69.3, 9.6);
-                break;
-            case LEU:
-                aminoAcidRotamerCache[n] = new Rotamer[4];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -64.9, 8.2, 176.0, 9.9);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.4, 10.2, 63.1, 8.2);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -165.3, 10.0, 168.2, 34.2);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, 44.3, 20.0, 60.4, 18.8);
-                break;
-            case ILE:
-                aminoAcidRotamerCache[n] = new Rotamer[5];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -60.9, 7.5, 168.7, 11.6);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -59.6, 9.6, -64.1, 14.3);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 61.7, 5.0, 163.8, 16.4);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -166.6, 10.1, 166.0, 8.9);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -174.8, 24.9, 72.1, 10.5);
-                break;
-            case SER:
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 64.7, 16.1);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -69.7, 14.6);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -176.1, 20.2);
-                break;
-            case THR:
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62.7, 8.5);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -59.7, 9.4);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -169.5, 6.6);
-                break;
-            case CYS:
-            case CYD:
-                aminoAcidRotamerCache[n] = null;
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
-                break;
-            /*
-             * TODO: Figure out proline rotamers.  I have dihedrals from
-             * the Richardson lab/Kinemages website (downloaded PDB, used
-             * the get_dihedral function to extract the dihedrals), and they
-             * conflict with these rotamers.  Plus, this library only
-             * specifies one of the two necessary dihedrals.
-             */
-            case PRO:
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 24.0, 8.0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 0.0, 8.0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -24.0, 8.0);
-                /*
-                 aminoAcidRotamerCache[n] = new Rotamer[2];
-                 // The exo- conformation
-                 aminoAcidRotamerCache[n][0] = new Rotamer(name, -27.9, 0, 39.0, 0);
-                 // The endo- conformation
-                 aminoAcidRotamerCache[n][2] = new Rotamer(name, 25.6, 0, -35.8, 0);
-                 */
-                break;
-            case PHE:
-                aminoAcidRotamerCache[n] = new Rotamer[4];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.3, 10.2, 94.3, 19.5);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.2, 9.3, 78.9, 8.9);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 66.0, 12.0, 90.7, 9.4);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -71.9, 16.3, -0.4, 26.1);
-                break;
-            case TYR:
-                aminoAcidRotamerCache[n] = new Rotamer[8];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 0, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 0, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 0, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 0, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 180.0, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 180.0, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 180.0, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 180.0, 0);
-                break;
-            case TYD:
-                aminoAcidRotamerCache[n] = new Rotamer[4];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1);
-                break;
-            case TRP:
-                aminoAcidRotamerCache[n] = new Rotamer[6];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -70.4, 7.0, 100.5, 18.2);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 64.8, 13.0, -88.9, 5.3);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177.3, 7.9, -95.1, 7.6);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -179.5, 3.4, 87.5, 3.8);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -73.3, 6.5, -87.7, 8.1);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62.2, 10.0, 112.5, 15.0);
-                break;
-            case HIS:
-            case HIE:
-            case HID:
-                aminoAcidRotamerCache[n] = new Rotamer[6];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -62.8, 10.0, -74.3, 17.2);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -175.2, 15.4, -88.7, 43.5);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -69.8, 5.9, 96.1, 32.2);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, 67.9, 17.4, -80.5, 40.7);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177.3, 6.3, 100.5, 14.0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 48.8, 10.0, 89.5, 30.0);
-                break;
-            case ASH:
-                aminoAcidRotamerCache[n] = new Rotamer[6];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -68.3, 9.2, -25.7, 31.1);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -169.1, 9.5, 3.9, 38.9);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.7, 9.9, 2.4, 29.4);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -68.3, 9.2, 154.3, 31.1);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -169.1, 9.5, -176.1, 38.9);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 63.7, 9.9, -177.6, 29.4);
-                break;
-            case ASP:
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -68.3, 9.2, -25.7, 31.1);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -169.1, 9.5, 3.9, 38.9);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.7, 9.9, 2.4, 29.4);
-                break;
-            case ASN:
-                aminoAcidRotamerCache[n] = new Rotamer[6];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -68.3, 12.3, -36.8, 25.2);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177.1, 8.8, 1.3, 34.1);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -67.2, 10.8, 128.8, 24.2);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, 63.9, 3.7, -6.8, 13.5);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -174.9, 17.9, -156.8, 58.9);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 63.6, 6.6, 53.8, 17.1);
-                break;
-            case GLU:
-                aminoAcidRotamerCache[n] = new Rotamer[7];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
-                break;
-            case GLH:
-                aminoAcidRotamerCache[n] = new Rotamer[14];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, 168.6, 44.8);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, 175.3, 39.0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, 146.6, 27.4);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, -154.7, 32.6);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, -173.4, 64.2);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, -166.0, 37.1);
-                aminoAcidRotamerCache[n][13] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8);
-                break;
-            case GLN:
-                aminoAcidRotamerCache[n] = new Rotamer[10];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, -24.0, 38.0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, 156.0, 38.0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, -24.0, 38.0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, 156.0, 38.0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -58.7, 11.2, -63.8, 16.1, -46.3, 27.7);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -51.3, 7.3, -90.4, 22.8, 165.0, 38.2);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -179.4, 21.5, 67.3, 7.9, 26.8, 38.4);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, 167.5, 14.8, 70.9, 3.7, 174.2, 7.1);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, -24.0, 38.0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, 156.0, 38.0);
-                break;
-            case MET:
-                aminoAcidRotamerCache[n] = new Rotamer[13];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -64.5, 12.7, -68.5, 6.0, -75.6, 14.1);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 65.0, 20.0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 180.0, 20.0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, -65.0, 20.0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, -65.0, 20.0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 65.0, 20.0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -170.0, 24.0, 65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, 61.0, 21.0, 65.0, 20.0, 180.0, 20.0);
-                break;
-            case LYS:
-            case LYD:
-                aminoAcidRotamerCache[n] = new Rotamer[12];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 65.0, 20.0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, -65.0, 20.0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, -65.0, 20.0);
-                break;
-            case ARG:
-                aminoAcidRotamerCache[n] = new Rotamer[14];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 61.0, 25.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 61.0, 25.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 90.0, 20.0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, -90.0, 20.0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, -90.0, 20.0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -170.0, 21.0, 65.0, 20.0, 65.0, 20.0, 180.0, 20.0);
-                aminoAcidRotamerCache[n][13] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-                break;
-            default:
-                // Handles GLY, ALA, CYX, ...
-                break;
-        }
-        return aminoAcidRotamerCache[n];
-    }
-
-    /**
-     * Fills the idealized amino acid rotamer cache with the Richardson rotamers.
-     *
-     *  Lovell, S. C.; Word, J. M.; Richardson, J. S.; Richardson, D. C.,
-     *  The penultimate rotamer library. Proteins-Structure, Function,
-     *  and Genetics 2000, 40 (3), 389-408.
-     *
-     * @param name Type of amino acid.
-     * @return Rotamer cache (double[] of torsions).
-     */
-    private Rotamer[] getRichardsonRotamers(AminoAcid3 name) {
-        int n = name.ordinal();
-        if (aminoAcidRotamerCache[n] != null) {
-            return aminoAcidRotamerCache[n];
-        }
-        switch (name) {
-            case VAL:
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 64, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 175, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -60, 0);
-                break;
-            case LEU:
-                aminoAcidRotamerCache[n] = new Rotamer[5];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 80, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0, 65, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -172, 0, 145, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -85, 0, 65, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, 175, 0);
-                break;
-            case ILE:
-                aminoAcidRotamerCache[n] = new Rotamer[7];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 100, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 170, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 66, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 165, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, 100, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 170, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -57, 0, -60, 0);
-                break;
-            case SER:
-                aminoAcidRotamerCache[n] = new Rotamer[18];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 0, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 60, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 120, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, -60, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, -120, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -177, 0, 0, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, 60, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, 120, 0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -177, 0, 180, 0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, -60, 0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, -120, 0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -65, 0, 0, 0);
-                aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 60, 0);
-                aminoAcidRotamerCache[n][14] = new Rotamer(name, -65, 0, 120, 0);
-                aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, 180, 0);
-                aminoAcidRotamerCache[n][16] = new Rotamer(name, -65, 0, -60, 0);
-                aminoAcidRotamerCache[n][17] = new Rotamer(name, -65, 0, -120, 0);
-                break;
-            case THR:
-                aminoAcidRotamerCache[n] = new Rotamer[18];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 0, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 60, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 120, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, -60, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, -120, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -175, 0, 0, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -175, 0, 60, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -175, 0, 120, 0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -175, 0, 180, 0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -175, 0, -60, 0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -175, 0, -120, 0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -65, 0, 0, 0);
-                aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 60, 0);
-                aminoAcidRotamerCache[n][14] = new Rotamer(name, -65, 0, 120, 0);
-                aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, 180, 0);
-                aminoAcidRotamerCache[n][16] = new Rotamer(name, -65, 0, -60, 0);
-                aminoAcidRotamerCache[n][17] = new Rotamer(name, -65, 0, -120, 0);
-                break;
-            case CYS:
-            case CYD:
-                aminoAcidRotamerCache[n] = null;
-                aminoAcidRotamerCache[n] = new Rotamer[3];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0);
-                break;
-            case PHE:
-                aminoAcidRotamerCache[n] = new Rotamer[4];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 90, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0, 80, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0, -85, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -65, 0, -30, 0);
-                break;
-            case TYR:
-                aminoAcidRotamerCache[n] = new Rotamer[8];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 90, 0, 0, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 90, 0, 180, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 80, 0, 0, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 80, 0, 180, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, -85, 0, 0, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -85, 0, 180, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, -30, 0, 0, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -30, 0, 180, 0);
-                break;
-            case TYD:
-                aminoAcidRotamerCache[n] = new Rotamer[4];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 90, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0, 80, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0, -85, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -65, 0, -30, 0);
-                break;
-            case TRP:
-                aminoAcidRotamerCache[n] = new Rotamer[7];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, -90, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 90, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, -105, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 90, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, -90, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -5, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, 95, 0);
-                break;
-            case HIS:
-            case HIE:
-            case HID:
-                aminoAcidRotamerCache[n] = new Rotamer[8];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, -75, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 80, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, -165, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, -80, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, 60, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -70, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, 165, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, 80, 0);
-                break;
-            case ASP:
-                aminoAcidRotamerCache[n] = new Rotamer[5];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 10, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 30, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 0, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -70, 0, -15, 0);
-                break;
-            case ASH:
-                aminoAcidRotamerCache[n] = new Rotamer[10];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 10, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 30, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 0, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -70, 0, -15, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, -170, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, 62, 0, -150, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, -180, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, -115, 0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -70, 0, 165, 0);
-                break;
-            case ASN:
-                aminoAcidRotamerCache[n] = new Rotamer[7];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, -10, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 30, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -174, 0, -20, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 30, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, -20, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -75, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, 120, 0);
-                break;
-            case GLU:
-                aminoAcidRotamerCache[n] = new Rotamer[8];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, -20, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -80, 0, 0, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 10, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 180, 0, 0, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, -80, 0, -25, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, -180, 0, -10, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0);
-                break;
-            case GLH:
-                aminoAcidRotamerCache[n] = new Rotamer[16];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, -20, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -80, 0, 0, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 10, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 180, 0, 0, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, -80, 0, -25, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, -180, 0, -10, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, 62, 0, 180, 0, 160, 0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, 70, 0, -80, 0, -180, 0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 65, 0, -170, 0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, -180, 0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, -80, 0, 155, 0);
-                aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 85, 0, -180, 0);
-                aminoAcidRotamerCache[n][14] = new Rotamer(name, -67, 0, -180, 0, 170, 0);
-                aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, -65, 0, 140, 0);
-                break;
-            case GLN:
-                aminoAcidRotamerCache[n] = new Rotamer[9];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 20, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -75, 0, 0, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, -100, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0, 60, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, 180, 0, 0, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, 180, 0, -25, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -65, 0, -65, 0, 100, 0);
-                break;
-            case MET:
-                aminoAcidRotamerCache[n] = new Rotamer[13];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 75, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 180, 0, -75, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 75, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0, 180, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, 180, 0, 75, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -177, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -177, 0, 180, 0, -75, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -67, 0, 180, 0, 75, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -67, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -67, 0, 180, 0, -75, 0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -65, 0, -65, 0, 103, 0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -65, 0, -65, 0, 180, 0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -65, 0, -65, 0, -70, 0);
-                break;
-            case LYS:
-            case LYD:
-                aminoAcidRotamerCache[n] = new Rotamer[27];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 68, 0, 180, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 65.0, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0, 180, 0, -65, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, 180, 0, -68, 0, 180, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, -177, 0, 68, 0, 180, 0, 65, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, -177, 0, 68, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, 68, 0, 180, 0, -65, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, 180, 0, 68, 0, 65, 0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -177, 0, 180, 0, 68, 0, 180, 0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 65, 0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, 180, 0, 180, 0, -65, 0);
-                aminoAcidRotamerCache[n][13] = new Rotamer(name, -177, 0, 180, 0, -68, 0, 180, 0);
-                aminoAcidRotamerCache[n][14] = new Rotamer(name, -177, 0, 180, 0, -68, 0, -65, 0);
-                aminoAcidRotamerCache[n][15] = new Rotamer(name, -90, 0, 68, 0, 180, 0, 180);
-                aminoAcidRotamerCache[n][16] = new Rotamer(name, -67, 0, 180, 0, 68, 0, -65, 0);
-                aminoAcidRotamerCache[n][17] = new Rotamer(name, -67, 0, 180, 0, 68, 0, 180, 0);
-                aminoAcidRotamerCache[n][18] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 65, 0);
-                aminoAcidRotamerCache[n][19] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][20] = new Rotamer(name, -67, 0, 180, 0, 180, 0, -65, 0);
-                aminoAcidRotamerCache[n][21] = new Rotamer(name, -67, 0, 180, 0, -68, 0, 180, 0);
-                aminoAcidRotamerCache[n][22] = new Rotamer(name, -67, 0, 180, 0, -68, 0, -65, 0);
-                aminoAcidRotamerCache[n][23] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 65, 0);
-                aminoAcidRotamerCache[n][24] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][25] = new Rotamer(name, -62, 0, -68, 0, 180, 0, -65, 0);
-                aminoAcidRotamerCache[n][26] = new Rotamer(name, -62, 0, -68, 0, -68, 0, 180, 0);
-                break;
-            case ARG:
-                aminoAcidRotamerCache[n] = new Rotamer[34];
-                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 65, 0, 85, 0);
-                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 180, 0, 65, 0, -175, 0);
-                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 85, 0);
-                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, 180, 0, 180, 0, -85, 0);
-                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, 180, 0, -65, 0, 175, 0);
-                aminoAcidRotamerCache[n][6] = new Rotamer(name, 62, 0, 180, 0, -65, 0, -85, 0);
-                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, 65, 0, 65, 0, 85, 0);
-                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, 65, 0, 65, 0, -175, 0);
-                aminoAcidRotamerCache[n][9] = new Rotamer(name, -177, 0, 65, 0, 180, 0, 85, 0);
-                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 65, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, 65, 0, 85, 0);
-                aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, 180, 0, 65, 0, -175, 0);
-                aminoAcidRotamerCache[n][13] = new Rotamer(name, -177, 0, 180, 0, 65, 0, -105, 0);
-                aminoAcidRotamerCache[n][14] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 85, 0);
-                aminoAcidRotamerCache[n][15] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][16] = new Rotamer(name, -177, 0, 180, 0, 180, 0, -85, 0);
-                aminoAcidRotamerCache[n][17] = new Rotamer(name, -177, 0, 180, 0, -65, 0, 105, 0);
-                aminoAcidRotamerCache[n][18] = new Rotamer(name, -177, 0, 180, 0, -65, 0, 175, 0);
-                aminoAcidRotamerCache[n][19] = new Rotamer(name, -177, 0, 180, 0, -65, 0, -85, 0);
-                aminoAcidRotamerCache[n][20] = new Rotamer(name, -67, 0, 180, 0, 65, 0, 85, 0);
-                aminoAcidRotamerCache[n][21] = new Rotamer(name, -67, 0, 180, 0, 65, 0, -175, 0);
-                aminoAcidRotamerCache[n][22] = new Rotamer(name, -67, 0, 180, 0, 65, 0, -105, 0);
-                aminoAcidRotamerCache[n][23] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 85, 0);
-                aminoAcidRotamerCache[n][24] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][25] = new Rotamer(name, -67, 0, 180, 0, 180, 0, -85, 0);
-                aminoAcidRotamerCache[n][26] = new Rotamer(name, -67, 0, 180, 0, -65, 0, 105, 0);
-                aminoAcidRotamerCache[n][27] = new Rotamer(name, -67, 0, 180, 0, -65, 0, 175, 0);
-                aminoAcidRotamerCache[n][28] = new Rotamer(name, -67, 0, -167, 0, -65, 0, -85, 0);
-                aminoAcidRotamerCache[n][29] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 85, 0);
-                aminoAcidRotamerCache[n][30] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 180, 0);
-                aminoAcidRotamerCache[n][31] = new Rotamer(name, -62, 0, -68, 0, 180, 0, -85, 0);
-                aminoAcidRotamerCache[n][32] = new Rotamer(name, -62, 0, -68, 0, -65, 0, 175, 0);
-                aminoAcidRotamerCache[n][33] = new Rotamer(name, -62, 0, -68, 0, -65, 0, -85, 0);
-                break;
-            default:
-                // Handles GLY, ALA, CYX, PRO, ...
-                break;
-        }
-        return aminoAcidRotamerCache[n];
-    }
-
-    /**
-     * Returns the Rotamers for a specified nucleic acid type. Torsion angles
-     * are listed from delta (i-1) to delta (i), along with standard deviations
-     * calculated by Richardson et al.
-     * <p>
-     * Citation: Richardson, J.S., et al., RNA backbone: Consensus all-angle
-     * conformers and modular string nomenclature (an RNA Ontology Consortium
-     * contribution). Rna-a Publication of the Rna Society, 2008. 14(3): p. 465-481.
-     *
-     * @param name Type of nucleic acid.
-     * @return Rotamer cache (double[] of torsions).
-     */
-    private Rotamer[] getRichardsonRNARotamers(NucleicAcid3 name) {
-        int n = name.ordinal();
-        if (nucleicAcidRotamerCache[n] != null) {
-            return nucleicAcidRotamerCache[n];
-        }
-        /*
-         * Comments on rotamers can be found in Richardson et al, 2008.
-         * Rotamers 0-45 are these rotamers in order.
-         *
-         * In the future, subsequent sets of 46 could be these rotamers with
-         * rotations of either the base as a whole, or portions of the base
-         * (such as the C6 amino group of adenine).  One suggestion is to use
-         * %46 if only the backbone information is needed, or integer division
-         * by 46 if the backbone information is unnecessary.
-         *
-         * Torsions are in order delta (i-1), epsilon (i-1), zeta (i-1), alpha,
-         * beta, gamma, delta.  However, at this moment, only delta through alpha
-         * (reverse order) are used to build the backbone, and delta (i-1) as
-         * a binary function to determine what previous sugar pucker to expect.
-         *
-         * 1a, 1m, 1L, &a, 7a, 3a, 9a, 1g, 7d, 3d, 5d, 1e, 1c, 1f, 5j, 1b, 1{,
-         * 3b, 1z, 5z, 7p, 1t, 5q, 1o, 7r, 2a, 4a, 0a, #a, 4g, 6g, 8d, 4d, 6d,
-         * 2h, 4n, 0i, 6n, 6j, 2[, 4b, 0b, 4p, 6p, 4s, 2o
-         */
-        switch (name) {
-            case ADE:
-            case GUA:
-            case CYT:
-            case URI:
-            case DAD:
-            case DGU:
-            case DCY:
-            case DTY:
-            case THY:
-                nucleicAcidRotamerCache[n] = new Rotamer[46];
-                nucleicAcidRotamerCache[n][0] = new Rotamer(name, 81, 4, -148, 10, -71, 7, -65, 8, 174, 8, 54, 6, 81, 3);
-                nucleicAcidRotamerCache[n][1] = new Rotamer(name, 84, 5, -142, 16, -68, 15, -68, 16, -138, 12, 58, 10, 86, 7);
-                nucleicAcidRotamerCache[n][2] = new Rotamer(name, 86, 4, -115, 6, -92, 13, -56, 8, 138, 4, 62, 10, 79, 5);
-                nucleicAcidRotamerCache[n][3] = new Rotamer(name, 82, 5, -169, 7, -95, 6, -64, 9, -178, 10, 51, 7, 82, 5);
-                nucleicAcidRotamerCache[n][4] = new Rotamer(name, 83, 4, -143, 23, -138, 14, -57, 9, 161, 15, 49, 6, 82, 3);
-                nucleicAcidRotamerCache[n][5] = new Rotamer(name, 85, 4, -144, 24, 173, 14, -71, 12, 164, 16, 46, 7, 85, 6);//
-                nucleicAcidRotamerCache[n][6] = new Rotamer(name, 83, 2, -150, 15, 121, 13, -71, 12, 157, 23, 49, 6, 81, 3);
-                nucleicAcidRotamerCache[n][7] = new Rotamer(name, 81, 3, -141, 8, -69, 9, 167, 8, 160, 16, 51, 5, 85, 3);
-                nucleicAcidRotamerCache[n][8] = new Rotamer(name, 84, 4, -121, 16, -103, 12, 70, 10, 170, 23, 53, 6, 85, 3);
-                nucleicAcidRotamerCache[n][9] = new Rotamer(name, 85, 4, -116, 15, -156, 15, 66, 19, -179, 23, 55, 6, 86, 4);
-                nucleicAcidRotamerCache[n][10] = new Rotamer(name, 80, 4, -158, 7, 63, 14, 68, 12, 143, 30, 50, 7, 83, 2);
-                nucleicAcidRotamerCache[n][11] = new Rotamer(name, 81, 3, -159, 8, -79, 6, -111, 9, 83, 11, 168, 6, 86, 4);
-                nucleicAcidRotamerCache[n][12] = new Rotamer(name, 80, 3, -163, 9, -69, 10, 153, 12, -166, 12, 179, 10, 84, 3);
-                nucleicAcidRotamerCache[n][13] = new Rotamer(name, 81, 2, -157, 14, -66, 11, 172, 11, 139, 13, 176, 10, 84, 3);
-                nucleicAcidRotamerCache[n][14] = new Rotamer(name, 87, 7, -136, 23, 80, 15, 67, 9, 109, 10, 176, 6, 84, 4);
-                nucleicAcidRotamerCache[n][15] = new Rotamer(name, 84, 4, -145, 10, -71, 10, -60, 9, 177, 12, 58, 7, 145, 7);
-                nucleicAcidRotamerCache[n][16] = new Rotamer(name, 83, 4, -140, 10, -71, 10, -63, 8, -138, 9, 54, 7, 144, 8);
-                nucleicAcidRotamerCache[n][17] = new Rotamer(name, 85, 3, -134, 18, 168, 17, -67, 15, 178, 22, 49, 5, 148, 3);
-                nucleicAcidRotamerCache[n][18] = new Rotamer(name, 83, 3, -154, 18, -82, 19, -164, 14, 162, 25, 51, 5, 145, 5);
-                nucleicAcidRotamerCache[n][19] = new Rotamer(name, 83, 3, -154, 5, 53, 7, 164, 5, 148, 10, 50, 5, 148, 4);
-                nucleicAcidRotamerCache[n][20] = new Rotamer(name, 84, 3, -123, 24, -140, 15, 68, 12, -160, 30, 54, 7, 146, 6);
-                nucleicAcidRotamerCache[n][21] = new Rotamer(name, 81, 3, -161, 20, -71, 8, 180, 17, -165, 14, 178, 9, 147, 5);
-                nucleicAcidRotamerCache[n][22] = new Rotamer(name, 82, 8, -155, 6, 69, 14, 63, 9, 115, 17, 176, 6, 146, 4);
-                nucleicAcidRotamerCache[n][23] = new Rotamer(name, 84, 4, -143, 17, -73, 15, -63, 7, -135, 39, -66, 7, 151, 13);
-                nucleicAcidRotamerCache[n][24] = new Rotamer(name, 85, 4, -127, 13, -112, 19, 63, 13, -178, 27, -64, 4, 150, 7);
-                nucleicAcidRotamerCache[n][25] = new Rotamer(name, 145, 8, -100, 12, -71, 18, -72, 13, -167, 17, 53, 7, 84, 5);
-                nucleicAcidRotamerCache[n][26] = new Rotamer(name, 146, 7, -100, 15, 170, 14, -62, 19, 170, 34, 51, 8, 84, 5);
-                nucleicAcidRotamerCache[n][27] = new Rotamer(name, 149, 7, -137, 11, 139, 25, -75, 11, 158, 20, 48, 6, 84, 4);
-                nucleicAcidRotamerCache[n][28] = new Rotamer(name, 148, 3, -168, 5, 146, 6, -71, 7, 151, 12, 42, 4, 85, 3);
-                nucleicAcidRotamerCache[n][29] = new Rotamer(name, 148, 8, -103, 14, 165, 21, -155, 14, 165, 15, 49, 7, 83, 4);
-                nucleicAcidRotamerCache[n][30] = new Rotamer(name, 145, 7, -97, 18, 80, 16, -156, 29, -170, 23, 58, 5, 85, 7);
-                nucleicAcidRotamerCache[n][31] = new Rotamer(name, 149, 6, -89, 10, -119, 17, 62, 10, 176, 23, 54, 4, 87, 3);
-                nucleicAcidRotamerCache[n][32] = new Rotamer(name, 150, 6, -110, 26, -172, 7, 80, 20, -162, 20, 61, 8, 89, 4);
-                nucleicAcidRotamerCache[n][33] = new Rotamer(name, 147, 6, -119, 23, 89, 16, 59, 14, 161, 23, 52, 7, 83, 4);
-                nucleicAcidRotamerCache[n][34] = new Rotamer(name, 148, 4, -99, 8, -70, 12, -64, 10, 177, 17, 176, 14, 87, 4);
-                nucleicAcidRotamerCache[n][35] = new Rotamer(name, 144, 7, -133, 14, -156, 14, 74, 12, -143, 20, -166, 9, 81, 3);
-                nucleicAcidRotamerCache[n][36] = new Rotamer(name, 149, 2, -85, 20, 100, 13, 81, 11, -112, 12, -178, 3, 83, 2);
-                nucleicAcidRotamerCache[n][37] = new Rotamer(name, 150, 6, -92, 11, 85, 8, 64, 5, -169, 8, 177, 9, 86, 5);
-                nucleicAcidRotamerCache[n][38] = new Rotamer(name, 142, 8, -116, 28, 66, 15, 72, 8, 122, 22, -178, 6, 84, 3);
-                nucleicAcidRotamerCache[n][39] = new Rotamer(name, 146, 8, -101, 16, -69, 17, -68, 12, -150, 21, 54, 7, 148, 7);
-                nucleicAcidRotamerCache[n][40] = new Rotamer(name, 145, 7, -115, 20, 163, 13, -66, 6, 172, 14, 46, 6, 146, 6);
-                nucleicAcidRotamerCache[n][41] = new Rotamer(name, 148, 4, -112, 20, 112, 14, -85, 17, 165, 16, 57, 12, 146, 6);
-                nucleicAcidRotamerCache[n][42] = new Rotamer(name, 150, 10, -100, 16, -146, 19, 72, 13, -152, 27, 57, 14, 148, 4);
-                nucleicAcidRotamerCache[n][43] = new Rotamer(name, 146, 7, -102, 21, 90, 15, 68, 12, 173, 18, 56, 8, 148, 4);
-                nucleicAcidRotamerCache[n][44] = new Rotamer(name, 150, 2, -112, 16, 170, 12, -82, 13, 84, 7, 176, 6, 148, 2);
-                nucleicAcidRotamerCache[n][45] = new Rotamer(name, 147, 6, -104, 15, -64, 16, -73, 4, -165, 26, -66, 7, 150, 3);
-                break;
-            case MP1:
-            case DP2:
-            case TP3:
-            case UNK:
-            case M2MG:
-            case H2U:
-            case M2G:
-            case OMC:
-            case OMG:
-            case PSU:
-            case M5MC:
-            case M7MG:
-            case M5MU:
-            case M1MA:
-            case YYG:
-            default:
-                break;
-        }
-        return nucleicAcidRotamerCache[n];
-    }
-
-    /**
      * Measures the torsions in a list of Residues.
      *
      * @param residueList Residues to be measured.
      * @param print       Verbosity flag.
      */
     public static void measureRotamers(List<Residue> residueList, boolean print) {
-        double chi[] = new double[7];
+        double[] chi = new double[7];
         for (Residue residue : residueList) {
             chi[0] = chi[1] = chi[2] = chi[3] = chi[4] = chi[5] = chi[6] = 0.0;
             measureRotamer(residue, chi, print);
             switch (residue.getResidueType()) {
                 case AA:
-                    logger.info(String.format(" %c %s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue,
+                    logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue,
                             chi[0], chi[1], chi[2], chi[3]));
                     break;
                 case NA:
-                    logger.info(String.format(" %c %s %8.3f %8.3f %8.3f %8.3f %8.3f"
+                    logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f %8.3f"
                                     + " %8.3f %8.3f", residue.getChainID(), residue, chi[0],
                             chi[1], chi[2], chi[3], chi[4], chi[5], chi[6]));
                     break;
                 default:
-                    logger.info(String.format(
-                            " Not recognized as a nucleic or amino acid residue"));
+                    logger.info(" Not recognized as a nucleic or amino acid residue");
                     break;
             }
         }
@@ -1132,7 +446,7 @@ public class RotamerLibrary {
      * @param chi     Array to be filled with torsion values
      * @param print   Verbosity flag
      */
-    public static void measureRotamer(Residue residue, double chi[], boolean print) {
+    public static void measureRotamer(Residue residue, double[] chi, boolean print) {
         if (residue == null) {
             return;
         }
@@ -1166,160 +480,6 @@ public class RotamerLibrary {
     }
 
     /**
-     * <p>measureUNKRotamer.</p>
-     *
-     * @param residue a {@link ffx.potential.bonded.Residue} object.
-     * @param chi     an array of {@link double} objects.
-     * @param print   a boolean.
-     */
-    public static void measureUNKRotamer(Residue residue, double[] chi, boolean print) {
-        String resName = residue.getName().toUpperCase();
-        if (nonstdRotCache.containsKey(resName)) {
-            nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
-        } else {
-            logger.warning(String.format(" Could not measure chi angles "
-                    + "for residue %s", residue.toString()));
-        }
-    }
-
-    /**
-     * Measure the current torsions of a nucleic acid Residue, starting from the
-     * 5'-most torsion.
-     * <p>
-     * Chi[0]-chi[6] in order are: delta (i-1), epsilon (i-1), zeta (i-1), alpha
-     * (i), beta (i), gamma (i) and delta (i) for residue i.
-     *
-     * @param residue Residue to be measured.
-     * @param chi     Array to be filled with torsion values.
-     * @param print   Verbosity flag.
-     */
-    public static void measureNARotamer(Residue residue, double chi[], boolean print) {
-        NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
-        Residue prevResidue = residue.getPreviousResidue();
-        Torsion torsion;
-
-        Atom C5s = (Atom) residue.getAtomNode("C5\'");
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        Atom C3s = (Atom) residue.getAtomNode("C3\'");
-        Atom O3s = (Atom) residue.getAtomNode("O3\'");
-        Atom O5s = (Atom) residue.getAtomNode("O5\'");
-        Atom P = (Atom) residue.getAtomNode("P");
-
-
-        /*
-         * Start by measuring delta (i-1) if available, working up to delta.  If
-         * there is no prior residue, start measuring from the 5'-most torsion.
-         */
-        if (prevResidue == null) {
-            switch (name) {
-                case GUA:
-                case ADE:
-                case DGU:
-                case DAD:
-                case CYT:
-                case URI:
-                case THY:
-                case DCY:
-                case DTY:
-                    /*
-                     * If there is an HO5s, measure alpha based on HO5s.  Else,
-                     * measure zeta (i-1) based on OP3 and alpha on P.
-                     */
-                    Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
-                    if (HO5s != null) {
-                        torsion = HO5s.getTorsion(O5s, C5s, C4s);
-                        chi[4] = torsion.getValue();
-                        if (print) {
-                            logger.info(torsion.toString());
-                        }
-                    } else {
-                        Atom OP3 = (Atom) residue.getAtomNode("OP3");
-                        if (OP3 != null) {
-                            torsion = OP3.getTorsion(P, O5s, C5s);
-                            chi[3] = torsion.getValue();
-                            if (print) {
-                                logger.info(torsion.toString());
-                            }
-                        }
-
-                        torsion = P.getTorsion(O5s, C5s, C4s);
-                        chi[4] = torsion.getValue();
-                        if (print) {
-                            logger.info(torsion.toString());
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            switch (name) {
-                case GUA:
-                case ADE:
-                case DGU:
-                case DAD:
-                case CYT:
-                case URI:
-                case THY:
-                case DCY:
-                case DTY:
-                    Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
-                    Atom C3sPrev = (Atom) prevResidue.getAtomNode("C3\'");
-                    Atom C4sPrev = (Atom) prevResidue.getAtomNode("C4\'");
-                    Atom C5sPrev = (Atom) prevResidue.getAtomNode("C5\'");
-
-                    torsion = C5sPrev.getTorsion(C4sPrev, C3sPrev, O3sPrev);
-                    chi[0] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-
-                    torsion = C4sPrev.getTorsion(C3sPrev, O3sPrev, P);
-                    chi[1] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-
-                    torsion = C3sPrev.getTorsion(O3sPrev, P, O5s);
-                    chi[2] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-
-                    torsion = O3sPrev.getTorsion(P, O5s, C5s);
-                    chi[3] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-
-                    torsion = P.getTorsion(O5s, C5s, C4s);
-                    chi[4] = torsion.getValue();
-                    if (print) {
-                        logger.info(torsion.toString());
-                    }
-                    break;
-                default:
-                    break;
-            }
-
-        }
-        /*
-         * Measure torsions common to all nucleic acids (gamma, delta).
-         */
-        torsion = O5s.getTorsion(C5s, C4s, C3s);
-        chi[5] = torsion.getValue();
-        if (print) {
-            logger.info(torsion.toString());
-        }
-
-        torsion = C5s.getTorsion(C4s, C3s, O3s);
-        chi[6] = torsion.getValue();
-        if (print) {
-            logger.info(torsion.toString());
-        }
-    }
-
-    /**
      * Measures the delta torsion (sugar pucker) of a nucleic acid Residue.
      *
      * @param residue To be measured
@@ -1341,7 +501,7 @@ public class RotamerLibrary {
      * @param chi     Array to be filled with torsion values.
      * @param print   Verbosity flag.
      */
-    public static void measureAARotamer(Residue residue, double chi[], boolean print) {
+    public static void measureAARotamer(Residue residue, double[] chi, boolean print) {
         if (residue instanceof MultiResidue) {
             residue = ((MultiResidue) residue).getActive();
         }
@@ -2012,7 +1172,7 @@ public class RotamerLibrary {
                     nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
                     //nonstdRotCache.get(resName).applyNonstdRotamer(residue, rotamer);
                 } else {
-                    throw new IllegalArgumentException(String.format("(IAE) valueOf(%s)", residue.getName()));
+                    throw new IllegalArgumentException(format("(IAE) valueOf(%s)", residue.getName()));
                 }
                 break;
             default: {
@@ -2061,6 +1221,317 @@ public class RotamerLibrary {
     }
 
     /**
+     * If place is true, builds C2', C3', and O3' based on delta(i) and returns
+     * an empty double[]; if place is false, returns a double[] filled with the
+     * coordinates at which O3' would be placed by the specified pucker.
+     * <p>
+     * Presently uses default locations for C1', O4', and C4' to build these
+     * atoms.
+     *
+     * @param residue Nucleic acid Residue to which the pucker is to bea applied
+     * @param pucker  An int specifying pucker (1=North, 2=South).
+     * @param isDeoxy Boolean
+     * @param place   Flag for usage case.
+     * @return A double[] with O3' coordinates (place=false), or null
+     * (place=true).
+     */
+    public static double[] applySugarPucker(Residue residue, NucleicSugarPucker pucker, boolean isDeoxy, boolean place) {
+        // Torsions from http://ndb-mirror-2.rutgers.edu/ndbmodule/archives/proj/valence/table6.html
+        // SP is short for Sugar Pucker (torsion).
+        final double C2_SP_SOUTH_RNA = 24.2;
+        final double C3_SP_SOUTH_RNA = 357.7;
+        final double O3_SP_SOUTH_RNA = 268.1;
+        final double C2_SP_NORTH_RNA = 324.7;
+        final double C3_SP_NORTH_RNA = 20.4;
+        final double O3_SP_NORTH_RNA = 201.8;
+
+        final double C2_SP_SOUTH_DNA = 22.6;
+        final double C3_SP_SOUTH_DNA = 357.7;
+        final double O3_SP_SOUTH_DNA = 265.8;
+        final double C2_SP_NORTH_DNA = 327.7;
+        final double C3_SP_NORTH_DNA = 16.4;
+        final double O3_SP_NORTH_DNA = 205.4;
+
+        // Ret will only be filled if place is false.
+        double[] ret = new double[3];
+
+        // Constituents of the sugar
+        Atom C1s = (Atom) residue.getAtomNode("C1\'");
+        // C2' will only be used if place is true.
+        Atom C3s = (Atom) residue.getAtomNode("C3\'");
+        Atom O4s = (Atom) residue.getAtomNode("O4\'");
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        Atom O3s = (Atom) residue.getAtomNode("O3\'");
+
+        // Bonds and angles necessary to draw C3' and O3'.
+        Bond C3s_C4s = C4s.getBond(C3s);
+        double dC3s_C4s = C3s_C4s.bondType.distance;
+        Angle C3s_C4s_O4s = O4s.getAngle(C4s, C3s);
+        double dC3s_C4s_O4s = C3s_C4s_O4s.angleType.angle[C3s_C4s_O4s.nh];
+
+        Bond C3s_O3s = C3s.getBond(O3s);
+        double dC3s_O3s = C3s_O3s.bondType.distance;
+        Angle C4s_C3s_O3s = C4s.getAngle(C3s, O3s);
+        double dC4s_C3s_O3s = C4s_C3s_O3s.angleType.angle[C4s_C3s_O3s.nh];
+
+        /*
+         * If place is true, place C3', C2', and O3'. Else, determine the
+         * coordinates of O3' based on the invariant atoms.
+         *
+         * If deoxy, a different set of sugar pucker torsions is
+         * applied.
+         *
+         * Then, if a North pucker (delta (i) is in the range of 78-90),
+         * apply Cx_SP_NORTH torsion to place C3 and C2.  Else,
+         * assume a South pucker (delta is between 140 and 152).
+         *
+         * Then, use O3_SP_NORTH or SOUTH to place O3.
+         */
+        if (place) {
+            Atom C2s = (Atom) residue.getAtomNode("C2\'");
+            Bond C3s_C2s = C3s.getBond(C2s);
+            double dC3s_C2s = C3s_C2s.bondType.distance;
+            Angle C4s_C3s_C2s = C4s.getAngle(C3s, C2s);
+            double dC4s_C3s_C2s = C4s_C3s_C2s.angleType.angle[C4s_C3s_C2s.nh];
+
+            if (isDeoxy) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_DNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_DNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_DNA, 0);
+                } // TODO: else-if for 3'-exo configuration (DNA only)
+                else {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_DNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_DNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_DNA, 0);
+                }
+            } else {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_RNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_RNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_RNA, 0);
+                } else {
+                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_RNA, 0);
+                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_RNA, 0);
+                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_RNA, 0);
+                }
+            }
+        } else {
+            double[] C1sXYZ = new double[3];
+            double[] C3sXYZ;
+            double[] O4sXYZ = new double[3];
+            double[] C4sXYZ = new double[3];
+            C1s.getXYZ(C1sXYZ);
+            O4s.getXYZ(O4sXYZ);
+            C4s.getXYZ(C4sXYZ);
+
+            // O3s coordinates will be filled into ret.
+            if (isDeoxy) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_DNA, 0);
+                } // TODO: else-if for 3'-exo configuration (DNA only)
+                else {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_DNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_DNA, 0);
+                }
+            } else {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_RNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_RNA, 0);
+                } else {
+                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_RNA, 0);
+                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_RNA, 0);
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * <p>addRotPatch.</p>
+     *
+     * @param rotFileName a {@link java.lang.String} object.
+     * @return a boolean.
+     */
+    public static boolean addRotPatch(String rotFileName) {
+        File rotPatchFile = new File(rotFileName);
+        if (rotPatchFile.exists() && rotPatchFile.canRead()) {
+            return addRotPatch(new File(rotFileName));
+        }
+        return false;
+    }
+
+    public static void readRotFile(File rotamerFile, MolecularAssembly assembly) throws IOException {
+        readRotFile(rotamerFile, assembly, 1);
+    }
+
+    /**
+     * <p>measureUNKRotamer.</p>
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     * @param chi     an array of {@link double} objects.
+     * @param print   a boolean.
+     */
+    private static void measureUNKRotamer(Residue residue, double[] chi, boolean print) {
+        String resName = residue.getName().toUpperCase();
+        if (nonstdRotCache.containsKey(resName)) {
+            nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
+        } else {
+            logger.warning(format(" Could not measure chi angles "
+                    + "for residue %s", residue.toString()));
+        }
+    }
+
+    /**
+     * Measure the current torsions of a nucleic acid Residue, starting from the
+     * 5'-most torsion.
+     * <p>
+     * Chi[0]-chi[6] in order are: delta (i-1), epsilon (i-1), zeta (i-1), alpha
+     * (i), beta (i), gamma (i) and delta (i) for residue i.
+     *
+     * @param residue Residue to be measured.
+     * @param chi     Array to be filled with torsion values.
+     * @param print   Verbosity flag.
+     */
+    private static void measureNARotamer(Residue residue, double[] chi, boolean print) {
+        NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
+        Residue prevResidue = residue.getPreviousResidue();
+        Torsion torsion;
+
+        Atom C5s = (Atom) residue.getAtomNode("C5\'");
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        Atom C3s = (Atom) residue.getAtomNode("C3\'");
+        Atom O3s = (Atom) residue.getAtomNode("O3\'");
+        Atom O5s = (Atom) residue.getAtomNode("O5\'");
+        Atom P = (Atom) residue.getAtomNode("P");
+
+
+        /*
+         * Start by measuring delta (i-1) if available, working up to delta.  If
+         * there is no prior residue, start measuring from the 5'-most torsion.
+         */
+        if (prevResidue == null) {
+            switch (name) {
+                case GUA:
+                case ADE:
+                case DGU:
+                case DAD:
+                case CYT:
+                case URI:
+                case THY:
+                case DCY:
+                case DTY:
+                    /*
+                     * If there is an HO5s, measure alpha based on HO5s.  Else,
+                     * measure zeta (i-1) based on OP3 and alpha on P.
+                     */
+                    Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+                    if (HO5s != null) {
+                        torsion = HO5s.getTorsion(O5s, C5s, C4s);
+                        chi[4] = torsion.getValue();
+                        if (print) {
+                            logger.info(torsion.toString());
+                        }
+                    } else {
+                        Atom OP3 = (Atom) residue.getAtomNode("OP3");
+                        if (OP3 != null) {
+                            torsion = OP3.getTorsion(P, O5s, C5s);
+                            chi[3] = torsion.getValue();
+                            if (print) {
+                                logger.info(torsion.toString());
+                            }
+                        }
+
+                        torsion = P.getTorsion(O5s, C5s, C4s);
+                        chi[4] = torsion.getValue();
+                        if (print) {
+                            logger.info(torsion.toString());
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            switch (name) {
+                case GUA:
+                case ADE:
+                case DGU:
+                case DAD:
+                case CYT:
+                case URI:
+                case THY:
+                case DCY:
+                case DTY:
+                    Atom O3sPrev = (Atom) prevResidue.getAtomNode("O3\'");
+                    Atom C3sPrev = (Atom) prevResidue.getAtomNode("C3\'");
+                    Atom C4sPrev = (Atom) prevResidue.getAtomNode("C4\'");
+                    Atom C5sPrev = (Atom) prevResidue.getAtomNode("C5\'");
+
+                    torsion = C5sPrev.getTorsion(C4sPrev, C3sPrev, O3sPrev);
+                    chi[0] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = C4sPrev.getTorsion(C3sPrev, O3sPrev, P);
+                    chi[1] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = C3sPrev.getTorsion(O3sPrev, P, O5s);
+                    chi[2] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = O3sPrev.getTorsion(P, O5s, C5s);
+                    chi[3] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+
+                    torsion = P.getTorsion(O5s, C5s, C4s);
+                    chi[4] = torsion.getValue();
+                    if (print) {
+                        logger.info(torsion.toString());
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }
+        /*
+         * Measure torsions common to all nucleic acids (gamma, delta).
+         */
+        torsion = O5s.getTorsion(C5s, C4s, C3s);
+        chi[5] = torsion.getValue();
+        if (print) {
+            logger.info(torsion.toString());
+        }
+
+        torsion = C5s.getTorsion(C4s, C3s, O3s);
+        chi[6] = torsion.getValue();
+        if (print) {
+            logger.info(torsion.toString());
+        }
+    }
+
+    /**
+     * Checks if a Residue has a PTM.
+     *
+     * @param residue The Residue to check.
+     * @return True if this is a modified residue.
+     */
+    private static boolean isModRes(Residue residue) {
+        List<Atom> resatoms = residue.getAtomList();
+        return (resatoms != null && !resatoms.isEmpty() && resatoms.get(0).isModRes());
+    }
+
+    /**
      * Applies a coordinates-based Rotamer (defined by Cartesian coordinates
      * instead of by a set of torsion angles); intended for use with original
      * coordinates Rotamers and possibly other future cases.
@@ -2072,7 +1543,7 @@ public class RotamerLibrary {
         if (rotamer.isState) {
             residue.revertState(rotamer.originalState);
         } else {
-            logger.warning(String.format(" Attempting to apply a ResidueState for "
+            logger.warning(format(" Attempting to apply a ResidueState for "
                     + "a torsion-based rotamer %s for residue %s", rotamer, residue));
         }
     }
@@ -2125,7 +1596,7 @@ public class RotamerLibrary {
             if (resMap.containsKey(atomString)) {
                 return resMap.get(atomString);
             } else {
-                logger.fine(String.format(" Could not find an ideal-geometry angle for %s %s-%s-%s", resName, a1, a2, a3));
+                logger.fine(format(" Could not find an ideal-geometry angle for %s %s-%s-%s", resName, a1, a2, a3));
                 return angleFromForceField(a1, a2, a3);
             }
         }
@@ -2213,7 +1684,7 @@ public class RotamerLibrary {
         if (residue instanceof MultiResidue) {
             name = rotamer.name;
             if (!((MultiResidue) residue).setActiveResidue(name)) {
-                logger.warning(String.format(" Could not set residue %s for multi-residue %s", name, residue));
+                logger.warning(format(" Could not set residue %s for multi-residue %s", name, residue));
             }
         } else {
             name = residue.getAminoAcid3();
@@ -3534,199 +3005,6 @@ public class RotamerLibrary {
     }
 
     /**
-     * Applies a nucleic acid Rotamer, returning the magnitude of the correction applied to make residue i join i-1.
-     * <p>
-     * Note that the independent flag is separate from DEE independence: DEE
-     * independence is preserved by applying corrections based on a non-variable
-     * set of coordinates, and is wholly independent of what is happening to
-     * residue i-1.
-     * <p>
-     * Cannot presently handle 3' phosphate caps: I do not know what they would
-     * be labeled as in PDB files. A template for how to handle 3' phosphate
-     * caps is written but commented out.
-     *
-     * @param residue     Residue.
-     * @param rotamer     Rotamer to be applied to Residue.
-     * @param independent Whether to draw NA rotamer independent of chain
-     *                    context.
-     * @return Magnitude of the correction vector.
-     */
-    public static double applyNARotamer(Residue residue, Rotamer rotamer, boolean independent) {
-        if (rotamer.isState) {
-            applyState(residue, rotamer);
-            return 0;
-        }
-        NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
-        Residue prevResidue = residue.getPreviousResidue();
-        boolean is3sTerminal = false;  // 3' terminal
-        if (residue.getNextResidue() == null) {
-            is3sTerminal = true;
-        }
-
-        // Check if this is a 3' phosphate being listed as its own residue.
-        /* if (residue.getAtomList().size() == 1) {
-         return;
-         } */
-        boolean isDeoxy = residue.getAtomNode("O2\'") == null;
-
-        // Note: chi values will generally be applied from chi7 to chi1.
-        // Will have to add an else-if to handle DNA C3'-exo configurations.
-        NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi7, isDeoxy);
-        NucleicSugarPucker prevSugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi1, isDeoxy);
-
-        // Revert C1', O4', and C4' coordinates to PDB defaults.
-        Atom C1s = (Atom) residue.getAtomNode("C1\'");
-        C1s.moveTo(residue.getC1sCoords());
-        Atom O4s = (Atom) residue.getAtomNode("O4\'");
-        O4s.moveTo(residue.getO4sCoords());
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        C4s.moveTo(residue.getC4sCoords());
-
-        // Presently, the exterior method loadPriorAtomicCoordinates() directly
-        // calls applySugarPucker instead of going through applyRotamer().
-        applySugarPucker(residue, sugarPucker, isDeoxy, true);
-        applyNABackbone(residue, rotamer, prevResidue);
-
-        double naCorrection = 0;
-        if (prevResidue != null && !independent) {
-            naCorrection = applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, isDeoxy, is3sTerminal);
-        } /* else if (!independent) {
-         startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
-         } */
-
-        applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
-        return naCorrection;
-    }
-
-    /**
-     * If place is true, builds C2', C3', and O3' based on delta(i) and returns
-     * an empty double[]; if place is false, returns a double[] filled with the
-     * coordinates at which O3' would be placed by the specified pucker.
-     * <p>
-     * Presently uses default locations for C1', O4', and C4' to build these
-     * atoms.
-     *
-     * @param residue Nucleic acid Residue to which the pucker is to bea applied
-     * @param pucker  An int specifying pucker (1=North, 2=South).
-     * @param isDeoxy Boolean
-     * @param place   Flag for usage case.
-     * @return A double[] with O3' coordinates (place=false), or null
-     * (place=true).
-     */
-    public static double[] applySugarPucker(Residue residue, NucleicSugarPucker pucker, boolean isDeoxy, boolean place) {
-        // Torsions from http://ndb-mirror-2.rutgers.edu/ndbmodule/archives/proj/valence/table6.html
-        // SP is short for Sugar Pucker (torsion).
-        final double C2_SP_SOUTH_RNA = 24.2;
-        final double C3_SP_SOUTH_RNA = 357.7;
-        final double O3_SP_SOUTH_RNA = 268.1;
-        final double C2_SP_NORTH_RNA = 324.7;
-        final double C3_SP_NORTH_RNA = 20.4;
-        final double O3_SP_NORTH_RNA = 201.8;
-
-        final double C2_SP_SOUTH_DNA = 22.6;
-        final double C3_SP_SOUTH_DNA = 357.7;
-        final double O3_SP_SOUTH_DNA = 265.8;
-        final double C2_SP_NORTH_DNA = 327.7;
-        final double C3_SP_NORTH_DNA = 16.4;
-        final double O3_SP_NORTH_DNA = 205.4;
-
-        // Ret will only be filled if place is false.
-        double[] ret = new double[3];
-
-        // Constituents of the sugar
-        Atom C1s = (Atom) residue.getAtomNode("C1\'");
-        // C2' will only be used if place is true.
-        Atom C3s = (Atom) residue.getAtomNode("C3\'");
-        Atom O4s = (Atom) residue.getAtomNode("O4\'");
-        Atom C4s = (Atom) residue.getAtomNode("C4\'");
-        Atom O3s = (Atom) residue.getAtomNode("O3\'");
-
-        // Bonds and angles necessary to draw C3' and O3'.
-        Bond C3s_C4s = C4s.getBond(C3s);
-        double dC3s_C4s = C3s_C4s.bondType.distance;
-        Angle C3s_C4s_O4s = O4s.getAngle(C4s, C3s);
-        double dC3s_C4s_O4s = C3s_C4s_O4s.angleType.angle[C3s_C4s_O4s.nh];
-
-        Bond C3s_O3s = C3s.getBond(O3s);
-        double dC3s_O3s = C3s_O3s.bondType.distance;
-        Angle C4s_C3s_O3s = C4s.getAngle(C3s, O3s);
-        double dC4s_C3s_O3s = C4s_C3s_O3s.angleType.angle[C4s_C3s_O3s.nh];
-
-        /*
-         * If place is true, place C3', C2', and O3'. Else, determine the
-         * coordinates of O3' based on the invariant atoms.
-         *
-         * If deoxy, a different set of sugar pucker torsions is
-         * applied.
-         *
-         * Then, if a North pucker (delta (i) is in the range of 78-90),
-         * apply Cx_SP_NORTH torsion to place C3 and C2.  Else,
-         * assume a South pucker (delta is between 140 and 152).
-         *
-         * Then, use O3_SP_NORTH or SOUTH to place O3.
-         */
-        if (place) {
-            Atom C2s = (Atom) residue.getAtomNode("C2\'");
-            Bond C3s_C2s = C3s.getBond(C2s);
-            double dC3s_C2s = C3s_C2s.bondType.distance;
-            Angle C4s_C3s_C2s = C4s.getAngle(C3s, C2s);
-            double dC4s_C3s_C2s = C4s_C3s_C2s.angleType.angle[C4s_C3s_C2s.nh];
-
-            if (isDeoxy) {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_DNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_DNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_DNA, 0);
-                } // TODO: else-if for 3'-exo configuration (DNA only)
-                else {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_DNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_DNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_DNA, 0);
-                }
-            } else {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_RNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_RNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_RNA, 0);
-                } else {
-                    intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_SOUTH_RNA, 0);
-                    intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_SOUTH_RNA, 0);
-                    intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_RNA, 0);
-                }
-            }
-        } else {
-            double[] C1sXYZ = new double[3];
-            double[] C3sXYZ;
-            double[] O4sXYZ = new double[3];
-            double[] C4sXYZ = new double[3];
-            C1s.getXYZ(C1sXYZ);
-            O4s.getXYZ(O4sXYZ);
-            C4s.getXYZ(C4sXYZ);
-
-            // O3s coordinates will be filled into ret.
-            if (isDeoxy) {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_DNA, 0);
-                } // TODO: else-if for 3'-exo configuration (DNA only)
-                else {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_DNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_DNA, 0);
-                }
-            } else {
-                if (pucker == NucleicSugarPucker.C3_ENDO) {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_RNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_RNA, 0);
-                } else {
-                    C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_SOUTH_RNA, 0);
-                    ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_RNA, 0);
-                }
-            }
-        }
-        return ret;
-    }
-
-    /**
      * Draws nucleic acid Atoms outside the backbone. Called after corrections
      * have been applied, so that these Atoms are drawn with ideal bond lengths
      * and angles.
@@ -4042,17 +3320,728 @@ public class RotamerLibrary {
     }
 
     /**
-     * <p>addRotPatch.</p>
+     * Fills the idealized amino acid rotamer cache with the Ponder and Richards rotamers.
+     * <p>
+     * Ponder, J. W.; Richards, F. M., Tertiary templates for proteins:
+     * Use of packing criteria in the enumeration of allowed sequences
+     * for different structural classes Journal of Molecular Biology
+     * 1987, 193 (4), 775-791
      *
-     * @param rotFileName a {@link java.lang.String} object.
-     * @return a boolean.
+     * @param name Type of amino acid.
+     * @return Rotamer cache (double[] of torsions).
      */
-    public static boolean addRotPatch(String rotFileName) {
-        File rotPatchFile = new File(rotFileName);
-        if (rotPatchFile.exists() && rotPatchFile.canRead()) {
-            return addRotPatch(new File(rotFileName));
+    private Rotamer[] getPonderAndRichardsRotamers(AminoAcid3 name) {
+        int n = name.ordinal();
+        if (aminoAcidRotamerCache[n] != null) {
+            return aminoAcidRotamerCache[n];
         }
-        return false;
+        switch (name) {
+            case VAL:
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 173.5, 9.0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -63.4, 8.1);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 69.3, 9.6);
+                break;
+            case LEU:
+                aminoAcidRotamerCache[n] = new Rotamer[4];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -64.9, 8.2, 176.0, 9.9);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.4, 10.2, 63.1, 8.2);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -165.3, 10.0, 168.2, 34.2);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, 44.3, 20.0, 60.4, 18.8);
+                break;
+            case ILE:
+                aminoAcidRotamerCache[n] = new Rotamer[5];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -60.9, 7.5, 168.7, 11.6);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -59.6, 9.6, -64.1, 14.3);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 61.7, 5.0, 163.8, 16.4);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -166.6, 10.1, 166.0, 8.9);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -174.8, 24.9, 72.1, 10.5);
+                break;
+            case SER:
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 64.7, 16.1);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -69.7, 14.6);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -176.1, 20.2);
+                break;
+            case THR:
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62.7, 8.5);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -59.7, 9.4);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -169.5, 6.6);
+                break;
+            case CYS:
+            case CYD:
+                aminoAcidRotamerCache[n] = null;
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
+                break;
+            /*
+             * TODO: Figure out proline rotamers.  I have dihedrals from
+             * the Richardson lab/Kinemages website (downloaded PDB, used
+             * the get_dihedral function to extract the dihedrals), and they
+             * conflict with these rotamers.  Plus, this library only
+             * specifies one of the two necessary dihedrals.
+             */
+            case PRO:
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 24.0, 8.0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 0.0, 8.0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -24.0, 8.0);
+                /*
+                 aminoAcidRotamerCache[n] = new Rotamer[2];
+                 // The exo- conformation
+                 aminoAcidRotamerCache[n][0] = new Rotamer(name, -27.9, 0, 39.0, 0);
+                 // The endo- conformation
+                 aminoAcidRotamerCache[n][2] = new Rotamer(name, 25.6, 0, -35.8, 0);
+                 */
+                break;
+            case PHE:
+                aminoAcidRotamerCache[n] = new Rotamer[4];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.3, 10.2, 94.3, 19.5);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.2, 9.3, 78.9, 8.9);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 66.0, 12.0, 90.7, 9.4);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -71.9, 16.3, -0.4, 26.1);
+                break;
+            case TYR:
+                aminoAcidRotamerCache[n] = new Rotamer[8];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 0, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 0, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 0, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 0, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 180.0, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 180.0, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 180.0, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 180.0, 0);
+                break;
+            case TYD:
+                aminoAcidRotamerCache[n] = new Rotamer[4];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1);
+                break;
+            case TRP:
+                aminoAcidRotamerCache[n] = new Rotamer[6];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -70.4, 7.0, 100.5, 18.2);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 64.8, 13.0, -88.9, 5.3);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177.3, 7.9, -95.1, 7.6);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -179.5, 3.4, 87.5, 3.8);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -73.3, 6.5, -87.7, 8.1);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62.2, 10.0, 112.5, 15.0);
+                break;
+            case HIS:
+            case HIE:
+            case HID:
+                aminoAcidRotamerCache[n] = new Rotamer[6];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -62.8, 10.0, -74.3, 17.2);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -175.2, 15.4, -88.7, 43.5);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -69.8, 5.9, 96.1, 32.2);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, 67.9, 17.4, -80.5, 40.7);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177.3, 6.3, 100.5, 14.0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 48.8, 10.0, 89.5, 30.0);
+                break;
+            case ASH:
+                aminoAcidRotamerCache[n] = new Rotamer[6];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -68.3, 9.2, -25.7, 31.1);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -169.1, 9.5, 3.9, 38.9);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.7, 9.9, 2.4, 29.4);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -68.3, 9.2, 154.3, 31.1);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -169.1, 9.5, -176.1, 38.9);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 63.7, 9.9, -177.6, 29.4);
+                break;
+            case ASP:
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -68.3, 9.2, -25.7, 31.1);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -169.1, 9.5, 3.9, 38.9);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.7, 9.9, 2.4, 29.4);
+                break;
+            case ASN:
+                aminoAcidRotamerCache[n] = new Rotamer[6];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -68.3, 12.3, -36.8, 25.2);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177.1, 8.8, 1.3, 34.1);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -67.2, 10.8, 128.8, 24.2);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, 63.9, 3.7, -6.8, 13.5);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -174.9, 17.9, -156.8, 58.9);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 63.6, 6.6, 53.8, 17.1);
+                break;
+            case GLU:
+                aminoAcidRotamerCache[n] = new Rotamer[7];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
+                break;
+            case GLH:
+                aminoAcidRotamerCache[n] = new Rotamer[14];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, 168.6, 44.8);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, 175.3, 39.0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, 146.6, 27.4);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, -154.7, 32.6);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, -173.4, 64.2);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, -166.0, 37.1);
+                aminoAcidRotamerCache[n][13] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8);
+                break;
+            case GLN:
+                aminoAcidRotamerCache[n] = new Rotamer[10];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, -24.0, 38.0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, 156.0, 38.0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, -24.0, 38.0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, 156.0, 38.0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -58.7, 11.2, -63.8, 16.1, -46.3, 27.7);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -51.3, 7.3, -90.4, 22.8, 165.0, 38.2);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -179.4, 21.5, 67.3, 7.9, 26.8, 38.4);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, 167.5, 14.8, 70.9, 3.7, 174.2, 7.1);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, -24.0, 38.0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, 156.0, 38.0);
+                break;
+            case MET:
+                aminoAcidRotamerCache[n] = new Rotamer[13];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -64.5, 12.7, -68.5, 6.0, -75.6, 14.1);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 65.0, 20.0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 180.0, 20.0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, -65.0, 20.0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, -65.0, 20.0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 65.0, 20.0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -170.0, 24.0, 65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, 61.0, 21.0, 65.0, 20.0, 180.0, 20.0);
+                break;
+            case LYS:
+            case LYD:
+                aminoAcidRotamerCache[n] = new Rotamer[12];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 65.0, 20.0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, -65.0, 20.0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, -65.0, 20.0);
+                break;
+            case ARG:
+                aminoAcidRotamerCache[n] = new Rotamer[14];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 61.0, 25.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 61.0, 25.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 90.0, 20.0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, -90.0, 20.0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, -90.0, 20.0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -170.0, 21.0, 65.0, 20.0, 65.0, 20.0, 180.0, 20.0);
+                aminoAcidRotamerCache[n][13] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, -65.0, 20.0, 180.0, 20.0);
+                break;
+            default:
+                // Handles GLY, ALA, CYX, ...
+                break;
+        }
+        return aminoAcidRotamerCache[n];
+    }
+
+    /**
+     * Fills the idealized amino acid rotamer cache with the Richardson rotamers.
+     * <p>
+     * Lovell, S. C.; Word, J. M.; Richardson, J. S.; Richardson, D. C.,
+     * The penultimate rotamer library. Proteins-Structure, Function,
+     * and Genetics 2000, 40 (3), 389-408.
+     *
+     * @param name Type of amino acid.
+     * @return Rotamer cache (double[] of torsions).
+     */
+    private Rotamer[] getRichardsonRotamers(AminoAcid3 name) {
+        int n = name.ordinal();
+        if (aminoAcidRotamerCache[n] != null) {
+            return aminoAcidRotamerCache[n];
+        }
+        switch (name) {
+            case VAL:
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 64, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 175, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -60, 0);
+                break;
+            case LEU:
+                aminoAcidRotamerCache[n] = new Rotamer[5];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 80, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0, 65, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -172, 0, 145, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -85, 0, 65, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, 175, 0);
+                break;
+            case ILE:
+                aminoAcidRotamerCache[n] = new Rotamer[7];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 100, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 170, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 66, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 165, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, 100, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 170, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -57, 0, -60, 0);
+                break;
+            case SER:
+                aminoAcidRotamerCache[n] = new Rotamer[18];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 0, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 60, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 120, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, -60, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, -120, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -177, 0, 0, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, 60, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, 120, 0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -177, 0, 180, 0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, -60, 0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, -120, 0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -65, 0, 0, 0);
+                aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 60, 0);
+                aminoAcidRotamerCache[n][14] = new Rotamer(name, -65, 0, 120, 0);
+                aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, 180, 0);
+                aminoAcidRotamerCache[n][16] = new Rotamer(name, -65, 0, -60, 0);
+                aminoAcidRotamerCache[n][17] = new Rotamer(name, -65, 0, -120, 0);
+                break;
+            case THR:
+                aminoAcidRotamerCache[n] = new Rotamer[18];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 0, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 60, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 120, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, -60, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, -120, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -175, 0, 0, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -175, 0, 60, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -175, 0, 120, 0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -175, 0, 180, 0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -175, 0, -60, 0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -175, 0, -120, 0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -65, 0, 0, 0);
+                aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 60, 0);
+                aminoAcidRotamerCache[n][14] = new Rotamer(name, -65, 0, 120, 0);
+                aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, 180, 0);
+                aminoAcidRotamerCache[n][16] = new Rotamer(name, -65, 0, -60, 0);
+                aminoAcidRotamerCache[n][17] = new Rotamer(name, -65, 0, -120, 0);
+                break;
+            case CYS:
+            case CYD:
+                aminoAcidRotamerCache[n] = null;
+                aminoAcidRotamerCache[n] = new Rotamer[3];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0);
+                break;
+            case PHE:
+                aminoAcidRotamerCache[n] = new Rotamer[4];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 90, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0, 80, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0, -85, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -65, 0, -30, 0);
+                break;
+            case TYR:
+                aminoAcidRotamerCache[n] = new Rotamer[8];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 90, 0, 0, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 90, 0, 180, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 80, 0, 0, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 80, 0, 180, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, -85, 0, 0, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -85, 0, 180, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, -30, 0, 0, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -30, 0, 180, 0);
+                break;
+            case TYD:
+                aminoAcidRotamerCache[n] = new Rotamer[4];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 90, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0, 80, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0, -85, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -65, 0, -30, 0);
+                break;
+            case TRP:
+                aminoAcidRotamerCache[n] = new Rotamer[7];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, -90, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 90, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, -105, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 90, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, -90, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -5, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, 95, 0);
+                break;
+            case HIS:
+            case HIE:
+            case HID:
+                aminoAcidRotamerCache[n] = new Rotamer[8];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, -75, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 80, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, -165, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, -80, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, 60, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -70, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, 165, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, 80, 0);
+                break;
+            case ASP:
+                aminoAcidRotamerCache[n] = new Rotamer[5];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 10, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 30, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 0, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -70, 0, -15, 0);
+                break;
+            case ASH:
+                aminoAcidRotamerCache[n] = new Rotamer[10];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 10, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 30, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 0, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -70, 0, -15, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, -170, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, 62, 0, -150, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, -180, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, -115, 0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -70, 0, 165, 0);
+                break;
+            case ASN:
+                aminoAcidRotamerCache[n] = new Rotamer[7];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, -10, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 30, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -174, 0, -20, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 30, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -65, 0, -20, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, -75, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -65, 0, 120, 0);
+                break;
+            case GLU:
+                aminoAcidRotamerCache[n] = new Rotamer[8];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, -20, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -80, 0, 0, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 10, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 180, 0, 0, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, -80, 0, -25, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, -180, 0, -10, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0);
+                break;
+            case GLH:
+                aminoAcidRotamerCache[n] = new Rotamer[16];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, -20, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -80, 0, 0, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 10, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 180, 0, 0, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, -80, 0, -25, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, -180, 0, -10, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, 62, 0, 180, 0, 160, 0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, 70, 0, -80, 0, -180, 0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 65, 0, -170, 0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, -180, 0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, -80, 0, 155, 0);
+                aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 85, 0, -180, 0);
+                aminoAcidRotamerCache[n][14] = new Rotamer(name, -67, 0, -180, 0, 170, 0);
+                aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, -65, 0, 140, 0);
+                break;
+            case GLN:
+                aminoAcidRotamerCache[n] = new Rotamer[9];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 20, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -75, 0, 0, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, -100, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0, 60, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, 180, 0, 0, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, 180, 0, -25, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -65, 0, -65, 0, 100, 0);
+                break;
+            case MET:
+                aminoAcidRotamerCache[n] = new Rotamer[13];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 75, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 180, 0, -75, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 75, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 65, 0, 180, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, 180, 0, 75, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -177, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -177, 0, 180, 0, -75, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -67, 0, 180, 0, 75, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -67, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -67, 0, 180, 0, -75, 0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -65, 0, -65, 0, 103, 0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -65, 0, -65, 0, 180, 0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -65, 0, -65, 0, -70, 0);
+                break;
+            case LYS:
+            case LYD:
+                aminoAcidRotamerCache[n] = new Rotamer[27];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 68, 0, 180, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 65.0, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0, 180, 0, -65, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, 180, 0, -68, 0, 180, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, -177, 0, 68, 0, 180, 0, 65, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, -177, 0, 68, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, 68, 0, 180, 0, -65, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, 180, 0, 68, 0, 65, 0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -177, 0, 180, 0, 68, 0, 180, 0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 65, 0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, 180, 0, 180, 0, -65, 0);
+                aminoAcidRotamerCache[n][13] = new Rotamer(name, -177, 0, 180, 0, -68, 0, 180, 0);
+                aminoAcidRotamerCache[n][14] = new Rotamer(name, -177, 0, 180, 0, -68, 0, -65, 0);
+                aminoAcidRotamerCache[n][15] = new Rotamer(name, -90, 0, 68, 0, 180, 0, 180);
+                aminoAcidRotamerCache[n][16] = new Rotamer(name, -67, 0, 180, 0, 68, 0, -65, 0);
+                aminoAcidRotamerCache[n][17] = new Rotamer(name, -67, 0, 180, 0, 68, 0, 180, 0);
+                aminoAcidRotamerCache[n][18] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 65, 0);
+                aminoAcidRotamerCache[n][19] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][20] = new Rotamer(name, -67, 0, 180, 0, 180, 0, -65, 0);
+                aminoAcidRotamerCache[n][21] = new Rotamer(name, -67, 0, 180, 0, -68, 0, 180, 0);
+                aminoAcidRotamerCache[n][22] = new Rotamer(name, -67, 0, 180, 0, -68, 0, -65, 0);
+                aminoAcidRotamerCache[n][23] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 65, 0);
+                aminoAcidRotamerCache[n][24] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][25] = new Rotamer(name, -62, 0, -68, 0, 180, 0, -65, 0);
+                aminoAcidRotamerCache[n][26] = new Rotamer(name, -62, 0, -68, 0, -68, 0, 180, 0);
+                break;
+            case ARG:
+                aminoAcidRotamerCache[n] = new Rotamer[34];
+                aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, 65, 0, 85, 0);
+                aminoAcidRotamerCache[n][1] = new Rotamer(name, 62, 0, 180, 0, 65, 0, -175, 0);
+                aminoAcidRotamerCache[n][2] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 85, 0);
+                aminoAcidRotamerCache[n][3] = new Rotamer(name, 62, 0, 180, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][4] = new Rotamer(name, 62, 0, 180, 0, 180, 0, -85, 0);
+                aminoAcidRotamerCache[n][5] = new Rotamer(name, 62, 0, 180, 0, -65, 0, 175, 0);
+                aminoAcidRotamerCache[n][6] = new Rotamer(name, 62, 0, 180, 0, -65, 0, -85, 0);
+                aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, 65, 0, 65, 0, 85, 0);
+                aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, 65, 0, 65, 0, -175, 0);
+                aminoAcidRotamerCache[n][9] = new Rotamer(name, -177, 0, 65, 0, 180, 0, 85, 0);
+                aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 65, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, 65, 0, 85, 0);
+                aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, 180, 0, 65, 0, -175, 0);
+                aminoAcidRotamerCache[n][13] = new Rotamer(name, -177, 0, 180, 0, 65, 0, -105, 0);
+                aminoAcidRotamerCache[n][14] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 85, 0);
+                aminoAcidRotamerCache[n][15] = new Rotamer(name, -177, 0, 180, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][16] = new Rotamer(name, -177, 0, 180, 0, 180, 0, -85, 0);
+                aminoAcidRotamerCache[n][17] = new Rotamer(name, -177, 0, 180, 0, -65, 0, 105, 0);
+                aminoAcidRotamerCache[n][18] = new Rotamer(name, -177, 0, 180, 0, -65, 0, 175, 0);
+                aminoAcidRotamerCache[n][19] = new Rotamer(name, -177, 0, 180, 0, -65, 0, -85, 0);
+                aminoAcidRotamerCache[n][20] = new Rotamer(name, -67, 0, 180, 0, 65, 0, 85, 0);
+                aminoAcidRotamerCache[n][21] = new Rotamer(name, -67, 0, 180, 0, 65, 0, -175, 0);
+                aminoAcidRotamerCache[n][22] = new Rotamer(name, -67, 0, 180, 0, 65, 0, -105, 0);
+                aminoAcidRotamerCache[n][23] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 85, 0);
+                aminoAcidRotamerCache[n][24] = new Rotamer(name, -67, 0, 180, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][25] = new Rotamer(name, -67, 0, 180, 0, 180, 0, -85, 0);
+                aminoAcidRotamerCache[n][26] = new Rotamer(name, -67, 0, 180, 0, -65, 0, 105, 0);
+                aminoAcidRotamerCache[n][27] = new Rotamer(name, -67, 0, 180, 0, -65, 0, 175, 0);
+                aminoAcidRotamerCache[n][28] = new Rotamer(name, -67, 0, -167, 0, -65, 0, -85, 0);
+                aminoAcidRotamerCache[n][29] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 85, 0);
+                aminoAcidRotamerCache[n][30] = new Rotamer(name, -62, 0, -68, 0, 180, 0, 180, 0);
+                aminoAcidRotamerCache[n][31] = new Rotamer(name, -62, 0, -68, 0, 180, 0, -85, 0);
+                aminoAcidRotamerCache[n][32] = new Rotamer(name, -62, 0, -68, 0, -65, 0, 175, 0);
+                aminoAcidRotamerCache[n][33] = new Rotamer(name, -62, 0, -68, 0, -65, 0, -85, 0);
+                break;
+            default:
+                // Handles GLY, ALA, CYX, PRO, ...
+                break;
+        }
+        return aminoAcidRotamerCache[n];
+    }
+
+    /**
+     * Returns the Rotamers for a specified nucleic acid type. Torsion angles
+     * are listed from delta (i-1) to delta (i), along with standard deviations
+     * calculated by Richardson et al.
+     * <p>
+     * Citation: Richardson, J.S., et al., RNA backbone: Consensus all-angle
+     * conformers and modular string nomenclature (an RNA Ontology Consortium
+     * contribution). Rna-a Publication of the Rna Society, 2008. 14(3): p. 465-481.
+     *
+     * @param name Type of nucleic acid.
+     * @return Rotamer cache (double[] of torsions).
+     */
+    private Rotamer[] getRichardsonRNARotamers(NucleicAcid3 name) {
+        int n = name.ordinal();
+        if (nucleicAcidRotamerCache[n] != null) {
+            return nucleicAcidRotamerCache[n];
+        }
+        /*
+         * Comments on rotamers can be found in Richardson et al, 2008.
+         * Rotamers 0-45 are these rotamers in order.
+         *
+         * In the future, subsequent sets of 46 could be these rotamers with
+         * rotations of either the base as a whole, or portions of the base
+         * (such as the C6 amino group of adenine).  One suggestion is to use
+         * %46 if only the backbone information is needed, or integer division
+         * by 46 if the backbone information is unnecessary.
+         *
+         * Torsions are in order delta (i-1), epsilon (i-1), zeta (i-1), alpha,
+         * beta, gamma, delta.  However, at this moment, only delta through alpha
+         * (reverse order) are used to build the backbone, and delta (i-1) as
+         * a binary function to determine what previous sugar pucker to expect.
+         *
+         * 1a, 1m, 1L, &a, 7a, 3a, 9a, 1g, 7d, 3d, 5d, 1e, 1c, 1f, 5j, 1b, 1{,
+         * 3b, 1z, 5z, 7p, 1t, 5q, 1o, 7r, 2a, 4a, 0a, #a, 4g, 6g, 8d, 4d, 6d,
+         * 2h, 4n, 0i, 6n, 6j, 2[, 4b, 0b, 4p, 6p, 4s, 2o
+         */
+        switch (name) {
+            case ADE:
+            case GUA:
+            case CYT:
+            case URI:
+            case DAD:
+            case DGU:
+            case DCY:
+            case DTY:
+            case THY:
+                nucleicAcidRotamerCache[n] = new Rotamer[46];
+                nucleicAcidRotamerCache[n][0] = new Rotamer(name, 81, 4, -148, 10, -71, 7, -65, 8, 174, 8, 54, 6, 81, 3);
+                nucleicAcidRotamerCache[n][1] = new Rotamer(name, 84, 5, -142, 16, -68, 15, -68, 16, -138, 12, 58, 10, 86, 7);
+                nucleicAcidRotamerCache[n][2] = new Rotamer(name, 86, 4, -115, 6, -92, 13, -56, 8, 138, 4, 62, 10, 79, 5);
+                nucleicAcidRotamerCache[n][3] = new Rotamer(name, 82, 5, -169, 7, -95, 6, -64, 9, -178, 10, 51, 7, 82, 5);
+                nucleicAcidRotamerCache[n][4] = new Rotamer(name, 83, 4, -143, 23, -138, 14, -57, 9, 161, 15, 49, 6, 82, 3);
+                nucleicAcidRotamerCache[n][5] = new Rotamer(name, 85, 4, -144, 24, 173, 14, -71, 12, 164, 16, 46, 7, 85, 6);//
+                nucleicAcidRotamerCache[n][6] = new Rotamer(name, 83, 2, -150, 15, 121, 13, -71, 12, 157, 23, 49, 6, 81, 3);
+                nucleicAcidRotamerCache[n][7] = new Rotamer(name, 81, 3, -141, 8, -69, 9, 167, 8, 160, 16, 51, 5, 85, 3);
+                nucleicAcidRotamerCache[n][8] = new Rotamer(name, 84, 4, -121, 16, -103, 12, 70, 10, 170, 23, 53, 6, 85, 3);
+                nucleicAcidRotamerCache[n][9] = new Rotamer(name, 85, 4, -116, 15, -156, 15, 66, 19, -179, 23, 55, 6, 86, 4);
+                nucleicAcidRotamerCache[n][10] = new Rotamer(name, 80, 4, -158, 7, 63, 14, 68, 12, 143, 30, 50, 7, 83, 2);
+                nucleicAcidRotamerCache[n][11] = new Rotamer(name, 81, 3, -159, 8, -79, 6, -111, 9, 83, 11, 168, 6, 86, 4);
+                nucleicAcidRotamerCache[n][12] = new Rotamer(name, 80, 3, -163, 9, -69, 10, 153, 12, -166, 12, 179, 10, 84, 3);
+                nucleicAcidRotamerCache[n][13] = new Rotamer(name, 81, 2, -157, 14, -66, 11, 172, 11, 139, 13, 176, 10, 84, 3);
+                nucleicAcidRotamerCache[n][14] = new Rotamer(name, 87, 7, -136, 23, 80, 15, 67, 9, 109, 10, 176, 6, 84, 4);
+                nucleicAcidRotamerCache[n][15] = new Rotamer(name, 84, 4, -145, 10, -71, 10, -60, 9, 177, 12, 58, 7, 145, 7);
+                nucleicAcidRotamerCache[n][16] = new Rotamer(name, 83, 4, -140, 10, -71, 10, -63, 8, -138, 9, 54, 7, 144, 8);
+                nucleicAcidRotamerCache[n][17] = new Rotamer(name, 85, 3, -134, 18, 168, 17, -67, 15, 178, 22, 49, 5, 148, 3);
+                nucleicAcidRotamerCache[n][18] = new Rotamer(name, 83, 3, -154, 18, -82, 19, -164, 14, 162, 25, 51, 5, 145, 5);
+                nucleicAcidRotamerCache[n][19] = new Rotamer(name, 83, 3, -154, 5, 53, 7, 164, 5, 148, 10, 50, 5, 148, 4);
+                nucleicAcidRotamerCache[n][20] = new Rotamer(name, 84, 3, -123, 24, -140, 15, 68, 12, -160, 30, 54, 7, 146, 6);
+                nucleicAcidRotamerCache[n][21] = new Rotamer(name, 81, 3, -161, 20, -71, 8, 180, 17, -165, 14, 178, 9, 147, 5);
+                nucleicAcidRotamerCache[n][22] = new Rotamer(name, 82, 8, -155, 6, 69, 14, 63, 9, 115, 17, 176, 6, 146, 4);
+                nucleicAcidRotamerCache[n][23] = new Rotamer(name, 84, 4, -143, 17, -73, 15, -63, 7, -135, 39, -66, 7, 151, 13);
+                nucleicAcidRotamerCache[n][24] = new Rotamer(name, 85, 4, -127, 13, -112, 19, 63, 13, -178, 27, -64, 4, 150, 7);
+                nucleicAcidRotamerCache[n][25] = new Rotamer(name, 145, 8, -100, 12, -71, 18, -72, 13, -167, 17, 53, 7, 84, 5);
+                nucleicAcidRotamerCache[n][26] = new Rotamer(name, 146, 7, -100, 15, 170, 14, -62, 19, 170, 34, 51, 8, 84, 5);
+                nucleicAcidRotamerCache[n][27] = new Rotamer(name, 149, 7, -137, 11, 139, 25, -75, 11, 158, 20, 48, 6, 84, 4);
+                nucleicAcidRotamerCache[n][28] = new Rotamer(name, 148, 3, -168, 5, 146, 6, -71, 7, 151, 12, 42, 4, 85, 3);
+                nucleicAcidRotamerCache[n][29] = new Rotamer(name, 148, 8, -103, 14, 165, 21, -155, 14, 165, 15, 49, 7, 83, 4);
+                nucleicAcidRotamerCache[n][30] = new Rotamer(name, 145, 7, -97, 18, 80, 16, -156, 29, -170, 23, 58, 5, 85, 7);
+                nucleicAcidRotamerCache[n][31] = new Rotamer(name, 149, 6, -89, 10, -119, 17, 62, 10, 176, 23, 54, 4, 87, 3);
+                nucleicAcidRotamerCache[n][32] = new Rotamer(name, 150, 6, -110, 26, -172, 7, 80, 20, -162, 20, 61, 8, 89, 4);
+                nucleicAcidRotamerCache[n][33] = new Rotamer(name, 147, 6, -119, 23, 89, 16, 59, 14, 161, 23, 52, 7, 83, 4);
+                nucleicAcidRotamerCache[n][34] = new Rotamer(name, 148, 4, -99, 8, -70, 12, -64, 10, 177, 17, 176, 14, 87, 4);
+                nucleicAcidRotamerCache[n][35] = new Rotamer(name, 144, 7, -133, 14, -156, 14, 74, 12, -143, 20, -166, 9, 81, 3);
+                nucleicAcidRotamerCache[n][36] = new Rotamer(name, 149, 2, -85, 20, 100, 13, 81, 11, -112, 12, -178, 3, 83, 2);
+                nucleicAcidRotamerCache[n][37] = new Rotamer(name, 150, 6, -92, 11, 85, 8, 64, 5, -169, 8, 177, 9, 86, 5);
+                nucleicAcidRotamerCache[n][38] = new Rotamer(name, 142, 8, -116, 28, 66, 15, 72, 8, 122, 22, -178, 6, 84, 3);
+                nucleicAcidRotamerCache[n][39] = new Rotamer(name, 146, 8, -101, 16, -69, 17, -68, 12, -150, 21, 54, 7, 148, 7);
+                nucleicAcidRotamerCache[n][40] = new Rotamer(name, 145, 7, -115, 20, 163, 13, -66, 6, 172, 14, 46, 6, 146, 6);
+                nucleicAcidRotamerCache[n][41] = new Rotamer(name, 148, 4, -112, 20, 112, 14, -85, 17, 165, 16, 57, 12, 146, 6);
+                nucleicAcidRotamerCache[n][42] = new Rotamer(name, 150, 10, -100, 16, -146, 19, 72, 13, -152, 27, 57, 14, 148, 4);
+                nucleicAcidRotamerCache[n][43] = new Rotamer(name, 146, 7, -102, 21, 90, 15, 68, 12, 173, 18, 56, 8, 148, 4);
+                nucleicAcidRotamerCache[n][44] = new Rotamer(name, 150, 2, -112, 16, 170, 12, -82, 13, 84, 7, 176, 6, 148, 2);
+                nucleicAcidRotamerCache[n][45] = new Rotamer(name, 147, 6, -104, 15, -64, 16, -73, 4, -165, 26, -66, 7, 150, 3);
+                break;
+            case MP1:
+            case DP2:
+            case TP3:
+            case UNK:
+            case M2MG:
+            case H2U:
+            case M2G:
+            case OMC:
+            case OMG:
+            case PSU:
+            case M5MC:
+            case M7MG:
+            case M5MU:
+            case M1MA:
+            case YYG:
+            default:
+                break;
+        }
+        return nucleicAcidRotamerCache[n];
+    }
+
+    /**
+     * Applies a nucleic acid Rotamer, returning the magnitude of the correction applied to make residue i join i-1.
+     * <p>
+     * Note that the independent flag is separate from DEE independence: DEE
+     * independence is preserved by applying corrections based on a non-variable
+     * set of coordinates, and is wholly independent of what is happening to
+     * residue i-1.
+     * <p>
+     * Cannot presently handle 3' phosphate caps: I do not know what they would
+     * be labeled as in PDB files. A template for how to handle 3' phosphate
+     * caps is written but commented out.
+     *
+     * @param residue     Residue.
+     * @param rotamer     Rotamer to be applied to Residue.
+     * @param independent Whether to draw NA rotamer independent of chain
+     *                    context.
+     * @return Magnitude of the correction vector.
+     */
+    private static double applyNARotamer(Residue residue, Rotamer rotamer, boolean independent) {
+        if (rotamer.isState) {
+            applyState(residue, rotamer);
+            return 0;
+        }
+        NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
+        Residue prevResidue = residue.getPreviousResidue();
+        boolean is3sTerminal = false;  // 3' terminal
+        if (residue.getNextResidue() == null) {
+            is3sTerminal = true;
+        }
+
+        // Check if this is a 3' phosphate being listed as its own residue.
+        /* if (residue.getAtomList().size() == 1) {
+         return;
+         } */
+        boolean isDeoxy = residue.getAtomNode("O2\'") == null;
+
+        // Note: chi values will generally be applied from chi7 to chi1.
+        // Will have to add an else-if to handle DNA C3'-exo configurations.
+        NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi7, isDeoxy);
+        NucleicSugarPucker prevSugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi1, isDeoxy);
+
+        // Revert C1', O4', and C4' coordinates to PDB defaults.
+        Atom C1s = (Atom) residue.getAtomNode("C1\'");
+        C1s.moveTo(residue.getC1sCoords());
+        Atom O4s = (Atom) residue.getAtomNode("O4\'");
+        O4s.moveTo(residue.getO4sCoords());
+        Atom C4s = (Atom) residue.getAtomNode("C4\'");
+        C4s.moveTo(residue.getC4sCoords());
+
+        // Presently, the exterior method loadPriorAtomicCoordinates() directly
+        // calls applySugarPucker instead of going through applyRotamer().
+        applySugarPucker(residue, sugarPucker, isDeoxy, true);
+        applyNABackbone(residue, rotamer, prevResidue);
+
+        double naCorrection = 0;
+        if (prevResidue != null && !independent) {
+            naCorrection = applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, isDeoxy, is3sTerminal);
+        } /* else if (!independent) {
+         startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
+         } */
+
+        applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
+        return naCorrection;
     }
 
     private static boolean addRotPatch(File rpatchFile) {
@@ -4113,7 +4102,7 @@ public class RotamerLibrary {
                 }
 
                 if (nonstdRotCache.containsKey(resName)) {
-                    logger.warning(String.format(" Rotamer library already contains "
+                    logger.warning(format(" Rotamer library already contains "
                             + "rotamer definition for residue %s!", resName));
                 } else {
                     NonstandardRotLibrary nrlib = new NonstandardRotLibrary(resName,
@@ -4126,17 +4115,13 @@ public class RotamerLibrary {
                 return false;
             }
         } catch (IOException ex) {
-            logger.warning(String.format(" Exception in parsing rotamer patch "
+            logger.warning(format(" Exception in parsing rotamer patch "
                     + "file %s: %s", rpatchFile.getName(), ex.toString()));
             return false;
         }
     }
 
-    public static void readRotFile(File rotamerFile, MolecularAssembly assembly) throws IOException {
-        readRotFile(rotamerFile, assembly, 1);
-    }
-
-    public static void readRotFile(File rotamerFile, MolecularAssembly assembly, int boxWindowIndex) throws IOException {
+    private static void readRotFile(File rotamerFile, MolecularAssembly assembly, int boxWindowIndex) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(rotamerFile))) {
             Polymer[] polys = assembly.getChains();
             Residue currentRes = null;
@@ -4148,7 +4133,7 @@ public class RotamerLibrary {
                 String[] toks = line.trim().split(":");
                 if (toks[0].equals("ALGORITHM")) {
                     doRead = Integer.parseInt(toks[2]) == boxWindowIndex;
-                    logger.info(String.format(" Readabilifications %b with %s", doRead, line));
+                    logger.info(format(" Readabilifications %b with %s", doRead, line));
                 } else if (doRead && !toks[0].startsWith("#")) {
                     switch (toks[0]) {
                         case "RES": {
@@ -4167,7 +4152,7 @@ public class RotamerLibrary {
                             ResidueState rotamerState = currentRes.storeState();
                             currentRes.addRotamer(Rotamer.stateToRotamer(rotamerState));
                             currentRes.revertState(origState);
-                            logger.info(String.format(" Adding a rotamer to %s", currentRes));
+                            logger.info(format(" Adding a rotamer to %s", currentRes));
                         }
                         break;
                         case "ROT": {
@@ -4179,7 +4164,7 @@ public class RotamerLibrary {
                             Atom atom = (Atom) currentRes.getAtomNode(name);
                             double[] xyz = new double[3];
                             for (int i = 0; i < 3; i++) {
-                                xyz[i] = Double.parseDouble(toks[i+2]);
+                                xyz[i] = Double.parseDouble(toks[i + 2]);
                             }
                             atom.setXYZ(xyz);
                         }
@@ -4194,68 +4179,118 @@ public class RotamerLibrary {
         }
     }
 
-    public enum ProteinLibrary {
+    /**
+     * Number of amino acid residues types currently recognized, although there
+     * are not rotamer libraries for each yet.
+     */
+    private static final int numberOfAminoAcids = AminoAcid3.values().length;
+    /**
+     * Number of nucleic acid residues types currently recognized, although
+     * there are not rotamer libraries for each yet.
+     */
+    private static final int numberOfNucleicAcids = NucleicAcid3.values().length;
+    /**
+     * The first time rotamers are requested for an amino acid type, they are
+     * instantiated into an array, which is stored in the cache. Subsequently
+     * the reference is simply returned.
+     */
+    private final Rotamer[][] aminoAcidRotamerCache = new Rotamer[numberOfAminoAcids][];
+    /**
+     * The first time rotamers are requested for a nucleic acid type, they are
+     * instantiated into an array, which is stored in the cache. Subsequently
+     * the reference is simply returned.
+     */
+    private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
 
-        PonderAndRichards(1), Richardson(2), None(-1);
+    /**
+     * The idealized amino acid rotamer library in use. Defaults to the Richardson library.
+     */
+    private final ProteinLibrary proteinLibrary;
+    private static final ProteinLibrary DEFAULT_PROTEIN_LIB = ProteinLibrary.Richardson;
 
-        private final int oldIntegerConstant;
+    /**
+     * The idealized nucleic acid rotamer library in use. Defaults to the Richardson library... partially because there's no other library.
+     */
+    private final NucleicAcidLibrary nucleicAcidLibrary;
+    private static final NucleicAcidLibrary DEFAULT_NA_LIB = NucleicAcidLibrary.RICHARDSON;
 
-        ProteinLibrary(int oldConst) {
-            this.oldIntegerConstant = oldConst;
-        }
+    private boolean useOrigCoordsRotamer;
 
-        /**
-         * Parses a String input to a ProteinLibrary. Can be either a name, or an integer constant.
-         * <p>
-         * The name is preferred, but the integer constant is allowed for legacy reasons.
-         *
-         * @param input Input to parse.
-         * @return A ProteinLibrary.
-         * @throws IllegalArgumentException If no matching ProteinLibrary found.
-         */
-        public static ProteinLibrary getProteinLibrary(String input) throws IllegalArgumentException {
-            if (input.matches("^\\d+$")) {
-                return int2Library(Integer.parseInt(input));
-            } else {
-                return Arrays.stream(ProteinLibrary.values()).
-                        filter((ProteinLibrary pl) -> pl.toString().equalsIgnoreCase(input)).
-                        findAny().
-                        orElseThrow(() -> new IllegalArgumentException(" No protein library found that corresponds to " + input));
-            }
-        }
+    private static final Map<String, NonstandardRotLibrary> nonstdRotCache = new HashMap<>();
 
-        /**
-         * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the actual name.
-         *
-         * @param library Index of the library.
-         * @return A ProteinLibrary.
-         * @throws IllegalArgumentException If no matching ProteinLibrary found.
-         */
-        @Deprecated
-        public static ProteinLibrary intToProteinLibrary(int library) throws IllegalArgumentException {
-            return int2Library(library);
-        }
+    private static final RotamerLibrary defaultRotamerLibrary = new RotamerLibrary(ProteinLibrary.PonderAndRichards, false);
 
-        /**
-         * Converts an integer to a corresponding ProteinLibrary. Wrapped by deprecated intToProteinLibrary.
-         *
-         * @param library Index of the library.
-         * @return A ProteinLibrary.
-         * @throws IllegalArgumentException If no matching ProteinLibrary found.
-         */
-        private static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
-            for (ProteinLibrary lib : ProteinLibrary.values()) {
-                if (library == lib.oldIntegerConstant) {
-                    return lib;
-                }
-            }
-            throw new IllegalArgumentException(String.format(" Could not find a " +
-                    "protein rotamer library to correspond with %d!", library));
-        }
-    }
+    private static final boolean useIdealRingGeometries = Boolean.parseBoolean(System.getProperty("useIdealRingGeo", "true"));
 
-    public enum NucleicAcidLibrary {
-        RICHARDSON
+    private static final Map<AminoAcid3, Map<String, Double>> idealAngleGeometries;
+
+    static {
+        Map<AminoAcid3, Map<String, Double>> angleGeos = new HashMap<>();
+
+        Map<String, Double> pheMap = new HashMap<>();
+        pheMap.put("CD1-CG-CB", 120.3);
+        pheMap.put("CD2-CG-CB", 120.3);
+        pheMap.put("CE1-CD1-CG", 120.3);
+        pheMap.put("CE2-CD2-CG", 120.3);
+        pheMap.put("CZ-CE1-CD1", 120.0);
+        pheMap.put("CZ-CE2-CD2", 120.0);
+        angleGeos.put(AminoAcid3.PHE, Collections.unmodifiableMap(pheMap));
+
+        Map<String, Double> tyrMap = new HashMap<>();
+        tyrMap.put("CD1-CG-CB", 120.3);
+        tyrMap.put("CD2-CG-CB", 120.3);
+        tyrMap.put("CE1-CD1-CG", 120.3);
+        tyrMap.put("CE2-CD2-CG", 120.3);
+        tyrMap.put("CZ-CE1-CD1", 120.0);
+        tyrMap.put("CZ-CE2-CD2", 120.0);
+        angleGeos.put(AminoAcid3.TYR, Collections.unmodifiableMap(tyrMap));
+
+        Map<String, Double> tydMap = new HashMap<>();
+        tydMap.put("CD1-CG-CB", 120.5);
+        tydMap.put("CD2-CG-CB", 120.5);
+        tydMap.put("CE1-CD1-CG", 120.4);
+        tydMap.put("CE2-CD2-CG", 120.4);
+        tydMap.put("CZ-CE1-CD1", 120.8);
+        tydMap.put("CZ-CE2-CD2", 120.8);
+        angleGeos.put(AminoAcid3.TYD, Collections.unmodifiableMap(tydMap));
+
+        Map<String, Double> hisMap = new HashMap<>();
+        hisMap.put("ND1-CG-CB", 122.1);
+        hisMap.put("CD2-CG-CB", 131.0);
+        hisMap.put("CD2-CG-ND1", 106.8);
+        hisMap.put("CE1-ND1-CG", 109.5);
+        hisMap.put("NE2-CD2-CG", 107.1);
+        angleGeos.put(AminoAcid3.HIS, Collections.unmodifiableMap(hisMap));
+
+        Map<String, Double> hidMap = new HashMap<>();
+        hidMap.put("ND1-CG-CB", 123.5);
+        hidMap.put("CD2-CG-CB", 132.3);
+        hidMap.put("CD2-CG-ND1", 104.2);
+        hidMap.put("CE1-ND1-CG", 108.8);
+        hidMap.put("NE2-CD2-CG", 111.2);
+        angleGeos.put(AminoAcid3.HID, Collections.unmodifiableMap(hidMap));
+
+        Map<String, Double> hieMap = new HashMap<>();
+        hieMap.put("ND1-CG-CB", 120.2);
+        hieMap.put("CD2-CG-CB", 129.1);
+        hieMap.put("CD2-CG-ND1", 110.7);
+        hieMap.put("CE1-ND1-CG", 105.1);
+        hieMap.put("NE2-CD2-CG", 104.6);
+        angleGeos.put(AminoAcid3.HIE, Collections.unmodifiableMap(hieMap));
+
+        Map<String, Double> trpMap = new HashMap<>();
+        trpMap.put("CD1-CG-CB", 126.4);
+        trpMap.put("CD2-CG-CB", 126.5);
+        trpMap.put("CD2-CG-CD1", 107.1);
+        trpMap.put("NE1-CD1-CG", 106.9);
+        trpMap.put("CE2-NE1-CD1", 109.4);
+        trpMap.put("CE3-CD2-CE2", 121.6);
+        trpMap.put("CZ2-CE2-CD2", 123.5);
+        trpMap.put("CZ3-CE3-CD2", 116.7);
+        trpMap.put("CH2-CZ2-CE2", 116.2);
+        angleGeos.put(AminoAcid3.TRP, Collections.unmodifiableMap(trpMap));
+
+        idealAngleGeometries = Collections.unmodifiableMap(angleGeos);
     }
 
     /**
@@ -4316,7 +4351,7 @@ public class RotamerLibrary {
          */
         void applyNonstdRotamer(Residue residue, Rotamer rotamer) {
             if (!residue.getName().equalsIgnoreCase(resName)) {
-                throw new IllegalArgumentException(String.format(" Residue %s is "
+                throw new IllegalArgumentException(format(" Residue %s is "
                         + "not of type %s", residue.toString(), resName));
             }
             for (String record : placeRecords) {
@@ -4364,43 +4399,6 @@ public class RotamerLibrary {
                 int chirality = Integer.parseInt(toks[6]);
                 intxyz(at1, at2, dbond, at3, dang, at4, dtors, chirality);
             }
-        }
-    }
-
-    public enum NucleicSugarPucker {
-        // Used to be 2, 1, and 3 respectively.
-        C2_ENDO("south"), C3_ENDO("north"), C3_EXO();
-        private final List<String> alternateNames;
-
-        NucleicSugarPucker() {
-            alternateNames = Collections.emptyList();
-        }
-
-        NucleicSugarPucker(String aName) {
-            alternateNames = Collections.singletonList(aName);
-        }
-
-        /**
-         * Returns the sugar pucker associated with a delta torsion. Currently does
-         * not support the C3'-exo DNA-only pucker.
-         *
-         * @param delta   Delta torsion to check
-         * @param isDeoxy If DNA (vs. RNA). Presently ignored.
-         * @return Pucker
-         */
-        public static NucleicSugarPucker checkPucker(double delta, boolean isDeoxy) {
-            /*
-             * Midpoint between North, South is 115 degrees.
-             *
-             * 0-360: North is 0-115 or 295-360.
-             * -180 to 180: North is -65 to 115.
-             */
-            delta = Crystal.mod(delta, 360.0);
-            if (delta <= 115 || delta > 295) {
-                return C3_ENDO;
-            } else {
-                return C2_ENDO;
-            } // TODO: Add else-if to handle C3'-exo pucker.
         }
     }
 }

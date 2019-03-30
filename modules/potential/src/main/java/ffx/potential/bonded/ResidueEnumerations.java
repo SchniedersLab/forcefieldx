@@ -88,8 +88,6 @@ public class ResidueEnumerations {
         J, t, f, a, o, n, m, x
     }
 
-    ;
-
     public enum AminoAcid3 {
 
         GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, CYD,
@@ -98,25 +96,10 @@ public class ResidueEnumerations {
         PCA, H2N, FOR, ACE, COH, NH2, NME, UNK
     }
 
-    ;
-
-    public enum CommonAminoAcid3 {
-        ALA, VAL, LEU, ILE, CYS, PHE, TYR, TRP, HIS, ASP,
-        ASN, GLU, GLN, MET, LYS, ARG
-//        PRO, GLY, SER, THR
-    }
-
-    /**
-     * Constant <code>aminoAcidList</code>
-     */
-    public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
-
     public enum NucleicAcid1 {
 
         A, G, C, U, D, B, I, T, O, W, H, X
     }
-
-    ;
 
     /**
      * Since enumeration values must start with a letter, an 'M' is added to
@@ -128,7 +111,10 @@ public class ResidueEnumerations {
         H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
     }
 
-    ;
+    /**
+     * Constant <code>aminoAcidList</code>
+     */
+    public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
 
     /**
      * Constant <code>nucleicAcidList</code>
@@ -138,7 +124,7 @@ public class ResidueEnumerations {
     /**
      * Constant <code>aminoAcidHeavyAtoms</code>
      */
-    public static final int aminoAcidHeavyAtoms[] = {
+    public static final int[] aminoAcidHeavyAtoms = {
             4, 5, 7, 8, 8, 6, 7, 6, 6, 6,
             7, 11, 12, 12, 14, 10, 10, 10, 8, 8,
             8, 9, 9, 9, 8, 9, 9, 11, 8, 6,
