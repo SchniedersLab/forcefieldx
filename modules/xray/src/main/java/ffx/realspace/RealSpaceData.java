@@ -1,47 +1,47 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.realspace;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -88,10 +88,6 @@ public class RealSpaceData implements DataContainer {
      */
     private RealSpaceFile[] realSpaceFile;
     /**
-     * The name of the model.
-     */
-    private String modelName;
-    /**
      * The number of real space data sources to consider.
      */
     private int nRealSpaceData;
@@ -99,7 +95,7 @@ public class RealSpaceData implements DataContainer {
      * The collection of crystals that describe the PBC and symmetry of each
      * data source.
      */
-    private Crystal crystal[];
+    private Crystal[] crystal;
     /**
      * The real space refinement data for each data source.
      */
@@ -119,11 +115,11 @@ public class RealSpaceData implements DataContainer {
     /**
      * The real space gradient.
      */
-    private double realSpaceGradient[];
+    private double[] realSpaceGradient;
     /**
      * The partial derivative of the real space gradient with respect to lambda.
      */
-    private double realSpacedUdXdL[];
+    private double[] realSpacedUdXdL;
     /**
      * The weight of the data relative to the weight of the force field.
      */
@@ -135,10 +131,14 @@ public class RealSpaceData implements DataContainer {
     /**
      * A flag to indicate if the lambda term is active.
      */
-    private boolean lambdaTerm = false;
-
-    private final boolean parallel = true;
+    private boolean lambdaTerm;
+    /**
+     * Parallel Team instance.
+     */
     private final ParallelTeam parallelTeam;
+    /**
+     * Calculate the real space target in parallel.
+     */
     private final RealSpaceRegion realSpaceRegion;
 
     /**
@@ -169,13 +169,12 @@ public class RealSpaceData implements DataContainer {
      * @param parallelTeam        a {@link edu.rit.pj.ParallelTeam} object.
      * @param diffractionData     {@link ffx.xray.DiffractionData diffraction data}
      */
-    public RealSpaceData(MolecularAssembly molecularAssemblies[],
+    public RealSpaceData(MolecularAssembly[] molecularAssemblies,
                          CompositeConfiguration properties,
                          ParallelTeam parallelTeam,
                          DiffractionData diffractionData) {
         this.molecularAssemblies = molecularAssemblies;
         this.parallelTeam = parallelTeam;
-        this.modelName = molecularAssemblies[0].getFile().getName();
         this.realSpaceFile = null;
         this.nRealSpaceData = 1;
         crystal = new Crystal[nRealSpaceData];
@@ -188,8 +187,7 @@ public class RealSpaceData implements DataContainer {
         lambdaTerm = properties.getBoolean("lambdaterm", false);
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(" Real Space Refinement Settings\n");
+            StringBuilder sb = new StringBuilder(" Real Space Refinement Settings\n");
             sb.append(format("  Refinement weight (xweight): %5.3f", xweight));
             logger.info(sb.toString());
         }
@@ -216,20 +214,16 @@ public class RealSpaceData implements DataContainer {
             for (int j = 0; j < exty; j++) {
                 for (int i = 0; i < extx; i++) {
                     int index1 = (i + extx * (j + exty * k));
-                    int index2 = 2 * (i + extx * (j + exty * k));
+                    int index2 = 2 * index1;
                     refinementData[0].getData()[index1] = diffractionData.getCrs_fc()[0].getDensityGrid()[index2];
                 }
             }
         }
 
-        /**
-         * Initialize the refinement model.
-         */
+        // Initialize the refinement model.
         refinementModel = new RefinementModel(molecularAssemblies);
 
-        /**
-         * Initialize the RealSpaceRegion.
-         */
+        // Initialize the RealSpaceRegion.
         int nAtoms = refinementModel.getTotalAtomArray().length;
         realSpaceRegion = new RealSpaceRegion(parallelTeam.getThreadCount(),
                 nAtoms, refinementData.length);
@@ -279,13 +273,12 @@ public class RealSpaceData implements DataContainer {
      * @param parallelTeam        a {@link edu.rit.pj.ParallelTeam} object.
      * @param dataFile            one or more {@link ffx.realspace.parsers.RealSpaceFile} to be refined against
      */
-    public RealSpaceData(MolecularAssembly molecularAssemblies[],
+    public RealSpaceData(MolecularAssembly[] molecularAssemblies,
                          CompositeConfiguration properties,
                          ParallelTeam parallelTeam,
                          RealSpaceFile... dataFile) {
 
         this.molecularAssemblies = molecularAssemblies;
-        this.modelName = molecularAssemblies[0].getFile().getName();
         this.parallelTeam = parallelTeam;
         this.realSpaceFile = dataFile;
         this.nRealSpaceData = dataFile.length;
@@ -297,9 +290,8 @@ public class RealSpaceData implements DataContainer {
 
         for (int i = 0; i < nRealSpaceData; i++) {
             crystal[i] = dataFile[i].getRealSpaceFileFilter().getCrystal(dataFile[i].getFilename(), properties);
-
             if (crystal[i] == null) {
-                logger.severe("CCP4 map file does not contain full crystal information!");
+                logger.severe(" CCP4 map file does not contain full crystal information!");
             }
         }
 
@@ -319,8 +311,7 @@ public class RealSpaceData implements DataContainer {
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(" Real Space Refinement Settings\n");
+            StringBuilder sb = new StringBuilder(" Real Space Refinement Settings\n");
             sb.append(format("  Refinement weight (xweight): %5.3f", xweight));
             logger.info(sb.toString());
         }
@@ -328,9 +319,7 @@ public class RealSpaceData implements DataContainer {
         // now set up the refinement model
         refinementModel = new RefinementModel(molecularAssemblies);
 
-        /**
-         * Initialize the RealSpaceRegion.
-         */
+        // Initialize the RealSpaceRegion.
         int nAtoms = refinementModel.getTotalAtomArray().length;
         realSpaceRegion = new RealSpaceRegion(parallelTeam.getThreadCount(),
                 nAtoms, refinementData.length);
@@ -342,7 +331,7 @@ public class RealSpaceData implements DataContainer {
      *
      * @return target value sum over all data sets.
      */
-    public double computeRealSpaceTarget() {
+    double computeRealSpaceTarget() {
 
         long time = -System.nanoTime();
         // Zero out the realSpaceTarget energy.
@@ -362,23 +351,21 @@ public class RealSpaceData implements DataContainer {
         if (realSpaceGradient == null || realSpaceGradient.length < nGrad) {
             realSpaceGradient = new double[nGrad];
         } else {
-            Arrays.fill(realSpaceGradient, 0.0);
+            fill(realSpaceGradient, 0.0);
         }
 
         // Initialize dUdXdL to zero; allocate space if necessary.
         if (realSpacedUdXdL == null || realSpacedUdXdL.length < nGrad) {
             realSpacedUdXdL = new double[nGrad];
         } else {
-            Arrays.fill(realSpacedUdXdL, 0.0);
+            fill(realSpacedUdXdL, 0.0);
         }
 
-        if (parallel) {
-            try {
-                parallelTeam.execute(realSpaceRegion);
-            } catch (Exception e) {
-                String message = " Exception computing real space energy";
-                logger.log(Level.SEVERE, message, e);
-            }
+        try {
+            parallelTeam.execute(realSpaceRegion);
+        } catch (Exception e) {
+            String message = " Exception computing real space energy";
+            logger.log(Level.SEVERE, message, e);
         }
 
         time += System.nanoTime();
@@ -390,20 +377,11 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
-     * <p>Getter for the field <code>realSpaceEnergy</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getRealSpaceEnergy() {
-        return realSpaceEnergy;
-    }
-
-    /**
      * <p>getdEdL.</p>
      *
      * @return a double.
      */
-    public double getdEdL() {
+    double getdEdL() {
         return realSpacedUdL;
     }
 
@@ -413,7 +391,7 @@ public class RealSpaceData implements DataContainer {
      * @param gradient an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public double[] getRealSpaceGradient(double gradient[]) {
+    public double[] getRealSpaceGradient(double[] gradient) {
         int nAtoms = refinementModel.getTotalAtomArray().length;
         int nActiveAtoms = 0;
         for (int i = 0; i < nAtoms; i++) {
@@ -437,7 +415,7 @@ public class RealSpaceData implements DataContainer {
      * @param gradient an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public double[] getdEdXdL(double gradient[]) {
+    double[] getdEdXdL(double[] gradient) {
         int nAtoms = refinementModel.getTotalAtomArray().length;
         int nActiveAtoms = 0;
         for (int i = 0; i < nAtoms; i++) {
@@ -544,7 +522,7 @@ public class RealSpaceData implements DataContainer {
     public String printOptimizationUpdate() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nRealSpaceData; i++) {
-            sb.append(String.format("%6.2f ", refinementData[i].getDensityScore()));
+            sb.append(format("%6.2f ", refinementData[i].getDensityScore()));
         }
         return sb.toString();
     }
@@ -556,7 +534,7 @@ public class RealSpaceData implements DataContainer {
     public String printEnergyUpdate() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nRealSpaceData; i++) {
-            sb.append(String.format("     dataset %d (weight: %5.1f): chemical energy: %8.2f density score: %8.2f\n",
+            sb.append(format("     dataset %d (weight: %5.1f): chemical energy: %8.2f density score: %8.2f\n",
                     i + 1, realSpaceFile[i].getWeight(),
                     molecularAssemblies[0].getPotentialEnergy().getTotalEnergy(),
                     realSpaceFile[i].getWeight() * refinementData[i].getDensityScore()));
@@ -566,9 +544,7 @@ public class RealSpaceData implements DataContainer {
 
     private class RealSpaceRegion extends ParallelRegion {
 
-        private int nThreads;
         private int nAtoms;
-        // private int nGrad;
         private int nData;
         private final AtomicDoubleArray gradX;
         private final AtomicDoubleArray gradY;
@@ -576,15 +552,13 @@ public class RealSpaceData implements DataContainer {
         private final AtomicDoubleArray lambdaGradX;
         private final AtomicDoubleArray lambdaGradY;
         private final AtomicDoubleArray lambdaGradZ;
-        private final InitializationLoop initializationLoops[];
-        private final RealSpaceLoop realSpaceLoops[];
-        private final SharedDouble sharedTarget[];
+        private final InitializationLoop[] initializationLoops;
+        private final RealSpaceLoop[] realSpaceLoops;
+        private final SharedDouble[] sharedTarget;
         private final SharedDouble shareddUdL;
 
-        public RealSpaceRegion(int nThreads, int nAtoms, /*int nGrad, */ int nData) {
-            this.nThreads = nThreads;
+        RealSpaceRegion(int nThreads, int nAtoms, int nData) {
             this.nAtoms = nAtoms;
-            //this.nGrad = nGrad;
             this.nData = nData;
             initializationLoops = new InitializationLoop[nThreads];
             realSpaceLoops = new RealSpaceLoop[nThreads];
@@ -689,7 +663,7 @@ public class RealSpaceData implements DataContainer {
 
         private class RealSpaceLoop extends IntegerForLoop {
 
-            double target[] = new double[nData];
+            double[] target = new double[nData];
             double localdUdL;
 
             @Override
@@ -712,10 +686,10 @@ public class RealSpaceData implements DataContainer {
             public void run(int first, int last) throws Exception {
 
                 int threadID = getThreadIndex();
-                double xyz[] = new double[3];
-                double uvw[] = new double[3];
-                double grad[] = new double[3];
-                double scalar[][][] = new double[4][4][4];
+                double[] xyz = new double[3];
+                double[] uvw = new double[3];
+                double[] grad = new double[3];
+                double[][][] scalar = new double[4][4][4];
                 TriCubicSpline spline = new TriCubicSpline();
 
                 for (int i = 0; i < getnRealSpaceData(); i++) {
@@ -733,10 +707,8 @@ public class RealSpaceData implements DataContainer {
 
                     for (int ia = first; ia <= last; ia++) {
                         Atom a = refinementModel.getTotalAtomArray()[ia];
-                        /**
-                         * Only include atoms in the target function that have
-                         * their use flag set to true and are Active.
-                         */
+                        // Only include atoms in the target function that have
+                        // their use flag set to true and are Active.
                         if (!a.getUse()) {
                             continue;
                         }
@@ -750,9 +722,7 @@ public class RealSpaceData implements DataContainer {
                         a.getXYZ(xyz);
                         getCrystal()[i].toFractionalCoordinates(xyz, uvw);
 
-                        /**
-                         * Logic to find atom in 3d scalar field box.
-                         */
+                        // Logic to find atom in 3d scalar field box.
                         final double frx = nX * uvw[0];
                         final int ifrx = ((int) floor(frx)) - originX;
                         final double dfrx = frx - floor(frx);
@@ -775,9 +745,7 @@ public class RealSpaceData implements DataContainer {
                             }
                         }
 
-                        /**
-                         * Fill in scalar 4x4 array for interpolation.
-                         */
+                        // Fill in scalar 4x4 array for interpolation.
                         if (getRefinementData()[i].isPeriodic()) {
                             for (int ui = ifrx - 1; ui < ifrx + 3; ui++) {
                                 int uii = ui - (ifrx - 1);
@@ -805,9 +773,7 @@ public class RealSpaceData implements DataContainer {
                             }
                         }
 
-                        /**
-                         * Scale and interpolate.
-                         */
+                        // Scale and interpolate.
                         double scale;
                         double scaledUdL;
                         double atomicWeight = a.getAtomType().atomicWeight;
@@ -851,48 +817,12 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
-     * <p>Setter for the field <code>molecularAssemblies</code>.</p>
-     *
-     * @param molecularAssemblies the molecularAssemblies to set
-     */
-    public void setMolecularAssemblies(MolecularAssembly[] molecularAssemblies) {
-        this.molecularAssemblies = molecularAssemblies;
-    }
-
-    /**
      * <p>Getter for the field <code>realSpaceFile</code>.</p>
      *
      * @return the realSpaceFile
      */
-    public RealSpaceFile[] getRealSpaceFile() {
+    private RealSpaceFile[] getRealSpaceFile() {
         return realSpaceFile;
-    }
-
-    /**
-     * <p>Setter for the field <code>realSpaceFile</code>.</p>
-     *
-     * @param realSpaceFile the realSpaceFile to set
-     */
-    public void setRealSpaceFile(RealSpaceFile[] realSpaceFile) {
-        this.realSpaceFile = realSpaceFile;
-    }
-
-    /**
-     * <p>Getter for the field <code>modelName</code>.</p>
-     *
-     * @return the modelName
-     */
-    public String getModelName() {
-        return modelName;
-    }
-
-    /**
-     * <p>Setter for the field <code>modelName</code>.</p>
-     *
-     * @param modelName the modelName to set
-     */
-    public void setModelName(String modelName) {
-        this.modelName = modelName;
     }
 
     /**
@@ -900,17 +830,8 @@ public class RealSpaceData implements DataContainer {
      *
      * @return the nRealSpaceData
      */
-    public int getnRealSpaceData() {
+    private int getnRealSpaceData() {
         return nRealSpaceData;
-    }
-
-    /**
-     * <p>Setter for the field <code>nRealSpaceData</code>.</p>
-     *
-     * @param nRealSpaceData the nRealSpaceData to set
-     */
-    public void setnRealSpaceData(int nRealSpaceData) {
-        this.nRealSpaceData = nRealSpaceData;
     }
 
     /**
@@ -950,15 +871,6 @@ public class RealSpaceData implements DataContainer {
     }
 
     /**
-     * <p>Setter for the field <code>refinementModel</code>.</p>
-     *
-     * @param refinementModel the refinementModel to set
-     */
-    public void setRefinementModel(RefinementModel refinementModel) {
-        this.refinementModel = refinementModel;
-    }
-
-    /**
      * <p>Getter for the field <code>lambda</code>.</p>
      *
      * @return the lambda
@@ -983,7 +895,7 @@ public class RealSpaceData implements DataContainer {
             parallelTeam.shutdown();
             return underlyingShutdown;
         } catch (Exception ex) {
-            logger.warning(String.format(" Exception in shutting down a RealSpaceData: %s", ex));
+            logger.warning(format(" Exception in shutting down a RealSpaceData: %s", ex));
             logger.info(Utilities.stackTraceToString(ex));
             return false;
         }

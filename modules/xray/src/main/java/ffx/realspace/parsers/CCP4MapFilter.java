@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.realspace.parsers;
 
 import java.io.DataInputStream;
@@ -43,6 +43,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 
@@ -55,12 +56,10 @@ import ffx.realspace.RealSpaceRefinementData;
  * CCP4MapFilter class.</p>
  *
  * @author Timothy D. Fenn
- *
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
  * target="_blank">CCP4 library documentation</a>
- *
  * @since 1.0
  */
 public class CCP4MapFilter implements RealSpaceFileFilter {
@@ -85,13 +84,13 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
         FileInputStream fileInputStream;
         DataInputStream dataInputStream;
 
-        // first determine byte order of file versus system
+        // First determine byte order of file versus system.
         try {
             fileInputStream = new FileInputStream(fileName);
             dataInputStream = new DataInputStream(fileInputStream);
 
             dataInputStream.skipBytes(212);
-            byte bytes[] = new byte[4];
+            byte[] bytes = new byte[4];
             dataInputStream.read(bytes, 0, 4);
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
@@ -122,7 +121,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             dataInputStream = new DataInputStream(fileInputStream);
 
             dataInputStream.skipBytes(40);
-            byte bytes[] = new byte[80];
+            byte[] bytes = new byte[80];
             dataInputStream.read(bytes, 0, 80);
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
@@ -179,7 +178,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             dataInputStream = new DataInputStream(fileInputStream);
 
             dataInputStream.skipBytes(212);
-            byte bytes[] = new byte[4];
+            byte[] bytes = new byte[4];
             dataInputStream.read(bytes, 0, 4);
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
@@ -200,8 +199,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             }
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(String.format(" Opening CCP4 map: %s\n", filename));
-                //sb.append(String.format("file type (machine stamp): %s\n", stampString));
+                sb.append(format(" Opening CCP4 map: %s\n", filename));
                 logger.info(sb.toString());
             }
 
@@ -215,12 +213,12 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             fileInputStream = new FileInputStream(filename);
             dataInputStream = new DataInputStream(fileInputStream);
 
-            byte bytes[] = new byte[2048];
+            byte[] bytes = new byte[2048];
 
             dataInputStream.read(bytes, 0, 1024);
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
-            int ext[] = new int[3];
+            int[] ext = new int[3];
             ext[0] = byteBuffer.order(byteOrder).getInt();
             ext[1] = byteBuffer.order(byteOrder).getInt();
             ext[2] = byteBuffer.order(byteOrder).getInt();
@@ -228,12 +226,12 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             // mode (2 = reals, only one we accept)
             int mode = byteBuffer.order(byteOrder).getInt();
 
-            int ori[] = new int[3];
+            int[] ori = new int[3];
             ori[0] = byteBuffer.order(byteOrder).getInt();
             ori[1] = byteBuffer.order(byteOrder).getInt();
             ori[2] = byteBuffer.order(byteOrder).getInt();
 
-            int ni[] = new int[3];
+            int[] ni = new int[3];
             ni[0] = byteBuffer.order(byteOrder).getInt();
             ni[1] = byteBuffer.order(byteOrder).getInt();
             ni[2] = byteBuffer.order(byteOrder).getInt();
@@ -245,7 +243,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             cellBeta = byteBuffer.order(byteOrder).getFloat();
             cellGamma = byteBuffer.order(byteOrder).getFloat();
 
-            int axisi[] = new int[3];
+            int[] axisi = new int[3];
             for (int i = 0; i < 3; i++) {
                 int axis = byteBuffer.order(byteOrder).getInt();
                 switch (axis) {
@@ -276,7 +274,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                 byteBuffer.order(byteOrder).getInt();
             }
 
-            byte word[] = new byte[2048];
+            byte[] word = new byte[2048];
             byteBuffer.order(byteOrder).get(word, 0, 4);
             String mapString = new String(word);
             sd = byteBuffer.order(byteOrder).getFloat();
@@ -284,19 +282,19 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
 
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(String.format("  Column origin:  %d\t Extent: %d\n",
+                sb.append(format("  Column origin:  %d\t Extent: %d\n",
                         ori[0], ext[0]));
-                sb.append(String.format("  Row origin:     %d\t Extent: %d\n",
+                sb.append(format("  Row origin:     %d\t Extent: %d\n",
                         ori[1], ext[1]));
-                sb.append(String.format("  Section origin: %d\t Extent: %d\n",
+                sb.append(format("  Section origin: %d\t Extent: %d\n",
                         ori[2], ext[2]));
-                sb.append(String.format("  Axis order:     %d %d %d\n",
+                sb.append(format("  Axis order:     %d %d %d\n",
                         axisi[0], axisi[1], axisi[2]));
-                sb.append(String.format("  Number of X, Y, Z columns: %d %d %d\n",
+                sb.append(format("  Number of X, Y, Z columns: %d %d %d\n",
                         ni[0], ni[1], ni[2]));
-                sb.append(String.format("  Spacegroup:     %d (%s)\n",
+                sb.append(format("  Spacegroup:     %d (%s)\n",
                         sg, SpaceGroup.spaceGroupNames[sg - 1]));
-                sb.append(String.format("  Cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+                sb.append(format("  Cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                         cellA, cellB, cellC, cellAlpha, cellBeta, cellGamma));
                 logger.info(sb.toString());
             }
@@ -319,7 +317,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             byteBuffer.rewind();
             dataInputStream.read(bytes, 0, 2048);
             refinementdata.setData(new double[ext[0] * ext[1] * ext[2]]);
-            int ijk[] = new int[3];
+            int[] ijk = new int[3];
             int index, x, y, z;
             refinementdata.setOrigin(ori[axisi[0]], ori[axisi[1]], ori[axisi[2]]);
             int nx = ext[axisi[0]];

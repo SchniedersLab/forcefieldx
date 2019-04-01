@@ -1,43 +1,44 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.realspace;
 
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
@@ -81,7 +82,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     /**
      * Optimization scaling used to improve convergence.
      */
-    protected double[] optimizationScaling = null;
+    private double[] optimizationScaling = null;
     /**
      * Value of the lambda state variable.
      */
@@ -98,8 +99,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     /**
      * Diffraction data energy target
      *
-     * @param realSpaceData  {@link ffx.realspace.RealSpaceData} object to associate with the
-     *                       target
+     * @param realSpaceData  {@link ffx.realspace.RealSpaceData} object to associate with the target
      * @param nxyz           number of xyz parameters
      * @param nb             number of b factor parameters
      * @param nocc           number of occupancy parameters
@@ -142,15 +142,10 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * parameters are being fit.
      */
     private void setRefinementBooleans() {
-        // reset, if previously set
-        refineXYZ = false;
-
-        if (refinementMode == RefinementMode.COORDINATES
+        refineXYZ = (refinementMode == RefinementMode.COORDINATES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            refineXYZ = true;
-        }
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES);
     }
 
     /**
@@ -162,9 +157,8 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     public double energy(double[] x) {
 
         double e = 0.0;
-        /**
-         * Unscale the coordinates.
-         */
+
+        // Unscale the coordinates.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -174,7 +168,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
 
         if (refineXYZ) {
             int index = 0;
-            double xyz[] = new double[3];
+            double[] xyz = new double[3];
             for (Atom a : refinementModel.getTotalAtomArray()) {
                 if (a.isActive()) {
                     int i = index * 3;
@@ -194,9 +188,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
             e = realSpaceData.computeRealSpaceTarget();
         }
 
-        /**
-         * Scale the coordinates and gradients.
-         */
+        // Scale the coordinates and gradients.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -214,9 +206,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
-        /**
-         * Unscale the coordinates.
-         */
+        // Unscale the coordinates.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -226,7 +216,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
 
         if (refineXYZ) {
             int index = 0;
-            double xyz[] = new double[3];
+            double[] xyz = new double[3];
             for (Atom a : refinementModel.getTotalAtomArray()) {
                 if (a.isActive()) {
                     int i = index * 3;
@@ -241,20 +231,14 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
             }
         }
 
-        /**
-         * Target function for real space refinement
-         */
+        // Target function for real space refinement
         if (refineXYZ) {
             e = realSpaceData.computeRealSpaceTarget();
-            /**
-             * Pack gradients into gradient array
-             */
+            // Pack gradients into gradient array
             getXYZGradients(g);
         }
 
-        /**
-         * Scale the coordinates and gradients.
-         */
+        // Scale the coordinates and gradients.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -271,7 +255,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      *
      * @return the number of xyz parameters
      */
-    public int getNXYZ() {
+    private int getNXYZ() {
         return nXYZ;
     }
 
@@ -280,7 +264,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param nxyz requested number of xyz parameters
      */
-    public void setNXYZ(int nxyz) {
+    private void setNXYZ(int nxyz) {
         this.nXYZ = nxyz;
     }
 
@@ -289,9 +273,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param g array to add gradient to
      */
-    public void getXYZGradients(double g[]) {
+    private void getXYZGradients(double[] g) {
         assert (g != null);
-        double grad[] = new double[3];
+        double[] grad = new double[3];
         int index = 0;
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
@@ -307,7 +291,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public double[] getCoordinates(double x[]) {
+    public double[] getCoordinates(double[] x) {
         int n = getNumberOfVariables();
         if (x == null || x.length < n) {
             x = new double[n];
@@ -328,9 +312,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param x an array of coordinates for active atoms.
      */
-    public void setCoordinates(double x[]) {
+    public void setCoordinates(double[] x) {
         assert (x != null);
-        double xyz[] = new double[3];
+        double[] xyz = new double[3];
         int index = 0;
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
@@ -346,8 +330,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public void setScaling(double[] scaling
-    ) {
+    public void setScaling(double[] scaling) {
         optimizationScaling = scaling;
     }
 
@@ -364,7 +347,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      */
     @Override
     public double[] getMass() {
-        double mass[] = new double[nXYZ];
+        double[] mass = new double[nXYZ];
         int i = 0;
         if (refineXYZ) {
             for (Atom a : refinementModel.getTotalAtomArray()) {
@@ -399,13 +382,12 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public void setLambda(double lambda
-    ) {
+    public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
             realSpaceData.setLambda(lambda);
         } else {
-            String message = String.format(" Lambda value %8.3f is not in the range [0..1].", lambda);
+            String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
         }
     }
@@ -438,8 +420,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public void getdEdXdL(double[] gradient
-    ) {
+    public void getdEdXdL(double[] gradient) {
         realSpaceData.getdEdXdL(gradient);
     }
 
@@ -458,7 +439,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
             }
         }
 
-        VARIABLE_TYPE type[] = new VARIABLE_TYPE[nActive * 3];
+        VARIABLE_TYPE[] type = new VARIABLE_TYPE[nActive * 3];
 
         int index = 0;
         for (int i = 0; i < nActive; i++) {
@@ -481,8 +462,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public void setEnergyTermState(STATE state
-    ) {
+    public void setEnergyTermState(STATE state) {
         this.state = state;
     }
 
@@ -490,13 +470,12 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public void setVelocity(double[] velocity
-    ) {
+    public void setVelocity(double[] velocity) {
         if (velocity == null) {
             return;
         }
         int index = 0;
-        double vel[] = new double[3];
+        double[] vel = new double[3];
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 vel[0] = velocity[index++];
@@ -511,13 +490,12 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public void setAcceleration(double[] acceleration
-    ) {
+    public void setAcceleration(double[] acceleration) {
         if (acceleration == null) {
             return;
         }
         int index = 0;
-        double accel[] = new double[3];
+        double[] accel = new double[3];
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 accel[0] = acceleration[index++];
@@ -532,13 +510,12 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public void setPreviousAcceleration(double[] previousAcceleration
-    ) {
+    public void setPreviousAcceleration(double[] previousAcceleration) {
         if (previousAcceleration == null) {
             return;
         }
         int index = 0;
-        double prev[] = new double[3];
+        double[] prev = new double[3];
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 prev[0] = previousAcceleration[index++];
@@ -553,14 +530,13 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public double[] getVelocity(double[] velocity
-    ) {
+    public double[] getVelocity(double[] velocity) {
         int n = getNumberOfVariables();
         if (velocity == null || velocity.length < n) {
             velocity = new double[n];
         }
         int index = 0;
-        double v[] = new double[3];
+        double[] v = new double[3];
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 a.getVelocity(v);
@@ -576,14 +552,13 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public double[] getAcceleration(double[] acceleration
-    ) {
+    public double[] getAcceleration(double[] acceleration) {
         int n = getNumberOfVariables();
         if (acceleration == null || acceleration.length < n) {
             acceleration = new double[n];
         }
         int index = 0;
-        double acc[] = new double[3];
+        double[] acc = new double[3];
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 a.getAcceleration(acc);
@@ -599,14 +574,13 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration
-    ) {
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
         int n = getNumberOfVariables();
         if (previousAcceleration == null || previousAcceleration.length < n) {
             previousAcceleration = new double[n];
         }
         int index = 0;
-        double prev[] = new double[3];
+        double[] prev = new double[3];
         for (Atom a : refinementModel.getTotalAtomArray()) {
             if (a.isActive()) {
                 a.getPreviousAcceleration(prev);
