@@ -1,4 +1,40 @@
-
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy.test
 
 import org.apache.commons.io.FileUtils
@@ -25,31 +61,37 @@ class SplitPDBDirectory extends Script {
      * <br>
      * ffxc SplitPDBDirectory [options] &lt;filename&gt;
      */
-    class Options{
+    class Options {
         /**
          * -h or --help to print a help message
          */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        @Option(longName = 'help', shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
+        boolean help
         /**
          * -n or --numberPerDirectory to split the directory into sub-directories of this many PDB files
-         */ 
-        @Option(longName='numberPerDirectory', shortName='n', description='Split the directory into sub-directories of this many PDB files.') int numberPerDirectory
+         */
+        @Option(longName = 'numberPerDirectory', shortName = 'n', description = 'Split the directory into sub-directories of this many PDB files.')
+        int numberPerDirectory
         /**
          * -p or --parseDeep to split files with valid coordinate file format (true) or look only at extension (false)
          */
-        @Option(longName='parseDeep', shortName='p', defaultValue='false', description='Split files with valid coordinate file format (true if flag is present) or look only at extension (false if flag is not present).') boolean parseDeep
+        @Option(longName = 'parseDeep', shortName = 'p', defaultValue = 'false', description = 'Split files with valid coordinate file format (true if flag is present) or look only at extension (false if flag is not present).')
+        boolean parseDeep
         /**
          * -d or --directoryNames to specify that new sub-directories should begin with this prefix
          */
-        @Option(longName='directoryNames', shortName='d', description='New sub-directories begin with this prefix.') String directoryNames
+        @Option(longName = 'directoryNames', shortName = 'd', description = 'New sub-directories begin with this prefix.')
+        String directoryNames
         /**
          * -q or --quiet to suppress progress printing
          */
-        @Option(longName='quiet', shortName='q', defaultValue='false', description='Suppress progress printing') boolean quiet
+        @Option(longName = 'quiet', shortName = 'q', defaultValue = 'false', description = 'Suppress progress printing')
+        boolean quiet
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed List<String> filenames
+        @Unparsed
+        List<String> filenames
     }
 
     /**
@@ -64,16 +106,16 @@ class SplitPDBDirectory extends Script {
         boolean quiet = false;
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc SplitPDBDirectory [options] <directory>');
-   
+        def cli = new CliBuilder(usage: ' ffxc SplitPDBDirectory [options] <directory>');
+
         def options = new Options()
         cli.parseFromInstance(options, args)
-        
+
         if (options.help == true) {
             return cli.usage()
         }
         List<String> arguments = options.filenames;
-    
+
         if (options.numberPerDirectory) {
             numPerDirectory = options.numberPerDirectory;
         }
@@ -185,41 +227,3 @@ class SplitPDBDirectory extends Script {
         }
     }
 }
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */

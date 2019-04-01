@@ -54,10 +54,6 @@ public class Molecule extends MSGroup {
     private static final Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
     /**
-     * Apparently unused, and hides the field from MSNode.
-     */
-//    public static final int MultiScaleLevel = 2;
-    /**
      * Residue number assigned in PDB files.
      */
     private int residueNum = -1;
@@ -109,19 +105,6 @@ public class Molecule extends MSGroup {
         this.residueNum = residueNum;
         this.chainID = chainID;
         this.segID = segID;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setName(String name) {
-        if (segID != null) {
-            super.setName(name + "-" + residueNum + " " + segID);
-        } else {
-            super.setName(name);
-        }
-        this.residueName = name;
     }
 
     /**
@@ -182,6 +165,19 @@ public class Molecule extends MSGroup {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public void setName(String name) {
+        if (segID != null) {
+            super.setName(name + "-" + residueNum + " " + segID);
+        } else {
+            super.setName(name);
+        }
+        this.residueName = name;
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
      * Allows adding Atom MSNodes to the Molecule.
      */
@@ -198,10 +194,7 @@ public class Molecule extends MSGroup {
                 atoms.add(newAtom);
                 setFinalized(false);
             } else {
-                /**
-                 * Allow overwriting of the root alternate conformer (' ' or
-                 * 'A').
-                 */
+                // Allow overwriting of the root alternate conformer (' ' or 'A').
                 Character currentAlt = currentAtom.getAltLoc();
                 if (currentAlt.equals(' ') || currentAlt.equals('A')) {
                     if (!newAlt.equals(' ') && !newAlt.equals('A')) {
@@ -214,7 +207,7 @@ public class Molecule extends MSGroup {
                 }
             }
         } else {
-            logger.warning("Only an Atom can be added to a Residue.");
+            logger.warning(" Only an Atom can be added to a Residue.");
         }
         return currentAtom;
     }
@@ -227,11 +220,9 @@ public class Molecule extends MSGroup {
         setFinalized(false);
         getAtomNode().setName("Atoms (" + getAtomList().size() + ")");
         if (finalizeGeometry) {
-            //constructValenceTerms();
             assignBondedTerms(forceField);
             removeLeaves();
         }
-        // findDangelingAtoms();
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
     }

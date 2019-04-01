@@ -1,45 +1,41 @@
-
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy.test
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
-
-// TEST LAMBDA GRADIENT
 
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -68,20 +64,20 @@ double pH;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.esvGradient [options] <XYZ|PDB>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.l(longOpt:'lambda', args:1, argName:'1.0', 'Initial lambda value (for all ESVs).');
-cli.dx(longOpt:'stepSize', args:1, argName:'0.0001', 'Finite difference step size.');
-cli.rl(longOpt:'resList', required:true, args:1, 'List of residues to titrate (e.g. A4.A8.B2.B34)');
-cli.bm(longOpt:'biasMag', args:1, argName:'1.0', 'ESV discretization bias height.');
-cli.st(longOpt:'singleThread', args:0, 'Limit PJ concurrency.');
-cli.fv(longOpt:'ffe-verbose', args:0, 'Always print FFE decomposition.');
-cli.v(longOpt:'verbose', 'Print out every atomic interaction.');
-cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
-cli.t1(longOpt:'test1', 'Test 1: Lambda derivatives by finite difference.');
-cli.t2(longOpt:'test2', 'Test 2: End state energies verification.');
-cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
-cli.i(longOpt:'iterations', args:1, argName:'n', 'Repeat Test1 several times to verify threaded replicability.');
+def cli = new CliBuilder(usage: ' ffxc test.esvGradient [options] <XYZ|PDB>');
+cli.h(longOpt: 'help', 'Print this help message.');
+cli.l(longOpt: 'lambda', args: 1, argName: '1.0', 'Initial lambda value (for all ESVs).');
+cli.dx(longOpt: 'stepSize', args: 1, argName: '0.0001', 'Finite difference step size.');
+cli.rl(longOpt: 'resList', required: true, args: 1, 'List of residues to titrate (e.g. A4.A8.B2.B34)');
+cli.bm(longOpt: 'biasMag', args: 1, argName: '1.0', 'ESV discretization bias height.');
+cli.st(longOpt: 'singleThread', args: 0, 'Limit PJ concurrency.');
+cli.fv(longOpt: 'ffe-verbose', args: 0, 'Always print FFE decomposition.');
+cli.v(longOpt: 'verbose', 'Print out every atomic interaction.');
+cli.pH(longOpt: 'pH', args: 1, argName: '7.4', 'Constant simulation pH.');
+cli.t1(longOpt: 'test1', 'Test 1: Lambda derivatives by finite difference.');
+cli.t2(longOpt: 'test2', 'Test 2: End state energies verification.');
+cli.t3(longOpt: 'test3', 'Test 3: Switching function and path smoothness.');
+cli.i(longOpt: 'iterations', args: 1, argName: 'n', 'Repeat Test1 several times to verify threaded replicability.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -94,7 +90,7 @@ if (options.h) {
 } else if (!options.rl) {
     cli.usage();
     logger.info(" Specify titratable residues with --resList\n"
-              + "     e.g. to titrate chainA res4 and chainB res6: -rl A4.B6");
+            + "     e.g. to titrate chainA res4 and chainB res6: -rl A4.B6");
     return;
 }
 
@@ -180,8 +176,8 @@ System.setProperty("lambda_torsions", "false");
 
 // Potential Settings
 System.setProperty("polarization", "NONE");
-System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
-System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
+System.setProperty("polarization-lambda-start", "0.0");      // polarize on the whole range [0,1]
+System.setProperty("polarization-lambda-exponent", "0.0");   // polarization not softcored, only prefactored
 System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
 System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
 System.setProperty("vdw-cutoff", "1000");
@@ -214,8 +210,8 @@ for (int i = 0; i < numESVs; i++) {
     for (Polymer p : polymers) {
         if (p.getChainID().equals(chainID)) {
             target = p.getResidues().stream()
-                .filter {res -> res.getResidueNumber() == resNum}
-                .findFirst();
+                    .filter { res -> res.getResidueNumber() == resNum }
+                    .findFirst();
             break;
         }
     }
@@ -236,7 +232,7 @@ ffe.getCrystal().setSpecialPositionCutoff(0.0);
 
 // Declare arrays and get coordinates.
 n = ffe.getNumberOfVariables();
-assert(n % 3 == 0);
+assert (n % 3 == 0);
 int nAtoms = n / 3;
 double[] xyz = new double[n];
 double[] gradient = new double[n];
@@ -249,30 +245,30 @@ double tolerance = 1.0e-3;      // pass-fail margin
 
 /*******************************************************************************
  * Finite Difference Tests of the VdW Lambda Derivative
-Check that the analytic lambda derivatives reported by van der Waals agree with
-the central finite difference.
-*******************************************************************************/
+ Check that the analytic lambda derivatives reported by van der Waals agree with
+ the central finite difference.
+ *******************************************************************************/
 if (test1) {
     for (int iter = 0; iter < 10; iter++) {
         for (int i = 0; i < numESVs; i++) {
             ffe.setPrintOverride(false);
             esvSystem.setLambda(i, 0.0);
-            double e0 = ffe.energyAndGradient(xyz,gradient);
+            double e0 = ffe.energyAndGradient(xyz, gradient);
             esvSystem.setLambda(i, 1.0);
-            double e1 = ffe.energyAndGradient(xyz,gradient);
-            logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1-e0));
+            double e1 = ffe.energyAndGradient(xyz, gradient);
+            logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1 - e0));
             if (iter == 0) {
                 ffe.setPrintOverride(true);
             }
-            
+
             esvSystem.setLambda(i, lambda - step);
-            double eLower = ffe.energyAndGradient(xyz,esvLambdaGradFD[1][i]);
+            double eLower = ffe.energyAndGradient(xyz, esvLambdaGradFD[1][i]);
 
             esvSystem.setLambda(i, lambda + step);
-            double eUpper = ffe.energyAndGradient(xyz,esvLambdaGradFD[0][i]);
+            double eUpper = ffe.energyAndGradient(xyz, esvLambdaGradFD[0][i]);
 
             esvSystem.setLambda(i, lambda);
-            double center = ffe.energyAndGradient(xyz,esvLambdaGrad[i]);
+            double center = ffe.energyAndGradient(xyz, esvLambdaGrad[i]);
 
             double analytic = esvSystem.getdEdL(i, null, false, true);
             double numeric = (eUpper - eLower) / (2 * step);
@@ -280,7 +276,7 @@ if (test1) {
 
             StringBuilder sb = new StringBuilder();
             sb.append(format("\n  ESV_%d Derivative Test \n", i));
-            sb.append(format(  " *********************** \n"));
+            sb.append(format(" *********************** \n"));
             sb.append(String.format(" Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", eUpper, eLower, width, numeric));
             sb.append(String.format(" Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n", lambda, analytic));
             String passFail = (error < tolerance) ? "passed" : "failed";
@@ -294,9 +290,9 @@ if (test1) {
 
 /*******************************************************************************
  * Dilysine End-State Verification
-Verify that a lys-lys system with two ESVs can exactly reproduce the VdW
-energy yielded by vanilla energy() calls on mutated PDB files.
-*******************************************************************************/
+ Verify that a lys-lys system with two ESVs can exactly reproduce the VdW
+ energy yielded by vanilla energy() calls on mutated PDB files.
+ *******************************************************************************/
 if (test2) {
     esvSystem.setEsvBiasTerm(false);
     ffe.setPrintOverride(true);
@@ -355,9 +351,9 @@ if (test2) {
 
 /*******************************************************************************
  * Switching and Smoothness
-Numerically ensure that the VdW energy and lambda derivatives are smooth all 
-along both ESV coordinates in the dilysine system.
-*******************************************************************************/
+ Numerically ensure that the VdW energy and lambda derivatives are smooth all
+ along both ESV coordinates in the dilysine system.
+ *******************************************************************************/
 if (test3) {
     logger.info(format("  Smoothness Verification: "));
     logger.info(format(" ************************** "));
@@ -365,11 +361,11 @@ if (test3) {
     StringBuilder energyTable = new StringBuilder(format(" %6s", "Energy"));
     StringBuilder dedlaTable = new StringBuilder(format("\n %6s", "dEdEv1"));
     StringBuilder dedlbTable = new StringBuilder(format("\n %6s", "dEdEv2"));
-    energyTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %6s    %6s    %6s    %8.1f  %8.1f  %8.1f  %8.1f", 
+    energyTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %6s    %6s    %6s    %8.1f  %8.1f  %8.1f  %8.1f",
             0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
-    dedlaTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
+    dedlaTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f",
             0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
-    dedlbTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
+    dedlbTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f",
             0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
     for (double la = 0.0; la <= 1.0; la += 0.1) {
         switch (la) {

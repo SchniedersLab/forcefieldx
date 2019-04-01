@@ -52,7 +52,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class ResidueState {
+
     private static final Logger logger = Logger.getLogger(ResidueState.class.getName());
+
     /**
      * For a MultiResidue, parent is the MultiResidue, while res is the chemical
      * state to which this ResidueState belongs. For a regular Residue, both are
@@ -109,7 +111,7 @@ public class ResidueState {
      *
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
-    public Residue getStateResidue() {
+    Residue getStateResidue() {
         return res;
     }
 
@@ -118,7 +120,7 @@ public class ResidueState {
      *
      * @return a boolean.
      */
-    public boolean getIsNeutralTerminus() {
+    boolean getIsNeutralTerminus() {
         return isNeutralTerminus;
     }
 
@@ -166,7 +168,7 @@ public class ResidueState {
      * @param atom An Atom.
      * @return xyz coordinates.
      */
-    public double[] getAtomCoords(Atom atom) {
+    double[] getAtomCoords(Atom atom) {
         double[] xyz = new double[3];
         if (!atomMap.containsKey(atom)) {
             logger.info(String.format(" Illegal call to ResidueState.getAtomCoords: atom %s not found: hashcode %d", atom, atom.hashCode()));
@@ -191,8 +193,6 @@ public class ResidueState {
         }
     }
 
-    // A set of public static methods for storing/reverting coordinates for lists of residues.
-
     /**
      * <p>storeAllCoordinates.</p>
      *
@@ -211,26 +211,11 @@ public class ResidueState {
      */
     public static ResidueState[] storeAllCoordinates(Residue[] residues) {
         int nResidues = residues.length;
-        ResidueState states[] = new ResidueState[nResidues];
+        ResidueState[] states = new ResidueState[nResidues];
         for (int i = 0; i < nResidues; i++) {
             states[i] = residues[i].storeState();
         }
         return states;
-    }
-
-    /**
-     * <p>storeAllCoordinateArrays.</p>
-     *
-     * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
-     * @return an array of {@link double} objects.
-     */
-    public static double[][][] storeAllCoordinateArrays(Residue[] residueArray) {
-        int nResidues = residueArray.length;
-        double[][][] xyz = new double[nResidues][][];
-        for (int i = 0; i < nResidues; i++) {
-            xyz[i] = residueArray[i].storeCoordinateArray();
-        }
-        return xyz;
     }
 
     /**
@@ -240,7 +225,7 @@ public class ResidueState {
      * @return a {@link ffx.potential.bonded.ResidueState} object.
      */
     public static ResidueState storeAllCoordinates(Residue res) {
-        Residue residues[] = new Residue[1];
+        Residue[] residues = new Residue[1];
         residues[0] = res;
         return storeAllCoordinates(residues)[0];
     }
@@ -314,12 +299,27 @@ public class ResidueState {
     }
 
     /**
+     * <p>storeAllCoordinateArrays.</p>
+     *
+     * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
+     * @return an array of {@link double} objects.
+     */
+    private static double[][][] storeAllCoordinateArrays(Residue[] residueArray) {
+        int nResidues = residueArray.length;
+        double[][][] xyz = new double[nResidues][][];
+        for (int i = 0; i < nResidues; i++) {
+            xyz[i] = residueArray[i].storeCoordinateArray();
+        }
+        return xyz;
+    }
+
+    /**
      * <p>revertAllCoordinates.</p>
      *
      * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
      * @param states       an array of {@link ffx.potential.bonded.ResidueState} objects.
      */
-    public static void revertAllCoordinates(Residue[] residueArray, ResidueState[] states) {
+    private static void revertAllCoordinates(Residue[] residueArray, ResidueState[] states) {
         int nResidues = residueArray.length;
         if (nResidues != states.length) {
             throw new IllegalArgumentException(String.format("Length of residue "

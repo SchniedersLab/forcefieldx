@@ -1,4 +1,40 @@
-
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy.test
 
 import groovy.cli.Option
@@ -30,19 +66,23 @@ class LoopClosure extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName='h', description='Print this help message.') boolean help
+        @Option(shortName = 'h', description = 'Print this help message.')
+        boolean help
         /**
          * -f or --first to set the first residue to draw (indexed from residue 0).
          */
-        @Option(shortName='f', defaultValue='2', description='First residue to draw. Indexed from residue 0.') boolean first
+        @Option(shortName = 'f', defaultValue = '2', description = 'First residue to draw. Indexed from residue 0.')
+        boolean first
         /**
          * -l or --last to set the last residue to draw (indexed from residue 0).
          */
-        @Option(shortName='l', defaultValue='4', description='Last residue to draw. Indexed from residue 0.') boolean last
+        @Option(shortName = 'l', defaultValue = '4', description = 'Last residue to draw. Indexed from residue 0.')
+        boolean last
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed List<String> filenames
+        @Unparsed
+        List<String> filenames
 
     }
 
@@ -53,7 +93,7 @@ class LoopClosure extends Script {
     LoopClosure run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc FracToCart <filename>', header:' Options:');
+        def cli = new CliBuilder(usage: ' ffxc FracToCart <filename>', header: ' Options:');
         def options = new Options()
         cli.parseFromInstance(options, args)
         if (options.help) {
@@ -91,8 +131,7 @@ class LoopClosure extends Script {
         int firstResidue = options.first
         int lastResidue = options.last
 
-        if (lastResidue - firstResidue != 3)
-        {
+        if (lastResidue - firstResidue != 3) {
             logger.info("\n\nInvalid residue range. Residue range must consist of 3 residues.\n\n");
         }
 
@@ -102,7 +141,7 @@ class LoopClosure extends Script {
         Loop loop = new Loop(assemblies[0]);
         List<double[]> loopSolutions = loop.generateLoops(firstResidue, lastResidue);
 
-        for(int i = 0; i < loopSolutions.size(); i++){
+        for (int i = 0; i < loopSolutions.size(); i++) {
             //Test for using alternative coordinates with generateLoops method.
             // loopSolutions = loop.generateLoops(stt_res+1, end_res+1,loopSolutions.get(i));
             forceFieldEnergy.setCoordinates(loopSolutions.get(i));
@@ -116,42 +155,3 @@ class LoopClosure extends Script {
         return this
     }
 }
-
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */

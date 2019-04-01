@@ -506,7 +506,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
           larger number is automatically allocated as needed. The center of the
           central bin is at 0.
          */
-        FLambdaBins = 401;
+        FLambdaBins = 101;
         minFLambda = -(dFL * FLambdaBins) / 2.0;
 
         energyCount = -1;

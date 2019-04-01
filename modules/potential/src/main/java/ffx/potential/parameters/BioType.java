@@ -38,32 +38,47 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
+import static java.lang.String.format;
 
 /**
  * The BioType class maps PDB identifiers to atom types.
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class BioType extends BaseType implements Comparator<String> {
 
+    /**
+     * The index of this BioType.
+     */
     public int index;
+    /**
+     * The PDB atom name for this BioType.
+     */
     public final String atomName;
+    /**
+     * The PDB molecule name for this BioType.
+     */
     public final String moleculeName;
+    /**
+     * The force field atom type to be used for the molecule / atom name combination.
+     */
     public int atomType;
-    public final String bonds[];
+    /**
+     * Bonds are required to listed atom names.
+     */
+    public final String[] bonds;
 
     /**
      * BioType Constructor.
      *
-     * @param index int
-     * @param atomName String
+     * @param index        int
+     * @param atomName     String
      * @param moleculeName String
-     * @param atomType int
-     * @param bonds an array of {@link java.lang.String} objects.
+     * @param atomType     int
+     * @param bonds        an array of {@link java.lang.String} objects.
      */
-    public BioType(int index, String atomName, String moleculeName, int atomType, String bonds[]) {
+    public BioType(int index, String atomName, String moleculeName, int atomType, String[] bonds) {
         super(ForceField.ForceFieldType.BIOTYPE, Integer.toString(index));
         this.index = index;
         this.atomName = atomName;
@@ -81,9 +96,9 @@ public final class BioType extends BaseType implements Comparator<String> {
      * incrementIndexAndType</p>
      *
      * @param indexIncrement a int.
-     * @param typeIncrement a int.
+     * @param typeIncrement  a int.
      */
-    public void incrementIndexAndType(int indexIncrement, int typeIncrement) {
+    void incrementIndexAndType(int indexIncrement, int typeIncrement) {
         index += indexIncrement;
         atomType += typeIncrement;
         setKey(Integer.toString(index));
@@ -91,56 +106,52 @@ public final class BioType extends BaseType implements Comparator<String> {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted biotype.
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(String.format("biotype  %5d  %-4s  \"%-23s\"  %5d", index, atomName,
-                moleculeName, atomType));
+        StringBuilder sb = new StringBuilder(
+                format("biotype  %5d  %-4s  \"%-23s\"  %5d", index, atomName, moleculeName, atomType));
         if (bonds != null && bonds.length > 0) {
-            for (int i = 0; i < bonds.length; i++) {
-                sb.append(String.format("  %-4s", bonds[i]));
+            for (String bond : bonds) {
+                sb.append(format("  %-4s", bond));
             }
         }
         return sb.toString();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String s1, String s2) {
 
         int t1 = Integer.parseInt(s1);
         int t2 = Integer.parseInt(s2);
 
-        if (t1 < t2) {
-            return -1;
-        }
-        if (t1 > t2) {
-            return 1;
-        }
-
-        return 0;
+        return Integer.compare(t1, t2);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof BioType)) {
+        if (!(other instanceof BioType)) {
             return false;
         }
         BioType bioType = (BioType) other;
-        if (bioType.index == this.index) {
-            return true;
-        }
 
-        return false;
+        return bioType.index == this.index;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 3;

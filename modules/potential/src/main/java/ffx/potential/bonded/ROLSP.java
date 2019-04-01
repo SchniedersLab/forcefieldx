@@ -63,14 +63,13 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
 
     public enum PARALLELMETHOD {
 
-        SETVIEW, NONE;
+        SETVIEW, NONE
     }
 
-    private static final long serialVersionUID = 1L;
     /**
      * Constant <code>GO_PARALLEL=false</code>
      */
-    public static boolean GO_PARALLEL = false;
+    public static boolean GO_PARALLEL;
     /**
      * Constant <code>parallelNotDone=0</code>
      */
@@ -78,16 +77,13 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
 
     static {
         try {
-            boolean b = Boolean.parseBoolean(System.getProperty(
-                    "ffx.lang.parallel", "false"));
-            GO_PARALLEL = b;
+            GO_PARALLEL = Boolean.parseBoolean(System.getProperty("ffx.lang.parallel", "false"));
         } catch (Exception e) {
             GO_PARALLEL = false;
         }
     }
 
     private PARALLELMETHOD parallelMethod = PARALLELMETHOD.NONE;
-    private Thread thread = null;
     private long startTime = 0;
     private long threadTime = 0;
     private RendererCache.ViewModel viewModel = null;
@@ -158,7 +154,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
             this.viewModel = viewModel;
             this.newShapes = newShapes;
             parallelMethod = PARALLELMETHOD.SETVIEW;
-            thread = new Thread(this);
+            Thread thread = new Thread(this);
             thread.setName(getParent().toString() + ": Parallel setView MSM");
             thread.setPriority(Thread.MAX_PRIORITY);
             parallelNotDone++;
@@ -171,12 +167,8 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
                 node.setView(viewModel, newShapes);
             }
             parallelMethod = PARALLELMETHOD.NONE;
-            thread = null;
-            viewModel = null;
-            newShapes = null;
         } else {
             logger.info("Parallel setView method called by: " + parallelMethod);
-            return;
         }
     }
 

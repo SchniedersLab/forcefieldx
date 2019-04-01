@@ -75,13 +75,10 @@ import ffx.xray.parsers.MTZWriter.MTZType;
  * This class parses CCP4 MTZ files.<br>
  *
  * @author Timothy D. Fenn<br>
- *
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
- *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
  * target="_blank">CCP4 library documentation</a>
- *
  * @since 1.0
  */
 public class MTZFilter implements DiffractionFileFilter {
@@ -145,13 +142,17 @@ public class MTZFilter implements DiffractionFileFilter {
     public MTZFilter() {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File mtzFile) {
         return getReflectionList(mtzFile, null);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File mtzFile, CompositeConfiguration properties) {
         ByteOrder byteOrder = ByteOrder.nativeOrder();
@@ -266,14 +267,18 @@ public class MTZFilter implements DiffractionFileFilter {
         return new ReflectionList(crystal, resolution, properties);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getResolution(File mtzFile, Crystal crystal) {
         ReflectionList reflectionList = getReflectionList(mtzFile, null);
-        return reflectionList.maxres;
+        return reflectionList.getMaxResolution();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionList,
                             DiffractionRefinementData refinementData, CompositeConfiguration properties) {
@@ -538,12 +543,12 @@ public class MTZFilter implements DiffractionFileFilter {
     /**
      * Average the computed structure factors for two systems.
      *
-     * @param mtzFile1 This file will be overwritten and become the new average.
-     * @param mtzFile2 Second MTZ file.
+     * @param mtzFile1       This file will be overwritten and become the new average.
+     * @param mtzFile2       Second MTZ file.
      * @param reflectionlist List of HKLs.
-     * @param iter The iteration in the running average.
-     * @param properties The CompositeConfiguration defines the properties of
-     * each system.
+     * @param iter           The iteration in the running average.
+     * @param properties     The CompositeConfiguration defines the properties of
+     *                       each system.
      */
     public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
                            int iter, CompositeConfiguration properties) {
@@ -573,10 +578,10 @@ public class MTZFilter implements DiffractionFileFilter {
     /**
      * Read the structure factors.
      *
-     * @param mtzFile a {@link java.io.File} object.
+     * @param mtzFile        a {@link java.io.File} object.
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-     * @param fcData a {@link ffx.xray.DiffractionRefinementData} object.
-     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param fcData         a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param properties     a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return a boolean.
      */
     public boolean readFcs(File mtzFile, ReflectionList reflectionList,

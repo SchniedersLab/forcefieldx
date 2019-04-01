@@ -47,23 +47,28 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public abstract class BaseType {
 
     private static final Logger logger = Logger.getLogger(BaseType.class.getName());
-    protected final ForceFieldType forceFieldType;
+
+    /**
+     * The ForceFieldType of this term.
+     */
+    final ForceFieldType forceFieldType;
+    /**
+     * The look-up key for this term, which is usually a concatenation of atom classes or atom types.
+     */
     protected String key;
 
     /**
      * Public constructor.
      *
-     * @param forceFieldType a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
-     * @param keys an array of int.
+     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @param keys           an array of int.
      * @since 1.0
      */
-    public BaseType(ForceFieldType forceFieldType, int keys[]) {
+    public BaseType(ForceFieldType forceFieldType, int[] keys) {
         this.forceFieldType = forceFieldType;
         setKey(keys);
     }
@@ -71,9 +76,8 @@ public abstract class BaseType {
     /**
      * Public constructor.
      *
-     * @param forceFieldType a
-     * {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
-     * @param key a {@link java.lang.String} object.
+     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @param key            a {@link java.lang.String} object.
      * @since 1.0
      */
     public BaseType(ForceFieldType forceFieldType, String key) {
@@ -92,12 +96,13 @@ public abstract class BaseType {
             key = null;
             return;
         }
-        StringBuilder keyBuffer = new StringBuilder(Integer.toString(keys[0]));
-        for (int i = 1; i < keys.length; i++) {
+
+        StringBuilder keyBuffer = new StringBuilder();
+        for (int k : keys) {
+            keyBuffer.append(k);
             keyBuffer.append(" ");
-            keyBuffer.append(keys[i]);
         }
-        key = keyBuffer.toString();
+        key = keyBuffer.toString().trim();
     }
 
     /**
@@ -142,8 +147,9 @@ public abstract class BaseType {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Basic toString method.
+     *
      * @since 1.0
      */
     @Override

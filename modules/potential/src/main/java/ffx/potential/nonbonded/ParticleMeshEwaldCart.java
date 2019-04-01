@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
-
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
@@ -87,7 +86,6 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.StringUtils;
-
 import static ffx.numerics.math.VectorMath.cross;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.dot;
@@ -6155,7 +6153,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (forceField == null) {
             String message = "No force field is defined.\n";
             logger.log(Level.SEVERE, message);
+            return;
         }
+
         if (forceField.getForceFieldTypeCount(ForceFieldType.MULTIPOLE) < 1
                 && forceField.getForceFieldTypeCount(ForceFieldType.CHARGE) < 1) {
             String message = "Force field has no permanent electrostatic types.\n";
@@ -6170,19 +6170,18 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         for (int i = 0; i < nAtoms; i++) {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
-                String message = "No multipole could be assigned to atom:\n"
-                        + atom + "\nof type:\n" + atom.getAtomType();
                 for (Bond b : atom.getBonds()) {
                     Atom a2 = b.get1_2(atom);
                     AtomType aType2 = a2.getAtomType();
-                    logger.info(String.format(" Bonded atom %s type number %d type string %s", a2, aType2.type, aType2));
+                    logger.info(format(" Bonded atom %s type number %d type string %s", a2, aType2.type, aType2));
                 }
+                String message = "No multipole could be assigned to atom:\n"
+                        + atom + "\nof type:\n" + atom.getAtomType();
                 logger.log(Level.SEVERE, message);
             }
         }
-        /**
-         * Check for multipoles that were not assigned correctly.
-         */
+
+        // Check for multipoles that were not assigned correctly.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nAtoms; i++) {
             boolean flag = false;
@@ -6225,7 +6224,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             logger.fine(message);
             double polarizability = 0.0;
             double thole = 0.0;
-            int polarizationGroup[] = null;
+            int[] polarizationGroup = null;
             polarizeType = new PolarizeType(atomType.type,
                     polarizability, thole, polarizationGroup);
             forceField.addForceFieldType(polarizeType);
@@ -6266,7 +6265,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             key = atomType.getKey() + " " + atom2.getAtomType().getKey() + " 0";
             multipoleType = multipoleType = forceField.getMultipoleType(key);
             if (multipoleType != null) {
-                int multipoleReferenceAtoms[] = new int[1];
+                int[] multipoleReferenceAtoms = new int[1];
                 multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                 atom.setMultipoleType(multipoleType);
                 localMultipole[i][t000] = multipoleType.getCharge();
@@ -6298,7 +6297,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 key = atomType.getKey() + " " + key2 + " " + key3;
                 multipoleType = forceField.getMultipoleType(key);
                 if (multipoleType != null) {
-                    int multipoleReferenceAtoms[] = new int[2];
+                    int[] multipoleReferenceAtoms = new int[2];
                     multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                     multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                     atom.setMultipoleType(multipoleType);
@@ -6320,9 +6319,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
         }
 
-        /**
-         * 3 reference atoms.
-         */
+        // 3 reference atoms.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
             String key2 = atom2.getAtomType().getKey();
@@ -6341,7 +6338,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
-                        int multipoleReferenceAtoms[] = new int[3];
+                        int[] multipoleReferenceAtoms = new int[3];
                         multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                         multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                         multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
@@ -6369,7 +6366,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                         multipoleType = forceField.getMultipoleType(key);
                         if (multipoleType != null) {
-                            int multipoleReferenceAtoms[] = new int[3];
+                            int[] multipoleReferenceAtoms = new int[3];
                             multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                             multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                             multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
@@ -6393,9 +6390,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
         }
 
-        /**
-         * Revert to a 2 reference atom definition that may include a 1-3 site.
-         * For example a hydrogen on water.
+        /*
+          Revert to a 2 reference atom definition that may include a 1-3 site.
+          For example a hydrogen on water.
          */
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
@@ -6408,7 +6405,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     key = atomType.getKey() + " " + key2 + " " + key3;
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
-                        int multipoleReferenceAtoms[] = new int[2];
+                        int[] multipoleReferenceAtoms = new int[2];
                         multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                         multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                         atom.setMultipoleType(multipoleType);
@@ -6433,7 +6430,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                             multipoleType = forceField.getMultipoleType(key);
                             if (multipoleType != null) {
-                                int multipoleReferenceAtoms[] = new int[3];
+                                int[] multipoleReferenceAtoms = new int[3];
                                 multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                                 multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                                 multipoleReferenceAtoms[2] = atom4.getIndex() - 1;

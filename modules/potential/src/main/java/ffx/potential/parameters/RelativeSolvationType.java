@@ -47,16 +47,22 @@ import java.util.Objects;
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
- *
  */
 public class RelativeSolvationType extends BaseType implements Comparator<String> {
+
+    /**
+     * The residue name;
+     */
     private final String resName;
+    /**
+     * THe solvation energy.
+     */
     private final double solvEnergy;
 
     /**
      * <p>Constructor for RelativeSolvationType.</p>
      *
-     * @param resname a {@link java.lang.String} object.
+     * @param resname    a {@link java.lang.String} object.
      * @param solvEnergy a double.
      */
     public RelativeSolvationType(String resname, double solvEnergy) {
@@ -83,7 +89,9 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
         return resName;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object o) {
         if (o instanceof RelativeSolvationType) {
@@ -94,7 +102,9 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 3;
@@ -102,13 +112,17 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
         return hash;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return String.format("relative solvation %10s %8.5f", resName, solvEnergy);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String o1, String o2) {
         return o1.compareTo(o2);

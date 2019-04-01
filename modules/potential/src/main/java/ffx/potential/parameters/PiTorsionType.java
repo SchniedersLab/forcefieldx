@@ -40,20 +40,24 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import static java.lang.String.format;
 
 /**
  * The PiTorsionType class defines a Pi-Torsion energy term.
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class PiTorsionType extends BaseType implements Comparator<String> {
 
     /**
+     * Convert Pi-Torsion energy to kcal/mole.
+     */
+    public static double units = 1.0;
+    /**
      * Atom classes that form this Pi-Torsion.
      */
-    public final int atomClasses[];
+    public final int[] atomClasses;
     /**
      * Force constant.
      */
@@ -62,10 +66,10 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     /**
      * PiTorsionType Constructor.
      *
-     * @param atomClasses int[]
+     * @param atomClasses   int[]
      * @param forceConstant double
      */
-    public PiTorsionType(int atomClasses[], double forceConstant) {
+    public PiTorsionType(int[] atomClasses, double forceConstant) {
         super(ForceField.ForceFieldType.PITORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
@@ -76,7 +80,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
      *
      * @param scale a double.
      */
-    public void setScaleFactor(double scale) {
+    void setScaleFactor(double scale) {
         forceConstant *= scale;
     }
 
@@ -102,21 +106,20 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     public PiTorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
         int len = atomClasses.length;
-        /**
-         * Look for new PiTorsions that contain 1 mapped atom classes.
-         */
+
+        // Look for new PiTorsions that contain 1 mapped atom classes.
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < len; i++) {
-                if (atomClasses[i] == newType.atomClass) {
+
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
                     count++;
                 }
             }
         }
-        /**
-         * If found, create a new PiTorsion that bridges to known classes.
-         */
+
+        // If found, create a new PiTorsion that bridges to known classes.
         if (count == 1) {
-            int newClasses[] = Arrays.copyOf(atomClasses, len);
+            int[] newClasses = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
@@ -136,42 +139,57 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
      * @param c atomClasses
      * @return lookup key
      */
-    public static String sortKey(int c[]) {
+    public static String sortKey(int[] c) {
         if (c == null || c.length != 2) {
             return null;
         }
-        String key = null;
+
         int temp;
         if (c[1] <= c[0]) {
             temp = c[1];
             c[1] = c[0];
             c[0] = temp;
         }
-        key = c[0] + " " + c[1];
-        return key;
+        return c[0] + " " + c[1];
+    }
+
+    /**
+     * Average two PiTorsionType instances. The atom classes that define the new
+     * type must be supplied.
+     *
+     * @param piTorsionType1 a {@link ffx.potential.parameters.PiTorsionType} object.
+     * @param piTorsionType2 a {@link ffx.potential.parameters.PiTorsionType} object.
+     * @param atomClasses    an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
+     */
+    public static PiTorsionType average(PiTorsionType piTorsionType1,
+                                        PiTorsionType piTorsionType2, int[] atomClasses) {
+        if (piTorsionType1 == null || piTorsionType2 == null || atomClasses == null) {
+            return null;
+        }
+
+        double forceConstant = (piTorsionType1.forceConstant + piTorsionType2.forceConstant) / 2.0;
+
+        return new PiTorsionType(atomClasses, forceConstant);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted Pi-Torsion type.
      */
     @Override
     public String toString() {
-        return String.format("pitors  %5d  %5d  %4.2f", atomClasses[0],
-                atomClasses[1], forceConstant);
+        return format("pitors  %5d  %5d  %4.2f", atomClasses[0], atomClasses[1], forceConstant);
     }
 
     /**
-     * Convert Pi-Torsion energy to kcal/mole.
+     * {@inheritDoc}
      */
-    public static double units = 1.0;
-
-    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
-        String keys1[] = s1.split(" ");
-        String keys2[] = s2.split(" ");
+        String[] keys1 = s1.split(" ");
+        String[] keys2 = s2.split(" ");
 
         for (int i = 0; i < 2; i++) {
             int c1 = Integer.parseInt(keys1[i]);
@@ -185,13 +203,15 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof PiTorsionType)) {
+        if (!(other instanceof PiTorsionType)) {
             return false;
         }
         PiTorsionType piTorsionType = (PiTorsionType) other;
@@ -203,32 +223,14 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 5;
         hash = 97 * hash + Arrays.hashCode(atomClasses);
         return hash;
-    }
-
-    /**
-     * Average two PiTorsionType instances. The atom classes that define the new
-     * type must be supplied.
-     *
-     * @param piTorsionType1 a {@link ffx.potential.parameters.PiTorsionType} object.
-     * @param piTorsionType2 a {@link ffx.potential.parameters.PiTorsionType} object.
-     * @param atomClasses an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
-     */
-    public static PiTorsionType average(PiTorsionType piTorsionType1,
-                                        PiTorsionType piTorsionType2, int atomClasses[]) {
-        if (piTorsionType1 == null || piTorsionType2 == null || atomClasses == null) {
-            return null;
-        }
-
-        double forceConstant = (piTorsionType1.forceConstant + piTorsionType2.forceConstant) / 2.0;
-
-        return new PiTorsionType(atomClasses, forceConstant);
     }
 
 }

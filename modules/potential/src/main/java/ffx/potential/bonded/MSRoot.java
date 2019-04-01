@@ -46,6 +46,7 @@ package ffx.potential.bonded;
 public class MSRoot extends MSNode {
 
     private static final long serialVersionUID = 1L;
+
     /**
      * Constant <code>MultiScaleLevel=ROLS.MaxLengthScale</code>
      */
@@ -84,7 +85,6 @@ public class MSRoot extends MSNode {
      */
     @Override
     public int hashCode() {
-        int hash = 7;
-        return hash;
+        return 7;
     }
 }

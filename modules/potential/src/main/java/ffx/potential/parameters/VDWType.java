@@ -44,7 +44,6 @@ import java.util.Comparator;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class VDWType extends BaseType implements Comparator<String> {
 
@@ -81,10 +80,10 @@ public final class VDWType extends BaseType implements Comparator<String> {
      * van der Waals constructor. If the reduction factor is .LE. 0.0, no
      * reduction is used for this atom type.
      *
-     * @param atomClass int
-     * @param radius double
-     * @param wellDepth double
-     * @param reductionFactor double
+     * @param atomClass       The atom class that uses this van der Waals parameter.
+     * @param radius          The radius of the minimum well depth energy (angstroms).
+     * @param wellDepth       The minimum energy of the vdw function (kcal/mol).
+     * @param reductionFactor Reduction factor for evaluating van der Waals pairs.
      */
     public VDWType(int atomClass, double radius, double wellDepth,
                    double reductionFactor) {
@@ -101,14 +100,34 @@ public final class VDWType extends BaseType implements Comparator<String> {
      *
      * @param increment a int.
      */
-    public void incrementClass(int increment) {
+    void incrementClass(int increment) {
         atomClass += increment;
         setKey(Integer.toString(atomClass));
     }
 
     /**
-     * {@inheritDoc}
+     * <p>average.</p>
      *
+     * @param vdwType1  a {@link ffx.potential.parameters.VDWType} object.
+     * @param vdwType2  a {@link ffx.potential.parameters.VDWType} object.
+     * @param atomClass a int.
+     * @return a {@link ffx.potential.parameters.VDWType} object.
+     */
+    public static VDWType average(VDWType vdwType1, VDWType vdwType2, int atomClass) {
+        if (vdwType1 == null || vdwType2 == null) {
+            return null;
+        }
+
+        double radius = (vdwType1.radius + vdwType2.radius) / 2.0;
+        double wellDepth = (vdwType1.wellDepth + vdwType2.wellDepth) / 2.0;
+        double reductionFactor = (vdwType1.reductionFactor + vdwType2.reductionFactor) / 2.0;
+
+        return new VDWType(atomClass, radius, wellDepth, reductionFactor);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Nicely formatted van der Waals type.
      */
     @Override
@@ -125,66 +144,41 @@ public final class VDWType extends BaseType implements Comparator<String> {
         return vdwString;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String s1, String s2) {
 
         int t1 = Integer.parseInt(s1);
         int t2 = Integer.parseInt(s2);
 
-        if (t1 < t2) {
-            return -1;
-        }
-        if (t1 > t2) {
-            return 1;
-        }
-
-        return 0;
+        return Integer.compare(t1, t2);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof VDWType)) {
+        if (!(other instanceof VDWType)) {
             return false;
         }
         VDWType vdwType = (VDWType) other;
-        if (vdwType.atomClass == this.atomClass) {
-            return true;
-        }
-
-        return false;
+        return (vdwType.atomClass == this.atomClass);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 7;
         hash = 97 * hash + this.atomClass;
         return hash;
-    }
-
-    /**
-     * <p>average.</p>
-     *
-     * @param vdwType1 a {@link ffx.potential.parameters.VDWType} object.
-     * @param vdwType2 a {@link ffx.potential.parameters.VDWType} object.
-     * @param atomClass a int.
-     * @return a {@link ffx.potential.parameters.VDWType} object.
-     */
-    public static VDWType average(VDWType vdwType1, VDWType vdwType2, int atomClass) {
-        if (vdwType1 == null || vdwType2 == null) {
-            return null;
-        }
-
-        double radius = (vdwType1.radius + vdwType2.radius) / 2.0;
-        double wellDepth = (vdwType1.wellDepth + vdwType2.wellDepth) / 2.0;
-        double reductionFactor = (vdwType1.reductionFactor + vdwType2.reductionFactor) / 2.0;
-
-        return new VDWType(atomClass, radius, wellDepth, reductionFactor);
     }
 
 }

@@ -49,34 +49,33 @@ import static org.apache.commons.math3.util.FastMath.PI;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class StretchBendType extends BaseType implements Comparator<String> {
 
     /**
+     * Constant <code>units=PI / 180.0</code>
+     */
+    public static final double units = PI / 180.0;
+    /**
      * Atom class for this stretch-bend type.
      */
-    public final int atomClasses[];
+    public final int[] atomClasses;
     /**
      * Force constants (Kcal/mole/Angstrom-Degrees).
      */
-    public final double forceConstants[];
+    public final double[] forceConstants;
 
     /**
      * StretchBendType Constructor.
      *
-     * @param atomClasses int[]
+     * @param atomClasses    int[]
      * @param forceConstants double[]
      */
-    public StretchBendType(int atomClasses[], double forceConstants[]) {
-        /**
-         * Pass the key from sorted classes to the super constructor.
-         */
+    public StretchBendType(int[] atomClasses, double[] forceConstants) {
+        // Pass the key from sorted classes to the super constructor.
         super(ForceField.ForceFieldType.STRBND, sortKey(copyOf(atomClasses, 3)));
 
-        /**
-         * Sort the atom classes and force constants in tandem.
-         */
+        // Sort the atom classes and force constants in tandem.
         if (atomClasses[0] > atomClasses[2]) {
             int temp = atomClasses[0];
             double f = forceConstants[0];
@@ -114,21 +113,19 @@ public final class StretchBendType extends BaseType implements Comparator<String
     public StretchBendType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
         int len = atomClasses.length;
-        /**
-         * Check if this StetchBendType contain 1 or 2 mapped atom classes.
-         */
+
+        // Check if this StetchBendType contain 1 or 2 mapped atom classes.
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < len; i++) {
-                if (atomClasses[i] == newType.atomClass) {
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
                     count++;
                 }
             }
         }
-        /**
-         * If found, create a new StetchBendType that bridges to known classes.
-         */
+
+        // If found, create a new StetchBendType that bridges to known classes.
         if (count == 1 || count == 2) {
-            int newClasses[] = Arrays.copyOf(atomClasses, len);
+            int[] newClasses = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
@@ -137,6 +134,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
                     }
                 }
             }
+
             return new StretchBendType(newClasses, forceConstants);
         }
         return null;
@@ -148,7 +146,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
      * @param c atomClasses
      * @return lookup key
      */
-    public static String sortKey(int c[]) {
+    public static String sortKey(int[] c) {
         if (c == null || c.length != 3) {
             return null;
         }
@@ -158,13 +156,38 @@ public final class StretchBendType extends BaseType implements Comparator<String
             c[2] = temp;
 
         }
-        String key = c[0] + " " + c[1] + " " + c[2];
-        return key;
+
+        return c[0] + " " + c[1] + " " + c[2];
+    }
+
+    /**
+     * <p>average.</p>
+     *
+     * @param stretchBendType1 a {@link ffx.potential.parameters.StretchBendType} object.
+     * @param stretchBendType2 a {@link ffx.potential.parameters.StretchBendType} object.
+     * @param atomClasses      an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.StretchBendType} object.
+     */
+    public static StretchBendType average(StretchBendType stretchBendType1,
+                                          StretchBendType stretchBendType2, int[] atomClasses) {
+        if (stretchBendType1 == null || stretchBendType2 == null || atomClasses == null) {
+            return null;
+        }
+        int len = stretchBendType1.forceConstants.length;
+        if (len != stretchBendType2.forceConstants.length) {
+            return null;
+        }
+        double forceConstants[] = new double[len];
+        for (int i = 0; i < len; i++) {
+            forceConstants[i] = (stretchBendType1.forceConstants[i]
+                    + stretchBendType2.forceConstants[i]) / 2.0;
+        }
+        return new StretchBendType(atomClasses, forceConstants);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted Stretch-Bend string.
      */
     @Override
@@ -175,17 +198,14 @@ public final class StretchBendType extends BaseType implements Comparator<String
     }
 
     /**
-     * Constant <code>units=PI / 180.0</code>
+     * {@inheritDoc}
      */
-    public static final double units = PI / 180.0;
-
-    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
-        String keys1[] = key1.split(" ");
-        String keys2[] = key2.split(" ");
-        int c1[] = new int[3];
-        int c2[] = new int[3];
+        String[] keys1 = key1.split(" ");
+        String[] keys2 = key2.split(" ");
+        int[] c1 = new int[3];
+        int[] c2 = new int[3];
         for (int i = 0; i < 3; i++) {
             c1[i] = Integer.parseInt(keys1[i]);
             c2[i] = Integer.parseInt(keys2[i]);
@@ -206,54 +226,31 @@ public final class StretchBendType extends BaseType implements Comparator<String
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof StretchBendType)) {
+        if (!(other instanceof StretchBendType)) {
             return false;
         }
         StretchBendType stretchBendType = (StretchBendType) other;
         int c[] = stretchBendType.atomClasses;
-        if (c[0] == atomClasses[0] && c[1] == atomClasses[1] && c[2] == atomClasses[2]) {
-            return true;
-        }
-        return false;
+
+        return (c[0] == atomClasses[0] && c[1] == atomClasses[1] && c[2] == atomClasses[2]);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 3;
         hash = 29 * hash + Arrays.hashCode(atomClasses);
         return hash;
-    }
-
-    /**
-     * <p>average.</p>
-     *
-     * @param stretchBendType1 a {@link ffx.potential.parameters.StretchBendType} object.
-     * @param stretchBendType2 a {@link ffx.potential.parameters.StretchBendType} object.
-     * @param atomClasses an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.StretchBendType} object.
-     */
-    public static StretchBendType average(StretchBendType stretchBendType1,
-                                          StretchBendType stretchBendType2, int atomClasses[]) {
-        if (stretchBendType1 == null || stretchBendType2 == null || atomClasses == null) {
-            return null;
-        }
-        int len = stretchBendType1.forceConstants.length;
-        if (len != stretchBendType2.forceConstants.length) {
-            return null;
-        }
-        double forceConstants[] = new double[len];
-        for (int i = 0; i < len; i++) {
-            forceConstants[i] = (stretchBendType1.forceConstants[i]
-                    + stretchBendType2.forceConstants[i]) / 2.0;
-        }
-        return new StretchBendType(atomClasses, forceConstants);
     }
 
 }

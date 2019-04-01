@@ -169,7 +169,8 @@ public class ForceFieldFilter {
         } else {
             forceFieldFile = null;
         }
-        forceField = new ForceField(properties, forceFieldFile);
+
+        forceField = new ForceField(properties);
     }
 
     /**

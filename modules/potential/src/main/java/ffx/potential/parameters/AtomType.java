@@ -44,7 +44,6 @@ import java.util.Comparator;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class AtomType extends BaseType implements Comparator<String> {
 
@@ -82,13 +81,13 @@ public final class AtomType extends BaseType implements Comparator<String> {
     /**
      * AtomType Constructor.
      *
-     * @param type int
-     * @param atomClass int
-     * @param name String
-     * @param environment String
+     * @param type         int
+     * @param atomClass    int
+     * @param name         String
+     * @param environment  String
      * @param atomicNumber int
      * @param atomicWeight double
-     * @param valence int
+     * @param valence      int
      */
     public AtomType(int type, int atomClass, String name, String environment,
                     int atomicNumber, double atomicWeight, int valence) {
@@ -107,9 +106,9 @@ public final class AtomType extends BaseType implements Comparator<String> {
      * incrementClassAndType</p>
      *
      * @param classIncrement a int.
-     * @param typeIncrement a int.
+     * @param typeIncrement  a int.
      */
-    public void incrementClassAndType(int classIncrement, int typeIncrement) {
+    void incrementClassAndType(int classIncrement, int typeIncrement) {
         atomClass += classIncrement;
         type += typeIncrement;
         setKey(Integer.toString(type));
@@ -117,7 +116,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted atom type string.
      */
     @Override
@@ -125,8 +124,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
         String s;
         if (atomClass >= 0) {
             s = String.format("atom  %5d  %5d  %-4s  %-25s  %3d  %8.4f  %d",
-                    type, atomClass, name, environment, atomicNumber,
-                    atomicWeight, valence);
+                    type, atomClass, name, environment, atomicNumber, atomicWeight, valence);
         } else {
             s = String.format("atom  %5d  %-4s  %-25s  %3d  %8.4f  %d", type,
                     name, environment, atomicNumber, atomicWeight, valence);
@@ -134,41 +132,37 @@ public final class AtomType extends BaseType implements Comparator<String> {
         return s;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String s1, String s2) {
 
         int t1 = Integer.parseInt(s1);
         int t2 = Integer.parseInt(s2);
 
-        if (t1 < t2) {
-            return -1;
-        }
-        if (t1 > t2) {
-            return 1;
-        }
-
-        return 0;
+        return Integer.compare(t1, t2);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof AtomType)) {
+        if (!(other instanceof AtomType)) {
             return false;
         }
         AtomType atomType = (AtomType) other;
-        if (atomType.type == this.type) {
-            return true;
-        }
 
-        return false;
+        return atomType.type == this.type;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 7;

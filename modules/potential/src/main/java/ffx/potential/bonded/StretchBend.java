@@ -65,20 +65,51 @@ import static ffx.potential.parameters.StretchBendType.units;
 public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
 
     private static final Logger logger = Logger.getLogger(StretchBend.class.getName());
-    private static final long serialVersionUID = 1L;
+
     /**
      * Force field parameters to compute the Stretch-Bend energy.
      */
-    public StretchBendType stretchBendType = null;
+    private StretchBendType stretchBendType = null;
+    /**
+     * Rigid scale factor to apply to the force constant.
+     */
     private double rigidScale = 1.0;
     /**
      * Angle this Stretch-Bend is based on.
      */
-    protected Angle angle = null;
+    protected Angle angle;
+    /**
+     * Force constant.
+     */
     public double force0, force1;
+    /**
+     * Equilibrium angle.
+     */
     final public double angleEq;
+    /**
+     * First equilibrium bond distance.
+     */
     final public double bond0Eq;
+    /**
+     * Second equilibrium bond distance.
+     */
     final public double bond1Eq;
+
+    /**
+     * Constructor for the Stretch-Bend class.
+     *
+     * @param a The Angle that this stretch-bend is based on.
+     */
+    public StretchBend(Angle a) {
+        super();
+        angle = a;
+        atoms = a.atoms;
+        bonds = a.bonds;
+        angleEq = angle.angleType.angle[angle.nh];
+        bond0Eq = bonds[0].bondType.distance;
+        bond1Eq = bonds[1].bondType.distance;
+        setID_Key(false);
+    }
 
     /**
      * <p>
@@ -89,10 +120,8 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
      */
     public void setStretchBendType(StretchBendType stretchBendType) {
         this.stretchBendType = stretchBendType;
-        /**
-         * Match the atom class of the angle to the atom class of the
-         * stretch-bend type.
-         */
+
+        // Match the atom class of the angle to the atom class of the stretch-bend type.
         if (atoms[0].getAtomType().atomClass == stretchBendType.atomClasses[0]) {
             force0 = units * stretchBendType.forceConstants[0];
             force1 = units * stretchBendType.forceConstants[1];
@@ -110,7 +139,7 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
      * @param forceField the ForceField parameters to use.
      * @return a new StretchBend, or null.
      */
-    public static StretchBend stretchBendFactory(Angle angle, ForceField forceField) {
+    static StretchBend stretchBendFactory(Angle angle, ForceField forceField) {
         StretchBendType stretchBendType = forceField.getStretchBendType(angle.getAngleType().getKey());
         if (stretchBendType == null) {
             return null;
@@ -131,19 +160,16 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
     }
 
     /**
-     * Constructor for the Stretch-Bend class.
-     *
-     * @param a The Angle that this stretch-bend is based on.
+     * <p>
+     * log</p>
      */
-    public StretchBend(Angle a) {
-        super();
-        angle = a;
-        atoms = a.atoms;
-        bonds = a.bonds;
-        angleEq = angle.angleType.angle[angle.nh];
-        bond0Eq = bonds[0].bondType.distance;
-        bond1Eq = bonds[1].bondType.distance;
-        setID_Key(false);
+    public void log() {
+        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
+                        + "%7.4f %10.4f",
+                "Stretch-Bend", atoms[0].getIndex(),
+                atoms[0].getAtomType().name, atoms[1].getIndex(),
+                atoms[1].getAtomType().name, atoms[2].getIndex(),
+                atoms[2].getAtomType().name, value, energy));
     }
 
     /**
@@ -159,30 +185,22 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
                          AtomicDoubleArray lambdaGradX,
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
-
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        /**
-         * Work vectors.
-         */
-        double v10[] = new double[3];
-        double v12[] = new double[3];
-        double p[] = new double[3];
-        double dta[] = new double[3];
-        double dtc[] = new double[3];
-        /**
-         * Gradient on atoms 0, 1 & 2.
-         */
-        double g0[] = new double[3];
-        double g1[] = new double[3];
-        double g2[] = new double[3];
-
         energy = 0.0;
         value = 0.0;
+
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
+
+        // Work vectors.
+        double[] v10 = new double[3];
+        double[] v12 = new double[3];
+        double[] p = new double[3];
+        double[] dta = new double[3];
+        double[] dtc = new double[3];
         diff(a0, a1, v10);
         diff(a2, a1, v12);
         double rab2 = dot(v10, v10);
@@ -217,14 +235,14 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
                 scalar(v10, term1, v10);
                 scalar(v12, term2, v12);
 
+                // Gradient on atoms 0, 1 & 2.
+                double[] g0 = new double[3];
+                double[] g1 = new double[3];
+                double[] g2 = new double[3];
                 sum(dta, v10, g0);
                 sum(dtc, v12, g2);
                 sum(g0, g2, g1);
                 scalar(g1, -1.0, g1);
-
-                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
                 int i0 = atoms[0].getIndex() - 1;
                 gradX.add(threadID, i0, g0[0]);
                 gradY.add(threadID, i0, g0[1]);
@@ -246,18 +264,6 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
         return energy;
     }
 
-    /**
-     * <p>
-     * log</p>
-     */
-    public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
-                        + "%7.4f %10.4f",
-                "Stretch-Bend", atoms[0].getIndex(),
-                atoms[0].getAtomType().name, atoms[1].getIndex(),
-                atoms[1].getAtomType().name, atoms[2].getIndex(),
-                atoms[2].getAtomType().name, value, energy));
-    }
 
     /**
      * {@inheritDoc}

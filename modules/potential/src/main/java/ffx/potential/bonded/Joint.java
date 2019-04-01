@@ -463,7 +463,7 @@ public class Joint extends MSNode {
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      */
-    public void assignBonds(Atom atom) {
+    private void assignBonds(Atom atom) {
         for (ROLS bond : getBondList()) {
             Bond b = (Bond) bond;
             if (b.containsAtom(atom)) {
@@ -477,7 +477,7 @@ public class Joint extends MSNode {
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      */
-    public void assignAngles(Atom atom) {
+    private void assignAngles(Atom atom) {
         for (ROLS angle : getAngleList()) {
             Angle a = (Angle) angle;
             if (a.containsAtom(atom)) {
@@ -491,7 +491,7 @@ public class Joint extends MSNode {
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      */
-    public void assignTorsions(Atom atom) {
+    private void assignTorsions(Atom atom) {
         for (ROLS torsion : getTorsionList()) {
             Torsion t = (Torsion) torsion;
             if (t.containsAtom(atom)) {

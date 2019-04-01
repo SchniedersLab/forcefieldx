@@ -1,3 +1,40 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy.test
 
 import groovy.cli.Option
@@ -10,6 +47,7 @@ import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.parameters.ForceField
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
+
 /**
  * The MultiResidue script evaluates the energy of a MultiResidue system.
  * <br>
@@ -30,23 +68,28 @@ class MultiResidue extends Script {
         /**
          * -h or --help to print a help message.
          */
-        @Option(shortName='h', description='Print this help message.') boolean help
+        @Option(shortName = 'h', description = 'Print this help message.')
+        boolean help
         /**
          * -r or --resID to define the residue number (default is 1).
          */
-        @Option(shortName='r', defaultValue='1', description='Residue number.') Integer resID
+        @Option(shortName = 'r', defaultValue = '1', description = 'Residue number.')
+        Integer resID
         /**
          * -c or --chain to set the single character chain name (default is \' \').'
          */
-        @Option(shortName='c', defaultValue=' ', description='Single character chain name (default is \' \').') Character chain
+        @Option(shortName = 'c', defaultValue = ' ', description = 'Single character chain name (default is \' \').')
+        Character chain
         /**
          * -n or --name to set the name of residue to switch (default is ALA).
          */
-        @Option(shortName='n', defaultValue='ALA', description='Name of residue to switch to.') String name
+        @Option(shortName = 'n', defaultValue = 'ALA', description = 'Name of residue to switch to.')
+        String name
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed List<String> filenames
+        @Unparsed
+        List<String> filenames
     }
 
     /**
@@ -56,7 +99,7 @@ class MultiResidue extends Script {
     MultiResidue run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc test.MultiResidue [options] <filename>', header:' Options:');
+        def cli = new CliBuilder(usage: ' ffxc test.MultiResidue [options] <filename>', header: ' Options:');
         def options = new Options()
         cli.parseFromInstance(options, args)
         if (options.help) {
@@ -112,7 +155,7 @@ class MultiResidue extends Script {
         }
 
         if (residue == null) {
-            logger.info(" Chain " + chain + " residue " + resID + " was not found." );
+            logger.info(" Chain " + chain + " residue " + resID + " was not found.");
             return;
         }
 
@@ -120,53 +163,13 @@ class MultiResidue extends Script {
         int resNumber = residue.getResidueNumber();
         multiResidue.addResidue(new Residue(name, resNumber, type));
 
-
-
         int numResidues = multiResidue.getResidueCount();
-        for (int i=0; i<numResidues; i++) {
+        for (int i = 0; i < numResidues; i++) {
             multiResidue.setActiveResidue(i);
             logger.info(" Active Residue: " + multiResidue.toString());
-            forceFieldEnergy.energy(true,true);
+            forceFieldEnergy.energy(true, true);
         }
 
         return this
     }
 }
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */

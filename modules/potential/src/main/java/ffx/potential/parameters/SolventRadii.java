@@ -44,24 +44,44 @@ import java.util.logging.Logger;
  * Provides Bondi scaling factors for atomic radii in Generalized Kirkwood
  * continuum solvent.
  *
- * @author slucore
- *
+ * @author Stephen D. LuCore
  */
 public class SolventRadii {
 
     private static final Logger logger = Logger.getLogger(ForceField.class.getName());
 
-    private final String forcefield;
+    /**
+     * The default Bondi scale factor.
+     */
     private double defaultBondi;
+    /**
+     * The default HCT overlap scale factor.
+     */
     private double overlapScale;
+    /**
+     * Map atom types to scale factor.
+     */
     private final HashMap<Integer, Double> atomtypeToBondi;
+    /**
+     * Map biotype to scale factor.
+     */
     private final HashMap<Integer, Double> biotypeToBondi;
+    /**
+     * Map types to Bondi factors fit for AMOEBA_PROTEIN_2013.
+     */
+    private static final HashMap<Integer, Double> amoebapro13ByAtomtype = new HashMap<>();
+    private static final HashMap<Integer, Double> amoebapro13ByBiotype = new HashMap<>();
+    /**
+     * Map types to bondi factors fit for AMBER99SB.
+     */
+    private static final HashMap<Integer, Double> amber99sbByAtomtype = new HashMap<>();
+    private static final HashMap<Integer, Double> amber99sbByBiotype = new HashMap<>();
 
     /**
      * <p>Constructor for SolventRadii.</p>
      *
      * @param forceFieldString a {@link java.lang.String} object.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
      */
     public SolventRadii(String forceFieldString, ForceField forceField) {
         switch (forceFieldString.toUpperCase()) {
@@ -87,7 +107,6 @@ public class SolventRadii {
                 biotypeToBondi = null;
                 logger.severe("No GK solvent radii available for forcefield: " + forceFieldString);
         }
-        this.forcefield = forceFieldString.toUpperCase();
 
         // Parse properties and command-line overrides.
         overlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, overlapScale);
@@ -128,18 +147,6 @@ public class SolventRadii {
     public HashMap<Integer, Double> getBioBondiMap() {
         return biotypeToBondi;
     }
-
-    /**
-     * Map types to bondi factors fit for AMOEBA_PROTEIN_2013.
-     */
-    private static final HashMap<Integer, Double> amoebapro13ByAtomtype = new HashMap<>();
-    private static final HashMap<Integer, Double> amoebapro13ByBiotype = new HashMap<>();
-
-    /**
-     * Map types to bondi factors fit for AMBER99SB.
-     */
-    private static final HashMap<Integer, Double> amber99sbByAtomtype = new HashMap<>();
-    private static final HashMap<Integer, Double> amber99sbByBiotype = new HashMap<>();
 
     static {
         // GLY

@@ -86,7 +86,7 @@ public interface LambdaInterface {
      *                 the model (commonly 3 * number of atoms).
      * @since 1.0
      */
-    void getdEdXdL(double gradient[]);
+    void getdEdXdL(double[] gradient);
 
     /**
      * Returns true if dUdL is guaranteed to be zero at 0 and 1. Default

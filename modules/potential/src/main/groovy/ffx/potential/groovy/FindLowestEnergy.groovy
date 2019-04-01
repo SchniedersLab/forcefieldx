@@ -1,23 +1,56 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.ForceFieldEnergy
-import ffx.potential.AssemblyState
-import ffx.potential.bonded.Atom
-import ffx.potential.parsers.XYZFileFilter
-import ffx.potential.parsers.XYZFilter
-import ffx.potential.utils.PotentialsUtils
+import com.google.common.collect.MinMaxPriorityQueue
+
 import org.apache.commons.io.FilenameUtils
+
+import ffx.potential.AssemblyState
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.SystemFilter
-import ffx.potential.utils.Superpose
-import org.checkerframework.checker.units.qual.K
+import ffx.potential.parsers.XYZFilter
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import com.google.common.collect.MinMaxPriorityQueue
-
-import static java.lang.String.format
 
 /**
  * The FindLowestEnergy script calculates energies for all assemblies in an arc file , finds the lowest energy assembly,
@@ -66,6 +99,7 @@ class FindLowestEnergy extends PotentialScript {
         AssemblyState getState() {
             return state;
         }
+
         double getEnergy() {
             return e;
         }
@@ -104,13 +138,13 @@ class FindLowestEnergy extends PotentialScript {
         SystemFilter systemFilter = potentialFunctions.getFilter()
 
 
-        int maxnum= 1
+        int maxnum = 1
 
         /**
          * Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size N/
          */
 
-        if (numSnaps < 1 ) {
+        if (numSnaps < 1) {
             numSnaps = 1
             logger.info(String.format(" Warning!!! Cannot request 0 lowest enrgies! System will return 1 lowest energies and PDB file"))
         }
@@ -128,8 +162,9 @@ class FindLowestEnergy extends PotentialScript {
             //calling the next assembly of the arc file
             while (xyzFilter.readNext()) {
                 forceFieldEnergy.getCoordinates(x) // getting the coordinates for the next assembly
-                energy= forceFieldEnergy.energy(x, true) //calculating energy for new assembly
-                assemblyState = new AssemblyState(activeAssembly) //saving new assembly if the energy is less than the current energy
+                energy = forceFieldEnergy.energy(x, true) //calculating energy for new assembly
+                assemblyState = new AssemblyState(activeAssembly)
+                //saving new assembly if the energy is less than the current energy
                 energyQueue.add(new StateContainer(assemblyState, energy))
                 maxnum = maxnum + 1
 
@@ -139,30 +174,27 @@ class FindLowestEnergy extends PotentialScript {
         }
 
         /**File saveDir = baseDir
-        *String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
-        *if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        *}
-        *String dirName = saveDir.toString() + File.separator
-        *String fileName = FilenameUtils.getName(modelFilename)
-        *\\fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-        *String arcFileName = fileName + ".arc"
-        **/
+         * String modelFilename = assemblyState.mola.getFile().getAbsolutePath()
+         * if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+         *}* String dirName = saveDir.toString() + File.separator
+         * String fileName = FilenameUtils.getName(modelFilename)
+         * \\fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+         * String arcFileName = fileName + ".arc"
+         **/
 
 
-        if (numSnaps > maxnum ) {
+        if (numSnaps > maxnum) {
             logger.info(String.format(" Warning!!! System does not appear to contain enough entries! All %d energies will be reported", maxnum))
             numSnaps = maxnum
 
         }
 
-        for (int i = 0; i < numSnaps-1; i++) {
+        for (int i = 0; i < numSnaps - 1; i++) {
             StateContainer savedState = energyQueue.removeLast()
             AssemblyState finalAssembly = savedState.getState()
             finalAssembly.revertState();
             double finalEnergy = savedState.getEnergy()
             logger.info(String.format("The potential energy found is %12.6g kcal/mol", finalEnergy))
-
 
 
             File saveDir = baseDir
@@ -219,41 +251,3 @@ class FindLowestEnergy extends PotentialScript {
         return AssemblyState.copyState(assemblyState);
     }
 }
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
-*/

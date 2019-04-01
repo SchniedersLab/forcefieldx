@@ -40,10 +40,9 @@ package ffx.potential.bonded;
 import ffx.numerics.atomic.AtomicDoubleArray;
 
 /**
- * The BondedTerm class is extended by all Valence Geometry classes (bond,
- * angle, dihedral, torsion, etc.).
+ * The BondedEnergy interface.
  *
- * @author Stephen LuCore
+ * @author Stephen D. LuCore
  * @since 1.0
  */
 public interface BondedEnergy {
@@ -62,8 +61,7 @@ public interface BondedEnergy {
      * @return a double.
      */
     default double energy(boolean gradient) {
-        return energy(gradient, 0,
-                null, null, null);
+        return energy(gradient, 0, null, null, null);
     }
 
     /**
@@ -80,9 +78,7 @@ public interface BondedEnergy {
                           AtomicDoubleArray gradX,
                           AtomicDoubleArray gradY,
                           AtomicDoubleArray gradZ) {
-        return energy(gradient, threadID,
-                gradX, gradY, gradZ,
-                null, null, null);
+        return energy(gradient, threadID, gradX, gradY, gradZ, null, null, null);
     }
 
     /**
@@ -99,11 +95,11 @@ public interface BondedEnergy {
      * @return a double.
      */
     double energy(boolean gradient, int threadID,
-                                  AtomicDoubleArray gradX,
-                                  AtomicDoubleArray gradY,
-                                  AtomicDoubleArray gradZ,
-                                  AtomicDoubleArray lambdaGradX,
-                                  AtomicDoubleArray lambdaGradY,
-                                  AtomicDoubleArray lambdaGradZ);
+                  AtomicDoubleArray gradX,
+                  AtomicDoubleArray gradY,
+                  AtomicDoubleArray gradZ,
+                  AtomicDoubleArray lambdaGradX,
+                  AtomicDoubleArray lambdaGradY,
+                  AtomicDoubleArray lambdaGradZ);
 
 }

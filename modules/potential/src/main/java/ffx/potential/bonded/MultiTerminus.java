@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -69,27 +70,49 @@ public class MultiTerminus extends Residue {
 
     private static final Logger logger = Logger.getLogger(MultiResidue.class.getName());
 
+    public enum END {
+        NTERM, CTERM;
+    }
+
+    /**
+     * The force field in use.
+     */
     private final ForceField forceField;
+    /**
+     * The ForceFieldEnergy in use.
+     */
     private final ForceFieldEnergy forceFieldEnergy;
-    private final MolecularAssembly mola;
+    /**
+     * The MolecularAssembly in use.
+     */
+    private final MolecularAssembly molecularAssembly;
     public final END end;
+    /**
+     * Charge state of the termini.
+     */
     public boolean isCharged;
     /**
      * Constant <code>kB=0.83144725</code>
      */
     public static final double kB = 0.83144725;
-    private final static boolean DEBUG = false;
+
+    private Atom uberH3;
+    private Atom uberHO;
+    private Bond bondH3;
+    private Bond bondHO;
+    private List<ROLS> rolsH3 = new ArrayList<>();
+    private List<ROLS> rolsHO = new ArrayList<>();
 
     /**
      * <p>Constructor for MultiTerminus.</p>
      *
-     * @param residue          a {@link ffx.potential.bonded.Residue} object.
-     * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
-     * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
-     * @param mola             a {@link ffx.potential.MolecularAssembly} object.
+     * @param residue           a {@link ffx.potential.bonded.Residue} object.
+     * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+     * @param forceFieldEnergy  a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      */
     public MultiTerminus(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy,
-                         MolecularAssembly mola) {
+                         MolecularAssembly molecularAssembly) {
         super(residue.getName(), residue.getResidueNumber(), residue.residueType,
                 residue.getChainID(), residue.getChainID().toString());
         try {
@@ -102,7 +125,7 @@ public class MultiTerminus extends Residue {
         }
         this.forceField = forceField;
         this.forceFieldEnergy = forceFieldEnergy;
-        this.mola = mola;
+        this.molecularAssembly = molecularAssembly;
         if (residue.getNextResidue() == null) {
             end = END.CTERM;
             isCharged = (residue.getAtomNode("HO") == null);
@@ -151,10 +174,10 @@ public class MultiTerminus extends Residue {
 
     private void updateBondedTerms() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Updating bonded terms: \n"));
+        sb.append("Updating bonded terms: \n");
         List<ROLS> bonds = getBondList();
-        for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = (Bond) bonds.get(i);
+        for (ROLS bond1 : bonds) {
+            Bond bond = (Bond) bond1;
             BondType oldType = bond.bondType;
             int c[] = new int[2];
             c[0] = bond.atoms[0].getAtomType().atomClass;
@@ -162,62 +185,43 @@ public class MultiTerminus extends Residue {
             String key = BondType.sortKey(c);
             BondType newType = forceField.getBondType(key);
             if (oldType != newType) {
-                sb.append(String.format(" Bond: %s --> %s \n", bond.bondType, newType));
+                sb.append(format(" Bond: %s --> %s \n", bond.bondType, newType));
                 bond.setBondType(newType);
                 if (newType.distance < 0.9 * oldType.distance || newType.distance > 1.1 * oldType.distance) {
-                    logger.info(String.format(" Large bond distance change: %s %s,  %.2f --> %.2f ",
+                    logger.info(format(" Large bond distance change: %s %s,  %.2f --> %.2f ",
                             bond.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), bond.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
                             oldType.distance, newType.distance));
                 }
             }
         }
         List<ROLS> angles = getAngleList();
-        for (int i = 0; i < angles.size(); i++) {
-            Angle angle = (Angle) angles.get(i);
+        for (ROLS angle1 : angles) {
+            Angle angle = (Angle) angle1;
             AngleType oldType = angle.angleType;
-            if (DEBUG) {
-                logger.info(String.format(" %d ( %s %s %s ) ( %d %d %d )", i,
-                        angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name),
-                        angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
-                        angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name),
-                        angle.atoms[0].getAtomType().atomClass,
-                        angle.atoms[1].getAtomType().atomClass,
-                        angle.atoms[2].getAtomType().atomClass));
-            }
             Angle dummy = Angle.angleFactory(angle.bonds[0], angle.bonds[1], forceField);
             AngleType newType = dummy.angleType;
             if (oldType != newType) {
-                sb.append(String.format(" Angle: %s --> %s \n", angle.angleType, dummy.angleType));
+                sb.append(format(" Angle: %s --> %s \n", angle.angleType, dummy.angleType));
                 angle.setAngleType(dummy.angleType);
                 if (newType.angle[0] < 0.9 * oldType.angle[0] || newType.angle[0] > 1.1 * oldType.angle[0]) {
-                    logger.info(String.format(" Large angle change: %s %s %s,  %.2f --> %.2f ",
+                    logger.info(format(" Large angle change: %s %s %s,  %.2f --> %.2f ",
                             angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name),
                             oldType.angle[0], newType.angle[0]));
                 }
             }
         }
         List<ROLS> torsions = getTorsionList();
-        for (int i = 0; i < torsions.size(); i++) {
-            Torsion tors = (Torsion) torsions.get(i);
+        for (ROLS torsion : torsions) {
+            Torsion tors = (Torsion) torsion;
             TorsionType oldType = tors.torsionType;
             Torsion dummy = Torsion.torsionFactory(tors.bonds[0], tors.bonds[1], tors.bonds[2], forceField);
             TorsionType newType = dummy.torsionType;
             if (oldType != newType) {
-                sb.append(String.format(" Torsion: %s --> %s \n", tors.torsionType, dummy.torsionType));
+                sb.append(format(" Torsion: %s --> %s \n", tors.torsionType, dummy.torsionType));
                 tors.torsionType = dummy.torsionType;
             }
         }
-        if (DEBUG) {
-            logger.info(sb.toString());
-        }
     }
-
-    private Atom uberH3;
-    private Atom uberHO;
-    private Bond bondH3;
-    private Bond bondHO;
-    private List<ROLS> rolsH3 = new ArrayList<>();
-    private List<ROLS> rolsHO = new ArrayList<>();
 
     /**
      * Changes the charge state of this MultiTerminus.
@@ -227,16 +231,8 @@ public class MultiTerminus extends Residue {
      * @return a {@link ffx.potential.extended.TitrationUtils.TitrationType} object.
      */
     public TitrationType titrateTerminus_v1(double temperature) {
-        logger.info(String.format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
-//        StringBuilder sb = new StringBuilder();
-//        sb.append(" Contents of children: ");
-//        for (Atom atom : this.getAtomList()) {
-//            sb.append(String.format("%s, ", atom.getName()));
-//        }
-//        logger.info(sb.toString());
-        /**
-         * Get references to the backbone atoms.
-         */
+        logger.info(format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
+        // Get references to the backbone atoms.
         TitrationType titrationType = (isCharged) ? TitrationType.DEPROT : TitrationType.PROT;
         Atom N = getBBAtom("N");
         Atom CA = getBBAtom("CA");
@@ -253,9 +249,6 @@ public class MultiTerminus extends Residue {
         int resSeq = C.getResidueNumber();
         Character chainID = C.getChainID();
         List<Atom> typeChanged = new ArrayList<>();
-        if (DEBUG) {
-            printBonds();
-        }
 
         if (end == END.NTERM) {
             if (isCharged) {
@@ -341,12 +334,12 @@ public class MultiTerminus extends Residue {
                 OH.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.neutType)));
                 if (uberHO == null) {
                     // Gotta build the HO and all its bonded terms.
-                    uberHO = new Atom(mola.getAtomArray().length, "HO", OH.getAltLoc(), new double[3],
+                    uberHO = new Atom(molecularAssembly.getAtomArray().length, "HO", OH.getAltLoc(), new double[3],
                             resName, resSeq, chainID, OH.getOccupancy(), OH.getTempFactor(), OH.getSegID(), true);
                     uberHO.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.HO.neutType)));
                     bondHO = new Bond(OH, uberHO);
                     bondHO.setBondType(forceField.getBondType(
-                            String.format("%d %d", OH.getAtomType().atomClass, uberHO.getAtomType().atomClass)));
+                            format("%d %d", OH.getAtomType().atomClass, uberHO.getAtomType().atomClass)));
                     Angle a1 = Angle.angleFactory(bondHO, OH.getBond(C), forceField);
                     Torsion t1 = Torsion.torsionFactory(O.getBond(C), C.getBond(OH), bondHO, forceField);
                     Torsion t2 = Torsion.torsionFactory(CA.getBond(C), C.getBond(OH), bondHO, forceField);
@@ -409,20 +402,7 @@ public class MultiTerminus extends Residue {
         updateBondedTerms();
         isCharged = !isCharged;
         forceFieldEnergy.reInit();
-        if (DEBUG) {
-            printBonds();
-        }
         return titrationType;
-    }
-
-    private void printBonds() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("BondList: %s\n", this.toString()));
-        for (ROLS rols : getBondList()) {
-            Bond bond = (Bond) rols;
-            sb.append(String.format("  %s\n", bond.toString()));
-        }
-        logger.info(sb.toString());
     }
 
     /**
@@ -431,9 +411,6 @@ public class MultiTerminus extends Residue {
     @Override
     public void add(MutableTreeNode mtn) {
         super.add(mtn);
-        if (DEBUG) {
-            logger.info("Adding to terminus: " + mtn.toString());
-        }
     }
 
     /**
@@ -441,11 +418,11 @@ public class MultiTerminus extends Residue {
      * Keep existing Atom objects but updates types, bonded terms, and builds new proton if necessary.
      */
     public void titrateTerminus_v0() {
-        logger.info(String.format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
+        logger.info(format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
         StringBuilder sb = new StringBuilder();
         sb.append(" Contents of children: ");
         for (Atom atom : this.getAtomList()) {
-            sb.append(String.format("%s, ", atom.getName()));
+            sb.append(format("%s, ", atom.getName()));
         }
         logger.info(sb.toString());
         /**
@@ -482,7 +459,7 @@ public class MultiTerminus extends Residue {
 //                this.getBondList().remove(bondH3);    // returns false
 //                this.getAtomNode().remove(H3);        // throws "is not a child"
                 updateGeometry();
-                logger.info(String.format(" Finished titration. H3 status: %b %b %b",
+                logger.info(format(" Finished titration. H3 status: %b %b %b",
                         N.getBond(H3) == null, this.getAtomNode().contains(H3) == null, H3.getParent() == null));
             } else {
                 if (H3 != null) {
@@ -491,7 +468,7 @@ public class MultiTerminus extends Residue {
                 N.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.N.chrgType)));
                 H1.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H1.chrgType)));
                 H2.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H2.chrgType)));
-                H3 = new Atom(mola.getAtomArray().length, "H3", N.getAltLoc(), new double[3], resName, resSeq, chainID,
+                H3 = new Atom(molecularAssembly.getAtomArray().length, "H3", N.getAltLoc(), new double[3], resName, resSeq, chainID,
                         N.getOccupancy(), N.getTempFactor(), N.getSegID(), true);
                 H3.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.H3.chrgType)));
                 intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
@@ -503,17 +480,17 @@ public class MultiTerminus extends Residue {
 //                Bond bondH3 = buildBond(N, H3, forceField, null); // try manually
                 Bond bondH3 = new Bond(N, H3);
                 bondH3.setBondType(forceField.getBondType(
-                        String.format("%d %d", N.getAtomType().atomClass, H3.getAtomType().atomClass)));
+                        format("%d %d", N.getAtomType().atomClass, H3.getAtomType().atomClass)));
                 this.getAtomNode().add(H3);
                 this.getBondList().add(bondH3);
                 this.add(bondH3);
                 updateGeometry();
-                logger.info(String.format(" Finished titration. H3 statuses: "
+                logger.info(format(" Finished titration. H3 statuses: "
                                 + "(They have each other: %b %b) (I have them: %b %b) (I have bond: %b)",
                         N.getBond(H3) != null, H3.getBond(N) != null,
                         this.getAtomNode().contains(H3) != null, H3.getParent() == this.getAtomNode(),
                         this.getBondList().contains(bondH3)));
-                logger.info(String.format(" Bonds from H3: %s %s",
+                logger.info(format(" Bonds from H3: %s %s",
                         H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.XyzIndex_Name),
                         H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.XyzIndex_Name)));
             }
@@ -527,7 +504,7 @@ public class MultiTerminus extends Residue {
                 OXT.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.OH.neutType)));
                 OXT.setName("OH");
                 OH = OXT;
-                HO = new Atom(mola.getAtomArray().length, "HO", OXT.getAltLoc(), new double[3], resName, resSeq, chainID,
+                HO = new Atom(molecularAssembly.getAtomArray().length, "HO", OXT.getAltLoc(), new double[3], resName, resSeq, chainID,
                         OXT.getOccupancy(), OXT.getTempFactor(), OXT.getSegID(), true);
                 HO.setAtomType(forceField.getAtomType(Integer.toString(BB_TYPE.HO.neutType)));
                 intxyz(HO, OXT, 1.02, C, 109.5, CA, -1.7, 0);
@@ -612,13 +589,9 @@ public class MultiTerminus extends Residue {
 
     /**
      * Update Atom references to local geometry.
-     *
-     * @param residue
      */
     private void updateGeometry() {
-        /**
-         * Update atom references to local geometry.
-         */
+        // Update atom references to local geometry.
         ArrayList<Atom> atoms = this.getAtomList();
         ArrayList<ROLS> bonds = this.getBondList();
         ArrayList<ROLS> angles = this.getAngleList();
@@ -652,66 +625,6 @@ public class MultiTerminus extends Residue {
             }
         }
     }
-
-//  For reference.
-//    public void addResidue(Residue newResidue) {
-//        /**
-//         * Add the new residue to list.
-//         */
-//        consideredResidues.add(newResidue);
-//        /**
-//         * Get references to nearby residues.
-//         */
-//        Residue prevResidue = activeResidue.getPreviousResidue();
-//        Residue nextResidue = activeResidue.getNextResidue();
-//        Residue prev2Residue = null;
-//        if (prevResidue != null) {
-//            prev2Residue = prevResidue.getPreviousResidue();
-//        }
-//        Residue next2Residue = null;
-//        if (nextResidue != null) {
-//            next2Residue = nextResidue.getNextResidue();
-//        }
-//
-//        /**
-//         * Move atoms from the active Residue to the new Residue.
-//         */
-//        moveBackBoneAtoms(activeResidue, newResidue);
-//        
-//        /**
-//         * Pass references of the active Residues' joints to the new Residue.
-//         */
-//        ArrayList<Joint> joints = activeResidue.getJoints();
-//        for (Joint joint : joints) {
-//            newResidue.addJoint(joint);
-//        }
-//        /**
-//         * Make the new Residue active.
-//         */
-//        activeResidue.removeFromParent();
-//        activeResidue = newResidue;
-//        add(activeResidue);
-//        /**
-//         * Build side-chain atoms and assign atom types for the new Residue.
-//         */
-//        try {
-//            assignAminoAcidAtomTypes(newResidue, prevResidue, nextResidue, forceField, null);
-//            if (nextResidue != null) {
-//                Atom C = (Atom) newResidue.getAtomNode("C");
-//                Atom nextN = (Atom) nextResidue.getAtomNode("N");
-//                for (Joint joint : joints) {
-//                    Bond bond = (Bond) joint.getBondList().get(0);
-//                    if (bond.containsAtom(C) && bond.containsAtom(nextN)) {
-//                        C.setBond(bond);
-//                    }
-//                }
-//            }
-//        } catch (MissingHeavyAtomException | MissingAtomTypeException exception) {
-//            logger.severe(exception.toString());
-//        }
-//        newResidue.finalize(true, forceField);
-//        updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
-//    }
 
     /**
      * <p>isCharged.</p>
@@ -757,12 +670,8 @@ public class MultiTerminus extends Residue {
         }
     }
 
-    public enum END {
-        NTERM, CTERM;
-    }
-
     private void maxwellMe(Atom atom, double temperature) {
-        double vv[] = new double[3];
+        double[] vv = new double[3];
         for (int i = 0; i < 3; i++) {
             vv[i] = ThreadLocalRandom.current().nextGaussian() * sqrt(kB * temperature / atom.getMass());
         }

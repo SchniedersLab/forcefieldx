@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+// 
+// This file is part of Force Field X.
+// 
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+// 
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+// 
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+// 
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.crystal;
 
 import java.util.ArrayList;
@@ -94,18 +94,6 @@ public class Crystal {
      */
     public double c;
     /**
-     * Length of the reciprocal basis vector <b>a*</b>.
-     */
-    public double aStar;
-    /**
-     * Length of the reciprocal basis vector <b>b*</b>.
-     */
-    public double bStar;
-    /**
-     * Length of the reciprocal basis vector <b>c*</b>.
-     */
-    public double cStar;
-    /**
      * The interaxial lattice angle between <b>b</b> and <b>c</b>.
      */
     public double alpha;
@@ -133,47 +121,45 @@ public class Crystal {
      * The crystal unit cell volume.
      */
     public double volume;
-
     /**
      * Change in the volume with respect to a.
      */
-    public double dVdA;
+    double dVdA;
     /**
      * Change in the volume with respect to b.
      */
-    public double dVdB;
+    double dVdB;
     /**
      * Change in the volume with respect to c.
      */
-    public double dVdC;
+    double dVdC;
     /**
      * Change in the volume with respect to alpha (in Radians). This is set to
      * zero if alpha is fixed.
      */
-    public double dVdAlpha;
+    double dVdAlpha;
     /**
      * Change in the volume with respect to beta (in Radians). This is set to
      * zero if beta is fixed.
      */
-    public double dVdBeta;
+    double dVdBeta;
     /**
      * Change in the volume with respect to gamma (in Radians). This is set to
      * zero if gamma is fixed.
      */
-    public double dVdGamma;
-
+    double dVdGamma;
     /**
      * Matrix to convert from fractional to Cartesian coordinates.
      */
-    public final double Ai[][] = new double[3][3];
+    public final double[][] Ai = new double[3][3];
     /**
      * Entries in the Ai array.
      */
-    public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
+    private double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
     /**
      * Matrix to convert from Cartesian to fractional coordinates.
      */
-    public double A[][];
+    public double[][] A;
     /**
      * Entries in the A array.
      */
@@ -181,11 +167,11 @@ public class Crystal {
     /**
      * The direct space metric matrix.
      */
-    public final double G[][] = new double[3][3];
+    public final double[][] G = new double[3][3];
     /**
      * The reciprocal space metric matrix.
      */
-    public double Gstar[][];
+    private double[][] Gstar;
     /**
      * Interfacial radius in the direction of the A-axis.
      */
@@ -199,23 +185,21 @@ public class Crystal {
      */
     public double interfacialRadiusC;
 
-
     private boolean aperiodic;
-    public int scale_flag;
-    public int scale_b[] = new int[6];
+    public int[] scale_b = new int[6];
     public int scale_n;
     /**
      * An atom and one of its symmetry copies within the specialPositionCutoff
      * should be flagged to be at a special position.
      */
-    public double specialPositionCutoff = 0.3;
+    private double specialPositionCutoff = 0.3;
     public double specialPositionCutoff2 = specialPositionCutoff * specialPositionCutoff;
     /**
      * Avogadro's number.
      */
     private static final double AVOGADRO = 6.02214129e23;
 
-    protected boolean checkRestrictions = true;
+    boolean checkRestrictions = true;
 
     /**
      * The Crystal class encapsulates the lattice parameters and space group.
@@ -253,7 +237,7 @@ public class Crystal {
         }
 
         SymOp symop;
-        double rot[][];
+        double[][] rot;
         int index = 0;
         switch (crystalSystem) {
             case TRICLINIC:
@@ -321,7 +305,6 @@ public class Crystal {
                         scale_b[2] = index++;
                         hexagonal = true;
                     }
-
                     if (hexagonal) {
                         break;
                     }
@@ -350,9 +333,9 @@ public class Crystal {
         return checkRestrictions;
     }
 
-    public boolean isSpecialPosition(double cartesianCoords[]) {
-        double newCoords[] = new double[3];
-        double ret[] = new double[3];
+    public boolean isSpecialPosition(double[] cartesianCoords) {
+        double[] newCoords = new double[3];
+        double[] ret = new double[3];
         int n = spaceGroup.getNumberOfSymOps();
         for (int i = 1; i < n; i++) {
             SymOp symOp = symOpsCartesian.get(i);
@@ -372,20 +355,19 @@ public class Crystal {
      */
     public void updateCrystal() {
 
-        double cos_alpha = 0.0;
-        double sin_beta = 0.0;
-        double cos_beta = 0.0;
-        double sin_gamma = 0.0;
-        double cos_gamma = 0.0;
-        double beta_term = 0.0;
-        double gamma_term = 0.0;
+        double cos_alpha;
+        double sin_beta;
+        double cos_beta;
+        double sin_gamma;
+        double cos_gamma;
+        double beta_term;
+        double gamma_term;
 
         switch (crystalSystem) {
             case CUBIC:
             case ORTHORHOMBIC:
             case TETRAGONAL:
                 cos_alpha = 0.0;
-                sin_beta = 1.0;
                 cos_beta = 0.0;
                 sin_gamma = 1.0;
                 cos_gamma = 0.0;
@@ -500,9 +482,9 @@ public class Crystal {
         A22 = A[2][2];
 
         // Reciprocal basis vector lengths
-        aStar = 1.0 / sqrt(A00 * A00 + A10 * A10 + A20 * A20);
-        bStar = 1.0 / sqrt(A01 * A01 + A11 * A11 + A21 * A21);
-        cStar = 1.0 / sqrt(A02 * A02 + A12 * A12 + A22 * A22);
+        double aStar = 1.0 / sqrt(A00 * A00 + A10 * A10 + A20 * A20);
+        double bStar = 1.0 / sqrt(A01 * A01 + A11 * A11 + A21 * A21);
+        double cStar = 1.0 / sqrt(A02 * A02 + A12 * A12 + A22 * A22);
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest(format(" Reciprocal Lattice Lengths: (%8.3f, %8.3f, %8.3f)",
                     aStar, bStar, cStar));
@@ -533,13 +515,12 @@ public class Crystal {
 
         RealMatrix toFrac = new Array2DRowRealMatrix(A);
         RealMatrix toCart = new Array2DRowRealMatrix(Ai);
-        for (int i = 0; i < nSymm; i++) {
-            SymOp symOp = symOps.get(i);
+        for (SymOp symOp : symOps) {
             m = new Array2DRowRealMatrix(symOp.rot);
             // rot_c = A^(-1).rot_f.A
             RealMatrix rotMat = m.preMultiply(toCart.transpose()).multiply(toFrac.transpose());
             // tr_c = tr_f.A^(-1)
-            double tr[] = toCart.preMultiply(symOp.tr);
+            double[] tr = toCart.preMultiply(symOp.tr);
             symOpsCartesian.add(new SymOp(rotMat.getData(), tr));
         }
     }
@@ -585,17 +566,16 @@ public class Crystal {
         return true;
     }
 
-
     /**
      * Strain the unit cell vectors.
      *
      * @param dStrain a 3x3 matrix of unitless Strain percentages.
      * @return True if the perturbation of cell vectors succeeds.
      */
-    public boolean perturbCellVectors(double dStrain[][]) {
+    public boolean perturbCellVectors(double[][] dStrain) {
 
-        double AA[][] = new double[3][3];
-        double newAi[][] = new double[3][3];
+        double[][] AA = new double[3][3];
+        double[][] newAi = new double[3][3];
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -625,7 +605,7 @@ public class Crystal {
      * @param cellVectors 3x3 matrix of cell vectors.
      * @return True if the perturbation of cell vectors succeeds.
      */
-    public boolean setCellVectors(double cellVectors[][]) {
+    public boolean setCellVectors(double[][] cellVectors) {
 
         // Update a-, b-, and c-axis lengths.
         double aa = r(cellVectors[0]);
@@ -642,8 +622,7 @@ public class Crystal {
 
     public double getDensity(double mass) {
         int nSymm = spaceGroup.symOps.size();
-        double dens = (mass * nSymm / AVOGADRO) * (1.0e24 / volume);
-        return dens;
+        return (mass * nSymm / AVOGADRO) * (1.0e24 / volume);
     }
 
     public void setDensity(double dens, double mass) {
@@ -656,7 +635,7 @@ public class Crystal {
     }
 
     public void randomParameters(double dens, double mass) {
-        double params[] = SpaceGroup.resetUnitCellParams(crystalSystem);
+        double[] params = SpaceGroup.resetUnitCellParams(crystalSystem);
         changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
         setDensity(dens, mass);
     }
@@ -826,7 +805,7 @@ public class Crystal {
      * @param xyz input distances that are over-written.
      * @return the output distance squared.
      */
-    public double image(final double xyz[]) {
+    public double image(final double[] xyz) {
         double x = xyz[0];
         double y = xyz[1];
         double z = xyz[2];
@@ -879,13 +858,13 @@ public class Crystal {
      * @param m an array of double.
      * @param r an array of double.
      */
-    public void averageTensor(double m[][], double r[][]) {
+    public void averageTensor(double[][] m, double[][] r) {
         int n = spaceGroup.symOps.size();
         for (int i = 0; i < n; i++) {
             SymOp symop = spaceGroup.symOps.get(i);
-            double rot[][] = symop.rot;
-            double rt[][] = transpose3(rot);
-            double rmrt[][] = mat3Mat3(mat3Mat3(rot, m), rt);
+            double[][] rot = symop.rot;
+            double[][] rt = transpose3(rot);
+            double[][] rmrt = mat3Mat3(mat3Mat3(rot, m), rt);
             for (int j = 0; j < 3; j++) {
                 for (int k = 0; k < 3; k++) {
                     r[j][k] += rmrt[j][k];
@@ -906,13 +885,13 @@ public class Crystal {
      * @param v an array of double.
      * @param r an array of double.
      */
-    public void averageTensor(double v[], double r[][]) {
+    public void averageTensor(double[] v, double[][] r) {
         int n = spaceGroup.symOps.size();
         for (int i = 0; i < n; i++) {
             SymOp symop = spaceGroup.symOps.get(i);
-            double rot[][] = symop.rot;
-            double rt[][] = transpose3(rot);
-            double rmrt[][] = mat3Mat3(mat3SymVec6(rot, v), rt);
+            double[][] rot = symop.rot;
+            double[][] rt = transpose3(rot);
+            double[][] rmrt = mat3Mat3(mat3SymVec6(rot, v), rt);
             for (int j = 0; j < 3; j++) {
                 for (int k = 0; k < 3; k++) {
                     r[j][k] += rmrt[j][k];
@@ -941,8 +920,8 @@ public class Crystal {
      * @param mateZ Output z coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applyCartSymOp(int n, double x[], double y[], double z[],
-                               double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+    public void applyCartSymOp(int n, double[] x, double[] y, double[] z,
+                               double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
         if (x == null || y == null || z == null) {
             return;
         }
@@ -959,8 +938,8 @@ public class Crystal {
             mateZ = new double[n];
         }
 
-        final double rot[][] = symOp.rot;
-        final double trans[] = symOp.tr;
+        final double[][] rot = symOp.rot;
+        final double[] trans = symOp.tr;
 
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
@@ -1000,8 +979,8 @@ public class Crystal {
      * @param mateZ Output z coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applySymOp(int n, double x[], double y[], double z[],
-                           double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+    public void applySymOp(int n, double[] x, double[] y, double[] z,
+                           double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
         if (x == null || y == null || z == null) {
             return;
         }
@@ -1018,8 +997,8 @@ public class Crystal {
             mateZ = new double[n];
         }
 
-        final double rot[][] = symOp.rot;
-        final double trans[] = symOp.tr;
+        final double[][] rot = symOp.rot;
+        final double[] trans = symOp.tr;
 
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
@@ -1064,9 +1043,9 @@ public class Crystal {
      * @param ny    number of unit cell translations
      * @param nz    number of unit cell translations
      */
-    public void applySymOp(int h, int k, int l, int mate[], SymOp symOp, int nx, int ny, int nz) {
-        double rot[][] = symOp.rot;
-        double trans[] = symOp.tr;
+    public void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny, int nz) {
+        double[][] rot = symOp.rot;
+        double[] trans = symOp.tr;
         // Apply Symmetry Operator.
         mate[0] = (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
         mate[1] = (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
@@ -1083,9 +1062,9 @@ public class Crystal {
      * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applyCartesianSymOp(double xyz[], double mate[], SymOp symOp) {
-        double rot[][] = symOp.rot;
-        double trans[] = symOp.tr;
+    public void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
+        double[][] rot = symOp.rot;
+        double[] trans = symOp.tr;
         double xc = xyz[0];
         double yc = xyz[1];
         double zc = xyz[2];
@@ -1102,9 +1081,9 @@ public class Crystal {
      * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applySymOp(double xyz[], double mate[], SymOp symOp) {
-        double rot[][] = symOp.rot;
-        double trans[] = symOp.tr;
+    public void applySymOp(double[] xyz, double[] mate, SymOp symOp) {
+        double[][] rot = symOp.rot;
+        double[] trans = symOp.tr;
         double xc = xyz[0];
         double yc = xyz[1];
         double zc = xyz[2];
@@ -1129,9 +1108,9 @@ public class Crystal {
      * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applyFracSymOp(double xyz[], double mate[], SymOp symOp) {
-        double rot[][] = symOp.rot;
-        double trans[] = symOp.tr;
+    public void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
+        double[][] rot = symOp.rot;
+        double[] trans = symOp.tr;
         double xi = xyz[0];
         double yi = xyz[1];
         double zi = xyz[2];
@@ -1151,8 +1130,8 @@ public class Crystal {
      * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applySymRot(double xyz[], double mate[], SymOp symOp) {
-        double rot[][] = symOp.rot;
+    public void applySymRot(double[] xyz, double[] mate, SymOp symOp) {
+        double[][] rot = symOp.rot;
         // Convert to fractional coordinates.
         double xc = xyz[0];
         double yc = xyz[1];
@@ -1180,7 +1159,7 @@ public class Crystal {
      * @param out    output coordinates.
      * @param matrix multiply by the transpose of this matrix.
      */
-    public static void applyMatrixTranspose(double in[], double out[], double matrix[][]) {
+    public static void applyMatrixTranspose(double[] in, double[] out, double[][] matrix) {
         double xc = in[0];
         double yc = in[1];
         double zc = in[2];
@@ -1195,8 +1174,8 @@ public class Crystal {
      * @param symOp  Symmetry operator to apply.
      * @param rotmat Resulting transformation operator R.
      */
-    public void getTransformationOperator(SymOp symOp, double rotmat[][]) {
-        double rot[][] = symOp.rot;
+    public void getTransformationOperator(SymOp symOp, double[][] rotmat) {
+        double[][] rot = symOp.rot;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 rotmat[i][j] = 0.0;
@@ -1217,16 +1196,12 @@ public class Crystal {
      * @param symOp  The symmetry operator.
      * @param rotmat an array of double.
      */
-    public void applyTransSymRot(double xyz[], double mate[], SymOp symOp, double rotmat[][]) {
+    public void applyTransSymRot(double[] xyz, double[] mate, SymOp symOp, double[][] rotmat) {
 
-        /**
-         * The transformation operator R = ToCart * Rot * ToFrac
-         */
+        // The transformation operator R = ToCart * Rot * ToFrac
         getTransformationOperator(symOp, rotmat);
 
-        /**
-         * Apply R^T (its transpose).
-         */
+        // Apply R^T (its transpose).
         applyMatrixTranspose(xyz, mate, rotmat);
     }
 
@@ -1238,7 +1213,7 @@ public class Crystal {
      * @param symOp The symmetry operator.
      */
     public void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
-        double rot[][] = symOp.rot;
+        double[][] rot = symOp.rot;
         double h = hkl.h();
         double k = hkl.k();
         double l = hkl.l();
@@ -1259,7 +1234,7 @@ public class Crystal {
      * @param symOp The symmetry operator.
      */
     public void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
-        double rot[][] = symOp.rot;
+        double[][] rot = symOp.rot;
         double h = hkl.h();
         double k = hkl.k();
         double l = hkl.l();
@@ -1288,9 +1263,9 @@ public class Crystal {
      * @param mateZ Output z coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applySymRot(int n, double x[], double y[], double z[],
-                            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
-        double rot[][] = symOp.rot;
+    public void applySymRot(int n, double[] x, double[] y, double[] z,
+                            double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
+        double[][] rot = symOp.rot;
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
         final double rot20 = rot[2][0];
@@ -1336,9 +1311,9 @@ public class Crystal {
      * @param symOp  The symmetry operator.
      * @param rotmat an array of double.
      */
-    public void applyTransSymRot(int n, double x[], double y[], double z[],
-                                 double mateX[], double mateY[], double mateZ[],
-                                 SymOp symOp, double rotmat[][]) {
+    public void applyTransSymRot(int n, double[] x, double[] y, double[] z,
+                                 double[] mateX, double[] mateY, double[] mateZ,
+                                 SymOp symOp, double[][] rotmat) {
 
         if (x == null || y == null || z == null) {
             return;
@@ -1356,9 +1331,7 @@ public class Crystal {
             mateZ = new double[n];
         }
 
-        /**
-         * The transformation operator R = ToCart * Rot * ToFrac
-         */
+        // The transformation operator R = ToCart * Rot * ToFrac
         getTransformationOperator(symOp, rotmat);
 
         for (int i = 0; i < n; i++) {
@@ -1384,8 +1357,8 @@ public class Crystal {
      * @param yf an array of double.
      * @param zf an array of double.
      */
-    public void toFractionalCoordinates(int n, double x[], double y[],
-                                        double z[], double xf[], double yf[], double zf[]) {
+    public void toFractionalCoordinates(int n, double[] x, double[] y,
+                                        double[] z, double[] xf, double[] yf, double[] zf) {
         for (int i = 0; i < n; i++) {
             double xc = x[i];
             double yc = y[i];
@@ -1404,7 +1377,7 @@ public class Crystal {
      * @param cart an array of double.
      * @param frac an array of double.
      */
-    public void toFractionalCoordinates(int n, double cart[], double frac[]) {
+    public void toFractionalCoordinates(int n, double[] cart, double[] frac) {
         int i3 = 0;
         for (int i = 0; i < n; i++) {
             // Convert to fractional coordinates.
@@ -1428,7 +1401,7 @@ public class Crystal {
      * @param in  an array of double.
      * @param out an array of double.
      */
-    public void toPrimaryCell(double in[], double out[]) {
+    public void toPrimaryCell(double[] in, double[] out) {
         toFractionalCoordinates(in, out);
         out[0] = mod(out[0], 1.0);
         out[1] = mod(out[1], 1.0);
@@ -1443,7 +1416,7 @@ public class Crystal {
      * @param x  an array of double.
      * @param xf an array of double.
      */
-    public void toFractionalCoordinates(double x[], double xf[]) {
+    public void toFractionalCoordinates(double[] x, double[] xf) {
         double xc = x[0];
         double yc = x[1];
         double zc = x[2];
@@ -1464,8 +1437,8 @@ public class Crystal {
      * @param y  an array of double.
      * @param z  an array of double.
      */
-    public void toCartesianCoordinates(int n, double xf[], double yf[],
-                                       double zf[], double x[], double y[], double z[]) {
+    public void toCartesianCoordinates(int n, double[] xf, double[] yf,
+                                       double[] zf, double[] x, double[] y, double[] z) {
         for (int i = 0; i < n; i++) {
             double xi = xf[i];
             double yi = yf[i];
@@ -1484,7 +1457,7 @@ public class Crystal {
      * @param frac an array of double.
      * @param cart an array of double.
      */
-    public void toCartesianCoordinates(int n, double frac[], double cart[]) {
+    public void toCartesianCoordinates(int n, double[] frac, double[] cart) {
         int i3 = 0;
         for (int i = 0; i < n; i++) {
             // Convert to cartesian coordinates.
@@ -1508,7 +1481,7 @@ public class Crystal {
      * @param xf an array of double.
      * @param x  an array of double.
      */
-    public void toCartesianCoordinates(double xf[], double x[]) {
+    public void toCartesianCoordinates(double[] xf, double[] x) {
         double fx = xf[0];
         double fy = xf[1];
         double fz = xf[2];
@@ -1550,7 +1523,7 @@ public class Crystal {
      * @param mat an array of double.
      * @return a double.
      */
-    public static double quad_form(double v[], double mat[][]) {
+    public static double quad_form(double[] v, double[][] mat) {
         return (v[0] * (v[0] * mat[0][0] + 2 * (v[1] * mat[0][1] + v[2] * mat[0][2]))
                 + v[1] * (v[1] * mat[1][1] + 2 * (v[2] * mat[1][2]))
                 + v[2] * v[2] * mat[2][2]);
@@ -1564,7 +1537,7 @@ public class Crystal {
      * @param mat an array of double.
      * @return a double.
      */
-    public static double quad_form(HKL hkl, double mat[][]) {
+    public static double quad_form(HKL hkl, double[][] mat) {
         return (hkl.h() * (hkl.h() * mat[0][0] + 2 * (hkl.k() * mat[0][1] + hkl.l() * mat[0][2]))
                 + hkl.k() * (hkl.k() * mat[1][1] + 2 * (hkl.l() * mat[1][2]))
                 + hkl.l() * hkl.l() * mat[2][2]);
@@ -1602,11 +1575,10 @@ public class Crystal {
      * @param symOp a {@link ffx.crystal.SymOp} object.
      * @return a double.
      */
-    public static double sym_phase_shift(double hkl[], SymOp symOp) {
-        double trans[] = symOp.tr;
+    public static double sym_phase_shift(double[] hkl, SymOp symOp) {
+        double[] trans = symOp.tr;
         // Apply translation
-        return -2.0 * PI
-                * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
+        return -2.0 * PI * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
     }
 
     /**
@@ -1618,10 +1590,9 @@ public class Crystal {
      * @return a double.
      */
     public static double sym_phase_shift(HKL hkl, SymOp symOp) {
-        double trans[] = symOp.tr;
+        double[] trans = symOp.tr;
         // Apply translation
-        return -2.0 * PI
-                * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
+        return -2.0 * PI * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
     }
 
     /**
@@ -1683,7 +1654,7 @@ public class Crystal {
      * @return A string with the unit cell parameters.
      */
     public String toShortString() {
-        return String.format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a, b, c, alpha, beta, gamma);
+        return format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a, b, c, alpha, beta, gamma);
     }
 
     /**
@@ -1692,16 +1663,16 @@ public class Crystal {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("\n Unit Cell\n");
-        sb.append(String.format("  A-axis:                              %8.3f\n", a));
-        sb.append(String.format("  B-axis:                              %8.3f\n", b));
-        sb.append(String.format("  C-axis:                              %8.3f\n", c));
-        sb.append(String.format("  Alpha:                               %8.3f\n", alpha));
-        sb.append(String.format("  Beta:                                %8.3f\n", beta));
-        sb.append(String.format("  Gamma:                               %8.3f\n", gamma));
-        sb.append(String.format("  Space group\n"));
-        sb.append(String.format("   Number:                                  %3d\n", spaceGroup.number));
-        sb.append(String.format("   Symbol:                             %8s\n", spaceGroup.shortName));
-        sb.append(String.format("   Number of Symmetry Operators:            %3d", spaceGroup.getNumberOfSymOps()));
+        sb.append(format("  A-axis:                              %8.3f\n", a));
+        sb.append(format("  B-axis:                              %8.3f\n", b));
+        sb.append(format("  C-axis:                              %8.3f\n", c));
+        sb.append(format("  Alpha:                               %8.3f\n", alpha));
+        sb.append(format("  Beta:                                %8.3f\n", beta));
+        sb.append(format("  Gamma:                               %8.3f\n", gamma));
+        sb.append("  Space group\n");
+        sb.append(format("   Number:                                  %3d\n", spaceGroup.number));
+        sb.append(format("   Symbol:                             %8s\n", spaceGroup.shortName));
+        sb.append(format("   Number of Symmetry Operators:            %3d", spaceGroup.getNumberOfSymOps()));
         return sb.toString();
     }
 

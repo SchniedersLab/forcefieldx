@@ -59,7 +59,7 @@
                                 </resource>
                                 <resource>
                                     <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
-                                    <targetPath>realsapace</targetPath>
+                                    <targetPath>realspace</targetPath>
                                 </resource>
                             </resources>
                             <overwrite>true</overwrite>

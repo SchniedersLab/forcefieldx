@@ -38,7 +38,6 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
-import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
 
@@ -47,11 +46,9 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class ISolvRadType extends BaseType implements Comparator<String> {
 
-    private static final Logger logger = Logger.getLogger(BondType.class.getName());
     /**
      * Atom classes that form this bond stretch.
      */
@@ -64,7 +61,7 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
     /**
      * <p>Constructor for ISolvRadType.</p>
      *
-     * @param atomType a int.
+     * @param atomType    a int.
      * @param radiusScale a double.
      */
     public ISolvRadType(int atomType, double radiusScale) {
@@ -79,14 +76,14 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
      *
      * @param increment a int.
      */
-    public void incrementType(int increment) {
+    void incrementType(int increment) {
         atomType += increment;
         setKey(Integer.toString(atomType));
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted bond stretch string.
      */
     @Override
@@ -94,34 +91,35 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
         return String.format("isolvrad  %4d  %6.4f", atomType, radiusScale);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String key1, String key2) {
         int type1 = Integer.parseInt(key1);
         int type2 = Integer.parseInt(key2);
-        if (type1 < type2) {
-            return -1;
-        } else if (type1 > type2) {
-            return 1;
-        } else {
-            return 0;
-        }
+
+        return Integer.compare(type1, type2);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof ISolvRadType)) {
+        if (!(other instanceof ISolvRadType)) {
             return false;
         }
         ISolvRadType otherType = (ISolvRadType) other;
         return (otherType.atomType == this.atomType);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 7;
