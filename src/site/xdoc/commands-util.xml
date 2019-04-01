@@ -21,61 +21,43 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/biotype.groovy" >biotype</a>
+                            <a href="modules/potential/scripts/Biotype.groovy" >Biotype</a>
                         </td>
                         <td>Print out a lookup table from PDB atom names to force field atom types.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/cart2frac.groovy" >cart2frac</a>
+                            <a href="modules/potential/scripts/Cart2Frac.groovy" >Cart2Frac</a>
                         </td>
                         <td>Convert Cartesian coordinates to fractional coordinates.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/cif2mtz.groovy" >cif2mtz</a>
-                        </td>
-                        <td>Convert a cif reflection file to mtz format.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="modules/xray/scripts/deuterate.groovy" >deuterate</a>
-                        </td>
-                        <td>Convert exchangeble hydrogens to dueterium atoms.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="modules/potential/scripts/frac2cart.groovy" >frac2cart</a>
+                            <a href="modules/potential/scripts/Frac2Cart.groovy" >Frac2Cart</a>
                         </td>
                         <td>Convert fractional coordinates to Cartesian coordinates.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/moveIntoUnitCell.groovy" >moveIntoUnitCell</a>
+                            <a href="modules/potential/scripts/MoveIntoUnitCell.groovy" >MoveIntoUnitCell</a>
                         </td>
                         <td>Move the center of mass of each molecule into the unit cell.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/mtzInfo.groovy" >mtzInfo</a>
-                        </td>
-                        <td>Print out information on a binary mtz reflection file.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="modules/potential/scripts/saveAsP1.groovy" >saveAsP1</a>
+                            <a href="modules/potential/scripts/SaveAsP1.groovy" >SaveAsP1</a>
                         </td>
                         <td>Generate a P1 unit cell from an asymmetric unit.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/saveAsPDB.groovy" >saveAsPDB</a>
+                            <a href="modules/potential/scripts/SaveAsPDB.groovy" >SaveAsPDB</a>
                         </td>
                         <td>Convert input XYZ file to PDB format.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/saveAsXYZ.groovy" >saveAsXYZ</a>
+                            <a href="modules/potential/scripts/SaveAsXYZ.groovy" >SaveAsXYZ</a>
                         </td>
                         <td>Convert input PDB file to XYZ format.</td>
                     </tr>

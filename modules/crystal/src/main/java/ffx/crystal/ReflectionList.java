@@ -207,6 +207,22 @@ public class ReflectionList {
     }
 
     /**
+     * Get the maximum resolution.
+     * @return Maximum resolution
+     */
+    public double getMaxResolution() {
+        return maxResolution;
+    }
+
+    /**
+     * Get the minimum resolution.
+     * @return Minimum resolution
+     */
+    public double getMinResolution() {
+        return minResolution;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

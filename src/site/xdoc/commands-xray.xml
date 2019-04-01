@@ -21,21 +21,69 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/xray/anneal.groovy" >xray.anneal</a>
+                            <a href="modules/xray/scripts/xray/Anneal.groovy" >xray.Anneal</a>
                         </td>
-                        <td>Apply simulated annealing using a reciprocal space objective function.</td>
+                        <td>Run simulated annealing to optimize a structure using a reciprocal space objective function.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/xray/minimize.groovy" >xray.minimize</a>
+                            <a href="modules/xray/scripts/xray/AverageMTZ.groovy" >xray.AverageMTZ</a>
+                        </td>
+                        <td>Average multiple MTZ files.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/CIF2MTZ.groovy" >xray.CIF2MTZ</a>
+                        </td>
+                        <td>Convert a CIF diffraction file to MTZ format.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/ComputeFc.groovy" >xray.ComputeFc</a>
+                        </td>
+                        <td>Write out computed structure factors.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/Deuterate.groovy" >xray.Deuterate</a>
+                        </td>
+                        <td>Deuterate exchangable hydrogens of the PDB model.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/Dynamics.groovy" >xray.Dynamics</a>
+                        </td>
+                        <td>Run Dynamics simulations using a reciprocal space objective function.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/ManyBody.groovy">xray.ManyBody</a>
+                        </td>
+                        <td>Globally optimize the side-chains of a protein using a reciprocal space objective function.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/Minimize.groovy" >xray.Minimize</a>
                         </td>
                         <td>X-ray Refinement using a reciprocal space objective function.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/xray/scaleBulk.groovy" >xray.scaleBulk</a>
+                            <a href="modules/xray/scripts/xray/ModelvsData.groovy" >xray.ModelvsData</a>
                         </td>
-                        <td>Compute the bulk solvent contribution to the X-ray target.</td>
+                        <td>Compare the calculated diffraction of the model to the diffraction data.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/MTZInfo.groovy" >xray.MTZInfo</a>
+                        </td>
+                        <td>Write out information on an MTZ file.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/potential/scripts/xray/Timer.groovy" >xray.Timer</a>
+                        </td>
+                        <td>Time the computation of the reciprocal space objective function and gradient.</td>
                     </tr>
                 </tbody>
             </table>

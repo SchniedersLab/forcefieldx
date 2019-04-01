@@ -10,7 +10,7 @@
     </properties>
     <body>
         <section name="Optimization and Sampling">
-            <p>Minimization Algorithms, Simulated Annealing, MD, Alchemical Free Energy Simulations.</p>
+            <p>Local and Global Minimization, Dynamics, and Alchemical Free Energy Simulations.</p>
             <table>
                 <thead>
                     <tr>
@@ -21,27 +21,51 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/anneal.groovy" >anneal</a>
+                            <a href="modules/algorithms/scripts/anneal.groovy" >Anneal</a>
                         </td>
                         <td>Run simulated annealing to optimize a structure.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/energy.groovy" >energy</a>
+                            <a href="modules/algorithms/scripts/Dynamics.groovy" >Dynamics</a>
                         </td>
-                        <td>Calculate the AMOEBA potential energy.</td>
+                        <td>Run dynamics simulations in a variety of ensembles.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/md.groovy" >md</a>
+                            <a href="modules/algorithms/scripts/DynamicsOpenMM.groovy" >DynamicsOpenMM</a>
                         </td>
-                        <td>Run NVE or NVT molecular dynamics.</td>
+                        <td>Run dynamics simulations in a variety of ensembles accelerated by OpenMM.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/minimize.groovy" >minimize</a>
+                            <a href="modules/algorithms/scripts/Histogram.groovy" >Histogram</a>
                         </td>
-                        <td>Minimize a structure under the AMOEBA potential.</td>
+                        <td>Examine a histogram produced by orthogonal space sampling.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/scripts/ManyBody.groovy" >ManyBody</a>
+                        </td>
+                        <td>Globally optimize the side-chains of a protein.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/scripts/Minimize.groovy" >Minimize</a>
+                        </td>
+                        <td>Minimize a structure using a variety of force fields.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/scripts/MinimizeOpenMM.groovy" >MinimizeOpenMM</a>
+                        </td>
+                        <td>Minimize a structure using a variety of force fields accelerated by OpenMM.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/scripts/Thermodynamics.groovy" >Thermodynamics</a>
+                        </td>
+                        <td>Compute free energy differences using orthogonal space sampling.</td>
                     </tr>
                 </tbody>
             </table>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Commands</title>
@@ -10,7 +10,8 @@
     </properties>
     <body>
         <subsection name="Real Space Refinement">
-            <p>Optimize an atomic resolution structure against real space data (i.e. CryoEM data).</p>
+            <p>Optimize an atomic resolution structure against real space data (i.e. X-ray Diffraction or CryoEM Map).
+            </p>
             <table>
                 <thead>
                     <tr>
@@ -21,13 +22,25 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/realSpace/anneal.groovy" >realSpace.anneal</a>
+                            <a href="modules/xray/scripts/realspace/Anneal.groovy">realspace.Anneal</a>
                         </td>
                         <td>Apply simulated annealing using a real space objective function.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/realSpace/minimize.groovy" >realSpace.minimize</a>
+                            <a href="modules/xray/scripts/realspace/Dynamics.groovy">realspace.Dynamics</a>
+                        </td>
+                        <td>Run Dynamics simulations using a real space objective function.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/realspace/ManyBody.groovy">realspace.ManyBody</a>
+                        </td>
+                        <td>Globally optimize the side-chains of a protein using a real space objective function.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/realspace/Minimize.groovy">realspace.Minimize</a>
                         </td>
                         <td>Minimize using a real space objective function.</td>
                     </tr>

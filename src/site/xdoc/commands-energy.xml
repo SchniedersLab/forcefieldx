@@ -21,27 +21,27 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/energy.groovy" >energy</a>
+                            <a href="modules/potential/scripts/Energy.groovy" >Energy</a>
                         </td>
                         <td>Calculate the potential energy of the system.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/testGradient.groovy" >testGradient</a>
+                            <a href="modules/potential/scripts/Timer.groovy" >Timer</a>
+                        </td>
+                        <td>Time the computation of the potential energy and gradient.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/potential/scripts/test/Gradient.groovy" >test.Gradient</a>
                         </td>
                         <td>Test the analytic Cartesian coordinate energy gradient numerically.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/testLambdaGradient.groovy" >testLambdaGradient</a>
+                            <a href="modules/potential/scripts/test/LambdaGradient.groovy" >test.LambdaGradient</a>
                         </td>
-                        <td>Test the analytic Lambda gradient numerically.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="modules/potential/scripts/timer.groovy" >timer</a>
-                        </td>
-                        <td>Time the computation of the potential energy and gradient.</td>
+                        <td>Test the analytic thermodynamic path parameterized by Lambda numerically.</td>
                     </tr>
                 </tbody>
             </table>

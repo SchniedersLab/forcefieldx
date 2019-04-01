@@ -1,41 +1,40 @@
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
-
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.algorithms.groovy.test;
 
 import groovy.cli.picocli.CliBuilder
@@ -186,55 +185,3 @@ mmGKSA.setVdwWeight(vdwWt);
 mmGKSA.setDecompose(decompose);
 mmGKSA.runMMgksa(freq, maxFrames);
 
-/**List<Double> totalEnergies = new ArrayList<>();
- double meanEnergy = 0;
- int nSnapshots = 1;
-
- if (useLigand) {List<Double> ligandEnergies = new ArrayList<>();
- List<Double> proteinEnergies = new ArrayList<>();
-
- ForceFieldEnergy energy = functs.energy(mola);
- double totE = energy.getNonbondedEnergy();
-
- for (Atom atom : protAtoms) {atom.setUse(false);}functs.energy(mola);
- double ligE = energy.getNonbondedEnergy();
- for (Atom atom : protAtoms) {atom.setUse(true);}for (Atom atom : ligAtoms) {atom.setUse(false);}functs.energy(mola);
- double protE = energy.getNonbondedEnergy();
- for (Atom atom : ligAtoms) {atom.setUse(true);}logger.info(String.format(" Protein: %10.4f Ligand:  %10.4f Total:   %10.4f", protE, ligE, totE));
- totalEnergies.add(totE);
- ligandEnergies.add(ligE);
- proteinEnergies.add(protE);
- meanEnergy += (totE - ligE - protE);
- logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
-
- // Can replace with do-while when Groovy implements do-while.
- while (filter.readNext()) {functs.energy(mola);
- totE = energy.getNonbondedEnergy();
-
- for (Atom atom : protAtoms) {atom.setUse(false);}functs.energy(mola);
- ligE = energy.getNonbondedEnergy();
-
- for (Atom atom : protAtoms) {atom.setUse(true);}for (Atom atom : ligAtoms) {atom.setUse(false);}functs.energy(mola);
- protE = energy.getNonbondedEnergy();
- for (Atom atom : ligAtoms) {atom.setUse(true);}logger.info(String.format(" Protein: %10.4f Ligand:  %10.4f Total:   %10.4f", protE, ligE, totE));
- totalEnergies.add(totE);
- ligandEnergies.add(ligE);
- proteinEnergies.add(protE);
- ++nSnapshots;
- meanEnergy += (totE - ligE - protE);
- logger.info(String.format(" Average nonbonded energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));}} else {double totE = functs.returnEnergy(mola);
-
- logger.info(String.format(" Total:   %10.4f", totE));
- totalEnergies.add(totE);
- meanEnergy += totE;
- logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));
-
- // Can replace with do-while when Groovy implements do-while.
- while (filter.readNext()) {totE = functs.returnEnergy(mola);
-
- logger.info(String.format(" Total:   %10.4f", totE));
- totalEnergies.add(totE);
- ++nSnapshots;
- meanEnergy += totE;
- logger.info(String.format(" Average energy so far: %10.4f", (meanEnergy / (double) nSnapshots)));}}meanEnergy /= ((double) nSnapshots);
- logger.info(String.format(" Mean energy: %12.6f", meanEnergy));*/
