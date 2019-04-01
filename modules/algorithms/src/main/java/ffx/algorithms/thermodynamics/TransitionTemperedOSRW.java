@@ -1242,7 +1242,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             ttOSRWLambdaRestart.close();
             logger.info(format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
         } catch (IOException ex) {
-            String message = " Exception writing TTOSRW lambda restart file.";
+            String message = String.format(" Exception writing TTOSRW lambda restart file %s.", lambdaFile);
             logger.log(Level.INFO, Utilities.stackTraceToString(ex));
             logger.log(Level.SEVERE, message, ex);
         }
