@@ -657,7 +657,7 @@ public class ThermodynamicsTest extends PJDependentTest {
             File srcFile = new File("src/main/java/" + filenames[i]);
             File tempFile = new File(tempDirName + FilenameUtils.getName(filenames[i]));
             FileUtils.copyFile(srcFile, tempFile);
-            logger.info(String.format(" Copied file %s to %s", srcFile, tempFile));
+            logger.fine(String.format(" Copied file %s to %s", srcFile, tempFile));
             copiedFiles[i] = tempFile;
 
             for (String ext : copiedExtensions) {
@@ -665,7 +665,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                 if (srcFile.exists()) {
                     logger.fine(" Copying extension " + ext);
                     tempFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
-                    logger.info(String.format(" Copied file %s to %s", srcFile, tempFile));
+                    logger.fine(String.format(" Copied file %s to %s", srcFile, tempFile));
                     FileUtils.copyFile(srcFile, tempFile);
                 }
             }
