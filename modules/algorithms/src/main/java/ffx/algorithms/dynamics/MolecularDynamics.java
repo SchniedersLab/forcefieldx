@@ -689,7 +689,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             loadRestart = false;
         } else {
             this.restartFile = dyn;
-            loadRestart = true;
+            loadRestart = dyn.exists();
         }
 
         if (dynFilter == null) {
@@ -856,7 +856,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         done = false;
 
-        if (dyn != null) {
+        if (dyn != null && dyn.exists()) {
             logger.info(" Continuing from " + dyn.getAbsolutePath());
         }
 
