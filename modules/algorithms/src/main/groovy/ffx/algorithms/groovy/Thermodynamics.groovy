@@ -178,21 +178,25 @@ class Thermodynamics extends AlgorithmsScript {
                 collect(Collectors.toList())
 
         File firstStructure = structureFiles.get(0)
-        String baseFilename = FilenameUtils.getBaseName(firstStructure.getPath())
-        File histogramRestart = new File(baseFilename + ".his")
+        String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst(~/\.[^.]+$/, "");
+        File histogramRestart = new File(filePathNoExtension + ".his")
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
-        String withRankName = baseFilename
+        String withRankName = filePathNoExtension
+
         if (size > 1) {
             List<File> rankedFiles = new ArrayList<>(nArgs)
+            String rankDirName = FilenameUtils.getFullPath(filePathNoExtension);
+            rankDirName = String.format("%s%d", rankDirName, rank);
+            File rankDirectory = new File(rankDirName);
+            if (!rankDirectory.exists()) {
+                rankDirectory.mkdir();
+            }
+            rankDirName = rankDirName + File.separator;
+            withRankName = String.format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension));
+
             for (File structureFile : structureFiles) {
-                File rankDirectory = new File(structureFile.getParent() + File.separator
-                        + Integer.toString(rank))
-                if (!rankDirectory.exists()) {
-                    rankDirectory.mkdir()
-                }
-                withRankName = rankDirectory.getPath() + File.separator + baseFilename;
-                rankedFiles.add(new File(rankDirectory.getPath() + File.separator + structureFile.getName()))
+                rankedFiles.add(new File(String.format("%s%s", rankDirName, FilenameUtils.getName(structureFile.getName()))));
             }
             structureFiles = rankedFiles
         }
@@ -233,9 +237,6 @@ class Thermodynamics extends AlgorithmsScript {
 
         // End of boilerplate code.
 
-        if (!dyn.exists()) {
-            dyn = null
-        }
         boolean lamExists = lambdaRestart.exists()
         boolean hisExists = histogramRestart.exists()
 
