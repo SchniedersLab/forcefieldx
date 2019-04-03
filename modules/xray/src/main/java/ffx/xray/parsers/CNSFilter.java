@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray.parsers;
 
 import java.io.BufferedReader;
@@ -68,9 +68,8 @@ public class CNSFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(CNSFilter.class.getName());
 
-    private final double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
+    private final double[] cell = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
     private double resHigh = -1.0;
-    private String foString, sigFoString, rFreeString;
     private String spaceGroupName = null;
     private int spaceGroupNum = -1;
 
@@ -81,20 +80,24 @@ public class CNSFilter implements DiffractionFileFilter {
     public CNSFilter() {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File cnsFile) {
         return getReflectionList(cnsFile, null);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File cnsFile, CompositeConfiguration properties) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
             String string;
             while ((string = br.readLine()) != null) {
-                String strArray[] = string.split("\\s+");
+                String[] strArray = string.split("\\s+");
                 if (strArray[0].equalsIgnoreCase("{")) {
                     if (strArray[1].toLowerCase().startsWith("sg=")) {
                         spaceGroupName = strArray[1].substring(3);
@@ -142,7 +145,7 @@ public class CNSFilter implements DiffractionFileFilter {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             sb.append(format("\n Opening %s\n", cnsFile.getName()));
-            sb.append(format(" Setting up Reflection List based on CNS:\n"));
+            sb.append(" Setting up Reflection List based on CNS:\n");
             sb.append(format("  Spacegroup #: %d (name: %s)\n",
                     spaceGroupNum, SpaceGroup.spaceGroupNames[spaceGroupNum - 1]));
             sb.append(format("  Resolution:   %8.3f\n", resHigh));
@@ -154,12 +157,12 @@ public class CNSFilter implements DiffractionFileFilter {
         Crystal crystal = new Crystal(cell[0], cell[1], cell[2],
                 cell[3], cell[4], cell[5], SpaceGroup.spaceGroupNames[spaceGroupNum - 1]);
 
-        ReflectionList reflectionlist = new ReflectionList(crystal, resolution,
-                properties);
-        return reflectionlist;
+        return new ReflectionList(crystal, resolution, properties);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getResolution(File cnsFile, Crystal crystal) {
         double res = Double.POSITIVE_INFINITY;
@@ -169,7 +172,7 @@ public class CNSFilter implements DiffractionFileFilter {
             HKL hkl = new HKL();
             String string;
             while ((string = br.readLine()) != null) {
-                String strArray[] = string.split("\\s+");
+                String[] strArray = string.split("\\s+");
                 for (int i = 0; i < strArray.length; i++) {
                     if (strArray[i].toLowerCase().startsWith("inde")) {
                         if (i < strArray.length - 3) {
@@ -193,7 +196,9 @@ public class CNSFilter implements DiffractionFileFilter {
         return res;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readFile(File cnsFile, ReflectionList reflectionList,
                             DiffractionRefinementData refinementData, CompositeConfiguration properties) {
@@ -227,7 +232,7 @@ public class CNSFilter implements DiffractionFileFilter {
 
             String string;
             while ((string = br.readLine()) != null) {
-                String strArray[] = string.split("\\s+");
+                String[] strArray = string.split("\\s+");
 
                 for (int i = 0; i < strArray.length; i++) {
                     if (strArray[i].toLowerCase().startsWith("inde")) {
@@ -235,13 +240,13 @@ public class CNSFilter implements DiffractionFileFilter {
                             ih = Integer.parseInt(strArray[i + 1]);
                             ik = Integer.parseInt(strArray[i + 2]);
                             il = Integer.parseInt(strArray[i + 3]);
-                            boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, false);
+                            reflectionList.findSymHKL(ih, ik, il, mate, false);
                             HKL hklpos = reflectionList.getHKL(mate);
                             if (hklpos == null) {
                                 nPosIgnore++;
                             }
 
-                            friedel = reflectionList.findSymHKL(ih, ik, il, mate, true);
+                            reflectionList.findSymHKL(ih, ik, il, mate, true);
                             HKL hkltrans = reflectionList.getHKL(mate);
                             if (hkltrans == null) {
                                 nTransIgnore++;
@@ -255,7 +260,9 @@ public class CNSFilter implements DiffractionFileFilter {
             }
 
             // column identifiers
-            foString = sigFoString = rFreeString = null;
+            String foString = null;
+            String sigFoString = null;
+            String rFreeString = null;
             if (properties != null) {
                 foString = properties.getString("fostring", null);
                 sigFoString = properties.getString("sigfostring", null);
@@ -266,14 +273,14 @@ public class CNSFilter implements DiffractionFileFilter {
             br = new BufferedReader(new FileReader(cnsFile));
 
             // read in data
-            double anofSigF[][] = new double[refinementData.n][4];
+            double[][] anofSigF = new double[refinementData.n][4];
             for (int i = 0; i < refinementData.n; i++) {
                 anofSigF[i][0] = anofSigF[i][1] = anofSigF[i][2] = anofSigF[i][3] = Double.NaN;
             }
             nRead = nRes = nIgnore = nFriedel = nCut = 0;
 
             while ((string = br.readLine()) != null) {
-                String strArray[] = string.split("\\s+");
+                String[] strArray = string.split("\\s+");
                 for (int i = 0; i < strArray.length; i++) {
                     if (strArray[i].toLowerCase().startsWith("inde")) {
                         if (hasHKL && hasFo && hasSigFo && hasFree) {
@@ -287,7 +294,7 @@ public class CNSFilter implements DiffractionFileFilter {
                                     anofSigF[hkl.index()][2] = fo;
                                     anofSigF[hkl.index()][3] = sigFo;
                                     nFriedel++;
-                                } else if (!friedel) {
+                                } else {
                                     anofSigF[hkl.index()][0] = fo;
                                     anofSigF[hkl.index()][1] = sigFo;
                                 }

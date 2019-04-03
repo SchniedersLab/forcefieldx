@@ -1364,13 +1364,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         this.lambda = lambda;
-        super.setLambda(lambda);
 
         // Remove the beginning of the normal Lambda path.
         if (lambdaStart > 0) {
             double windowSize = 1.0 - lambdaStart;
             lambda = lambdaStart + lambda * windowSize;
         }
+
+        super.setLambda(lambda);
 
         // Initially set all lambda values to 1.0.
         lambdaTorsion = 1.0;

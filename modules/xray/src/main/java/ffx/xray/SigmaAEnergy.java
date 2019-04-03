@@ -1,43 +1,46 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.logging.Logger;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -117,18 +120,18 @@ public class SigmaAEnergy implements Potential {
     private final ParallelTeam parallelTeam;
     private final SigmaARegion sigmaARegion;
     private final double dfscale;
-    private final double fo[][];
-    private final double fctot[][];
-    private final double fofc1[][];
-    private final double fofc2[][];
-    private final double fomphi[][];
-    private final double dfc[][];
-    private final double dfs[][];
-    private final double recipt[][];
-    private final double sa[];
-    private final double wa[];
+    private final double[][] fo;
+    private final double[][] fctot;
+    private final double[][] fofc1;
+    private final double[][] fofc2;
+    private final double[][] fomphi;
+    private final double[][] dfc;
+    private final double[][] dfs;
+    private final double[][] recipt;
+    private final double[] sa;
+    private final double[] wa;
     private final int n;
-    protected double[] optimizationScaling = null;
+    private double[] optimizationScaling = null;
     private double totalEnergy;
     private final boolean useCernBessel;
     private STATE state = STATE.BOTH;
@@ -138,8 +141,7 @@ public class SigmaAEnergy implements Potential {
      * Constructor for SigmaAEnergy.</p>
      *
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
-     *                       object.
+     * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
      * @param parallelTeam   the ParallelTeam to execute the SigmaAEnergy.
      */
     public SigmaAEnergy(ReflectionList reflectionList,
@@ -175,21 +177,16 @@ public class SigmaAEnergy implements Potential {
         useCernBessel = (cernBessel == null || !cernBessel.equalsIgnoreCase("false"));
     }
 
-    /*
+    /**
      * From sim and sim_integ functions in clipper utils:
      * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from lnI0
      * and i1OverI0 functions in bessel.h in scitbx module of cctbx:
      * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
-     */
-
-    /**
-     * <p>
-     * sim</p>
      *
      * @param x a double.
      * @return a double.
      */
-    public static double sim(double x) {
+    private static double sim(double x) {
         if (x >= 0.0) {
             return (((x + sim_a) * x + sim_b) * x)
                     / (((x + sim_c) * x + sim_d) * x + sim_e);
@@ -206,10 +203,9 @@ public class SigmaAEnergy implements Potential {
      * @param x0 a double.
      * @return a double.
      */
-    public static double sim_integ(double x0) {
+    private static double sim_integ(double x0) {
         double x = abs(x0);
         double z = (x + sim_p) / sim_q;
-
         return sim_A * log(x + sim_g) + 0.5 * sim_B * log(z * z + 1.0)
                 + sim_r * atan(z) + x + 1.0;
     }
@@ -243,6 +239,7 @@ public class SigmaAEnergy implements Potential {
      */
     @Override
     public double[] getVelocity(double[] velocity) {
+
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -262,23 +259,208 @@ public class SigmaAEnergy implements Potential {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * <p>
+     * target</p>
+     *
+     * @param x        an array of double.
+     * @param g        an array of double.
+     * @param gradient a boolean.
+     * @param print    a boolean.
+     * @return a double.
+     */
+    public double target(double[] x, double[] g, boolean gradient, boolean print) {
+
+        try {
+            sigmaARegion.init(x, g, gradient);
+            parallelTeam.execute(sigmaARegion);
+        } catch (Exception e) {
+            logger.info(e.toString());
+        }
+
+        double sum = sigmaARegion.sum.get();
+        double sumr = sigmaARegion.sumr.get();
+        refinementData.llkr = sumr;
+        refinementData.llkf = sum;
+
+        if (print) {
+            int nsum = sigmaARegion.nsum.get();
+            int nsumr = sigmaARegion.nsumr.get();
+            StringBuilder sb = new StringBuilder("\n");
+            sb.append(" sigmaA (s and w) fit using only Rfree reflections\n");
+            sb.append(format("      # HKL: %10d (free set) %10d (working set) %10d (total)\n",
+                    nsum, nsumr, nsum + nsumr));
+            sb.append(format("   residual: %10g (free set) %10g (working set) %10g (total)\n",
+                    sum, sumr, sum + sumr));
+            sb.append("    x: ");
+            for (double x1 : x) {
+                sb.append(format("%g ", x1));
+            }
+            sb.append("\n    g: ");
+            for (double v : g) {
+                sb.append(format("%g ", v));
+            }
+            sb.append("\n");
+            logger.info(sb.toString());
+        }
+
+        totalEnergy = sum;
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x) {
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        double sum = target(x, null, false, false);
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        double sum = target(x, g, true, false);
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+                g[i] /= optimizationScaling[i];
+            }
+        }
+
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        if (scaling != null && scaling.length == n * 2) {
+            optimizationScaling = scaling;
+        } else {
+            optimizationScaling = null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return optimizationScaling;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean destroy() {
+        // Should be destroyed upstream in DiffractionData.
+        return true;
+    }
+
     private class SigmaARegion extends ParallelRegion {
 
         boolean gradient = true;
         double modelK;
         double solventK;
         double solventUEq;
-        double x[];
-        double g[];
-        private final double resm[][] = new double[3][3];
-        private final double model_b[] = new double[6];
-        private final double ustar[][] = new double[3][3];
+        double[] x;
+        double[] g;
+        private final double[][] resm = new double[3][3];
+        private final double[] model_b = new double[6];
+        private final double[][] ustar = new double[3][3];
         SharedInteger nsum;
         SharedInteger nsumr;
         SharedDouble sum;
         SharedDouble sumr;
         SharedDoubleArray grad;
-        SigmaALoop sigmaALoop[];
+        SigmaALoop[] sigmaALoop;
 
         public SigmaARegion(int nThreads) {
             sigmaALoop = new SigmaALoop[nThreads];
@@ -288,7 +470,7 @@ public class SigmaAEnergy implements Potential {
             sumr = new SharedDouble();
         }
 
-        public void init(double x[], double g[], boolean gradient) {
+        public void init(double[] x, double[] g, boolean gradient) {
             this.x = x;
             this.g = g;
             this.gradient = gradient;
@@ -301,9 +483,6 @@ public class SigmaAEnergy implements Potential {
                     g[i] = grad.get(i);
                 }
             }
-
-            // logger.info(String.format("SigmaA Sum   %16.8f", sum.get()));
-            // logger.info(String.format("SigmaA Sum R %16.8f", sumr.get()));
         }
 
         @Override
@@ -325,7 +504,7 @@ public class SigmaAEnergy implements Potential {
             modelK = refinementData.model_k;
             solventK = refinementData.solvent_k;
             solventUEq = refinementData.solvent_ueq;
-            System.arraycopy(refinementData.model_b, 0, model_b, 0, 6);
+            arraycopy(refinementData.model_b, 0, model_b, 0, 6);
 
             // Generate Ustar
             mat3SymVec6(crystal.A, model_b, resm);
@@ -361,16 +540,14 @@ public class SigmaAEnergy implements Potential {
 
         private class SigmaALoop extends IntegerForLoop {
 
-            /**
-             * Thread local work variables.
-             */
+            // Thread local work variables.
             private double lsum;
             private double lsumr;
             private int lnsum;
             private int lnsumr;
-            private final double lgrad[];
-            private final double resv[] = new double[3];
-            private final double ihc[] = new double[3];
+            private final double[] lgrad;
+            private final double[] resv = new double[3];
+            private final double[] ihc = new double[3];
             private final ComplexNumber resc = new ComplexNumber();
             private final ComplexNumber fcc = new ComplexNumber();
             private final ComplexNumber fsc = new ComplexNumber();
@@ -524,15 +701,15 @@ public class SigmaAEnergy implements Potential {
                     dfc[i][1] = 0.0;
                     dfs[i][0] = 0.0;
                     dfs[i][1] = 0.0;
-                    if (Double.isNaN(fctot[i][0])) {
-                        if (!Double.isNaN(fo[i][0])) {
+                    if (isNaN(fctot[i][0])) {
+                        if (!isNaN(fo[i][0])) {
                             fofc2[i][0] = mfo.re() * iSqrtEOScale;
                             fofc2[i][1] = mfo.im() * iSqrtEOScale;
                         }
                         continue;
                     }
-                    if (Double.isNaN(fo[i][0])) {
-                        if (!Double.isNaN(fctot[i][0])) {
+                    if (isNaN(fo[i][0])) {
+                        if (!isNaN(fctot[i][0])) {
                             fofc2[i][0] = dfcc.re() * iSqrtEOScale;
                             fofc2[i][1] = dfcc.im() * iSqrtEOScale;
                         }
@@ -604,191 +781,5 @@ public class SigmaAEnergy implements Potential {
                 }
             }
         }
-    }
-
-    /**
-     * <p>
-     * target</p>
-     *
-     * @param x        an array of double.
-     * @param g        an array of double.
-     * @param gradient a boolean.
-     * @param print    a boolean.
-     * @return a double.
-     */
-    public double target(double x[], double g[],
-                         boolean gradient, boolean print) {
-
-        try {
-            sigmaARegion.init(x, g, gradient);
-            parallelTeam.execute(sigmaARegion);
-        } catch (Exception e) {
-            logger.info(e.toString());
-        }
-
-        double sum = sigmaARegion.sum.get();
-        double sumr = sigmaARegion.sumr.get();
-        refinementData.llkr = sumr;
-        refinementData.llkf = sum;
-
-        if (print) {
-            int nsum = sigmaARegion.nsum.get();
-            int nsumr = sigmaARegion.nsumr.get();
-            StringBuilder sb = new StringBuilder("\n");
-            sb.append(" sigmaA (s and w) fit using only Rfree reflections\n");
-            sb.append(String.format("      # HKL: %10d (free set) %10d (working set) %10d (total)\n",
-                    nsum, nsumr, nsum + nsumr));
-            sb.append(String.format("   residual: %10g (free set) %10g (working set) %10g (total)\n",
-                    sum, sumr, sum + sumr));
-            sb.append(String.format("    x: "));
-            for (int i = 0; i < x.length; i++) {
-                sb.append(String.format("%g ", x[i]));
-            }
-            sb.append("\n    g: ");
-            for (int i = 0; i < g.length; i++) {
-                sb.append(String.format("%g ", g[i]));
-            }
-            sb.append("\n");
-            logger.info(sb.toString());
-        }
-
-        totalEnergy = sum;
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energy(double x[]) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
-        double sum = target(x, null, false, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
-
-        return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double energyAndGradient(double x[], double g[]) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
-        double sum = target(x, g, true, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
-
-        return sum;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setScaling(double[] scaling) {
-        if (scaling != null && scaling.length == n * 2) {
-            optimizationScaling = scaling;
-        } else {
-            optimizationScaling = null;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getScaling() {
-        return optimizationScaling;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getMass() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getNumberOfVariables() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Return a reference to each variables type.
-     */
-    @Override
-    public VARIABLE_TYPE[] getVariableTypes() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEnergyTermState(STATE state) {
-        this.state = state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean destroy() {
-        // Should be destroyed upstream in DiffractionData.
-        return true;
     }
 }

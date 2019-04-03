@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray.parsers;
 
 import java.io.DataOutputStream;
@@ -72,27 +72,28 @@ import ffx.xray.DiffractionRefinementData;
  */
 public class MTZWriter {
 
+    private static final Logger logger = Logger.getLogger(MTZWriter.class.getName());
+
     /**
      * The possible output "styles".
      */
-    public static interface MTZType {
+    public interface MTZType {
 
         /**
          * Output unscaled data only.
          */
-        public static final int DATAONLY = 1;
+        int DATAONLY = 1;
         /**
          * Output unscaled Fcs only (still requires data to be read in).
          */
-        public static final int FCONLY = 2;
+        int FCONLY = 2;
         /**
          * Everything, including fitted/scaled coefficients (e.g. sigmaA, map
          * coefficients).
          */
-        public static final int ALL = 3;
+        int ALL = 3;
     }
 
-    private static final Logger logger = Logger.getLogger(MTZWriter.class.getName());
     private final String fileName;
     private final ReflectionList reflectionList;
     private final DiffractionRefinementData refinementData;
@@ -108,8 +109,7 @@ public class MTZWriter {
      * Constructor for MTZWriter.</p>
      *
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
-     *                       object.
+     * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
      * @param filename       a {@link java.lang.String} object.
      */
     public MTZWriter(ReflectionList reflectionList,
@@ -122,8 +122,7 @@ public class MTZWriter {
      * Constructor for MTZWriter.</p>
      *
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
-     *                       object.
+     * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
      * @param filename       a {@link java.lang.String} object.
      * @param mtzType        see MTZType interface types
      */
@@ -175,7 +174,7 @@ public class MTZWriter {
             fileOutputStream = new FileOutputStream(fileName);
             dataOutputStream = new DataOutputStream(fileOutputStream);
 
-            byte bytes[] = new byte[80];
+            byte[] bytes = new byte[80];
             int offset = 0;
             int writeLen = 0;
 
@@ -209,11 +208,11 @@ public class MTZWriter {
 
             // Data.
             Vector<String> colname = new Vector<>(nCol);
-            char colType[] = new char[nCol];
-            double res[] = new double[2];
+            char[] colType = new char[nCol];
+            double[] res = new double[2];
             res[0] = Double.POSITIVE_INFINITY;
             res[1] = Double.NEGATIVE_INFINITY;
-            float colMinMax[][] = new float[nCol][2];
+            float[][] colMinMax = new float[nCol][2];
             for (int i = 0; i < nCol; i++) {
                 colMinMax[i][0] = Float.POSITIVE_INFINITY;
                 colMinMax[i][1] = Float.NEGATIVE_INFINITY;
@@ -268,7 +267,7 @@ public class MTZWriter {
                 colname.add("DELFWT");
                 colType[col++] = 'F';
                 colname.add("PHDELWT");
-                colType[col++] = 'P';
+                colType[col] = 'P';
                 writeLen += 32;
             }
 
@@ -406,7 +405,7 @@ public class MTZWriter {
                     col++;
 
                     // Spline setup.
-                    double fh = spline.f(ss, refinementData.spline);
+                    spline.f(ss, refinementData.spline);
                     double sa = sigmaASpline.f(ss, refinementData.sigmaa);
                     double wa = sigmaASpline.f(ss, refinementData.sigmaw);
 
@@ -446,7 +445,6 @@ public class MTZWriter {
                     colMinMax[col][0] = min(fMapData, colMinMax[col][0]);
                     colMinMax[col][1] = max(fMapData, colMinMax[col][1]);
                     byteBuffer.order(byteOrder).putFloat(fMapData);
-                    col++;
                 }
 
                 dataOutputStream.write(bytes, offset, writeLen);
@@ -463,7 +461,7 @@ public class MTZWriter {
             Date now = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
             sb = new StringBuilder();
-            sb.append("TITLE FFX output: " + sdf.format(now));
+            sb.append("TITLE FFX output: ").append(sdf.format(now));
             while (sb.length() < 80) {
                 sb.append(" ");
             }

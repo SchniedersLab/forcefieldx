@@ -1,43 +1,44 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.logging.Logger;
+import static java.lang.Double.isNaN;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -50,6 +51,7 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.Potential;
 import ffx.numerics.math.ComplexNumber;
+import static ffx.crystal.Crystal.invressq;
 
 /**
  * Fit structure factors using spline coefficients
@@ -68,9 +70,9 @@ public class SplineEnergy implements Potential {
     private final int type;
     private final Crystal crystal;
     private final DiffractionRefinementData refinementdata;
-    private final double fc[][];
-    private final double fo[][];
-    protected double[] optimizationScaling = null;
+    private final double[][] fc;
+    private final double[][] fo;
+    private double[] optimizationScaling = null;
     private final ComplexNumber fct = new ComplexNumber();
     private double totalEnergy;
     private STATE state = STATE.BOTH;
@@ -80,8 +82,7 @@ public class SplineEnergy implements Potential {
      * Constructor for SplineEnergy.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
-     *                       object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
      * @param nparams        a int.
      * @param type           a int.
      */
@@ -117,7 +118,7 @@ public class SplineEnergy implements Potential {
      * @param print    a boolean.
      * @return a double.
      */
-    public double target(double x[], double g[], boolean gradient, boolean print) {
+    public double target(double[] x, double[] g, boolean gradient, boolean print) {
 
         double r = 0.0;
         double rf = 0.0;
@@ -133,9 +134,7 @@ public class SplineEnergy implements Potential {
 
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            if (Double.isNaN(fc[i][0])
-                    || Double.isNaN(fo[i][0])
-                    || fo[i][1] <= 0.0) {
+            if (isNaN(fc[i][0]) || isNaN(fo[i][0]) || fo[i][1] <= 0.0) {
                 continue;
             }
 
@@ -145,8 +144,8 @@ public class SplineEnergy implements Potential {
             }
 
             double eps = ih.epsilon();
-            double s = Crystal.invressq(crystal, ih);
-            // spline setup
+            double s = invressq(crystal, ih);
+            // Spline setup
             double fh = spline.f(s, x);
             refinementdata.getFcTotIP(i, fct);
 
@@ -217,9 +216,7 @@ public class SplineEnergy implements Potential {
             }
         }
 
-        /**
-         * Tim - should this only be done for Type.FOFC??
-         */
+        // Tim - should this only be done for Type.FOFC??
         if (gradient) {
             double isumfo = 1.0 / sumfo;
             for (int i = 0; i < g.length; i++) {
@@ -237,12 +234,12 @@ public class SplineEnergy implements Potential {
                         (r / rf) * 100.0, (rfree / rfreef) * 100.0));
             }
             sb.append("x: ");
-            for (int i = 0; i < x.length; i++) {
-                sb.append(String.format("%8g ", x[i]));
+            for (double x1 : x) {
+                sb.append(String.format("%8g ", x1));
             }
             sb.append("\ng: ");
-            for (int i = 0; i < g.length; i++) {
-                sb.append(String.format("%8g ", g[i]));
+            for (double v : g) {
+                sb.append(String.format("%8g ", v));
             }
             sb.append("\n");
             logger.info(sb.toString());
@@ -256,7 +253,7 @@ public class SplineEnergy implements Potential {
      * {@inheritDoc}
      */
     @Override
-    public double energy(double x[]) {
+    public double energy(double[] x) {
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -280,7 +277,7 @@ public class SplineEnergy implements Potential {
      * {@inheritDoc}
      */
     @Override
-    public double energyAndGradient(double x[], double g[]) {
+    public double energyAndGradient(double[] x, double[] g) {
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -428,11 +425,11 @@ public class SplineEnergy implements Potential {
         return true;
     }
 
-    public static interface Type {
+    public interface Type {
 
-        public static final int FOFC = 1;
-        public static final int F1F2 = 2;
-        public static final int FCTOESQ = 3;
-        public static final int FOTOESQ = 4;
+        int FOFC = 1;
+        int F1F2 = 2;
+        int FCTOESQ = 3;
+        int FOTOESQ = 4;
     }
 }

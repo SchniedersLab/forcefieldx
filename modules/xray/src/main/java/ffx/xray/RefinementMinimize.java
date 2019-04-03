@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.ArrayList;
@@ -111,31 +111,25 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         }
     }
 
-
     public final RefinementEnergy refinementEnergy;
     private final AlgorithmListener listener;
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
     private static double toSeconds = 1.0e-9;
     private final DataContainer dataContainer;
-    private final RefinementModel refinementModel;
-    private final Atom atomArray[];
-    private final Atom activeAtomArray[];
-    private final int nAtoms;
-    private final int nActive;
+    private final Atom[] activeAtomArray;
     private RefinementMode refinementMode;
     private final int nXYZ;
     private final int nB;
     private final int nOcc;
     private final int n;
-    private final double x[];
-    private final double grad[];
-    private final double scaling[];
+    private final double[] x;
+    private final double[] grad;
+    private final double[] scaling;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
     private double grms;
     private int nSteps;
-    // recommended eps - accessible to groovy
     private double eps = 0.1;
 
     /**
@@ -176,16 +170,15 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         dataContainer = data;
         this.listener = listener;
         this.refinementMode = refinementMode;
-        refinementModel = data.getRefinementModel();
-        atomArray = data.getAtomArray();
-        nAtoms = atomArray.length;
         refinementEnergy = new RefinementEnergy(data, refinementMode, null);
         nXYZ = refinementEnergy.nXYZ;
         nB = refinementEnergy.nBFactor;
         nOcc = refinementEnergy.nOccupancy;
         n = refinementEnergy.getNumberOfVariables();
 
-        // logger.info(String.format(" RefinementMinimize variables %d (nXYZ %d, nB %d, nOcc %d)", n, nXYZ, nB, nOcc));
+        Atom[] atomArray = data.getAtomArray();
+        RefinementModel refinementModel = data.getRefinementModel();
+        int nAtoms = atomArray.length;
 
         // Fill an active atom array.
         int count = 0;
@@ -194,7 +187,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 count++;
             }
         }
-        nActive = count;
+        int nActive = count;
         activeAtomArray = new Atom[count];
         count = 0;
         for (Atom a : atomArray) {
@@ -483,9 +476,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         logger.info(" Number of Parameters: " + n);
 
         refinementEnergy.getCoordinates(x);
-        /**
-         * Scale coordinates.
-         */
+
+        // Scale coordinates.
         for (int i = 0; i < n; i++) {
             x[i] *= scaling[i];
         }
@@ -493,7 +485,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
-        int status = 0;
+        int status;
         double e = refinementEnergy.energyAndGradient(x, grad);
         status = LBFGS.minimize(n, m, x, e, grad, eps, maxiter, refinementEnergy, this);
         done = true;
@@ -530,10 +522,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         this.grms = grms;
         this.nSteps = iter;
 
-        // update display
+        // Update display.
         if (listener != null) {
-            MolecularAssembly molecularAssembly[];
-            molecularAssembly = dataContainer.getMolecularAssemblies();
+            MolecularAssembly[] molecularAssembly = dataContainer.getMolecularAssemblies();
             for (MolecularAssembly ma : molecularAssembly) {
                 listener.algorithmUpdate(ma);
             }

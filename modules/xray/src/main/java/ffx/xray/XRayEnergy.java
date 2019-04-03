@@ -1,44 +1,46 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -75,10 +77,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
 
     private final DiffractionData diffractionData;
     private final RefinementModel refinementModel;
-    private final Atom atomArray[];
-    private final Atom activeAtomArray[];
+    private final Atom[] activeAtomArray;
     private final int nAtoms;
-    private final int nActiveAtoms;
     private int nXYZ;
     private int nB;
     private int nOCC;
@@ -89,22 +89,19 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     private boolean refineB = false;
     private boolean xrayTerms = true;
     private boolean restraintTerms = true;
-    protected double[] optimizationScaling = null;
+    private double[] optimizationScaling = null;
 
     private final double bMass;
     private final double kTbNonzero;
     private final double kTbSimWeight;
     private final double occMass;
-    private final double temperature = 50.0;
-
-    protected double lambda = 1.0;
-    private boolean lambdaTerm = false;
+    private boolean lambdaTerm;
     private double totalEnergy;
     private double dEdL;
-    private double d2UdL2 = 0.0;
-    private double g2[];
-    private double dUdXdL[];
+    private double[] g2;
+    private double[] dUdXdL;
     private STATE state = STATE.BOTH;
+    protected double lambda = 1.0;
 
     /**
      * Diffraction data energy target
@@ -122,13 +119,15 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         this.diffractionData = diffractionData;
         this.refinementModel = diffractionData.getRefinementModel();
         this.refinementMode = refinementMode;
-        this.atomArray = refinementModel.getTotalAtomArray();
-        this.nAtoms = atomArray.length;
         this.nXYZ = nXYZ;
         this.nB = nB;
         this.nOCC = nOCC;
 
+        Atom[] atomArray = refinementModel.getTotalAtomArray();
+        this.nAtoms = atomArray.length;
+
         bMass = diffractionData.getbMass();
+        double temperature = 50.0;
         kTbNonzero = 0.5 * kBkcal * temperature * diffractionData.getbNonZeroWeight();
         kTbSimWeight = kBkcal * temperature * diffractionData.getbSimWeight();
         occMass = diffractionData.getOccMass();
@@ -143,7 +142,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 count++;
             }
         }
-        nActiveAtoms = count;
         activeAtomArray = new Atom[count];
         count = 0;
         for (Atom a : atomArray) {
@@ -163,9 +161,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             logger.info("  Non-zero restraint weight:   " + diffractionData.getbNonZeroWeight());
             logger.info("  Similarity restraint weight: " + diffractionData.getbSimWeight());
         }
-
-        // logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
-        //         this.nXYZ + this.nB + this.nOCC, this.nXYZ, this.nB, this.nOCC));
     }
 
     /**
@@ -174,9 +169,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     @Override
     public double energy(double[] x) {
         double e = 0.0;
-        /**
-         * Unscale the coordinates.
-         */
+
+        // Unscale the coordinates.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -235,9 +229,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             }
         }
 
-        /**
-         * Scale the coordinates and gradients.
-         */
+        // Scale the coordinates and gradients.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -255,9 +247,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
-        /**
-         * Unscale the coordinates.
-         */
+
+        // Unscale the coordinates.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -327,7 +318,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             if (lambdaTerm) {
 
                 int n = dUdXdL.length;
-                System.arraycopy(g, 0, dUdXdL, 0, n);
+                arraycopy(g, 0, dUdXdL, 0, n);
 
                 for (Atom a : activeAtomArray) {
                     a.setXYZGradient(0.0, 0.0, 0.0);
@@ -374,9 +365,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             }
         }
 
-        /**
-         * Scale the coordinates and gradients.
-         */
+        // Scale the coordinates and gradients.
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -402,8 +391,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      * <p>
      * Setter for the field <code>refinementMode</code>.</p>
      *
-     * @param refinementmode a
-     *                       {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
     public void setRefinementMode(RefinementMode refinementmode) {
         this.refinementMode = refinementmode;
@@ -501,9 +489,9 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param g array to add gradients to
      */
-    public void getBFactorGradients(double g[]) {
+    private void getBFactorGradients(double[] g) {
         assert (g != null);
-        double grad[] = null;
+        double[] grad = null;
         int index = nXYZ;
         int resnum = -1;
         int nres = diffractionData.getnResidueBFactor() + 1;
@@ -549,7 +537,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param g array to add gradients to
      */
-    public void getOccupancyGradients(double g[]) {
+    private void getOccupancyGradients(double[] g) {
         double ave;
         int index = nXYZ + nB;
 
@@ -564,9 +552,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 }
             }
             /*
-             * should this be normalized with respect
-             * to number of atoms in residue in addition
-             * to the number of conformers?
+              Should this be normalized with respect to number of atoms in residue in addition
+              to the number of conformers?
              */
             ave /= list.size();
             for (Residue r : list) {
@@ -576,7 +563,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                     }
                 }
                 if (list.size() > 1) {
-                    // subtract average to move COM to zero
+                    // Subtract average to move COM to zero
                     g[index] -= ave;
                 }
                 index++;
@@ -613,9 +600,9 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param g gradient array
      */
-    public void getXYZGradients(double g[]) {
+    private void getXYZGradients(double[] g) {
         assert (g != null);
-        double grad[] = new double[3];
+        double[] grad = new double[3];
         int index = 0;
         for (Atom a : activeAtomArray) {
             a.getXYZGradient(grad);
@@ -629,9 +616,9 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      * {@inheritDoc}
      */
     @Override
-    public double[] getCoordinates(double x[]) {
+    public double[] getCoordinates(double[] x) {
         assert (x != null);
-        double xyz[] = new double[3];
+        double[] xyz = new double[3];
         int index = 0;
         fill(x, 0.0);
 
@@ -645,7 +632,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         }
 
         if (refineB) {
-            double anisou[] = null;
+            double[] anisou = null;
             int resnum = -1;
             int nat = 0;
             int nres = diffractionData.getnResidueBFactor() + 1;
@@ -665,8 +652,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 } else if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
                         if (nres >= diffractionData.getnResidueBFactor()) {
-                            if (resnum > -1
-                                    && index < nXYZ + nB - 1) {
+                            if (resnum > -1 && index < nXYZ + nB - 1) {
                                 x[index] /= nat;
                                 index++;
                             }
@@ -725,8 +711,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param x current parameters to set B factors with
      */
-    public void setBFactors(double x[]) {
-        double tmpanisou[] = new double[6];
+    private void setBFactors(double[] x) {
+        double[] tmpanisou = new double[6];
         int index = nXYZ;
         int nneg = 0;
         int resnum = -1;
@@ -766,7 +752,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                     }
                 }
             } else {
-                double anisou[] = a.getAnisou(null);
+                double[] anisou = a.getAnisou(null);
                 tmpanisou[0] = x[index++];
                 tmpanisou[1] = x[index++];
                 tmpanisou[2] = x[index++];
@@ -775,7 +761,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 tmpanisou[5] = x[index++];
                 double det = determinant3(tmpanisou);
                 if (det > 0.0) {
-                    System.arraycopy(tmpanisou, 0, anisou, 0, 6);
+                    arraycopy(tmpanisou, 0, anisou, 0, 6);
                     a.setAnisou(anisou);
                     det = Math.pow(det, 0.3333);
                     a.setTempFactor(u2b(det));
@@ -795,10 +781,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         if (nneg > 0) {
             logger.info(" " + nneg + " of " + nAtoms
                     + " atoms with negative B factors! Attempting to correct.\n  (If this problem persists, increase bsimweight)");
-            /*
-             * if (nneg > 50){ kTbsim *= 2.0; logger.info("excessive number of
-             * negative Bs, increasing similarity restraint: " + kTbsim); }
-             */
         }
 
         // set hydrogen based on bonded atom
@@ -815,9 +797,9 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param x current parameters to set coordinates with
      */
-    public void setCoordinates(double x[]) {
+    public void setCoordinates(double[] x) {
         assert (x != null);
-        double xyz[] = new double[3];
+        double[] xyz = new double[3];
         int index = 0;
         for (Atom a : activeAtomArray) {
             xyz[0] = x[index++];
@@ -832,8 +814,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      *
      * @param x current parameters to set occupancies with
      */
-    public void setOccupancies(double x[]) {
-        double occ = 0.0;
+    public void setOccupancies(double[] x) {
+        double occ;
         int index = nXYZ + nB;
         for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
             for (Residue r : list) {
@@ -863,27 +845,26 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      *
      * @return energy of the restraint
      */
-    public double getBFactorRestraints() {
+    private double getBFactorRestraints() {
         Atom a1, a2;
         double b1, b2, bdiff;
-        double anisou1[] = null;
-        double anisou2[] = null;
+        double[] anisou1 = null;
+        double[] anisou2 = null;
         double gradb;
         double det1, det2;
-        double gradu[] = new double[6];
+        double[] gradu = new double[6];
         double e = 0.0;
 
         for (Atom a : activeAtomArray) {
             double biso = a.getTempFactor();
-            // ignore hydrogens!!!
+            // Ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
 
             if (a.getAnisou(null) == null) {
-                // isotropic B restraint
-
-                // non-zero restraint: -kTln[Z], Z is ADP partition function
+                // Isotropic B restraint
+                // Non-zero restraint: -kTln[Z], Z is ADP partition function
                 e += -3.0 * kTbNonzero * Math.log(biso / (4.0 * Math.PI));
                 gradb = -3.0 * kTbNonzero / biso;
                 a.addToTempFactorGradient(gradb);
@@ -920,11 +901,11 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                     a2.addToTempFactorGradient(-gradb);
                 }
             } else {
-                // anisotropic B restraint
+                // Anisotropic B restraint
                 anisou1 = a.getAnisou(anisou1);
                 det1 = determinant3(anisou1);
 
-                // non-zero restraint: -kTln[Z], Z is ADP partition function
+                // Non-zero restraint: -kTln[Z], Z is ADP partition function
                 e += u2b(-kTbNonzero * Math.log(det1 * eightPI2 * Math.PI));
                 gradu[0] = u2b(-kTbNonzero * ((anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]) / det1));
                 gradu[1] = u2b(-kTbNonzero * ((anisou1[0] * anisou1[2] - anisou1[4] * anisou1[4]) / det1));
@@ -934,7 +915,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 gradu[5] = u2b(-kTbNonzero * ((2.0 * (anisou1[3] * anisou1[4] - anisou1[5] * anisou1[0])) / det1));
                 a.addToAnisouGradient(gradu);
 
-                // similarity harmonic restraint based on determinants
+                // Similarity harmonic restraint based on determinants
                 ArrayList<Bond> bonds = a.getBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
@@ -1009,7 +990,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      */
     @Override
     public double[] getMass() {
-        double mass[] = new double[nXYZ + nB + nOCC];
+        double[] mass = new double[nXYZ + nB + nOCC];
         int i = 0;
         if (refineXYZ) {
             for (Atom a : activeAtomArray) {
@@ -1058,7 +1039,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
         } else {
-            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+            String message = format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
         }
     }
@@ -1093,7 +1074,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     @Override
     public void getdEdXdL(double[] gradient) {
         int n = dUdXdL.length;
-        System.arraycopy(dUdXdL, 0, gradient, 0, n);
+        arraycopy(dUdXdL, 0, gradient, 0, n);
     }
 
     /**
@@ -1103,7 +1084,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
-        VARIABLE_TYPE vtypes[] = new VARIABLE_TYPE[nXYZ + nB + nOCC];
+        VARIABLE_TYPE[] vtypes = new VARIABLE_TYPE[nXYZ + nB + nOCC];
         int i = 0;
         if (refineXYZ) {
             for (Atom a : activeAtomArray) {
@@ -1134,10 +1115,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     public STATE getEnergyTermState() {
         return state;
     }
-
-    /*
-     * RESPA setup
-     */
 
     /**
      * {@inheritDoc}

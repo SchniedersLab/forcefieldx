@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.Random;
@@ -64,106 +64,106 @@ public class DiffractionRefinementData {
      */
     public final int n;
     /**
-     * number of scale parameters
+     * Number of scale parameters.
      */
-    public final int scale_n;
+    final int scale_n;
     /**
      * 2D array of F/sigF data
      */
-    public final double fsigf[][];
+    public final double[][] fsigf;
     /**
      * array of Rfree
      */
-    public final int freer[];
+    public final int[] freer;
     /**
      * calculated atomic structure factors
      */
-    public final double fc[][];
+    public final double[][] fc;
     /**
      * calculated bulk solvent structure factors
      */
-    public final double fs[][];
+    public final double[][] fs;
     /**
      * scaled sum of Fc and Fs
      */
-    public final double fctot[][];
+    final double[][] fctot;
     /**
      * figure of merit and phase
      */
-    public final double fomphi[][];
+    public final double[][] fomphi;
     /**
      * 2mFo - DFc coefficients
      */
-    public final double fofc2[][];
+    final double[][] fofc2;
     /**
      * mFo - DFc coefficients
      */
-    public final double fofc1[][];
+    public final double[][] fofc1;
     /**
      * derivatives wrt Fc
      */
-    public final double dfc[][];
+    public final double[][] dfc;
     /**
      * derivatives wrt Fs
      */
-    public final double dfs[][];
+    final double[][] dfs;
     /**
      * log likelihoods
      */
-    public double llkr, llkf;
+    double llkr, llkf;
     /**
      * reciprocal space reference for structure factor calculations and
      * computing derivatives
      */
-    protected CrystalReciprocalSpace crs_fc;
+    CrystalReciprocalSpace crs_fc;
     /**
      * reciprocal space reference for bulk solvent structure factor calculations
      * and computing derivatives
      */
-    protected CrystalReciprocalSpace crs_fs;
+    CrystalReciprocalSpace crs_fs;
     /**
      * number of resolution bins
      */
-    public final int nbins;
+    final int nbins;
     /**
      * spine scaling coefficients
      */
-    public double spline[];
+    public double[] spline;
     /**
      * sigmaA coefficient - s
      */
-    public double sigmaa[];
+    public double[] sigmaa;
     /**
      * sigmaA coefficient - w
      */
-    public double sigmaw[];
+    public double[] sigmaw;
     /**
      * scaled, E-like Fc
      */
-    public double fcesq[];
+    double[] fcesq;
     /**
      * scaled, E-like Fo
      */
-    public double foesq[];
+    double[] foesq;
     /**
      * bulk solvent parameters
      */
-    public double solvent_a, solvent_b;
+    double solvent_a, solvent_b;
     /**
      * bulk solvent scale and Ueq
      */
-    public double solvent_k, solvent_ueq;
+    double solvent_k, solvent_ueq;
     /**
      * overall model scale
      */
-    public double model_k;
+    double model_k;
     /**
      * model anisotropic B
      */
-    public double model_b[] = new double[6];
+    double[] model_b = new double[6];
     /**
-     * duplicated settings - these are also in DiffractionData, but duplicated
-     * here until settings are put in their own class
+     * Duplicated settings - these are also in DiffractionData, but duplicated
+     * here until settings are put in their own class.
      */
     public int rfreeflag;
     public final double fsigfcutoff;
@@ -215,7 +215,7 @@ public class DiffractionRefinementData {
             sigmaw[i] = 0.05;
         }
 
-        // initial guess for scaling/bulk solvent correction
+        // Initial guess for scaling/bulk solvent correction.
         solvent_k = 0.33;
         solvent_ueq = 50.0 / (8.0 * PI * PI);
         model_k = 0.0;
@@ -227,7 +227,7 @@ public class DiffractionRefinementData {
      *
      * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
      */
-    public void setCrystalReciprocalSpace_fc(CrystalReciprocalSpace crs) {
+    void setCrystalReciprocalSpace_fc(CrystalReciprocalSpace crs) {
         this.crs_fc = crs;
     }
 
@@ -237,7 +237,7 @@ public class DiffractionRefinementData {
      *
      * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
      */
-    public void setCrystalReciprocalSpace_fs(CrystalReciprocalSpace crs) {
+    void setCrystalReciprocalSpace_fs(CrystalReciprocalSpace crs) {
         this.crs_fs = crs;
     }
 
@@ -289,7 +289,7 @@ public class DiffractionRefinementData {
      *
      * @param anofsigf an array of double.
      */
-    public void generate_fsigf_from_anofsigf(double anofsigf[][]) {
+    public void generate_fsigf_from_anofsigf(double[][] anofsigf) {
         for (int i = 0; i < n; i++) {
             if (isNaN(anofsigf[i][0]) && isNaN(anofsigf[i][2])) {
             } else if (isNaN(anofsigf[i][0])) {
@@ -307,7 +307,7 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * generate amplitudes from intensities. Does NOT use French and Wilson
+     * Generate amplitudes from intensities. Does NOT use French and Wilson
      * scaling, just simple square root.
      */
     public void intensities_to_amplitudes() {
@@ -472,7 +472,7 @@ public class DiffractionRefinementData {
      * @param i reflection to get
      * @return newly allocated {@link ComplexNumber}
      */
-    public ComplexNumber getFc(int i) {
+    ComplexNumber getFc(int i) {
         return new ComplexNumber(fc[i][0], fc[i][1]);
     }
 
@@ -482,7 +482,7 @@ public class DiffractionRefinementData {
      * @param i reflection to get
      * @param c {@link ComplexNumber} to fill
      */
-    public void getFcIP(int i, ComplexNumber c) {
+    void getFcIP(int i, ComplexNumber c) {
         c.re(fc[i][0]);
         c.im(fc[i][1]);
     }
@@ -495,7 +495,6 @@ public class DiffractionRefinementData {
      */
     public double fcF(int i) {
         ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
-
         return c.abs();
     }
 
@@ -507,7 +506,6 @@ public class DiffractionRefinementData {
      */
     public double fcPhi(int i) {
         ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
-
         return c.phase();
     }
 
@@ -541,7 +539,7 @@ public class DiffractionRefinementData {
      * @param i a int.
      * @param c a {@link ComplexNumber} object.
      */
-    public void getFsIP(int i, ComplexNumber c) {
+    void getFsIP(int i, ComplexNumber c) {
         c.re(fs[i][0]);
         c.im(fs[i][1]);
     }
@@ -555,7 +553,6 @@ public class DiffractionRefinementData {
      */
     public double fsF(int i) {
         ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
-
         return c.abs();
     }
 
@@ -568,7 +565,6 @@ public class DiffractionRefinementData {
      */
     public double fsPhi(int i) {
         ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
-
         return c.phase();
     }
 
@@ -602,7 +598,7 @@ public class DiffractionRefinementData {
      * @param i a int.
      * @param c a {@link ComplexNumber} object.
      */
-    public void getFcTotIP(int i, ComplexNumber c) {
+    void getFcTotIP(int i, ComplexNumber c) {
         c.re(fctot[i][0]);
         c.im(fctot[i][1]);
     }
@@ -616,7 +612,6 @@ public class DiffractionRefinementData {
      */
     public double fcTotF(int i) {
         ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
-
         return c.abs();
     }
 
@@ -629,7 +624,6 @@ public class DiffractionRefinementData {
      */
     public double fcTotPhi(int i) {
         ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
-
         return c.phase();
     }
 
@@ -677,7 +671,6 @@ public class DiffractionRefinementData {
      */
     public double FoFc2F(int i) {
         ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
-
         return c.abs();
     }
 
@@ -690,7 +683,6 @@ public class DiffractionRefinementData {
      */
     public double FoFc2Phi(int i) {
         ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
-
         return c.phase();
     }
 
@@ -738,7 +730,6 @@ public class DiffractionRefinementData {
      */
     public double foFc1F(int i) {
         ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
-
         return c.abs();
     }
 
@@ -751,7 +742,6 @@ public class DiffractionRefinementData {
      */
     public double foFc1Phi(int i) {
         ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
-
         return c.phase();
     }
 
