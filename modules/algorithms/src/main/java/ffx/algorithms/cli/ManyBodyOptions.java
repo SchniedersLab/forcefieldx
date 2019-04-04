@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.algorithms.cli;
 
 import java.io.File;
@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
+
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.MolecularAssembly;
@@ -53,7 +55,6 @@ import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 
-import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.Option;
 
 /**
@@ -68,9 +69,8 @@ public class ManyBodyOptions {
 
     private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
-    /**
-     * PARAMETERS SHARED BY ALL ALGORITHMS.
-     */
+    // Parameters for algorithms.
+
     /**
      * -L or --library Choose either Ponder and Richards (1) or Richardson (2)
      * rotamer library.
@@ -86,7 +86,6 @@ public class ManyBodyOptions {
     @Option(names = {"--Ln", "--libraryNucleic"}, paramLabel = "Richardson",
             description = "Nucleic acid library to select: [Richardson]")
     String naLibraryName = "Richardson";
-    //RotamerLibrary.NucleicAcidLibrary naLibrary = RotamerLibrary.NucleicAcidLibrary.RICHARDSON;
 
     /**
      * -a or --algorithm Choices are independent residues (1), all with rotamer
@@ -206,20 +205,21 @@ public class ManyBodyOptions {
             description = "Choose a list of individual residues to optimize (eg. A11,A24,B40).")
     String listResidues = "none";
 
-    /**
-     * --sO or --sequence Choose a list of individual residues to sequence
-     * optimize (example: A2.A3.A5).
-     */
-    // @Option(names = {"--sO", "--sequence"}, paramLabel = "none",
-    //        description = "Choose a list of individual residues to sequence optimize (example: A2.A3.A5)")
-    // String sequence = "none";
-    /**
-     * --tO or --titrationOptimization Optimize the titration states for a list
-     * of residues (example: H2.H3.H5).
-     */
-    // @Option(names = {"--tO", "--titrationOptimization"}, paramLabel = "none",
-    //        description = "Optimize the titration states for a list of residues (example: H2.H3.H5).")
-    // String titrationOptimization = "none";
+//    /**
+//     * --sO or --sequence Choose a list of individual residues to sequence
+//     * optimize (example: A2.A3.A5).
+//     */
+//    @Option(names = {"--sO", "--sequence"}, paramLabel = "none",
+//            description = "Choose a list of individual residues to sequence optimize (example: A2.A3.A5)")
+//    String sequence = "none";
+//    /**
+//     * --tO or --titrationOptimization Optimize the titration states for a list
+//     * of residues (example: H2.H3.H5).
+//     */
+//    @Option(names = {"--tO", "--titrationOptimization"}, paramLabel = "none",
+//            description = "Optimize the titration states for a list of residues (example: H2.H3.H5).")
+//    String titrationOptimization = "none";
+
     /**
      * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo
      * steps, or enumerate all remaining conformations, whichever is smaller.
@@ -236,9 +236,8 @@ public class ManyBodyOptions {
             description = "Save eliminated singles and eliminated pairs to a text file.")
     boolean saveOutput = false;
 
-    /**
-     * PARAMETERS SPECIFIC TO SLIDING WINDOW.
-     */
+    // Parameters for the sliding window algorithm.
+
     /**
      * --window Size of the sliding window with respect to adjacent residues
      * (default = 7).
@@ -269,9 +268,8 @@ public class ManyBodyOptions {
             description = "Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.")
     String forceResidues = "-1,-1";
 
-    /**
-     * PARAMETERS SPECIFIC TO SLIDING BOX.
-     */
+    // Parameters for the sliding box algorithm.
+
     /**
      * -nB or --numBoxes Specify number of boxes along X, Y, and Z (default:
      * '3,3,3').
@@ -307,15 +305,14 @@ public class ManyBodyOptions {
             description = "Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer")
     int boxInclusionCriterion = 1;
 
-    RotamerOptimization rotamerOptimization;
-    RotamerLibrary rLib;
-
-    int allStartResID;
-    int boxStart;
-    int boxEnd;
-    int[] numXYZBoxes;
-    int forceResiduesStart;
-    int forceResiduesEnd;
+    private RotamerOptimization rotamerOptimization;
+    private RotamerLibrary rLib;
+    private int allStartResID;
+    private int boxStart;
+    private int boxEnd;
+    private int[] numXYZBoxes;
+    private int forceResiduesStart;
+    private int forceResiduesEnd;
 
     /**
      * <p>initRotamerOptimization.</p>
@@ -379,10 +376,8 @@ public class ManyBodyOptions {
 
         if (allStartResID > 0) {
             Polymer[] polymers = activeAssembly.getChains();
-            int nPolymers = polymers.length;
             int nResidues = 0;
-            for (int p = 0; p < nPolymers; p++) {
-                Polymer polymer = polymers[p];
+            for (Polymer polymer : polymers) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 nResidues = residues.size() + nResidues;
             }
@@ -453,9 +448,8 @@ public class ManyBodyOptions {
      * Set allStartResID, boxStart and boxEnd
      */
     private void setSelection() {
-        /**
-         * Chain, Residue and/or Box selections.
-         */
+
+        // Chain, Residue and/or Box selections.
         // Internal machinery indexed 0 to (n-1)
         setStartAndEndDefault();
 
@@ -472,10 +466,6 @@ public class ManyBodyOptions {
             if (allStartResID > 0) {
                 // Internal machinery indexed 0 to (n-1)
                 boxStart = allStartResID - 1;
-                if (boxStart < 0) {
-                    logger.warning(" FFX shutting down: Invalid input for box selection: index begins at 1 (or start must be less than finish).");
-                    return;
-                }
             } else {
                 if (boxStart < 0 || (boxEnd > -1 && boxEnd < boxStart)) {
                     logger.warning(" FFX shutting down: Invalid input for box selection: index begins at 1 (or start must be less than finish).");
@@ -484,9 +474,7 @@ public class ManyBodyOptions {
             }
         }
 
-        /**
-         * Box optimization options.
-         */
+        // Box optimization options.
         numXYZBoxes = new int[3];
         if (algorithm == 5) {
             String input = numBoxes;
@@ -501,12 +489,12 @@ public class ManyBodyOptions {
                 } else if (boxNumInput.hasNextDouble()) {
                     numXYZBoxes[inputLoopCounter] = (int) Math.floor(boxNumInput.nextDouble());
                     inputLoopCounter++;
-                    logger.info("Double input to nB truncated to integer.");
+                    logger.info(" Double input to nB truncated to integer.");
                 } else if (boxNumInput.hasNext()) {
-                    logger.info("Non-numeric input to nB discarded");
+                    logger.info(" Non-numeric input to nB discarded");
                     boxNumInput.next();
                 } else {
-                    logger.info("Insufficient input to nB. Non-input values assumed either equal to X or default to 3");
+                    logger.info(" Insufficient input to nB. Non-input values assumed either equal to X or default to 3");
                     break;
                 }
             }
@@ -517,10 +505,10 @@ public class ManyBodyOptions {
             for (int i = 0; i < numXYZBoxes.length; i++) {
                 if (numXYZBoxes[i] == 0) {
                     numXYZBoxes[i] = 3;
-                    logger.info("Input of zero to nB reset to default of three.");
+                    logger.info(" Input of zero to nB reset to default of three.");
                 } else if (numXYZBoxes[i] < 0) {
                     numXYZBoxes[i] = -1 * numXYZBoxes[i];
-                    logger.info("Input of negative number to nB reset to positive number");
+                    logger.info(" Input of negative number to nB reset to positive number");
                 }
             }
         }
@@ -529,10 +517,8 @@ public class ManyBodyOptions {
     /**
      * <p>setForcedResidue.</p>
      */
-    public void setForcedResidue() {
-        /**
-         * Force residues.
-         */
+    private void setForcedResidue() {
+        // Force residues.
         forceResiduesStart = -1;
         forceResiduesEnd = -1;
 
@@ -545,9 +531,7 @@ public class ManyBodyOptions {
             }
         }
 
-        /**
-         * Evaluate forced residues for the sliding window algorithm
-         */
+        // Evaluate forced residues for the sliding window algorithm
         if (algorithm == 4 && !forceResidues.equalsIgnoreCase("-1,-1")) {
             String input = forceResidues;
             Scanner frScan = new Scanner(input);
@@ -605,7 +589,7 @@ public class ManyBodyOptions {
      *
      * @param resList a {@link java.util.List} object.
      */
-    public void addListResidues(List<String> resList) {
+    private void addListResidues(List<String> resList) {
         if (!listResidues.equalsIgnoreCase("none")) {
             String tok[] = listResidues.split(",");
             for (String t : tok) {
@@ -629,13 +613,9 @@ public class ManyBodyOptions {
             if (allStartResID > 0) {
                 ArrayList<Residue> residueList = new ArrayList<Residue>();
                 Polymer[] polymers = activeAssembly.getChains();
-                int nPolymers = polymers.length;
-                for (int p = 0; p < nPolymers; p++) {
-                    Polymer polymer = polymers[p];
+                for (Polymer polymer : polymers) {
                     ArrayList<Residue> residues = polymer.getResidues();
-                    int nResidues = residues.size();
-                    for (int i = 0; i < nResidues; i++) {
-                        Residue residue = residues.get(i);
+                    for (Residue residue : residues) {
                         Rotamer[] rotamers = residue.getRotamers(rLib);
                         if (rotamers != null) {
                             int nrot = rotamers.length;
@@ -787,7 +767,7 @@ public class ManyBodyOptions {
     /**
      * Sets the standard values for properties in rotamer optimization.
      */
-    public void setRotOptProperties() {
+    private void setRotOptProperties() {
         // General
         rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
         rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
@@ -829,21 +809,6 @@ public class ManyBodyOptions {
     }
 
     /**
-     * Saves all eliminated rotamers to an ouput file called "eliminated.csv"
-     * when the many body command is run with the following syntax and flags:
-     * ffxc ManyBody --out ... file.pdb &gt;&gt; file.log.
-     *
-     * @throws java.io.IOException Throws an exception when output is non piped to a log
-     *                             file. The --out flag relies on the presence of a log file where output is
-     *                             piped.
-     */
-    /*public void saveEliminatedRotamers() throws IOException {
-        if (saveOutput) {
-            rotamerOptimization.outputEliminated();
-        }
-    }*/
-
-    /**
      * Gets the restart file created during rotamer optimization.
      *
      * @return The restart file.
@@ -861,6 +826,21 @@ public class ManyBodyOptions {
     public int getAlgorithmNumber() {
         return algorithm;
     }
+
+//    /**
+//     * Saves all eliminated rotamers to an ouput file called "eliminated.csv"
+//     * when the many body command is run with the following syntax and flags:
+//     * ffxc ManyBody --out ... file.pdb &gt;&gt; file.log.
+//     *
+//     * @throws java.io.IOException Throws an exception when output is non piped to a log
+//     *                             file. The --out flag relies on the presence of a log file where output is
+//     *                             piped.
+//     */
+//    public void saveEliminatedRotamers() throws IOException {
+//        if (saveOutput) {
+//            rotamerOptimization.outputEliminated();
+//        }
+//    }
 
     /**
      * List<String> sequenceOptimizationList = new ArrayList<>();

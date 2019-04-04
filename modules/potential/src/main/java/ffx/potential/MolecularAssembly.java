@@ -1057,8 +1057,9 @@ public class MolecularAssembly extends MSGroup {
 
         // Apply the Heavy Hydrogen flag.
         boolean heavyHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.HEAVY_HYDROGENS, false);
+        heavyHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.HEAVY_HYDROGEN, heavyHydrogen);
         if (heavyHydrogen) {
-            applyHeavyHydrogens();
+            applyHeavyHydrogen();
         }
 
         setFinalized(true);
@@ -1070,7 +1071,7 @@ public class MolecularAssembly extends MSGroup {
      * The mass of each hydrogen is scaled by a factor of 3.
      * The mass of the heavy atom is reduced by 2 AMU.
      */
-    private void applyHeavyHydrogens() {
+    private void applyHeavyHydrogen() {
         ArrayList<ROLS> bonds = getBondList();
         for (ROLS b : bonds) {
             Bond bond = (Bond) b;
