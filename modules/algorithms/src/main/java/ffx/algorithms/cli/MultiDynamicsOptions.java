@@ -40,7 +40,6 @@ package ffx.algorithms.cli;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,7 +70,7 @@ import picocli.CommandLine;
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class  MultiDynamicsOptions {
+public class MultiDynamicsOptions {
 
     private static final Logger logger = Logger.getLogger(MultiDynamicsOptions.class.getName());
 
@@ -115,7 +114,7 @@ public class  MultiDynamicsOptions {
      * @param structureFile a {@link java.io.File} object.
      * @return a {@link ffx.potential.MolecularAssembly} object.
      */
-    public MolecularAssembly openFile(AlgorithmFunctions afuncts, Optional<TopologyOptions> topOptions, int threadsPer,
+    public MolecularAssembly openFile(AlgorithmFunctions afuncts, TopologyOptions topOptions, int threadsPer,
                                       String toOpen, int topNum, AlchemicalOptions alchemy, File structureFile, int rank) {
         boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
 
