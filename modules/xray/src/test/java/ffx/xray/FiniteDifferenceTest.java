@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.io.File;
@@ -85,8 +85,8 @@ public class FiniteDifferenceTest {
 
     private final boolean ci;
     private final boolean ciOnly;
-    private final Atom atomArray[];
-    private final int atoms[];
+    private final Atom[] atomArray;
+    private final int[] atoms;
     private final DiffractionRefinementData refinementData;
     private final SigmaAMinimize sigmaAMinimize;
 
@@ -134,8 +134,7 @@ public class FiniteDifferenceTest {
             reflectionList = new ReflectionList(crystal, resolution);
         }
 
-        refinementData = new DiffractionRefinementData(properties,
-                reflectionList);
+        refinementData = new DiffractionRefinementData(properties, reflectionList);
         assertTrue(info + " mtz file should be read in without errors",
                 mtzFilter.readFile(mtzFile, reflectionList, refinementData,
                         properties));
@@ -157,7 +156,7 @@ public class FiniteDifferenceTest {
                 continue;
             }
             double aRad = 2.4;
-            double xyz[] = new double[3];
+            double[] xyz = new double[3];
             xyz[0] = atom.getX() + aRad;
             xyz[1] = atom.getY();
             xyz[2] = atom.getZ();
@@ -191,13 +190,11 @@ public class FiniteDifferenceTest {
                 = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
         scaleBulkMinimize.minimize(6, 1.0e-4);
 
-        sigmaAMinimize = new SigmaAMinimize(reflectionList,
-                refinementData, parallelTeam);
+        sigmaAMinimize = new SigmaAMinimize(reflectionList, refinementData, parallelTeam);
         sigmaAMinimize.minimize(7, 2.0e-2);
 
         SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
-                refinementData, refinementData.spline,
-                SplineEnergy.Type.FOFC);
+                refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
         splineMinimize.minimize(7, 1e-5);
 
         CrystalStats crystalstats = new CrystalStats(reflectionList, refinementData);
@@ -223,7 +220,7 @@ public class FiniteDifferenceTest {
 
         double mean = 0.0;
         double nmean = 0.0;
-        double gxyz[] = new double[3];
+        double[] gxyz = new double[3];
         for (int i = 0; i < atoms.length; i++) {
             Atom atom = atomArray[atoms[i]];
             int index = atom.getXyzIndex() - 1;
@@ -289,8 +286,8 @@ public class FiniteDifferenceTest {
                 nmean++;
                 mean += (bg / fd - mean) / nmean;
             } else {
-                double anisou[] = atom.getAnisou(null);
-                double anisouG[] = atom.getAnisouGradient(null);
+                double[] anisou = atom.getAnisou(null);
+                double[] anisouG = atom.getAnisouGradient(null);
                 for (int j = 0; j < 6; j++) {
                     double tmpu = anisou[j];
                     anisou[j] = tmpu + b2u(delta);

@@ -207,36 +207,23 @@ public class OSRWOptions {
      * @param firstAssembly   Primary assembly in ttOSRW.
      * @param dynamics        MD options.
      * @param lpo             Lambda particle options.
-     * @param alch            Alchemy options.
      * @param barostat        NPT options.
-     * @param lamExists       If the lambda file exists for this walker.
      * @param histogramExists If the histogram file exists already.
      * @return a {@link ffx.crystal.CrystalPotential} object.
      */
     public CrystalPotential applyAllOSRWOptions(TransitionTemperedOSRW ttOSRW, MolecularAssembly firstAssembly,
-                                                DynamicsOptions dynamics, LambdaParticleOptions lpo, AlchemicalOptions alch,
-                                                BarostatOptions barostat, boolean lamExists, boolean histogramExists) {
+                                                DynamicsOptions dynamics, LambdaParticleOptions lpo,
+                                                BarostatOptions barostat, boolean histogramExists) {
 
-        CrystalPotential cpot = ttOSRW;
         applyOSRWOptions(ttOSRW, histogramExists);
-        if (histogramExists) {
+        if (!histogramExists) {
             ttOSRW.setThetaFrication(lpo.getLambdaFriction());
             ttOSRW.setThetaMass(lpo.getLambdaMass());
         }
-
         if (dynamics.getOptimize()) {
             ttOSRW.setOptimization(true, firstAssembly);
-            // TODO: Apply other minimization parameters.
         }
-
-        if (!lamExists) {
-            double lam = alch.getInitialLambda();
-            logger.info(String.format(" Setting lambda to %5.3f", lam));
-            ttOSRW.setLambda(lam);
-        }
-        cpot = barostat.checkNPT(firstAssembly, cpot);
-
-        return cpot;
+        return barostat.checkNPT(firstAssembly, ttOSRW);
     }
 
     /**
@@ -261,13 +248,13 @@ public class OSRWOptions {
      * @param topologies All MolecularAssemblys.
      * @param potential  The top-layer CrystalPotential.
      * @param dynamics   Dynamics options.
-     * @param writeout   a {@link ffx.algorithms.cli.WriteoutOptions} object.
+     * @param writeOut   a {@link ffx.algorithms.cli.WriteoutOptions} object.
      * @param thermo     Thermodynamics options.
      * @param dyn        The .dyn dynamics restart file.
      * @param aListener  AlgorithmListener
      */
     public void beginMDOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
-                            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermo,
+                            DynamicsOptions dynamics, WriteoutOptions writeOut, ThermodynamicsOptions thermo,
                             File dyn, AlgorithmListener aListener) {
         // Create the MolecularDynamics instance.
         MolecularAssembly firstTop = topologies[0];
@@ -289,7 +276,7 @@ public class OSRWOptions {
         if (nEquil > 0) {
             logger.info(" Beginning equilibration");
             ttOSRW.setPropagateLambda(false);
-            runDynamics(molDyn, nEquil, dynamics, writeout, true, dyn);
+            runDynamics(molDyn, nEquil, dynamics, writeOut, true, dyn);
             logger.info(" Beginning Transition-Tempered OSRW sampling");
             ttOSRW.setPropagateLambda(true);
         } else {
@@ -304,7 +291,7 @@ public class OSRWOptions {
             }
         }
         if (nSteps > 0) {
-            runDynamics(molDyn, nSteps, dynamics, writeout, initVelocities, dyn);
+            runDynamics(molDyn, nSteps, dynamics, writeOut, initVelocities, dyn);
         } else {
             logger.info(" No steps remaining for this process!");
         }
@@ -344,7 +331,6 @@ public class OSRWOptions {
 
         logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
         mcOSRW.setLambdaStdDev(mcL);
-        //lambdaWriteOut = getLambdaWriteOut();
         mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt);
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
             mcOSRW.setLambdaWriteOut(lambdaWriteOut);
@@ -356,7 +342,9 @@ public class OSRWOptions {
         }
     }
 
-    private void runDynamics(MolecularDynamics molDyn, int numSteps, DynamicsOptions dynamics, WriteoutOptions writeout, boolean initVelocities, File dyn) {
-        molDyn.dynamic(numSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp, initVelocities, writeout.getFileType(), dynamics.getCheckpoint(), dyn);
+    private void runDynamics(MolecularDynamics molDyn, int numSteps, DynamicsOptions dynamics,
+                             WriteoutOptions writeout, boolean initVelocities, File dyn) {
+        molDyn.dynamic(numSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
+                initVelocities, writeout.getFileType(), dynamics.getCheckpoint(), dyn);
     }
 }

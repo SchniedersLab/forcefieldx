@@ -42,6 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static java.lang.String.format;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -171,7 +172,7 @@ public class AlchemicalOptions {
     public static void setAlchemicalAtoms(MolecularAssembly assembly, int start, int fin, String ligAt) {
         Atom[] atoms = assembly.getAtomArray();
         if (start > 0) {
-            logger.info(String.format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
+            logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
             for (int i = start; i <= fin; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setApplyLambda(true);
@@ -186,9 +187,9 @@ public class AlchemicalOptions {
                     int rangeStart = Integer.parseInt(m.group(1));
                     int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                     if (rangeStart > rangeEnd) {
-                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                        logger.severe(format(" Range %s was invalid; start was greater than end", range));
                     }
-                    logger.info(String.format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
+                    logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
                     // Don't need to worry about negative numbers; rangeregex just won't match.
                     for (int i = rangeStart; i <= rangeEnd; i++) {
                         Atom ai = atoms[i - 1];
@@ -196,7 +197,7 @@ public class AlchemicalOptions {
                         ai.print(Level.FINE);
                     }
                 } else {
-                    logger.warning(String.format(" Could not recognize %s as a valid range; skipping", range));
+                    logger.warning(format(" Could not recognize %s as a valid range; skipping", range));
                 }
             }
         }
@@ -219,7 +220,7 @@ public class AlchemicalOptions {
      * @param eEnd     Last atom to decharge.
      */
     public static void setUnchargedAtoms(MolecularAssembly assembly, int eStart, int eEnd) {
-        Atom atoms[] = assembly.getAtomArray();
+        Atom[] atoms = assembly.getAtomArray();
         // Apply the no electrostatics atom selection
         int noElecStart = eStart;
         noElecStart = (noElecStart < 1) ? 1 : noElecStart;
@@ -249,21 +250,51 @@ public class AlchemicalOptions {
      * @return Initial lambda.
      */
     public double getInitialLambda() {
-        return getInitialLambda(true);
+        return getInitialLambda(false);
     }
 
     /**
      * Gets the initial value of lambda.
      *
-     * @param quiet If true, do not warn about lambda not being in the range 0-1.
+     * @param quiet No logging if quiet.
      * @return Initial lambda.
      */
     public double getInitialLambda(boolean quiet) {
-        Level toLog = quiet ? Level.OFF : Level.WARNING;
+        return getInitialLambda(1, 0, quiet);
+    }
+
+    /**
+     * Gets the initial value of lambda.
+     *
+     * @param size The number of processes.
+     * @param rank THe rank of this process.
+     * @return Initial lambda.
+     */
+    public double getInitialLambda(int size, int rank) {
+        return getInitialLambda(size, rank, false);
+    }
+
+    /**
+     * Gets the initial value of lambda.
+     *
+     * @param size  The number of processes.
+     * @param rank  THe rank of this process.
+     * @param quiet No logging if quiet.
+     * @return Initial lambda.
+     */
+    public double getInitialLambda(int size, int rank, boolean quiet) {
         if (initialLambda < 0.0 || initialLambda > 1.0) {
-            logger.log(toLog, String.format(" Initial alchemical lambda reset " +
-                    "to 0.0 from %8.4g; must be between 0 and 1!", initialLambda));
-            initialLambda = 0.0;
+            if (rank == 0 || size < 2) {
+                initialLambda = 0.0;
+                if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
+            } else if (rank == size - 1) {
+                initialLambda = 1.0;
+                if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
+            } else {
+                double dL = 1.0 / (size - 1);
+                initialLambda = dL * rank;
+                if (!quiet) logger.info(format(" Setting lambda to %5.3f.", initialLambda));
+            }
         }
         return initialLambda;
     }

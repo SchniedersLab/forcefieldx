@@ -156,7 +156,6 @@ class Thermodynamics extends AlgorithmsScript {
             System.setProperty("lambdaterm", "true")
         }
 
-        double initLambda = alchemical.getInitialLambda()
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
@@ -171,6 +170,8 @@ class Thermodynamics extends AlgorithmsScript {
         Comm world = Comm.world()
         int size = world.size()
         int rank = (size > 1) ? world.rank() : 0
+
+        double initLambda = alchemical.getInitialLambda(size, rank);
 
         // Segment of code for MultiDynamics and OSRW.
         List<File> structureFiles = arguments.stream().
@@ -258,11 +259,13 @@ class Thermodynamics extends AlgorithmsScript {
 
         osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0],
                 additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
+        if (!lamExists) {
+            osrw.setLambda(initLambda)
+        }
 
         // Can be either the TT-OSRW or a Barostat on top of it.
-        // Cannot be the Potential underneath the TT-OSRW.
         CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0],
-                dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists)
+                dynamics, lambdaParticle, barostat, hisExists)
 
         if (osrwOptions.mc) {
             osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)

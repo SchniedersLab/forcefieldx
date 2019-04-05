@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.crystal;
 
 import java.util.Arrays;
@@ -47,6 +47,8 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
 /**
+ * Test the Crystal class.
+ *
  * @author Michael J. Schnieders
  */
 @RunWith(Parameterized.class)
@@ -55,22 +57,23 @@ public class CrystalVolumeDerivativeTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {"Triclinic (3TRW)",
-                28.38, 31.73, 36.75, 90.12, 99.61, 96.52, "P-1"},
-            {"Cubic (3RN4)",
-                92.69, 92.69, 92.69, 90.0, 90.0, 90.0, "P23"},
-            {"Orthorhombic (2WLD)",
-                79.09, 94.81, 100.85, 90.0, 90.0, 90.0, "P222"},
-            {"Monoclinic (3V0E)",
-                50.85, 38.60, 89.83, 90.0, 103.99, 90.0, "P2"},
-            {"Hexagonal (4DAC)",
-                63.67, 63.67, 40.40, 90.0, 90.0, 120.0, "P6"},
-            {"Tetragonal (3TI8)",
-                112.56, 112.56, 66.81, 90.0, 90.0, 90.0, "P4"},
-            {"Trigonal (3TNZ)",
-                108.99, 108.99, 49.40, 90.0, 90.0, 120.0, "P3"}
+                {"Triclinic (3TRW)",
+                        28.38, 31.73, 36.75, 90.12, 99.61, 96.52, "P-1"},
+                {"Cubic (3RN4)",
+                        92.69, 92.69, 92.69, 90.0, 90.0, 90.0, "P23"},
+                {"Orthorhombic (2WLD)",
+                        79.09, 94.81, 100.85, 90.0, 90.0, 90.0, "P222"},
+                {"Monoclinic (3V0E)",
+                        50.85, 38.60, 89.83, 90.0, 103.99, 90.0, "P2"},
+                {"Hexagonal (4DAC)",
+                        63.67, 63.67, 40.40, 90.0, 90.0, 120.0, "P6"},
+                {"Tetragonal (3TI8)",
+                        112.56, 112.56, 66.81, 90.0, 90.0, 90.0, "P4"},
+                {"Trigonal (3TNZ)",
+                        108.99, 108.99, 49.40, 90.0, 90.0, 120.0, "P3"}
         });
     }
+
     private final String info;
     private final Crystal crystal;
 
@@ -80,6 +83,7 @@ public class CrystalVolumeDerivativeTest {
         this.info = info;
         this.crystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
     }
+
     /**
      * Finite-Difference parameters.
      */
@@ -91,9 +95,7 @@ public class CrystalVolumeDerivativeTest {
     @Test
     public void finiteDifferenceTest() {
 
-        /**
-         * Current unit cell parameters.
-         */
+        // Current unit cell parameters.
         double a = crystal.a;
         double b = crystal.b;
         double c = crystal.c;
@@ -101,9 +103,7 @@ public class CrystalVolumeDerivativeTest {
         double beta = crystal.beta;
         double gamma = crystal.gamma;
 
-        /**
-         * Analytic volume derivatives with respect to unit parameters.
-         */
+        // Analytic volume derivatives with respect to unit parameters.
         double dVdA = crystal.dVdA;
         double dVdB = crystal.dVdB;
         double dVdC = crystal.dVdC;

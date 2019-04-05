@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.numerics.multipole;
 
 import java.util.Arrays;
@@ -58,7 +58,7 @@ import ffx.numerics.multipole.MultipoleTensor.OPERATOR;
 @RunWith(Parameterized.class)
 public class MultipoleTensorTest {
 
-    private static final double xyz[] = {1.1, 1.2, 1.3, 0.5};
+    private static final double[] xyz = {1.1, 1.2, 1.3, 0.5};
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -71,10 +71,10 @@ public class MultipoleTensorTest {
 
     private final double tolerance = 1.0e-14;
     private final double fdTolerance = 1.0e-6;
-    private final double r[] = new double[3];
-    private final double tensor[];
-    private final double noStorageTensor[];
-    private final double fastTensor[];
+    private final double[] r = new double[3];
+    private final double[] tensor;
+    private final double[] noStorageTensor;
+    private final double[] fastTensor;
     private final int order;
     private final int tensorCount;
     private final String info;
@@ -87,10 +87,10 @@ public class MultipoleTensorTest {
     private static final boolean testGlobal = false;
     private static final boolean testQI = true;
 
-    private final double Qi[] = {0.11,
+    private final double[] Qi = {0.11,
             0.21, 0.31, 0.41,
             -0.51, -0.61, 1.12, 0.71, 0.81, 0.91};
-    private final double Qk[] = {0.11,
+    private final double[] Qk = {0.11,
             0.21, 0.31, 0.41,
             -0.51, -0.61, 1.12, 0.71, 0.81, 0.91};
 
@@ -151,9 +151,7 @@ public class MultipoleTensorTest {
         MultipoleTensor multipoleTensor = new MultipoleTensorGlobal(operator, order, beta);
         multipoleTensor.setTholeDamping(damp, aiak);
 
-        /**
-         * Check Cartesian Tensors in the Global frame.
-         */
+        // Check Cartesian Tensors in the Global frame.
         multipoleTensor.noStorageRecursion(r, noStorageTensor);
         multipoleTensor.recursion(r, tensor);
         multipoleTensor.unrolled(r, fastTensor);
@@ -169,9 +167,7 @@ public class MultipoleTensorTest {
             }
         }
 
-        /**
-         * Check QI Tensors in a quasi-internal frame.
-         */
+        // Check QI Tensors in a quasi-internal frame.
         // Set x and y = 0.0
         r[0] = 0.0;
         r[1] = 0.0;
@@ -204,9 +200,7 @@ public class MultipoleTensorTest {
         MultipoleTensor multipoleTensor = new MultipoleTensorQI(operator, order, beta);
         multipoleTensor.setTholeDamping(damp, aiak);
 
-        /**
-         * Check Cartesian Tensors in the Global frame.
-         */
+        // Check Cartesian Tensors in the Global frame.
         multipoleTensor.noStorageRecursion(r, noStorageTensor);
         multipoleTensor.recursion(r, tensor);
         multipoleTensor.generateTensor();
@@ -223,9 +217,7 @@ public class MultipoleTensorTest {
             }
         }
 
-        /**
-         * Check QI Tensors in a quasi-internal frame.
-         */
+        // Check QI Tensors in a quasi-internal frame.
         // Set x and y = 0.0
         r[0] = 0.0;
         r[1] = 0.0;
@@ -260,12 +252,12 @@ public class MultipoleTensorTest {
 
         multipoleTensor.recursion(r, tensor);
 
-        double tensorsPx[] = new double[tensorCount];
-        double tensorsNx[] = new double[tensorCount];
-        double tensorsPy[] = new double[tensorCount];
-        double tensorsNy[] = new double[tensorCount];
-        double tensorsPz[] = new double[tensorCount];
-        double tensorsNz[] = new double[tensorCount];
+        double[] tensorsPx = new double[tensorCount];
+        double[] tensorsNx = new double[tensorCount];
+        double[] tensorsPy = new double[tensorCount];
+        double[] tensorsNy = new double[tensorCount];
+        double[] tensorsPz = new double[tensorCount];
+        double[] tensorsNz = new double[tensorCount];
         double delta = 1.0e-5;
         double delta2 = delta * 2;
         r[0] += delta;
@@ -312,8 +304,8 @@ public class MultipoleTensorTest {
         r[1] = 0.0;
 
         multipoleTensor.noStorageRecursion(r, tensor);
-        double tensorsPz[] = new double[tensorCount];
-        double tensorsNz[] = new double[tensorCount];
+        double[] tensorsPz = new double[tensorCount];
+        double[] tensorsNz = new double[tensorCount];
         double delta = 1.0e-5;
         double delta2 = delta * 2;
 
@@ -345,18 +337,18 @@ public class MultipoleTensorTest {
         r[2] = 1.3;
         double delta = 1.0e-5;
         double delta2 = 2.0 * 1.0e-5;
-        double Fi[] = new double[3];
-        double Ti[] = new double[3];
-        double Tk[] = new double[3];
+        double[] Fi = new double[3];
+        double[] Ti = new double[3];
+        double[] Tk = new double[3];
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
 
-        double energy = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
 
         double aX = -Fi[0];
         double aY = -Fi[1];
         double aZ = -Fi[2];
 
-        double analyticdEdF = multipoleTensor.getdEdZ();
+        multipoleTensor.getdEdZ();
 
         r[0] += delta;
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
@@ -382,17 +374,14 @@ public class MultipoleTensorTest {
 
         lambdaFunction += delta;
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
-        double posF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction -= delta2;
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
-        double negF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction += delta;
 
-        double expect = analyticdEdF;
-        double actual = (posF - negF) / delta2;
-//        assertEquals(info + " Global dE/dF", expect, actual, fdTolerance);
-        expect = aX;
-        actual = (posX - negX) / delta2;
+        double expect = aX;
+        double actual = (posX - negX) / delta2;
         assertEquals(info + " Force X", expect, actual, fdTolerance);
         expect = aY;
         actual = (posY - negY) / delta2;
@@ -411,18 +400,18 @@ public class MultipoleTensorTest {
         MultipoleTensor multipoleTensor = new MultipoleTensorQI(operator, order, beta);
         double delta = 1.0e-5;
         double delta2 = 2.0 * 1.0e-5;
-        double Fi[] = new double[3];
-        double Ti[] = new double[3];
-        double Tk[] = new double[3];
+        double[] Fi = new double[3];
+        double[] Ti = new double[3];
+        double[] Tk = new double[3];
 
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
-        double energy = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
 
         double aX = -Fi[0];
         double aY = -Fi[1];
         double aZ = -Fi[2];
 
-        double analyticdEdF = multipoleTensor.getdEdZ();
+        multipoleTensor.getdEdZ();
 
         r[0] += delta;
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
@@ -450,18 +439,14 @@ public class MultipoleTensorTest {
 
         lambdaFunction += delta;
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
-        double posF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction -= delta2;
         multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
-        double negF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+        multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction += delta;
 
-        double expect = analyticdEdF;
-        double actual = (posF - negF) / delta2;
-//        assertEquals(info + " QI dE/dF", expect, actual, fdTolerance);
-
-        expect = aX;
-        actual = (posX - negX) / delta2;
+        double expect = aX;
+        double actual = (posX - negX) / delta2;
         assertEquals(info + " QI Force X", expect, actual, fdTolerance);
 
         expect = aY;
@@ -474,21 +459,18 @@ public class MultipoleTensorTest {
     }
 
     private void tensorFiniteDifference(MultipoleTensor multipoleTensor, double delta2,
-                                        double tensorsPx[], double tensorsNx[],
-                                        double tensorsPy[], double tensorsNy[],
-                                        double tensorsPz[], double tensorsNz[]) {
+                                        double[] tensorsPx, double[] tensorsNx,
+                                        double[] tensorsPy, double[] tensorsNy,
+                                        double[] tensorsPz, double[] tensorsNz) {
 
         int start = 0;
-        /**
-         * We do not calculate the zeroth term for Thole damping.
-         */
+
+        // We do not calculate the zeroth term for Thole damping.
         if (operator == OPERATOR.THOLE_FIELD) {
             start = 1;
         }
 
-        /**
-         * Test the partial derivatives for all tensor components.
-         */
+        // Test the partial derivatives for all tensor components.
         for (int l = start; l < order; l++) {
             // Test X derivative
             double expect = tensor[multipoleTensor.ti(l + 1, 0, 0)];
@@ -541,19 +523,16 @@ public class MultipoleTensorTest {
     }
 
     private void tensorFiniteDifferenceQI(MultipoleTensor multipoleTensor, double delta2,
-                                          double tensorsPz[], double tensorsNz[]) {
+                                          double[] tensorsPz, double[] tensorsNz) {
 
         int start = 0;
-        /**
-         * We do not calculate the zeroth term for Thole damping.
-         */
+
+        // We do not calculate the zeroth term for Thole damping.
         if (operator == OPERATOR.THOLE_FIELD) {
             start = 1;
         }
 
-        /**
-         * Test the partial derivatives for all tensor components.
-         */
+        // Test the partial derivatives for all tensor components.
         for (int l = start; l < order; l++) {
             // Test Z derivative
             double expect = tensor[multipoleTensor.ti(l, 0, 1)];
