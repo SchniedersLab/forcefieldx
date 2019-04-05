@@ -174,11 +174,11 @@ class LambdaGradient extends PotentialScript {
             }
             arguments = new ArrayList<>()
             arguments.add(mola.getFile().getName())
-            topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0))
+            topologyList.add(alchemical.processFile(topology, mola, 0))
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(alchemical.openFile(potentialFunctions, Optional.of(topology), threadsPer, arguments.get(i), i))
+                topologyList.add(alchemical.openFile(potentialFunctions, topology, threadsPer, arguments.get(i), i))
             }
         }
 
