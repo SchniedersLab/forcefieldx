@@ -37,7 +37,6 @@
  */
 package ffx.potential.cli;
 
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -309,7 +308,7 @@ public class AlchemicalOptions {
      * @param topNum             The index of this topology.
      * @return The processed MolecularAssembly.
      */
-    public MolecularAssembly openFile(PotentialsFunctions potentialFunctions, Optional<TopologyOptions> topOptions, int threadsPer, String toOpen, int topNum) {
+    public MolecularAssembly openFile(PotentialsFunctions potentialFunctions, TopologyOptions topOptions, int threadsPer, String toOpen, int topNum) {
         potentialFunctions.openAll(toOpen, threadsPer);
         MolecularAssembly mola = potentialFunctions.getActiveAssembly();
         return processFile(topOptions, mola, topNum);
@@ -323,7 +322,7 @@ public class AlchemicalOptions {
      * @param topNum     The index of this topology, 0-indexed.
      * @return The processed MolecularAssembly.
      */
-    public MolecularAssembly processFile(Optional<TopologyOptions> topOptions, MolecularAssembly mola, int topNum) {
+    public MolecularAssembly processFile(TopologyOptions topOptions, MolecularAssembly mola, int topNum) {
 
         int remainder = (topNum % 2) + 1;
         switch (remainder) {
@@ -332,12 +331,11 @@ public class AlchemicalOptions {
                 setFirstSystemUnchargedAtoms(mola);
                 break;
             case 2:
-                if (!topOptions.isPresent()) {
+                if (topOptions == null) {
                     throw new IllegalArgumentException(" For >= 2 systems, topOptions must not be empty!");
                 }
-                TopologyOptions topology = topOptions.get();
-                topology.setSecondSystemAlchemistry(mola);
-                topology.setSecondSystemUnchargedAtoms(mola);
+                topOptions.setSecondSystemAlchemistry(mola);
+                topOptions.setSecondSystemUnchargedAtoms(mola);
                 break;
         }
 
@@ -347,4 +345,5 @@ public class AlchemicalOptions {
 
         return mola;
     }
+
 }
