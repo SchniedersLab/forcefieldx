@@ -215,11 +215,11 @@ class Thermodynamics extends AlgorithmsScript {
             }
             arguments = new ArrayList<>()
             arguments.add(mola.getFile().getName())
-            topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0))
+            topologyList.add(alchemical.processFile(topology, mola, 0))
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology),
+                topologyList.add(multidynamics.openFile(algorithmFunctions, topology,
                         threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank))
             }
         }
