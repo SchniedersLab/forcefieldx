@@ -532,6 +532,51 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Compute the energy using the pure Java code path.
+     *
+     * @param x Input atomic coordinates
+     * @return The energy (kcal/mol)
+     */
+    public double energyFFX(double[] x) {
+        return energyFFX(x, false);
+    }
+
+    /**
+     * Compute the energy using the pure Java code path.
+     *
+     * @param x       Input atomic coordinates
+     * @param verbose Use verbose logging.
+     * @return The energy (kcal/mol)
+     */
+    public double energyFFX(double[] x, boolean verbose) {
+        return super.energy(x, verbose);
+    }
+
+    /**
+     * Compute the energy and gradient using the pure Java code path.
+     *
+     * @param x Input atomic coordinates
+     * @param g Storage for the gradient vector.
+     * @return The energy (kcal/mol)
+     */
+    public double energyAndGradientFFX(double[] x, double[] g) {
+        return energyAndGradientFFX(x, g, false);
+    }
+
+    /**
+     * Compute the energy and gradient using the pure Java code path.
+     *
+     * @param x       Input atomic coordinates
+     * @param g       Storage for the gradient vector.
+     * @param verbose Use verbose logging.
+     * @return The energy (kcal/mol)
+     */
+    public double energyAndGradientFFX(double[] x, double[] g, boolean verbose) {
+        return super.energyAndGradient(x, g, verbose);
+    }
+
+
+    /**
      * {@inheritDoc}
      */
     @Override

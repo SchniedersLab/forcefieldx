@@ -161,7 +161,7 @@ public class MinimizeOpenMM extends Minimize {
             OpenMM_State_destroy(state);
 
             double[] ffxGrad = new double[n];
-            double ffxEnergy = forceFieldEnergy.energyAndGradient(x, ffxGrad);
+            double ffxEnergy = forceFieldEnergyOpenMM.energyAndGradientFFX(x, ffxGrad);
             double grmsFFX = 0.0;
             for (int i = 0; i < n; i++) {
                 double gi = ffxGrad[i];
