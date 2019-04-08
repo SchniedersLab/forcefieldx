@@ -171,7 +171,7 @@ class Thermodynamics extends AlgorithmsScript {
         int size = world.size()
         int rank = (size > 1) ? world.rank() : 0
 
-        double initLambda = alchemical.getInitialLambda(size, rank);
+        double initLambda = alchemical.getInitialLambda(size, rank)
 
         // Segment of code for MultiDynamics and OSRW.
         List<File> structureFiles = arguments.stream().
@@ -179,7 +179,7 @@ class Thermodynamics extends AlgorithmsScript {
                 collect(Collectors.toList())
 
         File firstStructure = structureFiles.get(0)
-        String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst(~/\.[^.]+$/, "");
+        String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst(~/\.[^.]+$/, "")
         File histogramRestart = new File(filePathNoExtension + ".his")
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
@@ -187,17 +187,17 @@ class Thermodynamics extends AlgorithmsScript {
 
         if (size > 1) {
             List<File> rankedFiles = new ArrayList<>(nArgs)
-            String rankDirName = FilenameUtils.getFullPath(filePathNoExtension);
-            rankDirName = String.format("%s%d", rankDirName, rank);
-            File rankDirectory = new File(rankDirName);
+            String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
+            rankDirName = String.format("%s%d", rankDirName, rank)
+            File rankDirectory = new File(rankDirName)
             if (!rankDirectory.exists()) {
-                rankDirectory.mkdir();
+                rankDirectory.mkdir()
             }
-            rankDirName = rankDirName + File.separator;
-            withRankName = String.format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension));
+            rankDirName = rankDirName + File.separator
+            withRankName = String.format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension))
 
             for (File structureFile : structureFiles) {
-                rankedFiles.add(new File(String.format("%s%s", rankDirName, FilenameUtils.getName(structureFile.getName()))));
+                rankedFiles.add(new File(String.format("%s%s", rankDirName, FilenameUtils.getName(structureFile.getName()))))
             }
             structureFiles = rankedFiles
         }
@@ -205,9 +205,7 @@ class Thermodynamics extends AlgorithmsScript {
         File lambdaRestart = new File(withRankName + ".lam")
         File dyn = new File(withRankName + ".dyn")
 
-        /**
-         * Read in files.
-         */
+        // Read in files.
         if (!arguments || arguments.isEmpty()) {
             MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
             if (mola == null) {
@@ -226,25 +224,18 @@ class Thermodynamics extends AlgorithmsScript {
 
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
-        /**
-         * Configure the potential to test.
-         */
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ")
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
-
-        logger.info(sb.toString())
-
         LambdaInterface linter = (LambdaInterface) potential
-
-        // End of boilerplate code.
+        logger.info(sb.toString())
 
         boolean lamExists = lambdaRestart.exists()
         boolean hisExists = histogramRestart.exists()
 
         boolean updatesDisabled = topologies[0].getForceField().getBoolean(
-                ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+                ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
         if (updatesDisabled) {
-            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
+            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
         }
         double[] x = new double[potential.getNumberOfVariables()]
         potential.getCoordinates(x)

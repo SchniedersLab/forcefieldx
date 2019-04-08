@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.utils;
 
 import java.io.File;
@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -90,23 +91,23 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Logs time since this interface was created and the last time this method
      * was called.
      */
     @Override
     public double time() {
         long currTime = System.nanoTime();
-        logger.info(String.format(" Time since interface established: %f", (currTime - initTime) * 1.0E-9));
+        logger.info(format(" Time since interface established: %f", (currTime - initTime) * 1.0E-9));
         double elapsed = (currTime - interTime) * 1.0E-9;
         interTime = currTime;
-        logger.info(String.format(" Time since last timer call: %f", elapsed));
+        logger.info(format(" Time since last timer call: %f", elapsed));
         return elapsed;
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns true (this is the local implementation).
      */
     @Override
@@ -119,7 +120,7 @@ public class PotentialsUtils implements PotentialsFunctions {
      *
      * @param silent a boolean.
      */
-    public void setSilentPotential(boolean silent) {
+    void setSilentPotential(boolean silent) {
         if (silent && potLog.isLoggable(Level.INFO) && levelBak == null) {
             levelBak = potLog.getLevel();
             potLog.setLevel(Level.WARNING);
@@ -132,7 +133,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Opens a file and returns all created MolecularAssembly objects.
      */
     @Override
@@ -143,7 +144,9 @@ public class PotentialsUtils implements PotentialsFunctions {
         return opener.getAllAssemblies();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MolecularAssembly open(String filename) {
         PotentialsFileOpener opener = new PotentialsFileOpener(filename);
@@ -175,7 +178,7 @@ public class PotentialsUtils implements PotentialsFunctions {
      * Mutates file on-the-fly as it is being opened.
      * Used to open files for pHMD in fully-protonated form.
      *
-     * @param file a {@link java.io.File} object.
+     * @param file      a {@link java.io.File} object.
      * @param mutations a {@link java.util.List} object.
      * @return a {@link ffx.potential.MolecularAssembly} object.
      */
@@ -204,21 +207,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * Open one File object without printing all the header material.
-     *
-     * @param file a {@link java.io.File} object.
-     * @return a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public MolecularAssembly openQuietly(File file) {
-        setSilentPotential(true);
-        MolecularAssembly mola = open(file);
-        setSilentPotential(false);
-        return mola;
-    }
-
-    /**
      * {@inheritDoc}
-     *
+     * <p>
      * Opens an array of files and returns the created MolecularAssembly
      * objects.
      */
@@ -232,7 +222,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Opens a file and returns all created MolecularAssembly objects, setting
      * any underlying Potential to use a certain number of threads.
      */
@@ -247,7 +237,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Opens an array of files and returns all created MolecularAssembly
      * objects, setting any underlying Potential to use a certain number of
      * threads.
@@ -263,7 +253,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
      */
@@ -274,14 +264,14 @@ public class PotentialsUtils implements PotentialsFunctions {
             converter.run();
             return converter.getAllAssemblies();
         } catch (FileNotFoundException | IllegalArgumentException ex) {
-            logger.warning(String.format(" Exception in data structure conversion: %s", ex.toString()));
+            logger.warning(format(" Exception in data structure conversion: %s", ex.toString()));
             return null;
         }
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
      */
@@ -292,14 +282,14 @@ public class PotentialsUtils implements PotentialsFunctions {
             converter.run();
             return converter.getAllAssemblies();
         } catch (FileNotFoundException | IllegalArgumentException ex) {
-            logger.warning(String.format(" Exception in data structure conversion: %s", ex.toString()));
+            logger.warning(format(" Exception in data structure conversion: %s", ex.toString()));
             return null;
         }
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
      */
@@ -307,7 +297,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     public MolecularAssembly[] convertDataStructure(Object data, String filename) {
         File file = new File(filename);
         if (!file.exists() || file.isDirectory() || !file.canRead()) {
-            logger.warning(String.format("%s not a valid file name: file name discarded.", filename));
+            logger.warning(format("%s not a valid file name: file name discarded.", filename));
             return convertDataStructure(data);
         }
         return convertDataStructure(data, file);
@@ -315,7 +305,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Shuts down parallel teams in the force field of the provided
      * MolecularAssembly. Kaminsky's ParallelTeamThreads' run() methods are
      * infinite loops, and because running threads are always GC roots, it is
@@ -329,7 +319,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Shuts down parallel teams in the force fields of the provided
      * MolecularAssemblys.
      */
@@ -342,7 +332,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Saves the current state of a MolecularAssembly to an XYZ file.
      */
     @Override
@@ -352,7 +342,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Saves the current state of a MolecularAssembly to an XYZ file.
      */
     @Override
@@ -364,7 +354,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             XYZFilter xyzFilter = new XYZFilter(file, assembly, null, null);
             if (!xyzFilter.writeFile(file, false)) {
-                logger.info(String.format(" Save failed for %s", assembly.toString()));
+                logger.info(format(" Save failed for %s", assembly.toString()));
             }
             lastFilter = xyzFilter;
         }
@@ -372,7 +362,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Saves the current state of a MolecularAssembly to an XYZ file as a P1
      * crystal.
      */
@@ -395,7 +385,7 @@ public class PotentialsUtils implements PotentialsFunctions {
                     ForceFieldString.SPACEGROUP, "P1");
             Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
             if (!filter.writeFileAsP1(file, false, crystal)) {
-                logger.info(String.format(" Save failed for %s", assembly.toString()));
+                logger.info(format(" Save failed for %s", assembly.toString()));
             }
             lastFilter = filter;
         }
@@ -403,7 +393,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Saves the current state of a MolecularAssembly to a PDB file.
      */
     @Override
@@ -413,7 +403,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Saves the current state of a MolecularAssembly to a PDB file.
      */
     @Override
@@ -425,19 +415,23 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
             if (!pdbFilter.writeFile(file, append, false, writeEnd)) {
-                logger.info(String.format(" Save failed for %s", assembly.toString()));
+                logger.info(format(" Save failed for %s", assembly.toString()));
             }
             lastFilter = pdbFilter;
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file) {
         savePDBSymMates(assembly, file, "_symMate");
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
         if (assembly == null) {
@@ -448,7 +442,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
             lastFilter = pdbFilter;
             if (!pdbFilter.writeFile(file, false)) {
-                logger.info(String.format(" Save failed for %s", assembly.toString()));
+                logger.info(format(" Save failed for %s", assembly.toString()));
             } else {
                 Crystal crystal = assembly.getCrystal();
                 int nSymOps = crystal.spaceGroup.getNumberOfSymOps();
@@ -479,13 +473,13 @@ public class PotentialsUtils implements PotentialsFunctions {
                     }
 
                     if (saveFile.exists()) {
-                        logger.warning(String.format(" Could not successfully version file "
+                        logger.warning(format(" Could not successfully version file "
                                 + "%s: appending to file %s", saveFileName, saveFile.getName()));
                         if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), true)) {
-                            logger.info(String.format(" Save failed for %s", saveFile.getName()));
+                            logger.info(format(" Save failed for %s", saveFile.getName()));
                         }
                     } else if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), false)) {
-                        logger.info(String.format(" Save failed for %s", saveFile.getName()));
+                        logger.info(format(" Save failed for %s", saveFile.getName()));
                     }
                 }
             }
@@ -495,8 +489,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * <p>saveAsSIFTPDB.</p>
      *
-     * @param assembly a {@link ffx.potential.MolecularAssembly} object.
-     * @param file a {@link java.io.File} object.
+     * @param assembly    a {@link ffx.potential.MolecularAssembly} object.
+     * @param file        a {@link java.io.File} object.
      * @param resAndScore an array of {@link java.lang.String} objects.
      */
     public void saveAsSIFTPDB(MolecularAssembly assembly, File file, String[] resAndScore) {
@@ -509,7 +503,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
             if (!pdbFilter.writeSIFTFile(file, false, resAndScore)) {
-                logger.info(String.format(" Save failed for %s", assembly.toString()));
+                logger.info(format(" Save failed for %s", assembly.toString()));
             }
             lastFilter = pdbFilter;
         }
@@ -517,7 +511,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Saves the current state of an array of MolecularAssemblys to a PDB file.
      */
     @Override
@@ -539,8 +533,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * <p>saveAsSIFTPDB.</p>
      *
-     * @param assemblies an array of {@link ffx.potential.MolecularAssembly} objects.
-     * @param file a {@link java.io.File} object.
+     * @param assemblies  an array of {@link ffx.potential.MolecularAssembly} objects.
+     * @param file        a {@link java.io.File} object.
      * @param resAndScore an array of {@link java.lang.String} objects.
      */
     public void saveAsSIFTPDB(MolecularAssembly[] assemblies, File file, String[] resAndScore) {
@@ -559,7 +553,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Evaluates the energy of a MolecularAssembly and returns its
      * ForceFieldEnergy object.
      */
@@ -581,7 +575,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
      * prints the energy evaluation
      */
@@ -600,7 +594,9 @@ public class PotentialsUtils implements PotentialsFunctions {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SystemFilter getFilter() {
         return lastFilter;
@@ -609,10 +605,10 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * <p>analysis.</p>
      *
-     * @param molas an array of {@link ffx.potential.MolecularAssembly} objects.
+     * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
      */
-    public static void analysis(MolecularAssembly molas[]) {
-        for (MolecularAssembly mola : molas) {
+    public static void analysis(MolecularAssembly[] molecularAssemblies) {
+        for (MolecularAssembly mola : molecularAssemblies) {
             analysis(mola);
         }
     }
@@ -624,8 +620,8 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     public static void analysis(MolecularAssembly mola) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\n Array Pos., XYZ Index, Residue, Atom Name, Type, Class\n"));
-        Atom atoms[] = mola.getAtomArray();
+        sb.append(format("\n Array Pos., XYZ Index, Residue, Atom Name, Type, Class\n"));
+        Atom[] atoms = mola.getAtomArray();
         for (int i = 0; i < atoms.length; i++) {
             String resName = atoms[i].getResidueName();
             String atomName = atoms[i].getName();
@@ -633,7 +629,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             int typeNum = atomType.type;
             int classNum = atomType.atomClass;
             int xyzIndex = atoms[i].getIndex();
-            sb.append(String.format("     %6d     %6d   %6s     %6s%6d %6d\n", i, xyzIndex, resName, atomName, typeNum, classNum));
+            sb.append(format("     %6d     %6d   %6s     %6s%6d %6d\n", i, xyzIndex, resName, atomName, typeNum, classNum));
         }
         logger.info(sb.toString());
     }
@@ -641,50 +637,11 @@ public class PotentialsUtils implements PotentialsFunctions {
     /**
      * <p>assertEquals.</p>
      *
-     * @param expected a double.
-     * @param actual a double.
+     * @param expected  a double.
+     * @param actual    a double.
      * @param tolerance a double.
      */
     public static void assertEquals(double expected, double actual, double tolerance) {
         assert (Math.abs(expected - actual) < tolerance);
     }
-
 }
-
-/**
- * Returns a FileOpener thread which can be used to create a MolecularAssembly
- * from a file.
- *
- * @param file To be opened
- * @return Opener thread.
- */
-/*@Override
- public FileOpener open(String file) {
- return new PotentialsFileOpener(file);
- }*/
-/**
- * Returns an array of FileOpener threads which can be used to create
- * MolecularAssembly objects from an array of files.
- *
- * @param filenames To be opened
- * @return Opener threads.
- */
-/*@Override
- public FileOpener open(String[] filenames) {
- int numFiles = filenames.length;
- File[] files = new File[numFiles];
- for (int i = 0; i < numFiles; i++) {
- files[i] = new File(filenames[i]);
- }
- return new PotentialsFileOpener(files);
- }
-
- @Override
- public FileOpener open(File file, String commandDescription) {
- return new PotentialsFileOpener(file);
- }
-
- @Override
- public FileOpener open(File[] files, String commandDescription) {
- return new PotentialsFileOpener(files);
- }*/

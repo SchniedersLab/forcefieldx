@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parsers;
 
 import java.io.BufferedReader;
@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Integer.parseInt;
 
 import ffx.utilities.Keyword;
 
@@ -53,7 +54,6 @@ import ffx.utilities.Keyword;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class KeyFilter {
 
@@ -65,7 +65,7 @@ public class KeyFilter {
      *
      * @return a {@link java.util.Hashtable} object.
      */
-    public static Hashtable<String, Keyword> loadSystemKeywords() {
+    private static Hashtable<String, Keyword> loadSystemKeywords() {
         File f = new File("/etc/ffx.conf");
         Hashtable<String, Keyword> systemKeywords = new Hashtable<>();
         if (f.exists() && f.canRead()) {
@@ -100,7 +100,7 @@ public class KeyFilter {
      * <p>
      * open</p>
      *
-     * @param keyFile a {@link java.io.File} object.
+     * @param keyFile     a {@link java.io.File} object.
      * @param keywordHash a {@link java.util.Hashtable} object.
      * @return a {@link java.util.Hashtable} object.
      */
@@ -109,12 +109,10 @@ public class KeyFilter {
             return null;
         }
         if (keywordHash == null) {
-            keywordHash = new Hashtable<String, Keyword>();
+            keywordHash = new Hashtable<>();
         }
-        FileReader fr = null;
-        BufferedReader br = null;
-        try {
-            fr = new FileReader(keyFile);
+        BufferedReader br;
+        try (FileReader fr = new FileReader(keyFile)) {
             br = new BufferedReader(fr);
             Keyword comments = new Keyword("COMMENTS");
             keywordHash.put("COMMENTS", comments);
@@ -158,13 +156,13 @@ public class KeyFilter {
                     if (data != null) {
                         kd.append(data);
                     }
-                    /**
-                     * Multipoles and TORTORS are the only keywords that span
-                     * multiple lines. Editing these from within Force Field X
-                     * seems unlikely, so they are treated as comments.
+                    /*
+                      Multipoles and TORTORS are the only keywords that span
+                      multiple lines. Editing these from within Force Field X
+                      seems unlikely, so they are treated as comments.
                      */
                     if (keyword.equalsIgnoreCase("MULTIPOLE")) {
-                        int mnum[] = {3, 1, 2, 3};
+                        int[] mnum = {3, 1, 2, 3};
                         for (int i = 0; i < 4; i++) {
                             if (!br.ready()) {
                                 System.out.println("Check for an invalid MULTIPOLE keyword.");
@@ -183,13 +181,13 @@ public class KeyFilter {
                             kd.append(s);
                         }
                     } else if (keyword.equalsIgnoreCase("TORTORS")) {
-                        String res[] = data.split(" +");
-                        if (res == null || res.length < 7) {
+                        String[] res = data.split(" +");
+                        if (res.length < 7) {
                             logger.warning("TORTOR format error.");
                             return null;
                         }
-                        int xres = Integer.parseInt(res[5]);
-                        int yres = Integer.parseInt(res[6]);
+                        int xres = parseInt(res[5]);
+                        int yres = parseInt(res[6]);
                         for (int i = 0; i < xres * yres; i++) {
                             if (!br.ready()) {
                                 System.out.println("Check for an invalid TORTOR keyword.");
@@ -214,13 +212,6 @@ public class KeyFilter {
         } catch (IOException e) {
             System.err.println("Error reading Key File: " + e);
             return null;
-        } finally {
-            if (fr != null) {
-                try {
-                    fr.close();
-                } catch (IOException e) {
-                }
-            }
         }
     }
 

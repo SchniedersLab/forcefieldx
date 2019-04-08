@@ -105,7 +105,7 @@ public class MultiDynamicsOptions {
      * by permitting use of a rank-dependent File.
      *
      * @param afuncts       AlgorithmFunctions object.
-     * @param topOptions    Optional Topology Options.
+     * @param topOptions    Topology Options.
      * @param threadsPer    Threads to use per system.
      * @param toOpen        Filename to open.
      * @param topNum        Number of the topology to open.

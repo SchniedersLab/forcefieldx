@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parsers;
 
 import javax.vecmath.Vector3d;
@@ -85,8 +85,7 @@ public class XYZFilter extends SystemFilter {
      * @param files      a {@link java.util.List} object.
      * @param system     a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public XYZFilter(List<File> files, MolecularAssembly system,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -331,7 +330,7 @@ public class XYZFilter extends SystemFilter {
     public boolean readNext(boolean resetPosition, boolean print) {
         try {
             String data;
-            Atom atoms[] = activeMolecularAssembly.getAtomArray();
+            Atom[] atoms = activeMolecularAssembly.getAtomArray();
             int nSystem = atoms.length;
 
             if (bufferedReader == null || resetPosition/* || !bin.ready()*/) {
@@ -358,12 +357,12 @@ public class XYZFilter extends SystemFilter {
             }
 
             if (print) {
-                logger.info(String.format(" Attempting to read snapshot %d.", snapShot));
+                logger.info(format(" Attempting to read snapshot %d.", snapShot));
             }
             try {
                 int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
                 if (nArchive != nSystem) {
-                    String message = String.format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
+                    String message = format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
                     if (dieOnMissingAtom) {
                         logger.severe(message);
                     }
@@ -389,8 +388,8 @@ public class XYZFilter extends SystemFilter {
                     data = bufferedReader.readLine();
                 }
                 String[] tokens = data.trim().split(" +");
-                if (tokens == null || tokens.length < 6) {
-                    String message = String.format("Check atom %d in %s.", (i + 1),
+                if (tokens.length < 6) {
+                    String message = format("Check atom %d in %s.", (i + 1),
                             currentFile.getName());
                     logger.warning(message);
                     return false;
@@ -400,18 +399,17 @@ public class XYZFilter extends SystemFilter {
                 double z = parseDouble(tokens[4]);
                 int xyzIndex = atoms[i].getIndex();
                 if (xyzIndex != i + 1) {
-                    String message = String.format("Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
+                    String message = format("Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
                     logger.warning(message);
                 }
                 atoms[i].moveTo(x, y, z);
             }
             return true;
         } catch (FileNotFoundException e) {
-            String message = String.format("Exception opening file %s.", currentFile);
+            String message = format("Exception opening file %s.", currentFile);
             logger.log(Level.WARNING, message, e);
         } catch (IOException e) {
-            String message = String.format("Exception reading from file %s.",
-                    currentFile);
+            String message = format("Exception reading from file %s.", currentFile);
             logger.log(Level.WARNING, message, e);
         }
         return false;
@@ -449,25 +447,25 @@ public class XYZFilter extends SystemFilter {
             Crystal crystal = activeMolecularAssembly.getCrystal();
             if (!crystal.aperiodic()) {
                 Crystal uc = crystal.getUnitCell();
-                String params = String.format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
+                String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
                         uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
                 bw.write(params);
             }
 
             Atom a2;
             StringBuilder line;
-            StringBuilder lines[] = new StringBuilder[numberOfAtoms];
+            StringBuilder[] lines = new StringBuilder[numberOfAtoms];
             // XYZ File Atom Lines
             ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
             Vector3d offset = activeMolecularAssembly.getOffset();
             for (Atom a : atoms) {
                 if (vdwH) {
-                    line = new StringBuilder(String.format(
+                    line = new StringBuilder(format(
                             "%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(),
                             a.getAtomType().name, a.getRedX() - offset.x,
                             a.getRedY() - offset.y, a.getRedZ() - offset.z, a.getType()));
                 } else {
-                    line = new StringBuilder(String.format(
+                    line = new StringBuilder(format(
                             "%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(),
                             a.getAtomType().name, a.getX() - offset.x,
                             a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
@@ -527,17 +525,17 @@ public class XYZFilter extends SystemFilter {
 
             if (!crystal.aperiodic()) {
                 Crystal uc = crystal.getUnitCell();
-                String params = String.format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
+                String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
                         uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
                 bw.write(params);
             }
 
             Atom a2;
             StringBuilder line;
-            StringBuilder lines[] = new StringBuilder[numberOfAtoms];
+            StringBuilder[] lines = new StringBuilder[numberOfAtoms];
             // XYZ File Atom Lines
-            Atom atoms[] = activeMolecularAssembly.getAtomArray();
-            double xyz[] = new double[3];
+            Atom[] atoms = activeMolecularAssembly.getAtomArray();
+            double[] xyz = new double[3];
             for (int iSym = 0; iSym < nSymm; iSym++) {
                 SymOp symOp = crystal.spaceGroup.getSymOp(iSym);
                 int indexOffset = iSym * atoms.length;
@@ -601,7 +599,7 @@ public class XYZFilter extends SystemFilter {
             if (data == null) {
                 return false;
             }
-            String tokens[] = data.trim().split(" +");
+            String[] tokens = data.trim().split(" +");
             int num_atoms = Integer.parseInt(tokens[0]);
             if (num_atoms != oldSystem.getAtomList().size()) {
                 return false;
@@ -613,7 +611,7 @@ public class XYZFilter extends SystemFilter {
                 br.reset();
             }
 
-            double d[][] = new double[num_atoms][3];
+            double[][] d = new double[num_atoms][3];
             for (int i = 0; i < num_atoms; i++) {
                 if (!br.ready()) {
                     return false;
@@ -624,7 +622,7 @@ public class XYZFilter extends SystemFilter {
                     return false;
                 }
                 tokens = data.trim().split(" +");
-                if (tokens == null || tokens.length < 6) {
+                if (tokens.length < 6) {
                     logger.warning(format(" Check atom %d.", (i + 1)));
                     return false;
                 }
@@ -655,7 +653,7 @@ public class XYZFilter extends SystemFilter {
         try {
             bufferedReader.close();
         } catch (IOException ex) {
-            logger.warning(String.format(" Exception in closing XYZ filter: %s", ex.toString()));
+            logger.warning(format(" Exception in closing XYZ filter: %s", ex.toString()));
         }
     }
 
@@ -668,7 +666,7 @@ public class XYZFilter extends SystemFilter {
             try {
                 bufferedReader.close();
             } catch (Exception e) {
-                String message = String.format("Exception closing file %s.",
+                String message = format("Exception closing file %s.",
                         activeMolecularAssembly.getFile());
                 logger.log(Level.WARNING, message, e);
             }
@@ -688,8 +686,8 @@ public class XYZFilter extends SystemFilter {
 
         // Check if the first token in an integer.
         try {
-            String tokens[] = data.split(" +");
-            int i = Integer.parseInt(tokens[0]);
+            String[] tokens = data.split(" +");
+            Integer.parseInt(tokens[0]);
             return true;
         } catch (NumberFormatException e) {
             return false;
@@ -703,14 +701,13 @@ public class XYZFilter extends SystemFilter {
      * @return false if the first token in the String is an integer and true
      * otherwise.
      */
-    private static boolean readPBC(String data,
-                                   MolecularAssembly activeMolecularAssembly) {
+    private static boolean readPBC(String data, MolecularAssembly activeMolecularAssembly) {
         if (firstTokenIsInteger(data)) {
             return false;
         }
 
-        String tokens[] = data.trim().split(" +");
-        if (tokens != null && tokens.length == 6) {
+        String[] tokens = data.trim().split(" +");
+        if (tokens.length == 6) {
             CompositeConfiguration config = activeMolecularAssembly.getProperties();
             double a = parseDouble(tokens[0]);
             double b = parseDouble(tokens[1]);
