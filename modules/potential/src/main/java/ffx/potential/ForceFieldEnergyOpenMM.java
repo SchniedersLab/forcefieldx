@@ -306,7 +306,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.severe(" OpenMM does not support symmetry operators.");
         }
 
-        //super.energy(false, true);
         logger.info("\n Initializing OpenMM");
 
         ForceField forceField = molecularAssembly.getForceField();
@@ -836,23 +835,26 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         super.setLambda(lambda);
-        openMMSystem.setLambda(lambda);
 
-        if (atoms != null) {
-            List<Atom> atomList = new ArrayList<>();
-            for (Atom atom : atoms) {
-                if (atom.applyLambda()) {
-                    atomList.add(atom);
+        if (openMMSystem != null) {
+            openMMSystem.setLambda(lambda);
+
+            if (atoms != null) {
+                List<Atom> atomList = new ArrayList<>();
+                for (Atom atom : atoms) {
+                    if (atom.applyLambda()) {
+                        atomList.add(atom);
+                    }
                 }
+
+                // Convert the list to an array.
+                Atom[] atomArray = atomList.toArray(new Atom[0]);
+
+                // Update force field parameters based on defined lambda values.
+                updateParameters(atomArray);
+            } else {
+                updateParameters(atoms);
             }
-
-            // Convert the list to an array.
-            Atom[] atomArray = atomList.toArray(new Atom[0]);
-
-            // Update force field parameters based on defined lambda values.
-            updateParameters(atomArray);
-        } else {
-            updateParameters(atoms);
         }
     }
 
@@ -1722,74 +1724,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             forceField = molecularAssembly.getForceField();
             atoms = molecularAssembly.getAtomArray();
 
-            // Read alchemical information
-            elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, false);
-            vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
-            torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
-
-            lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
-
-            if (lambdaTerm) {
-                logger.info(format("\n Lambda scales torsions:          %s", torsionLambdaTerm));
-                logger.info(format(" Lambda scales vdW interactions:  %s", vdwLambdaTerm));
-                logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
-
-                // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
-                lambdaStart = forceField.getDouble(
-                        ForceFieldDouble.LAMBDA_START, 0.0);
-                if (lambdaStart > 1.0) {
-                    lambdaStart = 1.0;
-                } else if (lambdaStart < 0.0) {
-                    lambdaStart = 0.0;
-                }
-                logger.info(format(" Lambda path start:              %6.3f", lambdaStart));
-
-                // Define AMOEBA specific vdW lambda path details.
-                if (vdwLambdaTerm && openMMSystem.amoebaVDWForce != null) {
-                    softcoreAMOEBAvdWMidPoint = forceField.getDouble(
-                            ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MIDPOINT, softcoreAMOEBAvdWMidPoint);
-                    if (softcoreAMOEBAvdWMidPoint > 1.0) {
-                        softcoreAMOEBAvdWMidPoint = 1.0;
-                    } else if (softcoreAMOEBAvdWMidPoint < 0.0) {
-                        softcoreAMOEBAvdWMidPoint = 0.0;
-                    }
-
-                    nonSoftcoreAMOEBAvdWStart = forceField.getDouble(
-                            ForceFieldDouble.NON_SOFTCORE_AMOEBA_VDW_START, nonSoftcoreAMOEBAvdWStart);
-                    if (nonSoftcoreAMOEBAvdWStart > 1.0) {
-                        nonSoftcoreAMOEBAvdWStart = 1.0;
-                    } else if (nonSoftcoreAMOEBAvdWStart < 0.0) {
-                        nonSoftcoreAMOEBAvdWStart = 0.0;
-                    }
-
-                    softcoreAMOEBASwitch = new LinearDerivativeSwitch();
-
-                    softcoreAMOEBAvdWMax = forceField.getDouble(
-                            ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MAX, softcoreAMOEBAvdWMax);
-                    if (softcoreAMOEBAvdWMax > 1.0) {
-                        softcoreAMOEBAvdWMax = 1.0;
-                    } else if (softcoreAMOEBAvdWMax < 0.1) {
-                        softcoreAMOEBAvdWMax = 0.1;
-                    }
-
-                    logger.info(format(" Softcore AMOEBA vdW midpoint:   %6.3f", softcoreAMOEBAvdWMidPoint));
-                    logger.info(format(" Softcore AMOEBA vdW max lambda: %6.3f", softcoreAMOEBAvdWMax));
-                    logger.info(format(" Non-Softcore AMOEBA vdW start:  %6.3f", nonSoftcoreAMOEBAvdWStart));
-                }
-
-                // Define electrostatics to turn on at a value different from 0.5.
-                if (vdwLambdaTerm && elecLambdaTerm) {
-                    electrostaticStart = forceField.getDouble(
-                            ForceFieldDouble.ELEC_START, electrostaticStart);
-                    if (electrostaticStart > 1.0) {
-                        electrostaticStart = 1.0;
-                    } else if (electrostaticStart < 0.0) {
-                        electrostaticStart = 0.0;
-                    }
-                    logger.info(format(" Electrostatics start:           %6.3f", electrostaticStart));
-                }
-            }
-
             // Load atoms.
             try {
                 addAtoms();
@@ -1868,6 +1802,73 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                     // Add Multipole Force.
                     addAmoebaMultipoleForce();
+                }
+            }
+
+            // Read alchemical information
+            elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, false);
+            vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
+            torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
+
+            lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
+
+            if (lambdaTerm) {
+                logger.info(format("\n Lambda scales torsions:          %s", torsionLambdaTerm));
+                logger.info(format(" Lambda scales vdW interactions:  %s", vdwLambdaTerm));
+                logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
+
+                // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
+                lambdaStart = forceField.getDouble(ForceFieldDouble.LAMBDA_START, 0.0);
+                if (lambdaStart > 1.0) {
+                    lambdaStart = 1.0;
+                } else if (lambdaStart < 0.0) {
+                    lambdaStart = 0.0;
+                }
+                logger.info(format(" Lambda path start:              %6.3f", lambdaStart));
+
+                // Define AMOEBA specific vdW lambda path details.
+                if (vdwLambdaTerm && amoebaVDWForce != null) {
+                    softcoreAMOEBAvdWMidPoint = forceField.getDouble(
+                            ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MIDPOINT, softcoreAMOEBAvdWMidPoint);
+                    if (softcoreAMOEBAvdWMidPoint > 1.0) {
+                        softcoreAMOEBAvdWMidPoint = 1.0;
+                    } else if (softcoreAMOEBAvdWMidPoint < 0.0) {
+                        softcoreAMOEBAvdWMidPoint = 0.0;
+                    }
+
+                    nonSoftcoreAMOEBAvdWStart = forceField.getDouble(
+                            ForceFieldDouble.NON_SOFTCORE_AMOEBA_VDW_START, nonSoftcoreAMOEBAvdWStart);
+                    if (nonSoftcoreAMOEBAvdWStart > 1.0) {
+                        nonSoftcoreAMOEBAvdWStart = 1.0;
+                    } else if (nonSoftcoreAMOEBAvdWStart < 0.0) {
+                        nonSoftcoreAMOEBAvdWStart = 0.0;
+                    }
+
+                    softcoreAMOEBASwitch = new LinearDerivativeSwitch();
+
+                    softcoreAMOEBAvdWMax = forceField.getDouble(
+                            ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MAX, softcoreAMOEBAvdWMax);
+                    if (softcoreAMOEBAvdWMax > 1.0) {
+                        softcoreAMOEBAvdWMax = 1.0;
+                    } else if (softcoreAMOEBAvdWMax < 0.1) {
+                        softcoreAMOEBAvdWMax = 0.1;
+                    }
+
+                    logger.info(format(" Softcore AMOEBA vdW midpoint:   %6.3f", softcoreAMOEBAvdWMidPoint));
+                    logger.info(format(" Softcore AMOEBA vdW max lambda: %6.3f", softcoreAMOEBAvdWMax));
+                    logger.info(format(" Non-Softcore AMOEBA vdW start:  %6.3f", nonSoftcoreAMOEBAvdWStart));
+                }
+
+                // Define electrostatics to turn on at a value different from 0.5.
+                if (vdwLambdaTerm && elecLambdaTerm) {
+                    electrostaticStart = forceField.getDouble(
+                            ForceFieldDouble.ELEC_START, electrostaticStart);
+                    if (electrostaticStart > 1.0) {
+                        electrostaticStart = 1.0;
+                    } else if (electrostaticStart < 0.0) {
+                        electrostaticStart = 0.0;
+                    }
+                    logger.info(format(" Electrostatics start:           %6.3f", electrostaticStart));
                 }
             }
 
@@ -3922,9 +3923,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         OpenMM_NmPerAngstrom * vdwType.radius * radScale, eps, vdwType.reductionFactor);
             }
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, openMMContext.context);
             }
         }
 
@@ -4045,9 +4045,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         i1, i2, qq, sigma.getValue(), epsilon);
             }
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, openMMContext.context);
             }
         }
 
@@ -4101,9 +4100,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
             OpenMM_DoubleArray_destroy(doubleArray);
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_CustomGBForce_updateParametersInContext(customGBForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_CustomGBForce_updateParametersInContext(customGBForce, openMMContext.context);
             }
         }
 
@@ -4204,9 +4202,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_DoubleArray_destroy(dipoles);
             OpenMM_DoubleArray_destroy(quadrupoles);
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, openMMContext.context);
             }
         }
 
@@ -4262,9 +4259,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //                break;
 //        }
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(
+                        amoebaGeneralizedKirkwoodForce, openMMContext.context);
             }
 
         }
@@ -4304,9 +4301,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         OpenMM_NmPerAngstrom * radius * radScale, OpenMM_KJPerKcal * eps * useFactor);
             }
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(
+                        amoebaWcaDispersionForce, openMMContext.context);
             }
         }
 
@@ -4347,9 +4344,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             }
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_PeriodicTorsionForce_updateParametersInContext(amoebaTorsionForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_PeriodicTorsionForce_updateParametersInContext(amoebaTorsionForce, openMMContext.context);
             }
         }
 
@@ -4386,9 +4382,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         improperTorsionType.periodicity, improperTorsionType.phase * OpenMM_RadiansPerDegree, forceConstant);
             }
 
-            PointerByReference context = openMMContext.getContext();
-            if (context != null) {
-                OpenMM_PeriodicTorsionForce_updateParametersInContext(amoebaImproperTorsionForce, context);
+            if (openMMContext.context != null) {
+                OpenMM_PeriodicTorsionForce_updateParametersInContext(amoebaImproperTorsionForce, openMMContext.context);
             }
         }
 

@@ -119,11 +119,12 @@ public class MinimizeOpenMM extends Minimize {
         if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
             time = -System.nanoTime();
             ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) forceFieldEnergy;
-            forceFieldEnergyOpenMM.getCoordinates(x);
-            forceFieldEnergyOpenMM.setOpenMMPositions(x, x.length);
 
             // Run the OpenMM minimization.
             PointerByReference context = forceFieldEnergyOpenMM.getContext();
+            forceFieldEnergyOpenMM.getCoordinates(x);
+            forceFieldEnergyOpenMM.setOpenMMPositions(x, x.length);
+
             OpenMM_LocalEnergyMinimizer_minimize(context, eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
 
             // Get the minimized coordinates, forces and potential energy back from OpenMM.
