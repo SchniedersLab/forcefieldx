@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Commands</title>
+        <title>Parallelization</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
@@ -49,6 +49,16 @@
                     cores nodes for the job, and the number of threads per process was set to 10, then the FFX job could
                     request anywhere between 1 and 8 processes across two nodes.
                 </p>
+                <source>
+Usage: ffxc Scheduler [-hv] [-e=PE_HOSTFILE] [-m=2G] [-p=all] [-P=20617] [-W=8080]
+The Scheduler runs parallel jobs over nodes.
+-e, --hostfile=PE_HOSTFILE  Environment variable that points to the host file.
+-h, --help                  Print this help message.
+-m, --memory=2G             String value of -Xmx to pass to worker nodes.
+-p, --pj.nt=all             The number of processor cores (threads) per process.
+-P, --port=20617            Set the port the front end server will listen on.
+-v, --verbose               Turn on verbose back end logging.
+-W, --webport=8080          Set the port the server will serve a webpage to.</source>
             </subsection>
             <subsection name="GPU Parallelization">
                 <p>FFX uses the OpenMM API to accelerate energy evaluations, optimization algorithms, dynamics

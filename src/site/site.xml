@@ -37,7 +37,6 @@
         <width>100px</width>
         <height>100px</height>
     </bannerRight>
-
     <custom>
         <fluidoSkin>
             <!-- leftColumnClass (span2) plus bodyColumnClass (span10) should sum to 12 -->
@@ -150,6 +149,5 @@
             <item name="X-Ray Refinement" href="modules/xray/index.html"/>
         </menu>
         <menu name="Project Info" ref="reports"/>
-
     </body>
 </project>

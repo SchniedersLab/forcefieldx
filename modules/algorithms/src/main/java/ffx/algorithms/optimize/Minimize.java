@@ -112,7 +112,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     /**
      * The final RMS gradient.
      */
-    protected double rmsGradient;
+    double rmsGradient;
     /**
      * The return status of the optimization.
      */

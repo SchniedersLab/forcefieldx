@@ -55,35 +55,35 @@ import picocli.CommandLine.Option
 
  * @author Michael Schnieders
  */
-@Command(description = " The Scheduler runs Parallel jobs over nodes.", name = "ffxc Scheduler")
+@Command(description = " The Scheduler runs parallel jobs over nodes.", name = "ffxc Scheduler")
 class Scheduler extends AlgorithmsScript {
 
     /**
      * -v or --verbose to turn on verbose backend Parallel Java logging.
      */
     @Option(names = ['-v', '--verbose'],
-            description = 'Turn on verbose backend Parallel Java logging.')
+            description = 'Turn on verbose back end logging.')
     boolean v = false
 
     /**
-     * -p or --CPUs to define the processor cores (threads) per process (default is all available cores).
+     * -p or --pj.nt to define the processor cores (threads) per process (default is all available cores).
      */
-    @Option(names = ['-p', '--CPUs'],
+    @Option(names = ['-p', '--pj.nt'], paramLabel = 'all',
             description = 'The number of processor cores (threads) per process.')
     int p = -1
 
     /**
      * -P or --port to define the port the Server will use.
      */
-    @Option(names = ['-P', '--port'], paramLabel = "20617",
-            description = 'Set the port the Front End server will listen on.')
+    @Option(names = ['-P', '--port'], paramLabel = '20617',
+            description = 'Set the port the front end server will listen on.')
     int port = 20617
 
     /**
      * -W or --webport to define the port the Server will serve a webpage to (generally not used).
      */
-    @Option(names = ['-W', '--webport'], paramLabel = "8080",
-            description = 'Set the port the Server will serve a webpage to.')
+    @Option(names = ['-W', '--webport'], paramLabel = '8080',
+            description = 'Set the port the server will serve a webpage to.')
     int webport = 8080
 
     /**

@@ -21,7 +21,7 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/anneal.groovy" >Anneal</a>
+                            <a href="commands/anneal.html" >Anneal</a>
                         </td>
                         <td>Run simulated annealing to optimize a structure.</td>
                     </tr>
