@@ -45,8 +45,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.isInfinite;
+import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+import static java.util.Arrays.sort;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -122,9 +125,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     static {
         fittedForceFields = new HashSet<>();
-        /**
-         * AMOEBA-PROTEIN-2013 and AMBER99SB as fitted by Stephen D. LuCore.
-         * Various tweaks to both force fields also use the same radii.
+        /*
+          AMOEBA-PROTEIN-2013 and AMBER99SB as fitted by Stephen D. LuCore.
+          Various tweaks to both force fields also use the same radii.
          */
         String[] fitted = {"AMOEBA-PROTEIN-2013", "AMOEBA-DIRECT-2013", "AMOEBA-FIXED-2013", "AMBER99SB", "AMBER99SB-TIP3F"};
         fittedForceFields.addAll(Arrays.asList(fitted));
@@ -135,10 +138,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private static final double gkc = 2.455;
     /**
-     * Kirkwood multipolar reaction field constants.
+     * Kirkwood monopole reaction field constant.
      */
     private final double fc;
+    /**
+     * Kirkwood dipole reaction field constant.
+     */
     private final double fd;
+    /**
+     * Kirkwood quadrupole reaction field constant.
+     */
     private final double fq;
     /**
      * Permittivity of water at STP.
@@ -460,33 +469,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final boolean outputVolume;
 
     /**
-     * <p>Getter for the field <code>overlapScale</code>.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[] getOverlapScale() {
-        return overlapScale;
-    }
-
-    /**
-     * <p>getBaseRadii.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[] getBaseRadii() {
-        return baseRadiusWithBondi;
-    }
-
-    /**
-     * <p>Getter for the field <code>surfaceTension</code>.</p>
-     *
-     * @return a double.
-     */
-    public double getSurfaceTension() {
-        return surfaceTension;
-    }
-
-    /**
      * <p>
      * Constructor for GeneralizedKirkwood.</p>
      *
@@ -543,7 +525,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 solventRadii = new SolventRadii(forcefieldName, forceField);
             }
         } else if (hasFittedRadii) {
-            logger.log(Level.INFO, String.format(" (GK) Ignoring fitted radii for force field %s", forcefieldName));
+            logger.log(Level.INFO, format(" (GK) Ignoring fitted radii for force field %s", forcefieldName));
         }
 
         boolean vRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_VERBOSERADII, false);
@@ -566,12 +548,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         globalRadiiScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_GLOBAL_RADIISCALE, 1.0);
         if (globalRadiiScale != 1.0) {
-            logger.info(String.format(" (GK) All non-overridden radii are scaled by factor: %.6f", globalRadiiScale));
+            logger.info(format(" (GK) All non-overridden radii are scaled by factor: %.6f", globalRadiiScale));
         }
 
         String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
-            String tokens[] = radiiProp.split("A");
+            String[] tokens = radiiProp.split("A");
             for (String token : tokens) {
                 if (!token.contains("r")) {
                     logger.severe("Invalid radius override.");
@@ -586,7 +568,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         String radiiByNumber = forceField.getString(ForceField.ForceFieldString.GK_RADIIBYNUMBER, null);
         if (radiiByNumber != null) {
-            String tokens[] = radiiByNumber.split(",");
+            String[] tokens = radiiByNumber.split(",");
             for (String token : tokens) {
                 if (!token.contains("r")) {
                     logger.severe("Invalid radius override.");
@@ -634,10 +616,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         initAtomArrays();
 
-        /**
-         * If polarization lambda exponent is set to 0.0, then we're running
-         * Dual-Topology and the GK energy will be scaled with the overall
-         * system lambda value.
+        /*
+          If polarization lambda exponent is set to 0.0, then we're running
+          Dual-Topology and the GK energy will be scaled with the overall system lambda value.
          */
         double polLambdaExp = forceField.getDouble(ForceField.ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
         if (polLambdaExp == 0.0) {
@@ -716,6 +697,33 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
+     * <p>Getter for the field <code>overlapScale</code>.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
+    public double[] getOverlapScale() {
+        return overlapScale;
+    }
+
+    /**
+     * <p>getBaseRadii.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
+    public double[] getBaseRadii() {
+        return baseRadiusWithBondi;
+    }
+
+    /**
+     * <p>Getter for the field <code>surfaceTension</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getSurfaceTension() {
+        return surfaceTension;
+    }
+
+    /**
      * <p>getNonPolarModel.</p>
      *
      * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar} object.
@@ -784,7 +792,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param neighbors an array of {@link int} objects.
      */
-    public void setNeighborList(int neighbors[][][]) {
+    public void setNeighborList(int[][][] neighbors) {
         this.neighborLists = neighbors;
     }
 
@@ -793,7 +801,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public void setAtoms(Atom atoms[]) {
+    public void setAtoms(Atom[] atoms) {
         this.atoms = atoms;
         nAtoms = atoms.length;
         maxNumAtoms = nAtoms > maxNumAtoms ? nAtoms : maxNumAtoms;
@@ -964,8 +972,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     baseRadius[i] = 2.00;
             }
 
-            // baseRadius[i] = atoms[i].getVDWType().radius / 2.0;
-
             double bondiFactor = bondiScale;
 
             int atomNumber = atoms[i].getIndex() + 1;
@@ -978,7 +984,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         if (solventRadii.getAtomBondiMap().containsKey(atomType.type)) {
                             bondiFactor = solventRadii.getAtomBondiMap().get(atomType.type);
                             if (verboseRadii) {
-                                logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
+                                logger.info(format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
                                         atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
                             }
                         }
@@ -989,7 +995,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (atoms[i].getResidueName().equals("ALA")) {
                                 bondiFactor = 1.60;
                                 if (verboseRadii) {
-                                    logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
+                                    logger.info(format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
                                             atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
                                 }
                             }
@@ -1000,7 +1006,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (atoms[i].getResidueName().equals("CYD")) {
                                 bondiFactor = 1.02;
                                 if (verboseRadii) {
-                                    logger.info(String.format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
+                                    logger.info(format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
                                             atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
                                 }
                             }
@@ -1016,12 +1022,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                         }
                         if (bioType == null) {
-                            logger.severe(String.format("Couldn't find biotype for %s", atomType, toString()));
+                            logger.severe(format("Couldn't find biotype for %s", atomType, toString()));
                         }
 
                         //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
                         //                if (bioType == null) {
-                        //                    logger.info(String.format("Null biotype for atom: %3s-%-4s",
+                        //                    logger.info(format("Null biotype for atom: %3s-%-4s",
                         //                            atoms[i].getResidueName(), atoms[i].getName()));
                         //                }
                         // Check for hard-coded BioType bondi factor.
@@ -1029,7 +1035,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             double factor = solventRadii.getBioBondiMap().get(bioType.index);
                             bondiFactor = factor;
                             if (verboseRadii) {
-                                logger.info(String.format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
+                                logger.info(format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
                                         atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
                             }
                         }
@@ -1040,7 +1046,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (atoms[i].getResidueName().equals("ALA")) {
                                 bondiFactor = 1.60;
                                 if (verboseRadii) {
-                                    logger.info(String.format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
+                                    logger.info(format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
                                             atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
                                 }
                             }
@@ -1051,7 +1057,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (atoms[i].getResidueName().equals("CYD")) {
                                 bondiFactor = 1.02;
                                 if (verboseRadii) {
-                                    logger.info(String.format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
+                                    logger.info(format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
                                             atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
                                 }
                             }
@@ -1059,36 +1065,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         break;
                 }
             }
-            // Next, check if this Atom has an ISolvRad forcefield parameter.
-//            if (atoms[i].getISolvRadType() != null) {
-//                bondiFactor = atoms[i].getISolvRadType().radiusScale;
-//                logger.info(String.format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
-//                    atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-//            }
             ISolvRadType iSolvRadType = forceField.getISolvRadType(Integer.toString(atomType.type));
             if (iSolvRadType != null) {
                 bondiFactor = iSolvRadType.radiusScale;
                 if (verboseRadii) {
-                    logger.info(String.format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
+                    logger.info(format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
                             atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
                 }
             }
             // Finally, check for command-line bondi factor override.
             if (radiiOverride.containsKey(atomType.type) && !radiiByNumberMap.containsKey(atomNumber)) {
                 bondiFactor = radiiOverride.get(atomType.type);
-                logger.info(String.format(" (GK) Scaling Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
+                logger.info(format(" (GK) Scaling Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
                         atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
             }
             if (radiiByNumberMap.containsKey(atomNumber)) {
                 bondiFactor = radiiByNumberMap.get(atomNumber);
-                logger.info(String.format(" (GK) Scaling Atom number %d, %3s-%-4s, with factor %.2f",
+                logger.info(format(" (GK) Scaling Atom number %d, %3s-%-4s, with factor %.2f",
                         atomNumber, atoms[i].getResidueName(), atoms[i].getName(), bondiFactor));
             }
 
             if (!radiiOverride.containsKey(atomType.type)) {
                 bondiFactor *= globalRadiiScale;
             } else {
-                logger.fine(String.format(" Not scaling atom type %d", atomType.type));
+                logger.fine(format(" Not scaling atom type %d", atomType.type));
             }
 
             baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
@@ -1112,7 +1112,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param use an array of {@link boolean} objects.
      */
-    public void setUse(boolean use[]) {
+    public void setUse(boolean[] use) {
         this.use = use;
     }
 
@@ -1139,7 +1139,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         for (int i = 0; i < nAtoms; i++) {
             if (use[i]) {
                 double borni = born[i];
-                if (Double.isInfinite(borni) || Double.isNaN(borni)) {
+                if (isInfinite(borni) || isNaN(borni)) {
                     throw new EnergyException(format(" %s\n Born radii %d %8.3f", atoms[i], i, born[i]), true);
                 }
             }
@@ -1257,7 +1257,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             for (int i = 0; i < nAtoms; i++) {
                 double borni = sharedBornGrad.get(i);
                 if (use[i]) {
-                    if (Double.isInfinite(borni) || Double.isNaN(borni)) {
+                    if (isInfinite(borni) || isNaN(borni)) {
                         throw new EnergyException(format(" %s\n Born radii %d %8.3f", atoms[i], i, borni), true);
                     }
                 }
@@ -1554,14 +1554,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                     born[i] = 1.0 / pow(sum / PI4_3, oneThird);
                     if (verboseRadii) {
-                        logger.info(String.format(" Atom %s: Base radius %10.6f, Born radius %10.6f", atoms[i], baseRi, born[i]));
+                        logger.info(format(" Atom %s: Base radius %10.6f, Born radius %10.6f", atoms[i], baseRi, born[i]));
                     }
                     if (born[i] < baseRi) {
                         // logger.info(format(" Less than base radii; resetting to %d %12.6f", i, baseRi));
                         born[i] = baseRi;
                         continue;
                     }
-                    if (Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
+                    if (isInfinite(born[i]) || isNaN(born[i])) {
                         logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
                         born[i] = baseRi;
                     }
@@ -1662,10 +1662,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                /**
-                 * The descreening integral is initialized to the limit of the
-                 * atom alone in solvent.
-                 */
+                // The descreening integral is initialized to the limit of the atom alone in solvent.
                 for (int i = lb; i <= ub; i++) {
                     final double baseRi = baseRadiusWithBondi[i];
                     localBorn[i] = PI4_3 / (baseRi * baseRi * baseRi);
@@ -1687,7 +1684,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         final double xi = x[i];
                         final double yi = y[i];
                         final double zi = z[i];
-                        int list[] = neighborLists[iSymOp][i];
+                        int[] list = neighborLists[iSymOp][i];
                         int npair = list.length;
                         for (int l = 0; l < npair; l++) {
                             int k = list[l];
@@ -1743,7 +1740,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class PermanentGKFieldRegion extends ParallelRegion {
 
-        private final PermanentGKFieldLoop permanentGKFieldLoop[];
+        private final PermanentGKFieldLoop[] permanentGKFieldLoop;
 
         public PermanentGKFieldRegion(int nt) {
             permanentGKFieldLoop = new PermanentGKFieldLoop[nt];
@@ -1779,22 +1776,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class PermanentGKFieldLoop extends IntegerForLoop {
 
-            private final double a[][];
-            private final double gc[];
-            private final double gux[], guy[], guz[];
-            private final double gqxx[], gqyy[], gqzz[];
-            private final double gqxy[], gqxz[], gqyz[];
-            private double fx_local[];
-            private double fy_local[];
-            private double fz_local[];
-            private final double dx_local[];
-            private double multipolei[];
+            private final double[][] a;
+            private final double[] gc;
+            private final double[] gux, guy, guz;
+            private final double[] gqxx, gqyy, gqzz;
+            private final double[] gqxy, gqxz, gqyz;
+            private double[] fx_local;
+            private double[] fy_local;
+            private double[] fz_local;
+            private final double[] dx_local;
+            private double[] multipolei;
             private double xi, yi, zi;
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
             private double rbi;
             private int nSymm, iSymm;
             private SymOp symOp;
-            private double transOp[][];
+            private double[][] transOp;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1829,10 +1826,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void finish() {
-                /**
-                 * Reduce the field contributions computed by the current thread
-                 * into the shared arrays.
-                 */
+                // Reduce the field contributions computed by the current thread into the shared arrays.
                 sharedGKField[0].reduce(fx_local, DoubleOp.SUM);
                 sharedGKField[1].reduce(fy_local, DoubleOp.SUM);
                 sharedGKField[2].reduce(fz_local, DoubleOp.SUM);
@@ -1865,18 +1859,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         qzzi = multipolei[t002] * oneThird;
                         rbi = born[i];
                         int list[] = neighborLists[iSymm][i];
-                        int npair = list.length;
-                        for (int l = 0; l < npair; l++) {
-                            int k = list[l];
+                        for (int k : list) {
                             if (!use[k]) {
                                 continue;
                             }
                             permanentGKField(i, k);
                         }
-                        /**
-                         * Include the self permanent reaction field, which is
-                         * not in the neighbor list.
-                         */
+
+                        // Include the self permanent reaction field, which is not in the neighbor list.
                         if (iSymm == 0) {
                             permanentGKField(i, i);
                         }
@@ -1899,7 +1889,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double yr2 = yr * yr;
                 double zr2 = zr * zr;
                 final double rbk = born[k];
-                final double multipolek[] = globalMultipole[iSymm][k];
+                final double[] multipolek = globalMultipole[iSymm][k];
                 final double ck = multipolek[t000];
                 final double uxk = multipolek[t100];
                 final double uyk = multipolek[t010];
@@ -1921,42 +1911,34 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 final double gf3 = gf2 * gf;
                 final double gf5 = gf3 * gf2;
                 final double gf7 = gf5 * gf2;
-                /**
-                 * Reaction potential auxiliary terms.
-                 */
+
+                // Reaction potential auxiliary terms.
                 a[0][0] = gf;
                 a[1][0] = -gf3;
                 a[2][0] = 3.0 * gf5;
                 a[3][0] = -15.0 * gf7;
-                /**
-                 * Reaction potential gradient auxiliary terms.
-                 */
+
+                // Reaction potential gradient auxiliary terms.
                 a[0][1] = expc1 * a[1][0];
                 a[1][1] = expc1 * a[2][0];
                 a[2][1] = expc1 * a[3][0];
-                /**
-                 * 2nd reaction potential gradient auxiliary terms.
-                 */
+                // 2nd reaction potential gradient auxiliary terms.
                 a[1][2] = expc1 * a[2][1] + expcdexpc * a[2][0];
-                /**
-                 * Multiply the potential auxiliary terms by their dielectric
-                 * functions.
-                 */
+
+                // Multiply the potential auxiliary terms by their dielectric functions.
                 a[0][1] = fc * a[0][1];
                 a[1][0] = fd * a[1][0];
                 a[1][1] = fd * a[1][1];
                 a[1][2] = fd * a[1][2];
                 a[2][0] = fq * a[2][0];
                 a[2][1] = fq * a[2][1];
-                /**
-                 * Unweighted reaction potential tensor.
-                 */
+
+                // Unweighted reaction potential tensor.
                 gux[1] = xr * a[1][0];
                 guy[1] = yr * a[1][0];
                 guz[1] = zr * a[1][0];
-                /**
-                 * Unweighted reaction potential gradient tensor.
-                 */
+
+                // Unweighted reaction potential gradient tensor.
                 gc[2] = xr * a[0][1];
                 gc[3] = yr * a[0][1];
                 gc[4] = zr * a[0][1];
@@ -1987,9 +1969,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqyz[2] = gqxy[4];
                 gqyz[3] = zr * (a[2][0] + yr2 * a[2][1]);
                 gqyz[4] = yr * (a[2][0] + zr2 * a[2][1]);
-                /**
-                 * Unweighted 2nd reaction potential gradient tensor.
-                 */
+
+                // Unweighted 2nd reaction potential gradient tensor.
                 gux[5] = xr * (3.0 * a[1][1] + xr2 * a[1][2]);
                 gux[6] = yr * (a[1][1] + xr2 * a[1][2]);
                 gux[7] = zr * (a[1][1] + xr2 * a[1][2]);
@@ -2009,9 +1990,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 guz[9] = yr * (a[1][1] + zr2 * a[1][2]);
                 guz[10] = zr * (3.0 * a[1][1] + zr2 * a[1][2]);
 
-                /**
-                 * Generalized Kirkwood permanent reaction field.
-                 */
+                // Generalized Kirkwood permanent reaction field.
                 double fix = uxk * gux[2] + uyk * gux[3] + uzk * gux[4]
                         + 0.5 * (ck * gux[1] + qxxk * gux[5]
                         + qyyk * gux[8] + qzzk * gux[10]
@@ -2067,9 +2046,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         + 2.0 * (qxyi * gqxy[4] + qxzi * gqxz[4]
                         + qyzi * gqyz[4]));
 
-                /**
-                 * Scale the self-field by half, such that it sums to one below.
-                 */
+                // Scale the self-field by half, such that it sums to one below.
                 if (i == k) {
                     fix *= 0.5;
                     fiy *= 0.5;
@@ -2102,7 +2079,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class InducedGKFieldRegion extends ParallelRegion {
 
-        private final InducedGKFieldLoop inducedGKFieldLoop[];
+        private final InducedGKFieldLoop[] inducedGKFieldLoop;
 
         public InducedGKFieldRegion(int nt) {
             inducedGKFieldLoop = new InducedGKFieldLoop[nt];
@@ -2141,22 +2118,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class InducedGKFieldLoop extends IntegerForLoop {
 
-            private final double a[][];
-            private final double gux[], guy[], guz[];
-            private double fx_local[];
-            private double fy_local[];
-            private double fz_local[];
-            private double fxCR_local[];
-            private double fyCR_local[];
-            private double fzCR_local[];
-            private final double dx_local[];
+            private final double[][] a;
+            private final double[] gux;
+            private final double[] guy;
+            private final double[] guz;
+            private double[] fx_local;
+            private double[] fy_local;
+            private double[] fz_local;
+            private double[] fxCR_local;
+            private double[] fyCR_local;
+            private double[] fzCR_local;
+            private final double[] dx_local;
             private double xi, yi, zi;
             private double uix, uiy, uiz;
             private double uixCR, uiyCR, uizCR;
             private double rbi;
-            private int nSymm, iSymm;
-            private SymOp symOp;
-            private double transOp[][];
+            private int iSymm;
+            private double[][] transOp;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -2190,10 +2168,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void finish() {
-                /**
-                 * Reduce the field contributions computed by the current thread
-                 * into the shared arrays.
-                 */
+
+                // Reduce the field contributions computed by the current thread into the shared arrays.
                 sharedGKField[0].reduce(fx_local, DoubleOp.SUM);
                 sharedGKField[1].reduce(fy_local, DoubleOp.SUM);
                 sharedGKField[2].reduce(fz_local, DoubleOp.SUM);
@@ -2204,10 +2180,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                nSymm = crystal.spaceGroup.symOps.size();
+                int nSymm = crystal.spaceGroup.symOps.size();
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (iSymm = 0; iSymm < nSymm; iSymm++) {
-                    symOp = symOps.get(iSymm);
+                    SymOp symOp = symOps.get(iSymm);
                     crystal.getTransformationOperator(symOp, transOp);
                     for (int i = lb; i <= ub; i++) {
                         if (!use[i]) {
@@ -2224,18 +2200,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         uizCR = inducedDipoleCR[0][i][2];
                         rbi = born[i];
                         int list[] = neighborLists[iSymm][i];
-                        int nPair = list.length;
-                        for (int l = 0; l < nPair; l++) {
-                            int k = list[l];
+                        for (int k : list) {
                             if (!use[k]) {
                                 continue;
                             }
                             inducedGKField(i, k);
                         }
-                        /**
-                         * Include the self induced reaction field, which is not
-                         * in the neighbor list.
-                         */
+
+                        // Include the self induced reaction field, which is not in the neighbor list.
                         if (iSymm == 0) {
                             inducedGKField(i, i);
                         }
@@ -2272,25 +2244,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 final double gf = sqrt(gf2);
                 final double gf3 = gf2 * gf;
                 final double gf5 = gf3 * gf2;
-                /**
-                 * Reaction potential auxiliary terms.
-                 */
+
+                // Reaction potential auxiliary terms.
                 a[1][0] = -gf3;
                 a[2][0] = 3.0 * gf5;
-                /**
-                 * Reaction potential gradient auxiliary term.
-                 */
+
+                // Reaction potential gradient auxiliary term.
                 a[1][1] = expc1 * a[2][0];
-                /**
-                 * Multiply the potential auxiliary terms by their dielectric
-                 * functions.
-                 */
+
+                // Multiply the potential auxiliary terms by their dielectric functions.
                 a[1][0] = fd * a[1][0];
                 a[1][1] = fd * a[1][1];
                 a[2][0] = fq * a[2][0];
-                /**
-                 * Unweighted reaction potential gradient tensor.
-                 */
+
+                // Unweighted reaction potential gradient tensor.
                 gux[2] = a[1][0] + xr2 * a[1][1];
                 gux[3] = xr * yr * a[1][1];
                 gux[4] = xr * zr * a[1][1];
@@ -2300,9 +2267,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 guz[2] = gux[4];
                 guz[3] = guy[4];
                 guz[4] = a[1][0] + zr2 * a[1][1];
-                /**
-                 * Compute the reaction field due to induced dipoles.
-                 */
+
+                // Compute the reaction field due to induced dipoles.
                 double fix = ukx * gux[2] + uky * guy[2] + ukz * guz[2];
                 double fiy = ukx * gux[3] + uky * guy[3] + ukz * guz[3];
                 double fiz = ukx * gux[4] + uky * guy[4] + ukz * guz[4];
@@ -2315,9 +2281,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double fkxCR = uixCR * gux[2] + uiyCR * guy[2] + uizCR * guz[2];
                 double fkyCR = uixCR * gux[3] + uiyCR * guy[3] + uizCR * guz[3];
                 double fkzCR = uixCR * gux[4] + uiyCR * guy[4] + uizCR * guz[4];
-                /**
-                 * Scale the self-field by half, such that it sums to one below.
-                 */
+
+                // Scale the self-field by half, such that it sums to one below.
                 if (i == k) {
                     fix *= 0.5;
                     fiy *= 0.5;
@@ -2372,7 +2337,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private boolean gradient = false;
         private final SharedDouble sharedGKEnergy;
         private final SharedInteger sharedInteractions;
-        private final GKEnergyLoop gkEnergyLoop[];
+        private final GKEnergyLoop[] gkEnergyLoop;
 
         public GKEnergyRegion(int nt) {
             gkEnergyLoop = new GKEnergyLoop[nt];
@@ -2420,38 +2385,43 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class GKEnergyLoop extends IntegerForLoop {
 
-            private final double a[][];
-            private final double b[][];
-            private final double gc[];
-            private final double gux[], guy[], guz[];
-            private final double gqxx[], gqyy[], gqzz[];
-            private final double gqxy[], gqxz[], gqyz[];
-            private double gb_local[];
-            private double gbi_local[];
-            private final double dx_local[];
-            private double gX[];
-            private double gY[];
-            private double gZ[];
-            private double tX[];
-            private double tY[];
-            private double tZ[];
-            private double lgX[];
-            private double lgY[];
-            private double lgZ[];
-            private double ltX[];
-            private double ltY[];
-            private double ltZ[];
+            private final double[][] a;
+            private final double[][] b;
+            private final double[] gc;
+            private final double[] gux;
+            private final double[] guy;
+            private final double[] guz;
+            private final double[] gqxx;
+            private final double[] gqyy;
+            private final double[] gqzz;
+            private final double[] gqxy;
+            private final double[] gqxz;
+            private final double[] gqyz;
+            private double[] gb_local;
+            private double[] gbi_local;
+            private final double[] dx_local;
+            private double[] gX;
+            private double[] gY;
+            private double[] gZ;
+            private double[] tX;
+            private double[] tY;
+            private double[] tZ;
+            private double[] lgX;
+            private double[] lgY;
+            private double[] lgZ;
+            private double[] ltX;
+            private double[] ltY;
+            private double[] ltZ;
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
             private double ck, uxk, uyk, uzk, qxxk, qxyk, qxzk, qyyk, qyzk, qzzk;
             private double dxi, dyi, dzi, pxi, pyi, pzi, sxi, syi, szi;
             private double dxk, dyk, dzk, pxk, pyk, pzk, sxk, syk, szk;
-            private double xr, yr, zr, xr2, yr2, zr2, r2, rbi, rbk;
+            private double xr, yr, zr, xr2, yr2, zr2, rbi, rbk;
             private double xi, yi, zi;
             private boolean gradient = false;
             private int count;
-            private int nSymm, iSymm;
-            private SymOp symOp;
-            private double transOp[][];
+            private int iSymm;
+            private double[][] transOp;
             private double gkEnergy;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -2511,11 +2481,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                nSymm = crystal.spaceGroup.symOps.size();
+                int nSymm = crystal.spaceGroup.symOps.size();
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
 
                 for (iSymm = 0; iSymm < nSymm; iSymm++) {
-                    symOp = symOps.get(iSymm);
+                    SymOp symOp = symOps.get(iSymm);
                     crystal.getTransformationOperator(symOp, transOp);
                     for (int i = lb; i <= ub; i++) {
                         if (!use[i]) {
@@ -2524,7 +2494,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         xi = x[i];
                         yi = y[i];
                         zi = z[i];
-                        final double multipolei[] = globalMultipole[0][i];
+                        final double[] multipolei = globalMultipole[0][i];
                         ci = multipolei[t000];
                         uxi = multipolei[t100];
                         uyi = multipolei[t010];
@@ -2545,10 +2515,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         syi = dyi + pyi;
                         szi = dzi + pzi;
                         rbi = born[i];
-                        int list[] = neighborLists[iSymm][i];
-                        int nPair = list.length;
-                        for (int l = 0; l < nPair; l++) {
-                            int k = list[l];
+                        int[] list = neighborLists[iSymm][i];
+                        for (int k : list) {
                             if (!use[k]) {
                                 continue;
                             }
@@ -2558,11 +2526,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             // Include self-interactions for the asymmetric unit atoms.
                             interaction(i, i);
 
-                            /**
-                             * Formula for Born energy approximation for cavitation energy is:
-                             * e = surfaceTension / 6 * (ri + probe)^2 * (ri/rb)^6.
-                             * ri is the base atomic radius the atom.
-                             * rb is Born radius of the atom.
+                            /*
+                              Formula for Born energy approximation for cavitation energy is:
+                              e = surfaceTension / 6 * (ri + probe)^2 * (ri/rb)^6.
+                              ri is the base atomic radius the atom.
+                              rb is Born radius of the atom.
                              */
                             switch (nonPolar) {
                                 case BORN_SOLV:
@@ -2588,10 +2556,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 sharedInteractions.addAndGet(count);
                 sharedGKEnergy.addAndGet(gkEnergy);
                 if (gradient) {
-                    /**
-                     * Reduce the torque contributions computed by the current
-                     * thread into the shared array.
-                     */
+
+                    // Reduce the torque contributions computed by the current thread into the shared array.
                     sharedBornGrad.reduce(gb_local, DoubleOp.SUM);
                 }
             }
@@ -2600,7 +2566,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 dx_local[0] = sXYZ[iSymm][0][k] - xi;
                 dx_local[1] = sXYZ[iSymm][1][k] - yi;
                 dx_local[2] = sXYZ[iSymm][2][k] - zi;
-                r2 = crystal.image(dx_local);
+                double r2 = crystal.image(dx_local);
                 if (r2 > cut2) {
                     return;
                 }
@@ -2612,7 +2578,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 zr2 = zr * zr;
                 rbk = born[k];
 
-                final double multipolek[] = globalMultipole[iSymm][k];
+                final double[] multipolek = globalMultipole[iSymm][k];
                 ck = multipolek[t000];
                 uxk = multipolek[t100];
                 uyk = multipolek[t010];
@@ -2648,35 +2614,31 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 final double gf7 = gf5 * gf2;
                 final double gf9 = gf7 * gf2;
                 final double gf11 = gf9 * gf2;
-                /**
-                 * Reaction potential auxiliary terms.
-                 */
+
+                // Reaction potential auxiliary terms.
                 a[0][0] = gf;
                 a[1][0] = -gf3;
                 a[2][0] = 3.0 * gf5;
                 a[3][0] = -15.0 * gf7;
                 a[4][0] = 105.0 * gf9;
                 a[5][0] = -945.0 * gf11;
-                /**
-                 * Reaction potential gradient auxiliary terms.
-                 */
+
+                // Reaction potential gradient auxiliary terms.
                 a[0][1] = expc1 * a[1][0];
                 a[1][1] = expc1 * a[2][0];
                 a[2][1] = expc1 * a[3][0];
                 a[3][1] = expc1 * a[4][0];
                 a[4][1] = expc1 * a[5][0];
-                /**
-                 * 2nd reaction potential gradient auxiliary terms.
-                 */
+
+                // 2nd reaction potential gradient auxiliary terms.
                 a[0][2] = expc1 * a[1][1] + expcdexpc * a[1][0];
                 a[1][2] = expc1 * a[2][1] + expcdexpc * a[2][0];
                 a[2][2] = expc1 * a[3][1] + expcdexpc * a[3][0];
                 a[3][2] = expc1 * a[4][1] + expcdexpc * a[4][0];
 
                 if (gradient) {
-                    /**
-                     * 3rd reaction potential gradient auxiliary terms.
-                     */
+
+                    // 3rd reaction potential gradient auxiliary terms.
                     expcdexpc = 2.0 * expcdexpc;
                     a[0][3] = expc1 * a[1][2] + expcdexpc * a[1][1];
                     a[1][3] = expc1 * a[2][2] + expcdexpc * a[2][1];
@@ -2685,37 +2647,29 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     a[0][3] = a[0][3] + expcdexpc * a[1][0];
                     a[1][3] = a[1][3] + expcdexpc * a[2][0];
                     a[2][3] = a[2][3] + expcdexpc * a[3][0];
-                    /**
-                     * Born radii derivatives of reaction potential auxiliary
-                     * terms.
-                     */
+
+                    // Born radii derivatives of reaction potential auxiliary terms.
                     b[0][0] = dgfdr * a[1][0];
                     b[1][0] = dgfdr * a[2][0];
                     b[2][0] = dgfdr * a[3][0];
                     b[3][0] = dgfdr * a[4][0];
                     b[4][0] = dgfdr * a[5][0];
-                    /**
-                     * Born radii gradients of reaction potential gradient
-                     * auxiliary terms.
-                     */
+
+                    // Born radii gradients of reaction potential gradient auxiliary terms.
                     b[0][1] = b[1][0] - expcr * a[1][0] - expc * b[1][0];
                     b[1][1] = b[2][0] - expcr * a[2][0] - expc * b[2][0];
                     b[2][1] = b[3][0] - expcr * a[3][0] - expc * b[3][0];
                     b[3][1] = b[4][0] - expcr * a[4][0] - expc * b[4][0];
-                    /**
-                     * Born radii derivatives of the 2nd reaction potential
-                     * gradient auxiliary terms.
-                     */
+
+                    // Born radii derivatives of the 2nd reaction potential gradient auxiliary terms.
                     b[0][2] = b[1][1] - (expcr * (a[1][1] + dexpc * a[1][0])
                             + expc * (b[1][1] + dexpcr * a[1][0] + dexpc * b[1][0]));
                     b[1][2] = b[2][1] - (expcr * (a[2][1] + dexpc * a[2][0])
                             + expc * (b[2][1] + dexpcr * a[2][0] + dexpc * b[2][0]));
                     b[2][2] = b[3][1] - (expcr * (a[3][1] + dexpc * a[3][0])
                             + expc * (b[3][1] + dexpcr * a[3][0] + dexpc * b[3][0]));
-                    /**
-                     * Multiply the Born radii auxiliary terms by their
-                     * dielectric functions.
-                     */
+
+                    // Multiply the Born radii auxiliary terms by their dielectric functions.
                     b[0][0] = ELECTRIC * fc * b[0][0];
                     b[0][1] = ELECTRIC * fc * b[0][1];
                     b[0][2] = ELECTRIC * fc * b[0][2];
@@ -2727,10 +2681,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     b[2][2] = ELECTRIC * fq * b[2][2];
                 }
 
-                /**
-                 * Multiply the potential auxiliary terms by their dielectric
-                 * functions.
-                 */
+                // Multiply the potential auxiliary terms by their dielectric functions.
                 a[0][0] = ELECTRIC * fc * a[0][0];
                 a[0][1] = ELECTRIC * fc * a[0][1];
                 a[0][2] = ELECTRIC * fc * a[0][2];
@@ -2743,41 +2694,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 a[2][1] = ELECTRIC * fq * a[2][1];
                 a[2][2] = ELECTRIC * fq * a[2][2];
                 a[2][3] = ELECTRIC * fq * a[2][3];
-                /**
-                 * Compute the GK tensors required to compute the energy.
-                 */
+
+                // Compute the GK tensors required to compute the energy.
                 energyTensors();
 
-                /**
-                 * Compute the GK interaction energy.
-                 */
+                // Compute the GK interaction energy.
                 double eik = energy(i, k);
                 gkEnergy += eik;
                 count++;
 
                 if (gradient || lambdaTerm) {
-                    /**
-                     * Compute the additional GK tensors required to compute the
-                     * energy gradient.
-                     */
+                    // Compute the additional GK tensors required to compute the energy gradient.
                     gradientTensors();
-                    /**
-                     * Compute the permanent GK energy gradient.
-                     */
+
+                    // Compute the permanent GK energy gradient.
                     permanentEnergyGradient(i, k);
                     if (polarization != Polarization.NONE) {
-                        /**
-                         * Compute the induced GK energy gradient.
-                         */
+                        // Compute the induced GK energy gradient.
                         polarizationEnergyGradient(i, k);
                     }
                 }
             }
 
             private void energyTensors() {
-                /**
-                 * Unweighted reaction potential tensor.
-                 */
+                // Unweighted reaction potential tensor.
                 gc[1] = a[0][0];
                 gux[1] = xr * a[1][0];
                 guy[1] = yr * a[1][0];
@@ -2788,9 +2728,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqxy[1] = xr * yr * a[2][0];
                 gqxz[1] = xr * zr * a[2][0];
                 gqyz[1] = yr * zr * a[2][0];
-                /**
-                 * Unweighted reaction potential gradient tensor.
-                 */
+
+                // Unweighted reaction potential gradient tensor.
                 gc[2] = xr * a[0][1];
                 gc[3] = yr * a[0][1];
                 gc[4] = zr * a[0][1];
@@ -2821,9 +2760,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqyz[2] = gqxy[4];
                 gqyz[3] = zr * (a[2][0] + yr2 * a[2][1]);
                 gqyz[4] = yr * (a[2][0] + zr2 * a[2][1]);
-                /**
-                 * Unweighted 2nd reaction potential gradient tensor.
-                 */
+
+                // Unweighted 2nd reaction potential gradient tensor.
                 gc[5] = a[0][1] + xr2 * a[0][2];
                 gc[6] = xr * yr * a[0][2];
                 gc[7] = xr * zr * a[0][2];
@@ -2887,10 +2825,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             private double energy(int i, int k) {
-                /**
-                 * Electrostatic solvation energy of the permanent multipoles in
-                 * their own GK reaction potential.
-                 */
+                // Electrostatic solvation energy of the permanent multipoles in their own GK reaction potential.
                 double esym = ci * ck * gc[1]
                         - (uxi * (uxk * gux[2] + uyk * guy[2] + uzk * guz[2])
                         + uyi * (uxk * gux[3] + uyk * guy[3] + uzk * guz[3])
@@ -2958,11 +2893,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double e = esym + 0.5 * (ewi + ewk);
                 double ei = 0.0;
                 if (polarization != Polarization.NONE) {
-                    /**
-                     * Electrostatic solvation energy of the permanent
-                     * multipoles in the GK reaction potential of the induced
-                     * dipoles.
-                     */
+
+                    // Electrostatic solvation energy of the permanent multipoles in the 
+                    // GK reaction potential of the induced dipoles.
                     double esymi = -uxi * (dxk * gux[2] + dyk * guy[2] + dzk * guz[2])
                             - uyi * (dxk * gux[3] + dyk * guy[3] + dzk * guz[3])
                             - uzi * (dxk * gux[4] + dyk * guy[4] + dzk * guz[4])
@@ -3007,9 +2940,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             private void gradientTensors() {
-                /**
-                 * Born radii gradients of unweighted reaction potential tensor.
-                 */
+                // Born radii gradients of unweighted reaction potential tensor.
                 gc[21] = b[0][0];
                 gux[21] = xr * b[1][0];
                 guy[21] = yr * b[1][0];
@@ -3020,10 +2951,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqxy[21] = xr * yr * b[2][0];
                 gqxz[21] = xr * zr * b[2][0];
                 gqyz[21] = yr * zr * b[2][0];
-                /**
-                 * Born gradients of the unweighted reaction potential gradient
-                 * tensor
-                 */
+
+                // Born gradients of the unweighted reaction potential gradient tensor
                 gc[22] = xr * b[0][1];
                 gc[23] = yr * b[0][1];
                 gc[24] = zr * b[0][1];
@@ -3054,10 +2983,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqyz[22] = gqxy[24];
                 gqyz[23] = zr * (b[2][0] + yr2 * b[2][1]);
                 gqyz[24] = yr * (b[2][0] + zr2 * b[2][1]);
-                /**
-                 * Born radii derivatives of the unweighted 2nd reaction
-                 * potential gradient tensor.
-                 */
+
+                // Born radii derivatives of the unweighted 2nd reaction potential gradient tensor.
                 gc[25] = b[0][1] + xr2 * b[0][2];
                 gc[26] = xr * yr * b[0][2];
                 gc[27] = xr * zr * b[0][2];
@@ -3118,9 +3045,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqyz[28] = yr * zr * (3.0 * b[2][1] + yr2 * b[2][2]);
                 gqyz[29] = b[2][0] + (yr2 + zr2) * b[2][1] + yr2 * zr2 * b[2][2];
                 gqyz[30] = yr * zr * (3.0 * b[2][1] + zr2 * b[2][2]);
-                /**
-                 * Unweighted 3rd reaction potential gradient tensor.
-                 */
+
+                // Unweighted 3rd reaction potential gradient tensor.
                 gc[11] = xr * (3.0 * a[0][2] + xr2 * a[0][3]);
                 gc[12] = yr * (a[0][2] + xr2 * a[0][3]);
                 gc[13] = zr * (a[0][2] + xr2 * a[0][3]);
@@ -3312,9 +3238,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Increment the gradients and Born chain rule term.
-                 */
+                // Increment the gradients and Born chain rule term.
                 final double dedx = selfScale * dEdX();
                 final double dedy = selfScale * dEdY();
                 final double dedz = selfScale * dEdZ();
@@ -3550,9 +3474,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             private void permanentEnergyTorque(int i, int k) {
-                /**
-                 * Torque on permanent dipoles due to permanent reaction field.
-                 */
+
+                // Torque on permanent dipoles due to permanent reaction field.
                 final double ix = uxk * gux[2] + uyk * gux[3] + uzk * gux[4]
                         + 0.5 * (ck * gux[1] + qxxk * gux[5] + qyyk * gux[8] + qzzk * gux[10]
                         + 2.0 * (qxyk * gux[6] + qxzk * gux[7] + qyzk * gux[9])
@@ -3589,10 +3512,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double tkx = uyk * kz - uzk * ky;
                 double tky = uzk * kx - uxk * kz;
                 double tkz = uxk * ky - uyk * kx;
-                /**
-                 * Torque on quadrupoles due to permanent reaction field
-                 * gradient.
-                 */
+
+                // Torque on quadrupoles due to permanent reaction field gradient.
                 final double ixx
                         = -0.5 * (ck * gqxx[1] + uxk * gqxx[2] + uyk * gqxx[3] + uzk * gqxx[4]
                         + qxxk * gqxx[5] + qyyk * gqxx[8] + qzzk * gqxx[10]
@@ -3721,10 +3642,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             private void polarizationEnergyGradient(int i, int k) {
-                /**
-                 * Electrostatic solvation free energy gradient of the permanent
-                 * multipoles in the reaction potential of the induced dipoles.
-                 */
+                // Electrostatic solvation free energy gradient of the permanent
+                // multipoles in the reaction potential of the induced dipoles.
                 final double dpsymdx = -uxi * (sxk * gux[5] + syk * guy[5] + szk * guz[5])
                         - uyi * (sxk * gux[6] + syk * guy[6] + szk * guz[6])
                         - uzi * (sxk * gux[7] + syk * guy[7] + szk * guz[7])
@@ -3827,11 +3746,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         + 2.0 * (qxyi * guy[15] + qxzi * guy[16] + qyzi * guy[19]))
                         + szk * (qxxi * guz[13] + qyyi * guz[18] + qzzi * guz[20]
                         + 2.0 * (qxyi * guz[15] + qxzi * guz[16] + qyzi * guz[19]));
-                /**
-                 * Effective radii chain rule terms for the electrostatic
-                 * solvation free energy gradient of the permanent multipoles in
-                 * the reaction potential of the induced dipoles.
-                 */
+
+                // Effective radii chain rule terms for the electrostatic solvation free energy
+                // gradient of the permanent multipoles in the reaction potential of the induced dipoles.
                 final double dsymdr = -uxi * (sxk * gux[22] + syk * guy[22] + szk * guz[22])
                         - uyi * (sxk * gux[23] + syk * guy[23] + szk * guz[23])
                         - uzi * (sxk * gux[24] + syk * guy[24] + szk * guz[24])
@@ -3900,10 +3817,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dbi -= 0.5 * rbk * duvdr;
                     dbk -= 0.5 * rbi * duvdr;
                 }
-                /**
-                 * Increment the gradients and Born chain rule term.
-                 */
 
+                // Increment the gradients and Born chain rule term.
                 if (i == k && iSymm == 0) {
                     gb_local[i] += dbi;
                 } else {
@@ -4014,18 +3929,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     fkzy *= 0.5;
                     fkzz *= 0.5;
                 }
-                /**
-                 * Torque due to induced reaction field on permanent dipoles.
-                 */
+
+                // Torque due to induced reaction field on permanent dipoles.
                 double tix = uyi * fiz - uzi * fiy;
                 double tiy = uzi * fix - uxi * fiz;
                 double tiz = uxi * fiy - uyi * fix;
                 double tkx = uyk * fkz - uzk * fky;
                 double tky = uzk * fkx - uxk * fkz;
                 double tkz = uxk * fky - uyk * fkx;
-                /**
-                 * Torque due to induced reaction field gradient on quadrupoles.
-                 */
+
+                // Torque due to induced reaction field gradient on quadrupoles.
                 tix += 2.0 * (qxyi * fixz + qyyi * fiyz + qyzi * fizz - qxzi * fixy - qyzi * fiyy - qzzi * fizy);
                 tiy += 2.0 * (qxzi * fixx + qyzi * fiyx + qzzi * fizx - qxxi * fixz - qxyi * fiyz - qxzi * fizz);
                 tiz += 2.0 * (qxxi * fixy + qxyi * fiyy + qxzi * fizy - qxyi * fixx - qyyi * fiyx - qyzi * fizx);
@@ -4066,14 +3979,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private class BornCRRegion extends ParallelRegion {
 
         private final BornCRLoop[] bornCRLoop;
-        private final SharedDouble ecavTot;
 
         public BornCRRegion(int nt) {
             bornCRLoop = new BornCRLoop[nt];
             for (int i = 0; i < nt; i++) {
                 bornCRLoop[i] = new BornCRLoop();
             }
-            ecavTot = new SharedDouble(0.0);
         }
 
         @Override
@@ -4103,7 +4014,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double[] lgX;
             private double[] lgY;
             private double[] lgZ;
-            private double ecav;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -4427,14 +4337,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class DispersionLoop extends IntegerForLoop {
 
-            private double gX[];
-            private double gY[];
-            private double gZ[];
-            private double lgX[];
-            private double lgY[];
-            private double lgZ[];
+            private double[] gX;
+            private double[] gY;
+            private double[] gZ;
+            private double[] lgX;
+            private double[] lgY;
+            private double[] lgZ;
             private double edisp;
-            private final double dx_local[];
+            private final double[] dx_local;
             private double r, r2, r3;
             private double xr, yr, zr;
             // Extra padding to avert cache interference.
@@ -4470,14 +4380,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (!use[i]) {
                         continue;
                     }
-                    /**
-                     * Begin with the limit of atom alone in solvent.
-                     */
+
+                    // Begin with the limit of atom alone in solvent.
                     edisp += cdisp[i];
 
-                    /**
-                     * Now descreen over neighbors.
-                     */
+                    // Now descreen over neighbors.
                     double sum = 0.0;
                     final double xi = x[i];
                     final double yi = y[i];
@@ -4500,25 +4407,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             zr = dx_local[2];
                             r = sqrt(r2);
                             r3 = r * r2;
-                            /**
-                             * Atom i descreened by atom k.
-                             */
+
+                            // Atom i descreened by atom k.
                             sum += descreen(i, k);
-                            /**
-                             * Flip the sign on {xr, yr, zr};
-                             */
+
+                            // Flip the sign on {xr, yr, zr};
                             xr = -xr;
                             yr = -yr;
                             zr = -zr;
-                            /**
-                             * Atom k descreened by atom i.
-                             */
+
+                            // Atom k descreened by atom i.
                             sum += descreen(k, i);
                         }
                     }
-                    /**
-                     * Subtract descreening.
-                     */
+
+                    // Subtract descreening.
                     edisp -= SLEVY * AWATER * sum;
                 }
             }
@@ -4716,9 +4619,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
 
                     }
-                    /**
-                     * Increment the individual dispersion gradient components.
-                     */
+
+                    // Increment the individual dispersion gradient components.
                     if (gradient) {
                         de = -de / r * SLEVY * AWATER;
                         double dedx = de * xr;
@@ -4752,30 +4654,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class CavitationRegion extends ParallelRegion {
 
-        private final AtomOverlapLoop atomOverlapLoop[];
-        private final CavitationLoop cavitationLoop[];
-        private final InitLoop initLoop[];
+        private final AtomOverlapLoop[] atomOverlapLoop;
+        private final CavitationLoop[] cavitationLoop;
+        private final InitLoop[] initLoop;
         private final SharedDouble sharedCavitation;
         private final int maxarc = 150;
         private final static double delta = 1.0e-8;
         private final static double delta2 = delta * delta;
 
-        private double xc1[][];
-        private double yc1[][];
-        private double zc1[][];
-        private double dsq1[][];
-        private double bsq1[][];
-        private double b1[][];
-        private IndexedDouble gr[][];
-        private int intag1[][];
-        private Integer count[];
-        private boolean buried[];
+        private double[][] xc1;
+        private double[][] yc1;
+        private double[][] zc1;
+        private double[][] dsq1;
+        private double[][] bsq1;
+        private double[][] b1;
+        private IndexedDouble[][] gr;
+        private int[][] intag1;
+        private Integer[] count;
+        private boolean[] buried;
         private SharedBooleanArray skip;
-        private double area[];
-        private double r[];
-        private long initTime = 0;
-        private long overlapTime = 0;
-        private long cavTime = 0;
+        private double[] area;
+        private double[] r;
+        // private long initTime = 0;
+        // private long overlapTime = 0;
+        // private long cavTime = 0;
 
         public CavitationRegion(int nt) {
             atomOverlapLoop = new AtomOverlapLoop[nt];
@@ -4810,9 +4712,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 area = new double[nAtoms];
                 r = new double[nAtoms];
             }
-            /**
-             * Set the sphere radii.
-             */
+
+            // Set the sphere radii.
             for (int i = 0; i < nAtoms; i++) {
                 VDWType type = atoms[i].getVDWType();
                 double rmini = type.radius;
@@ -4835,15 +4736,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
         public void finish() {
             if (logger.isLoggable(Level.FINE)) {
                 int n = initLoop.length;
-                initTime = 0;
-                overlapTime = 0;
-                cavTime = 0;
+                long initTime = 0;
+                long overlapTime = 0;
+                long cavTime = 0;
                 for (int i = 0; i < n; i++) {
                     initTime = max(initLoop[i].time, initTime);
                     overlapTime = max(atomOverlapLoop[i].time, overlapTime);
                     cavTime = max(cavitationLoop[i].time, cavTime);
                 }
-                logger.fine(String.format(" Cavitation Init: %10.3f Overlap: %10.3f Cav:  %10.3f",
+                logger.fine(format(" Cavitation Init: %10.3f Overlap: %10.3f Cav:  %10.3f",
                         initTime * 1e-9, overlapTime * 1e-9, cavTime * 1e-9));
             }
         }
@@ -4954,17 +4855,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                /**
-                 * Find overlaps with the current sphere.
-                 */
+
+                // Find overlaps with the current sphere.
                 for (int i = lb; i <= ub; i++) {
                     if (skip.get(i) || !use[i]) {
                         continue;
                     }
-                    int list[] = neighborLists[0][i];
-                    int npair = list.length;
-                    for (int l = 0; l < npair; l++) {
-                        int k = list[l];
+                    int[] list = neighborLists[0][i];
+                    for (int k : list) {
                         if (k == i) {
                             continue;
                         }
@@ -4990,10 +4888,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     return;
                 }
 
-                /**
-                 * Check for overlap of spheres by testing center to center
-                 * distance against sum and difference of radii.
-                 */
+                // Check for overlap of spheres by testing center to center
+                // distance against sum and difference of radii.
                 double xysq = dx * dx + dy * dy;
                 if (xysq < delta2) {
                     dx = delta;
@@ -5006,13 +4902,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     return;
                 }
                 double rminus = rri - r[k];
-                /**
-                 * Calculate overlap parameters between "i" and "ir" sphere.
-                 */
+
+                // Calculate overlap parameters between "i" and "ir" sphere.
                 synchronized (count) {
-                    /**
-                     * Check for a completely buried "ir" sphere.
-                     */
+                    // Check for a completely buried "ir" sphere.
                     if (dr - abs(rminus) <= delta) {
                         if (rminus <= 0.0) {
                             // SA for this atom is zero.
@@ -5032,8 +4925,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     intag1[i][n] = k;
                     count[i]++;
                     if (count[i] >= maxarc) {
-                        //logger.severe(String.format(" Increase the value of MAXARC to (%d).", count[i]));
-                        throw new EnergyException(String.format(" Increase the value of MAXARC to (%d).", count[i]), false);
+                        //logger.severe(format(" Increase the value of MAXARC to (%d).", count[i]));
+                        throw new EnergyException(format(" Increase the value of MAXARC to (%d).", count[i]), false);
                     }
                 }
             }
@@ -5047,35 +4940,35 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private class CavitationLoop extends IntegerForLoop {
 
             private double thec = 0;
-            private IndexedDouble arci[];
-            private final double dArea[][];
-            private final double ldArea[][];
-            private boolean omit[];
-            private double xc[];
-            private double yc[];
-            private double zc[];
-            private double dsq[];
-            private double b[];
-            private double bsq[];
-            private double bg[];
-            private double risq[];
-            private double ri[];
-            private double ther[];
-            private double ider[];
-            private double sign_yder[];
-            private double arcf[];
-            private double ex[];
-            private double ux[];
-            private double uy[];
-            private double uz[];
-            private int kent[];
-            private int kout[];
-            private int intag[];
-            private int lt[];
+            private IndexedDouble[] arci;
+            private final double[][] dArea;
+            private final double[][] ldArea;
+            private boolean[] omit;
+            private double[] xc;
+            private double[] yc;
+            private double[] zc;
+            private double[] dsq;
+            private double[] b;
+            private double[] bsq;
+            private double[] bg;
+            private double[] risq;
+            private double[] ri;
+            private double[] ther;
+            private double[] ider;
+            private double[] sign_yder;
+            private double[] arcf;
+            private double[] ex;
+            private double[] ux;
+            private double[] uy;
+            private double[] uz;
+            private int[] kent;
+            private int[] kout;
+            private int[] intag;
+            private int[] lt;
             private int i;
             private int j;
             private int ib;
-            private double ecav;
+
             /**
              * Set pi multiples, overlap criterion and tolerances.
              */
@@ -5146,9 +5039,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                /**
-                 * Compute the area and derivatives of current "ir" sphere
-                 */
+
+                // Compute the area and derivatives of current "ir" sphere
                 for (int ir = lb; ir <= ub; ir++) {
                     if (skip.get(ir) || !use[ir]) {
                         continue;
@@ -5163,14 +5055,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     boolean moved = false;
                     surface(xi, yi, zi, rri, rri2, rrisq, wght, moved, ir);
                     if (area[ir] < 0.0) {
-                        logger.log(GK_WARN_LEVEL, String.format(" Negative surface area set to 0 for atom %d.", ir));
-                        //logger.warning(String.format(" Negative surface area set to 0 for atom %d.", ir));
+                        logger.log(GK_WARN_LEVEL, format(" Negative surface area set to 0 for atom %d.", ir));
                         area[ir] = 0.0;
-                        /**
+                        /*
                          * xi = xi + rmove; yi = yi + rmove; zi = zi + rmove;
                          * moved = true; surface(xi, yi, zi, rri, rri2, rrisq,
                          * wght, moved, ir); if (area[ir] < 0.0) {
-                         * logger.warning(String.format(" Negative surface area
+                         * logger.warning(format(" Negative surface area
                          * set to 0 for atom %d.", ir)); area[ir] = 0.0;
                          * continue; }
                          */
@@ -5235,12 +5126,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     area[ir] = area[ir] % pix4;
                     return;
                 }
-                /**
-                 * general case where more than one sphere intersects the
-                 * current sphere; sort intersecting spheres by their degree of
-                 * overlap with the current main sphere
+                /*
+                  General case where more than one sphere intersects the
+                  current sphere; sort intersecting spheres by their degree of
+                  overlap with the current main sphere
                  */
-                Arrays.sort(gr[ir], 0, count[ir]);
+                sort(gr[ir], 0, count[ir]);
                 for (int j = 0; j < count[ir]; j++) {
                     int k = gr[ir][j].key;
                     intag[j] = intag1[ir][k];
@@ -5252,9 +5143,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     bsq[j] = bsq1[ir][k];
                     omit[j] = false;
                 }
-                /**
-                 * Radius of the each circle on the surface of the "ir" sphere.
-                 */
+
+                // Radius of the each circle on the surface of the "ir" sphere.
                 for (int i = 0; i < count[ir]; i++) {
                     double gi = gr[ir][i].value * rri;
                     bg[i] = b[i] * gi;
@@ -5262,9 +5152,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     ri[i] = sqrt(risq[i]);
                     ther[i] = pid2 - asin(min(1.0, max(-1.0, gr[ir][i].value)));
                 }
-                /**
-                 * Find boundary of inaccessible area on "ir" sphere.
-                 */
+
+                // Find boundary of inaccessible area on "ir" sphere.
                 for (int k = 0; k < count[ir] - 1; k++) {
                     if (omit[k]) {
                         continue;
@@ -5279,11 +5168,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             continue;
                         }
                         /*
-                         * Check to see if J circle is intersecting K circle;
-                         * get distance between circle centers and sum of radii.
+                          Check to see if J circle is intersecting K circle;
+                          get distance between circle centers and sum of radii.
                          */
-                        double cc = (txk * xc[j] + tyk * yc[j] + tzk * zc[j])
-                                / (bk * b[j]);
+                        double cc = (txk * xc[j] + tyk * yc[j] + tzk * zc[j]) / (bk * b[j]);
+
                         // Check acos FORTRAN vs. Java.
                         cc = acos(min(1.0, max(-1.0, cc)));
                         double td = therk + ther[j];
@@ -5306,9 +5195,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Find T value of circle intersections.
-                 */
+                // Find T value of circle intersections.
                 for (int k = 0; k < count[ir]; k++) {
                     if (omit[k]) {
                         continue; // goto 110
@@ -5327,9 +5214,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double risqk = risq[k];
                     double rik = ri[k];
                     double therk = ther[k];
-                    /**
-                     * Rotation matrix elements.
-                     */
+
+                    // Rotation matrix elements.
                     double t1 = tzk / (bk * dk);
                     double axx = txk * t1;
                     double axy = tyk * t1;
@@ -5346,9 +5232,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         double txl = xc[l];
                         double tyl = yc[l];
                         double tzl = zc[l];
-                        /**
-                         * Rotate spheres so K vector collinear with z-axis.
-                         */
+
+                        // Rotate spheres so K vector collinear with z-axis.
                         double uxl = txl * axx + tyl * axy - tzl * axz;
                         double uyl = tyl * ayy - txl * ayx;
                         double uzl = txl * azx + tyl * azy + tzl * azz;
@@ -5364,9 +5249,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             double tr = sqrt(tr2);
                             double txr = uxl * tr;
                             double tyr = uyl * tr;
-                            /**
-                             * Get T values of intersection for K circle.
-                             */
+
+                            // Get T values of intersection for K circle.
                             tb = (txb + tyr) / td;
                             tb = min(1.0, max(-1.0, tb));
                             double tk1 = acos(tb);
@@ -5389,9 +5273,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             } else if (thec <= -1.0) {
                                 the = -PI;
                             }
-                            /**
-                             * See if "tk1" is entry or exit point; check t=0
-                             * point; "ti" is exit point, "tf" is entry point.
+                            /*
+                              See if "tk1" is entry or exit point; check t=0
+                              point; "ti" is exit point, "tf" is entry point.
                              */
                             cosine = min(1.0, max(-1.0, (uzl * gk - uxl * rik)
                                     / (b[l] * rri)));
@@ -5405,9 +5289,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                             narc += 1;
                             if (narc > maxarc) {
-                                /*logger.severe(String.
-                                 format(" Increase value of MAXARC %d.", narc));*/
-                                throw new EnergyException(String.format(" Increase value of MAXARC %d.", narc), false);
+                                throw new EnergyException(format(" Increase value of MAXARC %d.", narc), false);
                             }
                             int narc1 = narc - 1;
                             if (tf <= ti) {
@@ -5430,9 +5312,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                     }
                     omit[k] = komit;
-                    /**
-                     * Special case; K circle without intersections.
-                     */
+
+                    // Special case; K circle without intersections.
                     if (narc <= 0) {
                         double arcsum = pix2;
                         ib += 1;
@@ -5458,10 +5339,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                         continue;
                     }
-                    /**
-                     * General case; sum up arclength and set connectivity code.
-                     */
-                    Arrays.sort(arci, 0, narc);
+
+                    // General case; sum up arclength and set connectivity code.
+                    sort(arci, 0, narc);
                     double arcsum = arci[0].value;
                     int mi = arci[0].key;
                     double t = arcf[mi];
@@ -5473,9 +5353,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             exang += ex[ni];
                             jb += 1;
                             if (jb >= maxarc) {
-                                /*logger.severe(String.
-                                 format("Increase the value of MAXARC (%d).", jb));*/
-                                throw new EnergyException(String.format("Increase the value of MAXARC (%d).", jb), false);
+                                throw new EnergyException(format("Increase the value of MAXARC (%d).", jb), false);
                             }
                             int l = lt[ni];
                             ider[l] += 1;
@@ -5505,9 +5383,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         sign_yder[l] -= 1;
                         kout[jb] = maxarc * (k + 1) + (l + 1);
                     }
-                    /**
-                     * Calculate the surface area derivatives.
-                     */
+
+                    // Calculate the surface area derivatives.
                     for (int l = 0; l <= count[ir]; l++) {
                         if (ider[l] == 0) {
                             continue;
@@ -5596,9 +5473,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     area[ir] = area[ir] % pix4;
                     return;
                 }
-                /**
-                 * Find number of independent boundaries and check connectivity.
-                 */
+
+                // Find number of independent boundaries and check connectivity.
                 j = 0;
                 for (int k = 1; k <= jb; k++) {
                     if (kout[k] == -1) {
@@ -5611,21 +5487,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
                 ib = ib + 1;
-                /*
-                 if (moved) {
-                 logger.warning(String.format(" Connectivity error at atom %d.", ir));
-                 } else {
-                 */
-                logger.log(GK_WARN_LEVEL, String.format(" Connectivity error at atom %d", ir));
-                //logger.warning(String.format(" Connectivity error at atom %d.", ir));
+                logger.log(GK_WARN_LEVEL, format(" Connectivity error at atom %d", ir));
                 area[ir] = 0.0;
-                /*
-                 moved = true;
-                 xi += rmove;
-                 yi += rmove;
-                 zi += rmove;
-                 surface(xi, yi, zi, rri, rri2, rrisq, wght, moved, ir);
-                 } */
             }
 
             /**
@@ -5638,8 +5501,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param ir
              * @param arclen
              */
-            public boolean independentBoundaries(int k, double exang,
-                                                 int jb, int ir, double arclen) {
+            public boolean independentBoundaries(int k, double exang, int jb, int ir, double arclen) {
                 int m = kout[i];
                 kout[i] = -1;
                 j = j + 1;
@@ -7327,7 +7189,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 int iv2 = env[1][iptr];
                                 int ip1 = vp[iv1];
                                 int ip2 = vp[iv2];
-                                logger.warning(String.format("Odd Torus for Probes IP1 %d and IP2 %d", ip1, ip2));
+                                logger.warning(format("Odd Torus for Probes IP1 %d and IP2 %d", ip1, ip2));
                                 iptr = enext[iptr];
                             }
                         }
@@ -9454,13 +9316,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Finally, compute the total area and total volume.
                  */
-                // logger.info(String.format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
+                // logger.info(format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
                 area = totap + totas + totan - totasp - alenst;
-                // logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
+                // logger.info(format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
                 volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
-                //logger.info(String.format(" Volume = %16.8f, Area = %16.8f", volume, area));
-                //logger.info(String.format(" Total Volume        %16.8f", volume));
-                //logger.info(String.format(" Total Area          %16.8f", area));
+                //logger.info(format(" Volume = %16.8f, Area = %16.8f", volume, area));
+                //logger.info(format(" Total Volume        %16.8f", volume));
+                //logger.info(format(" Total Area          %16.8f", area));
 
                 evol += volume;
                 earea += area;
@@ -9475,9 +9337,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             public void gendot(int ndots[], double dots[][], double radius,
                                double xcenter, double ycenter, double zcenter) {
                 int nequat = (int) sqrt(PI * ((double) ndots[0]));
-                //logger.info(String.format("nequat:\t%s", nequat));
+                //logger.info(format("nequat:\t%s", nequat));
                 int nvert = nequat / 2;
-                //logger.info(String.format("nvert:\t%s", nvert));
+                //logger.info(format("nvert:\t%s", nvert));
                 if (nvert < 0) {
                     nvert = 0;
                 }
@@ -9487,11 +9349,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double fi = (PI * ((double) i)) / ((double) nvert);
                     double z = cos(fi);
                     double xy = sin(fi);
-                    //logger.info(String.format("fi:\t%s", fi));
-                    //logger.info(String.format("z:\t%s", z));
-                    //logger.info(String.format("xy:\t%s", xy));
+                    //logger.info(format("fi:\t%s", fi));
+                    //logger.info(format("z:\t%s", z));
+                    //logger.info(format("xy:\t%s", xy));
                     int nhoriz = (int) (nequat * xy);
-                    //logger.info(String.format("nhoriz:\t%s", nhoriz));
+                    //logger.info(format("nhoriz:\t%s", nhoriz));
                     if (nhoriz < 0) {
                         nhoriz = 0;
                     }
@@ -9525,7 +9387,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double uvect2[] = new double[3];
                 for (int k = 0; k < 3; k++) {
                     cpvect[k] = plncen[k] - circen[k];
-                    //logger.info(String.format("cpvect:\t%s", cpvect[k]));
+                    //logger.info(format("cpvect:\t%s", cpvect[k]));
                 }
                 double dcp = VectorMath.dot(cpvect, plnvec);
                 cinsp = (dcp > 0.0);
@@ -9536,14 +9398,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (VectorMath.r(vect2) > 0.0) {
                         VectorMath.norm(vect2, uvect2);
                         double dir = VectorMath.dot(uvect2, plnvec);
-                        //logger.info(String.format("dir:\t%s", dir));
+                        //logger.info(format("dir:\t%s", dir));
                         if (dir != 0.0) {
                             double ratio = dcp / dir;
-                            //logger.info(String.format("ratio:\t%s", ratio));
+                            //logger.info(format("ratio:\t%s", ratio));
                             if (abs(ratio) <= cirrad) {
                                 for (int k = 0; k < 3; k++) {
                                     pnt1[k] = circen[k] + ratio * uvect2[k];
-                                    //logger.info(String.format("pnt1:\t%s", pnt1[k]));
+                                    //logger.info(format("pnt1:\t%s", pnt1[k]));
                                 }
                                 double rlen = cirrad * cirrad - ratio * ratio;
                                 if (rlen < 0.0) {
@@ -9553,8 +9415,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 for (int k = 0; k < 3; k++) {
                                     xpnt1[k] = pnt1[k] - rlen * uvect1[k];
                                     xpnt2[k] = pnt1[k] + rlen * uvect1[k];
-                                    //logger.info(String.format("xpnt1:\t%s", xpnt1[k]));
-                                    //logger.info(String.format("xpnt2:\t%s", xpnt2[k]));
+                                    //logger.info(format("xpnt1:\t%s", xpnt1[k]));
+                                    //logger.info(format("xpnt2:\t%s", xpnt2[k]));
                                 }
                                 return true;
                             }
@@ -9606,9 +9468,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double dot = VectorMath.dot(vect4, vect3);
                 for (int k = 0; k < 3; k++) {
                     alt[k] = vect4[k];
-                    //logger.info(String.format("alt:\t%s", alt[k]));
+                    //logger.info(format("alt:\t%s", alt[k]));
                 }
-                //logger.info(String.format("dot:\t%s", dot));
+                //logger.info(format("dot:\t%s", dot));
                 return dot;
             }
 
@@ -9708,7 +9570,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     for (int j = 0; j <= ny; j++) {
                         for (int k = 0; k <= nz; k++) {
                             tcube = cube[0][i][j][k];
-                            //logger.info(String.format(" TCUBE %d %d %d %d", i, j, k, tcube));
+                            //logger.info(format(" TCUBE %d %d %d %d", i, j, k, tcube));
                             if (tcube != -1) {
                                 isum += tcube;
                                 cube[0][i][j][k] = isum;
@@ -9751,7 +9613,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                      * Load all overlapping atoms into "inov".
                      */
                     io = -1;
-                    //logger.info(String.format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
+                    //logger.info(format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
                     for (int i = istart - 1; i < istop; i++) {
                         for (int j = jstart - 1; j < jstop; j++) {
                             for (int k = kstart - 1; k < kstop; k++) {
@@ -9760,7 +9622,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     mstop = cube[0][i][j][k];
                                     for (int m = mstart; m <= mstop; m++) {
                                         in = itab[m];
-                                        //logger.info(String.format(" CHECK %d %d", ir, in));
+                                        //logger.info(format(" CHECK %d %d", ir, in));
                                         if (in != ir) {
                                             io++;
                                             if (io > MAXARC) {
@@ -9776,7 +9638,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             } else {
                                                 d[io] = sqrt(dsq[io]);
                                                 inov[io] = in;
-                                                //logger.info(String.format(" INIT %d %d %d %16.8f", ir, io, in, d[io]));
+                                                //logger.info(format(" INIT %d %d %d %16.8f", ir, io, in, d[io]));
                                             }
                                         }
                                     }
@@ -9785,7 +9647,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                     }
 
-                    //logger.info(String.format("ir %d io %d", ir, io));
+                    //logger.info(format("ir %d io %d", ir, io));
                     /**
                      * Determine resolution along the z-axis.
                      */
@@ -9833,19 +9695,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 in = inov[k];
                                 rinsq = vdwrad[in] * vdwrad[in];
                                 rsec2n = rinsq - ((zgrid - z[in]) * (zgrid - z[in]));
-                                //logger.info(String.format(" NARC %d %d %16.8f %16.8f %16.8f", ir, k, rinsq, z[in], zgrid));
+                                //logger.info(format(" NARC %d %d %16.8f %16.8f %16.8f", ir, k, rinsq, z[in], zgrid));
                                 if (rsec2n > 0.0) {
                                     rsecn = sqrt(rsec2n);
                                     if (d[k] < (rsecr + rsecn)) {
                                         rdiff = rsecr - rsecn;
-                                        //logger.info(String.format(" DIFF %d %d %16.8f %16.8f %16.8f", ir, k, d[k], rsecr, rsecn));
+                                        //logger.info(format(" DIFF %d %d %16.8f %16.8f %16.8f", ir, k, d[k], rsecr, rsecn));
                                         if (d[k] <= abs(rdiff)) {
                                             if (rdiff < 0.0) {
                                                 narc = 0;
                                                 arci[narc] = 0.0;
                                                 arcf[narc] = pix2;
                                             }
-                                            //logger.info(String.format("%d Continue", ir));
+                                            //logger.info(format("%d Continue", ir));
                                             continue;
                                         }
                                         narc++;
@@ -9896,10 +9758,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             arcf[narc] = pix2;
                                             narc++;
                                             arci[narc] = 0.0;
-                                            //logger.info(String.format("ir= %d narc= %d arci= %16.8f", ir, narc, arci[narc]));
+                                            //logger.info(format("ir= %d narc= %d arci= %16.8f", ir, narc, arci[narc]));
                                         }
                                         arcf[narc] = tf;
-                                        //logger.info(String.format(" ARCF %d %d %16.8f %16.8f", ir, narc, tf, ti));
+                                        //logger.info(format(" ARCF %d %d %16.8f %16.8f", ir, narc, tf, ti));
                                         // BELOW HERE
                                     }
                                 }
@@ -9911,7 +9773,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                              * yet to be applied.
                              */
                             if (narc == -1) {
-                                //logger.info(String.format(" %d cos_phi %16.8f %16.8f %16.8f %16.8f",
+                                //logger.info(format(" %d cos_phi %16.8f %16.8f %16.8f %16.8f",
                                 //ir, phi1, cos_phi1, phi2, cos_phi2));
                                 seg_dz = pix2 * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
                                 pre_dz += seg_dz;
@@ -9973,19 +9835,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         arci[narc] = arcf[narc];
                                         arcf[narc] = temp;
                                         // SOME PRINTS ARE WRONG AFTER FIRST ENTRY
-                                        //logger.info(String.format(" ARCF1 %d %16.8f", ir, arcf[0]));
+                                        //logger.info(format(" ARCF1 %d %16.8f", ir, arcf[0]));
                                     }
                                 }
 
                                 // SOME OF THE FOLLOWING PRINTS ARE WRONG
-                                //logger.info(String.format(" SORT %d %d %16.8f %16.8f", ir, narc, arci[0], arcf[0]));
+                                //logger.info(format(" SORT %d %d %16.8f %16.8f", ir, narc, arci[0], arcf[0]));
                                 /**
                                  * Compute the numerical pre-derivative values.
                                  */
                                 for (int k = 0; k <= narc; k++) {
                                     theta1 = arci[k];
                                     theta2 = arcf[k];
-                                    //logger.info(String.format("%d theta1=%16.8f theta2=%16.8f", ir, theta1, theta2));
+                                    //logger.info(format("%d theta1=%16.8f theta2=%16.8f", ir, theta1, theta2));
                                     if (theta2 >= theta1) {
                                         dtheta = theta2 - theta1;
                                     } else {
@@ -10000,7 +9862,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     pre_dz += seg_dz;
                                     // SOME OF THE FOLLOWING PRINTS ARE WRONG
                                 }
-                                //logger.info(String.format(" LAST %d %16.8f %16.8f %16.8f", ir, pre_dx, pre_dy, pre_dz));
+                                //logger.info(format(" LAST %d %16.8f %16.8f %16.8f", ir, pre_dx, pre_dy, pre_dz));
                             }
                             zgrid += zstep;
                         }
@@ -10008,7 +9870,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dex[0][ir] = 0.5 * rrsq * pre_dx;
                     dex[1][ir] = 0.5 * rrsq * pre_dy;
                     dex[2][ir] = 0.5 * rrsq * pre_dz;
-                    //logger.info(String.format(" de/dx:\t%s\t%s\t%s\t%s", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
+                    //logger.info(format(" de/dx:\t%s\t%s\t%s\t%s", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
                 }
             }
 
@@ -10278,7 +10140,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final double carbonSASACR[];
 
         public HydrophobicPMFRegion(int nt) {
-            logger.info(String.format(" Hydrophobic PMF cut-off:              %8.2f (A)", hpmfCut));
+            logger.info(format(" Hydrophobic PMF cut-off:              %8.2f (A)", hpmfCut));
             /**
              * Count hydrophobic carbons.
              */
@@ -10369,7 +10231,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                         carbonSASA[index] = carbonSASA[index] * safact / acSurf;
                         if (logger.isLoggable(Level.FINEST)) {
-                            logger.finest(String.format(" %d Base HPMF SASA for atom %d: %10.8f",
+                            logger.finest(format(" %d Base HPMF SASA for atom %d: %10.8f",
                                     index + 1, i + 1, carbonSASA[index]));
                         }
                         index++;

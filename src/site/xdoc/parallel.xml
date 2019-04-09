@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Commands</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Parallelization">
+            <p>Force Field X <b>commands</b> are launched using the following syntax:
+            </p>
+            <source>ffxc [-D&lt;property=value&gt;] &lt;command&gt; [-options] &lt;PDB|XYZ&gt;</source>
+            <p>Parallelization of the computational work is accomplished using three approaches:</p>
+            <ol>
+                <li>Shared memory parallelization across CPU cores (i.e. multiple threads).</li>
+                <li>MPI message passing parallelization across compute nodes.</li>
+                <li>Offload to GPUs via OpenMM.</li>
+            </ol>
+            <p>In many cases, more than one parallelization strategy can be combined. Below each will be
+                discussed separately and in combination.
+            </p>
+            <subsection name="Shared Memory Parallelization">
+                <p>By default, each FFX process will use all available threads for calculation of the
+                    system energy and forces. To explicitly set the number of threads, the syntax is:
+                </p>
+                <source>ffxc -Dpj.nt=X [-D&lt;property=value&gt;] &lt;command&gt; [-options] &lt;PDB|XYZ&gt;</source>
+                <p>where X is the number of threads (e.g. 1, 2, etc). Any command that evaluates
+                    a system energy and/or forces will usually benefit. The abbreviation pj.nt stands for
+                    Parallel Java Number of Threads.
+                </p>
+            </subsection>
+            <subsection name="MPI Message Passing Parallelization">
+                <p>By default, FFX executes only a single process. However, for algorithms such as Many-Body rotamer
+                optimization and Thermodynamics, multiple processes can cooperate. To enable this, a "Scheduler"
+                is needed to launch the processes and organize communication between processes. The command
+                to start the Scheduler is:
+                <source>ffxc Scheduler -p X > scheduler.log &amp; sleep 30s</source>
+                <p>where X is the number of threads per process (e.g. 1, 2, etc). The number of cores on each node
+                    must be divisible by X (e.g. if there are 40 cores, X can be 1, 2, 4, 5, 8, 10 or 20). The "sleep"
+                    command allows the Scheduler time to start up before the true FFX command is executed:
+                </p>
+                <source>ffxc -Dpj.nt=X -Dpj.nn=Y [-D&lt;property=value&gt;] &lt;command&gt; [-options] &lt;PDB|XYZ&gt;
+                </source>
+                <p>where X must be equivalent between the Scheduler and subsequent FFX command. The flag pj.nn
+                    stands for Parallel Java Number of Nodes. The number of requested nodes Y must be equal to or
+                    less than the of nodes controlled by the scheduler.
+                </p>
+                <p>For jobs launched by Sun Grid Engine (SGE), the Scheduler will read in the file pointed to by
+                    the environment variable <b>PE_HOSTFILE</b> to determine the IP addresses of nodes where jobs
+                    can be scheduled. For example, if the <b>PE_HOSTFILE</b> indicates that SGE has allocated two 40
+                    cores
+                    nodes for the job, and the number of threads per process was set to 10, then the FFX job could
+                    request
+                    anywhere between 1 and 8 processes across two nodes.
+                </p>
+            </subsection>
+            <subsection name="GPU Parallelization">
+                <p>FFX uses the OpenMM API to accelerate energy evaluations, optimization algorithms, dynamics
+                simulations and calculation of free energy differences. Currently, OpenMM 7.3 is included with
+                FFX and depends on CUDA version 9.0. To use OpenMM acceleration on a single node (i.e. in the absence
+                    of MPI message passing across multipole nodes) example commands include:</p>
+                <source>ffxc [-D&lt;property=value&gt;] MinimizeOpenMM [-options] &lt;PDB|XYZ&gt;</source>
+                <source>ffxc [-D&lt;property=value&gt;] DynamicsOpenMM [-options] &lt;PDB|XYZ&gt;</source>
+                <p>FFX can also make use of multiple GPUs in combination with message passing for Many-Body rotamer
+                    optimization and for Thermodynamics (i.e. the Monte Carlo OSRW algorithm). For Many-Body rotamer
+                    optimization across nodes, after starting the Scheduler as described above, the command is</p>
+                <source>ffxc -Dpj.nn=Y -Dplatform=omm [-D&lt;property=value&gt;] ManyBody [-options] &lt;PDB|XYZ&gt;</source>
+                <p>If there are multiple GPUs per physical node, an additional flag is needed:</p>
+                <source>ffxc -Dpj.nn=Y -Dplatform=omm -DnumCudaDevices=Z [-D&lt;property=value&gt;] ManyBody [-options] &lt;PDB|XYZ&gt;</source>
+                <p>where Z is the number of nVidia GPUs</p>
+                <p>Finally, the command for GPU accelerated Thermodynamics is:</p>
+                <source>ffxc -Dpj.nn=Y -Dplatform=omm -DnumCudaDevices=Z [-D&lt;property=value&gt;] Thermodynamics -mc [-options] &lt;PDB|XYZ&gt;</source>
+                <p>Note  </p>
+            </subsection>
+        </section>
+    </body>
+</document>

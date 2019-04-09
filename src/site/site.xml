@@ -133,6 +133,7 @@
                <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html" />
                <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html" />
             </item>
+            <item name="Parallelization" href="/parallel.html"/>
             <item name="License" href="/licenses.html"/>
             <item name="FFX Team" href="/team.html"/>
         </menu>

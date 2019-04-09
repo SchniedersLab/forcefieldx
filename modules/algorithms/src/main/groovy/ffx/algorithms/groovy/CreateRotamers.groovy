@@ -44,6 +44,7 @@ import org.apache.commons.io.FilenameUtils
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.algorithms.optimize.Minimize
+import ffx.algorithms.optimize.Minimize.MinimizationEngine
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Polymer
@@ -179,8 +180,12 @@ class CreateRotamers extends AlgorithmsScript {
                     bw.write(String.format("  ROT:%d\n", i));
 
                     if (i > 0 || !useOriginalRotamers) {
+                        // -Dplatform=omm
+                        MinimizationEngine engine = Minimize.defaultEngine()
+                        Minimize minimize = Minimize.minimizeFactory(activeAssembly,
+                                activeAssembly.getPotentialEnergy(), algorithmListener, engine)
                         // Locally minimize.
-                        Minimize minimize = new Minimize(activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
+                        // Minimize minimize = new MinimizeOpenMM(activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
                         minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
                     } else {
                         logger.info(" Skipping minimization of original-coordinates rotamer.");
