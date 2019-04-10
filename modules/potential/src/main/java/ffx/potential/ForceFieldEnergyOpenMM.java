@@ -575,7 +575,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return super.energyAndGradient(x, g, verbose);
     }
 
-
     /**
      * {@inheritDoc}
      */
@@ -3197,7 +3196,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             OpenMM_AmoebaVdwForce_setCutoffDistance(amoebaVDWForce, nonbondedCutoff.off * OpenMM_NmPerAngstrom);
-            OpenMM_AmoebaVdwForce_setUseDispersionCorrection(amoebaVDWForce, OpenMM_Boolean.OpenMM_False);
+            if (vdW.getDoLongRangeCorrection()) {
+                OpenMM_AmoebaVdwForce_setUseDispersionCorrection(amoebaVDWForce, OpenMM_Boolean.OpenMM_True);
+            } else {
+                OpenMM_AmoebaVdwForce_setUseDispersionCorrection(amoebaVDWForce, OpenMM_Boolean.OpenMM_False);
+            }
 
             if (crystal.aperiodic()) {
                 OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVDWForce,
@@ -4545,34 +4548,44 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         private void setDefaultPeriodicBoxVectors() {
-
             OpenMM_Vec3 a = new OpenMM_Vec3();
             OpenMM_Vec3 b = new OpenMM_Vec3();
             OpenMM_Vec3 c = new OpenMM_Vec3();
-
             Crystal crystal = getCrystal();
-
             if (!crystal.aperiodic()) {
-                a.x = crystal.a * OpenMM_NmPerAngstrom;
-                a.y = 0.0 * OpenMM_NmPerAngstrom;
-                a.z = 0.0 * OpenMM_NmPerAngstrom;
-                b.x = 0.0 * OpenMM_NmPerAngstrom;
-                b.y = crystal.b * OpenMM_NmPerAngstrom;
-                b.z = 0.0 * OpenMM_NmPerAngstrom;
-                c.x = 0.0 * OpenMM_NmPerAngstrom;
-                c.y = 0.0 * OpenMM_NmPerAngstrom;
-                c.z = crystal.c * OpenMM_NmPerAngstrom;
+                double[][] Ai = crystal.Ai;
+                a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
+                a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
+                a.z = Ai[0][2] * OpenMM_NmPerAngstrom;
+                b.x = Ai[1][0] * OpenMM_NmPerAngstrom;
+                b.y = Ai[1][1] * OpenMM_NmPerAngstrom;
+                b.z = Ai[1][2] * OpenMM_NmPerAngstrom;
+                c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
+                c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
+                c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
                 OpenMM_System_setDefaultPeriodicBoxVectors(system, a, b, c);
             }
         }
 
         private void getPeriodicBoxVectors(PointerByReference state) {
-
-            OpenMM_Vec3 a = new OpenMM_Vec3();
-            OpenMM_Vec3 b = new OpenMM_Vec3();
-            OpenMM_Vec3 c = new OpenMM_Vec3();
-
-            OpenMM_State_getPeriodicBoxVectors(state, a, b, c);
+            Crystal crystal = getCrystal();
+            if (!crystal.aperiodic()) {
+                OpenMM_Vec3 a = new OpenMM_Vec3();
+                OpenMM_Vec3 b = new OpenMM_Vec3();
+                OpenMM_Vec3 c = new OpenMM_Vec3();
+                OpenMM_State_getPeriodicBoxVectors(state, a, b, c);
+                double[][] latticeVectors = new double[3][3];
+                latticeVectors[0][0] = a.x * OpenMM_AngstromsPerNm;
+                latticeVectors[0][1] = a.y * OpenMM_AngstromsPerNm;
+                latticeVectors[0][2] = a.z * OpenMM_AngstromsPerNm;
+                latticeVectors[1][0] = b.x * OpenMM_AngstromsPerNm;
+                latticeVectors[1][1] = b.y * OpenMM_AngstromsPerNm;
+                latticeVectors[1][2] = b.z * OpenMM_AngstromsPerNm;
+                latticeVectors[2][0] = c.x * OpenMM_AngstromsPerNm;
+                latticeVectors[2][1] = c.y * OpenMM_AngstromsPerNm;
+                latticeVectors[2][2] = c.z * OpenMM_AngstromsPerNm;
+                crystal.setCellVectors(latticeVectors);
+            }
         }
 
         /**

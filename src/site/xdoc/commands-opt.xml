@@ -27,7 +27,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/Dynamics.groovy" >Dynamics</a>
+                            <a href="commands/dynamics.html" >Dynamics</a>
                         </td>
                         <td>Run dynamics simulations in a variety of ensembles.</td>
                     </tr>

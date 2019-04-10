@@ -423,6 +423,14 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
+     * Return use of the long-range vdW correction.
+     * @return True if it is on.
+     */
+    public boolean getDoLongRangeCorrection() {
+        return doLongRangeCorrection;
+    }
+
+    /**
      * <p>getAlpha.</p>
      *
      * @return a double.
