@@ -621,6 +621,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         PointerByReference positions = OpenMM_State_getPositions(state);
         forceFieldEnergyOpenMM.getOpenMMPositions(positions, numParticles * 3, x);
+        forceFieldEnergyOpenMM.getPeriodicBoxVectors(state);
 
         OpenMM_State_destroy(state);
     }

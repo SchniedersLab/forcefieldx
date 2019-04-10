@@ -1063,6 +1063,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         openMMSystem.setDefaultPeriodicBoxVectors();
     }
 
+    public void getPeriodicBoxVectors(PointerByReference state) {
+        openMMSystem.getPeriodicBoxVectors(state);
+    }
+
     /**
      * Create a JNA Pointer to a String.
      *
@@ -1995,25 +1999,25 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         /**
          * Add a Monte Carlo Barostat to the system.
          *
-         * @param targetPressure The target pressure.
+         * @param targetPressure The target pressure (in atm).
          * @param targetTemp     The target temperature.
          * @param frequency      The frequency to apply the barostat.
          */
         void addMonteCarloBarostat(double targetPressure, double targetTemp, int frequency) {
             if (ommBarostat == null) {
-                ommBarostat = OpenMM_MonteCarloBarostat_create(targetPressure, targetTemp, frequency);
+                double pressureInBar = targetPressure * 1.01325;
+                ommBarostat = OpenMM_MonteCarloBarostat_create(pressureInBar, targetTemp, frequency);
 
                 CompositeConfiguration properties = molecularAssembly.getProperties();
                 if (properties.containsKey("randomseed")) {
                     int randomSeed = properties.getInt("randomseed", 0);
-                    logger.info(String.format(" Setting random seed %d for Monte Carlo Barostat", randomSeed));
+                    logger.info(format(" Setting random seed %d for Monte Carlo Barostat", randomSeed));
                     OpenMM_MonteCarloBarostat_setRandomNumberSeed(ommBarostat, randomSeed);
                 }
-
                 OpenMM_System_addForce(system, ommBarostat);
                 openMMContext.reinitContext();
-
-                logger.info(format(" Added a Monte Carlo barostat at target pressure %10.6f bar, target temperature %10.6fK and MC move frequency %d.", targetPressure, targetTemp, frequency));
+                logger.info(format(" Added a Monte Carlo barostat with pressure %6.2f (atm), target temperature %6.2f K and MC move frequency %d.",
+                        targetPressure, targetTemp, frequency));
             } else {
                 logger.info(" Attempted to add a second barostat to an OpenMM force field!");
             }
@@ -4585,6 +4589,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 latticeVectors[2][1] = c.y * OpenMM_AngstromsPerNm;
                 latticeVectors[2][2] = c.z * OpenMM_AngstromsPerNm;
                 crystal.setCellVectors(latticeVectors);
+                ForceFieldEnergyOpenMM.super.setCrystal(crystal);
             }
         }
 
