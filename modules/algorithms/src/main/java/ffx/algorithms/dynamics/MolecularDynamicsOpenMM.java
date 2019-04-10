@@ -646,6 +646,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 x[index + 2] = atom.getZ();
             }
             forceFieldEnergyOpenMM.setOpenMMPositions(x, numberOfVariables);
+            forceFieldEnergyOpenMM.setOpenMMPeriodicBoxVectors();
         }
 
         if (setVelocities) {

@@ -726,7 +726,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     @Override
     public void setCrystal(Crystal crystal) {
         super.setCrystal(crystal);
-        setDefaultPeriodicBoxVectors();
+        openMMContext.setPeriodicBoxVectors();
     }
 
     /**
@@ -1059,7 +1059,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         openMMSystem.addAndersenThermostat(targetTemp, collisionFreq);
     }
 
-    private void setDefaultPeriodicBoxVectors() {
+    public void setOpenMMPeriodicBoxVectors() {
+        openMMContext.setPeriodicBoxVectors();
+    }
+
+    public void setDefaultPeriodicBoxVectors() {
         openMMSystem.setDefaultPeriodicBoxVectors();
     }
 
@@ -1366,6 +1370,26 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
             OpenMM_Context_setVelocities(context, velocities);
             OpenMM_Vec3Array_destroy(velocities);
+        }
+
+        private void setPeriodicBoxVectors() {
+            Crystal crystal = getCrystal();
+            if (!crystal.aperiodic()) {
+                OpenMM_Vec3 a = new OpenMM_Vec3();
+                OpenMM_Vec3 b = new OpenMM_Vec3();
+                OpenMM_Vec3 c = new OpenMM_Vec3();
+                double[][] Ai = crystal.Ai;
+                a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
+                a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
+                a.z = Ai[0][2] * OpenMM_NmPerAngstrom;
+                b.x = Ai[1][0] * OpenMM_NmPerAngstrom;
+                b.y = Ai[1][1] * OpenMM_NmPerAngstrom;
+                b.z = Ai[1][2] * OpenMM_NmPerAngstrom;
+                c.x = Ai[2][0] * OpenMM_NmPerAngstrom;
+                c.y = Ai[2][1] * OpenMM_NmPerAngstrom;
+                c.z = Ai[2][2] * OpenMM_NmPerAngstrom;
+                OpenMM_Context_setPeriodicBoxVectors(context, a, b, c);
+            }
         }
 
         /**
@@ -4552,11 +4576,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         private void setDefaultPeriodicBoxVectors() {
-            OpenMM_Vec3 a = new OpenMM_Vec3();
-            OpenMM_Vec3 b = new OpenMM_Vec3();
-            OpenMM_Vec3 c = new OpenMM_Vec3();
             Crystal crystal = getCrystal();
             if (!crystal.aperiodic()) {
+                OpenMM_Vec3 a = new OpenMM_Vec3();
+                OpenMM_Vec3 b = new OpenMM_Vec3();
+                OpenMM_Vec3 c = new OpenMM_Vec3();
                 double[][] Ai = crystal.Ai;
                 a.x = Ai[0][0] * OpenMM_NmPerAngstrom;
                 a.y = Ai[0][1] * OpenMM_NmPerAngstrom;
