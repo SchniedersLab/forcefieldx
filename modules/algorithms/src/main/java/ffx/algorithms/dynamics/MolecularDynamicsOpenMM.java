@@ -404,6 +404,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             forceFieldEnergyOpenMM.setLambda(forceFieldEnergyOpenMM.getLambda());
 
             getOpenMMEnergies();
+
             retrieveEnergyTime += System.nanoTime();
 
             if (logger.isLoggable(Level.FINE)) {

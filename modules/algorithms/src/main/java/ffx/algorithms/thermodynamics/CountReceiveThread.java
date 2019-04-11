@@ -44,6 +44,8 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 
+import static org.apache.commons.math3.util.FastMath.round;
+
 import edu.rit.mp.DoubleBuf;
 
 /**
@@ -53,17 +55,14 @@ class CountReceiveThread extends Thread {
 
     private static final Logger logger = Logger.getLogger(CountReceiveThread.class.getName());
 
-
     /**
      * Private reference to the TTOSRW instance.
      */
     private TransitionTemperedOSRW transitionTemperedOSRW;
-
     /**
-     * Storage to recieve a recursion count.
+     * Storage to receive a recursion count.
      */
     private final double[] recursionCount;
-
     /**
      * DoubleBuf to wrap the recursion count.
      */
@@ -76,7 +75,7 @@ class CountReceiveThread extends Thread {
      */
     CountReceiveThread(TransitionTemperedOSRW transitionTemperedOSRW) {
         this.transitionTemperedOSRW = transitionTemperedOSRW;
-        recursionCount = new double[3];
+        recursionCount = new double[4];
         recursionCountBuf = DoubleBuf.buffer(recursionCount);
     }
 
@@ -98,20 +97,25 @@ class CountReceiveThread extends Thread {
                 logger.log(Level.WARNING, message, e);
             }
 
-            // 3x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
+            // 4x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
             boolean terminateSignal = stream(recursionCount).allMatch(Double::isNaN);
             if (terminateSignal) {
-                logger.fine(" Termination signal (3x NaN) received; CountReceiveThread shutting down.");
+                logger.fine(" Termination signal received; CountReceiveThread shutting down.");
                 break;
             }
 
+            int rank = (int) round(recursionCount[0]);
+            double lambda = recursionCount[1];
+            transitionTemperedOSRW.setCurrentLambdaforRank(rank, lambda);
+
+            double fLambda = recursionCount[2];
             // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
-            transitionTemperedOSRW.checkRecursionKernelSize(recursionCount[1]);
+            transitionTemperedOSRW.checkRecursionKernelSize(fLambda);
 
             // Increment the Recursion Kernel based on the input of current walker.
-            int walkerLambda = transitionTemperedOSRW.binForLambda(recursionCount[0]);
-            int walkerFLambda = transitionTemperedOSRW.binForFLambda(recursionCount[1]);
-            double weight = recursionCount[2];
+            int walkerLambda = transitionTemperedOSRW.binForLambda(lambda);
+            int walkerFLambda = transitionTemperedOSRW.binForFLambda(fLambda);
+            double weight = recursionCount[3];
 
             // If the weight is less than 1.0, then a walker has activated tempering.
             if (!transitionTemperedOSRW.isTempering() && weight < 1.0) {
@@ -119,10 +123,10 @@ class CountReceiveThread extends Thread {
                 logger.info(format(" Tempering activated due to received weight of (%8.6f)", weight));
             }
 
-            if (transitionTemperedOSRW.resetStatistics && recursionCount[0] > transitionTemperedOSRW.lambdaResetValue) {
+            if (transitionTemperedOSRW.resetStatistics && lambda > transitionTemperedOSRW.lambdaResetValue) {
                 transitionTemperedOSRW.allocateRecursionKernel();
                 transitionTemperedOSRW.resetStatistics = false;
-                logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
+                logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", lambda));
             }
 
             // Increase the Recursion Kernel based on the input of current walker.

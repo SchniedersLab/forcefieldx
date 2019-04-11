@@ -59,9 +59,9 @@ import static ffx.numerics.math.VectorMath.rsq;
 public class COMRestraint implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(COMRestraint.class.getName());
-    private final Atom atoms[];
+    private final Atom[] atoms;
     private final int nAtoms;
-    private final Polymer polymers[];
+    private final Polymer[] polymers;
     private final List<MSNode> molecules;
     private final List<MSNode> waters;
     private final List<MSNode> ions;
@@ -70,21 +70,20 @@ public class COMRestraint implements LambdaInterface {
      * Force constant in Kcal/mole/Angstrom.
      */
     private final double forceConstant;
-    private final double initialCOM[][];
-    private final double currentCOM[][];
-    private final double dx[] = new double[3];
-    private final double dcomdx[];
+    private final double[][] initialCOM;
+    private final double[][] currentCOM;
+    private final double[] dx = new double[3];
+    private final double[] dcomdx;
 
     private double lambda = 1.0;
     private final double lambdaExp = 1.0;
     private double lambdaPow = pow(lambda, lambdaExp);
     private double dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
     private double d2LambdaPow = 0;
-    private final double lambdaWindow = 1.0;
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
-    private final double lambdaGradient[];
-    private boolean lambdaTerm = false;
+    private final double[] lambdaGradient;
+    private boolean lambdaTerm;
 
     /**
      * This COMRestraint is based on the unit cell parameters and symmetry
@@ -97,7 +96,7 @@ public class COMRestraint implements LambdaInterface {
      * @param ions       the system Ion List.
      * @param forceField the ForceField to apply.
      */
-    public COMRestraint(Atom atoms[], Polymer polymers[], List<MSNode> molecules,
+    public COMRestraint(Atom[] atoms, Polymer[] polymers, List<MSNode> molecules,
                         List<MSNode> waters, List<MSNode> ions, ForceField forceField) {
         this.atoms = atoms;
         nAtoms = atoms.length;
@@ -143,8 +142,6 @@ public class COMRestraint implements LambdaInterface {
         }
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
-        //boolean computedcomdx = true;
-        //fill(currentCOM, 0.0);
         computeCOM(currentCOM, nMolecules);
         computedcomdx();
         for (int i = 0; i < nMolecules; i++) {
@@ -361,12 +358,25 @@ public class COMRestraint implements LambdaInterface {
     }
 
     /**
+     * <p>Setter for the field <code>lambdaTerm</code>.</p>
+     *
+     * @param lambdaTerm a boolean.
+     */
+    public void setLambdaTerm(boolean lambdaTerm) {
+        this.lambdaTerm = lambdaTerm;
+        setLambda(lambda);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = lambda;
+
+            double lambdaWindow = 1.0;
+
             if (this.lambda <= lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
                 double l = dldgl * this.lambda;
@@ -397,16 +407,6 @@ public class COMRestraint implements LambdaInterface {
             dLambdaPow = 0.0;
             d2LambdaPow = 0.0;
         }
-    }
-
-    /**
-     * <p>Setter for the field <code>lambdaTerm</code>.</p>
-     *
-     * @param lambdaTerm a boolean.
-     */
-    public void setLambdaTerm(boolean lambdaTerm) {
-        this.lambdaTerm = lambdaTerm;
-        setLambda(lambda);
     }
 
     /**

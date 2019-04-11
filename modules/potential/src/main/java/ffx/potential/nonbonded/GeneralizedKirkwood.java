@@ -1431,9 +1431,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             this.dlPow = dlPow;
             this.dl2Pow = dl2Pow;
         } else {
-            /**
-             * If the lambdaTerm flag is false, lambda must be set to one.
-             */
+            // If the lambdaTerm flag is false, lambda must be set to one.
             this.lambda = 1.0;
             this.lPow = 1.0;
             this.dlPow = 0.0;
@@ -1509,7 +1507,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private SharedDoubleArray sharedBorn;
         private SharedDouble ecavTot;
 
-        public BornRadiiRegion(int nt) {
+        BornRadiiRegion(int nt) {
             bornRadiiLoop = new BornRadiiLoop[nt];
             for (int i = 0; i < nt; i++) {
                 bornRadiiLoop[i] = new BornRadiiLoop();
@@ -1587,7 +1585,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public BornRadiiLoop() {
+            BornRadiiLoop() {
                 ecav = 0.0;
             }
 
@@ -1674,7 +1672,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
 
                 for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
-                    double xyz[][] = sXYZ[iSymOp];
+                    double[][] xyz = sXYZ[iSymOp];
                     for (int i = lb; i <= ub; i++) {
                         if (!nativeEnvironmentApproximation && !use[i]) {
                             continue;
@@ -1685,9 +1683,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         final double yi = y[i];
                         final double zi = z[i];
                         int[] list = neighborLists[iSymOp][i];
-                        int npair = list.length;
-                        for (int l = 0; l < npair; l++) {
-                            int k = list[l];
+                        for (int k : list) {
                             final double baseRk = baseRadiusWithBondi[k];
                             assert (baseRk > 0.0);
                             if (!nativeEnvironmentApproximation && !use[k]) {
@@ -1742,7 +1738,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         private final PermanentGKFieldLoop[] permanentGKFieldLoop;
 
-        public PermanentGKFieldRegion(int nt) {
+        private PermanentGKFieldRegion(int nt) {
             permanentGKFieldLoop = new PermanentGKFieldLoop[nt];
             for (int i = 0; i < nt; i++) {
                 permanentGKFieldLoop[i] = new PermanentGKFieldLoop();
@@ -1785,12 +1781,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double[] fy_local;
             private double[] fz_local;
             private final double[] dx_local;
-            private double[] multipolei;
             private double xi, yi, zi;
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
             private double rbi;
-            private int nSymm, iSymm;
-            private SymOp symOp;
+            private int iSymm;
             private double[][] transOp;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -1834,10 +1828,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                nSymm = crystal.spaceGroup.symOps.size();
+                int nSymm = crystal.spaceGroup.symOps.size();
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (iSymm = 0; iSymm < nSymm; iSymm++) {
-                    symOp = symOps.get(iSymm);
+                    SymOp symOp = symOps.get(iSymm);
                     crystal.getTransformationOperator(symOp, transOp);
                     for (int i = lb; i <= ub; i++) {
                         if (!use[i]) {
@@ -1846,7 +1840,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         xi = x[i];
                         yi = y[i];
                         zi = z[i];
-                        multipolei = globalMultipole[0][i];
+                        double[] multipolei = globalMultipole[0][i];
                         ci = multipolei[t000];
                         uxi = multipolei[t100];
                         uyi = multipolei[t010];
@@ -1858,7 +1852,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         qyzi = multipolei[t011] * oneThird;
                         qzzi = multipolei[t002] * oneThird;
                         rbi = born[i];
-                        int list[] = neighborLists[iSymm][i];
+                        int[] list = neighborLists[iSymm][i];
                         for (int k : list) {
                             if (!use[k]) {
                                 continue;

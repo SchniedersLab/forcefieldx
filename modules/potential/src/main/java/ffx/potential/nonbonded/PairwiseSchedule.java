@@ -54,8 +54,8 @@ public class PairwiseSchedule extends IntegerSchedule {
     private int nAtoms;
     private int threadOffset;
     private final int nThreads;
-    private final Range ranges[];
-    private final boolean threadDone[];
+    private final Range[] ranges;
+    private final boolean[] threadDone;
 
     /**
      * <p>
@@ -65,7 +65,7 @@ public class PairwiseSchedule extends IntegerSchedule {
      * @param nAtoms   a int.
      * @param ranges   an array of {@link edu.rit.util.Range} objects.
      */
-    public PairwiseSchedule(int nThreads, int nAtoms, Range ranges[]) {
+    public PairwiseSchedule(int nThreads, int nAtoms, Range[] ranges) {
         this.nAtoms = nAtoms;
         this.nThreads = nThreads;
         threadOffset = 0;
@@ -126,7 +126,7 @@ public class PairwiseSchedule extends IntegerSchedule {
      * @param atomsWithInteractions the number of chunks of interactions.
      * @param listCount             an array of int.
      */
-    public void updateRanges(int totalInteractions, int atomsWithInteractions, int listCount[]) {
+    void updateRanges(int totalInteractions, int atomsWithInteractions, int[] listCount) {
         int id = 0;
         int goal = totalInteractions / (nThreads + threadOffset);
         int num = 0;
@@ -134,9 +134,8 @@ public class PairwiseSchedule extends IntegerSchedule {
         for (int i = 0; i < nAtoms; i++) {
             num += listCount[i];
             if (num >= goal) {
-                /**
-                 * Last thread gets the remaining atoms.
-                 */
+
+                // Last thread gets the remaining atoms.
                 if (id == nThreads - 1) {
                     ranges[id] = new Range(start, nAtoms - 1);
                     break;
@@ -151,9 +150,7 @@ public class PairwiseSchedule extends IntegerSchedule {
                 // Next range starts at i+1.
                 start = i + 1;
 
-                /**
-                 * Out of atoms. Threads remaining get a null range.
-                 */
+                // Out of atoms. Threads remaining get a null range.
                 if (start == nAtoms) {
                     if (atomsWithInteractions > nThreads + threadOffset + 1) {
                         threadOffset++;
@@ -166,9 +163,8 @@ public class PairwiseSchedule extends IntegerSchedule {
                     break;
                 }
             } else if (i == nAtoms - 1) {
-                /**
-                 * Last atom without reaching goal for current thread.
-                 */
+
+                // Last atom without reaching goal for current thread.
                 if (id < nThreads - 1 && atomsWithInteractions > nThreads + threadOffset + 1) {
                     threadOffset++;
                     updateRanges(totalInteractions, atomsWithInteractions, listCount);

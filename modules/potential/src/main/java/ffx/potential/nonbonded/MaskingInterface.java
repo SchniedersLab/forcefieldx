@@ -40,14 +40,13 @@ package ffx.potential.nonbonded;
 /**
  * By implementing the MaskingInterface interface, interaction pairs can be
  * excluded during {@link ffx.potential.nonbonded.NeighborList} construction.
- *
+ * <p>
  * During non-bonded calculations, the interactions between bonded atoms (1-2,
  * 1-3 or 1-4, for example) may be masked to zero. The interaction energy
  * between excluded atoms is described by the bonded energy terms.
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public interface MaskingInterface {
 
@@ -56,17 +55,17 @@ public interface MaskingInterface {
      * should be set to 0.
      *
      * @param mask The masking array.
-     * @param i The atom whose masking rules should be applied.
+     * @param i    The atom whose masking rules should be applied.
      * @since 1.0
      */
-    void applyMask(final double mask[], final int i);
+    void applyMask(final double[] mask, final int i);
 
     /**
      * After calling removeMask, all entries in the mask array should be 1.
      *
      * @param mask The masking array.
-     * @param i The atom whose masking rules should be removed.
+     * @param i    The atom whose masking rules should be removed.
      * @since 1.0
      */
-    void removeMask(final double mask[], final int i);
+    void removeMask(final double[] mask, final int i);
 }
