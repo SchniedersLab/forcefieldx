@@ -1270,7 +1270,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public boolean destroy() {
         if (receiveThread != null && receiveThread.isAlive()) {
-            double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
+            double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
             DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
             try {
                 logger.fine(" Sending the termination message.");
