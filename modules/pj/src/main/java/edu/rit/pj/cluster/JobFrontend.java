@@ -43,9 +43,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
@@ -58,10 +64,6 @@ import edu.rit.util.ByteSequence;
 import edu.rit.util.Timer;
 import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
-import java.util.logging.Logger;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.SimpleFormatter;
 
 /**
  * Class JobFrontend provides the message handler for the PJ job frontend
@@ -158,7 +160,9 @@ public class JobFrontend
         RUNNING,
         TERMINATE_CANCEL_JOB,
         TERMINATING
-    };
+    }
+
+    ;
 
     // Error message if job canceled, or null if job finished normally.
     private String myCancelMessage = "User canceled job";
@@ -168,32 +172,33 @@ public class JobFrontend
     private FrontendFileReader myFrontendFileReader;
 
 // Exported constructors.
+
     /**
      * Construct a new job frontend object. The job frontend object will contact
      * the Job Scheduler Daemon specified by the <code>"pj.host"</code> and
      * <code>"pj.port"</code> Java system properties. See class {@linkplain
      * edu.rit.pj.PJProperties} for further information.
      *
-     * @param username User name.
-     * @param Nn Number of backend nodes (&gt;= 1).
-     * @param Np Number of processes (&gt;= 1).
-     * @param Nt Number of CPUs per process (&gt;= 0). 0 means "all CPUs."
+     * @param username        User name.
+     * @param Nn              Number of backend nodes (&gt;= 1).
+     * @param Np              Number of processes (&gt;= 1).
+     * @param Nt              Number of CPUs per process (&gt;= 0). 0 means "all CPUs."
      * @param hasFrontendComm True if the job has the frontend communicator,
-     * false if it doesn't.
-     * @param mainClassName Main class name.
-     * @param args Command line arguments.
-     * @exception JobSchedulerException (subclass of IOException) Thrown if the
-     * job frontend object could not contact the Job Scheduler Daemon.
-     * @exception IOException Thrown if an I/O error occurred.
-     * @throws java.io.IOException if any.
+     *                        false if it doesn't.
+     * @param mainClassName   Main class name.
+     * @param args            Command line arguments.
+     * @throws JobSchedulerException (subclass of IOException) Thrown if the
+     *                               job frontend object could not contact the Job Scheduler Daemon.
+     * @throws IOException           Thrown if an I/O error occurred.
+     * @throws java.io.IOException   if any.
      */
     public JobFrontend(String username,
-            int Nn,
-            int Np,
-            int Nt,
-            boolean hasFrontendComm,
-            String mainClassName,
-            String[] args)
+                       int Nn,
+                       int Np,
+                       int Nt,
+                       boolean hasFrontendComm,
+                       String mainClassName,
+                       String[] args)
             throws IOException {
         // Record arguments.
         this.username = username;
@@ -219,33 +224,33 @@ public class JobFrontend
         // Set up Job Scheduler lease timers.
         mySchedulerRenewTimer
                 = myLeaseTimerThread.createTimer(new TimerTask() {
-                    public void action(Timer timer) {
-                        try {
-                            schedulerRenewTimeout();
-                        } catch (Throwable exc) {
-                        }
-                    }
-                });
+            public void action(Timer timer) {
+                try {
+                    schedulerRenewTimeout();
+                } catch (Throwable exc) {
+                }
+            }
+        });
         mySchedulerExpireTimer
                 = myLeaseTimerThread.createTimer(new TimerTask() {
-                    public void action(Timer timer) {
-                        try {
-                            schedulerExpireTimeout();
-                        } catch (Throwable exc) {
-                        }
-                    }
-                });
+            public void action(Timer timer) {
+                try {
+                    schedulerExpireTimeout();
+                } catch (Throwable exc) {
+                }
+            }
+        });
 
         // Set up job timer.
         myJobTimer
                 = myLeaseTimerThread.createTimer(new TimerTask() {
-                    public void action(Timer timer) {
-                        try {
-                            jobTimeout();
-                        } catch (Throwable exc) {
-                        }
-                    }
-                });
+            public void action(Timer timer) {
+                try {
+                    jobTimeout();
+                } catch (Throwable exc) {
+                }
+            }
+        });
 
         // Set up array of job backend process info records.
         myProcessInfo = new ProcessInfo[Np];
@@ -253,31 +258,31 @@ public class JobFrontend
             final int rank = i;
             ProcessInfo processinfo
                     = new ProcessInfo(/*state            */ProcessInfo.State.NOT_STARTED,
-                            /*name             */ null,
-                            /*rank             */ rank,
-                            /*backend          */ null,
-                            /*middlewareAddress*/ null,
-                            /*worldAddress     */ null,
-                            /*frontendAddress  */ null,
-                            /*renewTimer       */
-                            myLeaseTimerThread.createTimer(new TimerTask() {
-                                public void action(Timer timer) {
-                                    try {
-                                        backendRenewTimeout(rank);
-                                    } catch (Throwable exc) {
-                                    }
-                                }
-                            }),
-                            /*expireTimer      */
-                            myLeaseTimerThread.createTimer(new TimerTask() {
-                                public void action(Timer timer) {
-                                    try {
-                                        backendExpireTimeout(rank);
-                                    } catch (Throwable exc) {
-                                    }
-                                }
-                            }),
-                            /*Nt               */ 0);
+                    /*name             */ null,
+                    /*rank             */ rank,
+                    /*backend          */ null,
+                    /*middlewareAddress*/ null,
+                    /*worldAddress     */ null,
+                    /*frontendAddress  */ null,
+                    /*renewTimer       */
+                    myLeaseTimerThread.createTimer(new TimerTask() {
+                        public void action(Timer timer) {
+                            try {
+                                backendRenewTimeout(rank);
+                            } catch (Throwable exc) {
+                            }
+                        }
+                    }),
+                    /*expireTimer      */
+                    myLeaseTimerThread.createTimer(new TimerTask() {
+                        public void action(Timer timer) {
+                            try {
+                                backendExpireTimeout(rank);
+                            } catch (Throwable exc) {
+                            }
+                        }
+                    }),
+                    /*Nt               */ 0);
             myProcessInfo[rank] = processinfo;
         }
 
@@ -304,7 +309,7 @@ public class JobFrontend
         try {
             js_address
                     = new InetSocketAddress(PJProperties.getPjHost(),
-                            PJProperties.getPjPort());
+                    PJProperties.getPjPort());
             js_channel = myMiddlewareChannelGroup.connect(js_address);
         } catch (IOException exc) {
             throw new JobSchedulerException("JobFrontend(): Cannot contact Job Scheduler Daemon at "
@@ -324,6 +329,7 @@ public class JobFrontend
     }
 
 // Exported operations.
+
     /**
      * Run this Job Frontend.
      */
@@ -383,18 +389,19 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Assign a backend process to the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public void assignBackend(JobSchedulerRef theJobScheduler,
-            String name,
-            String host,
-            String jvm,
-            String classpath,
-            String[] jvmflags,
-            String shellCommand,
-            int Nt)
+                              String name,
+                              String host,
+                              String jvm,
+                              String classpath,
+                              String[] jvmflags,
+                              String shellCommand,
+                              int Nt)
             throws IOException {
         // Record backend name and number of CPUs.
         int rank = myNextRank++;
@@ -414,9 +421,9 @@ public class JobFrontend
          * Without this pause of 10 msec, the SSH command below will often fail when using more than 10 to 12 nodes.
          */
         try {
-           Thread.sleep(10);
+            Thread.sleep(10);
         } catch (InterruptedException e) {
-           ;
+            //
         }
 
 //        if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
@@ -452,48 +459,77 @@ public class JobFrontend
 //        logger.log(Level.INFO, " Backend Host: " + host);
 
         try {
-            // Build a command to run on the backend node.
-            StringBuilder command = new StringBuilder();
-            command.append(shellCommand);
-            command.append(" \"");
-            String cwd = System.getProperty("user.dir");
-            if (cwd != null) {
-                command.append("cd '");
-                command.append(cwd);
-                command.append("'; ");
-            }
-            command.append("nohup ");
-            command.append(jvm);
-            command.append(" -classpath '");
-            command.append(classpath);
-            command.append("'");
-            for (String flag : jvmflags) {
+            String listenHost = myMiddlewareChannelGroup.listenAddress().getHostName();
+            if (listenHost.equalsIgnoreCase(host)) {
+                // Build a command to run on a backend node via a local ProcessBuilder.
+                List<String> command = new ArrayList<>();
+                command.add(jvm);
+                command.add("-classpath");
+                command.add(classpath);
+                if (jvmflags != null && jvmflags.length > 0) {
+                    command.addAll(Arrays.asList(jvmflags));
+                }
+                if (userJvmFlags != null && !userJvmFlags.trim().equalsIgnoreCase("")) {
+                    command.add(userJvmFlags.trim());
+                }
+                command.add("edu.rit.pj.cluster.JobBackend");
+                command.add(username);
+                command.add(Integer.toString(jobnum));
+                command.add(Integer.toString(Np));
+                command.add(Integer.toString(rank));
+                command.add(Boolean.toString(hasFrontendComm));
+                command.add(myMiddlewareChannelGroup.listenAddress().getHostName());
+                command.add(Integer.toString(myMiddlewareChannelGroup.listenAddress().getPort()));
+                command.add(host);
+                ProcessBuilder pb = new ProcessBuilder(command);
+                String cwd = System.getProperty("user.dir");
+                if (cwd != null) {
+                    pb.directory(new File(cwd));
+                }
+                Process ssh = pb.start();
+            } else {
+                // Build a command to run on the backend node via ssh.
+                StringBuilder command = new StringBuilder();
+                command.append(shellCommand);
+                command.append(" \"");
+                String cwd = System.getProperty("user.dir");
+                if (cwd != null) {
+                    command.append("cd '");
+                    command.append(cwd);
+                    command.append("'; ");
+                }
+                command.append("nohup ");
+                command.append(jvm);
+                command.append(" -classpath '");
+                command.append(classpath);
+                command.append("'");
+                for (String flag : jvmflags) {
+                    command.append(" ");
+                    command.append(flag);
+                }
                 command.append(" ");
-                command.append(flag);
-            }
-            command.append(" ");
-            command.append(userJvmFlags);
-            command.append(" edu.rit.pj.cluster.JobBackend '");
-            command.append(username);
-            command.append("' ");
-            command.append(jobnum);
-            command.append(" ");
-            command.append(Np);
-            command.append(" ");
-            command.append(rank);
-            command.append(" ");
-            command.append(hasFrontendComm);
-            command.append(" '");
-            command.append(myMiddlewareChannelGroup.listenAddress().getHostName());
-            command.append("' ");
-            command.append(myMiddlewareChannelGroup.listenAddress().getPort());
-            command.append(" '");
-            command.append(host);
-            command.append("' >/dev/null 2>/dev/null &\"");
+                command.append(userJvmFlags);
+                command.append(" edu.rit.pj.cluster.JobBackend '");
+                command.append(username);
+                command.append("' ");
+                command.append(jobnum);
+                command.append(" ");
+                command.append(Np);
+                command.append(" ");
+                command.append(rank);
+                command.append(" ");
+                command.append(hasFrontendComm);
+                command.append(" '");
+                command.append(myMiddlewareChannelGroup.listenAddress().getHostName());
+                command.append("' ");
+                command.append(myMiddlewareChannelGroup.listenAddress().getPort());
+                command.append(" '");
+                command.append(host);
+                command.append("' >/dev/null 2>/dev/null &\"");
 
-            // So an SSH remote login and execute the above command.
-            Process ssh
-                    = Runtime.getRuntime().exec(new String[]{"ssh", host, command.toString()});
+                // So an SSH remote login and execute the above command.
+                Process ssh = Runtime.getRuntime().exec(new String[]{"ssh", host, command.toString()});
+            }
 
             // Start lease timers for the backend node.
             processinfo.renewTimer.start(Constants.LEASE_RENEW_INTERVAL,
@@ -513,14 +549,15 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Assign a job number to the job. The host name for the job frontend's
      * middleware channel group is also specified.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void assignJobNumber(JobSchedulerRef theJobScheduler,
-            int jobnum,
-            String pjhost)
+                                             int jobnum,
+                                             String pjhost)
             throws IOException {
         // Record job number.
         this.jobnum = jobnum;
@@ -545,12 +582,13 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Cancel the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void cancelJob(JobSchedulerRef theJobScheduler,
-            String errmsg)
+                                       String errmsg)
             throws IOException {
         terminateCancelJob(errmsg);
     }
@@ -559,7 +597,7 @@ public class JobFrontend
      * Renew the lease on the job.
      *
      * @param theJobScheduler Job Scheduler that is calling this method.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public synchronized void renewLease(JobSchedulerRef theJobScheduler)
@@ -569,9 +607,10 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report that a backend process has finished executing the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void backendFinished(JobBackendRef theJobBackend)
             throws IOException {
@@ -603,15 +642,16 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report that a backend process is ready to commence executing the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void backendReady(JobBackendRef theJobBackend,
-            int rank,
-            InetSocketAddress middlewareAddress,
-            InetSocketAddress worldAddress,
-            InetSocketAddress frontendAddress)
+                                          int rank,
+                                          InetSocketAddress middlewareAddress,
+                                          InetSocketAddress worldAddress,
+                                          InetSocketAddress frontendAddress)
             throws IOException {
         // Verify that rank is in range.
         if (0 > rank || rank >= Np) {
@@ -670,21 +710,23 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Cancel the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void cancelJob(JobBackendRef theJobBackend,
-            String errmsg)
+                                       String errmsg)
             throws IOException {
         terminateCancelJob(errmsg);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Renew the lease on the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void renewLease(JobBackendRef theJobBackend)
             throws IOException {
@@ -696,12 +738,13 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Request the given resource from this job frontend's class loader.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void requestResource(JobBackendRef theJobBackend,
-            String resourceName)
+                                             String resourceName)
             throws IOException {
         // To hold resource content.
         byte[] content = null;
@@ -726,121 +769,130 @@ public class JobFrontend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Open the given output file for writing or appending.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileOpen(JobBackendRef theJobBackend,
-            int bfd,
-            File file,
-            boolean append)
+                                            int bfd,
+                                            File file,
+                                            boolean append)
             throws IOException {
         myFrontendFileWriter.outputFileOpen(theJobBackend, bfd, file, append);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Write the given bytes to the given output file. <code>ffd</code> = 1 refers
      * to the job's standard output stream; <code>ffd</code> = 2 refers to the job's
      * standard error stream; other values refer to a previously opened file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileWrite(JobBackendRef theJobBackend,
-            int ffd,
-            byte[] buf,
-            int off,
-            int len)
+                                             int ffd,
+                                             byte[] buf,
+                                             int off,
+                                             int len)
             throws IOException {
         myFrontendFileWriter.outputFileWrite(theJobBackend, ffd, len);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Flush accumulated bytes to the given output file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileFlush(JobBackendRef theJobBackend,
-            int ffd)
+                                             int ffd)
             throws IOException {
         myFrontendFileWriter.outputFileFlush(theJobBackend, ffd);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Close the given output file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileClose(JobBackendRef theJobBackend,
-            int ffd)
+                                             int ffd)
             throws IOException {
         myFrontendFileWriter.outputFileClose(theJobBackend, ffd);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Open the given input file for reading.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileOpen(JobBackendRef theJobBackend,
-            int bfd,
-            File file)
+                                           int bfd,
+                                           File file)
             throws IOException {
         myFrontendFileReader.inputFileOpen(theJobBackend, bfd, file);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Read bytes from the given input file. <code>ffd</code> = 1 refers to the
      * job's standard input stream; other values refer to a previously opened
      * file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileRead(JobBackendRef theJobBackend,
-            int ffd,
-            int len)
+                                           int ffd,
+                                           int len)
             throws IOException {
         myFrontendFileReader.inputFileRead(theJobBackend, ffd, len);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Skip bytes from the given input file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileSkip(JobBackendRef theJobBackend,
-            int ffd,
-            long len)
+                                           int ffd,
+                                           long len)
             throws IOException {
         myFrontendFileReader.inputFileSkip(theJobBackend, ffd, len);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Close the given input file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileClose(JobBackendRef theJobBackend,
-            int ffd)
+                                            int ffd)
             throws IOException {
         myFrontendFileReader.inputFileClose(theJobBackend, ffd);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report a comment for a process.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void reportComment(JobBackendRef theJobBackend,
-            int rank,
-            String comment)
+                                           int rank,
+                                           String comment)
             throws IOException {
         myJobScheduler.reportComment(this, rank, comment);
     }
@@ -852,10 +904,11 @@ public class JobFrontend
     }
 
 // Hidden operations.
+
     /**
      * Take action when the Job Scheduler's lease renewal timer times out.
      *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private synchronized void schedulerRenewTimeout()
             throws IOException {
@@ -867,7 +920,7 @@ public class JobFrontend
     /**
      * Take action when the Job Scheduler's lease expiration timer times out.
      *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private void schedulerExpireTimeout()
             throws IOException {
@@ -895,7 +948,7 @@ public class JobFrontend
     /**
      * Take action when the job timer times out.
      *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private void jobTimeout()
             throws IOException {
@@ -924,8 +977,7 @@ public class JobFrontend
      * Take action when a job backend process's lease renewal timer times out.
      *
      * @param rank Job backend process's rank.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private synchronized void backendRenewTimeout(int rank)
             throws IOException {
@@ -940,8 +992,7 @@ public class JobFrontend
      * out.
      *
      * @param rank Job backend process's rank.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private void backendExpireTimeout(int rank)
             throws IOException {
@@ -973,7 +1024,6 @@ public class JobFrontend
      * Take action when a backend process fails.
      *
      * @param processinfo Process info.
-     *
      * @return Error message.
      */
     private String backendFailed(ProcessInfo processinfo) {

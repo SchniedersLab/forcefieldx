@@ -19,52 +19,28 @@
             <p>
                 <a href="https://github.com/mjschnie/openmm-java-wrappers">Java Wrappers for the OpenMM C API</a>
             </p>
-            <subsection name="Environment Variables needed to use OpenMM within Force Field X on Linux / MacOS">
-                <p>
-                    To use the OpenMM Java wrappers, two environment variables need to be set (e.g. in .bash_profile)
-                    in order to invoke the OpenMM libraries from within a Java program.
-                    First, the JNA_LIBRARY_PATH variable needs to point to the location of the lib
-                    subdirectory of the OpenMM installation package.
-                </p>
-                <source>export JNA_LIBRARY_PATH="/Applications/anaconda3/pkgs/openmm-7.2.2-py36_1/lib"</source>
-                <p>
-                    Second, the OPENMM_PLUGIN_DIR variable needs to point to the location of the plugins subdirectory of
-                    the OpenMM installation package.
-                </p>
-                <source>export OPENMM_PLUGIN_DIR="/Applications/anaconda3/pkgs/openmm-7.2.2-py36_1/lib/plugins"</source>
+            <subsection name="Including the Library in a Maven project.">
+                <source>
+                    <![CDATA[
+                <dependency>
+                    <groupId>edu.uiowa.jopenmm</groupId>
+                    <artifactId>jopenmm-fat</artifactId>
+                    <version>7.3.0</version>
+                </dependency>]]>
+                </source>
             </subsection>
-            <subsection name="Environment Variables needed to use OpenMM within Force Field X on Windows">
+            <subsection name="How the Library Works">
                 <p>
-                    To use the OpenMM Java wrappers on Windows, three environment variables need to be set or updated
-                    in order to invoke the OpenMM libraries from within a Java program (e.g. Force Field X).
-                    First, set the OPENMM_LIBRARY variable to point to the location of the lib subdirectory of the
-                    OpenMM installation package. For example, from within a Windows Git BASH shell type:
+                    To use the Java OpenMM Wrappers within Java, please first initialize the library using the provided
+                    OpenMMUtils class:
                 </p>
-                <source>export OPENMM_LIBRARY="/c/path/to/anaconda3/pkgs/openmm-7.2.2-py36_1/lib"</source>
+                <source>OpenMMUtils.init();</source>
                 <p>
-                    Second, the OPENMM_PLUGIN_DIR variable needs to point to the location of the plugins subdirectory of
-                    the OpenMM installation package.
+                    This will extract the OpenMM binary libraries from the openmm-fat.jar file to a temporary directory
+                    and configure JNA to find them. OpenMM plugins can be loaded from the directory
+                    OpenMMUtils.OPENMM_PLUGIN_DIR as follows:
                 </p>
-                <source>export OPENMM_PLUGIN_DIR="$OPENMM_LIBRARY/plugins"</source>
-                <p>
-                    Finally, append the Windows PATH environment variable to include 1) the OpenMM library location
-                    (i.e. using the OPENMM_LIBRARY environment variable defined above), 2) the location of the CUDA compiler
-                    (nvcc), and 3) the Microsoft Visual Studio compiler (cl). Note that items 2 and 3 may already be configured
-                    as a result of installing the nVidia GPU Computing Toolkit and Microsoft Visual Studio.
-                </p>
-                <source>export PATH="$PATH:$OPENMM_LIBRARY:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v9.0/bin:/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin"</source>
-            </subsection>
-            <subsection name="An Example Force Field X Energy Command Calling OpenMM">
-                <p>
-                    There are a number of algorithms in the FFX package that can use OpenMM under the hood if the
-                    "platform" flag
-                    is set to OMM. An example of this can be seen below using the Energy script:
-                </p>
-                <source>ffxc -Dplatform=OMM Energy yourpdb.pdb</source>
-                <p>
-                    where yourpdb.pdb will be replaced with the name of the pdb structure you wish to run the
-                    algorithm on.
-                </p>
+                <source>PointerByReference plugins = OpenMM_Platform_loadPluginsFromDirectory(OpenMMUtils.OPENMM_PLUGIN_DIR);</source>
             </subsection>
         </section>
     </body>
