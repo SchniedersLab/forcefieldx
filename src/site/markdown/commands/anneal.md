@@ -1,17 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
-    http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Simulated Annealing</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Simulated Annealing">
-            <p>Run molecular dynamics at a series of temperatures to optimize a structure.</p>
-            <source>
+### Simulated Annealing
+
+Run molecular dynamics at a series of temperatures to optimize a structure.
+
+---
+```
 Usage: ffxc Anneal [-ho] [--tl=10.0] [--tu=1000.0] [-b=Bussi] [-d=1.0] [-i=Verlet] [-k=1.0] [-n=1000000] [-r=0.25] [-t=298.15] [-w=10.0] [-W=10] files...
 Run simulated annealing on a system.
      files...                           XYZ or PDB input files.
@@ -27,7 +19,7 @@ Run simulated annealing on a system.
  -r, --report=0.25                      Interval to report thermodynamics (psec).
  -t, --temperature=298.15               Temperature (Kelvin).
  -w, --write=10.0                       Interval to write out coordinates (psec).
- -W, --windows=10                       Number of annealing windows.</source>
-        </section>
-    </body>
-</document>
+ -W, --windows=10                       Number of annealing windows.
+ ```
+ ---
+ 

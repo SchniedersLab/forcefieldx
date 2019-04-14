@@ -56,7 +56,7 @@ import static ffx.numerics.math.VectorMath.sum;
 /**
  * A class that implements the Gaussian description of an object (molecule) made of a overlapping spheres.
  * <p>
- * Ported from C++ code by Emilio Gallicchio <egallicchio@brooklyn.cuny.edu>
+ * Ported from C++ code by Emilio Gallicchio.
  * GaussVol is part of the AGBNP/OpenMM implicit solvent model.
  *
  * @author Michael J. Schnieders
@@ -140,11 +140,11 @@ public class GaussVol {
     /**
      * Creates/Initializes a GaussVol instance.
      *
-     * @param nAtoms
-     * @param radii
-     * @param volumes
-     * @param gammas
-     * @param ishydrogen
+     * @param nAtoms     The number of atoms.
+     * @param radii      Atomic radii.
+     * @param volumes    Atomic volumes.
+     * @param gammas     Atomic surface tensions.
+     * @param ishydrogen True if the atom is a hydrogen.
      */
     public GaussVol(int nAtoms, double[] radii, double[] volumes,
                     double[] gammas, boolean[] ishydrogen) {

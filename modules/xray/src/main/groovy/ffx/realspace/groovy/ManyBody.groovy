@@ -161,7 +161,7 @@ class ManyBody extends AlgorithmsScript {
             }
         }
 
-        manyBody.saveEliminatedRotamers()
+        // manyBody.saveEliminatedRotamers()
 
         return this
     }

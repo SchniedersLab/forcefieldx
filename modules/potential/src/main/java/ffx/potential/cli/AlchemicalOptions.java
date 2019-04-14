@@ -94,7 +94,7 @@ public class AlchemicalOptions {
     /**
      * --la1 or -ligAtoms1 allows for multiple ranges and/or singletons of ligand atoms in the first topology, separated by periods.
      */
-    @Option(names = {"--la1", "--ligAtoms1"},
+    @Option(names = {"--la1", "--ligAtoms1"}, paramLabel = "-1",
             description = "Period-separated ranges of 1st topology ligand atoms (e.g. 40-50.72-83).")
     String ligAt1 = null;
 

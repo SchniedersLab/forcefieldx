@@ -133,11 +133,16 @@ class Minimize extends AlgorithmsScript {
 
     @Override
     boolean destroyPotentials() {
-        boolean destroyedSuccess = realspaceData.destroy();
-        for (int i = 1; i < assemblies.length; i++) {
-            destroyedSuccess = destroyedSuccess && assemblies[i].getPotentialEnergy().destroy();
+        boolean destroyedSuccess = true
+        if (assemblies != null) {
+            if (realspaceData != null) {
+                destroyedSuccess = realspaceData.destroy()
+            }
+            for (int i = 1; i < assemblies.length; i++) {
+                destroyedSuccess = destroyedSuccess && assemblies[i].getPotentialEnergy().destroy()
+            }
         }
-        return destroyedSuccess;
+        return destroyedSuccess
     }
 }
 

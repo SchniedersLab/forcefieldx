@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Commands</title>
@@ -21,49 +21,49 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="commands/anneal.html" >Anneal</a>
+                            <a href="commands/anneal.html">Anneal</a>
                         </td>
                         <td>Run simulated annealing to optimize a structure.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="commands/dynamics.html" >Dynamics</a>
+                            <a href="commands/dynamics.html">Dynamics</a>
                         </td>
                         <td>Run dynamics simulations in a variety of ensembles.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/DynamicsOpenMM.groovy" >DynamicsOpenMM</a>
+                            <a href="commands/dynamicsOpenMM.html">DynamicsOpenMM</a>
                         </td>
                         <td>Run dynamics simulations in a variety of ensembles accelerated by OpenMM.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/Histogram.groovy" >Histogram</a>
+                            <a href="commands/histogram.html">Histogram</a>
                         </td>
                         <td>Examine a histogram produced by orthogonal space sampling.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/ManyBody.groovy" >ManyBody</a>
+                            <a href="commands/manyBody.html">ManyBody</a>
                         </td>
                         <td>Globally optimize the side-chains of a protein.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/Minimize.groovy" >Minimize</a>
+                            <a href="commands/minimize.html">Minimize</a>
                         </td>
                         <td>Minimize a structure using a variety of force fields.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/MinimizeOpenMM.groovy" >MinimizeOpenMM</a>
+                            <a href="commands/minimizeOpenMM.html">MinimizeOpenMM</a>
                         </td>
                         <td>Minimize a structure using a variety of force fields accelerated by OpenMM.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/algorithms/scripts/Thermodynamics.groovy" >Thermodynamics</a>
+                            <a href="commands/thermodynamics.html">Thermodynamics</a>
                         </td>
                         <td>Compute free energy differences using orthogonal space sampling.</td>
                     </tr>

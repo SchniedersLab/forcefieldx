@@ -1,17 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
-    http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Dynamics</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Dynamics">
-            <p>Run NVE, NVT, NPT or stochastic dynamics.</p>
-            <source>
+### Molecular Dynamics
+
+Run NVE, NVT, NPT or stochastic dynamics.
+
+---
+```
 Usage: ffxc Dynamics [-hox] [-b=Bussi] [-d=1.0] [-F=XYZ] [-i=Verlet] [-k=1.0] [-n=1000000] [-p=0] [-r=0.25] [-t=298.15] [-w=10.0] files...
 Run dynamics on a system.
     files...                    XYZ or PDB input files.
@@ -27,7 +19,6 @@ Run dynamics on a system.
 -r, --report=0.25               Interval to report thermodynamics (psec).
 -t, --temperature=298.15        Temperature (Kelvin).
 -w, --write=10.0                Interval to write out coordinates (psec).
--x, --repEx                     Execute temperature replica exchange.</source>
-        </section>
-    </body>
-</document>
+-x, --repEx                     Execute temperature replica exchange.
+```
+---
