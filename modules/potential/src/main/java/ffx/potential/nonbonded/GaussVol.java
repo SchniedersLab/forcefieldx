@@ -162,7 +162,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    int setRadii(double[] radii) throws Exception {
+    public int setRadii(double[] radii) throws Exception {
         if (nAtoms == radii.length) {
             this.radii = radii;
             return nAtoms;
@@ -178,7 +178,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    int setVolumes(double[] volumes) throws Exception {
+    public int setVolumes(double[] volumes) throws Exception {
         if (nAtoms == volumes.length) {
             this.volumes = volumes;
             return nAtoms;
@@ -194,7 +194,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    int setGammas(double[] gammas) throws Exception {
+    public int setGammas(double[] gammas) throws Exception {
         if (nAtoms == gammas.length) {
             this.gammas = gammas;
             return nAtoms;
@@ -209,11 +209,9 @@ public class GaussVol {
      *
      * @param positions Current atomic positions.
      */
-    void computeTree(double[][] positions) {
+    public void computeTree(double[][] positions) {
         tree.computeOverlapTreeR(positions, radii, volumes, gammas, ishydrogen);
     }
-
-    /*  */
 
     /**
      * Returns GaussVol volume energy function and forces.
@@ -227,10 +225,11 @@ public class GaussVol {
      * @param free_volume
      * @param self_volume
      */
-    void computeVolume(double[][] positions,
+    public void computeVolume(double[][] positions,
                        double[] volume, double[] energy,
                        double[][] force, double[] gradV,
                        double[] free_volume, double[] self_volume) {
+
         tree.computeVolume2R(positions, volume, energy, force, gradV, free_volume, self_volume);
         for (int i = 0; i < nAtoms; ++i) {
             //transform gradient to force
