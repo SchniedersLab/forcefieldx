@@ -804,7 +804,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // If we're using the "lambdaStart" flag, the step-size must be scaled down.
         if (lambdaStart > 0.0) {
-            width *= (1.0 - lambdaStart);
+            width /= (1.0 - lambdaStart);
         }
 
         // Compute the finite difference derivative.
