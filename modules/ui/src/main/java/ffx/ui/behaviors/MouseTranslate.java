@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui.behaviors;
 
 import javax.media.j3d.Behavior;
@@ -52,24 +52,23 @@ import java.util.Enumeration;
  * The MouseTranslate class implements a mouse translate behavior.
  *
  * @author Michael J. Schnieders
- *
  */
 public class MouseTranslate extends MouseBehavior {
 
     private static Vector3d zero3d = new Vector3d(0.0, 0.0, 0.0);
-    double x_factor = 0.05; // .01;
-    double y_factor = 0.05; // .01;
-    Vector3d translation = new Vector3d();
+    private double x_factor = 0.05; // .01;
+    private double y_factor = 0.05; // .01;
+    private Vector3d translation = new Vector3d();
     private MouseBehaviorCallback callback = null;
-    int mouseButton = MouseEvent.BUTTON3_DOWN_MASK;
-    int doneID = 0;
+    private int mouseButton = MouseEvent.BUTTON3_DOWN_MASK;
+    private int doneID = 0;
 
     /**
      * <p>
      * Constructor for MouseTranslate.</p>
      *
      * @param flags a int.
-     * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+     * @param VPTG  a {@link javax.media.j3d.TransformGroup} object.
      */
     public MouseTranslate(int flags, TransformGroup VPTG) {
         super(flags, VPTG);
@@ -79,11 +78,11 @@ public class MouseTranslate extends MouseBehavior {
      * <p>
      * Constructor for MouseTranslate.</p>
      *
-     * @param flags a int.
-     * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+     * @param flags    a int.
+     * @param VPTG     a {@link javax.media.j3d.TransformGroup} object.
      * @param behavior a {@link javax.media.j3d.Behavior} object.
-     * @param postID a int.
-     * @param dID a int.
+     * @param postID   a int.
+     * @param dID      a int.
      */
     public MouseTranslate(int flags, TransformGroup VPTG, Behavior behavior,
                           int postID, int dID) {
@@ -91,11 +90,9 @@ public class MouseTranslate extends MouseBehavior {
         doneID = dID;
     }
 
-    /*
-     * Return the x-axis movement multipler.
-     */
-
     /**
+     * Return the x-axis movement multipler.
+     *
      * <p>
      * getXFactor</p>
      *
@@ -105,11 +102,8 @@ public class MouseTranslate extends MouseBehavior {
         return x_factor;
     }
 
-    /*
-     * Return the y-axis movement multipler.
-     */
-
     /**
+     * Return the y-axis movement multipler.
      * <p>
      * getYFactor</p>
      *
@@ -150,10 +144,10 @@ public class MouseTranslate extends MouseBehavior {
             WakeupCriterion wakeup = (WakeupCriterion) criteria.nextElement();
             if (wakeup instanceof WakeupOnAWTEvent) {
                 AWTEvent event[] = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
-                for (int i = 0; i < event.length; i++) {
-                    MouseEvent mevent = (MouseEvent) event[i];
+                for (AWTEvent awtEvent : event) {
+                    MouseEvent mevent = (MouseEvent) awtEvent;
                     processMouseEvent(mevent);
-                    int id = event[i].getID();
+                    int id = awtEvent.getID();
                     int mod = mevent.getModifiersEx();
                     boolean rightButton = ((mod & mouseButton) == mouseButton);
                     if (!rightButton) {
@@ -161,8 +155,8 @@ public class MouseTranslate extends MouseBehavior {
                     }
                     if ((id == MouseEvent.MOUSE_DRAGGED) && rightButton
                             && transformGroup != null) {
-                        x = ((MouseEvent) event[i]).getX();
-                        y = ((MouseEvent) event[i]).getY();
+                        x = ((MouseEvent) awtEvent).getX();
+                        y = ((MouseEvent) awtEvent).getY();
                         int dx = x - x_last;
                         int dy = y - y_last;
                         if ((!reset)
@@ -197,8 +191,8 @@ public class MouseTranslate extends MouseBehavior {
                         y_last = y;
                     }
                     if (id == MouseEvent.MOUSE_PRESSED) {
-                        x_last = ((MouseEvent) event[i]).getX();
-                        y_last = ((MouseEvent) event[i]).getY();
+                        x_last = ((MouseEvent) awtEvent).getX();
+                        y_last = ((MouseEvent) awtEvent).getY();
                     } else if (id == MouseEvent.MOUSE_RELEASED) {
                         setTransformGroup(null);
                     }
@@ -214,11 +208,8 @@ public class MouseTranslate extends MouseBehavior {
         }
     }
 
-    /*
-     * Set the x-axis amd y-axis movement multipler with factor.
-     */
-
     /**
+     * Set the x-axis amd y-axis movement multipler with factor.
      * <p>
      * setFactor</p>
      *
@@ -228,12 +219,9 @@ public class MouseTranslate extends MouseBehavior {
         x_factor = y_factor = factor;
     }
 
-    /*
+    /**
      * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
      * respectively.
-     */
-
-    /**
      * <p>
      * setFactor</p>
      *
@@ -245,12 +233,9 @@ public class MouseTranslate extends MouseBehavior {
         y_factor = yFactor;
     }
 
-    /*
-     * The transformChanged method in the callback class will be called every
-     * time the transform is updated
-     */
-
     /**
+     * The transformChanged method in the callback class will be called every
+     * time the transform is updated.
      * <p>
      * setupCallback</p>
      *
@@ -269,25 +254,3 @@ public class MouseTranslate extends MouseBehavior {
     public void transformChanged(Transform3D transform) {
     }
 }
-/*
- * Copyright (c) 1996-1998 Sun Microsystems, Inc. All Rights Reserved. Sun
- * grants you ("Licensee") a non-exclusive, royalty free, license to use, modify
- * and redistribute this software in source and binary code form, provided that
- * i) this copyright notice and license appear on all copies of the software;
- * and ii) Licensee does not utilize the software in a manner which is
- * disparaging to Sun. This software is provided "AS IS," without a warranty of
- * any kind. ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND WARRANTIES,
- * INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE OR NON-INFRINGEMENT, ARE HEREBY EXCLUDED. SUN AND ITS LICENSORS SHALL
- * NOT BE LIABLE FOR ANY DAMAGES SUFFXRED BY LICENSEE AS A RESULT OF USING,
- * MODIFYING OR DISTRIBUTING THE SOFTWARE OR ITS DERIVATIVES. IN NO EVENT WILL
- * SUN OR ITS LICENSORS BE LIABLE FOR ANY LOST REVENUE, PROFIT OR DATA, OR FOR
- * DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL OR PUNITIVE DAMAGES,
- * HOWEVER CAUSED AND REGARDLESS OF THE THEORY OF LIABILITY, ARISING OUT OF THE
- * USE OF OR INABILITY TO USE SOFTWARE, EVEN IF SUN HAS BEEN ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGES. This software is not designed or intended for
- * use in on-line control of aircraft, air traffic, aircraft navigation or
- * aircraft communications; or in the design, construction, operation or
- * maintenance of any nuclear facility. Licensee represents and warrants that it
- * will not use or redistribute the Software for such purposes.
- */

@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.swing.BorderFactory;
@@ -145,7 +145,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * Log Settings
      */
     private final JComboBox<String> logSettings = new JComboBox<>();
-    private String logString = null;
     /**
      * Commands for supported file types
      */
@@ -204,7 +203,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     private JButton jbLaunch;
     private JButton jbStop;
-    private FFXLauncher ffxLauncher = null;
     private Thread ffxThread = null;
 
     /**
@@ -301,6 +299,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         acidComboBox.insertItemAt("" + index + " " + entry,
                                 index);
                     } catch (Exception e) {
+                        //
                     }
                 } else {
                     try {
@@ -309,6 +308,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         acidComboBox.insertItemAt("" + index + " " + entry,
                                 index);
                     } catch (Exception e) {
+                        //
                     }
                 }
             }
@@ -343,7 +343,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         // Create the condensed sequence view.
         StringBuilder sequence = new StringBuilder();
         for (int i = 0; i < acidComboBox.getItemCount(); i++) {
-            String s[] = ((String) acidComboBox.getItemAt(i)).trim().toUpperCase().split(" +");
+            String[] s = (acidComboBox.getItemAt(i)).trim().toUpperCase().split(" +");
             if (s.length > 1) {
                 if (s[1].equalsIgnoreCase("MOL")) {
                     sequence.append(s[1]).append("\n");
@@ -356,7 +356,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         acidTextArea.setText(sequence.toString());
         for (int i = 0; i < acidComboBox.getItemCount(); i++) {
             String s = (String) acidComboBox.getItemAt(i);
-            s = s.substring(s.indexOf(" "), s.length()).trim();
+            s = s.substring(s.indexOf(" ")).trim();
             acidComboBox.removeItemAt(i);
             acidComboBox.insertItemAt("" + (i + 1) + " " + s, i);
         }
@@ -441,8 +441,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     if (k != 0) {
                         optionString.append("\n");
                     }
-                    String s = (String) acidComboBox.getItemAt(k);
-                    s = s.substring(s.indexOf(" "), s.length()).trim();
+                    String s = acidComboBox.getItemAt(k);
+                    s = s.substring(s.indexOf(" ")).trim();
                     optionString.append(s);
                 }
                 // Need an extra newline for Nucleic
@@ -509,7 +509,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         String postProcess = jtf.getName();
                         if (postProcess != null
                                 && postProcess.equalsIgnoreCase("ATOMPAIRS")) {
-                            String tokens[] = conditionalInput.split(" +");
+                            String[] tokens = conditionalInput.split(" +");
                             StringBuilder atomPairs = new StringBuilder();
                             int atomNumber = 0;
                             for (String token : tokens) {
@@ -530,9 +530,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             }
             if (optionString.length() > 0) {
                 commandTextArea.append(optionString.toString());
-                if (newLine) {
-                    commandTextArea.append("\n");
-                }
+                commandTextArea.append("\n");
             }
         }
         String commandInput = commandTextArea.getText();
@@ -579,7 +577,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             return aminoPanel;
         }
         JPanel buttonPanel = new JPanel(new GridLayout(4, 5, 2, 2));
-        Residue.AA3 a[] = Residue.AA3.values();
+        Residue.AA3[] a = Residue.AA3.values();
         for (int i = 0; i < 20; i++) {
             JButton button = new JButton(a[i].name());
             button.setActionCommand("PROTEIN");
@@ -606,17 +604,17 @@ public class ModelingPanel extends JPanel implements ActionListener,
     public ArrayList<String> getAvailableCommands() {
         ArrayList<String> availableCommands = new ArrayList<>();
         for (int i = 0; i < currentCommandBox.getItemCount(); i++) {
-            availableCommands.add((String) currentCommandBox.getItemAt(i));
+            availableCommands.add(currentCommandBox.getItemAt(i));
         }
         return availableCommands;
     }
 
+    // *********************************************************************
+    // Modeling Command Configuration
+
     /**
-     * *********************************************************************
-     *
      * @return a {@link java.lang.String} object.
      */
-    // Modeling Command Configuration
     public String getCommand() {
         return activeCommand;
     }
@@ -745,7 +743,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     break;
                 }
             }
-            if (commandroot == null || !(commandroot instanceof Element)) {
+            if (!(commandroot instanceof Element)) {
                 commandList = null;
             }
             commandList = ((Element) commandroot).getElementsByTagName("Command");
@@ -875,11 +873,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
         if (scriptFile != null && scriptFile.exists()) {
             String argLine = statusLabel.getText().replace('\n', ' ');
-            String args[] = argLine.trim().split(" +");
+            String[] args = argLine.trim().split(" +");
             // Remove the command (first token) and system name (last token).
             args = copyOfRange(args, 1, args.length - 1);
             List<String> argList = Arrays.asList(args);
-            ffxLauncher = new FFXLauncher(argList, scriptFile);
+            FFXLauncher ffxLauncher = new FFXLauncher(argList, scriptFile);
             ffxThread = new Thread(ffxLauncher);
             ffxThread.setName(statusLabel.getText());
             ffxThread.setPriority(Thread.MAX_PRIORITY);
@@ -889,7 +887,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
     }
 
-    public void enableLaunch(boolean enable) {
+    void enableLaunch(boolean enable) {
         jbLaunch.setEnabled(enable);
         jbStop.setEnabled(!enable);
     }
@@ -899,7 +897,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         List<String> argList;
         File scriptFile;
 
-        public FFXLauncher(List<String> argList, File scriptFile) {
+        FFXLauncher(List<String> argList, File scriptFile) {
             this.argList = argList;
             this.scriptFile = scriptFile;
         }
@@ -919,7 +917,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @param dir     The directory to execute the command in.
      * @return a {@link ffx.ui.FFXExec} object.
      */
-    public FFXExec launch(String command, String dir) {
+    private FFXExec launch(String command, String dir) {
         logger.log(Level.INFO, "Command: {0}\nDirectory: {1}", new Object[]{command, dir});
         synchronized (this) {
             // Check that the TINKER *.exe exists in TINKER/bin
@@ -1065,8 +1063,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             boolean openOnto = false;
             if (commandActions.toUpperCase().contains("CONNECT")) {
                 // If a version file is created, open it onto the structure used
-                // to
-                // display the job.
+                // to display the job.
                 if (newFile != null) {
                     openOnto = true;
                 }
@@ -1109,7 +1106,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      *
      * @param active a {@link ffx.ui.FFXSystem} object.
      */
-    public void loadActive(FFXSystem active) {
+    void loadActive(FFXSystem active) {
         synchronized (this) {
             activeSystem = active;
             FileType fileType;
@@ -1412,7 +1409,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     String cpostProcess = conditional.getAttribute("postProcess");
                     if (conditionalName.toUpperCase().startsWith("KEYWORD")) {
                         optionPanel.setName(conditionalName);
-                        String keywords[] = conditionalValues.split(" +");
+                        String[] keywords = conditionalValues.split(" +");
                         if (activeSystem != null) {
                             Hashtable<String, Keyword> systemKeywords = activeSystem.getKeywords();
                             for (String key : keywords) {
@@ -1533,6 +1530,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
         // Simple Case - default log file doesn't exist yet
         String createNew = null;
+        String logString = null;
         if (!tempLog.exists()) {
             createNew = "Create " + fileName;
             logSettings.addItem(createNew);
@@ -1642,6 +1640,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 end = new File(f.getParent(), f.getName() + ".end");
             }
         } catch (Exception e) {
+            //
         }
         if (end != null && end.exists()) {
             end.delete();
@@ -1651,15 +1650,17 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Save ModelingPanel user preferences
      */
-    public void savePrefs() {
+    void savePrefs() {
         String c = ModelingPanel.class.getName();
         prefs.putBoolean(c + ".description", descriptCheckBox.isSelected());
     }
 
-    /**
-     * *********************************************************************
-     */
+    // *********************************************************************
     // Initialization code and misc. methods.
+
+    /**
+     * Selected.
+     */
     public void selected() {
         loadLogSettings();
         setDivider(descriptCheckBox.isSelected());
@@ -1710,12 +1711,12 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
     }
 
+    // *********************************************************************
+    // Logging Configuation
+
     /**
-     * *********************************************************************
-     *
      * @param mode a {@link java.lang.String} object.
      */
-    // Logging Configuation
     public void setLogMode(String mode) {
         mode = mode.toUpperCase();
         for (int i = 0; i < logSettings.getItemCount(); i++) {
@@ -1732,7 +1733,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * <p>
      * deleteLogs</p>
      */
-    public void deleteLogs() {
+    private void deleteLogs() {
         if (activeSystem != null) {
             File file = activeSystem.getFile();
             String name = file.getName();
@@ -1742,15 +1743,15 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (i == JOptionPane.YES_OPTION) {
                 try {
-                    File files[] = activeSystem.getFile().getParentFile().listFiles();
+                    File[] files = activeSystem.getFile().getParentFile().listFiles();
                     for (File f : files) {
                         name = FilenameUtils.getBaseName(f.getAbsolutePath());
-                        if (FilenameUtils.wildcardMatch(f.getName(), name
-                                + ".log*")) {
+                        if (FilenameUtils.wildcardMatch(f.getName(), name + ".log*")) {
                             f.delete();
                         }
                     }
                 } catch (Exception e) {
+                    //
                 }
                 activeSystem.setLogFile(null);
                 loadLogSettings();

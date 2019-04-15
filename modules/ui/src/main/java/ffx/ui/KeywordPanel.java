@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.swing.BorderFactory;
@@ -66,7 +66,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
@@ -98,7 +97,6 @@ import ffx.utilities.Keyword;
  * files.
  *
  * @author Michael J. Schnieders
- *
  */
 public final class KeywordPanel extends JPanel implements ActionListener {
 
@@ -195,10 +193,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     private final JPanel noKeywordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
     private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
     private final BorderLayout borderLayout = new BorderLayout();
-    // Location of TINKER parameter files
-    private File paramDir = null;
-    private File paramFiles[] = null;
-    private String paramNames[] = null;
+    private String[] paramNames = null;
     private LinkedHashMap<String, String> paramHashtable = null;
 
     /**
@@ -206,7 +201,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * @param f a {@link ffx.ui.MainPanel} object.
      */
-    public KeywordPanel(MainPanel f) {
+    KeywordPanel(MainPanel f) {
         super();
         mainPanel = f;
         initialize();
@@ -214,7 +209,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
 
     /**
      * Handles input from KeywordPanel ToolBar buttons.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -300,9 +295,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 return null;
             }
             String value = keyword.toString().trim();
-            if (value == null) {
-                return null;
-            }
             int firstSpace = value.indexOf(" ");
             if (firstSpace < 1) {
                 return value;
@@ -317,7 +309,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * @return an array of {@link java.lang.String} objects.
      */
-    public String[] getParamFiles() {
+    String[] getParamFiles() {
         return paramNames;
     }
 
@@ -386,7 +378,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * initToolBar</p>
      */
-    public void initToolBar() {
+    private void initToolBar() {
         toolBar = new JToolBar("Keyword Editor");
         toolBar.setLayout(flowLayout);
         ClassLoader loader = getClass().getClassLoader();
@@ -445,7 +437,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * @return a boolean.
      */
-    public boolean isFileOpen() {
+    boolean isFileOpen() {
         return fileOpen;
     }
 
@@ -467,7 +459,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * keyClear</p>
      */
-    public void keyClear() {
+    private void keyClear() {
         synchronized (this) {
             // Clear each KeywordComponent
             for (KeywordComponent kw : keywordHashMap.values()) {
@@ -492,7 +484,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * @return a boolean.
      */
-    public boolean keyClose() {
+    private boolean keyClose() {
         if (KeywordComponent.isKeywordModified()) {
             return false;
         }
@@ -503,7 +495,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     /**
      * Give the user a File Dialog Box so they can select a key file.
      */
-    public void keyOpen() {
+    private void keyOpen() {
         if (fileOpen && KeywordComponent.isKeywordModified()) {
             int option = JOptionPane.showConfirmDialog(this,
                     "Save Changes First", "Opening New File",
@@ -543,7 +535,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * @param newKeyFile a {@link java.io.File} object.
      * @return a boolean.
      */
-    public boolean keyOpen(File newKeyFile) {
+    private boolean keyOpen(File newKeyFile) {
         if (newKeyFile != null && newKeyFile.exists() && newKeyFile.canRead()) {
             Hashtable<String, Keyword> newKeys = KeyFilter.open(newKeyFile);
             if (newKeys != null && newKeys.size() > 0) {
@@ -564,7 +556,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * @param f a {@link java.io.File} object.
      */
-    public void keySave(File f) {
+    void keySave(File f) {
         if (f != null) {
             currentKeyFile = f;
         }
@@ -579,7 +571,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * keySaveAs</p>
      */
-    public void keySaveAs() {
+    private void keySaveAs() {
         if (!fileOpen) {
             return;
         }
@@ -605,7 +597,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * @param newSystem a {@link ffx.ui.FFXSystem} object.
      * @return a boolean.
      */
-    public boolean loadActive(FFXSystem newSystem) {
+    boolean loadActive(FFXSystem newSystem) {
         synchronized (this) {
             if (newSystem == null) {
                 keyClear();
@@ -660,13 +652,13 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * loadActive</p>
      *
-     * @param newSystem a {@link ffx.ui.FFXSystem} object.
-     * @param newKeys a {@link java.util.Hashtable} object.
+     * @param newSystem  a {@link ffx.ui.FFXSystem} object.
+     * @param newKeys    a {@link java.util.Hashtable} object.
      * @param newKeyFile a {@link java.io.File} object.
      * @return a boolean.
      */
-    public boolean loadActive(FFXSystem newSystem,
-                              Hashtable<String, Keyword> newKeys, File newKeyFile) {
+    private boolean loadActive(FFXSystem newSystem,
+                               Hashtable<String, Keyword> newKeys, File newKeyFile) {
 
         synchronized (this) {
             // Store changes made to the current system (if any) first.
@@ -725,7 +717,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                         for (String entry : data) {
                             count++;
                             if (count > points) {
-                                String res[] = entry.split(" +");
+                                String[] res = entry.split(" +");
                                 int xres = Integer.parseInt(res[5]);
                                 int yres = Integer.parseInt(res[5]);
                                 points = xres * yres;
@@ -804,7 +796,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 gridBagConstraints.gridwidth = 1;
                 gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
                 for (KeywordComponent keywordComponent : keywordHashMap.values()) {
-                    if (keywordComponent.isActive() == true) {
+                    if (keywordComponent.isActive()) {
                         JPanel jptemp = keywordComponent.getKeywordGUI();
                         gridBagLayout.setConstraints(jptemp, gridBagConstraints);
                         gridPanel.add(jptemp);
@@ -857,7 +849,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * loadPrefs</p>
      */
-    public void loadPrefs() {
+    private void loadPrefs() {
         String c = KeywordPanel.class.getName();
         descriptCheckBox.setSelected(!preferences.getBoolean(c + ".description", true));
         descriptCheckBox.doClick();
@@ -948,7 +940,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * publishKeywords</p>
      */
-    public void publishKeywords() {
+    private void publishKeywords() {
         synchronized (this) {
             flatfileTextArea.setText("");
             boolean writegroup = false;
@@ -962,7 +954,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 }
                 String line = keyword.toString();
                 if (line != null) {
-                    if (writegroup == true) {
+                    if (writegroup) {
                         flatfileTextArea.append("\n");
                         flatfileTextArea.append("# " + group);
                         flatfileTextArea.append("\n");
@@ -974,7 +966,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             }
             flatfileTextArea.append("\n");
             String s = commentStringBuffer.toString();
-            if (s != null && !s.trim().equals("")) {
+            if (!s.trim().equals("")) {
                 flatfileTextArea.append(s.trim());
             }
             flatfileTextArea.append("\n");
@@ -987,7 +979,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * @return a boolean.
      */
-    public boolean saveChanges() {
+    boolean saveChanges() {
         if (KeywordComponent.isKeywordModified() && currentKeyFile != null) {
             keySave(currentKeyFile);
             return true;
@@ -999,14 +991,14 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * saveKeywords</p>
      *
-     * @param keyFile a {@link java.io.File} object.
+     * @param keyFile        a {@link java.io.File} object.
      * @param keywordHashMap a {@link java.util.LinkedHashMap} object.
-     * @param comments a {@link java.lang.StringBuilder} object.
+     * @param comments       a {@link java.lang.StringBuilder} object.
      * @return a boolean.
      */
-    public boolean saveKeywords(File keyFile,
-                                LinkedHashMap<String, KeywordComponent> keywordHashMap,
-                                StringBuilder comments) {
+    private boolean saveKeywords(File keyFile,
+                                 LinkedHashMap<String, KeywordComponent> keywordHashMap,
+                                 StringBuilder comments) {
         synchronized (this) {
             FileWriter fw = null;
             BufferedWriter bw = null;
@@ -1024,7 +1016,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                     }
                     String line = keyword.toString();
                     if (line != null) {
-                        if (writegroup == true) {
+                        if (writegroup) {
                             bw.newLine();
                             bw.write("# " + group);
                             bw.newLine();
@@ -1042,9 +1034,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 bw.newLine();
                 bw.flush();
                 KeywordComponent.setKeywordModified(false);
-            } catch (FileNotFoundException e) {
-                logger.warning(e.toString());
-                return false;
             } catch (IOException e) {
                 logger.warning(e.toString());
                 return false;
@@ -1068,7 +1057,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * savePrefs</p>
      */
-    public void savePrefs() {
+    void savePrefs() {
         String c = KeywordPanel.class.getName();
         preferences.putInt(c + ".divider", splitPane.getDividerLocation());
         preferences.putBoolean(c + ".description", descriptCheckBox.isSelected());
@@ -1090,7 +1079,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      *
      * @param b a boolean.
      */
-    public void setDivider(boolean b) {
+    private void setDivider(boolean b) {
         if (b) {
             descriptCheckBox.setSelected(b);
             int spDivider = (int) (this.getHeight() * (3.0f / 5.0f));
@@ -1124,7 +1113,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * should be null to just indicate the Keyword is present (active). If this
      * Keyword can apprear many times, value will be appended to the list.
      *
-     * @param key String
+     * @param key   String
      * @param value String
      */
     public void setKeywordValue(String key, String value) {
@@ -1147,11 +1136,12 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * <p>
      * setParamPath</p>
      */
-    public void setParamPath() {
-        paramDir = new File(MainPanel.ffxDir.getAbsolutePath() + File.separator
+    private void setParamPath() {
+        // Location of TINKER parameter files
+        File paramDir = new File(MainPanel.ffxDir.getAbsolutePath() + File.separator
                 + "params");
-        if (paramDir != null && paramDir.exists()) {
-            paramFiles = paramDir.listFiles();
+        if (paramDir.exists()) {
+            File[] paramFiles = paramDir.listFiles();
             paramHashtable = new LinkedHashMap<>();
             for (File f : paramFiles) {
                 if (f.exists() && f.canRead()
@@ -1189,7 +1179,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     /**
      * Store the KeywordPanel's current keyword content in the activeSystem.
      */
-    public void storeActive() {
+    private void storeActive() {
         synchronized (this) {
             if (currentSystem == null) {
                 return;
@@ -1201,7 +1191,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             Hashtable<String, Keyword> currentKeys = currentSystem.getKeywords();
             Hashtable<String, Keyword> newKeys = new Hashtable<String, Keyword>();
             for (KeywordComponent kc : keywordHashMap.values()) {
-                if (kc.isActive() == true) {
+                if (kc.isActive()) {
                     Keyword keywordData = null;
                     if (currentKeys != null) {
                         keywordData = currentKeys.get(kc.getKeyword());

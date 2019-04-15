@@ -1,46 +1,45 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.media.j3d.Appearance;
 import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Font3D;
 import javax.media.j3d.FontExtrusion;
 import javax.media.j3d.Geometry;
@@ -65,6 +64,8 @@ import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.picking.PickTool;
 import com.sun.j3d.utils.universe.ViewingPlatform;
 
+import static org.apache.commons.math3.util.FastMath.PI;
+
 import ffx.ui.behaviors.MouseBehaviorCallback;
 
 /**
@@ -72,34 +73,28 @@ import ffx.ui.behaviors.MouseBehaviorCallback;
  * control rotation/translation in the global frame.
  *
  * @author Michael J. Schnieders
- *
  */
 public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
 
-    Canvas3D canvas;
-    ViewingPlatform viewingPlatform;
-    Bounds axisBounds;
-    BranchGroup axisBranchGroup = new BranchGroup();
-    TransformGroup axisTransformGroup = new TransformGroup();
-    Transform3D axisTransform3D = new Transform3D();
-    Vector3d axisVector3d = new Vector3d(-0.7, -0.6, -1.25);
+    private ViewingPlatform viewingPlatform;
+    private BranchGroup axisBranchGroup = new BranchGroup();
+    private TransformGroup axisTransformGroup = new TransformGroup();
+    private Transform3D axisTransform3D = new Transform3D();
+    private Vector3d axisVector3d = new Vector3d(-0.7, -0.6, -1.25);
     public Matrix3d matrix = new Matrix3d();
 
     /**
      * <p>
      * Constructor for GraphicsAxis.</p>
      *
-     * @param v a {@link com.sun.j3d.utils.universe.ViewingPlatform} object.
-     * @param c a {@link javax.media.j3d.Canvas3D} object.
-     * @param b a {@link javax.media.j3d.Bounds} object.
+     * @param viewingPlatform a {@link com.sun.j3d.utils.universe.ViewingPlatform} object.
+     * @param bounds          a {@link javax.media.j3d.Bounds} object.
      */
-    public GraphicsAxis(ViewingPlatform v, Canvas3D c, Bounds b) {
-        viewingPlatform = v;
-        canvas = c;
-        axisBounds = b;
+    GraphicsAxis(ViewingPlatform viewingPlatform, Bounds bounds) {
+        this.viewingPlatform = viewingPlatform;
         setCapability(Group.ENABLE_PICK_REPORTING);
         createAxis();
-        setBounds(axisBounds);
+        setBounds(bounds);
         axisTransform3D.setTranslation(axisVector3d);
         axisTransform3D.setScale(0.015);
         axisTransformGroup.setTransform(axisTransform3D);
@@ -111,7 +106,7 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         axisBranchGroup.setCapability(BranchGroup.ENABLE_PICK_REPORTING);
         axisBranchGroup.addChild(axisTransformGroup);
         axisBranchGroup.compile();
-        viewingPlatform.getViewPlatformTransform().addChild(axisBranchGroup);
+        this.viewingPlatform.getViewPlatformTransform().addChild(axisBranchGroup);
     }
 
     /**
@@ -129,7 +124,7 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
      * <p>
      * createAxis</p>
      */
-    public void createAxis() {
+    private void createAxis() {
         Appearance ap = new Appearance();
         Color3f col = new Color3f(Color.lightGray);
         Color3f black = new Color3f(Color.black);
@@ -142,16 +137,14 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         xcone.setUserData(this);
         Transform3D xconeT3d = new Transform3D();
         xconeT3d.setTranslation(new Vector3d(10.0f, 0.0f, 0.0f));
-        xconeT3d.setRotation(new AxisAngle4f(0.0f, 0.0f, 1.0f, (float) Math.PI
-                / -2.0f));
+        xconeT3d.setRotation(new AxisAngle4f(0.0f, 0.0f, 1.0f, (float) PI / -2.0f));
         TransformGroup xconeTG = new TransformGroup(xconeT3d);
         xconeTG.addChild(xcone);
         Cylinder xcylinder = new Cylinder(1.0f, 9.0f, ap);
         xcylinder.setUserData(this);
         Transform3D xcyT3d = new Transform3D();
         xcyT3d.setTranslation(new Vector3d(4.5, 0.0, 0.0));
-        xcyT3d.setRotation(new AxisAngle4f(0.0f, 0.0f, 1.0f,
-                (float) Math.PI / 2.0f));
+        xcyT3d.setRotation(new AxisAngle4f(0.0f, 0.0f, 1.0f, (float) PI / 2.0f));
         TransformGroup xcyTG = new TransformGroup(xcyT3d);
         xcyTG.addChild(xcylinder);
         setCapabilities(xcone, xcylinder);
@@ -178,26 +171,22 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         zcone.setUserData(this);
         Transform3D zconeT3d = new Transform3D();
         zconeT3d.setTranslation(new Vector3d(0.0f, 0.0f, 10.0f));
-        zconeT3d.setRotation(new AxisAngle4f(1.0f, 0.0f, 0.0f,
-                (float) Math.PI / 2.0f));
+        zconeT3d.setRotation(new AxisAngle4f(1.0f, 0.0f, 0.0f, (float) PI / 2.0f));
         TransformGroup zconeTG = new TransformGroup(zconeT3d);
         zconeTG.addChild(zcone);
         Cylinder zcylinder = new Cylinder(1.0f, 9.0f, ap);
         zcylinder.setUserData(this);
         Transform3D zcyT3d = new Transform3D();
         zcyT3d.setTranslation(new Vector3d(0.0, 0.0, 4.5));
-        zcyT3d.setRotation(new AxisAngle4f(1.0f, 0.0f, 0.0f,
-                (float) Math.PI / 2.0f));
+        zcyT3d.setRotation(new AxisAngle4f(1.0f, 0.0f, 0.0f, (float) PI / 2.0f));
         TransformGroup zcyTG = new TransformGroup(zcyT3d);
         zcyTG.addChild(zcylinder);
         setCapabilities(zcone, zcylinder);
         addChild(zconeTG);
         addChild(zcyTG);
         Sphere sphere = new Sphere(1.0f, ap);
-        if (!sphere.getShape().getGeometry(0).isCompiled()
-                && !sphere.getShape().getGeometry(0).isLive()) {
-            PickTool.setCapabilities(sphere.getShape(),
-                    PickTool.INTERSECT_COORD);
+        if (!sphere.getShape().getGeometry(0).isCompiled() && !sphere.getShape().getGeometry(0).isLive()) {
+            PickTool.setCapabilities(sphere.getShape(), PickTool.INTERSECT_COORD);
         }
         addChild(sphere);
         // Labels
@@ -233,31 +222,17 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         return tg;
     }
 
-    /**
-     * <p>
-     * Getter for the field <code>axisTransformGroup</code>.</p>
-     *
-     * @return a {@link javax.media.j3d.TransformGroup} object.
-     */
-    public TransformGroup getAxisTransformGroup() {
-        return axisTransformGroup;
-    }
-
     private void setCapabilities(Cone cone, Cylinder cylinder) {
-        if (!cone.getShape(0).getGeometry(0).isLive()
-                && !cone.getShape(0).getGeometry(0).isCompiled()) {
+        if (!cone.getShape(0).getGeometry(0).isLive() && !cone.getShape(0).getGeometry(0).isCompiled()) {
             PickTool.setCapabilities(cone.getShape(0), PickTool.INTERSECT_COORD);
             cone.getShape(0).setUserData(this);
             PickTool.setCapabilities(cone.getShape(1), PickTool.INTERSECT_COORD);
             cone.getShape(1).setUserData(this);
-            PickTool.setCapabilities(cylinder.getShape(0),
-                    PickTool.INTERSECT_COORD);
+            PickTool.setCapabilities(cylinder.getShape(0), PickTool.INTERSECT_COORD);
             cylinder.getShape(0).setUserData(this);
-            PickTool.setCapabilities(cylinder.getShape(1),
-                    PickTool.INTERSECT_COORD);
+            PickTool.setCapabilities(cylinder.getShape(1), PickTool.INTERSECT_COORD);
             cylinder.getShape(1).setUserData(this);
-            PickTool.setCapabilities(cylinder.getShape(2),
-                    PickTool.INTERSECT_COORD);
+            PickTool.setCapabilities(cylinder.getShape(2), PickTool.INTERSECT_COORD);
             cylinder.getShape(2).setUserData(this);
         }
     }
@@ -268,10 +243,10 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
      *
      * @param b a boolean.
      */
-    public void showAxis(boolean b) {
-        if (b == true && !axisBranchGroup.isLive()) {
+    void showAxis(boolean b) {
+        if (b && !axisBranchGroup.isLive()) {
             viewingPlatform.getViewPlatformTransform().addChild(axisBranchGroup);
-        } else if (b == false && axisBranchGroup.isLive()) {
+        } else if (!b && axisBranchGroup.isLive()) {
             axisBranchGroup.detach();
         }
     }
