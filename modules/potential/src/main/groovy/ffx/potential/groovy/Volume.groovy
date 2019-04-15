@@ -103,7 +103,7 @@ class Volume extends PotentialScript {
         int nAtoms = atoms.length
 
         // Input
-        boolean[] isHydrogen = new Boolean[nAtoms]
+        boolean[] isHydrogen = new boolean[nAtoms]
         double[] radii = new double[nAtoms]
         double[] volume = new double[nAtoms]
         double[] gamma = new double[nAtoms]
@@ -111,8 +111,8 @@ class Volume extends PotentialScript {
 
         // Output
         double[][] force = new double[nAtoms][3]
-        double[] volume2 = new double[nAtoms]
-        double[] energy = new double[nAtoms]
+        double[] totalVolume = new double[1]
+        double[] energy = new double[1]
         double[] gradV = new double[nAtoms]
         double[] freeVolume = new double[nAtoms]
         double[] selfVolume = new double[nAtoms]
@@ -131,12 +131,17 @@ class Volume extends PotentialScript {
 
         GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen)
 
-        gaussVol.computeVolume(positions, volume2, energy, force, gradV, freeVolume, selfVolume)
+        gaussVol.computeTree(positions)
+        gaussVol.computeVolume(positions, totalVolume, energy, force, gradV, freeVolume, selfVolume)
+
+        logger.info(String.format(" Total Volume: %8.6f, Energy: %8.6f", totalVolume[0], energy[0]))
 
         int i = 0
         for (Atom atom : atoms) {
-            logger.info(String.format(" Atom %s, Volume: %8.6f, Energy: %8.6f, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
-                atom.toString(), volume2[i], energy[i], force[i][0], force[i][1], force[i][2], gradV[i], freeVolume[i], selfVolume[i]))
+            if (!atom.isHydrogen()) {
+                logger.info(String.format(" Atom %s, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
+                        atom.toString(), force[i][0], force[i][1], force[i][2], gradV[i], freeVolume[i], selfVolume[i]))
+            }
             i++
         }
 
