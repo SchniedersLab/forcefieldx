@@ -9,7 +9,7 @@
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <subsection name="Real Space Refinement">
+        <section name="Real Space Refinement">
             <p>Optimize an atomic resolution structure against real space data (i.e. X-ray Diffraction or CryoEM Map).
             </p>
             <table>
@@ -22,30 +22,30 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/realspace/Anneal.groovy">realspace.Anneal</a>
+                            <a href="commands/realspace.Anneal.html">realspace.Anneal</a>
                         </td>
                         <td>Apply simulated annealing using a real space objective function.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/realspace/Dynamics.groovy">realspace.Dynamics</a>
+                            <a href="commands/realspace.Dynamics.html">realspace.Dynamics</a>
                         </td>
                         <td>Run Dynamics simulations using a real space objective function.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/realspace/ManyBody.groovy">realspace.ManyBody</a>
+                            <a href="commands/realspace.ManyBody.html">realspace.ManyBody</a>
                         </td>
                         <td>Globally optimize the side-chains of a protein using a real space objective function.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/realspace/Minimize.groovy">realspace.Minimize</a>
+                            <a href="commands/realspace.Minimize.html">realspace.Minimize</a>
                         </td>
                         <td>Minimize using a real space objective function.</td>
                     </tr>
                 </tbody>
             </table>
-        </subsection>
+        </section>
     </body>
 </document>

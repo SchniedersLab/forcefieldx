@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Commands</title>
@@ -21,25 +21,25 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/Energy.groovy" >Energy</a>
+                            <a href="commands/energy.html">Energy</a>
                         </td>
                         <td>Calculate the potential energy of the system.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/Timer.groovy" >Timer</a>
+                            <a href="commands/timer.html">Timer</a>
                         </td>
                         <td>Time the computation of the potential energy and gradient.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/test/Gradient.groovy" >test.Gradient</a>
+                            <a href="commands/test.Gradient.html">test.Gradient</a>
                         </td>
                         <td>Test the analytic Cartesian coordinate energy gradient numerically.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/test/LambdaGradient.groovy" >test.LambdaGradient</a>
+                            <a href="commands/test.LambdaGradient.html">test.LambdaGradient</a>
                         </td>
                         <td>Test the analytic thermodynamic path parameterized by Lambda numerically.</td>
                     </tr>

@@ -72,9 +72,9 @@ class Superpose extends PotentialScript {
     /**
      * --atoms defines which atoms to calculate RMSD on.
      */
-    @Option(names = ['--fC', '--frameComparison'], paramLabel = "ALLVSALL",
-            description = 'Frames to be compared within the arc file. Select [ALLVSALL/ONEVSALL] to choose which assemblies within the arc are used for RMSD comparisons.')
-    private String frameComparison = "AllVsAll"
+    @Option(names = ['--fC', '--frameComparison'], paramLabel = "true",
+            description = 'Frames to be compared within the arc file. Select [true] for all versus all comparison; select [false] for one versus all comparison.')
+    private boolean frameComparison = true
 
     /**
      * -s or --start defines which atoms in the structure will be used in RMSD calculation.
@@ -196,37 +196,33 @@ class Superpose extends PotentialScript {
             double[] xUsed = new double[nUsedVars]
             double[] x2Used = new double[nUsedVars]
 
-            // Switch on which molecular assemblies to do RMSD comparisons among.
-            switch (frameComparison.toUpperCase()) {
-                case "ONEVSALL":
-                    // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
-                    rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
-                    break
-                case "ALLVSALL":
-                    rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
-                    SystemFilter systemFilter1
+            // Check which molecular assemblies to do RMSD comparisons among.
+            if (frameComparison == false) {
+                // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
+                rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+            } else if (frameComparison == true) {
+                rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+                SystemFilter systemFilter1
+                if (systemFilter instanceof PDBFilter) {
+                    systemFilter1 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                    systemFilter1.readFile()
+                } else if (systemFilter instanceof XYZFilter) {
+                    systemFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                }
+                while (systemFilter1.readNext(false, false)) {
+                    int snapshot1 = systemFilter1.getSnapshot()
+                    forceFieldEnergy.getCoordinates(x)
+                    SystemFilter systemFilter2
                     if (systemFilter instanceof PDBFilter) {
-                        systemFilter1 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                        systemFilter1.readFile()
+                        systemFilter2 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                        systemFilter2.readFile()
                     } else if (systemFilter instanceof XYZFilter) {
-                        systemFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                        systemFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                     }
-                    while (systemFilter1.readNext(false, false)) {
-                        int snapshot1 = systemFilter1.getSnapshot()
-                        forceFieldEnergy.getCoordinates(x)
-                        SystemFilter systemFilter2
-                        if (systemFilter instanceof PDBFilter) {
-                            systemFilter2 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                            systemFilter2.readFile()
-                        } else if (systemFilter instanceof XYZFilter) {
-                            systemFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                        }
-                        rmsd(systemFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
-                    }
-                    break
-
-                default:
-                    logger.severe(String.format(" Could not parse %s as a frame comparison! Must be ALLVSALL or ONEVSALL", frameComparison))
+                    rmsd(systemFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
+                }
+            } else{
+                logger.severe(String.format(" Could not parse %s as a frame comparison! Must be true or false", frameComparison))
             }
         }
         return this

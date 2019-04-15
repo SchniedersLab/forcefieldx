@@ -38,7 +38,10 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -52,14 +55,16 @@ import static ffx.numerics.math.VectorMath.sum;
 
 /**
  * A class that implements the Gaussian description of an object (molecule) made of a overlapping spheres.
- *
- * Ported from C++ code by Emilio Gallicchio <egallicchio@brooklyn.cuny.edu>
+ * <p>
+ * Ported from C++ code by Emilio Gallicchio.
  * GaussVol is part of the AGBNP/OpenMM implicit solvent model.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public class GaussVol {
+
+    private static final Logger logger = Logger.getLogger(GaussVol.class.getName());
 
     /* -------------------------------------------------------------------------- *
      *                                 GaussVol                                   *
@@ -87,9 +92,6 @@ public class GaussVol {
      *                                                                            *
      * -------------------------------------------------------------------------- */
 
-    private static int GAUSSVOL_OK = 2;
-    private static int GAUSSVOL_ERR = -1;
-
     // Conversion factors from spheres to Gaussians
     private static double KFC = 2.2269859253;
     private static double PFC = 2.5;
@@ -105,9 +107,9 @@ public class GaussVol {
     private static double ANG = 0.1;
     private static double ANG3 = 0.001;
 
-    //volume cutoffs in switching function
+    // Volume cutoffs in switching function
     private static double VOLMINA = 0.01 * ANG3;
-    private static double VOLMINB = 0.1f * ANG3;
+    private static double VOLMINB = 0.1 * ANG3;
 
     private GaussianOverlapTree tree;
     private int nAtoms;
@@ -138,11 +140,11 @@ public class GaussVol {
     /**
      * Creates/Initializes a GaussVol instance.
      *
-     * @param nAtoms
-     * @param radii
-     * @param volumes
-     * @param gammas
-     * @param ishydrogen
+     * @param nAtoms     The number of atoms.
+     * @param radii      Atomic radii.
+     * @param volumes    Atomic volumes.
+     * @param gammas     Atomic surface tensions.
+     * @param ishydrogen True if the atom is a hydrogen.
      */
     public GaussVol(int nAtoms, double[] radii, double[] volumes,
                     double[] gammas, boolean[] ishydrogen) {
@@ -310,7 +312,7 @@ public class GaussVol {
      * d2Vdalphadr is (1/r)*d^2V12/dalpha dr
      * d2VdVdr is (1/r) d^2V12/dV1 dr
      */
-    public class GaussianOverlap {
+    public class GaussianOverlap implements Comparable<GaussianOverlap> {
         /**
          * level (0=root, 1=atoms, 2=2-body, 3=3-body, etc.)
          */
@@ -363,25 +365,24 @@ public class GaussVol {
 
         /**
          * Print overlaps.
-         * <p>
-         * TODO: port the printing.
          */
-        public void print_overlap() {
-
+        public void printOverlap() {
+            logger.info(format(" Gaussian Overlap %d: radius %6.3f, volume %6.3f, center (%6.3f,%6.3f,%6.3f)",
+                    level, g.a, g.v, g.c[0], g.c[1], g.c[2]));
         }
 
         /**
-         * Overlap comparison function
+         * Order by volume, larger first.
          *
-         * @param overlap1
-         * @param overlap2
-         * @return
+         * @param o GaussianOverlap to compare to.
+         * @return Compare by volume.
          */
-        boolean goverlap_compare(GaussianOverlap overlap1, GaussianOverlap overlap2) {
-            /* order by volume, larger first */
-            return overlap1.volume > overlap2.volume;
+        @Override
+        public int compareTo(GaussianOverlap o) {
+            return Double.compare(volume, o.volume);
         }
     }
+
 
     /**
      * Gaussian Overlap Tree.
@@ -478,14 +479,12 @@ public class GaussVol {
             root.childrenCount = noverlaps;
 
             // Sort neighbors by overlap volume.
-            // TODO: port this sort.
-            // sort(children_overlaps.begin(), children_overlaps.end(), goverlap_compare);
+            Collections.sort(overlaps);
 
             int root_level = root.level;
 
             // Now copies the children overlaps from temp buffer.
-            for (int ip = 0; ip < noverlaps; ip++) {
-                GaussianOverlap child = children_overlaps.get(ip);
+            for (GaussianOverlap child : children_overlaps) {
                 child.level = root_level + 1;
 
                 // Connect overlap to parent
@@ -661,7 +660,6 @@ public class GaussVol {
 
             psi1i[0] = volcoeff * ov.volume; //for free volumes
             f1i[0] = volcoeff * ov.sfp;
-
 
             psip1i[0] = volcoeffp * ov.volume; //for self volumes
             fp1i[0] = volcoeffp * ov.sfp;

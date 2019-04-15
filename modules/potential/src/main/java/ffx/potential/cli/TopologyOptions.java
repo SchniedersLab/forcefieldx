@@ -87,7 +87,7 @@ public class TopologyOptions {
     /**
      * --la2 or -ligAtoms2 allows for multiple ranges and/or singletons of ligand atoms in the second topology, separated by periods.
      */
-    @Option(names = {"--la2", "--ligAtoms2"},
+    @Option(names = {"--la2", "--ligAtoms2"}, paramLabel = "-1",
             description = "Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)")
     String ligAt2 = null;
 
@@ -115,14 +115,14 @@ public class TopologyOptions {
     /**
      * -uaA or -unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
      */
-    @Option(names = {"--uaA", "--unsharedA"},
+    @Option(names = {"--uaA", "--unsharedA"}, paramLabel = "-1",
             description = "Unshared atoms in the A dual topology (period-separated hyphenated ranges)")
     String unsharedA = null;
 
     /**
      * -uaB or -unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
      */
-    @Option(names = {"--uaB", "--unsharedB"},
+    @Option(names = {"--uaB", "--unsharedB"}, paramLabel = "-1",
             description = "Unshared atoms in the B dual topology (period-separated hyphenated ranges)")
     String unsharedB = null;
 

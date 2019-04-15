@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.swing.Timer;
@@ -69,15 +69,11 @@ public class SimulationLoader implements ActionListener {
     private Thread job = null;
     // Once the simulation is finished, this flag will be true.
     private boolean finished = false;
-    // The reader thread contains a SimulationFilter instance that will read a
-    // simulation into the FFX.
-    private Thread reader;
     private MainPanel mainPanel;
     private FFXSystem system;
     private SimulationUpdate tinkerUpdate = null;
     private boolean firstUpdate = true;
     private Timer timer;
-    private int delay = 10;
     private double time = 0.0;
     private int step = 0;
 
@@ -100,7 +96,6 @@ public class SimulationLoader implements ActionListener {
         address = a;
         if (address == null) {
             finished = true;
-            return;
         }
     }
 
@@ -125,7 +120,9 @@ public class SimulationLoader implements ActionListener {
                     simulationFilter = new SimulationFilter(sys, system);
                     UIFileOpener openFile = new UIFileOpener(simulationFilter,
                             mainPanel);
-                    reader = new Thread(openFile);
+                    // The reader thread contains a SimulationFilter instance that will read a
+                    // simulation into the FFX.
+                    Thread reader = new Thread(openFile);
                     reader.start();
                 } else if (simulationFilter.fileRead()) {
                     system = (FFXSystem) simulationFilter.getActiveMolecularSystem();
@@ -150,7 +147,7 @@ public class SimulationLoader implements ActionListener {
      *
      * @return a boolean.
      */
-    public boolean connect() {
+    boolean connect() {
         if (isFinished()) {
             return false;
         }
@@ -158,6 +155,7 @@ public class SimulationLoader implements ActionListener {
             return true;
         }
         // Create a timer to regularly wake up this SimulationLoader.
+        int delay = 10;
         if (timer == null) {
             timer = new Timer(delay, this);
             timer.setCoalesce(true);
@@ -188,7 +186,7 @@ public class SimulationLoader implements ActionListener {
      *
      * @return a {@link ffx.ui.FFXSystem} object.
      */
-    public FFXSystem getFSystem() {
+    FFXSystem getFSystem() {
         return system;
     }
 
@@ -199,10 +197,7 @@ public class SimulationLoader implements ActionListener {
      * @return a boolean.
      */
     public boolean isConnected() {
-        if (client != null && client.isConnected()) {
-            return true;
-        }
-        return false;
+        return client != null && client.isConnected();
     }
 
     /**
@@ -211,7 +206,7 @@ public class SimulationLoader implements ActionListener {
      *
      * @return a boolean.
      */
-    public boolean isFinished() {
+    boolean isFinished() {
         if (client != null && client.isClosed()) {
             finished = true;
         }
@@ -249,7 +244,7 @@ public class SimulationLoader implements ActionListener {
         if (system.isStale()) {
             return;
         }
-        if (tinkerUpdate == null || tinkerUpdate.read == true) {
+        if (tinkerUpdate == null || tinkerUpdate.read) {
             return;
         }
         // Sanity check - FFX and TINKER should agree on the number of atoms.
@@ -275,7 +270,7 @@ public class SimulationLoader implements ActionListener {
         }
         // Reset the Maximum Magnitude Values, such that they will be consistent
         // with this frame of the simulation after the update.
-        double d[] = new double[3];
+        double[] d = new double[3];
         for (Atom a : atoms) {
             int index = a.getIndex() - 1;
             d[0] = tinkerUpdate.coordinates[0][index];

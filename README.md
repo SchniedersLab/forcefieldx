@@ -40,7 +40,7 @@ Additional tests, ordinarily skipped due to length of running them (~15 minutes 
 
    mvn -DskipTests=false -Dffx.ci=true
 
-Currently, JDKs 1.8, 9, 10, and 11 are supported. 
+Currently, JDKs 1.8, 9, 10, 11, and 12 are supported. 
 After installing a supported JDK, point the JAVA\_HOME environment variable to the JDK directory, and then add the JDK bin directory to your path. 
 
 ---

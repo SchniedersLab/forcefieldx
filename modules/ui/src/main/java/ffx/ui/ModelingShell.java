@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.swing.ImageIcon;
@@ -123,7 +123,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     /**
      * Flag to indicate if a script is running.
      */
-    public boolean scriptRunning;
+    private boolean scriptRunning;
     /**
      * Timing.
      */
@@ -227,17 +227,13 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     private void initMenus() {
         JFrame frame = (JFrame) this.getFrame();
         MenuBar menuBar = frame.getMenuBar();
-        /**
-         * Remove "Capture Std. Out", "Capture Std. Error" & "Detached Output"
-         * from the View menu.
-         */
+        // Remove "Capture Std. Out", "Capture Std. Error" & "Detached Output" from the View menu.
         Menu menu = menuBar.getMenu(2);
         menu.remove(5);
         menu.remove(5);
         menu.remove(9);
-        /**
-         * Edit the Script menu.
-         */
+
+        // Edit the Script menu.
         menu = menuBar.getMenu(4);
         menu.remove(4);
         menu.remove(4);
@@ -256,11 +252,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
                 init();
             } else {
                 try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        public void run() {
-                            init();
-                        }
-                    });
+                    SwingUtilities.invokeAndWait(() -> init());
                 } catch (Exception e) {
                     //
                 }
@@ -304,8 +296,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             getStatusLabel().setText("Welcome to the Force Field X Shell.");
             JFrame frame = (JFrame) this.getFrame();
             frame.setTitle("Force Field X Shell");
-            URL iconURL = getClass().getClassLoader().getResource(
-                    "ffx/ui/icons/icon64.png");
+            URL iconURL = getClass().getClassLoader().getResource("ffx/ui/icons/icon64.png");
             ImageIcon icon = new ImageIcon(iconURL);
             frame.setIconImage(icon.getImage());
             frame.setSize(600, 600);
@@ -337,7 +328,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      *
      * @param file a {@link java.io.File} object.
      */
-    public void runFFXScript(File file) {
+    void runFFXScript(File file) {
 
         logger.info(" Executing script: " + file.getAbsolutePath());
 
@@ -423,7 +414,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      *
      * @return Current system energy (a double).
      */
-    public double returnEnergy() {
+    double returnEnergy() {
         if (interrupted) {
             logger.info(" Algorithm interrupted - skipping energy.");
             return 0.0;
@@ -461,7 +452,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * @param eps a double.
      * @return a {@link ffx.numerics.Potential} object.
      */
-    public Potential minimize(double eps) {
+    Potential minimize(double eps) {
         if (interrupted) {
             logger.info(" Algorithm interrupted - skipping minimization.");
             return null;
@@ -584,16 +575,13 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     private void scriptStartup() {
         clearOutput();
 
-        /**
-         * Attempt to get the script's name.
-         */
+        // Attempt to get the script's name.
         Object name = getScriptFile();
         if (name != null && name instanceof File) {
             name = ((File) name).getName();
         }
-        /**
-         * A short message about the script to be evaluated.
-         */
+
+        // A short message about the script to be evaluated.
         String message;
         if (name == null || name.toString().equalsIgnoreCase("null")) {
             message = String.format("\n Evaluating...\n\n");
@@ -635,7 +623,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * @param string String to ouput.
      * @param style  Style to use.
      */
-    public void appendOutputNl(String string, Style style) {
+    void appendOutputNl(String string, Style style) {
         if (interrupted) {
             return;
         }
@@ -653,12 +641,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         if (EventQueue.isDispatchThread()) {
             scroll();
         } else {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    scroll();
-                }
-            });
+            SwingUtilities.invokeLater(() -> scroll());
         }
     }
 
@@ -666,7 +649,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * <p>
      * scroll</p>
      */
-    public void scroll() {
+    private void scroll() {
         JTextPane output = getOutputArea();
         JSplitPane splitPane = getSplitPane();
         JScrollPane scrollPane = (JScrollPane) splitPane.getBottomComponent();
@@ -684,7 +667,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * @param string a {@link java.lang.String} object.
      * @param style  a {@link javax.swing.text.Style} object.
      */
-    public void appendOutput(String string, Style style) {
+    private void appendOutput(String string, Style style) {
         if (interrupted) {
             return;
         }
@@ -742,14 +725,14 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * <p>
      * loadPrefs</p>
      */
-    final public void loadPrefs() {
+    private void loadPrefs() {
     }
 
     /**
      * <p>
      * savePrefs</p>
      */
-    public void savePrefs() {
+    void savePrefs() {
     }
 
     /**
@@ -759,7 +742,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * @param measurement a {@link java.lang.String} object.
      * @param d           a double.
      */
-    public void setMeasurement(String measurement, double d) {
+    void setMeasurement(String measurement, double d) {
         try {
             appendOutput(measurement, getOutputStyle());
         } catch (Exception e) {
@@ -772,7 +755,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * <p>
      * sync</p>
      */
-    public void sync() {
+    void sync() {
         try {
             setVariable("active", mainPanel.getHierarchy().getActive());
         } catch (Exception e) {
@@ -800,24 +783,17 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
         GraphicsCanvas graphics = mainPanel.getGraphics3D();
         if (graphics != null) {
-            /**
-             * Use the blocking graphics update method so that only
-             * self-consistent coordinate sets are displayed.
+            /*
+              Use the blocking graphics update method so that only
+              self-consistent coordinate sets are displayed.
              */
             //if (SwingUtilities.isEventDispatchThread()) {
             graphics.updateSceneWait(active, true, false, null, false, null);
             //}
         }
 
-        if (interrupted) {
-            /**
-             * The algorithm could have been interrupted during the graphics
-             * update.
-             */
-            return false;
-        } else {
-            return true;
-        }
+        // The algorithm could have been interrupted during the graphics update.
+        return !interrupted;
     }
 
     @Override

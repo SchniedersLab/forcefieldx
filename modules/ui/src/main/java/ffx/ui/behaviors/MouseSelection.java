@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui.behaviors;
 
 import javax.media.j3d.Transform3D;
@@ -50,13 +50,12 @@ import java.util.Enumeration;
  * The MouseSelection class implements a mouse selection behavior.
  *
  * @author Michael J. Schnieders
- *
  */
 public class MouseSelection extends MouseBehavior {
 
-    double x_angle, y_angle;
-    double x_factor = .03;
-    double y_factor = .03;
+    private double x_angle, y_angle;
+    private double x_factor = .03;
+    private double y_factor = .03;
     private MouseBehaviorCallback callback = null;
 
     /**
@@ -64,17 +63,14 @@ public class MouseSelection extends MouseBehavior {
      * Constructor for MouseSelection.</p>
      *
      * @param flags a int.
-     * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+     * @param VPTG  a {@link javax.media.j3d.TransformGroup} object.
      */
     public MouseSelection(int flags, TransformGroup VPTG) {
         super(flags, VPTG);
     }
 
-    /*
-     * Return the x-axis movement multipler.
-     */
-
     /**
+     * Return the x-axis movement multipler.
      * <p>
      * getXFactor</p>
      *
@@ -84,11 +80,8 @@ public class MouseSelection extends MouseBehavior {
         return x_factor;
     }
 
-    /*
-     * Return the y-axis movement multipler.
-     */
-
     /**
+     * Return the y-axis movement multipler.
      * <p>
      * getYFactor</p>
      *
@@ -154,11 +147,9 @@ public class MouseSelection extends MouseBehavior {
         wakeupOn(mouseCriterion);
     }
 
-    /*
-     * Set the x-axis amd y-axis movement multipler with factor.
-     */
-
     /**
+     * Set the x-axis amd y-axis movement multipler with factor.
+     *
      * <p>
      * setFactor</p>
      *
@@ -168,12 +159,9 @@ public class MouseSelection extends MouseBehavior {
         x_factor = y_factor = factor;
     }
 
-    /*
+    /**
      * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
      * respectively.
-     */
-
-    /**
      * <p>
      * setFactor</p>
      *
@@ -185,12 +173,9 @@ public class MouseSelection extends MouseBehavior {
         y_factor = yFactor;
     }
 
-    /*
+    /**
      * The transformChanged method in the callback class will be called every
      * time the transform is updated
-     */
-
-    /**
      * <p>
      * setupCallback</p>
      *

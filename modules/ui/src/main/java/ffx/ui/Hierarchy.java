@@ -1,47 +1,46 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
@@ -64,7 +63,6 @@ import ffx.potential.bonded.RendererCache;
  * active system and nodes.
  *
  * @author Michael J. Schnieders
- *
  */
 public final class Hierarchy extends JTree implements TreeSelectionListener {
 
@@ -74,17 +72,18 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     private final MainPanel mainPanel;
     private DefaultTreeModel hierarchyModel;
     private DefaultTreeSelectionModel treeSelectionModel;
-    private FFXSystem activeSystem = null; // Reference to the active FFXSystem
-    private MSNode activeNode = null; // Reference to the last Selected Node
+    // Reference to the active FFXSystem
+    private FFXSystem activeSystem = null;
+    // Reference to the last Selected Node
+    private MSNode activeNode = null;
     private final ArrayList<MSNode> activeNodes = new ArrayList<>();
     private JLabel status = null;
     private JLabel step = null;
     private JLabel energy = null;
-    ArrayList<TreePath> newPaths = new ArrayList<>();
-    ArrayList<TreePath> removedPaths = new ArrayList<>();
-    ArrayList<TreePath> previousPaths = new ArrayList<>();
-    ArrayList<MSNode> picks = new ArrayList<>();
-    TreePath nullPath = null;
+    private ArrayList<TreePath> newPaths = new ArrayList<>();
+    private ArrayList<TreePath> removedPaths = new ArrayList<>();
+    private ArrayList<TreePath> previousPaths = new ArrayList<>();
+    private TreePath nullPath = null;
 
     /**
      * The Default Constructor initializes JTree properties, then updates is
@@ -93,7 +92,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param f a {@link ffx.ui.MainPanel} object.
      */
-    public Hierarchy(MainPanel f) {
+    Hierarchy(MainPanel f) {
         mainPanel = f;
         root = mainPanel.getDataRoot();
         initTree();
@@ -105,7 +104,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
-    public void addSelection(MSNode f) {
+    private void addSelection(MSNode f) {
         if (f == null) {
             return;
         }
@@ -136,7 +135,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param newSystem a {@link ffx.ui.FFXSystem} object.
      */
-    public void addSystemNode(FFXSystem newSystem) {
+    void addSystemNode(FFXSystem newSystem) {
         addTreeNode(newSystem, root, root.getChildCount());
     }
 
@@ -145,10 +144,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * addTreeNode</p>
      *
      * @param nodeToAdd a {@link ffx.potential.bonded.MSNode} object.
-     * @param parent a {@link ffx.potential.bonded.MSNode} object.
-     * @param index a int.
+     * @param parent    a {@link ffx.potential.bonded.MSNode} object.
+     * @param index     a int.
      */
-    public void addTreeNode(MSNode nodeToAdd, MSNode parent, int index) {
+    private void addTreeNode(MSNode nodeToAdd, MSNode parent, int index) {
         synchronized (this) {
             if (nodeToAdd == null || nodeToAdd.getParent() != null) {
                 return;
@@ -205,7 +204,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * <p>
      * collapseAll</p>
      */
-    public void collapseAll() {
+    private void collapseAll() {
         int row = getRowCount() - 1;
         while (row >= 0) {
             collapseRow(row);
@@ -238,7 +237,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<MSNode> getActiveNodes() {
+    ArrayList<MSNode> getActiveNodes() {
         return activeNodes;
     }
 
@@ -248,7 +247,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
-    public FFXSystem[] getNonActiveSystems() {
+    FFXSystem[] getNonActiveSystems() {
         synchronized (this) {
             int childCount = root.getChildCount();
             if (childCount == 0) {
@@ -299,7 +298,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             return;
         }
         synchronized (this) {
-            TreePath paths[] = new TreePath[2];
+            TreePath[] paths = new TreePath[2];
             paths[0] = new TreePath(f1.getPath());
             paths[1] = new TreePath(f2.getPath());
             RowMapper rm = treeSelectionModel.getRowMapper();
@@ -311,7 +310,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     /**
      * Initialize the Tree representation based on the Root data node
      */
-    public void initTree() {
+    private void initTree() {
         addTreeSelectionListener(this);
         setExpandsSelectedPaths(true);
         setScrollsOnExpand(true);
@@ -337,16 +336,14 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
-    public void onlySelection(MSNode f) {
+    void onlySelection(MSNode f) {
         synchronized (this) {
-            if (activeNodes != null) {
-                int num = activeNodes.size();
-                TreePath paths[] = new TreePath[num];
-                for (int i = 0; i < num; i++) {
-                    paths[i] = new TreePath((activeNodes.get(i)).getPath());
-                }
-                removeSelectionPaths(paths);
+            int num = activeNodes.size();
+            TreePath[] paths = new TreePath[num];
+            for (int i = 0; i < num; i++) {
+                paths[i] = new TreePath((activeNodes.get(i)).getPath());
             }
+            removeSelectionPaths(paths);
             collapseAll();
             addSelection(f);
         }
@@ -358,14 +355,14 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
-    public void removeSelection(MSNode f) {
+    private void removeSelection(MSNode f) {
         synchronized (this) {
             if (f == null) {
                 return;
             }
             TreePath path = new TreePath(f.getPath());
             for (Enumeration e = getExpandedDescendants(path); e.hasMoreElements(); ) {
-                TreePath treePath = new TreePath((DefaultMutableTreeNode) e.nextElement());
+                TreePath treePath = new TreePath(e.nextElement());
                 collapsePath(treePath);
             }
             removeSelectionPath(path);
@@ -393,7 +390,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param nodeToRemove a {@link ffx.potential.bonded.MSNode} object.
      */
-    public void removeTreeNode(MSNode nodeToRemove) {
+    void removeTreeNode(MSNode nodeToRemove) {
         synchronized (this) {
             if (nodeToRemove == null) {
                 return;
@@ -401,10 +398,10 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
 
             hierarchyModel.removeNodeFromParent(nodeToRemove);
 
-            /**
-             * The DefaultTreeModel and DefaultTreeSelectionModel classes retain
-             * references to removed nodes. To work around this, we create new
-             * instances of these classes whenever an FFXSystem is removed.
+            /*
+              The DefaultTreeModel and DefaultTreeSelectionModel classes retain
+              references to removed nodes. To work around this, we create new
+              instances of these classes whenever an FFXSystem is removed.
              */
             if (nodeToRemove instanceof FFXSystem) {
                 hierarchyModel = new DefaultTreeModel(root);
@@ -413,10 +410,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                 setSelectionModel(treeSelectionModel);
             }
 
-            /**
-             * Whenever a node is removed, clear and reset activeNodes and path
-             * instances.
-             */
+            // Whenever a node is removed, clear and reset activeNodes and path instances.
             activeNodes.clear();
             previousPaths.clear();
             newPaths.clear();
@@ -440,7 +434,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * <p>
      * selectAll</p>
      */
-    public void selectAll() {
+    void selectAll() {
         synchronized (this) {
             if (activeSystem == null) {
                 return;
@@ -460,13 +454,9 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                 return;
             }
             if (ffxSystem != null) {
-                /**
-                 * A closed (closing) system cannot be set active.
-                 */
+                // A closed (closing) system cannot be set active.
                 if (ffxSystem.isClosing()) {
-                    /**
-                     * Set the most recently opened system to be active.
-                     */
+                    // Set the most recently opened system to be active.
                     for (int i = root.getChildCount() - 1; i >= 0; i--) {
                         FFXSystem child = (FFXSystem) root.getChildAt(i);
                         if (!child.isClosing()) {
@@ -514,7 +504,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param h a boolean.
      */
-    public void setHighlighting(boolean h) {
+    void setHighlighting(boolean h) {
         synchronized (this) {
             if (RendererCache.highlightSelections != h) {
                 RendererCache.highlightSelections = h;
@@ -535,7 +525,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * @param t a {@link javax.swing.JLabel} object.
      * @param e a {@link javax.swing.JLabel} object.
      */
-    public void setStatus(JLabel s, JLabel t, JLabel e) {
+    void setStatus(JLabel s, JLabel t, JLabel e) {
         status = s;
         step = t;
         energy = e;
@@ -547,7 +537,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      *
      * @param f a {@link ffx.potential.bonded.MSNode} object.
      */
-    public void toggleSelection(MSNode f) {
+    void toggleSelection(MSNode f) {
         synchronized (this) {
             if (f == null) {
                 return;
@@ -587,7 +577,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * <p>
      * updateStatus</p>
      */
-    public void updateStatus() {
+    void updateStatus() {
         if (activeSystem == null) {
             status.setText("  ");
             step.setText("  ");
@@ -717,7 +707,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
                     if (pathj == nullPath) {
                         continue;
                     }
-                    if (pathi == nullPath || pathj == nullPath) {
+                    if (pathi == nullPath) {
                         continue;
                     }
                     if (pathi.isDescendant(pathj)) {
@@ -749,7 +739,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             }
             // We now have a non-redundant set of Active Paths; and a
             // non-redundant set of removed paths
-            picks = new ArrayList<>();
+            ArrayList<MSNode> picks = new ArrayList<>();
             // Clear highlight of de-selected nodes
             for (TreePath r : removedPaths) {
                 boolean change = true;

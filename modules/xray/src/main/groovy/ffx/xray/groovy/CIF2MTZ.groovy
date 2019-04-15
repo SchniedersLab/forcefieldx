@@ -62,7 +62,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc xray.CIF2MTZ &lt;filename&gt;
  */
-@Command(description = " Convert a CIF file to MTZ format.", name = "ffxc xray.CIFMTZ")
+@Command(description = " Convert a CIF file to MTZ format.", name = "ffxc xray.CIF2MTZ")
 class CIF2MTZ extends AlgorithmsScript {
 
     /**

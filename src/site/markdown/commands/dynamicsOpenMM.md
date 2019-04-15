@@ -1,17 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
-    http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>OpenMM Dynamics</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="OpenMM Dynamics">
-            <p>Run NVE, NVT or stochastic dynamics using OpenMM.</p>
-            <source>
+### OpenMM Molecular Dynamics
+
+Run NVE, NVT or stochastic dynamics using OpenMM.
+
+---
+```
 Usage: ffxc DynamicsOpenMM [-ho] [--cf=0.01] [-b=Bussi] [-d=1.0] [-F=XYZ] [-i=Verlet] [-k=1.0] [-n=1000000] [-p=0] [-q=91.0] [-r=0.25] [-t=298.15] [-w=10.0] [-z=100] files...
 Run dynamics on a system using OpenMM.
     files...                XYZ or PDB input files.
@@ -29,7 +21,6 @@ Run dynamics on a system using OpenMM.
 -r, --report=0.25           Interval to report thermodynamics (psec).
 -t, --temperature=298.15    Temperature (Kelvin).
 -w, --write=10.0            Interval to write out coordinates (psec).
--z, --trajSteps=100         Number of steps for each OpenMM MD cycle.</source>
-        </section>
-    </body>
-</document>
+-z, --trajSteps=100         Number of steps for each OpenMM MD cycle.
+```
+---

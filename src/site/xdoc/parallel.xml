@@ -62,8 +62,8 @@ The Scheduler runs parallel jobs over nodes.
             </subsection>
             <subsection name="GPU Parallelization">
                 <p>FFX uses the OpenMM API to accelerate energy evaluations, optimization algorithms, dynamics
-                    simulations and calculation of free energy differences. Currently, OpenMM 7.3 is included with
-                    FFX and depends on CUDA version 9.0. To use OpenMM acceleration on a single node (i.e. in the
+                    simulations and calculation of free energy differences. Currently, OpenMM 7.3.1 is included with
+                    FFX and depends on CUDA version 9.2. To use OpenMM acceleration on a single node (i.e. in the
                     absence of MPI message passing across multipole nodes) example commands include:
                 </p>
                 <source>ffxc [-D&lt;property=value&gt;] MinimizeOpenMM [-options] &lt;PDB|XYZ&gt;</source>
