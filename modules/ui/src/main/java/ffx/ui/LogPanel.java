@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.swing.BorderFactory;
@@ -74,7 +74,6 @@ import java.util.logging.Logger;
  * TINKER jobs. Any text file can be edited.
  *
  * @author Michael J. Schnieders
- *
  */
 public class LogPanel extends JPanel implements ActionListener {
 
@@ -83,7 +82,6 @@ public class LogPanel extends JPanel implements ActionListener {
      */
     private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger(LogPanel.class.getName());
-    private MainPanel mainPanel;
     private Vector<Thread> tinkerThreads;
     // A Hashtable of JTextAreas labeled by absolute path to the Log File each
     // displays
@@ -92,12 +90,9 @@ public class LogPanel extends JPanel implements ActionListener {
     private JToolBar toolBar;
     private JTabbedPane resultsTabbedPane = new JTabbedPane(JTabbedPane.BOTTOM);
     private JProgressBar statusProgressBar;
-    private JLabel status = new JLabel("  ");
     private Font font;
-    private JLabel noLogsLabel = new JLabel("TINKER logs are displayed here.");
-    private JPanel noLogsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5,
-            5));
-    EtchedBorder eb = new EtchedBorder(EtchedBorder.RAISED);
+    private JPanel noLogsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+    private EtchedBorder eb = new EtchedBorder(EtchedBorder.RAISED);
 
     /**
      * Constructor
@@ -105,7 +100,6 @@ public class LogPanel extends JPanel implements ActionListener {
      * @param f a {@link ffx.ui.MainPanel} object.
      */
     public LogPanel(MainPanel f) {
-        mainPanel = f;
         tinkerThreads = null;  // mainPanel.getModelingPanel().getModelingJobs();
         initToolBar();
         setLayout(new BorderLayout());
@@ -115,9 +109,11 @@ public class LogPanel extends JPanel implements ActionListener {
         statusProgressBar.setStringPainted(true);
         ClassLoader loader = getClass().getClassLoader();
         ImageIcon icon = new ImageIcon(loader.getResource("ffx/ui/icons/page_code.png"));
+        JLabel noLogsLabel = new JLabel("TINKER logs are displayed here.");
         noLogsLabel.setIcon(icon);
         noLogsPanel.add(noLogsLabel);
         noLogsPanel.setBorder(eb);
+        JLabel status = new JLabel("  ");
         status.setBorder(eb);
         add(toolBar, BorderLayout.NORTH);
         add(noLogsPanel, BorderLayout.CENTER);
@@ -254,7 +250,7 @@ public class LogPanel extends JPanel implements ActionListener {
      * <p>
      * closeAll</p>
      */
-    public void closeAll() {
+    private void closeAll() {
         synchronized (this) {
             resultsTabbedPane.removeAll();
             logFiles.clear();
@@ -346,7 +342,7 @@ public class LogPanel extends JPanel implements ActionListener {
      * <p>
      * refresh</p>
      */
-    public void refresh() {
+    private void refresh() {
         synchronized (tinkerThreads) {
             for (Thread t : tinkerThreads) {
                 File file = new File(t.getName());
@@ -372,7 +368,7 @@ public class LogPanel extends JPanel implements ActionListener {
      * <p>
      * refreshStatus</p>
      */
-    public void refreshStatus() {
+    private void refreshStatus() {
         int count = tinkerThreads.size();
         if (count == 0) {
             statusProgressBar.setString("");

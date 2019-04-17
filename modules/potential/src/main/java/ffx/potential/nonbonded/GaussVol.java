@@ -164,7 +164,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    int setRadii(double[] radii) throws Exception {
+    public int setRadii(double[] radii) throws Exception {
         if (nAtoms == radii.length) {
             this.radii = radii;
             return nAtoms;
@@ -180,7 +180,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    int setVolumes(double[] volumes) throws Exception {
+    public int setVolumes(double[] volumes) throws Exception {
         if (nAtoms == volumes.length) {
             this.volumes = volumes;
             return nAtoms;
@@ -196,7 +196,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    int setGammas(double[] gammas) throws Exception {
+    public int setGammas(double[] gammas) throws Exception {
         if (nAtoms == gammas.length) {
             this.gammas = gammas;
             return nAtoms;
@@ -211,29 +211,28 @@ public class GaussVol {
      *
      * @param positions Current atomic positions.
      */
-    void computeTree(double[][] positions) {
+    public void computeTree(double[][] positions) {
         tree.computeOverlapTreeR(positions, radii, volumes, gammas, ishydrogen);
     }
-
-    /*  */
 
     /**
      * Returns GaussVol volume energy function and forces.
      * Also returns gradients with respect to atomic volumes and atomic free-volumes and self-volumes.
      *
      * @param positions
-     * @param volume
-     * @param energy
+     * @param totalVolume
+     * @param totalEnergy
      * @param force
      * @param gradV
      * @param free_volume
      * @param self_volume
      */
-    void computeVolume(double[][] positions,
-                       double[] volume, double[] energy,
+    public void computeVolume(double[][] positions,
+                       double[] totalVolume, double[] totalEnergy,
                        double[][] force, double[] gradV,
                        double[] free_volume, double[] self_volume) {
-        tree.computeVolume2R(positions, volume, energy, force, gradV, free_volume, self_volume);
+
+        tree.computeVolume2R(positions, totalVolume, totalEnergy, force, gradV, free_volume, self_volume);
         for (int i = 0; i < nAtoms; ++i) {
             //transform gradient to force
             force[i][0] = -force[i][0];
@@ -296,7 +295,7 @@ public class GaussVol {
         // Gaussian exponent
         public double a;
         // Center
-        public double[] c;
+        public double[] c = new double[3];
     }
 
     /**
@@ -321,7 +320,7 @@ public class GaussVol {
         /**
          * Gaussian representing overlap
          */
-        public GaussianVca g;
+        public GaussianVca g = new GaussianVca();
         /**
          * Volume of overlap (also stores Psi1..i in GPU version)
          */
@@ -333,7 +332,7 @@ public class GaussVol {
         /**
          * Derivative wrt position of first atom (also stores P1..i in GPU version)
          */
-        double[] dv1;
+        double[] dv1 = new double[3];;
         /**
          * Sum gammai for this overlap
          */
@@ -415,15 +414,16 @@ public class GaussVol {
         int initOverlapTree(double[][] pos, double[] radii, double[] volumes,
                             double[] gammas, boolean[] ishydrogen) {
 
-            GaussianOverlap overlap = new GaussianOverlap();
+
 
             // Reset tree
             overlaps = new ArrayList<>();
 
             // Slot 0 contains the master tree information, children = all of the atoms.
+            GaussianOverlap overlap = new GaussianOverlap();
             overlap.level = 0;
             overlap.volume = 0;
-            overlap.dv1 = new double[3];
+            //overlap.dv1 = new double[3];
             overlap.dvv1 = 0.;
             overlap.selfVolume = 0;
             overlap.sfp = 1.;
@@ -437,6 +437,7 @@ public class GaussVol {
 
             // list of atoms start at slot #1
             for (int iat = 0; iat < nAtoms; iat++) {
+                overlap = new GaussianOverlap();
                 double a = KFC / (radii[iat] * radii[iat]);
                 double vol = ishydrogen[iat] ? 0. : volumes[iat];
                 overlap.level = 1;
@@ -444,7 +445,7 @@ public class GaussVol {
                 overlap.g.a = a;
                 overlap.g.c = pos[iat];
                 overlap.volume = vol;
-                overlap.dv1 = new double[3];
+                //overlap.dv1 = new double[3];
                 overlap.dvv1 = 1.; //dVi/dVi
                 overlap.selfVolume = 0.;
                 overlap.sfp = 1.;

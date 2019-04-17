@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.media.j3d.Bounds;
@@ -50,12 +50,14 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.picking.PickIntersection;
 import com.sun.j3d.utils.picking.PickResult;
 
-import ffx.numerics.math.VectorMath;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedTerm;
@@ -65,6 +67,9 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.ui.behaviors.PickMouseBehavior;
+import static ffx.numerics.math.VectorMath.bondAngle;
+import static ffx.numerics.math.VectorMath.dihedralAngle;
+import static ffx.numerics.math.VectorMath.dist;
 
 /**
  * The GraphicsPicking class is used to make selections and measurements.
@@ -77,16 +82,17 @@ public class GraphicsPicking extends PickMouseBehavior {
 
     public enum PickLevel {
 
-        PICKATOM, PICKBOND, PICKANGLE, PICKDIHEDRAL, PICKRESIDUE, PICKMOLECULE, PICKPOLYMER, PICKSYSTEM, MEASUREDISTANCE, MEASUREANGLE, MEASUREDIHEDRAL;
+        PICKATOM, PICKBOND, PICKANGLE, PICKDIHEDRAL, PICKRESIDUE, PICKMOLECULE,
+        PICKPOLYMER, PICKSYSTEM, MEASUREDISTANCE, MEASUREANGLE, MEASUREDIHEDRAL
     }
 
     /**
      * Constant <code>pickLevelHash</code>
      */
-    public static final Hashtable<String, PickLevel> pickLevelHash = new Hashtable<String, PickLevel>();
+    static final Hashtable<String, PickLevel> pickLevelHash = new Hashtable<>();
 
     static {
-        PickLevel values[] = PickLevel.values();
+        PickLevel[] values = PickLevel.values();
         for (PickLevel value : values) {
             pickLevelHash.put(value.toString(), value);
         }
@@ -105,13 +111,13 @@ public class GraphicsPicking extends PickMouseBehavior {
     // Previously picked MSNode
     private MSNode previousPick = null;
     // Selected Atoms for Measuring
-    private Vector<Atom> atomCache = new Vector<Atom>(4);
+    private Vector<Atom> atomCache = new Vector<>(4);
     private int count = 0;
-    /* A few static variables for reuse */
-    private double a[] = new double[3];
-    private double b[] = new double[3];
-    private double c[] = new double[3];
-    private double d[] = new double[3];
+    // A few static variables for reuse
+    private double[] a = new double[3];
+    private double[] b = new double[3];
+    private double[] c = new double[3];
+    private double[] d = new double[3];
     private Transform3D systemTransform3D = new Transform3D();
     private Vector3d syspos = new Vector3d();
     private Vector3d atpos = new Vector3d();
@@ -119,15 +125,15 @@ public class GraphicsPicking extends PickMouseBehavior {
     /**
      * Constructor
      *
-     * @param base   Base of the Scenegraph
-     * @param bounds Behavior bounds
-     * @param g      Scene Canvas3D
-     * @param f      MainPanel
+     * @param base           Base of the Scenegraph
+     * @param bounds         Behavior bounds
+     * @param graphicsCanvas Scene Canvas3D
+     * @param mainPanel      MainPanel
      */
-    public GraphicsPicking(BranchGroup base, Bounds bounds, GraphicsCanvas g,
-                           MainPanel f) {
-        super(g, base, bounds);
-        mainPanel = f;
+    public GraphicsPicking(BranchGroup base, Bounds bounds, GraphicsCanvas graphicsCanvas,
+                           MainPanel mainPanel) {
+        super(graphicsCanvas, base, bounds);
+        this.mainPanel = mainPanel;
         pickCanvas.setMode(PickCanvas.GEOMETRY);
         pickCanvas.setTolerance(3.0f);
     }
@@ -137,8 +143,7 @@ public class GraphicsPicking extends PickMouseBehavior {
      */
     public void clear() {
         if (previousPick != null) {
-            mainPanel.getHierarchy().collapsePath(
-                    new TreePath(previousPick.getPath()));
+            mainPanel.getHierarchy().collapsePath(new TreePath(previousPick.getPath()));
             previousPick.setSelected(false);
             previousPick.setColor(RendererCache.ColorModel.SELECT, null, null);
             previousPick = null;
@@ -151,7 +156,7 @@ public class GraphicsPicking extends PickMouseBehavior {
         atomCache.clear();
     }
 
-    private void distance(Atom atom, double pos[]) {
+    private void distance(Atom atom, double[] pos) {
         MolecularAssembly m = (MolecularAssembly) atom
                 .getMSNode(MolecularAssembly.class);
         m.getTransformGroup().getTransform(systemTransform3D);
@@ -170,7 +175,7 @@ public class GraphicsPicking extends PickMouseBehavior {
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
-    public MSNode getPick() {
+    MSNode getPick() {
         return previousPick;
     }
 
@@ -190,17 +195,14 @@ public class GraphicsPicking extends PickMouseBehavior {
      *
      * @return a {@link java.lang.String} object.
      */
-    public String getPickLevel() {
+    String getPickLevel() {
         return pickLevel.toString();
     }
 
-    /**
-     * @param measureLevel
-     * @param atoms
-     */
+
     private void measure() {
-        String measurement = null;
-        double value = 0.0;
+        String measurement;
+        double value;
         Atom a1, a2, a3, a4;
         switch (pickLevel) {
             case MEASUREDISTANCE:
@@ -211,9 +213,9 @@ public class GraphicsPicking extends PickMouseBehavior {
                 a2 = atomCache.get(1);
                 distance(a1, a);
                 distance(a2, b);
-                value = VectorMath.dist(a, b);
+                value = dist(a, b);
                 measurement = "\nDistance\t" + a1.getIndex() + ", " + a2.getIndex()
-                        + ":   \t" + String.format("%10.5f", value);
+                        + ":   \t" + format("%10.5f", value);
                 break;
             case MEASUREANGLE:
                 if (atomCache.size() < 3) {
@@ -225,10 +227,10 @@ public class GraphicsPicking extends PickMouseBehavior {
                 distance(a1, a);
                 distance(a2, b);
                 distance(a3, c);
-                value = VectorMath.bondAngle(a, b, c);
-                value = Math.toDegrees(value);
+                value = bondAngle(a, b, c);
+                value = toDegrees(value);
                 measurement = "\nAngle\t" + a1.getIndex() + ", " + a2.getIndex() + ", "
-                        + a3.getIndex() + ":   \t" + String.format("%10.5f", value);
+                        + a3.getIndex() + ":   \t" + format("%10.5f", value);
                 break;
             case MEASUREDIHEDRAL:
                 if (atomCache.size() < 4) {
@@ -242,11 +244,11 @@ public class GraphicsPicking extends PickMouseBehavior {
                 distance(a2, b);
                 distance(a3, c);
                 distance(a4, d);
-                value = VectorMath.dihedralAngle(a, b, c, d);
-                value = Math.toDegrees(value);
+                value = dihedralAngle(a, b, c, d);
+                value = toDegrees(value);
                 measurement = "\nDihedral\t" + a1.getIndex() + ", " + a2.getIndex()
                         + ", " + a3.getIndex() + ", " + a4.getIndex() + ":\t"
-                        + String.format("%10.5f", value);
+                        + format("%10.5f", value);
                 break;
             default:
                 return;
@@ -261,7 +263,7 @@ public class GraphicsPicking extends PickMouseBehavior {
      * <p>
      * resetCount</p>
      */
-    public void resetCount() {
+    void resetCount() {
         count = 0;
     }
 
@@ -273,7 +275,7 @@ public class GraphicsPicking extends PickMouseBehavior {
      */
     public void setPicking(boolean m) {
         picking = m;
-        if (picking == false) {
+        if (!picking) {
             clear();
         }
     }
@@ -284,7 +286,7 @@ public class GraphicsPicking extends PickMouseBehavior {
      *
      * @param newPick a {@link java.lang.String} object.
      */
-    public void setPickLevel(String newPick) {
+    void setPickLevel(String newPick) {
         if (pickLevelHash.containsKey(newPick.toUpperCase())) {
             newPickLevel = pickLevelHash.get(newPick.toUpperCase());
         }
@@ -296,7 +298,7 @@ public class GraphicsPicking extends PickMouseBehavior {
      * Called by Java3D when an atom is picked
      */
     public void updateScene(int xpos, int ypos) {
-        if (picking == false) {
+        if (!picking) {
             return;
         }
         // Determine what FNode was picked
@@ -313,10 +315,8 @@ public class GraphicsPicking extends PickMouseBehavior {
             if (userData instanceof MolecularAssembly) {
                 FFXSystem sys = (FFXSystem) userData;
                 if (result.numIntersections() > 0) {
-                    PickIntersection pickIntersection = result
-                            .getIntersection(0);
-                    int coords[] = pickIntersection
-                            .getPrimitiveCoordinateIndices();
+                    PickIntersection pickIntersection = result.getIntersection(0);
+                    int[] coords = pickIntersection.getPrimitiveCoordinateIndices();
                     userData = sys.getAtomFromWireVertex(coords[0]);
                 } else {
                     return;
@@ -335,8 +335,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                 if (!measure || count == 0) {
                     for (Atom matom : atomCache) {
                         matom.setSelected(false);
-                        matom.setColor(RendererCache.ColorModel.SELECT, null,
-                                null);
+                        matom.setColor(RendererCache.ColorModel.SELECT, null, null);
                     }
                     atomCache.clear();
                     count = 0;
@@ -350,9 +349,8 @@ public class GraphicsPicking extends PickMouseBehavior {
                     measure();
                 }
                 if (!measure) {
-                    // Check to see if the same Atom has been selected twice in
-                    // a row
-                    // This allows iteration through the atom's terms
+                    // Check to see if the same Atom has been selected twice in a row.
+                    // This allows iteration through the atom's terms.
                     if (a == previousAtom) {
                         pickNumber++;
                     } else {
@@ -367,12 +365,12 @@ public class GraphicsPicking extends PickMouseBehavior {
                         case PICKBOND:
                         case PICKANGLE:
                         case PICKDIHEDRAL:
-                            ArrayList terms = null;
+                            ArrayList terms;
                             if (pickLevel == PickLevel.PICKBOND) {
                                 terms = a.getBonds();
                             } else if (pickLevel == PickLevel.PICKANGLE) {
                                 terms = a.getAngles();
-                            } else if (pickLevel == PickLevel.PICKDIHEDRAL) {
+                            } else {
                                 terms = a.getTorsions();
                             }
                             if (terms == null) {
@@ -388,15 +386,14 @@ public class GraphicsPicking extends PickMouseBehavior {
                         case PICKPOLYMER:
                         case PICKMOLECULE:
                         case PICKSYSTEM:
-                            MSNode dataNode = null;
+                            MSNode dataNode;
                             if (pickLevel == PickLevel.PICKRESIDUE) {
                                 dataNode = (MSNode) a.getMSNode(Residue.class);
                             } else if (pickLevel == PickLevel.PICKPOLYMER) {
                                 dataNode = (MSNode) a.getMSNode(Polymer.class);
                             } else if (pickLevel == PickLevel.PICKSYSTEM) {
-                                dataNode = (MSNode) a
-                                        .getMSNode(MolecularAssembly.class);
-                            } else if (pickLevel == PickLevel.PICKMOLECULE) {
+                                dataNode = (MSNode) a.getMSNode(MolecularAssembly.class);
+                            } else {
                                 dataNode = (MSNode) a.getMSNode(Molecule.class);
                                 if (dataNode == null) {
                                     dataNode = (MSNode) a.getMSNode(Polymer.class);
@@ -412,8 +409,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                     // Add the selected node to the Tree View
                     if (currentPick != null) {
                         if (controlButton) {
-                            mainPanel.getHierarchy().toggleSelection(
-                                    currentPick);
+                            mainPanel.getHierarchy().toggleSelection(currentPick);
                         } else if (currentPick != previousPick) {
                             mainPanel.getHierarchy().onlySelection(currentPick);
                         }
@@ -424,8 +420,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                     }
                     // Remove picking color from the previousPick
                     if (previousPick != null && previousPick != currentPick) {
-                        previousPick.setColor(RendererCache.ColorModel.REVERT,
-                                null, null);
+                        previousPick.setColor(RendererCache.ColorModel.REVERT, null, null);
                     }
                     previousPick = currentPick;
                 }
