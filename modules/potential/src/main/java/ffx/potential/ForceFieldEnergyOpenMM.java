@@ -873,15 +873,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         this.lambda = lambda;
 
         // Remove the beginning of the normal Lambda path.
+        double mappedLambda = lambda;
         if (lambdaStart > 0) {
             double windowSize = 1.0 - lambdaStart;
-            lambda = lambdaStart + lambda * windowSize;
+            mappedLambda = lambdaStart + lambda * windowSize;
         }
 
         super.setLambda(lambda);
 
         if (openMMSystem != null) {
-            openMMSystem.setLambda(lambda);
+            openMMSystem.setLambda(mappedLambda);
 
             if (atoms != null) {
                 List<Atom> atomList = new ArrayList<>();
