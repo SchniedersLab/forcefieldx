@@ -268,10 +268,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public final int enforcePBC;
     /**
-     * Value of the lambda state variable.
-     */
-    private double lambda = 1.0;
-    /**
      * Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. This is useful for conformational
      * optimization if full removal of vdW interactions is not desired (i.e. lambdaStart = ~0.2).
      */
@@ -802,13 +798,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
-        // If we're using the "lambdaStart" flag, the step-size must be scaled down.
-        if (lambdaStart > 0.0) {
-            width /= (1.0 - lambdaStart);
-        }
-
         // Compute the finite difference derivative.
-        return (ePlus - eMinus) / width;
+        double dEdL = (ePlus - eMinus) / width;
+
+        // logger.info(format(" getdEdL currentLambda: CL=%8.6f L=%8.6f dEdL=%12.6f", currentLambda, lambda, dEdL));
+        return dEdL;
     }
 
     /**
@@ -870,6 +864,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return;
         }
 
+        super.setLambda(lambda);
+
         this.lambda = lambda;
 
         // Remove the beginning of the normal Lambda path.
@@ -877,8 +873,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             double windowSize = 1.0 - lambdaStart;
             lambda = lambdaStart + lambda * windowSize;
         }
-
-        super.setLambda(lambda);
 
         if (openMMSystem != null) {
             openMMSystem.setLambda(lambda);
@@ -1251,7 +1245,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // Set lambda to 1.0 when creating a context to avoid OpenMM compiling out any terms.
             double currentLambda = lambda;
             if (lambdaTerm) {
-                setLambda(1.0);
+                ForceFieldEnergyOpenMM.this.setLambda(1.0);
             }
 
             // Create a context.
@@ -1259,7 +1253,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             // Revert to the current lambda value.
             if (lambdaTerm) {
-                setLambda(currentLambda);
+                ForceFieldEnergyOpenMM.this.setLambda(currentLambda);
             }
 
             // Set initial positions.
