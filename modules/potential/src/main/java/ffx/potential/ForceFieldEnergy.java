@@ -635,7 +635,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Current value of the Lambda state variable.
      */
-    private double lambda = 1.0;
+    protected double lambda = 1.0;
     /**
      * Indicates use of the Lambda state variable.
      */

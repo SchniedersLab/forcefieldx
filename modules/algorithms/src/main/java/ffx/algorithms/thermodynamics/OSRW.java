@@ -293,34 +293,7 @@ public class OSRW extends AbstractOSRW {
                 totalFreeEnergy = updateFLambda(printFLambda, false);
             }
             if (energyCount % saveFrequency == 0) {
-                if (algorithmListener != null) {
-                    algorithmListener.algorithmUpdate(molecularAssembly);
-                }
-                // Only the rank 0 process writes the histogram restart file.
-                if (rank == 0) {
-                    try {
-                        OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
-                                new BufferedWriter(new FileWriter(histogramFile)));
-                        osrwHistogramRestart.writeHistogramFile();
-                        osrwHistogramRestart.flush();
-                        osrwHistogramRestart.close();
-                        logger.info(String.format(" Wrote OSRW histogram restart file to %s.", histogramFile.getName()));
-                    } catch (IOException ex) {
-                        String message = " Exception writing OSRW histogram restart file.";
-                        logger.log(Level.INFO, message, ex);
-                    }
-                }
-                // All ranks write a lambda restart file.
-                try {
-                    OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-                    osrwLambdaRestart.writeLambdaFile();
-                    osrwLambdaRestart.flush();
-                    osrwLambdaRestart.close();
-                    logger.info(String.format(" Wrote OSRW lambda restart file to %s.", lambdaFile.getName()));
-                } catch (IOException ex) {
-                    String message = " Exception writing OSRW lambda restart file.";
-                    logger.log(Level.INFO, message, ex);
-                }
+                writeRestart();
             }
         }
 
@@ -607,7 +580,6 @@ public class OSRW extends AbstractOSRW {
      */
     @Override
     public void addBias(double dEdU, double[] x, double[] gradient) {
-
         if (asynchronous) {
             asynchronousSend(lambda, dEdU);
         } else {

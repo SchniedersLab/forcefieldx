@@ -96,18 +96,14 @@ public class VanDerWaalsForm {
      */
     public VanDerWaalsForm(ForceField forceField) {
 
-        /**
-         * Set-up default rules.
-         */
+        // Set-up default rules.
         vdwType = VDW_TYPE.BUFFERED_14_7;
         epsilonRule = EPSILON_RULE.HHG;
         radiusRule = RADIUS_RULE.CUBIC_MEAN;
         radiusSize = RADIUS_SIZE.DIAMETER;
         radiusType = RADIUS_TYPE.R_MIN;
 
-        /**
-         * Define functional form.
-         */
+        // Define functional form.
         String value = forceField.getString(VDWTYPE, vdwType.toString());
         try {
             vdwType = VDW_TYPE.valueOf(toEnumForm(value));
@@ -127,9 +123,7 @@ public class VanDerWaalsForm {
                 break;
         }
 
-        /**
-         * Define epsilon combining rule.
-         */
+        // Define epsilon combining rule.
         value = forceField.getString(EPSILONRULE, epsilonRule.toString());
         try {
             epsilonRule = EPSILON_RULE.valueOf(toEnumForm(value));
@@ -137,9 +131,7 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized EPSILONRULE %s; defaulting to %s.", value, epsilonRule));
         }
 
-        /**
-         * Define radius combining rule.
-         */
+        // Define radius combining rule.
         value = forceField.getString(RADIUSRULE, radiusRule.toString());
         try {
             radiusRule = RADIUS_RULE.valueOf(toEnumForm(value));
@@ -147,9 +139,7 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized RADIUSRULE %s; defaulting to %s.", value, radiusRule));
         }
 
-        /**
-         * Define radius size.
-         */
+        // Define radius size.
         value = forceField.getString(RADIUSSIZE, radiusSize.toString());
         try {
             radiusSize = RADIUS_SIZE.valueOf(toEnumForm(value));
@@ -157,9 +147,7 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized RADIUSSIZE %s; defaulting to %s.", value, radiusSize));
         }
 
-        /**
-         * Define radius type.
-         */
+        // Define radius type.
         value = forceField.getString(RADIUSTYPE, radiusType.toString());
         try {
             radiusType = RADIUS_TYPE.valueOf(toEnumForm(value));
@@ -167,9 +155,7 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized RADIUSTYPE %s; defaulting to %s", value, radiusType));
         }
 
-        /**
-         * Configure van der Waals well shape parameters.
-         */
+        // Configure van der Waals well shape parameters.
         switch (vdwType) {
             case LENNARD_JONES:
                 repulsivePower = 12;
