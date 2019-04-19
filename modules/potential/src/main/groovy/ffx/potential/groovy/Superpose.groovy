@@ -72,9 +72,9 @@ class Superpose extends PotentialScript {
     /**
      * --atoms defines which atoms to calculate RMSD on.
      */
-    @Option(names = ['--fC', '--frameComparison'], paramLabel = "true",
-            description = 'Frames to be compared within the arc file. Select [true] for all versus all comparison; select [false] for one versus all comparison.')
-    private boolean frameComparison = true
+    @Option(names = ['--fC', '--frameComparison'], paramLabel = "false",
+            description = 'Frames to be compared within the arc file. Select for all versus all comparison; otherwise performs a one versus all comparison.')
+    private boolean frameComparison = false
 
     /**
      * -s or --start defines which atoms in the structure will be used in RMSD calculation.
