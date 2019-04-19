@@ -57,9 +57,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import ffx.potential.parsers.XYZFileFilter
-import org.checkerframework.checker.units.qual.K
-
 
 /**
  * The Energy script evaluates the energy of a system.
@@ -89,7 +86,7 @@ class Energy extends PotentialScript {
      */
 
     @Option(names = ['--fl', '--findlowest'], paramLabel = "0",
-            description = 'finds the first lowest energy structure')
+            description = 'Find this number of lowest-energy structures in a .arc file (does not function with .pdb)')
     private int fl = 0
 
     /**
@@ -126,7 +123,6 @@ class Energy extends PotentialScript {
         StateContainer(AssemblyState state, double e) {
             this.state = state;
             this.e = e;
-
         }
 
         AssemblyState getState() {
@@ -191,7 +187,7 @@ class Energy extends PotentialScript {
             double[] g = new double[nVars]
             int nAts = nVars / 3
             energy = forceFieldEnergy.energyAndGradient(x, g, true)
-            logger.info(format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
+            logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
             for (int i = 0; i < nAts; i++) {
                 int i3 = 3 * i
                 logger.info(format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
@@ -232,8 +228,9 @@ class Energy extends PotentialScript {
             }
 
             int numSnaps = fl
-            double lowestEnergy = Double.MAX_VALUE
-            lowestEnergy = forceFieldEnergy.energy(x, false)
+            /*double lowestEnergy = Double.MAX_VALUE
+            lowestEnergy = forceFieldEnergy.energy(x, false)*/
+            double lowestEnergy = energy;
             assemblyState = new AssemblyState(activeAssembly)
 
             int maxnum = 1
@@ -307,7 +304,7 @@ class Energy extends PotentialScript {
                     lowestEnergy = forceFieldEnergy.energy(x, false) //calculating energy for new assembly
                     assemblyState = new AssemblyState(activeAssembly)
                     lowestEnergyQueue.add(new StateContainer(assemblyState, lowestEnergy))
-                    maxnum = maxnum + 1
+                    ++maxnum;
                 }
 
             }
@@ -315,9 +312,8 @@ class Energy extends PotentialScript {
             if (fl > 0) {
 
                 if (numSnaps > maxnum) {
-                    logger.info(String.format(" Warning!!! System does not appear to contain enough entries! All %d energies will be reported", maxnum))
+                    logger.warning(String.format(" Requested %d snapshots, but file %s has only %d snapshots. All %d energies will be reported", numSnaps, filename, maxnum, maxnum))
                     numSnaps = maxnum
-
                 }
 
                 for (int i = 0; i < numSnaps - 1; i++) {
@@ -357,7 +353,6 @@ class Energy extends PotentialScript {
                 }
                 String dirName = saveDir.toString() + File.separator
                 String fileName = FilenameUtils.getName(modelFilename)
-                String arcFileName = fileName + ".pdb"
                 File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
                 potentialFunctions.saveAsPDB(assemblyState.mola, saveFile)
 
