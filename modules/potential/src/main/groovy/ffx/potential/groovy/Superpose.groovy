@@ -40,6 +40,7 @@ package ffx.potential.groovy
 import java.util.stream.IntStream
 import static java.lang.String.format
 
+import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -91,6 +92,13 @@ class Superpose extends PotentialScript {
     private int finish = Integer.MAX_VALUE
 
     /**
+     * -w or --write enables writout of superposed snapshots to disc.
+     */
+    @Option(names = ['-w', '--write'], paramLabel = "False",
+            description = 'Write superposed snapshots to disc.')
+    private boolean writeSnapshots = false;
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -104,6 +112,8 @@ class Superpose extends PotentialScript {
     }
 
     public ForceFieldEnergy forceFieldEnergy = null
+    private File outFile;
+    private XYZFilter outputFilter;
 
     /**
      * Execute the script.
@@ -129,6 +139,15 @@ class Superpose extends PotentialScript {
         int nVars = forceFieldEnergy.getNumberOfVariables()
         double[] x = new double[nVars]
         forceFieldEnergy.getCoordinates(x)
+
+        if (writeSnapshots) {
+            String outFileName = activeAssembly.getFile().toString().replaceFirst(~/\.(?:xyz|pdb|arc).*$/, "");
+            outFileName = outFileName + "_superposed.arc";
+            outFileName = potentialFunctions.versionFile(outFileName);
+
+            outFile = new File(outFileName);
+            outputFilter = new XYZFilter(outFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties());
+        }
 
         SystemFilter systemFilter = potentialFunctions.getFilter()
         if (systemFilter instanceof PDBFilter || systemFilter instanceof XYZFilter) {
@@ -228,32 +247,65 @@ class Superpose extends PotentialScript {
         return this
     }
 
+    /**
+     * Copy coordinates from the entire system to the used subset.
+     *
+     * @param nUsed Number of atoms used.
+     * @param usedIndices Mapping from the xUsed array to its source in x.
+     * @param x All atomic coordinates.
+     * @param xUsed The used subset of coordinates.
+     */
+    private static void copyCoordinates(int nUsed, int[] usedIndices, double[] x, double[] xUsed) {
+        for (int i = 0; i < nUsed; i++) {
+            int index3 = 3 * usedIndices[i];
+            int i3 = 3 * i;
+            for (int j = 0; j < 3; j++) {
+                xUsed[i3 + j] = x[index3 + j];
+            }
+        }
+    }
+
     void rmsd(SystemFilter systemFilter, int nUsed, int[] usedIndices, String selectionType, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1) {
+        double[] xBak = Arrays.copyOf(x, x.length);
         while (systemFilter.readNext(false, false)) {
             int snapshot2 = systemFilter.getSnapshot()
             // Only calculate RMSD for snapshots if they aren't the same snapshot.
             // Also avoid double calculating snapshots in the matrix by only calculating the upper triangle.
             if (snapshot1 != snapshot2 && snapshot1 < snapshot2) {
+                AssemblyState origStateB = new AssemblyState(activeAssembly);
                 forceFieldEnergy.getCoordinates(x2)
-                for (int i = 0; i < nUsed; i++) {
-                    int index3 = 3 * usedIndices[i]
-                    int i3 = 3 * i
-                    for (int j = 0; j < 3; j++) {
-                        xUsed[i3 + j] = x[index3 + j]
-                        x2Used[i3 + j] = x2[index3 + j]
-                    }
-                }
+                copyCoordinates(nUsed, usedIndices, x, xUsed);
+                copyCoordinates(nUsed, usedIndices, x2, x2Used);
 
                 double origRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
-                ffx.potential.utils.Superpose.translate(xUsed, massUsed, x2Used, massUsed)
+
+                // Calculate the translation on only the used subset, but apply it to the entire structure.
+                double[] tA = ffx.potential.utils.Superpose.calculateTranslation(xUsed, massUsed);
+                ffx.potential.utils.Superpose.applyTranslation(x, tA);
+                double[] tB = ffx.potential.utils.Superpose.calculateTranslation(x2Used, massUsed);
+                ffx.potential.utils.Superpose.applyTranslation(x2, tB);
+                // Copy the applied translation to xUsed and x2Used.
+                copyCoordinates(nUsed, usedIndices, x, xUsed);
+                copyCoordinates(nUsed, usedIndices, x2, x2Used);
                 double translatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
-                ffx.potential.utils.Superpose.rotate(xUsed, x2Used, massUsed)
+
+                // Calculate the rotation on only the used subset, but apply it to the entire structure.
+                double[][] rotation = ffx.potential.utils.Superpose.calculateRotation(xUsed, x2Used, massUsed);
+                ffx.potential.utils.Superpose.applyRotation(x2, rotation);
+                // Copy the applied rotation to x2Used.
+                copyCoordinates(nUsed, usedIndices, x2, x2Used);
                 double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
 
                 logger.info(format(
                         "\n Coordinate RMSD Based On %s (Angstroms) on Model %d and Model %d\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
                         selectionType, snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
 
+                if (writeSnapshots) {
+                    forceFieldEnergy.setCoordinates(x2);
+                    outputFilter.writeFile(outFile, true);
+                    origStateB.revertState();
+                }
+                System.arraycopy(xBak, 0, x, 0, x.length);
             }
         }
     }
