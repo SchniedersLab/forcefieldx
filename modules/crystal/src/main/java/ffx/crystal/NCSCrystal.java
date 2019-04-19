@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.crystal;
 
 import java.util.List;
@@ -52,10 +52,7 @@ import org.apache.commons.math3.linear.RealMatrix;
  *
  * @author Aaron J. Nessler
  * @author Michael J. Schnieders
- *
  * @since 1.0
- *
- * @see Crystal
  */
 public class NCSCrystal extends Crystal {
 
@@ -75,7 +72,7 @@ public class NCSCrystal extends Crystal {
     /**
      * Constructor for a NCSCrystal.
      *
-     * @param unitCell The base unit cell.
+     * @param unitCell  The base unit cell.
      * @param NCSsymOps Non-crystallographic symmetry operators applied to the unit cell.
      * @since 1.0
      */
@@ -85,11 +82,11 @@ public class NCSCrystal extends Crystal {
         this.unitCell = unitCell;
         this.NCSsymOps = NCSsymOps;
 
-        /**
-         * At this point, the NCSCrystal references a SpaceGroup instance
-         * that is lacking symmetry operators. This is corrected by generating symmetry
-         * operators to fill up the non-crystallographic, which is added to the unit 
-         * cell based on the asymmetric unit.
+        /*
+          At this point, the NCSCrystal references a SpaceGroup instance
+          that is lacking symmetry operators. This is corrected by generating symmetry
+          operators to fill up the non-crystallographic, which is added to the unit
+          cell based on the asymmetric unit.
          */
         updateNCSOperators();
     }
@@ -99,15 +96,14 @@ public class NCSCrystal extends Crystal {
      */
     private void updateNCSOperators() {
         List<SymOp> symOps = spaceGroup.symOps;
-        /**
-         * First, we remove the existing symmetry operators.
-         */
+
+        // First, we remove the existing symmetry operators.
         symOps.clear();
 
-        /**
-         * Symmetry operators are produced that are the combination of the non-crystallographic and the unit cell symmetry operations.
-         * Note that the first symOp is still equivalent to the asymmetric unit and the first set of
-         * symOps are still equivalent to the unit cell.
+        /*
+          Symmetry operators are produced that are the combination of the non-crystallographic and the unit cell symmetry operations.
+          Note that the first symOp is still equivalent to the asymmetric unit and the first set of
+          symOps are still equivalent to the unit cell.
          */
         int ii = 0;
         int soRemoved = 0;
@@ -115,11 +111,11 @@ public class NCSCrystal extends Crystal {
             // All UC symOps seem to have collision issues... Use 1st (identity) for now...
             for (SymOp symOp : unitCell.spaceGroup.symOps) {
 //            SymOp symOp=unitCell.spaceGroup.symOps.get(0); //Identity matrix is standard first matrix. (P1)
-                double NCSTrans[] = new double[3];
+                double[] NCSTrans = new double[3];
                 RealMatrix NCS = MatrixUtils.createRealMatrix(NCSsymOp.rot);
                 RealMatrix UC = MatrixUtils.createRealMatrix(symOp.rot);
                 RealMatrix result = NCS.multiply(UC); //Abelian groups order doesnt matter...
-                double NCSRot[][] = result.getData();
+                double[][] NCSRot = result.getData();
                 NCSTrans[0] = symOp.tr[0] + NCSsymOp.tr[0];
                 NCSTrans[1] = symOp.tr[1] + NCSsymOp.tr[1];
                 NCSTrans[2] = symOp.tr[2] + NCSsymOp.tr[2];
@@ -146,11 +142,11 @@ public class NCSCrystal extends Crystal {
      * an update of the ReplicateCrystal parameters and possibly the number of
      * replicated cells.
      *
-     * @param a The length of the a-axis for the base unit cell (in Angstroms).
-     * @param b The length of the b-axis for the base unit cell (in Angstroms).
-     * @param c The length of the c-axis for the base unit cell (in Angstroms).
+     * @param a     The length of the a-axis for the base unit cell (in Angstroms).
+     * @param b     The length of the b-axis for the base unit cell (in Angstroms).
+     * @param c     The length of the c-axis for the base unit cell (in Angstroms).
      * @param alpha The angle between the b-axis and c-axis (in Degrees).
-     * @param beta The angle between the a-axis and c-axis (in Degrees).
+     * @param beta  The angle between the a-axis and c-axis (in Degrees).
      * @param gamma The angle between the a-axis and b-axis (in Degrees).
      * @return True is returned if the unit cell and replicates cell are updated
      * successfully.
@@ -159,13 +155,10 @@ public class NCSCrystal extends Crystal {
     @Override
     public boolean changeUnitCellParameters(double a, double b, double c,
                                             double alpha, double beta, double gamma) {
-        /**
-         * First, update the parameters of the unit cell.
-         */
+        // First, update the parameters of the unit cell.
         if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
-            /**
-             * Then, update the parameters of the NCSCrystal.
-             */
+
+            // Then, update the parameters of the NCSCrystal.
             if (super.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
                 // Finally, update the NCS operators.
                 updateNCSOperators();
@@ -202,7 +195,7 @@ public class NCSCrystal extends Crystal {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the unit cell for this NCSCrystal. This is useful for the
      * reciprocal space portion of PME that operates on the unit cell.
      */
@@ -213,24 +206,22 @@ public class NCSCrystal extends Crystal {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Include information about the base unit cell and NCS cell.
      */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(unitCell.toString());
-
         sb.append("\n\n Non-Crystallographic Cell\n");
-        sb.append(String.format("  A-axis:                              %8.3f\n", a));
-        sb.append(String.format("  B-axis:                              %8.3f\n", b));
-        sb.append(String.format("  C-axis:                              %8.3f\n", c));
-        sb.append(String.format("  Alpha:                               %8.3f\n", alpha));
-        sb.append(String.format("  Beta:                                %8.3f\n", beta));
-        sb.append(String.format("  Gamma:                               %8.3f\n", gamma));
-        sb.append(String.format("  UnitCell Symmetry Operators:         %8d\n", unitCell.spaceGroup.symOps.size()));
-        sb.append(String.format("  NCS Symmetry Operators:              %8d\n", NCSsymOps.size()));
-        sb.append(String.format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
-
+        sb.append(format("  A-axis:                              %8.3f\n", a));
+        sb.append(format("  B-axis:                              %8.3f\n", b));
+        sb.append(format("  C-axis:                              %8.3f\n", c));
+        sb.append(format("  Alpha:                               %8.3f\n", alpha));
+        sb.append(format("  Beta:                                %8.3f\n", beta));
+        sb.append(format("  Gamma:                               %8.3f\n", gamma));
+        sb.append(format("  UnitCell Symmetry Operators:         %8d\n", unitCell.spaceGroup.symOps.size()));
+        sb.append(format("  NCS Symmetry Operators:              %8d\n", NCSsymOps.size()));
+        sb.append(format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
         return sb.toString();
     }
 
@@ -239,7 +230,7 @@ public class NCSCrystal extends Crystal {
      * records in the PDB files. See REMARK 350.
      *
      * @param unitCell The unit cell of the crystal.
-     * @param symOps Symmetry operators for non-crystallographic symmetry
+     * @param symOps   Symmetry operators for non-crystallographic symmetry
      * @return A Crystal or NCSCrystal
      */
 

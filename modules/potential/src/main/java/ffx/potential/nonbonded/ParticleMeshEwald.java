@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
@@ -63,10 +63,72 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
 
+    public enum Polarization {
+        MUTUAL, DIRECT, NONE
+    }
+
+    public enum ELEC_FORM {
+        PAM, FIXED_CHARGE
+    }
+
+    public enum LambdaMode {
+        OFF, CONDENSED, CONDENSED_NO_LIGAND, VAPOR
+    }
+
+    /**
+     * Describes available SCF algorithms, and whether they are supported by the
+     * FFX and/or CUDA implementations.
+     */
+    public enum SCFAlgorithm {
+        SOR(true, true), CG(true, true), EPT(false, true);
+
+        private final List<Platform> supportedPlatforms;
+
+        SCFAlgorithm(boolean ffx, boolean openMM, Platform... otherPlatforms) {
+            List<Platform> platforms = new ArrayList<>();
+            if (ffx) {
+                platforms.add(Platform.FFX);
+            }
+            if (openMM) {
+                platforms.add(Platform.OMM);
+                platforms.add(Platform.OMM_CUDA);
+                platforms.add(Platform.OMM_REF);
+                // Inapplicable because the OpenCL and optimized C implementations don't have AMOEBA yet.
+                //platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
+                //platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
+            }
+            platforms.addAll(Arrays.asList(otherPlatforms));
+            supportedPlatforms = Collections.unmodifiableList(platforms);
+        }
+
+        /**
+         * Returns the list of supported Platforms.
+         *
+         * @return The supported platform List. Unmodifiable.
+         */
+        public List<Platform> getSupportedPlatforms() {
+            return supportedPlatforms;
+        }
+
+        /**
+         * Checks if this platform is supported
+         *
+         * @param platform To check
+         * @return Supported
+         */
+        public boolean isSupported(Platform platform) {
+            return supportedPlatforms.contains(platform);
+        }
+    }
+
+    public enum SCFPredictor {
+        NONE, LS, POLY, ASPC
+    }
+
     /**
      * An ordered array of atoms in the system.
      */
-    protected Atom atoms[];
+    protected Atom[] atoms;
     /**
      * The number of atoms in the system.
      */
@@ -74,9 +136,9 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     /**
      * Polarization groups.
      */
-    protected int ip11[][];
-    protected int ip12[][];
-    protected int ip13[][];
+    protected int[][] ip11;
+    protected int[][] ip12;
+    protected int[][] ip13;
 
     /**
      * Total electrostatic energy == permanentMultipole + polarizationEnergy +
@@ -120,30 +182,30 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     /**
      * Dimensions of [nsymm][xyz][nAtoms].
      */
-    public double coordinates[][][];
+    public double[][][] coordinates;
     /**
      * Neighbor lists, including atoms beyond the real space cutoff.
      * [nsymm][nAtoms][nAllNeighbors]
      */
-    public int neighborLists[][][];
+    public int[][][] neighborLists;
 
     /**
      * Dimensions of [nsymm][nAtoms][10]
      */
-    public double globalMultipole[][][];
+    public double[][][] globalMultipole;
 
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
-    public double inducedDipole[][][];
-    public double inducedDipoleCR[][][];
-
+    public double[][][] inducedDipole;
+    public double[][][] inducedDipoleCR;
 
     /**
      * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py
      * script (available from the wiki) to draw these easily in PyMol.
      */
     public boolean printInducedDipoles = Boolean.valueOf(System.getProperty("pme.printInducedDipoles", "false"));
+
     /**
      * Log the seven components of total electrostatic energy at each
      * evaluation: (Permanent) PermanentRealSpace, PermanentSelf, PermanentRecip
@@ -167,10 +229,6 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     public static final double APERIODIC_DEFAULT_EWALD_CUTOFF = 1000.0;
 
-    public enum Polarization {
-        MUTUAL, DIRECT, NONE
-    }
-
     /**
      * <p>Setter for the field <code>polarization</code>.</p>
      *
@@ -178,70 +236,6 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     public void setPolarization(Polarization set) {
         this.polarization = set;
-    }
-
-    public enum ELEC_FORM {
-        PAM, FIXED_CHARGE
-    }
-
-    public enum LambdaMode {
-        OFF, CONDENSED, CONDENSED_NO_LIGAND, VAPOR
-    }
-
-    /**
-     * Describes available SCF algorithms, and whether they are supported by the
-     * FFX and/or CUDA implementations.
-     */
-    public enum SCFAlgorithm {
-        // I actually don't know if OpenMM does SOR or CG, but they both just become "Mutual".
-        SOR(true, true), CG(true, true), EPT(false, true);
-
-        private final List<Platform> supportedPlatforms;
-
-        SCFAlgorithm(boolean ffx, boolean openMM, Platform... otherPlatforms) {
-            List<Platform> platforms = new ArrayList<>();
-            if (ffx) {
-                platforms.add(Platform.FFX);
-            }
-            if (openMM) {
-                platforms.add(Platform.OMM);
-                platforms.add(Platform.OMM_CUDA);
-                platforms.add(Platform.OMM_REF);
-                // Inapplicable because the OpenCL and optimized C implementations don't have AMOEBA yet.
-                //platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
-                //platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
-            }
-            platforms.addAll(Arrays.asList(otherPlatforms));
-            supportedPlatforms = Collections.unmodifiableList(platforms);
-            // Short of reflection, a final unmodifiable list is, well, unmodifiable.
-        }
-
-        /**
-         * Returns the list of supported Platforms.
-         *
-         * @return The supported platform List. Unmodifiable.
-         */
-        public List<Platform> getSupportedPlatforms() {
-            return supportedPlatforms;
-        }
-
-        /**
-         * Checks if this platform is supported
-         *
-         * @param platform To check
-         * @return Supported
-         */
-        public boolean isSupported(Platform platform) {
-            return supportedPlatforms.contains(platform);
-        }
-    }
-
-    public enum SCFPredictor {
-        NONE, LS, POLY, ASPC
-    }
-
-    public enum Mask {
-        Permanent, PolarGroup, PolarEnergy, Polar, All;
     }
 
     /**
@@ -292,14 +286,14 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * @param atoms    an array of {@link ffx.potential.bonded.Atom} objects.
      * @param molecule an array of {@link int} objects.
      */
-    public abstract void setAtoms(Atom atoms[], int molecule[]);
+    public abstract void setAtoms(Atom[] atoms, int[] molecule);
 
     /**
      * <p>setFixedCharges.</p>
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public abstract void setFixedCharges(Atom atoms[]);
+    public abstract void setFixedCharges(Atom[] atoms);
 
     /**
      * <p>energy.</p>
@@ -581,9 +575,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * <p>assignPolarizationGroups.</p>
      */
     protected void assignPolarizationGroups() {
-        /**
-         * Find directly connected group members for each atom.
-         */
+        // Find directly connected group members for each atom.
         List<Integer> group = new ArrayList<>();
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i];
@@ -618,10 +610,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
                 logger.severe(message);
             }
         }
-        /**
-         * Find 1-2 group relationships.
-         */
-        int mask[] = new int[nAtoms];
+        // Find 1-2 group relationships.
+        int[] mask = new int[nAtoms];
         List<Integer> list = new ArrayList<>();
         List<Integer> keep = new ArrayList<>();
         for (int i = 0; i < nAtoms; i++) {
@@ -658,9 +648,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
                 ip12[i][j++] = k;
             }
         }
-        /**
-         * Find 1-3 group relationships.
-         */
+
+        // Find 1-3 group relationships.
         for (int i = 0; i < nAtoms; i++) {
             mask[i] = -1;
         }

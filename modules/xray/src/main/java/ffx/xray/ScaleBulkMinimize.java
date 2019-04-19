@@ -1,45 +1,49 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
+
+import static org.apache.commons.math3.util.FastMath.log;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -63,7 +67,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(ScaleBulkMinimize.class.getName());
     private static double toSeconds = 1.0e-9;
-    private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private final ReflectionList reflectionlist;
     private final DiffractionRefinementData refinementData;
     private final Crystal crystal;
@@ -71,9 +74,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     private final ScaleBulkEnergy bulkSolventEnergy;
     private final int solvent_n;
     private final int n;
-    private final double x[];
-    private final double grad[];
-    private final double scaling[];
+    private final double[] x;
+    private final double[] grad;
+    private final double[] scaling;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -85,8 +88,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * Constructor for ScaleBulkMinimize.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
-     *                       object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
      * @param crs            a {@link ffx.xray.CrystalReciprocalSpace} object.
      * @param parallelTeam   the ParallelTeam to execute the ScaleBulkMinimize.
      */
@@ -130,7 +132,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      *
      * @return a {@link ffx.xray.ScaleBulkEnergy} object.
      */
-    public ScaleBulkEnergy getScaleBulkEnergy() {
+    ScaleBulkEnergy getScaleBulkEnergy() {
         return bulkSolventEnergy;
     }
 
@@ -153,13 +155,13 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         if (x == null) {
             x = new double[this.x.length];
         }
-        System.arraycopy(this.x, 0, x, 0, this.x.length);
+        arraycopy(this.x, 0, x, 0, this.x.length);
         return x;
     }
 
     private void setInitialScale() {
-        double fc[][] = refinementData.fc;
-        double fo[][] = refinementData.fsigf;
+        double[][] fc = refinementData.fc;
+        double[][] fo = refinementData.fsigf;
 
         bulkSolventEnergy.setScaling(scaling);
         double e = bulkSolventEnergy.energyAndGradient(x, grad);
@@ -180,7 +182,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             sumfc += fct * fct;
         }
 
-        x[0] = Math.log(4.0 * sumfofc / sumfc);
+        x[0] = log(4.0 * sumfofc / sumfc);
     }
 
     /**
@@ -210,7 +212,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 x[2] = j;
                 double sum = bulkSolventEnergy.energyAndGradient(x, grad);
 
-                System.out.println("ks: " + i + " bs: " + j + " sum: " + sum);
+                logger.info("ks: " + i + " bs: " + j + " sum: " + sum);
                 if (sum < min) {
                     min = sum;
                     k = i;
@@ -218,7 +220,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 }
             }
         }
-        System.out.println("minks: " + k + " minbs: " + b + " min: " + min);
+        logger.info("minks: " + k + " minbs: " + b + " min: " + min);
         refinementData.solvent_k = k;
         refinementData.solvent_ueq = b;
 
@@ -229,7 +231,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * <p>
      * GridOptimize</p>
      */
-    public void GridOptimize() {
+    void GridOptimize() {
         if (crs == null) {
             return;
         }
@@ -258,7 +260,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 crs.computeDensity(refinementData.fs);
                 double sum = bulkSolventEnergy.energy(x);
                 //double sum = bulkSolventEnergy.energyAndGradient(x, grad);
-                logger.info(String.format(" A: %6.3f B: %6.3f sum: %12.8f", i, j, sum));
+                logger.info(format(" A: %6.3f B: %6.3f sum: %12.8f", i, j, sum));
                 if (sum < min) {
                     min = sum;
                     a = i;
@@ -267,7 +269,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             }
         }
 
-        logger.info(String.format("\n Minimum at\n A: %6.3f B: %6.3f sum: %12.8f", a, b, min));
+        logger.info(format("\n Minimum at\n A: %6.3f B: %6.3f sum: %12.8f", a, b, min));
         crs.setSolventAB(a, b);
         refinementData.solvent_a = a;
         refinementData.solvent_b = b;
@@ -318,10 +320,10 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         done = true;
         switch (status) {
             case 0:
-                logger.info(String.format("\n Optimization achieved convergence criteria: %10.5f\n", grms));
+                logger.info(format("\n Optimization achieved convergence criteria: %10.5f\n", grms));
                 break;
             case 1:
-                logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
+                logger.info(format("\n Optimization terminated at step %d.\n", nSteps));
                 break;
             default:
                 logger.warning("\n Optimization failed.\n");
@@ -346,7 +348,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
         if (logger.isLoggable(Level.INFO)) {
             mtime += System.nanoTime();
-            logger.info(String.format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
+            logger.info(format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
         }
 
         bulkSolventEnergy.setScaling(null);
@@ -370,14 +372,14 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time");
         }
         if (info == null) {
-            logger.info(String.format("%6d %12.5f %10.6f",
+            logger.info(format("%6d %12.5f %10.6f",
                     iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8.3f",
+                logger.info(format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8.3f",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
-                logger.info(String.format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8s",
+                logger.info(format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8s",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }

@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
@@ -75,6 +75,9 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
  */
 public class AminoAcidUtils {
 
+    /**
+     * Private constructor.
+     */
     private AminoAcidUtils() {
     }
 
@@ -122,17 +125,6 @@ public class AminoAcidUtils {
         }
     }
 
-    private static void copyCoordinates(Residue fromResidue, Residue toResidue, String atomName) {
-        Atom fromAtom;
-        if (fromResidue.getAtomNode(atomName) != null) {
-            fromAtom = (Atom) fromResidue.getAtomNode(atomName);
-        } else {
-            fromAtom = (Atom) fromResidue.getAtomNode("H1");
-        }
-        Atom toAtom = (Atom) toResidue.getAtomNode(atomName);
-        toAtom.setXYZ(fromAtom.getXYZ(null));
-    }
-
     /**
      * <p>assignAminoAcidAtomTypes.</p>
      *
@@ -158,10 +150,7 @@ public class AminoAcidUtils {
         } else if (nextResidue == null) {
             j = 2;
             position = LAST_RESIDUE;
-            /**
-             * If the last residue only contains a nitrogen turn it into an NH2
-             * group.
-             */
+            // If the last residue only contains a nitrogen turn it into an NH2 group.
             Atom N = (Atom) residue.getAtomNode("N");
             if (residue.getAtomNodeList().size() == 1 && N != null) {
                 residueName = "NH2".intern();
@@ -171,34 +160,24 @@ public class AminoAcidUtils {
 
         AminoAcid3 aminoAcid = getAminoAcid(residueName);
         int aminoAcidNumber = getAminoAcidNumber(residueName);
-        /**
-         * Non-standard Amino Acid; use ALA backbone types.
-         */
+        // Non-standard Amino Acid; use ALA backbone types.
         boolean nonStandard = false;
         if (aminoAcid == AminoAcid3.UNK) {
             aminoAcidNumber = getAminoAcidNumber("ALA");
             nonStandard = true;
         }
 
-        /**
-         * Only the last residue in a chain should have an OXT/OT2 atom.
-         */
+        // Only the last residue in a chain should have an OXT/OT2 atom.
         if (nextResidue != null) {
             removeOXT_OT2(residue);
         }
 
-        /**
-         * Only the first nitrogen should have H1, H2 and H3 atoms, unless it's
-         * an NME cap.
-         */
+        // Only the first nitrogen should have H1, H2 and H3 atoms, unless it's an NME cap.
         if (previousResidue != null) {
             removeH1_H2_H3(aminoAcid, residue);
         }
 
-        /**
-         * Check for missing heavy atoms. This check ignores special terminating
-         * groups like FOR, NH2, etc.
-         */
+        // Check for missing heavy atoms. This check ignores special terminating groups like FOR, NH2, etc.
         if (!nonStandard) {
             try {
                 checkForMissingHeavyAtoms(aminoAcidNumber, aminoAcid, position, residue);
@@ -216,9 +195,7 @@ public class AminoAcidUtils {
             pCA = (Atom) previousResidue.getAtomNode("CA");
         }
 
-        /**
-         * Backbone heavy atoms.
-         */
+        // Backbone heavy atoms.
         Atom N = (Atom) residue.getAtomNode("N");
         if (N != null) {
             N.setAtomType(BondedUtils.findAtomType(AA_N[j][aminoAcidNumber], forceField));
@@ -253,9 +230,8 @@ public class AminoAcidUtils {
                 buildBond(C, O, forceField, bondList);
             }
         }
-        /**
-         * Nitrogen hydrogen atoms.
-         */
+
+        // Nitrogen hydrogen atoms.
         AtomType atomType = findAtomType(AA_HN[j][aminoAcidNumber], forceField);
         switch (position) {
             case FIRST_RESIDUE:
@@ -303,9 +279,8 @@ public class AminoAcidUtils {
                 buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1,
                         atomType, forceField, bondList);
         }
-        /**
-         * C-alpha hydrogen atoms.
-         */
+
+        // C-alpha hydrogen atoms.
         String haName = "HA";
         if (aminoAcid == AminoAcid3.GLY) {
             haName = "HA2";
@@ -351,14 +326,11 @@ public class AminoAcidUtils {
                 buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.0, -1,
                         atomType, forceField, bondList);
         }
-        /**
-         * Build the amino acid side chain.
-         */
+
+        // Build the amino acid side chain.
         assignAminoAcidSideChain(position, aminoAcid, residue, CA, N, C, forceField, bondList);
 
-        /**
-         * Build the terminal oxygen if the residue is not NH2 or NME.
-         */
+        // Build the terminal oxygen if the residue is not NH2 or NME.
         if (position == LAST_RESIDUE && !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
             atomType = findAtomType(AA_O[2][aminoAcidNumber], forceField);
             Atom OXT = (Atom) residue.getAtomNode("OXT");
@@ -386,10 +358,8 @@ public class AminoAcidUtils {
             }
             buildBond(C, OXT, forceField, bondList);
         }
-        /**
-         * Do some checks on the current residue to make sure all atoms have
-         * been assigned an atom type.
-         */
+
+        // Do some checks on the current residue to make sure all atoms have been assigned an atom type.
         List<Atom> resAtoms = residue.getAtomList();
         for (Atom atom : resAtoms) {
             atomType = atom.getAtomType();
@@ -423,335 +393,6 @@ public class AminoAcidUtils {
                         residueName, atom.toString()));
                 logger.warning(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
             }
-        }
-    }
-
-    /**
-     * Assign atom types to a single amino acid side chain.
-     *
-     * @param position   The position of this amino acid in the chain.
-     * @param aminoAcid  The amino acid to use.
-     * @param residue    The residue node.
-     * @param CA         The C-alpha carbon of this residue.
-     * @param N          The peptide nitrogen of this residue.
-     * @param C          The peptide carbonyl carbon.
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param bondList   a {@link java.util.ArrayList} object.
-     */
-    public static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
-                                                Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList) {
-        int k = AA_CB[aminoAcid.ordinal()];
-        switch (aminoAcid) {
-            case GLY:
-                switch (position) {
-                    case FIRST_RESIDUE:
-                        k = AA_HA[0][k];
-                        break;
-                    case LAST_RESIDUE:
-                        k = AA_HA[2][k];
-                        break;
-                    default:
-                        k = AA_HA[1][k];
-
-                }
-                buildHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k, forceField, bondList);
-                break;
-            case ALA:
-                buildAlanine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case VAL:
-                buildValine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case LEU:
-                buildLeucine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ILE:
-                buildIsoleucine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case SER:
-                buildSerine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case THR:
-                buildThreonine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case CYS:
-                buildCysteine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case CYX:
-                buildCystine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case CYD:
-                buildDeprotonatedCysteine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case PRO:
-                buildProline(residue, CA, N, C, k, position, forceField, bondList);
-                break;
-            case PHE:
-                buildPhenylalanine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case TYR:
-                buildTyrosine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case TYD:
-                buildDeprotonatedTyrosine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case TRP:
-                buildTryptophan(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case HIS:
-                buildHistidine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case HID:
-                buildNeutralHistidineD(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case HIE:
-                buildNeutralHistidineE(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ASP:
-                buildAspartate(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ASH:
-                buildNeutralAsparticAcid(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ASN:
-                buildAsparagine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case GLU:
-                buildGlutamate(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case GLH:
-                buildNeutralGlutamicAcid(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case GLN:
-                buildGlutamine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case MET:
-                buildMethionine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case LYS:
-                buildLysine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case LYD:
-                buildDeprotonatedLysine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ARG:
-                buildArginine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case ORN:
-                buildOrnithine(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case AIB:
-                buildAIB(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case PCA:
-                buildPCA(residue, CA, N, C, k, forceField, bondList);
-                break;
-            case UNK:
-                String residueName = residue.getName();
-                logger.log(Level.INFO, " Patching side-chain {0}", residueName);
-                HashMap<String, AtomType> types = forceField.getAtomTypes(residueName);
-                if (!types.isEmpty()) {
-                    boolean patched = true;
-                    ArrayList<Atom> residueAtoms = residue.getAtomList();
-                    // Assign atom types for side-chain atoms.
-                    for (Atom atom : residueAtoms) {
-                        String atomName = atom.getName().toUpperCase();
-                        AtomType type = atom.getAtomType();
-                        if (type == null) {
-                            type = types.get(atomName);
-                            atom.setAtomType(type);
-                            types.remove(atomName);
-                        }
-                    }
-                    // Create bonds between known atoms.
-                    if (patched) {
-                        for (Atom atom : residueAtoms) {
-                            String atomName = atom.getName();
-                            String bonds[] = forceField.getBonds(residueName, atomName);
-                            if (bonds != null) {
-                                for (String name : bonds) {
-                                    Atom atom2 = (Atom) residue.getAtomNode(name);
-                                    if (atom2 != null && !atom.isBonded(atom2)) {
-                                        buildBond(atom, atom2, forceField, bondList);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // Create missing hydrogen atoms.
-                    if (patched && !types.isEmpty()) {
-                        // Create a hashmap of the molecule's atoms
-                        HashMap<String, Atom> atomMap = new HashMap<>();
-                        for (Atom atom : residueAtoms) {
-                            atomMap.put(atom.getName().toUpperCase(), atom);
-                        }
-                        for (String atomName : types.keySet()) {
-                            AtomType type = types.get(atomName);
-                            String bonds[] = forceField.getBonds(residueName, atomName.toUpperCase());
-                            if (bonds == null || bonds.length != 1) {
-                                patched = false;
-                                logger.log(Level.INFO, " Check biotype for hydrogen {0}.", type.name);
-                                break;
-                            }
-                            // Get the heavy atom the hydrogen is bonded to.
-                            Atom ia = atomMap.get(bonds[0].toUpperCase());
-                            Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
-                                    ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
-                                    ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
-                            logger.log(Level.FINE, " Created hydrogen {0}.", atomName);
-                            hydrogen.setAtomType(type);
-                            hydrogen.setHetero(true);
-                            residue.addMSNode(hydrogen);
-                            int valence = ia.getAtomType().valence;
-                            List<Bond> aBonds = ia.getBonds();
-                            int numBonds = aBonds.size();
-                            /**
-                             * Try to find the following configuration: ib-ia-ic
-                             */
-                            Atom ib = null;
-                            Atom ic = null;
-                            Atom id = null;
-                            if (numBonds > 0) {
-                                Bond bond = aBonds.get(0);
-                                ib = bond.get1_2(ia);
-                            }
-                            if (numBonds > 1) {
-                                Bond bond = aBonds.get(1);
-                                ic = bond.get1_2(ia);
-                            }
-                            if (numBonds > 2) {
-                                Bond bond = aBonds.get(2);
-                                id = bond.get1_2(ia);
-                            }
-
-                            /**
-                             * Building the hydrogens depends on hybridization
-                             * and the locations of other bonded atoms.
-                             */
-                            logger.log(Level.FINE, " Bonding {0} to {1} ({2} of {3}).",
-                                    new Object[]{atomName, ia.getName(), numBonds, valence});
-                            switch (valence) {
-                                case 4:
-                                    switch (numBonds) {
-                                        case 3:
-                                            // Find the average coordinates of atoms ib, ic and id.
-                                            double b[] = ib.getXYZ(null);
-                                            double c[] = ib.getXYZ(null);
-                                            double d[] = ib.getXYZ(null);
-                                            double a[] = new double[3];
-                                            a[0] = (b[0] + c[0] + d[0]) / 3.0;
-                                            a[1] = (b[1] + c[1] + d[1]) / 3.0;
-                                            a[2] = (b[2] + c[2] + d[2]) / 3.0;
-
-                                            // Place the hydrogen at chiral position #1.
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                                            double e1[] = hydrogen.getXYZ(null);
-                                            double ret[] = new double[3];
-                                            diff(a, e1, ret);
-                                            double l1 = r(ret);
-
-                                            // Place the hydrogen at chiral position #2.
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
-                                            double e2[] = hydrogen.getXYZ(null);
-                                            diff(a, e2, ret);
-                                            double l2 = r(ret);
-
-                                            // Revert to #1 if it is farther from the average.
-                                            if (l1 > l2) {
-                                                hydrogen.setXYZ(e1);
-                                            }
-                                            break;
-                                        case 2:
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                                            break;
-                                        case 1:
-                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
-                                            break;
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                case 3:
-                                    switch (numBonds) {
-                                        case 2:
-                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
-                                            break;
-                                        case 1:
-                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
-                                            break;
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                case 2:
-                                    switch (numBonds) {
-                                        case 1:
-                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
-                                            break;
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                case 1:
-                                    switch (numBonds) {
-                                        case 0:
-                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                                            break;
-                                        default:
-                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                            patched = false;
-                                    }
-                                    break;
-                                default:
-                                    logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
-                                    patched = false;
-                            }
-                            if (!patched) {
-                                break;
-                            } else {
-                                buildBond(ia, hydrogen, forceField, bondList);
-                            }
-                        }
-                    }
-                    if (!patched) {
-                        logger.log(Level.SEVERE, format(" Could not patch %s.", residueName));
-                    } else {
-                        logger.log(Level.INFO, " Patch for {0} succeeded.", residueName);
-                        residueAtoms = residue.getAtomList();
-                        // Assign atom types for side-chain atoms.
-                        double charge = 0.0;
-                        for (Atom atom : residueAtoms) {
-                            logger.info(atom.toString() + " -> " + atom.getAtomType().toString());
-                        }
-                    }
-                } else {
-                    switch (position) {
-                        case FIRST_RESIDUE:
-                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355,
-                                    forceField, bondList);
-                            break;
-                        case LAST_RESIDUE:
-                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506,
-                                    forceField, bondList);
-                            break;
-                        default:
-                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6,
-                                    forceField, bondList);
-                    }
-                }
-                break;
         }
     }
 
@@ -2136,8 +1777,8 @@ public class AminoAcidUtils {
      * @param residue         a {@link ffx.potential.bonded.Residue} object.
      * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
-    public static void checkForMissingHeavyAtoms(int aminoAcidNumber, AminoAcid3 aminoAcid,
-                                                 ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
+    private static void checkForMissingHeavyAtoms(int aminoAcidNumber, AminoAcid3 aminoAcid,
+                                                  ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
         int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
         if (aminoAcid != AminoAcid3.GLY && expected >= 4) {
             int actual = 0;
@@ -2183,102 +1824,443 @@ public class AminoAcidUtils {
     }
 
     /**
+     * Assign atom types to a single amino acid side chain.
+     *
+     * @param position   The position of this amino acid in the chain.
+     * @param aminoAcid  The amino acid to use.
+     * @param residue    The residue node.
+     * @param CA         The C-alpha carbon of this residue.
+     * @param N          The peptide nitrogen of this residue.
+     * @param C          The peptide carbonyl carbon.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     */
+    private static void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
+                                                 Atom CA, Atom N, Atom C, ForceField forceField, ArrayList<Bond> bondList) {
+        int k = AA_CB[aminoAcid.ordinal()];
+        switch (aminoAcid) {
+            case GLY:
+                switch (position) {
+                    case FIRST_RESIDUE:
+                        k = AA_HA[0][k];
+                        break;
+                    case LAST_RESIDUE:
+                        k = AA_HA[2][k];
+                        break;
+                    default:
+                        k = AA_HA[1][k];
+
+                }
+                buildHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k, forceField, bondList);
+                break;
+            case ALA:
+                buildAlanine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case VAL:
+                buildValine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case LEU:
+                buildLeucine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ILE:
+                buildIsoleucine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case SER:
+                buildSerine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case THR:
+                buildThreonine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case CYS:
+                buildCysteine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case CYX:
+                buildCystine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case CYD:
+                buildDeprotonatedCysteine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case PRO:
+                buildProline(residue, CA, N, C, k, position, forceField, bondList);
+                break;
+            case PHE:
+                buildPhenylalanine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case TYR:
+                buildTyrosine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case TYD:
+                buildDeprotonatedTyrosine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case TRP:
+                buildTryptophan(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case HIS:
+                buildHistidine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case HID:
+                buildNeutralHistidineD(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case HIE:
+                buildNeutralHistidineE(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ASP:
+                buildAspartate(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ASH:
+                buildNeutralAsparticAcid(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ASN:
+                buildAsparagine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case GLU:
+                buildGlutamate(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case GLH:
+                buildNeutralGlutamicAcid(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case GLN:
+                buildGlutamine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case MET:
+                buildMethionine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case LYS:
+                buildLysine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case LYD:
+                buildDeprotonatedLysine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ARG:
+                buildArginine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case ORN:
+                buildOrnithine(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case AIB:
+                buildAIB(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case PCA:
+                buildPCA(residue, CA, N, C, k, forceField, bondList);
+                break;
+            case UNK:
+                String residueName = residue.getName();
+                logger.log(Level.INFO, " Patching side-chain {0}", residueName);
+                HashMap<String, AtomType> types = forceField.getAtomTypes(residueName);
+                if (!types.isEmpty()) {
+                    boolean patched = true;
+                    ArrayList<Atom> residueAtoms = residue.getAtomList();
+                    // Assign atom types for side-chain atoms.
+                    for (Atom atom : residueAtoms) {
+                        String atomName = atom.getName().toUpperCase();
+                        AtomType type = atom.getAtomType();
+                        if (type == null) {
+                            type = types.get(atomName);
+                            atom.setAtomType(type);
+                            types.remove(atomName);
+                        }
+                    }
+                    // Create bonds between known atoms.
+                    for (Atom atom : residueAtoms) {
+                        String atomName = atom.getName();
+                        String[] bonds = forceField.getBonds(residueName, atomName);
+                        if (bonds != null) {
+                            for (String name : bonds) {
+                                Atom atom2 = (Atom) residue.getAtomNode(name);
+                                if (atom2 != null && !atom.isBonded(atom2)) {
+                                    buildBond(atom, atom2, forceField, bondList);
+                                }
+                            }
+                        }
+                    }
+
+                    // Create missing hydrogen atoms.
+                    if (!types.isEmpty()) {
+                        // Create a hashmap of the molecule's atoms
+                        HashMap<String, Atom> atomMap = new HashMap<>();
+                        for (Atom atom : residueAtoms) {
+                            atomMap.put(atom.getName().toUpperCase(), atom);
+                        }
+                        for (String atomName : types.keySet()) {
+                            AtomType type = types.get(atomName);
+                            String[] bonds = forceField.getBonds(residueName, atomName.toUpperCase());
+                            if (bonds == null || bonds.length != 1) {
+                                patched = false;
+                                logger.log(Level.INFO, " Check biotype for hydrogen {0}.", type.name);
+                                break;
+                            }
+                            // Get the heavy atom the hydrogen is bonded to.
+                            Atom ia = atomMap.get(bonds[0].toUpperCase());
+                            Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
+                                    ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
+                                    ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
+                            logger.log(Level.FINE, " Created hydrogen {0}.", atomName);
+                            hydrogen.setAtomType(type);
+                            hydrogen.setHetero(true);
+                            residue.addMSNode(hydrogen);
+                            int valence = ia.getAtomType().valence;
+                            List<Bond> aBonds = ia.getBonds();
+                            int numBonds = aBonds.size();
+                            // Try to find the following configuration: ib-ia-ic
+                            Atom ib = null;
+                            Atom ic = null;
+                            Atom id = null;
+                            if (numBonds > 0) {
+                                Bond bond = aBonds.get(0);
+                                ib = bond.get1_2(ia);
+                            }
+                            if (numBonds > 1) {
+                                Bond bond = aBonds.get(1);
+                                ic = bond.get1_2(ia);
+                            }
+                            if (numBonds > 2) {
+                                Bond bond = aBonds.get(2);
+                                id = bond.get1_2(ia);
+                            }
+
+                            // Building the hydrogens depends on hybridization and the locations of other bonded atoms.
+                            logger.log(Level.FINE, " Bonding {0} to {1} ({2} of {3}).",
+                                    new Object[]{atomName, ia.getName(), numBonds, valence});
+                            switch (valence) {
+                                case 4:
+                                    switch (numBonds) {
+                                        case 3:
+                                            // Find the average coordinates of atoms ib, ic and id.
+                                            double b[] = ib.getXYZ(null);
+                                            double c[] = ib.getXYZ(null);
+                                            double d[] = ib.getXYZ(null);
+                                            double a[] = new double[3];
+                                            a[0] = (b[0] + c[0] + d[0]) / 3.0;
+                                            a[1] = (b[1] + c[1] + d[1]) / 3.0;
+                                            a[2] = (b[2] + c[2] + d[2]) / 3.0;
+
+                                            // Place the hydrogen at chiral position #1.
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                            double e1[] = hydrogen.getXYZ(null);
+                                            double ret[] = new double[3];
+                                            diff(a, e1, ret);
+                                            double l1 = r(ret);
+
+                                            // Place the hydrogen at chiral position #2.
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
+                                            double e2[] = hydrogen.getXYZ(null);
+                                            diff(a, e2, ret);
+                                            double l2 = r(ret);
+
+                                            // Revert to #1 if it is farther from the average.
+                                            if (l1 > l2) {
+                                                hydrogen.setXYZ(e1);
+                                            }
+                                            break;
+                                        case 2:
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                            break;
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                case 3:
+                                    switch (numBonds) {
+                                        case 2:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
+                                            break;
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                case 2:
+                                    switch (numBonds) {
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                case 1:
+                                    switch (numBonds) {
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                            patched = false;
+                                    }
+                                    break;
+                                default:
+                                    logger.log(Level.INFO, " Check biotype for hydrogen {0}.", atomName);
+                                    patched = false;
+                            }
+                            if (!patched) {
+                                break;
+                            } else {
+                                buildBond(ia, hydrogen, forceField, bondList);
+                            }
+                        }
+                    }
+                    if (!patched) {
+                        logger.log(Level.SEVERE, format(" Could not patch %s.", residueName));
+                    } else {
+                        logger.log(Level.INFO, " Patch for {0} succeeded.", residueName);
+                        residueAtoms = residue.getAtomList();
+                        // Assign atom types for side-chain atoms.
+                        double charge = 0.0;
+                        for (Atom atom : residueAtoms) {
+                            logger.info(atom.toString() + " -> " + atom.getAtomType().toString());
+                        }
+                    }
+                } else {
+                    switch (position) {
+                        case FIRST_RESIDUE:
+                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355,
+                                    forceField, bondList);
+                            break;
+                        case LAST_RESIDUE:
+                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506,
+                                    forceField, bondList);
+                            break;
+                        default:
+                            buildHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6,
+                                    forceField, bondList);
+                    }
+                }
+                break;
+        }
+    }
+
+    /**
+     * Copy coordinates of an atom from one residue to another.
+     *
+     * @param fromResidue Use the coordinates from this residue.
+     * @param toResidue   Send the coordinates to this residue.
+     * @param atomName    The name of the atom whose coordinates will be updated.
+     */
+    private static void copyCoordinates(Residue fromResidue, Residue toResidue, String atomName) {
+        Atom fromAtom;
+        if (fromResidue.getAtomNode(atomName) != null) {
+            fromAtom = (Atom) fromResidue.getAtomNode(atomName);
+        } else {
+            fromAtom = (Atom) fromResidue.getAtomNode("H1");
+        }
+
+        Atom toAtom = (Atom) toResidue.getAtomNode(atomName);
+        toAtom.setXYZ(fromAtom.getXYZ(null));
+    }
+
+    /**
      * Constant <code>nCapBackboneAtoms</code>
      */
-    public static final String nCapBackboneAtoms[] = {"N", "H1", "H2", "H3", "CA", "HA", "C", "O"};
+    public static final String[] nCapBackboneAtoms = {"N", "H1", "H2", "H3", "CA", "HA", "C", "O"};
     /**
      * Constant <code>backboneAtoms</code>
      */
-    public static final String backboneAtoms[] = {"N", "H", "CA", "HA", "C", "O"};
+    public static final String[] backboneAtoms = {"N", "H", "CA", "HA", "C", "O"};
     /**
      * Constant <code>glycineBackboneAtoms</code>
      */
-    public static final String glycineBackboneAtoms[] = {"N", "H", "CA", "HA2", "HA3", "C", "O"};
+    private static final String[] glycineBackboneAtoms = {"N", "H", "CA", "HA2", "HA3", "C", "O"};
     /**
      * Constant <code>prolineBackboneAtoms</code>
      */
-    public static final String prolineBackboneAtoms[] = {"N", "CA", "HA", "C", "O"};
-
+    private static final String[] prolineBackboneAtoms = {"N", "CA", "HA", "C", "O"};
     /**
      * Constant <code>alanineAtoms</code>
      */
-    public static final String alanineAtoms[] = {"CB", "HB1", "HB2", "HB3"};
+    private static final String[] alanineAtoms = {"CB", "HB1", "HB2", "HB3"};
     /**
      * Constant <code>glycineAtoms</code>
      */
-    public static final String glycineAtoms[] = {"HA2"};
+    private static final String[] glycineAtoms = {"HA2"};
     /**
      * Constant <code>valineAtoms</code>
      */
-    public static final String valineAtoms[] = {"CB", "HB", "CG1", "HG11", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23"};
+    private static final String[] valineAtoms = {"CB", "HB", "CG1", "HG11", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23"};
     /**
      * Constant <code>leucineAtoms</code>
      */
-    public static final String leucineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG", "CD1", "HD11", "HD12", "HD13", "CD2", "HD21", "HD22", "HD23"};
+    private static final String[] leucineAtoms = {"CB", "HB2", "HB3", "CG", "HG", "CD1", "HD11", "HD12", "HD13", "CD2", "HD21", "HD22", "HD23"};
     /**
      * Constant <code>isoleucineAtoms</code>
      */
-    public static final String isoleucineAtoms[] = {"CB", "HB", "CG1", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23", "CD1", "HD11", "HD12", "HD13"};
+    private static final String[] isoleucineAtoms = {"CB", "HB", "CG1", "HG12", "HG13", "CG2", "HG21", "HG22", "HG23", "CD1", "HD11", "HD12", "HD13"};
     /**
      * Constant <code>serineAtoms</code>
      */
-    public static final String serineAtoms[] = {"CB", "HB2", "HB3", "OG", "HG"};
+    private static final String[] serineAtoms = {"CB", "HB2", "HB3", "OG", "HG"};
     /**
      * Constant <code>threonineAtoms</code>
      */
-    public static final String threonineAtoms[] = {"CB", "HB", "OG1", "HG1", "CG2", "HG21", "HG22", "HG23"};
+    private static final String[] threonineAtoms = {"CB", "HB", "OG1", "HG1", "CG2", "HG21", "HG22", "HG23"};
     /**
      * Constant <code>cysteineAtoms</code>
      */
-    public static final String cysteineAtoms[] = {"CB", "HB2", "HB3", "SG", "HG"};
+    private static final String[] cysteineAtoms = {"CB", "HB2", "HB3", "SG", "HG"};
     /**
      * Constant <code>prolineAtoms</code>
      */
-    public static final String prolineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3"};
+    private static final String[] prolineAtoms = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3"};
     /**
      * Constant <code>phenylalanineAtoms</code>
      */
-    public static final String phenylalanineAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "HZ"};
+    private static final String[] phenylalanineAtoms = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "HZ"};
     /**
      * Constant <code>tyrosineAtoms</code>
      */
-    public static final String tyrosineAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "OH", "HH"};
+    private static final String[] tyrosineAtoms = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "HD2", "CE1", "HE1", "CE2", "HE2", "CZ", "OH", "HH"};
     /**
      * Constant <code>tryptophanAtoms</code>
      */
-    public static final String tryptophanAtoms[] = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "NE1", "HE1", "CE2", "CE3", "HE3", "CZ2", "HZ2", "CZ3", "HZ3", "CH2", "HH2"};
+    private static final String[] tryptophanAtoms = {"CB", "HB2", "HB3", "CG", "CD1", "HD1", "CD2", "NE1", "HE1", "CE2", "CE3", "HE3", "CZ2", "HZ2", "CZ3", "HZ3", "CH2", "HH2"};
     /**
      * Constant <code>histidineAtoms</code>
      */
-    public static final String histidineAtoms[] = {"CB", "HB2", "HB3", "CG", "ND1", "HD1", "CD2", "HD2", "CE1", "HE1", "NE2", "HE2"};
+    private static final String[] histidineAtoms = {"CB", "HB2", "HB3", "CG", "ND1", "HD1", "CD2", "HD2", "CE1", "HE1", "NE2", "HE2"};
     /**
      * Constant <code>aspartateAtoms</code>
      */
-    public static final String aspartateAtoms[] = {"CB", "HB2", "HB3", "CG", "OD1", "OD2"};
+    private static final String[] aspartateAtoms = {"CB", "HB2", "HB3", "CG", "OD1", "OD2"};
     /**
      * Constant <code>asparagineAtoms</code>
      */
-    public static final String asparagineAtoms[] = {"CB", "HB2", "HB3", "CG", "OD1", "ND2", "HD21", "HD22"};
+    private static final String[] asparagineAtoms = {"CB", "HB2", "HB3", "CG", "OD1", "ND2", "HD21", "HD22"};
     /**
      * Constant <code>glutamateAtoms</code>
      */
-    public static final String glutamateAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "OE2"};
+    private static final String[] glutamateAtoms = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "OE2"};
     /**
      * Constant <code>glutamineAtoms</code>
      */
-    public static final String glutamineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "NE2", "HE21", "HE22"};
+    private static final String[] glutamineAtoms = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "OE1", "NE2", "HE21", "HE22"};
     /**
      * Constant <code>methionineAtoms</code>
      */
-    public static final String methionineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "SD", "CE", "HE1", "HE2", "HE3"};
+    private static final String[] methionineAtoms = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "SD", "CE", "HE1", "HE2", "HE3"};
     /**
      * Constant <code>lysineAtoms</code>
      */
-    public static final String lysineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "CE", "HE2", "HE3", "NZ", "HZ1", "HZ2", "HZ3"};
+    private static final String[] lysineAtoms = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "CE", "HE2", "HE3", "NZ", "HZ1", "HZ2", "HZ3"};
     /**
      * Constant <code>arginineAtoms</code>
      */
-    public static final String arginineAtoms[] = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "NE", "HE", "CZ", "NH1", "HH11", "HH12", "NH2", "HH21", "HH22"};
+    private static final String[] arginineAtoms = {"CB", "HB2", "HB3", "CG", "HG2", "HG3", "CD", "HD2", "HD3", "NE", "HE", "CZ", "NH1", "HH11", "HH12", "NH2", "HH21", "HH22"};
 
     /**
      * Biotype keys for amino acid backbone atom types. These are consistent
@@ -2297,20 +2279,22 @@ public class AminoAcidUtils {
                     501, 507, 513, 519, 525, 531, 537, 543,
                     549, 555, 561, 567, 573, 579, 391, 762,
                     0, 0, 0, 0, 0, 403
-            }, {
-            1, 7, 15, 27, 41, 55, 65, 77,
-            87, 96, 105, 116, 131, 147, 162, 185,
-            202, 218, 234, 244, 256, 268, 280, 294,
-            308, 321, 337, 353, 370, 384, 391, 0,
-            0, 0, 0, 0, 0, 1
-    }, {
-            584, 590, 596, 602, 608, 614, 620, 626,
-            632, 638, 644, 649, 655, 661, 667, 673,
-            679, 685, 691, 697, 703, 709, 715, 721,
-            727, 733, 739, 745, 751, 757, 0, 0,
-            0, 0, 773, 775, 777, 584
-    }
-    };
+            },
+            {
+                    1, 7, 15, 27, 41, 55, 65, 77,
+                    87, 96, 105, 116, 131, 147, 162, 185,
+                    202, 218, 234, 244, 256, 268, 280, 294,
+                    308, 321, 337, 353, 370, 384, 391, 0,
+                    0, 0, 0, 0, 0, 1
+            },
+            {
+                    584, 590, 596, 602, 608, 614, 620, 626,
+                    632, 638, 644, 649, 655, 661, 667, 673,
+                    679, 685, 691, 697, 703, 709, 715, 721,
+                    727, 733, 739, 745, 751, 757, 0, 0,
+                    0, 0, 773, 775, 777, 584
+            }};
+
     /**
      * Constant <code>AA_CA</code>
      */
@@ -2321,20 +2305,22 @@ public class AminoAcidUtils {
                     502, 508, 514, 520, 526, 532, 538, 544,
                     550, 556, 562, 568, 574, 580, 392, 0,
                     0, 767, 0, 0, 0, 404
-            }, {
-            2, 8, 16, 28, 42, 56, 66, 78,
-            88, 97, 106, 117, 132, 148, 163, 186,
-            203, 219, 235, 245, 257, 269, 281, 295,
-            309, 322, 338, 354, 371, 385, 392, 0,
-            0, 0, 0, 0, 0, 2
-    }, {
-            585, 591, 597, 603, 609, 615, 621, 627,
-            633, 639, 645, 650, 656, 662, 668, 674,
-            680, 686, 692, 698, 704, 710, 716, 722,
-            728, 734, 740, 746, 752, 758, 0, 0,
-            0, 0, 0, 0, 779, 585
-    }
-    };
+            },
+            {
+                    2, 8, 16, 28, 42, 56, 66, 78,
+                    88, 97, 106, 117, 132, 148, 163, 186,
+                    203, 219, 235, 245, 257, 269, 281, 295,
+                    309, 322, 338, 354, 371, 385, 392, 0,
+                    0, 0, 0, 0, 0, 2
+            },
+            {
+                    585, 591, 597, 603, 609, 615, 621, 627,
+                    633, 639, 645, 650, 656, 662, 668, 674,
+                    680, 686, 692, 698, 704, 710, 716, 722,
+                    728, 734, 740, 746, 752, 758, 0, 0,
+                    0, 0, 0, 0, 779, 585
+            }};
+
     /**
      * Constant <code>AA_C</code>
      */
@@ -2345,20 +2331,22 @@ public class AminoAcidUtils {
                     503, 509, 515, 521, 527, 533, 539, 545,
                     551, 557, 563, 569, 575, 581, 393, 0,
                     764, 769, 0, 0, 0, 405
-            }, {
-            3, 9, 17, 29, 43, 57, 67, 79,
-            89, 98, 107, 118, 133, 149, 164, 187,
-            204, 220, 236, 246, 258, 270, 282, 296,
-            310, 323, 339, 355, 372, 386, 393, 0,
-            0, 0, 0, 0, 0, 3
-    }, {
-            586, 592, 598, 604, 610, 616, 622, 628,
-            634, 640, 646, 651, 657, 663, 669, 675,
-            681, 687, 693, 699, 705, 711, 717, 723,
-            729, 735, 741, 747, 753, 759, 0, 0,
-            0, 0, 771, 0, 0, 586
-    }
-    };
+            },
+            {
+                    3, 9, 17, 29, 43, 57, 67, 79,
+                    89, 98, 107, 118, 133, 149, 164, 187,
+                    204, 220, 236, 246, 258, 270, 282, 296,
+                    310, 323, 339, 355, 372, 386, 393, 0,
+                    0, 0, 0, 0, 0, 3
+            },
+            {
+                    586, 592, 598, 604, 610, 616, 622, 628,
+                    634, 640, 646, 651, 657, 663, 669, 675,
+                    681, 687, 693, 699, 705, 711, 717, 723,
+                    729, 735, 741, 747, 753, 759, 0, 0,
+                    0, 0, 771, 0, 0, 586
+            }};
+
     /**
      * Constant <code>AA_HN</code>
      */
@@ -2369,19 +2357,22 @@ public class AminoAcidUtils {
                     504, 510, 516, 522, 528, 534, 540, 546,
                     552, 558, 564, 570, 576, 582, 394, 763,
                     0, 0, 0, 0, 0, 406
-            }, {
-            4, 10, 18, 30, 44, 58, 68, 80,
-            90, 99, 0, 119, 134, 150, 165, 188,
-            205, 221, 237, 247, 259, 271, 283, 297,
-            311, 324, 340, 356, 373, 387, 394, 0,
-            0, 0, 0, 0, 0, 4
-    }, {
-            587, 593, 599, 605, 611, 617, 623, 629,
-            635, 641, 0, 652, 658, 664, 670, 676,
-            682, 688, 694, 700, 706, 712, 718, 724,
-            730, 736, 742, 748, 754, 760, 0, 0,
-            0, 0, 774, 776, 778, 587}
-    };
+            },
+            {
+                    4, 10, 18, 30, 44, 58, 68, 80,
+                    90, 99, 0, 119, 134, 150, 165, 188,
+                    205, 221, 237, 247, 259, 271, 283, 297,
+                    311, 324, 340, 356, 373, 387, 394, 0,
+                    0, 0, 0, 0, 0, 4
+            },
+            {
+                    587, 593, 599, 605, 611, 617, 623, 629,
+                    635, 641, 0, 652, 658, 664, 670, 676,
+                    682, 688, 694, 700, 706, 712, 718, 724,
+                    730, 736, 742, 748, 754, 760, 0, 0,
+                    0, 0, 774, 776, 778, 587
+            }};
+
     /**
      * Constant <code>AA_O</code>
      */
@@ -2392,20 +2383,22 @@ public class AminoAcidUtils {
                     505, 511, 517, 523, 529, 535, 541, 547,
                     553, 559, 565, 571, 577, 583, 395, 0,
                     766, 770, 0, 0, 0, 407
-            }, {
-            5, 11, 19, 31, 45, 59, 69, 81,
-            91, 100, 108, 120, 135, 151, 166, 189,
-            206, 222, 238, 248, 260, 272, 284, 298,
-            312, 325, 341, 357, 374, 388, 395, 0,
-            0, 0, 0, 0, 0, 5
-    }, {
-            588, 594, 600, 606, 612, 618, 624, 630,
-            636, 642, 647, 653, 659, 665, 671, 677,
-            683, 689, 695, 701, 707, 713, 719, 725,
-            731, 737, 743, 749, 755, 761, 0, 0,
-            0, 0, 772, 0, 0, 588
-    }
-    };
+            },
+            {
+                    5, 11, 19, 31, 45, 59, 69, 81,
+                    91, 100, 108, 120, 135, 151, 166, 189,
+                    206, 222, 238, 248, 260, 272, 284, 298,
+                    312, 325, 341, 357, 374, 388, 395, 0,
+                    0, 0, 0, 0, 0, 5
+            },
+            {
+                    588, 594, 600, 606, 612, 618, 624, 630,
+                    636, 642, 647, 653, 659, 665, 671, 677,
+                    683, 689, 695, 701, 707, 713, 719, 725,
+                    731, 737, 743, 749, 755, 761, 0, 0,
+                    0, 0, 772, 0, 0, 588
+            }};
+
     /**
      * Constant <code>AA_HA</code>
      */
@@ -2428,8 +2421,8 @@ public class AminoAcidUtils {
                     684, 690, 696, 702, 708, 714, 720, 726,
                     732, 738, 744, 750, 756, 0, 0, 0,
                     0, 0, 0, 0, 780, 589
-            }
-    };
+            }};
+
     /**
      * Constant <code>AA_CB</code>
      */

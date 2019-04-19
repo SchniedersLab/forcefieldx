@@ -1,44 +1,45 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -68,55 +69,38 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(AngleTorsion.class.getName());
 
-    private static final long serialVersionUID = 1L;
-    private double lambda = 1.0;
-    private double dEdL = 0.0;
-    private boolean lambdaTerm = false;
-
-    public AngleTorsionType angleTorsionType = null;
-    private double constants[] = new double[6];
-    public TorsionType torsionType = null;
+    /**
+     * Angle Torsion force field type.
+     */
+    private AngleTorsionType angleTorsionType = null;
+    /**
+     * Angle Torsion force constants (may be reversed compared to storage in the AngleTorsionType instance).
+     */
+    private double[] constants = new double[6];
+    /**
+     * Torsion force field type.
+     */
+    private TorsionType torsionType = null;
+    /**
+     * First angle force field type.
+     */
     public AngleType angleType1 = null;
+    /**
+     * Second angle force field type.
+     */
     public AngleType angleType2 = null;
-
-    private static final String mathForm;
-
-    static {
-        /**
-         * Defined constants:
-         * p1-p4 are particles 1-4.
-         * m is an angle number, from 1-2, representing angles p1-p2-p3, p2-p3-p4.
-         * n is a periodicity, from 1-3.
-         *
-         * k[m][n] is a set of 6 energy constants defined in the parameter file for this angle-torsion.
-         *
-         * aVal[m] is the current value for angle m.
-         * a[m] is the equilibrium value for angle m.
-         *
-         * tVal is the current value of the 1-2-3-4 dihedral angle.
-         *
-         * phi[m] is a phase offset constant; phi1 = phi3 = 0, phi2 = pi.
-         */
-
-        StringBuilder mathFormBuilder = new StringBuilder();
-
-        for (int m = 1; m < 3; m++) {
-            for (int n = 1; n < 4; n++) {
-                // kmn * (am - am(equil)) * (1 + cos(n*tors + phi(n)))
-                mathFormBuilder.append(String.format("k%d%d*(aVal%d-a%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
-            }
-        }
-        int lenStr = mathFormBuilder.length();
-        mathFormBuilder.replace(lenStr - 1, lenStr, ";");
-
-        for (int m = 1; m < 3; m++) {
-            mathFormBuilder.append(String.format("aVal%d=angle(p%d,p%d,p%d);", m, m, (m + 1), (m + 2)));
-        }
-
-        mathFormBuilder.append("tVal=dihedral(p1,p2,p3,p4)");
-
-        mathForm = mathFormBuilder.toString();
-    }
+    /**
+     * Value of lambda.
+     */
+    private double lambda = 1.0;
+    /**
+     * Value of dE/dL.
+     */
+    private double dEdL = 0.0;
+    /**
+     * Flag to indicate lambda dependence.
+     */
+    private boolean lambdaTerm = false;
 
     /**
      * AngleTorsion constructor.
@@ -131,27 +115,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         bonds[0] = an1.getOtherBond(bonds[1]);
         bonds[2] = an2.getOtherBond(bonds[1]);
         initialize();
-    }
-
-    /**
-     * <p>
-     * compare</p>
-     *
-     * @param a0 a {@link ffx.potential.bonded.Atom} object.
-     * @param a1 a {@link ffx.potential.bonded.Atom} object.
-     * @param a2 a {@link ffx.potential.bonded.Atom} object.
-     * @param a3 a {@link ffx.potential.bonded.Atom} object.
-     * @return a boolean.
-     */
-    public boolean compare(Atom a0, Atom a1, Atom a2, Atom a3) {
-        if (a0 == atoms[0] && a1 == atoms[1] && a2 == atoms[2]
-                && a3 == atoms[3]) {
-            return true;
-        } else if (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1]
-                && a3 == atoms[0]) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -180,6 +143,25 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
+     * <p>
+     * compare</p>
+     *
+     * @param a0 a {@link ffx.potential.bonded.Atom} object.
+     * @param a1 a {@link ffx.potential.bonded.Atom} object.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @param a3 a {@link ffx.potential.bonded.Atom} object.
+     * @return a boolean.
+     */
+    public boolean compare(Atom a0, Atom a1, Atom a2, Atom a3) {
+        if (a0 == atoms[0] && a1 == atoms[1] && a2 == atoms[2]
+                && a3 == atoms[3]) {
+            return true;
+        }
+
+        return (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1] && a3 == atoms[0]);
+    }
+
+    /**
      * Initialization
      */
     private void initialize() {
@@ -198,10 +180,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
      *
      * @param flipped a boolean.
      */
-    public void setFlipped(boolean flipped) {
-        for (int i = 0; i < 6; i++) {
-            constants[i] = angleTorsionType.forceConstants[i];
-        }
+    private void setFlipped(boolean flipped) {
         if (flipped) {
             constants[0] = angleTorsionType.forceConstants[3];
             constants[1] = angleTorsionType.forceConstants[4];
@@ -209,6 +188,8 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
             constants[3] = angleTorsionType.forceConstants[0];
             constants[4] = angleTorsionType.forceConstants[1];
             constants[5] = angleTorsionType.forceConstants[2];
+        } else {
+            arraycopy(angleTorsionType.forceConstants, 0, constants, 0, 6);
         }
     }
 
@@ -219,7 +200,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
      * @param forceField the ForceField parameters to apply.
      * @return a new Torsion, or null.
      */
-    public static AngleTorsion angleTorsionFactory(Torsion torsion, ForceField forceField) {
+    static AngleTorsion angleTorsionFactory(Torsion torsion, ForceField forceField) {
         TorsionType torsionType = torsion.torsionType;
         String key = torsionType.getKey();
         AngleTorsionType angleTorsionType = forceField.getAngleTorsionType(key);
@@ -278,37 +259,25 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
      *
      * @return Value of the dihedral angle.
      */
-    public double calculateDihedralAngle() {
+    private double calculateDihedralAngle() {
 
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        double a3[] = new double[3];
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
+        double[] a3 = new double[3];
 
-        /**
-         * Vector from Atom 0 to Atom 1.
-         */
-        double v01[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 2.
-         */
-        double v12[] = new double[3];
-        /**
-         * Vector from Atom 2 to Atom 3.
-         */
-        double v23[] = new double[3];
-        /**
-         * Vector v01 cross v12.
-         */
-        double x0112[] = new double[3];
-        /**
-         * Vector v12 cross v23.
-         */
-        double x1223[] = new double[3];
-        /**
-         * Vector x0112 cross x12_32.
-         */
-        double x[] = new double[3];
+        // Vector from Atom 0 to Atom 1.
+        double[] v01 = new double[3];
+        // Vector from Atom 1 to Atom 2.
+        double[] v12 = new double[3];
+        // Vector from Atom 2 to Atom 3.
+        double[] v23 = new double[3];
+        // Vector v01 cross v12.
+        double[] x0112 = new double[3];
+        // Vector v12 cross v23.
+        double[] x1223 = new double[3];
+        // Vector x0112 cross x12_32.
+        double[] x = new double[3];
 
         double theVal = 0.0;
 
@@ -344,7 +313,28 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
      * @return Stretch-torsion constants.
      */
     public double[] getConstants() {
-        return Arrays.copyOf(constants, constants.length);
+        return copyOf(constants, constants.length);
+    }
+
+    /**
+     * Log details for this Torsional Angle energy term.
+     */
+    public void log() {
+        logger.info(String.format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
+                "Angle-Torsion",
+                atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[1].getIndex(), atoms[1].getAtomType().name,
+                atoms[2].getIndex(), atoms[2].getAtomType().name,
+                atoms[3].getIndex(), atoms[3].getAtomType().name, energy));
+    }
+
+    /**
+     * Returns the mathematical form of an angle-torsion as an OpenMM-parsable String.
+     *
+     * @return Mathematical form of the angle-torsion coupling.
+     */
+    public static String angleTorsionForm() {
+        return mathForm;
     }
 
     /**
@@ -361,57 +351,32 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
                          AtomicDoubleArray lambdaGradX,
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
-
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        double a3[] = new double[3];
-
-        /**
-         * Vector from Atom 0 to Atom 1.
-         */
-        double v01[] = new double[3];
-        /**
-         * Vector from Atom 0 to Atom 2.
-         */
-        double v02[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 2.
-         */
-        double v12[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 3.
-         */
-        double v13[] = new double[3];
-        /**
-         * Vector from Atom 2 to Atom 3.
-         */
-        double v23[] = new double[3];
-        /**
-         * Vector v01 cross v12.
-         */
-        double x0112[] = new double[3];
-        /**
-         * Vector v12 cross v23.
-         */
-        double x1223[] = new double[3];
-        /**
-         * Vector x0112 cross x12_32.
-         */
-        double x[] = new double[3];
-
         energy = 0.0;
         value = 0.0;
         dEdL = 0.0;
 
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
+        double[] a3 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
         atoms[3].getXYZ(a3);
+
+        // Vector from Atom 0 to Atom 1.
+        double[] v01 = new double[3];
+        // Vector from Atom 0 to Atom 2.
+        double[] v02 = new double[3];
+        // Vector from Atom 1 to Atom 2.
+        double[] v12 = new double[3];
+        // Vector from Atom 1 to Atom 3.
+        double[] v13 = new double[3];
+        // Vector from Atom 2 to Atom 3.
+        double[] v23 = new double[3];
         diff(a1, a0, v01);
         diff(a2, a1, v12);
         diff(a3, a2, v23);
-
         double r01 = r(v01);
         double r12 = r(v12);
         double r23 = r(v23);
@@ -419,10 +384,15 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
             return 0.0;
         }
 
+        // Vector v01 cross v12.
+        double[] x0112 = new double[3];
+        // Vector v12 cross v23.
+        double[] x1223 = new double[3];
+        // Vector x0112 cross x12_32.
+        double[] x = new double[3];
         cross(v01, v12, x0112);
         cross(v12, v23, x1223);
         cross(x0112, x1223, x);
-
         double r01_12 = dot(x0112, x0112);
         r01_12 = max(r01_12, 0.000001);
         double r12_23 = dot(x1223, x1223);
@@ -439,8 +409,8 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         }
 
         // Compute multiple angle trigonometry and phase terms
-        double tsin[] = torsionType.sine;
-        double tcos[] = torsionType.cosine;
+        double[] tsin = torsionType.sine;
+        double[] tcos = torsionType.cosine;
         double cosine2 = cosine * cosine - sine * sine;
         double sine2 = 2.0 * cosine * sine;
         double cosine3 = cosine * cosine2 - sine * sine2;
@@ -460,7 +430,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         double cosang = -dot / sqrt(r01 * r01 * r12 * r12);
         double angle1 = toDegrees(acos(cosang));
         double dt1 = angle1 - angleType1.angle[0];
-        double e1 = angleTorsionType.units * dt1 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
+        double e1 = AngleTorsionType.units * dt1 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
 
         // Set the angle-torsion values for the second angle
         double v4 = constants[3];
@@ -470,7 +440,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         cosang = -dot / sqrt(r12 * r12 * r23 * r23);
         double angle2 = toDegrees(acos(cosang));
         double dt2 = angle2 - angleType2.angle[0];
-        double e2 = angleTorsionType.units * dt2 * (v4 * phi1 + v5 * phi2 + v6 * phi3);
+        double e2 = AngleTorsionType.units * dt2 * (v4 * phi1 + v5 * phi2 + v6 * phi3);
 
         energy = e1 + e2;
 
@@ -484,30 +454,27 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         if (gradient || lambdaTerm) {
 
             // Compute derivative components for this interaction.
-            double dedphi1 = angleTorsionType.units * dt1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-            double ddt1 = angleTorsionType.units * toDegrees(v1 * phi1 + v2 * phi2 + v3 * phi3);
+            double dedphi1 = AngleTorsionType.units * dt1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+            double ddt1 = AngleTorsionType.units * toDegrees(v1 * phi1 + v2 * phi2 + v3 * phi3);
 
-            double dedxt[] = new double[3];
-            double dedxu[] = new double[3];
+            double[] dedxt = new double[3];
+            double[] dedxu = new double[3];
             cross(x0112, v12, dedxt);
             scalar(dedxt, dedphi1 / (r01_12 * r12), dedxt);
             cross(v12, x1223, dedxu);
             scalar(dedxu, dedphi1 / (r12_23 * r12), dedxu);
 
-            /**
-             * Gradient for atoms 0, 1, 2 & 3.
-             */
-            double g0[] = new double[3];
-            double g1[] = new double[3];
-            double g2[] = new double[3];
-            double g3[] = new double[3];
-            /**
-             * Work vectors.
-             */
-            double x1[] = new double[3];
-            double x2[] = new double[3];
-            double x3[] = new double[3];
-            double x4[] = new double[3];
+            // Gradient for atoms 0, 1, 2 & 3.
+            double[] g0 = new double[3];
+            double[] g1 = new double[3];
+            double[] g2 = new double[3];
+            double[] g3 = new double[3];
+
+            // Work vectors.
+            double[] x1 = new double[3];
+            double[] x2 = new double[3];
+            double[] x3 = new double[3];
+            double[] x4 = new double[3];
 
             // Determine chain rule components for the first angle.
             double terma = -ddt1 / (r01 * r01 * sqrt(r01_12));
@@ -534,14 +501,14 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
             cross(dedxu, v12, g3);
 
             //  Partial gradient on atoms 0, 1, 2 & 3.
-            double pg0[] = new double[3];
-            double pg1[] = new double[3];
-            double pg2[] = new double[3];
-            double pg3[] = new double[3];
+            double[] pg0 = new double[3];
+            double[] pg1 = new double[3];
+            double[] pg2 = new double[3];
+            double[] pg3 = new double[3];
 
             // Compute derivative components for the 2nd angle.
-            double dedphi2 = angleTorsionType.units * dt2 * (v4 * dphi1 + v5 * dphi2 + v6 * dphi3);
-            double ddt2 = angleTorsionType.units * toDegrees(v4 * phi1 + v5 * phi2 + v6 * phi3);
+            double dedphi2 = AngleTorsionType.units * dt2 * (v4 * dphi1 + v5 * dphi2 + v6 * dphi3);
+            double ddt2 = AngleTorsionType.units * toDegrees(v4 * phi1 + v5 * phi2 + v6 * phi3);
             cross(x0112, v12, dedxt);
             scalar(dedxt, dedphi2 / (r01_12 * r12), dedxt);
             cross(v12, x1223, dedxu);
@@ -582,20 +549,25 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
             scalar(g2, esvLambda, g2);
             scalar(g3, esvLambda, g3);
 
+            // Atom indices
+            int i0 = atoms[0].getIndex() - 1;
+            int i1 = atoms[1].getIndex() - 1;
+            int i2 = atoms[2].getIndex() - 1;
+            int i3 = atoms[3].getIndex() - 1;
+
             if (lambdaTerm) {
-                int i0 = atoms[0].getIndex() - 1;
                 lambdaGradX.add(threadID, i0, g0[0]);
                 lambdaGradY.add(threadID, i0, g0[1]);
                 lambdaGradZ.add(threadID, i0, g0[2]);
-                int i1 = atoms[1].getIndex() - 1;
+
                 lambdaGradX.add(threadID, i1, g1[0]);
                 lambdaGradY.add(threadID, i1, g1[1]);
                 lambdaGradZ.add(threadID, i1, g1[2]);
-                int i2 = atoms[2].getIndex() - 1;
+
                 lambdaGradX.add(threadID, i2, g2[0]);
                 lambdaGradY.add(threadID, i2, g2[1]);
                 lambdaGradZ.add(threadID, i2, g2[2]);
-                int i3 = atoms[3].getIndex() - 1;
+
                 lambdaGradX.add(threadID, i3, g3[0]);
                 lambdaGradY.add(threadID, i3, g3[1]);
                 lambdaGradZ.add(threadID, i3, g3[2]);
@@ -605,19 +577,19 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
                 scalar(g1, lambda, g1);
                 scalar(g2, lambda, g2);
                 scalar(g3, lambda, g3);
-                int i0 = atoms[0].getIndex() - 1;
+
                 gradX.add(threadID, i0, g0[0]);
                 gradY.add(threadID, i0, g0[1]);
                 gradZ.add(threadID, i0, g0[2]);
-                int i1 = atoms[1].getIndex() - 1;
+
                 gradX.add(threadID, i1, g1[0]);
                 gradY.add(threadID, i1, g1[1]);
                 gradZ.add(threadID, i1, g1[2]);
-                int i2 = atoms[2].getIndex() - 1;
+
                 gradX.add(threadID, i2, g2[0]);
                 gradY.add(threadID, i2, g2[1]);
                 gradZ.add(threadID, i2, g2[2]);
-                int i3 = atoms[3].getIndex() - 1;
+
                 gradX.add(threadID, i3, g3[0]);
                 gradY.add(threadID, i3, g3[1]);
                 gradZ.add(threadID, i3, g3[2]);
@@ -628,18 +600,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
-     * Log details for this Torsional Angle energy term.
-     */
-    public void log() {
-        logger.info(String.format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
-                "Angle-Torsion",
-                atoms[0].getIndex(), atoms[0].getAtomType().name,
-                atoms[1].getIndex(), atoms[1].getAtomType().name,
-                atoms[2].getIndex(), atoms[2].getAtomType().name,
-                atoms[3].getIndex(), atoms[3].getAtomType().name, energy));
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * Overidden toString Method returns the Term's id.
@@ -647,15 +607,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
-    }
-
-    /**
-     * Returns the mathematical form of an angle-torsion as an OpenMM-parsable String.
-     *
-     * @return Mathematical form of the angle-torsion coupling.
-     */
-    public static String angleTorsionForm() {
-        return mathForm;
     }
 
     /**
@@ -704,6 +655,44 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        return;
+        // The dEdXdL terms are zero.
+    }
+
+    /**
+     * Functional form for OpenMM.
+     */
+    private static final String mathForm;
+
+    static {
+        /*
+          Defined constants:
+          p1-p4 are particles 1-4.
+          m is an angle number, from 1-2, representing angles p1-p2-p3, p2-p3-p4.
+          n is a periodicity, from 1-3.
+
+          k[m][n] is a set of 6 energy constants defined in the parameter file for this angle-torsion.
+
+          aVal[m] is the current value for angle m.
+          a[m] is the equilibrium value for angle m.
+
+          tVal is the current value of the 1-2-3-4 dihedral angle.
+
+          phi[m] is a phase offset constant; phi1 = phi3 = 0, phi2 = pi.
+         */
+
+        StringBuilder mathFormBuilder = new StringBuilder();
+        for (int m = 1; m < 3; m++) {
+            for (int n = 1; n < 4; n++) {
+                // kmn * (am - am(equil)) * (1 + cos(n*tors + phi(n)))
+                mathFormBuilder.append(String.format("k%d%d*(aVal%d-a%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
+            }
+        }
+        int lenStr = mathFormBuilder.length();
+        mathFormBuilder.replace(lenStr - 1, lenStr, ";");
+        for (int m = 1; m < 3; m++) {
+            mathFormBuilder.append(String.format("aVal%d=angle(p%d,p%d,p%d);", m, m, (m + 1), (m + 2)));
+        }
+        mathFormBuilder.append("tVal=dihedral(p1,p2,p3,p4)");
+        mathForm = mathFormBuilder.toString();
     }
 }

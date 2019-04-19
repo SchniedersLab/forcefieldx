@@ -1,45 +1,47 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.nonbonded;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.logging.Logger;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -60,27 +62,25 @@ public class CoordRestraint implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(CoordRestraint.class.getName());
 
-    private final Atom atoms[];
-    private final double initialCoordinates[][];
+    private final Atom[] atoms;
+    private final double[][] initialCoordinates;
     private int nAtoms = 0;
     /**
      * Force constant variable stores K/2 in Kcal/mol/A.
      * E = K/2 * dx^2.
      */
     private final double forceConstant;
-    private final double a1[] = new double[3];
-    private final double dx[] = new double[3];
+    private final double[] a1 = new double[3];
+    private final double[] dx = new double[3];
     private double lambda = 1.0;
     private final double lambdaExp = 1.0;
     private double lambdaPow = pow(lambda, lambdaExp);
     private double dLambdaPow = lambdaExp * pow(lambda, lambdaExp - 1.0);
     private double d2LambdaPow = 0;
-    private final double lambdaWindow = 1.0;
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
-    private final double lambdaGradient[];
-    private boolean lambdaTerm = false;
-    private boolean restrainWithLambda = true;
+    private final double[] lambdaGradient;
+    private boolean lambdaTerm;
     private int atom1Index;
     private int atom2Index;
     private int atom3Index;
@@ -125,8 +125,6 @@ public class CoordRestraint implements LambdaInterface {
         this.atoms = atoms;
         nAtoms = atoms.length;
 
-        restrainWithLambda = useLambda;
-
         if (useLambda) {
             lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         } else {
@@ -145,8 +143,7 @@ public class CoordRestraint implements LambdaInterface {
 
         forceConstant = forceConst;
 
-        logger.info(String.format("\n Coordinate Restraint Atoms (k = %6.3f, lambdaTerm=%s):",
-                forceConstant * 2.0, lambdaTerm));
+        logger.info(format("\n Coordinate Restraint Atoms (k = %6.3f, lambdaTerm=%s):", forceConstant * 2.0, lambdaTerm));
 
         initialCoordinates = new double[3][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
@@ -154,7 +151,6 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[0][i] = a.getX();
             initialCoordinates[1][i] = a.getY();
             initialCoordinates[2][i] = a.getZ();
-            //a.print();
         }
 
         Arrays.stream(atoms).sorted(Comparator.comparingInt(Atom::getIndex)).forEach(Atom::print);
@@ -167,7 +163,7 @@ public class CoordRestraint implements LambdaInterface {
      */
     public Atom[] getAtoms() {
         Atom[] retArray = new Atom[nAtoms];
-        System.arraycopy(atoms, 0, retArray, 0, nAtoms);
+        arraycopy(atoms, 0, retArray, 0, nAtoms);
         return retArray;
     }
 
@@ -215,32 +211,26 @@ public class CoordRestraint implements LambdaInterface {
      */
     public double residual(boolean gradient, boolean print) {
 
-        /**
-         * pdbAtomRestraints uses atom indexes to restrain specific atoms
-         */
+        // pdbAtomRestraints uses atom indexes to restrain specific atoms
         String atomIndexRestraints = System.getProperty("pdbAtomRestraints");
         if (atomIndexRestraints != null) {
-            String tokens[] = atomIndexRestraints.split(",");
+            String[] tokens = atomIndexRestraints.split(",");
 
-            /**
-             * Pick up atom index for reference when
-             * looking at multiple molecules.
-             */
+            // Pick up atom index for reference when looking at multiple molecules.
             atom1Index = Integer.parseInt(tokens[0]);
             atom2Index = Integer.parseInt(tokens[1]);
             atom3Index = Integer.parseInt(tokens[2]);
         }
 
-        /**
-         * xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
-         * atoms being restrained than desired since atom types are not unique to each atom.
+        /*
+          xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
+          atoms being restrained than desired since atom types are not unique to each atom.
          */
         String atomTypeRestraints = System.getProperty("xyzAtomRestraints");
         if (atomTypeRestraints != null) {
-            String tokens[] = atomTypeRestraints.split(",");
-            /**
-             * Pick up atom type for reference when looking at multiple molecules
-             */
+            String[] tokens = atomTypeRestraints.split(",");
+
+            // Pick up atom type for reference when looking at multiple molecules
             atom1Type = atoms[Integer.parseInt(tokens[0])].getAtomType();
             atom2Type = atoms[Integer.parseInt(tokens[1])].getAtomType();
             atom3Type = atoms[Integer.parseInt(tokens[2])].getAtomType();
@@ -253,9 +243,8 @@ public class CoordRestraint implements LambdaInterface {
         }
 
         int atomIndex = 0;
-        /**
-         * Assuming that the first molecule in pdb is labeled as 1.
-         */
+
+        // Assuming that the first molecule in pdb is labeled as 1.
         int moleculeNumber = 1;
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
@@ -364,6 +353,9 @@ public class CoordRestraint implements LambdaInterface {
     public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = lambda;
+
+            double lambdaWindow = 1.0;
+
             if (this.lambda <= lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
                 double l = dldgl * this.lambda;
@@ -406,7 +398,7 @@ public class CoordRestraint implements LambdaInterface {
             throw new IllegalArgumentException(" Incorrect number of atoms!");
         }
         for (int i = 0; i < 3; i++) {
-            System.arraycopy(newInitialCoordinates[i], 0, initialCoordinates[i], 0, initialCoordinates[0].length);
+            arraycopy(newInitialCoordinates[i], 0, initialCoordinates[i], 0, initialCoordinates[0].length);
         }
     }
 
@@ -423,10 +415,10 @@ public class CoordRestraint implements LambdaInterface {
      * <p>resetCoordinatePin.</p>
      */
     public void resetCoordinatePin() {
-        double aixyz[] = new double[3];
+        double[] aixyz = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             atoms[i].getXYZ(aixyz);
-            System.arraycopy(aixyz, 0, initialCoordinates[i], 0, 3);
+            arraycopy(aixyz, 0, initialCoordinates[i], 0, 3);
         }
     }
 
@@ -443,7 +435,7 @@ public class CoordRestraint implements LambdaInterface {
             throw new IllegalArgumentException(" Incorrect number of atoms!");
         }
         for (int i = 0; i < nAtoms; i++) {
-            System.arraycopy(initialCoordinates[i], 0, xyz, 0, 3);
+            arraycopy(initialCoordinates[i], 0, xyz[i], 0, 3);
         }
         return xyz;
     }

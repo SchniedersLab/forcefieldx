@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.io.File;
@@ -77,49 +77,50 @@ public class XRayMinimizeTest {
         Collection<Object[]> ret;
         if (cernBessel == null || !cernBessel.equalsIgnoreCase("false")) {
             ret = Arrays.asList(new Object[][]{
-                {false,
-                    "NSF D2 domain test",
-                    "ffx/xray/structures/1NSF.pdb",
-                    "ffx/xray/structures/1NSF.mtz",
-                    null,
-                    25.178605682089,
-                    25.448314839595,
-                    0.8939361241370969,
-                    0.14949033848514287},
-                {true,
-                    "SNARE complex",
-                    "ffx/xray/structures/1N7S.pdb",
-                    "ffx/xray/structures/1N7S.mtz",
-                    null,
-                    19.412671496011,
-                    21.555930987573,
-                    0.9336853524690557,
-                    0.13192537249786418}
+                    {false,
+                            "NSF D2 domain test",
+                            "ffx/xray/structures/1NSF.pdb",
+                            "ffx/xray/structures/1NSF.mtz",
+                            null,
+                            25.178605682089,
+                            25.448314839595,
+                            0.8939361241370969,
+                            0.14949033848514287},
+                    {true,
+                            "SNARE complex",
+                            "ffx/xray/structures/1N7S.pdb",
+                            "ffx/xray/structures/1N7S.mtz",
+                            null,
+                            19.412671496011,
+                            21.555930987573,
+                            0.9336853524690557,
+                            0.13192537249786418}
             });
         } else {
             ret = Arrays.asList(new Object[][]{
-                {false,
-                    "NSF D2 domain test",
-                    "ffx/xray/structures/1NSF.pdb",
-                    "ffx/xray/structures/1NSF.mtz",
-                    null,
-                    25.178605682089,
-                    25.448314839595,
-                    0.8921390108139,
-                    0.1526816244814},
-                {true,
-                    "SNARE complex",
-                    "ffx/xray/structures/1N7S.pdb",
-                    "ffx/xray/structures/1N7S.mtz",
-                    null,
-                    19.412671496011,
-                    21.555930987573,
-                    0.9314271250347,
-                    0.1361239311856}
+                    {false,
+                            "NSF D2 domain test",
+                            "ffx/xray/structures/1NSF.pdb",
+                            "ffx/xray/structures/1NSF.mtz",
+                            null,
+                            25.178605682089,
+                            25.448314839595,
+                            0.8921390108139,
+                            0.1526816244814},
+                    {true,
+                            "SNARE complex",
+                            "ffx/xray/structures/1N7S.pdb",
+                            "ffx/xray/structures/1N7S.mtz",
+                            null,
+                            19.412671496011,
+                            21.555930987573,
+                            0.9314271250347,
+                            0.1361239311856}
             });
         }
         return ret;
     }
+
     private final String info;
     private final CrystalStats crystalStats;
     private DiffractionRefinementData refinementData;
@@ -134,8 +135,8 @@ public class XRayMinimizeTest {
     private final boolean ciOnly;
 
     public XRayMinimizeTest(boolean ciOnly,
-            String info, String pdbname, String mtzname, String cifname,
-            double r, double rFree, double sigmaA, double sigmaW) {
+                            String info, String pdbname, String mtzname, String cifname,
+                            double r, double rFree, double sigmaA, double sigmaW) {
         this.ciOnly = ciOnly;
         this.info = info;
         this.r = r;
@@ -143,7 +144,7 @@ public class XRayMinimizeTest {
         this.sigmaA = sigmaA;
         this.sigmaW = sigmaW;
 
-        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+        ci = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             crystalStats = null;
             return;
@@ -190,12 +191,12 @@ public class XRayMinimizeTest {
                     cifFilter.readFile(cifFile, reflectionList, refinementData,
                             properties));
         }
-        
+
         mola.finalize(true, mola.getForceField());
         ForceFieldEnergy energy = mola.getPotentialEnergy();
 
         List<Atom> atomList = mola.getAtomList();
-        Atom atomArray[] = atomList.toArray(new Atom[atomList.size()]);
+        Atom[] atomArray = atomList.toArray(new Atom[0]);
 
         // set up FFT and run it
         parallelTeam = new ParallelTeam();
@@ -208,16 +209,13 @@ public class XRayMinimizeTest {
         crs.computeDensity(refinementData.fs);
         refinementData.setCrystalReciprocalSpace_fs(crs);
 
-        ScaleBulkMinimize scaleBulkMinimize
-                = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
+        ScaleBulkMinimize scaleBulkMinimize = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
         scaleBulkMinimize.minimize(6, 1.0e-4);
 
-        SigmaAMinimize sigmaAMinimize = new SigmaAMinimize(reflectionList,
-                refinementData, parallelTeam);
+        SigmaAMinimize sigmaAMinimize = new SigmaAMinimize(reflectionList, refinementData, parallelTeam);
         sigmaAMinimize.minimize(7, 2.0e-2);
 
-        SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
-                refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
+        SplineMinimize splineMinimize = new SplineMinimize(reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
         splineMinimize.minimize(7, 1e-5);
 
         crystalStats = new CrystalStats(reflectionList, refinementData);
@@ -255,11 +253,11 @@ public class XRayMinimizeTest {
     public void testScaleBulk() {
         ScaleBulkMinimize scaleBulkMinimize
                 = new ScaleBulkMinimize(reflectionList, refinementData,
-                        refinementData.crs_fs, parallelTeam);
+                refinementData.crs_fs, parallelTeam);
         ScaleBulkEnergy scaleBulkEnergy = scaleBulkMinimize.getScaleBulkEnergy();
         int n = scaleBulkMinimize.getNumberOfVariables();
-        double x[] = new double[n];
-        double g[] = new double[n];
+        double[] x = new double[n];
+        double[] g = new double[n];
         scaleBulkMinimize.getCoordinates(x);
         scaleBulkEnergy.energyAndGradient(x, g);
         double delta = 1.0e-4;
@@ -283,8 +281,8 @@ public class XRayMinimizeTest {
                 refinementData, parallelTeam);
         SigmaAEnergy sigmaAEnergy = sigmaAMinimize.getSigmaAEnergy();
         int n = sigmaAMinimize.getNumberOfVariables();
-        double x[] = new double[n];
-        double g[] = new double[n];
+        double[] x = new double[n];
+        double[] g = new double[n];
         sigmaAMinimize.getCoordinates(x);
         sigmaAEnergy.energyAndGradient(x, g);
         double delta = 1.0e-4;
@@ -309,8 +307,8 @@ public class XRayMinimizeTest {
 
         SplineEnergy splineEnergy = splineMinimize.getSplineEnergy();
         int n = splineMinimize.getNumberOfVariables();
-        double x[] = new double[n];
-        double g[] = new double[n];
+        double[] x = new double[n];
+        double[] g = new double[n];
         splineMinimize.getCoordinates(x);
         splineEnergy.energyAndGradient(x, g);
         double delta = 1.0e-4;

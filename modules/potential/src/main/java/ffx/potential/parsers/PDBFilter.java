@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parsers;
 
 import java.io.BufferedReader;
@@ -222,14 +222,17 @@ public final class PDBFilter extends SystemFilter {
     private boolean noVersioning = false;
     private final static Set<String> backboneNames;
 
+    /**
+     * Standardize atom names to PDB standard by default.
+     */
+    private static final boolean standardizeAtomNames = Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "true"));
+
     static {
         Set<String> bbAts = new HashSet<>();
         //String[] names = {"C", "CA", "N", "O", "H", "H1", "H2", "H3", "OXT", "OT2"};
         String[] names = {"C", "CA", "N", "O", "OXT", "OT2"};
         bbAts.addAll(Arrays.asList(names));
         backboneNames = Collections.unmodifiableSet(bbAts);
-        // If necessary, can now expose backboneNames as a public, final
-        // unmodifiable Set.
     }
 
     /**
@@ -237,11 +240,9 @@ public final class PDBFilter extends SystemFilter {
      * Constructor for PDBFilter.</p>
      *
      * @param files             a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties        a
-     *                          {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -254,11 +255,9 @@ public final class PDBFilter extends SystemFilter {
      * Parse the PDB File from a URL.
      *
      * @param file              a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     *                          object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties        a
-     *                          {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -273,8 +272,7 @@ public final class PDBFilter extends SystemFilter {
      * @param file                a {@link java.io.File} object.
      * @param molecularAssemblies a {@link java.util.List} object.
      * @param forceField          a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties          a
-     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -1265,6 +1263,10 @@ public final class PDBFilter extends SystemFilter {
     public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
         FileWriter fw;
         BufferedWriter bw;
+        if (standardizeAtomNames) {
+            renameAtomsToPDBStandard(activeMolecularAssembly);
+        }
+
         try {
             File newFile = saveFile;
             activeMolecularAssembly.setFile(newFile);
@@ -1340,7 +1342,7 @@ public final class PDBFilter extends SystemFilter {
      * @return Success of writing.
      */
     public boolean writeFile(File saveFile, boolean append, boolean printLinear, Set<Atom> toExclude, boolean writeEnd) {
-        if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
+        if (standardizeAtomNames) {
             renameAtomsToPDBStandard(activeMolecularAssembly);
         }
 

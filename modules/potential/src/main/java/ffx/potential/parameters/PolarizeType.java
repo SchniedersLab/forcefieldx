@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parameters;
 
 import java.util.ArrayList;
@@ -44,6 +44,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
+import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
@@ -55,7 +56,6 @@ import ffx.potential.bonded.Bond;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class PolarizeType extends BaseType implements Comparator<String> {
 
@@ -86,13 +86,13 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     /**
      * PolarizeType Constructor.
      *
-     * @param atomType int
-     * @param polarizability double
-     * @param polarizationGroup int[]
-     * @param thole a double.
+     * @param atomType          The atom type.
+     * @param polarizability    The polarizability.
+     * @param thole             The Thole dampling constant.
+     * @param polarizationGroup The atom types in the polarization group.
      */
     public PolarizeType(int atomType, double polarizability, double thole,
-                        int polarizationGroup[]) {
+                        int[] polarizationGroup) {
         super(ForceField.ForceFieldType.POLARIZE, Integer.toString(atomType));
         this.type = atomType;
         this.thole = thole;
@@ -111,7 +111,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      *
      * @param increment a int.
      */
-    public void incrementType(int increment) {
+    void incrementType(int increment) {
         type += increment;
         setKey(Integer.toString(type));
         if (polarizationGroup != null) {
@@ -127,14 +127,12 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * @param typeMap a lookup between new atom types and known atom types.
      * @return a boolean.
      */
-    public boolean patchTypes(HashMap<AtomType, AtomType> typeMap) {
+    boolean patchTypes(HashMap<AtomType, AtomType> typeMap) {
         if (polarizationGroup == null) {
             return false;
         }
 
-        /**
-         * Append known mapped types.
-         */
+        // Append known mapped types.
         int len = polarizationGroup.length;
         int added = 0;
         for (AtomType newType : typeMap.keySet()) {
@@ -147,10 +145,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
                 }
             }
         }
-        if (added > 0) {
-            return true;
-        }
-        return false;
+
+        return added > 0;
     }
 
     /**
@@ -166,85 +162,24 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
             }
         }
         int len = polarizationGroup.length;
-        int newGroup[] = new int[len + 1];
-        for (int i = 0; i < len; i++) {
-            newGroup[i] = polarizationGroup[i];
-        }
+        int[] newGroup = new int[len + 1];
+        arraycopy(polarizationGroup, 0, newGroup, 0, len);
         newGroup[len] = key;
         polarizationGroup = newGroup;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Nicely formatted polarization type.
-     */
-    @Override
-    public String toString() {
-        StringBuilder polarizeString = new StringBuilder(String.format(
-                "polarize  %5d  %6.3f %6.3f", type, polarizability, thole));
-        if (polarizationGroup != null) {
-            for (int a : polarizationGroup) {
-                polarizeString.append(String.format("  %5d", a));
-            }
-        }
-        return polarizeString.toString();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int compare(String s1, String s2) {
-
-        int t1 = Integer.parseInt(s1);
-        int t2 = Integer.parseInt(s2);
-
-        if (t1 < t2) {
-            return -1;
-        }
-        if (t1 > t2) {
-            return 1;
-        }
-
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (other == null || !(other instanceof PolarizeType)) {
-            return false;
-        }
-        PolarizeType polarizeType = (PolarizeType) other;
-        if (polarizeType.type == this.type) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int hashCode() {
-        int hash = 5;
-        hash = 37 * hash + type;
-        return hash;
     }
 
     /**
      * Average two PolarizeType instances. The atom types to include in the new
      * polarizationGroup must be supplied.
      *
-     * @param polarizeType1 a {@link ffx.potential.parameters.PolarizeType} object.
-     * @param polarizeType2 a {@link ffx.potential.parameters.PolarizeType} object.
-     * @param atomType a int.
+     * @param polarizeType1     a {@link ffx.potential.parameters.PolarizeType} object.
+     * @param polarizeType2     a {@link ffx.potential.parameters.PolarizeType} object.
+     * @param atomType          a int.
      * @param polarizationGroup an array of {@link int} objects.
      * @return a {@link ffx.potential.parameters.PolarizeType} object.
      */
-    public static PolarizeType average(PolarizeType polarizeType1,
-                                       PolarizeType polarizeType2, int atomType, int polarizationGroup[]) {
+    public static PolarizeType average(PolarizeType polarizeType1, PolarizeType polarizeType2,
+                                       int atomType, int[] polarizationGroup) {
         if (polarizeType1 == null || polarizeType2 == null) {
             return null;
         }
@@ -257,17 +192,15 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * <p>assignPolarizationGroups.</p>
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param ip11 an array of {@link int} objects.
-     * @param ip12 an array of {@link int} objects.
-     * @param ip13 an array of {@link int} objects.
+     * @param ip11  an array of {@link int} objects.
+     * @param ip12  an array of {@link int} objects.
+     * @param ip13  an array of {@link int} objects.
      */
-    public static void assignPolarizationGroups(Atom atoms[], int ip11[][], int ip12[][], int ip13[][]) {
-        /**
-         * Find directly connected group members for each atom.
-         */
+    public static void assignPolarizationGroups(Atom[] atoms, int[][] ip11, int[][] ip12, int[][] ip13) {
+
+        // Find directly connected group members for each atom.
         List<Integer> group = new ArrayList<>();
         List<Integer> polarizationGroup = new ArrayList<>();
-        //int g11 = 0;
         for (Atom ai : atoms) {
             group.clear();
             polarizationGroup.clear();
@@ -296,19 +229,16 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
                         ip11[index][j++] = k;
                     }
                 }
-                //g11 += ip11[index].length;
-                //System.out.println(format("%d %d", index + 1, g11));
             } else {
                 String message = "The polarize keyword was not found for atom "
                         + (index + 1) + " with type " + ai.getType();
                 logger.severe(message);
             }
         }
-        /**
-         * Find 1-2 group relationships.
-         */
+
+        // Find 1-2 group relationships.
         int nAtoms = atoms.length;
-        int mask[] = new int[nAtoms];
+        int[] mask = new int[nAtoms];
         List<Integer> list = new ArrayList<>();
         List<Integer> keep = new ArrayList<>();
         for (int i = 0; i < nAtoms; i++) {
@@ -345,9 +275,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
                 ip12[i][j++] = k;
             }
         }
-        /**
-         * Find 1-3 group relationships.
-         */
+
+        // Find 1-3 group relationships.
         for (int i = 0; i < nAtoms; i++) {
             mask[i] = -1;
         }
@@ -383,12 +312,10 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * found group member.
      *
      * @param polarizationGroup Atom types that should be included in the group.
-     * @param group XYZ indices of current group members.
-     * @param seed The bonds of the seed atom are queried for inclusion in the
-     * group.
+     * @param group             XYZ indices of current group members.
+     * @param seed              The bonds of the seed atom are queried for inclusion in the group.
      */
-    private static void growGroup(List<Integer> polarizationGroup,
-                                  List<Integer> group, Atom seed) {
+    private static void growGroup(List<Integer> polarizationGroup, List<Integer> group, Atom seed) {
         List<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);
@@ -414,6 +341,61 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
                 growGroup(polarizationGroup, group, aj);
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Nicely formatted polarization type.
+     */
+    @Override
+    public String toString() {
+        StringBuilder polarizeString = new StringBuilder(String.format(
+                "polarize  %5d  %6.3f %6.3f", type, polarizability, thole));
+        if (polarizationGroup != null) {
+            for (int a : polarizationGroup) {
+                polarizeString.append(String.format("  %5d", a));
+            }
+        }
+        return polarizeString.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String s1, String s2) {
+
+        int t1 = Integer.parseInt(s1);
+        int t2 = Integer.parseInt(s2);
+
+        return Integer.compare(t1, t2);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (!(other instanceof PolarizeType)) {
+            return false;
+        }
+        PolarizeType polarizeType = (PolarizeType) other;
+
+        return polarizeType.type == this.type;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 37 * hash + type;
+        return hash;
     }
 
 }

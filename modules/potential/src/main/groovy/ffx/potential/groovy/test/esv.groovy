@@ -1,44 +1,41 @@
-
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy.test
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
-
 
 import java.util.logging.Logger
 import static java.lang.String.format
@@ -54,8 +51,6 @@ import ffx.potential.extended.ExtendedSystem
 import ffx.potential.utils.PotentialsUtils
 import static ffx.potential.PotentialComponent.Bias
 import static ffx.potential.PotentialComponent.Bonded
-
-// Groovy Imports
 import static ffx.potential.PotentialComponent.InducedRealSpace
 import static ffx.potential.PotentialComponent.InducedReciprocal
 import static ffx.potential.PotentialComponent.InducedSelf
@@ -84,18 +79,18 @@ int tableDimensions = 10;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.esv [options]');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.l(longOpt:'lambda', args:1, argName:'random', 'Initial lambda value (for all ESVs).');
-cli.t1(longOpt:'test1', 'Test 1: Lambda derivatives by finite difference.');
-cli.t2(longOpt:'test2', 'Test 2: End state energies verification.');
-cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
-cli.i(longOpt:'iterations', args:1, argName:'1', 'Repeat FDs to verify threaded replicability.');
-cli.v(longOpt:'verbose', 'Print out all the ForceFieldEnergy decompositions.');
-cli.cut(longOpt:'cutoff', args:1, argName:'1000', 'Value of vdw-cutoff and pme-cutoff.');
+def cli = new CliBuilder(usage: ' ffxc test.esv [options]');
+cli.h(longOpt: 'help', 'Print this help message.');
+cli.l(longOpt: 'lambda', args: 1, argName: 'random', 'Initial lambda value (for all ESVs).');
+cli.t1(longOpt: 'test1', 'Test 1: Lambda derivatives by finite difference.');
+cli.t2(longOpt: 'test2', 'Test 2: End state energies verification.');
+cli.t3(longOpt: 'test3', 'Test 3: Switching function and path smoothness.');
+cli.i(longOpt: 'iterations', args: 1, argName: '1', 'Repeat FDs to verify threaded replicability.');
+cli.v(longOpt: 'verbose', 'Print out all the ForceFieldEnergy decompositions.');
+cli.cut(longOpt: 'cutoff', args: 1, argName: '1000', 'Value of vdw-cutoff and pme-cutoff.');
 cli.nocryst('Test a vacuum system.');
-cli.pH(args:1, argName:'7.4', 'Constant system pH.');
-cli.ttf(longOpt:'tables-to-file', args:1, argName:'100', 'Export Utot and dUdEsv to files with this granularity (third arg to MATLAB\'s linspace).');
+cli.pH(args: 1, argName: '7.4', 'Constant system pH.');
+cli.ttf(longOpt: 'tables-to-file', args: 1, argName: '100', 'Export Utot and dUdEsv to files with this granularity (third arg to MATLAB\'s linspace).');
 
 def options = cli.parse(args);
 if (options.h) {
@@ -213,10 +208,10 @@ System.setProperty("comrestrainterm", "false");
 System.setProperty("torsion-lambdaterm", "false");
 
 // Potential Settings
-System.setProperty("permanent-lambda-alpha","2.0");
-System.setProperty("permanent-lambda-exponent","3.0");
-System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
-System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
+System.setProperty("permanent-lambda-alpha", "2.0");
+System.setProperty("permanent-lambda-exponent", "3.0");
+System.setProperty("polarization-lambda-start", "0.0");      // polarize on the whole range [0,1]
+System.setProperty("polarization-lambda-exponent", "0.0");   // polarization not softcored, only prefactored
 System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
 System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
 System.setProperty("intramolecular-softcore", "true");
@@ -244,7 +239,7 @@ ffe.getCrystal().setSpecialPositionCutoff(0.0);
 try {
     /*******************************************************************************
      * Analytic Derivative vs Finite Difference: VdW,PermReal,PermRecip,Total
-    *******************************************************************************/
+     *******************************************************************************/
     if (test1) {
         for (int iter = 0; iter < testOneIterations; iter++) {
             for (int i = 0; i < numESVs; i++) {
@@ -254,65 +249,65 @@ try {
 
                 esvSystem.setLambda(i, lambda - step);
                 ffe.energy(true, false);
-                final double vdwLow       = ffe.getEnergyComponent(VanDerWaals);
-                final double bondedLow    = ffe.getEnergyComponent(Bonded);
-                final double biasLow      = ffe.getEnergyComponent(Bias);
-                final double permRealLow  = ffe.getEnergyComponent(PermanentRealSpace);
-                final double permSelfLow  = ffe.getEnergyComponent(PermanentSelf);
+                final double vdwLow = ffe.getEnergyComponent(VanDerWaals);
+                final double bondedLow = ffe.getEnergyComponent(Bonded);
+                final double biasLow = ffe.getEnergyComponent(Bias);
+                final double permRealLow = ffe.getEnergyComponent(PermanentRealSpace);
+                final double permSelfLow = ffe.getEnergyComponent(PermanentSelf);
                 final double permRecipLow = ffe.getEnergyComponent(PermanentReciprocal);
-                final double indRealLow   = ffe.getEnergyComponent(InducedRealSpace);
-                final double indSelfLow   = ffe.getEnergyComponent(InducedSelf);
-                final double indRecipLow  = ffe.getEnergyComponent(InducedReciprocal);
-                final double totalLow     = ffe.getEnergyComponent(Topology);
+                final double indRealLow = ffe.getEnergyComponent(InducedRealSpace);
+                final double indSelfLow = ffe.getEnergyComponent(InducedSelf);
+                final double indRecipLow = ffe.getEnergyComponent(InducedReciprocal);
+                final double totalLow = ffe.getEnergyComponent(Topology);
 
                 esvSystem.setLambda(i, lambda + step);
                 ffe.energy(true, false);
-                final double vdwHigh      = ffe.getEnergyComponent(VanDerWaals);
-                final double bondedHigh   = ffe.getEnergyComponent(Bonded);
-                final double biasHigh     = ffe.getEnergyComponent(Bias);
+                final double vdwHigh = ffe.getEnergyComponent(VanDerWaals);
+                final double bondedHigh = ffe.getEnergyComponent(Bonded);
+                final double biasHigh = ffe.getEnergyComponent(Bias);
                 final double permRealHigh = ffe.getEnergyComponent(PermanentRealSpace);
                 final double permSelfHigh = ffe.getEnergyComponent(PermanentSelf);
-                final double permRecipHigh= ffe.getEnergyComponent(PermanentReciprocal);
-                final double indRealHigh  = ffe.getEnergyComponent(InducedRealSpace);
-                final double indSelfHigh  = ffe.getEnergyComponent(InducedSelf);
+                final double permRecipHigh = ffe.getEnergyComponent(PermanentReciprocal);
+                final double indRealHigh = ffe.getEnergyComponent(InducedRealSpace);
+                final double indSelfHigh = ffe.getEnergyComponent(InducedSelf);
                 final double indRecipHigh = ffe.getEnergyComponent(InducedReciprocal);
-                final double totalHigh    = ffe.getEnergyComponent(Topology);
+                final double totalHigh = ffe.getEnergyComponent(Topology);
 
                 // Get analytic derivatives from the center.
                 esvSystem.setLambda(i, lambda);
                 ffe.energy(true, false);
-                final double vdwAna       = esvSystem.getDerivativeComponent(VanDerWaals, i);
-                final double bondedAna    = esvSystem.getDerivativeComponent(Bonded, i);
-                final double biasAna      = esvSystem.getDerivativeComponent(Bias, i);
-                final double permRealAna  = esvSystem.getDerivativeComponent(PermanentRealSpace, i);
-                final double permSelfAna  = esvSystem.getDerivativeComponent(PermanentSelf, i);
+                final double vdwAna = esvSystem.getDerivativeComponent(VanDerWaals, i);
+                final double bondedAna = esvSystem.getDerivativeComponent(Bonded, i);
+                final double biasAna = esvSystem.getDerivativeComponent(Bias, i);
+                final double permRealAna = esvSystem.getDerivativeComponent(PermanentRealSpace, i);
+                final double permSelfAna = esvSystem.getDerivativeComponent(PermanentSelf, i);
                 final double permRecipAna = esvSystem.getDerivativeComponent(PermanentReciprocal, i);
-                final double indRealAna   = esvSystem.getDerivativeComponent(InducedRealSpace, i);
-                final double indSelfAna   = esvSystem.getDerivativeComponent(InducedSelf, i);
-                final double indRecipAna  = esvSystem.getDerivativeComponent(InducedReciprocal, i);
-                final double totalAna     = esvSystem.getDerivativeComponent(Topology, i);
+                final double indRealAna = esvSystem.getDerivativeComponent(InducedRealSpace, i);
+                final double indSelfAna = esvSystem.getDerivativeComponent(InducedSelf, i);
+                final double indRecipAna = esvSystem.getDerivativeComponent(InducedReciprocal, i);
+                final double totalAna = esvSystem.getDerivativeComponent(Topology, i);
 
                 // Calculate numeric derivatives and error.
-                final double vdwNum         = (vdwHigh - vdwLow) / (2 * step);
-                final double vdwErr         = Math.abs(vdwNum - vdwAna);
-                final double bondedNum      = (bondedHigh - bondedLow) / (2 * step);
-                final double bondedErr      = Math.abs(bondedNum - bondedAna);
-                final double biasNum        = (biasHigh - biasLow) / (2 * step);
-                final double biasErr        = Math.abs(biasNum - biasAna);
-                final double permRealNum    = (permRealHigh - permRealLow) / (2 * step);
-                final double permRealErr    = Math.abs(permRealNum - permRealAna);
-                final double permSelfNum    = (permSelfHigh - permSelfLow) / (2 * step);
-                final double permSelfErr    = Math.abs(permSelfNum - permSelfAna);
-                final double permRecipNum   = (permRecipHigh - permRecipLow) / (2 * step);
-                final double permRecipErr   = Math.abs(permRecipNum - permRecipAna);
-                final double indRealNum     = (indRealHigh - indRealLow) / (2 * step);
-                final double indRealErr     = Math.abs(indRealNum - indRealAna);
-                final double indSelfNum     = (indSelfHigh - indSelfLow) / (2 * step);
-                final double indSelfErr     = Math.abs(indSelfNum - indSelfAna);
-                final double indRecipNum    = (indRecipHigh - indRecipLow) / (2 * step);
-                final double indRecipErr    = Math.abs(indRecipNum - indRecipAna);
-                final double totalNum       = (totalHigh - totalLow) / (2 * step);
-                final double totalErr       = Math.abs(totalNum - totalAna);
+                final double vdwNum = (vdwHigh - vdwLow) / (2 * step);
+                final double vdwErr = Math.abs(vdwNum - vdwAna);
+                final double bondedNum = (bondedHigh - bondedLow) / (2 * step);
+                final double bondedErr = Math.abs(bondedNum - bondedAna);
+                final double biasNum = (biasHigh - biasLow) / (2 * step);
+                final double biasErr = Math.abs(biasNum - biasAna);
+                final double permRealNum = (permRealHigh - permRealLow) / (2 * step);
+                final double permRealErr = Math.abs(permRealNum - permRealAna);
+                final double permSelfNum = (permSelfHigh - permSelfLow) / (2 * step);
+                final double permSelfErr = Math.abs(permSelfNum - permSelfAna);
+                final double permRecipNum = (permRecipHigh - permRecipLow) / (2 * step);
+                final double permRecipErr = Math.abs(permRecipNum - permRecipAna);
+                final double indRealNum = (indRealHigh - indRealLow) / (2 * step);
+                final double indRealErr = Math.abs(indRealNum - indRealAna);
+                final double indSelfNum = (indSelfHigh - indSelfLow) / (2 * step);
+                final double indSelfErr = Math.abs(indSelfNum - indSelfAna);
+                final double indRecipNum = (indRecipHigh - indRecipLow) / (2 * step);
+                final double indRecipErr = Math.abs(indRecipNum - indRecipAna);
+                final double totalNum = (totalHigh - totalLow) / (2 * step);
+                final double totalErr = Math.abs(totalNum - totalAna);
 
                 String esvName = esvSystem.getEsv(i).getName();
                 final int columns = 10;
@@ -320,30 +315,30 @@ try {
                 final String dataFormat = " %+9.4f";
                 logger.info(format(" %-31s", format(" Finite Difference Test: %s", esvName)));
                 logger.info(format(" %-31s %s",
-                    StringUtils.repeat("*", esvName.length() + 26),
-                    format(new String(new char[columns]).replace('\0',headFormat),
-                    "vdw ", "bonded", "bias", "permReal", "permSelf", "permRecip", "indReal", "indSelf", "indRecip", "total")));
+                        StringUtils.repeat("*", esvName.length() + 26),
+                        format(new String(new char[columns]).replace('\0', headFormat),
+                                "vdw ", "bonded", "bias", "permReal", "permSelf", "permRecip", "indReal", "indSelf", "indRecip", "total")));
                 logger.info(format(" %-31s %s",
-                    format("Numeric  Derivatives (@L %4.2f):", lambda),
-                    format(new String(new char[columns]).replace('\0',dataFormat),
-                    vdwNum, bondedNum, biasNum, permRealNum, permSelfNum, permRecipNum, indRealNum, indSelfNum, indRecipNum, totalNum)));
+                        format("Numeric  Derivatives (@L %4.2f):", lambda),
+                        format(new String(new char[columns]).replace('\0', dataFormat),
+                                vdwNum, bondedNum, biasNum, permRealNum, permSelfNum, permRecipNum, indRealNum, indSelfNum, indRecipNum, totalNum)));
                 logger.info(format(" %-31s %s",
-                    format("Analytic Derivatives (@L %4.2f):", lambda),
-                    format(new String(new char[columns]).replace('\0',dataFormat),
-                    vdwAna, bondedAna, biasAna, permRealAna, permSelfAna, permRecipAna, indRealAna, indSelfAna, indRecipAna, totalAna)));
+                        format("Analytic Derivatives (@L %4.2f):", lambda),
+                        format(new String(new char[columns]).replace('\0', dataFormat),
+                                vdwAna, bondedAna, biasAna, permRealAna, permSelfAna, permRecipAna, indRealAna, indSelfAna, indRecipAna, totalAna)));
                 logger.info(format(" %-31s %s",
-                    "Error:",
-                    format(new String(new char[columns]).replace('\0',dataFormat),
-                    vdwErr, bondedErr, biasErr, permRealErr, permSelfErr, permRecipErr, indRealErr, indSelfErr, indRecipErr, totalErr)));
+                        "Error:",
+                        format(new String(new char[columns]).replace('\0', dataFormat),
+                                vdwErr, bondedErr, biasErr, permRealErr, permSelfErr, permRecipErr, indRealErr, indSelfErr, indRecipErr, totalErr)));
             }
         }
     }
 
     /*******************************************************************************
      * End-State Verification
-    Verify that a lys-lys system with two ESVs can exactly reproduce the VdW
-    energy yielded by vanilla energy() calls on mutated PDB files.
-    *******************************************************************************/
+     Verify that a lys-lys system with two ESVs can exactly reproduce the VdW
+     energy yielded by vanilla energy() calls on mutated PDB files.
+     *******************************************************************************/
     if (test2) {
         esvSystem.setLambda((char) 'A', 0.0);
         esvSystem.setLambda((char) 'B', 0.0);
@@ -430,7 +425,7 @@ try {
         StringBuilder sb = new StringBuilder();
         sb.append(format("  Two-site End State Analysis: \n"));
         sb.append(format(" ****************************** \n"));
-        sb.append(format(" %-30s     %-30s\n","Extended System (1 Assembly)","Mutated Files (4 Assemblies)"));
+        sb.append(format(" %-30s     %-30s\n", "Extended System (1 Assembly)", "Mutated Files (4 Assemblies)"));
         for (int i = 0; i < extLines.length; i++) {
             sb.append(format(" %-30s     %-30s\n", extLines[i], vanLines[i]));
         }
@@ -439,10 +434,10 @@ try {
 
     /*******************************************************************************
      * Switching and Smoothness
-    Numerically ensure that the VdW energy and lambda derivatives are smooth all
-    along both ESV coordinates in the dilysine system.
-    *******************************************************************************/
-   // TODO Make this loop more granular for surface plot.
+     Numerically ensure that the VdW energy and lambda derivatives are smooth all
+     along both ESV coordinates in the dilysine system.
+     *******************************************************************************/
+    // TODO Make this loop more granular for surface plot.
     if (test3) {
         final int dimPlusOne = tableDimensions + 1;
         double[][] totalEnergies, totalDerivsA, totalDerivsB;
@@ -580,7 +575,7 @@ def void printAsTable(double[][] values, String title, File out) {
             } else {
                 String value = format("%8.4f", values[idxA][idxB]);
                 int max = (value.length() < 8) ? value.length() : 8;
-                sb.append(format(" %8s", value.substring(0,max)));
+                sb.append(format(" %8s", value.substring(0, max)));
             }
         }
     }
@@ -590,7 +585,8 @@ def void printAsTable(double[][] values, String title, File out) {
             BufferedWriter bw = new BufferedWriter(new FileWriter(out));
             bw.write(sb.toString());
             bw.close();
-        } catch (IOException ex) {}
+        } catch (IOException ex) {
+        }
     } else {
         Logger.getLogger("ffx").info(sb.toString());
     }

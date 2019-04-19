@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
 import javax.media.j3d.BranchGroup;
@@ -63,14 +63,13 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
 
     public enum PARALLELMETHOD {
 
-        SETVIEW, NONE;
+        SETVIEW, NONE
     }
 
-    private static final long serialVersionUID = 1L;
     /**
      * Constant <code>GO_PARALLEL=false</code>
      */
-    public static boolean GO_PARALLEL = false;
+    public static boolean GO_PARALLEL;
     /**
      * Constant <code>parallelNotDone=0</code>
      */
@@ -78,16 +77,13 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
 
     static {
         try {
-            boolean b = Boolean.parseBoolean(System.getProperty(
-                    "ffx.lang.parallel", "false"));
-            GO_PARALLEL = b;
+            GO_PARALLEL = Boolean.parseBoolean(System.getProperty("ffx.lang.parallel", "false"));
         } catch (Exception e) {
             GO_PARALLEL = false;
         }
     }
 
     private PARALLELMETHOD parallelMethod = PARALLELMETHOD.NONE;
-    private Thread thread = null;
     private long startTime = 0;
     private long threadTime = 0;
     private RendererCache.ViewModel viewModel = null;
@@ -158,7 +154,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
             this.viewModel = viewModel;
             this.newShapes = newShapes;
             parallelMethod = PARALLELMETHOD.SETVIEW;
-            thread = new Thread(this);
+            Thread thread = new Thread(this);
             thread.setName(getParent().toString() + ": Parallel setView MSM");
             thread.setPriority(Thread.MAX_PRIORITY);
             parallelNotDone++;
@@ -171,12 +167,8 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
                 node.setView(viewModel, newShapes);
             }
             parallelMethod = PARALLELMETHOD.NONE;
-            thread = null;
-            viewModel = null;
-            newShapes = null;
         } else {
             logger.info("Parallel setView method called by: " + parallelMethod);
-            return;
         }
     }
 

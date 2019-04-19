@@ -1,47 +1,47 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.cli;
 
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static java.lang.String.format;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -94,7 +94,7 @@ public class AlchemicalOptions {
     /**
      * --la1 or -ligAtoms1 allows for multiple ranges and/or singletons of ligand atoms in the first topology, separated by periods.
      */
-    @Option(names = {"--la1", "--ligAtoms1"},
+    @Option(names = {"--la1", "--ligAtoms1"}, paramLabel = "-1",
             description = "Period-separated ranges of 1st topology ligand atoms (e.g. 40-50.72-83).")
     String ligAt1 = null;
 
@@ -171,7 +171,7 @@ public class AlchemicalOptions {
     public static void setAlchemicalAtoms(MolecularAssembly assembly, int start, int fin, String ligAt) {
         Atom[] atoms = assembly.getAtomArray();
         if (start > 0) {
-            logger.info(String.format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
+            logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", start, atoms[start - 1], fin, atoms[fin - 1]));
             for (int i = start; i <= fin; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setApplyLambda(true);
@@ -186,9 +186,9 @@ public class AlchemicalOptions {
                     int rangeStart = Integer.parseInt(m.group(1));
                     int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                     if (rangeStart > rangeEnd) {
-                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                        logger.severe(format(" Range %s was invalid; start was greater than end", range));
                     }
-                    logger.info(String.format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
+                    logger.info(format(" Setting atoms %d (%s) to %d (%s) as alchemical", rangeStart, atoms[rangeStart - 1], rangeEnd, atoms[rangeEnd - 1]));
                     // Don't need to worry about negative numbers; rangeregex just won't match.
                     for (int i = rangeStart; i <= rangeEnd; i++) {
                         Atom ai = atoms[i - 1];
@@ -196,7 +196,7 @@ public class AlchemicalOptions {
                         ai.print(Level.FINE);
                     }
                 } else {
-                    logger.warning(String.format(" Could not recognize %s as a valid range; skipping", range));
+                    logger.warning(format(" Could not recognize %s as a valid range; skipping", range));
                 }
             }
         }
@@ -219,7 +219,7 @@ public class AlchemicalOptions {
      * @param eEnd     Last atom to decharge.
      */
     public static void setUnchargedAtoms(MolecularAssembly assembly, int eStart, int eEnd) {
-        Atom atoms[] = assembly.getAtomArray();
+        Atom[] atoms = assembly.getAtomArray();
         // Apply the no electrostatics atom selection
         int noElecStart = eStart;
         noElecStart = (noElecStart < 1) ? 1 : noElecStart;
@@ -249,21 +249,51 @@ public class AlchemicalOptions {
      * @return Initial lambda.
      */
     public double getInitialLambda() {
-        return getInitialLambda(true);
+        return getInitialLambda(false);
     }
 
     /**
      * Gets the initial value of lambda.
      *
-     * @param quiet If true, do not warn about lambda not being in the range 0-1.
+     * @param quiet No logging if quiet.
      * @return Initial lambda.
      */
     public double getInitialLambda(boolean quiet) {
-        Level toLog = quiet ? Level.OFF : Level.WARNING;
+        return getInitialLambda(1, 0, quiet);
+    }
+
+    /**
+     * Gets the initial value of lambda.
+     *
+     * @param size The number of processes.
+     * @param rank THe rank of this process.
+     * @return Initial lambda.
+     */
+    public double getInitialLambda(int size, int rank) {
+        return getInitialLambda(size, rank, false);
+    }
+
+    /**
+     * Gets the initial value of lambda.
+     *
+     * @param size  The number of processes.
+     * @param rank  THe rank of this process.
+     * @param quiet No logging if quiet.
+     * @return Initial lambda.
+     */
+    public double getInitialLambda(int size, int rank, boolean quiet) {
         if (initialLambda < 0.0 || initialLambda > 1.0) {
-            logger.log(toLog, String.format(" Initial alchemical lambda reset " +
-                    "to 0.0 from %8.4g; must be between 0 and 1!", initialLambda));
-            initialLambda = 0.0;
+            if (rank == 0 || size < 2) {
+                initialLambda = 0.0;
+                if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
+            } else if (rank == size - 1) {
+                initialLambda = 1.0;
+                if (!quiet) logger.info(format(" Setting lambda to %5.3f", initialLambda));
+            } else {
+                double dL = 1.0 / (size - 1);
+                initialLambda = dL * rank;
+                if (!quiet) logger.info(format(" Setting lambda to %5.3f.", initialLambda));
+            }
         }
         return initialLambda;
     }
@@ -278,7 +308,7 @@ public class AlchemicalOptions {
      * @param topNum             The index of this topology.
      * @return The processed MolecularAssembly.
      */
-    public MolecularAssembly openFile(PotentialsFunctions potentialFunctions, Optional<TopologyOptions> topOptions, int threadsPer, String toOpen, int topNum) {
+    public MolecularAssembly openFile(PotentialsFunctions potentialFunctions, TopologyOptions topOptions, int threadsPer, String toOpen, int topNum) {
         potentialFunctions.openAll(toOpen, threadsPer);
         MolecularAssembly mola = potentialFunctions.getActiveAssembly();
         return processFile(topOptions, mola, topNum);
@@ -292,7 +322,7 @@ public class AlchemicalOptions {
      * @param topNum     The index of this topology, 0-indexed.
      * @return The processed MolecularAssembly.
      */
-    public MolecularAssembly processFile(Optional<TopologyOptions> topOptions, MolecularAssembly mola, int topNum) {
+    public MolecularAssembly processFile(TopologyOptions topOptions, MolecularAssembly mola, int topNum) {
 
         int remainder = (topNum % 2) + 1;
         switch (remainder) {
@@ -301,12 +331,11 @@ public class AlchemicalOptions {
                 setFirstSystemUnchargedAtoms(mola);
                 break;
             case 2:
-                if (!topOptions.isPresent()) {
+                if (topOptions == null) {
                     throw new IllegalArgumentException(" For >= 2 systems, topOptions must not be empty!");
                 }
-                TopologyOptions topology = topOptions.get();
-                topology.setSecondSystemAlchemistry(mola);
-                topology.setSecondSystemUnchargedAtoms(mola);
+                topOptions.setSecondSystemAlchemistry(mola);
+                topOptions.setSecondSystemUnchargedAtoms(mola);
                 break;
         }
 
@@ -316,4 +345,5 @@ public class AlchemicalOptions {
 
         return mola;
     }
+
 }

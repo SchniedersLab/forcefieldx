@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.crystal;
 
 import java.io.DataOutputStream;
@@ -43,6 +43,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -96,8 +98,7 @@ public class CCP4MapWriter {
      * @param crystal {@link Crystal} object
      * @param filename output filename
      */
-    public CCP4MapWriter(int extx, int exty, int extz, Crystal crystal,
-            String filename) {
+    public CCP4MapWriter(int extx, int exty, int extz, Crystal crystal, String filename) {
         this.orix = 0;
         this.oriy = 0;
         this.oriz = 0;
@@ -159,7 +160,7 @@ public class CCP4MapWriter {
      *
      * @param data map data to write out
      */
-    public void write(double data[]) {
+    public void write(double[] data) {
         write(data, false);
     }
 
@@ -169,7 +170,7 @@ public class CCP4MapWriter {
      * @param data map data to write out
      * @param norm should the data be normalized by mean/sd?
      */
-    public void write(double data[], boolean norm) {
+    public void write(double[] data, boolean norm) {
         ByteOrder b = ByteOrder.nativeOrder();
         FileOutputStream fos;
         DataOutputStream dos;
@@ -226,8 +227,8 @@ public class CCP4MapWriter {
         try {
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(String.format("\nwriting CCP4 map file: \"%s\"\n", filename));
-                sb.append(String.format("map min: %g max: %g mean: %g standard dev.: %g",
+                sb.append(format("\nwriting CCP4 map file: \"%s\"\n", filename));
+                sb.append(format("map min: %g max: %g mean: %g standard dev.: %g",
                         min, max, mean, sd));
                 logger.info(sb.toString());
             }
@@ -235,7 +236,7 @@ public class CCP4MapWriter {
             fos = new FileOutputStream(filename);
             dos = new DataOutputStream(fos);
 
-            byte bytes[] = new byte[2048];
+            byte[] bytes = new byte[2048];
             int offset = 0;
 
             int imapdata;

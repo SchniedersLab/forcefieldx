@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.logging.Level;
@@ -88,22 +88,18 @@ public class BulkSolventList extends ParallelRegion {
      */
     private final int nSymm;
     /**
-     * The array of atoms in the asymmetric unit.
-     */
-    private final Atom atoms[];
-    /**
      * The number of atoms in the asymmetric unit.
      */
     private final int nAtoms;
     /**
      * Reduced coordinates for each symmetry copy. [nsymm][3][natom]
      */
-    private double coordinates[][][];
+    private double[][][] coordinates;
     /**
      * The selected atoms. [nsymm][natom]
      */
     private final SharedBooleanArray[] sharedSelect;
-    private boolean selected[][];
+    private boolean[][] selected;
     /**
      * Number of selected atoms.
      */
@@ -133,41 +129,40 @@ public class BulkSolventList extends ParallelRegion {
      * A temporary array that holds the index of the cell each atom is assigned
      * to.
      */
-    private final int cellIndex[][];
+    private final int[][] cellIndex;
     /**
      * The cell indices of each atom along a A-axis.
      */
-    private final int cellA[];
+    private final int[] cellA;
     /**
      * The cell indices of each atom along a B-axis.
      */
-    private final int cellB[];
+    private final int[] cellB;
     /**
      * The cell indices of each atom along a C-axis.
      */
-    private final int cellC[];
+    private final int[] cellC;
     /**
      * The list of atoms in each cell. [nsymm][natom] = atom index
      */
-    private final int cellList[][];
+    private final int[][] cellList;
     /**
      * The offset of each atom from the start of the cell. The first atom atom
      * in the cell has 0 offset. [nsymm][natom] = offset of the atom
      */
-    private final int cellOffset[][];
+    private final int[][] cellOffset;
     /**
      * The number of atoms in each cell. [nsymm][ncell]
      */
-    private final int cellCount[][];
+    private final int[][] cellCount;
     /**
      * The index of the first atom in each cell. [nsymm][ncell]
      */
-    private final int cellStart[][];
+    private final int[][] cellStart;
     /**
      * The cutoff beyound which the pairwise energy is zero.
      */
     private final double cutoff;
-    private final double minLengthA, minLengthB, minLengthC;
     /**
      * For distance comparisons without taking a sqrt.
      */
@@ -175,23 +170,15 @@ public class BulkSolventList extends ParallelRegion {
     /**
      * The array of fractional "a", "b", and "c" coordinates.
      */
-    private final double frac[][];
-    /**
-     * *************************************************************************
-     * Parallel variables.
-     */
+    private final double[][] frac;
     /**
      * The ParallelTeam coordinates use of threads and their schedules.
      */
     private final ParallelTeam parallelTeam;
     /**
-     * Number of threads used by the parallelTeam.
-     */
-    private final int threadCount;
-    /**
      * A Verlet list loop for each thread.
      */
-    private final SelectionListLoop selectionListLoop[];
+    private final SelectionListLoop[] selectionListLoop;
     private long time;
     private long cellTime, selectTime, totalTime;
     private final double toSeconds = 1.0e-9;
@@ -199,18 +186,16 @@ public class BulkSolventList extends ParallelRegion {
     /**
      * Constructor for the NeighborList class.
      *
-     * @param crystal Definition of the unit cell and space group.
-     * @param atoms The atoms to generate Verlet lists for.
-     * @param cutoff The cutoff distance.
+     * @param crystal      Definition of the unit cell and space group.
+     * @param atoms        The atoms to generate Verlet lists for.
+     * @param cutoff       The cutoff distance.
      * @param parallelTeam Specifies the parallel environment.
      * @since 1.0
      */
-    public BulkSolventList(Crystal crystal, Atom atoms[], double cutoff,
+    public BulkSolventList(Crystal crystal, Atom[] atoms, double cutoff,
                            ParallelTeam parallelTeam) {
         this.crystal = crystal;
-        this.atoms = atoms;
         this.cutoff = cutoff;
-        //this.parallelTeam = parallelTeam;
         this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.symOps.size();
@@ -220,15 +205,13 @@ public class BulkSolventList extends ParallelRegion {
 
         assert (side > 2.0 * cutoff);
 
-        /**
-         * nEdgeA, nEdgeB and nEdgeC must be >= 1.
-         */
+        // nEdgeA, nEdgeB and nEdgeC must be >= 1.
         nEdgeA = 2;
         nEdgeB = nEdgeA;
         nEdgeC = nEdgeA;
-        minLengthA = cutoff / (double) nEdgeA;
-        minLengthB = cutoff / (double) nEdgeB;
-        minLengthC = cutoff / (double) nEdgeC;
+        double minLengthA = cutoff / (double) nEdgeA;
+        double minLengthB = cutoff / (double) nEdgeB;
+        double minLengthC = cutoff / (double) nEdgeC;
 
         nA = (int) floor(crystal.a / minLengthA);
         nB = (int) floor(crystal.b / minLengthB);
@@ -257,7 +240,7 @@ public class BulkSolventList extends ParallelRegion {
         cellC = new int[nAtoms];
         frac = new double[3][nAtoms];
         // Parallel constructs.
-        threadCount = parallelTeam.getThreadCount();
+        int threadCount = parallelTeam.getThreadCount();
         selectionListLoop = new SelectionListLoop[threadCount];
         for (int i = 0; i < threadCount; i++) {
             selectionListLoop[i] = new SelectionListLoop();
@@ -273,12 +256,11 @@ public class BulkSolventList extends ParallelRegion {
      * lists.
      *
      * @param coordinates The coordinates of each atom [nSymm][nAtoms*3].
-     * @param selected The list of selected atoms [nSymm][nAtoms].
+     * @param selected    The list of selected atoms [nSymm][nAtoms].
+     * @param log         a boolean.
      * @since 1.0
-     * @param log a boolean.
      */
-    public void buildList(final double coordinates[][][], final boolean selected[][],
-                          boolean log) {
+    public void buildList(final double[][][] coordinates, final boolean[][] selected, boolean log) {
         this.coordinates = coordinates;
         this.selected = selected;
 
@@ -319,17 +301,17 @@ public class BulkSolventList extends ParallelRegion {
      */
     private void assignAtomsToCells() {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            final int cellIndexs[] = cellIndex[iSymm];
-            final int cellCounts[] = cellCount[iSymm];
-            final int cellStarts[] = cellStart[iSymm];
-            final int cellLists[] = cellList[iSymm];
-            final int cellOffsets[] = cellOffset[iSymm];
+            final int[] cellIndexs = cellIndex[iSymm];
+            final int[] cellCounts = cellCount[iSymm];
+            final int[] cellStarts = cellStart[iSymm];
+            final int[] cellLists = cellList[iSymm];
+            final int[] cellOffsets = cellOffset[iSymm];
             // Zero out the cell counts.
             for (int i = 0; i < nCells; i++) {
                 cellCounts[i] = 0;
             }
             // Convert to fractional coordinates.
-            final double xyz[][] = coordinates[iSymm];
+            final double[][] xyz = coordinates[iSymm];
 
             crystal.toFractionalCoordinates(nAtoms, xyz[0], xyz[1], xyz[2], frac[0], frac[1], frac[2]);
 
@@ -415,7 +397,7 @@ public class BulkSolventList extends ParallelRegion {
         nSelected = 0;
         fill(selected[0], false);
         for (int iSymm = 1; iSymm < nSymm; iSymm++) {
-            boolean select[] = selected[iSymm];
+            boolean[] select = selected[iSymm];
             SharedBooleanArray shared = sharedSelect[iSymm];
             for (int i = 0; i < nAtoms; i++) {
                 select[i] = shared.get(i);
@@ -428,8 +410,9 @@ public class BulkSolventList extends ParallelRegion {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 1.0
      */
     @Override
@@ -439,8 +422,9 @@ public class BulkSolventList extends ParallelRegion {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 1.0
      */
     @Override
@@ -450,9 +434,9 @@ public class BulkSolventList extends ParallelRegion {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This is method should not be called; it is invoked by Parallel Java.
-     *
+     * <p>
      * since 0.1
      */
     @Override
@@ -469,14 +453,13 @@ public class BulkSolventList extends ParallelRegion {
      * cell.
      *
      * @author Michael J. Schnieders
-     *
      * @since 1.0
      */
     private class SelectionListLoop extends IntegerForLoop {
 
         private int iSymm;
         private int atomIndex;
-        private double xyz[][];
+        private double[][] xyz;
         private SharedBooleanArray select;
         private final IntegerSchedule schedule;
         // Extra padding to avert cache interference.
@@ -515,7 +498,7 @@ public class BulkSolventList extends ParallelRegion {
                     int cStart = c - nEdgeC;
                     int cStop = c + nEdgeC;
 
-                    /**
+                    /*
                      * If the number of divisions is 1 in any direction then set
                      * the loop limits to the current cell value.
                      */
@@ -532,9 +515,7 @@ public class BulkSolventList extends ParallelRegion {
                         cStop = c;
                     }
 
-                    /**
-                     * Check atoms in symmetry mate cells.
-                     */
+                    // Check atoms in symmetry mate cells.
                     for (int ai = aStart; ai <= aStop; ai++) {
                         for (int bi = bStart; bi <= bStop; bi++) {
                             for (int ci = cStart; ci <= cStop; ci++) {
@@ -552,8 +533,6 @@ public class BulkSolventList extends ParallelRegion {
          * cell by subtracting nX. If the index is < 0, it is mapped into the
          * periodic unit cell by adding nX. The Neighbor list algorithm never
          * requires multiple additions or subtractions of nX.
-         *
-         *
          *
          * @param i The index along the a-axis.
          * @param j The index along the b-axis.
@@ -583,10 +562,10 @@ public class BulkSolventList extends ParallelRegion {
             final double xi = xyz[0][atomIndex];
             final double yi = xyz[1][atomIndex];
             final double zi = xyz[2][atomIndex];
-            final int pairList[] = cellList[iSymm];
+            final int[] pairList = cellList[iSymm];
             int start = cellStart[iSymm][pairCellIndex];
             final int pairStop = start + cellCount[iSymm][pairCellIndex];
-            final double pair[][] = coordinates[iSymm];
+            final double[][] pair = coordinates[iSymm];
             // Loop over atoms in the pair cell.
             for (int j = start; j < pairStop; j++) {
                 final int aj = pairList[j];

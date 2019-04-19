@@ -1,45 +1,47 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parameters;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import static java.lang.String.format;
+import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -50,14 +52,13 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class TorsionType extends BaseType implements Comparator<String> {
 
     /**
      * Atom classes that for this Torsion angle.
      */
-    public final int atomClasses[];
+    public final int[] atomClasses;
     /**
      * Number of terms in the Fourier series.
      */
@@ -65,40 +66,39 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * Amplitudes of the Fourier series.
      */
-    public final double amplitude[];
+    public final double[] amplitude;
     /**
      * Phases of the Fourier series in degrees.
      */
-    public final double phase[];
+    public final double[] phase;
     /**
      * Cosine of the phase angle.
      */
-    public final double cosine[];
+    public final double[] cosine;
     /**
      * Sine of the phase angle.
      */
-    public final double sine[];
+    public final double[] sine;
     /**
      * Periodicity of the Fourier series.
      */
-    public final int periodicity[];
+    private final int[] periodicity;
 
     /**
      * TorsionType Constructor.
      *
-     * @param atomClasses int[]
-     * @param amplitude double[]
-     * @param phase double[]
-     * @param periodicity double[]
+     * @param atomClasses Atom classes.
+     * @param amplitude   Amplitudes of the Fourier series.
+     * @param phase       Phases of the Fourier series in degrees.
+     * @param periodicity Periodicity of the Fourier series.
      */
-    public TorsionType(int atomClasses[], double amplitude[], double phase[],
-                       int periodicity[]) {
+    public TorsionType(int[] atomClasses, double[] amplitude, double[] phase, int[] periodicity) {
         super(ForceField.ForceFieldType.TORSION, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         int max = 1;
-        for (int i = 0; i < periodicity.length; i++) {
-            if (periodicity[i] > max) {
-                max = periodicity[i];
+        for (int i1 : periodicity) {
+            if (i1 > max) {
+                max = i1;
             }
         }
         terms = max;
@@ -130,7 +130,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      *
      * @param scale a double.
      */
-    public void setScaleFactor(double scale) {
+    void setScaleFactor(double scale) {
         for (int i = 0; i < amplitude.length; i++) {
             amplitude[i] *= scale;
         }
@@ -160,21 +160,19 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     public TorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
         int len = atomClasses.length;
-        /**
-         * Look for new TorsionTypes that contain 1 to 3 mapped atom classes.
-         */
+
+        // Look for new TorsionTypes that contain 1 to 3 mapped atom classes.
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < len; i++) {
-                if (atomClasses[i] == newType.atomClass) {
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
                     count++;
                 }
             }
         }
-        /**
-         * If found, create a new TorsionType that bridges to known classes.
-         */
+
+        // If found, create a new TorsionType that bridges to known classes.
         if (count == 1 || count == 2 || count == 3) {
-            int newClasses[] = Arrays.copyOf(atomClasses, len);
+            int[] newClasses = copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (atomClasses[i] == newType.atomClass) {
@@ -189,22 +187,31 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * {@inheritDoc}
+     * <p>average.</p>
      *
-     * Nicely formatted Torsion angle.
-     * @since 1.0
+     * @param torsionType1 a {@link ffx.potential.parameters.TorsionType} object.
+     * @param torsionType2 a {@link ffx.potential.parameters.TorsionType} object.
+     * @param atomClasses  an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
      */
-    @Override
-    public String toString() {
-        StringBuilder torsionBuffer = new StringBuilder("torsion");
-        for (int i : atomClasses) {
-            torsionBuffer.append(String.format(" %5d", i));
+    public static TorsionType average(TorsionType torsionType1, TorsionType torsionType2, int[] atomClasses) {
+        if (torsionType1 == null || torsionType2 == null || atomClasses == null) {
+            return null;
         }
-        for (int i = 0; i < amplitude.length; i++) {
-            torsionBuffer.append(String.format(" %7.3f %7.3f %1d",
-                    amplitude[i], phase[i], periodicity[i]));
+        int len = torsionType1.amplitude.length;
+        if (len != torsionType2.amplitude.length) {
+            return null;
         }
-        return torsionBuffer.toString();
+        double[] amplitude = new double[len];
+        double[] phase = new double[len];
+        int[] periodicity = new int[len];
+        for (int i = 0; i < len; i++) {
+            amplitude[i] = (torsionType1.amplitude[i] + torsionType2.amplitude[i]) / 2.0;
+            phase[i] = (torsionType1.phase[i] + torsionType2.phase[i]) / 2.0;
+            periodicity[i] = (torsionType1.periodicity[i] + torsionType2.periodicity[i]) / 2;
+        }
+
+        return new TorsionType(atomClasses, amplitude, phase, periodicity);
     }
 
     /**
@@ -214,7 +221,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * @return lookup key
      * @since 1.0
      */
-    public static String sortKey(int c[]) {
+    public static String sortKey(int[] c) {
         if (c == null || c.length != 4) {
             return null;
         }
@@ -246,20 +253,40 @@ public final class TorsionType extends BaseType implements Comparator<String> {
             c[1] = c[2];
             c[2] = temp;
         }
-        String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
-        return key;
+
+        return c[0] + " " + c[1] + " " + c[2] + " " + c[3];
     }
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Nicely formatted Torsion angle.
+     *
+     * @since 1.0
+     */
+    @Override
+    public String toString() {
+        StringBuilder torsionBuffer = new StringBuilder("torsion");
+        for (int i : atomClasses) {
+            torsionBuffer.append(format(" %5d", i));
+        }
+        for (int i = 0; i < amplitude.length; i++) {
+            torsionBuffer.append(format(" %7.3f %7.3f %1d", amplitude[i], phase[i], periodicity[i]));
+        }
+        return torsionBuffer.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @since 1.0
      */
     @Override
     public int compare(String s1, String s2) {
-        String keys1[] = s1.split(" ");
-        String keys2[] = s2.split(" ");
-        int c1[] = new int[4];
-        int c2[] = new int[4];
+        String[] keys1 = s1.split(" ");
+        String[] keys2 = s2.split(" ");
+        int[] c1 = new int[4];
+        int[] c2 = new int[4];
 
         for (int i = 0; i < 4; i++) {
             c1[i] = Integer.parseInt(keys1[i]);
@@ -289,8 +316,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Override the default <code>equals</code> method.
+     *
      * @since 1.0
      */
     @Override
@@ -298,7 +326,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof TorsionType)) {
+        if (!(other instanceof TorsionType)) {
             return false;
         }
         TorsionType torsionType = (TorsionType) other;
@@ -312,8 +340,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Implementation of the <code>hashCode</code> method.
+     *
      * @since 1.0
      */
     @Override
@@ -321,34 +350,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         int hash = 7;
         hash = 89 * hash + Arrays.hashCode(atomClasses);
         return hash;
-    }
-
-    /**
-     * <p>average.</p>
-     *
-     * @param torsionType1 a {@link ffx.potential.parameters.TorsionType} object.
-     * @param torsionType2 a {@link ffx.potential.parameters.TorsionType} object.
-     * @param atomClasses an array of {@link int} objects.
-     * @return a {@link ffx.potential.parameters.TorsionType} object.
-     */
-    public static TorsionType average(TorsionType torsionType1, TorsionType torsionType2, int atomClasses[]) {
-        if (torsionType1 == null || torsionType2 == null || atomClasses == null) {
-            return null;
-        }
-        int len = torsionType1.amplitude.length;
-        if (len != torsionType2.amplitude.length) {
-            return null;
-        }
-        double amplitude[] = new double[len];
-        double phase[] = new double[len];
-        int periodicity[] = new int[len];
-        for (int i = 0; i < len; i++) {
-            amplitude[i] = (torsionType1.amplitude[i] + torsionType2.amplitude[i]) / 2.0;
-            phase[i] = (torsionType1.phase[i] + torsionType2.phase[i]) / 2.0;
-            periodicity[i] = (torsionType1.periodicity[i] + torsionType2.periodicity[i]) / 2;
-        }
-
-        return new TorsionType(atomClasses, amplitude, phase, periodicity);
     }
 
 }

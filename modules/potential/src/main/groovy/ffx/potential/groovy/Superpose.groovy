@@ -1,19 +1,56 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy
 
+import java.util.stream.IntStream
+import static java.lang.String.format
+
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.bonded.Atom
-import ffx.potential.parsers.PDBFilter
-import ffx.potential.parsers.XYZFilter
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.util.stream.IntStream
-
-import static java.lang.String.format
 
 /**
  * The Superpose script superposes all molecules in an arc file to the first molecule in the arc file and reports the RMSD.
@@ -30,14 +67,28 @@ class Superpose extends PotentialScript {
      */
     @Option(names = ['--rA', '--rmsdAtoms'], paramLabel = "HEAVY",
             description = 'Atoms to be included in RMSD calculation. Select [ALL/HEAVY/ALPHA] to choose which atoms are used for RMSD (nucleic acids will use N1 or N9 in place of alpha carbons).')
-    private String atomSelection="HEAVY"
+    private String atomSelection = "HEAVY"
 
     /**
      * --atoms defines which atoms to calculate RMSD on.
      */
-    @Option(names = ['--fC', '--frameComparison'], paramLabel = "ALLVSALL",
-            description = 'Frames to be compared within the arc file. Select [ALLVSALL/ONEVSALL] to choose which assemblies within the arc are used for RMSD comparisons.')
-    private String frameComparison = "AllVsAll"
+    @Option(names = ['--fC', '--frameComparison'], paramLabel = "true",
+            description = 'Frames to be compared within the arc file. Select [true] for all versus all comparison; select [false] for one versus all comparison.')
+    private boolean frameComparison = true
+
+    /**
+     * -s or --start defines which atoms in the structure will be used in RMSD calculation.
+     */
+    @Option(names = ['-s', '--start'], paramLabel = "-1",
+            description = 'Atom number where RMSD calculation of structure will begin.')
+    private int start = -1
+
+    /**
+     * --fi or --finish defines which atoms in the structure will be used in RMSD calculation.
+     */
+    @Option(names = ['-f', '--fi'], paramLabel = "Max_Value",
+            description = 'Atom number where RMSD calculation of structure will end.')
+    private int finish = Integer.MAX_VALUE
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -85,14 +136,19 @@ class Superpose extends PotentialScript {
             double[] mass = new double[nVars / 3]
 
             int nAtoms = atoms.length
-            for (int i=0; i<nAtoms; i++) {
+            for (int i = 0; i < nAtoms; i++) {
                 mass[i] = atoms[i].getMass()
             }
 
             // Begin streaming the possible atom indices, filtering out inactive atoms.
             // TODO: Decide if we only want active atoms.
             IntStream atomIndexStream = IntStream.range(0, atoms.length).
-                    filter({ int i -> return atoms[i].isActive() })
+                    filter({ int i -> return atoms[i].isActive() }).
+                    filter({ int i -> return atoms[i].xyzIndex >= start && atoms[i].xyzIndex <= finish })
+            if (start > -1 || finish < Integer.MAX_VALUE) {
+                logger.info(String.format("Calculating RMSD on residues %d to %d.", start, finish))
+            }
+
             // String describing the selection type.
             String selectionType = "All Atoms"
 
@@ -114,7 +170,7 @@ class Superpose extends PotentialScript {
                         boolean proteinReference = atName.equals("CA") && ati.getAtomType().atomicNumber == 6
                         boolean naReference = (atName.equals("N1") || atName.equals("N9")) && ati.getAtomType().atomicNumber == 7
                         return proteinReference || naReference
-                    });
+                    })
                     selectionType = "Reference Atoms (i.e. alpha carbons and N1/N9 for nucleic acids)";
                     break
 
@@ -131,6 +187,7 @@ class Superpose extends PotentialScript {
 
             // Indices of atoms used in alignment and RMSD calculations.
             int[] usedIndices = atomIndexStream.toArray()
+            System.out.println("used indices length: " + usedIndices.length)
             int nUsed = usedIndices.length
             int nUsedVars = nUsed * 3
             double[] massUsed = Arrays.stream(usedIndices).
@@ -139,48 +196,44 @@ class Superpose extends PotentialScript {
             double[] xUsed = new double[nUsedVars]
             double[] x2Used = new double[nUsedVars]
 
-            // Switch on which molecular assemblies to do RMSD comparisons among.
-            switch(frameComparison.toUpperCase()){
-                case "ONEVSALL":
-                    // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
-                    rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
-                    break
-                case "ALLVSALL":
-                    rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
-                    SystemFilter systemFilter1
-                    if(systemFilter instanceof PDBFilter){
-                        systemFilter1 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                        systemFilter1.readFile()
-                    } else if (systemFilter instanceof XYZFilter){
-                        systemFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+            // Check which molecular assemblies to do RMSD comparisons among.
+            if (frameComparison == false) {
+                // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
+                rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+            } else if (frameComparison == true) {
+                rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
+                SystemFilter systemFilter1
+                if (systemFilter instanceof PDBFilter) {
+                    systemFilter1 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                    systemFilter1.readFile()
+                } else if (systemFilter instanceof XYZFilter) {
+                    systemFilter1 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                }
+                while (systemFilter1.readNext(false, false)) {
+                    int snapshot1 = systemFilter1.getSnapshot()
+                    forceFieldEnergy.getCoordinates(x)
+                    SystemFilter systemFilter2
+                    if (systemFilter instanceof PDBFilter) {
+                        systemFilter2 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                        systemFilter2.readFile()
+                    } else if (systemFilter instanceof XYZFilter) {
+                        systemFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                     }
-                    while (systemFilter1.readNext(false, false)) {
-                        int snapshot1 = systemFilter1.getSnapshot()
-                        forceFieldEnergy.getCoordinates(x)
-                        SystemFilter systemFilter2
-                        if(systemFilter instanceof PDBFilter){
-                            systemFilter2 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                            systemFilter2.readFile()
-                        } else if (systemFilter instanceof XYZFilter){
-                            systemFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-                        }
-                        rmsd(systemFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
-                    }
-                    break
-
-                default:
-                    logger.severe(String.format(" Could not parse %s as a frame comparison! Must be ALLVSALL or ONEVSALL", frameComparison))
+                    rmsd(systemFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
+                }
+            } else{
+                logger.severe(String.format(" Could not parse %s as a frame comparison! Must be true or false", frameComparison))
             }
         }
         return this
     }
 
-    void rmsd(SystemFilter systemFilter, int nUsed, int[] usedIndices, String selectionType, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1){
-        while(systemFilter.readNext(false, false)) {
+    void rmsd(SystemFilter systemFilter, int nUsed, int[] usedIndices, String selectionType, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1) {
+        while (systemFilter.readNext(false, false)) {
             int snapshot2 = systemFilter.getSnapshot()
             // Only calculate RMSD for snapshots if they aren't the same snapshot.
             // Also avoid double calculating snapshots in the matrix by only calculating the upper triangle.
-            if (snapshot1 != snapshot2 && snapshot1<snapshot2) {
+            if (snapshot1 != snapshot2 && snapshot1 < snapshot2) {
                 forceFieldEnergy.getCoordinates(x2)
                 for (int i = 0; i < nUsed; i++) {
                     int index3 = 3 * usedIndices[i]
@@ -205,41 +258,3 @@ class Superpose extends PotentialScript {
         }
     }
 }
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */

@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.nonbonded;
 
 import java.util.logging.Logger;
@@ -54,8 +54,8 @@ public class PairwiseSchedule extends IntegerSchedule {
     private int nAtoms;
     private int threadOffset;
     private final int nThreads;
-    private final Range ranges[];
-    private final boolean threadDone[];
+    private final Range[] ranges;
+    private final boolean[] threadDone;
 
     /**
      * <p>
@@ -65,7 +65,7 @@ public class PairwiseSchedule extends IntegerSchedule {
      * @param nAtoms   a int.
      * @param ranges   an array of {@link edu.rit.util.Range} objects.
      */
-    public PairwiseSchedule(int nThreads, int nAtoms, Range ranges[]) {
+    public PairwiseSchedule(int nThreads, int nAtoms, Range[] ranges) {
         this.nAtoms = nAtoms;
         this.nThreads = nThreads;
         threadOffset = 0;
@@ -126,7 +126,7 @@ public class PairwiseSchedule extends IntegerSchedule {
      * @param atomsWithInteractions the number of chunks of interactions.
      * @param listCount             an array of int.
      */
-    public void updateRanges(int totalInteractions, int atomsWithInteractions, int listCount[]) {
+    void updateRanges(int totalInteractions, int atomsWithInteractions, int[] listCount) {
         int id = 0;
         int goal = totalInteractions / (nThreads + threadOffset);
         int num = 0;
@@ -134,9 +134,8 @@ public class PairwiseSchedule extends IntegerSchedule {
         for (int i = 0; i < nAtoms; i++) {
             num += listCount[i];
             if (num >= goal) {
-                /**
-                 * Last thread gets the remaining atoms.
-                 */
+
+                // Last thread gets the remaining atoms.
                 if (id == nThreads - 1) {
                     ranges[id] = new Range(start, nAtoms - 1);
                     break;
@@ -151,9 +150,7 @@ public class PairwiseSchedule extends IntegerSchedule {
                 // Next range starts at i+1.
                 start = i + 1;
 
-                /**
-                 * Out of atoms. Threads remaining get a null range.
-                 */
+                // Out of atoms. Threads remaining get a null range.
                 if (start == nAtoms) {
                     if (atomsWithInteractions > nThreads + threadOffset + 1) {
                         threadOffset++;
@@ -166,9 +163,8 @@ public class PairwiseSchedule extends IntegerSchedule {
                     break;
                 }
             } else if (i == nAtoms - 1) {
-                /**
-                 * Last atom without reaching goal for current thread.
-                 */
+
+                // Last atom without reaching goal for current thread.
                 if (id < nThreads - 1 && atomsWithInteractions > nThreads + threadOffset + 1) {
                     threadOffset++;
                     updateRanges(totalInteractions, atomsWithInteractions, listCount);

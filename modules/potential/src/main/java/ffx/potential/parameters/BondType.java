@@ -1,46 +1,45 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parameters;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
 
@@ -52,32 +51,52 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  */
 public final class BondType extends BaseType implements Comparator<String> {
 
-    private static final Logger logger = Logger.getLogger(BondType.class.getName());
-
     /**
      * Describes the function used by the bond.
      * Currently supported: harmonic and quartic with flat-bottom variants.
      */
     public enum BondFunction {
-        // Typical bond functions.
+
+        // Harmonic bond function.
         HARMONIC("0.5*k*(r-r0)^2", false),
+
+        // Quartic bond function.
         QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=r-r0", false),
 
-        // Usually only for restraints.
+        // Flat bottom harmonic bond function for restraints.
         FLAT_BOTTOM_HARMONIC("0.5*k*dv^2;dv=step(dv)*step(dv-fb)*(dv-fb)" +
                 "+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0", true),
+
+        // Flat bottom Quartic bond function for restraints.
         FLAT_BOTTOM_QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);" +
                 "dv=step(dv)*step(dv-fb)*(dv-fb)+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0", true);
 
+        /**
+         * String representation of the mathematical form.
+         */
         private final String mathematicalForm;
 
-        // If we start to accumulate more features, consider making a BondFunctionFeature enum and having an EnumSet contained by this enum.
+
+        /**
+         * Flag to indicate if the bond function has a flat bottom.
+         */
         private final boolean hasFlatBottom;
 
+        /**
+         * BondFunction constructor.
+         *
+         * @param mathForm String representation of the mathematical form.
+         */
         BondFunction(String mathForm) {
             this(mathForm, false);
         }
 
+        /**
+         * BondFunction constructor.
+         *
+         * @param mathForm   String representation of the mathematical form.
+         * @param flatBottom Flag to indicate if the bond function has a flat bottom.
+         */
         BondFunction(String mathForm, boolean flatBottom) {
             this.mathematicalForm = mathForm;
             this.hasFlatBottom = flatBottom;
@@ -102,6 +121,18 @@ public final class BondType extends BaseType implements Comparator<String> {
         }
     }
 
+    /**
+     * Convert bond stretch energy to kcal/mole.
+     */
+    public static final double units = 1.0;
+    /**
+     * Cubic coefficient in bond stretch potential.
+     */
+    public static final double cubic = -2.55;
+    /**
+     * Quartic coefficient in bond stretch potential.
+     */
+    public static final double quartic = 3.793125;
     /**
      * Atom classes that form this bond stretch.
      */
@@ -178,19 +209,18 @@ public final class BondType extends BaseType implements Comparator<String> {
 
         int count = 0;
         int len = atomClasses.length;
-        /**
-         * Look for new BondTypes that contain one mapped atom class.
-         */
+
+        // Look for new BondTypes that contain one mapped atom class.
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < len; i++) {
-                if (atomClasses[i] == newType.atomClass) {
+
+            for (int atomClass : atomClasses) {
+                if (atomClass == newType.atomClass) {
                     count++;
                 }
             }
         }
-        /**
-         * If found, create a new BondType that bridges to known classes.
-         */
+
+        // If found, create a new BondType that bridges to known classes.
         if (count == 1) {
             int[] newClasses = Arrays.copyOf(atomClasses, len);
             for (AtomType newType : typeMap.keySet()) {
@@ -201,21 +231,10 @@ public final class BondType extends BaseType implements Comparator<String> {
                     }
                 }
             }
-            BondType bondType = new BondType(newClasses, forceConstant, distance, bondFunction);
-            return bondType;
+
+            return new BondType(newClasses, forceConstant, distance, bondFunction);
         }
         return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Nicely formatted bond stretch string.
-     */
-    @Override
-    public String toString() {
-        return String.format("bond  %5d  %5d  %6.1f  %7.4f", atomClasses[0],
-                atomClasses[1], forceConstant, distance);
     }
 
     /**
@@ -224,19 +243,19 @@ public final class BondType extends BaseType implements Comparator<String> {
      * @param c atomClasses
      * @return lookup key
      */
-    public static String sortKey(int c[]) {
+    public static String sortKey(int[] c) {
         if (c == null || c.length != 2) {
             return null;
         }
-        String key = null;
+
         int temp;
         if (c[1] <= c[0]) {
             temp = c[1];
             c[1] = c[0];
             c[0] = temp;
         }
-        key = c[0] + " " + c[1];
-        return key;
+
+        return c[0] + " " + c[1];
     }
 
     /**
@@ -248,7 +267,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      * @param atomClasses an array of {@link int} objects.
      * @return a {@link ffx.potential.parameters.BondType} object.
      */
-    public static BondType average(BondType bondType1, BondType bondType2, int atomClasses[]) {
+    public static BondType average(BondType bondType1, BondType bondType2, int[] atomClasses) {
         if (bondType1 == null || bondType2 == null || atomClasses == null) {
             return null;
         }
@@ -264,17 +283,15 @@ public final class BondType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Convert bond stretch energy to kcal/mole.
+     * {@inheritDoc}
+     * <p>
+     * Nicely formatted bond stretch string.
      */
-    public static final double units = 1.0;
-    /**
-     * Cubic coefficient in bond stretch potential.
-     */
-    public static final double cubic = -2.55;
-    /**
-     * Quartic coefficient in bond stretch potential.
-     */
-    public static final double quartic = 3.793125;
+    @Override
+    public String toString() {
+        return String.format("bond  %5d  %5d  %6.1f  %7.4f", atomClasses[0],
+                atomClasses[1], forceConstant, distance);
+    }
 
     /**
      * {@inheritDoc}
@@ -311,15 +328,13 @@ public final class BondType extends BaseType implements Comparator<String> {
         if (other == this) {
             return true;
         }
-        if (other == null || !(other instanceof BondType)) {
+        if (!(other instanceof BondType)) {
             return false;
         }
         BondType bondType = (BondType) other;
         int[] c = bondType.atomClasses;
-        if (c[0] == atomClasses[0] && c[1] == atomClasses[1]) {
-            return true;
-        }
-        return false;
+
+        return (c[0] == atomClasses[0] && c[1] == atomClasses[1]);
     }
 
     /**

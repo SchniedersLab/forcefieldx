@@ -1,47 +1,46 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.nonbonded;
 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
-
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
@@ -87,7 +86,6 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.StringUtils;
-
 import static ffx.numerics.math.VectorMath.cross;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.dot;
@@ -6155,7 +6153,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (forceField == null) {
             String message = "No force field is defined.\n";
             logger.log(Level.SEVERE, message);
+            return;
         }
+
         if (forceField.getForceFieldTypeCount(ForceFieldType.MULTIPOLE) < 1
                 && forceField.getForceFieldTypeCount(ForceFieldType.CHARGE) < 1) {
             String message = "Force field has no permanent electrostatic types.\n";
@@ -6170,19 +6170,18 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         for (int i = 0; i < nAtoms; i++) {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
-                String message = "No multipole could be assigned to atom:\n"
-                        + atom + "\nof type:\n" + atom.getAtomType();
                 for (Bond b : atom.getBonds()) {
                     Atom a2 = b.get1_2(atom);
                     AtomType aType2 = a2.getAtomType();
-                    logger.info(String.format(" Bonded atom %s type number %d type string %s", a2, aType2.type, aType2));
+                    logger.info(format(" Bonded atom %s type number %d type string %s", a2, aType2.type, aType2));
                 }
+                String message = "No multipole could be assigned to atom:\n"
+                        + atom + "\nof type:\n" + atom.getAtomType();
                 logger.log(Level.SEVERE, message);
             }
         }
-        /**
-         * Check for multipoles that were not assigned correctly.
-         */
+
+        // Check for multipoles that were not assigned correctly.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nAtoms; i++) {
             boolean flag = false;
@@ -6225,7 +6224,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             logger.fine(message);
             double polarizability = 0.0;
             double thole = 0.0;
-            int polarizationGroup[] = null;
+            int[] polarizationGroup = null;
             polarizeType = new PolarizeType(atomType.type,
                     polarizability, thole, polarizationGroup);
             forceField.addForceFieldType(polarizeType);
@@ -6266,7 +6265,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             key = atomType.getKey() + " " + atom2.getAtomType().getKey() + " 0";
             multipoleType = multipoleType = forceField.getMultipoleType(key);
             if (multipoleType != null) {
-                int multipoleReferenceAtoms[] = new int[1];
+                int[] multipoleReferenceAtoms = new int[1];
                 multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                 atom.setMultipoleType(multipoleType);
                 localMultipole[i][t000] = multipoleType.getCharge();
@@ -6298,7 +6297,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 key = atomType.getKey() + " " + key2 + " " + key3;
                 multipoleType = forceField.getMultipoleType(key);
                 if (multipoleType != null) {
-                    int multipoleReferenceAtoms[] = new int[2];
+                    int[] multipoleReferenceAtoms = new int[2];
                     multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                     multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                     atom.setMultipoleType(multipoleType);
@@ -6320,9 +6319,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
         }
 
-        /**
-         * 3 reference atoms.
-         */
+        // 3 reference atoms.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
             String key2 = atom2.getAtomType().getKey();
@@ -6341,7 +6338,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
-                        int multipoleReferenceAtoms[] = new int[3];
+                        int[] multipoleReferenceAtoms = new int[3];
                         multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                         multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                         multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
@@ -6369,7 +6366,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                         multipoleType = forceField.getMultipoleType(key);
                         if (multipoleType != null) {
-                            int multipoleReferenceAtoms[] = new int[3];
+                            int[] multipoleReferenceAtoms = new int[3];
                             multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                             multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                             multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
@@ -6393,9 +6390,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
         }
 
-        /**
-         * Revert to a 2 reference atom definition that may include a 1-3 site.
-         * For example a hydrogen on water.
+        /*
+          Revert to a 2 reference atom definition that may include a 1-3 site.
+          For example a hydrogen on water.
          */
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
@@ -6408,7 +6405,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     key = atomType.getKey() + " " + key2 + " " + key3;
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
-                        int multipoleReferenceAtoms[] = new int[2];
+                        int[] multipoleReferenceAtoms = new int[2];
                         multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                         multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                         atom.setMultipoleType(multipoleType);
@@ -6433,7 +6430,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                             multipoleType = forceField.getMultipoleType(key);
                             if (multipoleType != null) {
-                                int multipoleReferenceAtoms[] = new int[3];
+                                int[] multipoleReferenceAtoms = new int[3];
                                 multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                                 multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                                 multipoleReferenceAtoms[2] = atom4.getIndex() - 1;

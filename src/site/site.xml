@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
     name="Force Field X"
-    xmlns="http://maven.apache.org/DECORATION/1.7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
+    xmlns="http://maven.apache.org/DECORATION/1.8.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
     <version position="right" />
     <publishDate position="right" format="MMM dd yyyy" />
     <skin>
@@ -37,7 +37,6 @@
         <width>100px</width>
         <height>100px</height>
     </bannerRight>
-
     <custom>
         <fluidoSkin>
             <!-- leftColumnClass (span2) plus bodyColumnClass (span10) should sum to 12 -->
@@ -133,6 +132,7 @@
                <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html" />
                <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html" />
             </item>
+            <item name="Parallelization" href="/parallel.html"/>
             <item name="License" href="/licenses.html"/>
             <item name="FFX Team" href="/team.html"/>
         </menu>
@@ -149,6 +149,5 @@
             <item name="X-Ray Refinement" href="modules/xray/index.html"/>
         </menu>
         <menu name="Project Info" ref="reports"/>
-
     </body>
 </project>

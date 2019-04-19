@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Utility Commands</title>
@@ -21,61 +21,43 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/biotype.groovy" >biotype</a>
+                            <a href="commands/biotype.html">Biotype</a>
                         </td>
                         <td>Print out a lookup table from PDB atom names to force field atom types.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/cart2frac.groovy" >cart2frac</a>
+                            <a href="commands/cart2Frac.html">Cart2Frac</a>
                         </td>
                         <td>Convert Cartesian coordinates to fractional coordinates.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/cif2mtz.groovy" >cif2mtz</a>
-                        </td>
-                        <td>Convert a cif reflection file to mtz format.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="modules/xray/scripts/deuterate.groovy" >deuterate</a>
-                        </td>
-                        <td>Convert exchangeble hydrogens to dueterium atoms.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="modules/potential/scripts/frac2cart.groovy" >frac2cart</a>
+                            <a href="commands/frac2Cart.html">Frac2Cart</a>
                         </td>
                         <td>Convert fractional coordinates to Cartesian coordinates.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/moveIntoUnitCell.groovy" >moveIntoUnitCell</a>
+                            <a href="commands/moveIntoUnitCell.html">MoveIntoUnitCell</a>
                         </td>
                         <td>Move the center of mass of each molecule into the unit cell.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/mtzInfo.groovy" >mtzInfo</a>
-                        </td>
-                        <td>Print out information on a binary mtz reflection file.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="modules/potential/scripts/saveAsP1.groovy" >saveAsP1</a>
+                            <a href="commands/SaveAsP1.html">SaveAsP1</a>
                         </td>
                         <td>Generate a P1 unit cell from an asymmetric unit.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/saveAsPDB.groovy" >saveAsPDB</a>
+                            <a href="commands/SaveAsPDB.html">SaveAsPDB</a>
                         </td>
                         <td>Convert input XYZ file to PDB format.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/potential/scripts/saveAsXYZ.groovy" >saveAsXYZ</a>
+                            <a href="commands/SaveAsXYZ.html">SaveAsXYZ</a>
                         </td>
                         <td>Convert input PDB file to XYZ format.</td>
                     </tr>

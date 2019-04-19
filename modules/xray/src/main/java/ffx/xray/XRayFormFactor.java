@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.HashMap;
@@ -47,10 +47,10 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import static ffx.crystal.Crystal.quad_form;
 import static ffx.numerics.math.VectorMath.b2u;
 import static ffx.numerics.math.VectorMath.determinant3;
 import static ffx.numerics.math.VectorMath.diff;
@@ -87,26 +87,25 @@ public final class XRayFormFactor implements FormFactor {
     private static final Logger logger = Logger.getLogger(XRayFormFactor.class.getName());
 
     private final Atom atom;
-    private final double xyz[] = new double[3];
-    private final double dxyz[] = new double[3];
-    private final double resv[] = new double[3];
-    private final double a[] = new double[6];
-    private final double b[] = new double[6];
-    private final double ainv[] = new double[6];
-    private final double binv[] = new double[6];
-    private final double gradp[] = new double[6];
-    private final double gradu[] = new double[6];
-    private final double resm[][] = new double[3][3];
-    private final double u[][][] = new double[6][3][3];
-    private final double uinv[][][] = new double[6][3][3];
-    private final double jmat[][][] = new double[6][3][3];
-    private double anisou[] = null;
-    protected final int ffIndex;
-    private double bIso;
+    private final double[] xyz = new double[3];
+    private final double[] dxyz = new double[3];
+    private final double[] resv = new double[3];
+    private final double[] a = new double[6];
+    private final double[] b = new double[6];
+    private final double[] ainv = new double[6];
+    private final double[] binv = new double[6];
+    private final double[] gradp = new double[6];
+    private final double[] gradu = new double[6];
+    private final double[][] resm = new double[3][3];
+    private final double[][][] u = new double[6][3][3];
+    private final double[][][] uinv = new double[6][3][3];
+    private final double[][][] jmat = new double[6][3][3];
+    private double[] anisou = null;
     private double uAdd;
     private double occupancy;
     private boolean hasAnisou;
     private final int nGaussians;
+    final int ffIndex;
 
     /**
      * <p>
@@ -150,10 +149,10 @@ public final class XRayFormFactor implements FormFactor {
      * @param badd  a double.
      * @param xyz   an array of double.
      */
-    public XRayFormFactor(Atom atom, boolean use3G, double badd, double xyz[]) {
+    public XRayFormFactor(Atom atom, boolean use3G, double badd, double[] xyz) {
         this.atom = atom;
         this.uAdd = b2u(badd);
-        double ffactor[][];
+        double[][] formFactor;
         String key = "" + atom.getAtomicNumber();
         int charge = 0;
         if (atom.getMultipoleType() != null) {
@@ -163,36 +162,36 @@ public final class XRayFormFactor implements FormFactor {
         int atomindex = atom.getFormFactorIndex();
         if (atomindex < 0) {
             // if it has a charge, first try to find Su&Coppens 6G params
-            if (formfactors.containsKey(key + "_" + charge)) {
-                ffactor = getFormFactor(key + "_" + charge);
+            if (formFactors.containsKey(key + "_" + charge)) {
+                formFactor = getFormFactor(key + "_" + charge);
             } else {
                 // if not, use 3G params if requested
                 if (use3G) {
                     // first look for charged form
-                    if (formfactors.containsKey(key + "_" + charge + "_3g")) {
-                        ffactor = getFormFactor(key + "_" + charge + "_3g");
+                    if (formFactors.containsKey(key + "_" + charge + "_3g")) {
+                        formFactor = getFormFactor(key + "_" + charge + "_3g");
                     } else {
                         // if this fails, we don't have the SFs
-                        ffactor = getFormFactor(key + "_3g");
+                        formFactor = getFormFactor(key + "_3g");
                     }
                 } else {
-                    ffactor = getFormFactor(key);
+                    formFactor = getFormFactor(key);
                 }
             }
-            ffIndex = (int) ffactor[0][0];
+            ffIndex = (int) formFactor[0][0];
             atom.setFormFactorIndex(ffIndex);
         } else {
             ffIndex = atomindex;
-            ffactor = ffactors[atomindex];
+            formFactor = ffactors[atomindex];
         }
 
         int i;
-        for (i = 0; i < ffactor[1].length; i++) {
-            if (ffactor[1][i] < 0.01) {
+        for (i = 0; i < formFactor[1].length; i++) {
+            if (formFactor[1][i] < 0.01) {
                 break;
             }
-            a[i] = ffactor[1][i];
-            b[i] = ffactor[2][i];
+            a[i] = formFactor[1][i];
+            b[i] = formFactor[2][i];
         }
         nGaussians = i;
         assert (nGaussians > 0);
@@ -213,9 +212,9 @@ public final class XRayFormFactor implements FormFactor {
      * @return a int.
      */
     public static int getFormFactorIndex(String atom) {
-        double ffactor[][] = getFormFactor(atom);
-        if (ffactor != null) {
-            return (int) ffactor[0][0];
+        double[][] formFactor = getFormFactor(atom);
+        if (formFactor != null) {
+            return (int) formFactor[0][0];
         }
         return -1;
 
@@ -229,9 +228,9 @@ public final class XRayFormFactor implements FormFactor {
      * @return an array of double.
      */
     public static double[] getFormFactorA(String atom) {
-        double ffactor[][] = getFormFactor(atom);
-        if (ffactor != null) {
-            return ffactor[1];
+        double[][] formFactor = getFormFactor(atom);
+        if (formFactor != null) {
+            return formFactor[1];
         }
         return null;
     }
@@ -244,9 +243,9 @@ public final class XRayFormFactor implements FormFactor {
      * @return an array of double.
      */
     public static double[] getFormFactorB(String atom) {
-        double ffactor[][] = getFormFactor(atom);
-        if (ffactor != null) {
-            return ffactor[2];
+        double[][] formFactor = getFormFactor(atom);
+        if (formFactor != null) {
+            return formFactor[2];
         }
         return null;
     }
@@ -258,16 +257,15 @@ public final class XRayFormFactor implements FormFactor {
      * @param atom a {@link java.lang.String} object.
      * @return an array of double.
      */
-    public static double[][] getFormFactor(String atom) {
-        double ffactor[][] = null;
-        if (formfactors.containsKey(atom)) {
-            ffactor = (double[][]) formfactors.get(atom);
+    static double[][] getFormFactor(String atom) {
+        double[][] formFactor = null;
+        if (formFactors.containsKey(atom)) {
+            formFactor = formFactors.get(atom);
         } else {
-            String message = " Form factor for atom: " + atom
-                    + " not found!\n";
+            String message = " Form factor for atom: " + atom + " not found!\n";
             logger.severe(message);
         }
-        return ffactor;
+        return formFactor;
     }
 
     /**
@@ -293,7 +291,7 @@ public final class XRayFormFactor implements FormFactor {
         double sum = 0.0;
 
         for (int i = 0; i < nGaussians; i++) {
-            sum += a[i] * exp(-twopi2 * Crystal.quad_form(hkl, u[i]));
+            sum += a[i] * exp(-twopi2 * quad_form(hkl, u[i]));
         }
         return occupancy * sum;
     }
@@ -302,7 +300,7 @@ public final class XRayFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public double rho(double f, double lambda, double xyz[]) {
+    public double rho(double f, double lambda, double[] xyz) {
         return rhoN(f, lambda, xyz, nGaussians);
     }
 
@@ -316,20 +314,18 @@ public final class XRayFormFactor implements FormFactor {
      * @param nGaussians a int.
      * @return a double.
      */
-    public double rhoN(double f, double lambda, double xyz[], int nGaussians) {
+    private double rhoN(double f, double lambda, double[] xyz, int nGaussians) {
         assert (nGaussians > 0 && nGaussians <= this.nGaussians);
         diff(this.xyz, xyz, xyz);
 
-        /**
-         * Compare r^2 to form factor width^2 to avoid expensive sqrt.
-         */
+        // Compare r^2 to form factor width^2 to avoid expensive sqrt.
         if (rsq(xyz) > atom.getFormFactorWidth2()) {
             return f;
         }
 
         double sum = 0.0;
         for (int i = 0; i < nGaussians; i++) {
-            sum += ainv[i] * exp(-0.5 * Crystal.quad_form(xyz, uinv[i]));
+            sum += ainv[i] * exp(-0.5 * quad_form(xyz, uinv[i]));
         }
         return f + (lambda * occupancy * twopi32 * sum);
     }
@@ -338,7 +334,7 @@ public final class XRayFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void rhoGrad(double xyz[], double dfc, RefinementMode refinementMode) {
+    public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementMode) {
         rhoGradN(xyz, nGaussians, dfc, refinementMode);
     }
 
@@ -352,14 +348,12 @@ public final class XRayFormFactor implements FormFactor {
      * @param refinementMode a
      *                       {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
-    public void rhoGradN(double xyz[], int nGaussians, double dfc, RefinementMode refinementMode) {
-        assert (nGaussians > 0 && nGaussians <= nGaussians);
+    private void rhoGradN(double[] xyz, int nGaussians, double dfc, RefinementMode refinementMode) {
+        assert (nGaussians > 0 && nGaussians <= this.nGaussians);
         diff(this.xyz, xyz, dxyz);
         double r2 = rsq(dxyz);
 
-        /**
-         * Compare r^2 to form factor width^2 to avoid expensive sqrt.
-         */
+        // Compare r^2 to form factor width^2 to avoid expensive sqrt.
         if (r2 > atom.getFormFactorWidth2()) {
             return;
         }
@@ -394,7 +388,7 @@ public final class XRayFormFactor implements FormFactor {
         }
 
         for (int i = 0; i < nGaussians; i++) {
-            aex = ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
+            aex = ainv[i] * exp(-0.5 * quad_form(dxyz, uinv[i]));
 
             if (refinexyz) {
                 vec3Mat3(dxyz, uinv[i], resv);
@@ -409,7 +403,6 @@ public final class XRayFormFactor implements FormFactor {
 
             if (refineb) {
                 gradp[4] += aex * 0.5 * (r2 * binv[i] * binv[i] - 3.0 * binv[i]);
-
                 if (refineanisou) {
                     scalarMat3Mat3(-1.0, uinv[i], u11, resm);
                     mat3Mat3(resm, uinv[i], jmat[0]);
@@ -424,18 +417,17 @@ public final class XRayFormFactor implements FormFactor {
                     scalarMat3Mat3(-1.0, uinv[i], u23, resm);
                     mat3Mat3(resm, uinv[i], jmat[5]);
 
-                    gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[i][0][0]);
-                    gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[i][1][1]);
-                    gradu[2] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[2]) - uinv[i][2][2]);
-                    gradu[3] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[3]) - uinv[i][0][1] * 2.0);
-                    gradu[4] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[4]) - uinv[i][0][2] * 2.0);
-                    gradu[5] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[5]) - uinv[i][1][2] * 2.0);
+                    gradu[0] += aex * 0.5 * (-quad_form(dxyz, jmat[0]) - uinv[i][0][0]);
+                    gradu[1] += aex * 0.5 * (-quad_form(dxyz, jmat[1]) - uinv[i][1][1]);
+                    gradu[2] += aex * 0.5 * (-quad_form(dxyz, jmat[2]) - uinv[i][2][2]);
+                    gradu[3] += aex * 0.5 * (-quad_form(dxyz, jmat[3]) - uinv[i][0][1] * 2.0);
+                    gradu[4] += aex * 0.5 * (-quad_form(dxyz, jmat[4]) - uinv[i][0][2] * 2.0);
+                    gradu[5] += aex * 0.5 * (-quad_form(dxyz, jmat[5]) - uinv[i][1][2] * 2.0);
                 }
             }
         }
 
-        //double rho = occ * twopi32 * gradp[3];
-        // x, y, z
+        // X, Y, Z
         if (refinexyz) {
             atom.addToXYZGradient(
                     dfc * occupancy * -twopi32 * gradp[0],
@@ -443,12 +435,12 @@ public final class XRayFormFactor implements FormFactor {
                     dfc * occupancy * -twopi32 * gradp[2]);
         }
 
-        // occ
+        // Occupancy
         if (refineocc) {
             atom.addToOccupancyGradient(dfc * twopi32 * gradp[3]);
         }
 
-        // Biso
+        // Isotropic B
         if (refineb) {
             atom.addToTempFactorGradient(dfc * b2u(occupancy * twopi32 * gradp[4]));
             // Uaniso
@@ -465,7 +457,7 @@ public final class XRayFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void update(double xyz[]) {
+    public void update(double[] xyz) {
         update(xyz, u2b(uAdd));
     }
 
@@ -473,13 +465,13 @@ public final class XRayFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void update(double xyz[], double bAdd) {
+    public void update(double[] xyz, double bAdd) {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];
-        bIso = atom.getTempFactor();
         uAdd = b2u(bAdd);
         occupancy = atom.getOccupancy();
+        double bIso = atom.getTempFactor();
 
         // check occ is valid
         if (occupancy < 0.0) {
@@ -552,16 +544,16 @@ public final class XRayFormFactor implements FormFactor {
     private static final double twopi2 = 2.0 * PI * PI;
     private static final double twopi32 = pow(2.0 * PI, -1.5);
     private final static double oneThird = 1.0 / 3.0;
-    private static final double vx[] = {1.0, 0.0, 0.0};
-    private static final double vy[] = {0.0, 1.0, 0.0};
-    private static final double vz[] = {0.0, 0.0, 1.0};
-    private static final double u11[][] = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u22[][] = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u33[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
-    private static final double u12[][] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
-    private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
-    private static final HashMap<String, double[][]> formfactors = new HashMap<>();
+    private static final double[] vx = {1.0, 0.0, 0.0};
+    private static final double[] vy = {0.0, 1.0, 0.0};
+    private static final double[] vz = {0.0, 0.0, 1.0};
+    private static final double[][] u11 = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u22 = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u33 = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
+    private static final double[][] u12 = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u13 = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
+    private static final double[][] u23 = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
+    private static final HashMap<String, double[][]> formFactors = new HashMap<>();
 
     private static final String[] atoms = {"H", "He", "Li", "Be", "B", "C", "N", "O",
             "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
@@ -614,10 +606,12 @@ public final class XRayFormFactor implements FormFactor {
             "33_3g", "34_3g", "35_3g", "36_3g", "37_3g", "38_3g", "39_3g", "40_3g", "41_3g", "42_3g", "43_3g", "44_3g",
             "45_3g", "46_3g", "47_3g", "48_3g", "49_3g", "50_3g", "51_3g", "52_3g", "53_3g", "54_3g", "80_3g"};
 
+    /**
+     * Su and Coppens data: 0 through 113.
+     * <p>
+     * CCTBX 3 Gaussians: 114 through 216.
+     */
     private static final double[][][] ffactors = {
-            /**
-             * Su and Coppens data.
-            */
             {{0},
                     {0.43028, 0.28537, 0.17134, 0.09451, 0.01725, 0.00114},
                     {23.02312, 10.20138, 51.25444, 4.13511, 1.35427, 0.24269}},
@@ -960,9 +954,8 @@ public final class XRayFormFactor implements FormFactor {
             {{113},
                     {18.97534, 15.68841, 6.74714, 4.42194, 4.08431, 4.06854},
                     {0.38165, 4.33217, 26.51128, 4.35007, 0.00013, 70.73529}},
-            /**
-             * cctbx - 3 Gaussians.
-            */
+
+            // cctbx - 3 Gaussians.
             {{114},
                     {1.05674999997, 0.644323530897, 0.298305313502},
                     {1.10072695216, 3.30968118776, 0.263851354839}},
@@ -1276,7 +1269,7 @@ public final class XRayFormFactor implements FormFactor {
 
     static {
         for (int i = 0; i < atoms.length; i++) {
-            formfactors.put(atomsi[i], ffactors[i]);
+            formFactors.put(atomsi[i], ffactors[i]);
         }
     }
 }

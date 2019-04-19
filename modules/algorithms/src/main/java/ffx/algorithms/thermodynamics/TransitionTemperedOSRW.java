@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.algorithms.thermodynamics;
 
 import java.io.BufferedWriter;
@@ -51,6 +51,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import ffx.potential.Utilities;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -162,6 +163,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      */
     private final DoubleBuf[] recursionWeightsBuf;
     private final DoubleBuf myRecursionWeightBuf;
+    /**
+     * Most recent lambda values for each Walker.
+     */
+    private final double[] currentLambdaValues;
 
     /**
      * Transition Tempered OSRW Constructor.
@@ -246,9 +251,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             }
         }
 
+        currentLambdaValues = new double[world.size()];
         if (asynchronous) {
             // Use asynchronous communication.
-            myRecursionWeight = new double[3];
+            myRecursionWeight = new double[4];
             myRecursionWeightBuf = DoubleBuf.buffer(myRecursionWeight);
             receiveThread = new CountReceiveThread(this);
             receiveThread.start();
@@ -716,6 +722,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return val;
     }
 
+    public void setCurrentLambdaforRank(int rank, double lambda) {
+        currentLambdaValues[rank] = lambda;
+    }
+
     /**
      * Send an OSRW count to all other processes while also receiving an OSRW
      * count from all other processes.
@@ -750,6 +760,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         // Increment the Recursion Kernel based on the input of each walker.
         for (int i = 0; i < numProc; i++) {
+            currentLambdaValues[i] = recursionWeights[i][0];
             int walkerLambda = binForLambda(recursionWeights[i][0]);
             int walkerFLambda = binForFLambda(recursionWeights[i][1]);
             double weight = recursionWeights[i][2];
@@ -777,9 +788,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * @param dUdL   Current value of dU/dL.
      */
     private void asynchronousSend(double lambda, double dUdL) {
-        myRecursionWeight[0] = lambda;
-        myRecursionWeight[1] = dUdL;
-        myRecursionWeight[2] = temperingWeight;
+        myRecursionWeight[0] = world.rank();
+        myRecursionWeight[1] = lambda;
+        myRecursionWeight[2] = dUdL;
+        myRecursionWeight[3] = temperingWeight;
 
         for (int i = 0; i < numProc; i++) {
             try {
@@ -1033,13 +1045,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
             logger.info("  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
             logger.info(stringBuilder.toString());
-            logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
-                    freeEnergy, totalWeight, temperingWeight));
+            logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                    freeEnergy, totalWeight, temperingWeight, biasCount));
             logger.info(format(" Minimum Bias %8.3f", minFL));
             previousFreeEnergy = freeEnergy;
         } else if (!save && (print || biasCount % printFrequency == 0)) {
-            logger.info(format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
-                    freeEnergy, totalWeight, temperingWeight));
+            logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                    freeEnergy, totalWeight, temperingWeight, biasCount));
         }
 
         if (save) {
@@ -1219,6 +1231,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         // Only the rank 0 process writes the histogram restart file.
         if (rank == 0) {
+            StringBuilder stringBuilder = new StringBuilder(" Current Lambda Values:");
+            for (double lambda : currentLambdaValues) {
+                stringBuilder.append(format(" %6.4f", lambda));
+            }
+            logger.info(stringBuilder.toString());
             try {
                 HistogramWriter ttOSRWHistogramRestart = new HistogramWriter(this,
                         new BufferedWriter(new FileWriter(histogramFile)));
@@ -1228,7 +1245,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 logger.info(format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
             } catch (IOException ex) {
                 String message = " Exception writing TTOSRW histogram restart file.";
-                logger.log(Level.INFO, message, ex);
+                logger.log(Level.INFO, Utilities.stackTraceToString(ex));
+                logger.log(Level.SEVERE, message, ex);
             }
         }
 
@@ -1240,8 +1258,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             ttOSRWLambdaRestart.close();
             logger.info(format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
         } catch (IOException ex) {
-            String message = " Exception writing TTOSRW lambda restart file.";
-            logger.log(Level.INFO, message, ex);
+            String message = String.format(" Exception writing TTOSRW lambda restart file %s.", lambdaFile);
+            logger.log(Level.INFO, Utilities.stackTraceToString(ex));
+            logger.log(Level.SEVERE, message, ex);
         }
     }
 
@@ -1251,7 +1270,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public boolean destroy() {
         if (receiveThread != null && receiveThread.isAlive()) {
-            double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
+            double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
             DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
             try {
                 logger.fine(" Sending the termination message.");

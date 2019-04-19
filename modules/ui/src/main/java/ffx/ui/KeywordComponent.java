@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.ui;
 
 import javax.swing.JButton;
@@ -63,7 +63,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
-import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,7 +74,6 @@ import static ffx.utilities.HashCodeUtil.hash;
  * The KeywordComponent class is used to represent one TINKER keyword.
  *
  * @author Michael J. Schnieders
- *
  */
 public final class KeywordComponent implements MouseListener, ActionListener,
         ChangeListener, DocumentListener {
@@ -92,57 +90,14 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * across all keyword objects
      */
     private static boolean isModified = false;
-    /**
-     * Some static layout variables
-     */
-    private static String spaces = "                             ";
-    private static Dimension labelDimension = null;
-    private static Dimension entryDimension = null;
+    private static Dimension labelDimension;
+    private static Dimension entryDimension;
 
     static {
         JTextField textField = new JTextField(20);
         labelDimension = textField.getPreferredSize();
         textField = new JTextField(25);
         entryDimension = textField.getPreferredSize();
-    }
-
-    /**
-     * <p>
-     * fillPanel</p>
-     *
-     * @param p a {@link javax.swing.JPanel} object.
-     * @param g a {@link java.awt.GridBagLayout} object.
-     * @param c a {@link java.awt.GridBagConstraints} object.
-     */
-    public static void fillPanel(JPanel p, GridBagLayout g, GridBagConstraints c) {
-        JLabel jfill = new JLabel(" ");
-        c.weightx = 1;
-        c.weighty = 1;
-        c.fill = GridBagConstraints.BOTH;
-        c.gridwidth = GridBagConstraints.REMAINDER;
-        c.gridheight = GridBagConstraints.REMAINDER;
-        g.setConstraints(jfill, c);
-        p.add(jfill);
-    }
-
-    /**
-     * <p>
-     * isKeywordModified</p>
-     *
-     * @return a boolean.
-     */
-    public static boolean isKeywordModified() {
-        return isModified;
-    }
-
-    /**
-     * <p>
-     * setKeywordModified</p>
-     *
-     * @param b a boolean.
-     */
-    public static void setKeywordModified(boolean b) {
-        isModified = b;
     }
 
     /**
@@ -163,7 +118,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * The type of Swing Conponent used in representing this Keyword
      */
     private SwingRepresentation swingRepresentation;
-    private String options[];
+    private String[] options;
     private String keywordDescription;
     private JTextArea output;
     private boolean active;
@@ -174,21 +129,21 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * GUI Components used to represent Keyword modifiers d - Keyword
      * description
      *
-     * @param k a {@link java.lang.String} object.
-     * @param kg a {@link java.lang.String} object.
-     * @param s a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
-     * @param d a {@link java.lang.String} object.
-     * @param jta a {@link javax.swing.JTextArea} object.
+     * @param keyword             a {@link java.lang.String} object.
+     * @param keywordGroup        a {@link java.lang.String} object.
+     * @param swingRepresentation a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
+     * @param keywordDescription  a {@link java.lang.String} object.
+     * @param jTextArea           a {@link javax.swing.JTextArea} object.
      */
-    public KeywordComponent(String k, String kg, SwingRepresentation s,
-                            String d, JTextArea jta) {
+    KeywordComponent(String keyword, String keywordGroup, SwingRepresentation swingRepresentation,
+                     String keywordDescription, JTextArea jTextArea) {
         flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
-        keyword = k;
-        keywordGroup = kg;
+        this.keyword = keyword;
+        this.keywordGroup = keywordGroup;
         keywordValues = new ArrayList<>();
-        swingRepresentation = s;
-        keywordDescription = d;
-        output = jta;
+        this.swingRepresentation = swingRepresentation;
+        this.keywordDescription = keywordDescription;
+        output = jTextArea;
         active = false;
         flowLayout.setHgap(2);
         flowLayout.setVgap(1);
@@ -198,17 +153,56 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * <p>
      * Constructor for KeywordComponent.</p>
      *
-     * @param k a {@link java.lang.String} object.
-     * @param kg a {@link java.lang.String} object.
-     * @param s a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
-     * @param d a {@link java.lang.String} object.
-     * @param jta a {@link javax.swing.JTextArea} object.
-     * @param o an array of {@link java.lang.String} objects.
+     * @param keyword             a {@link java.lang.String} object.
+     * @param keywordGroup        a {@link java.lang.String} object.
+     * @param swingRepresentation a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
+     * @param keywordDescription  a {@link java.lang.String} object.
+     * @param jTextArea           a {@link javax.swing.JTextArea} object.
+     * @param options             an array of {@link java.lang.String} objects.
      */
-    public KeywordComponent(String k, String kg, SwingRepresentation s,
-                            String d, JTextArea jta, String o[]) {
-        this(k, kg, s, d, jta);
-        options = o;
+    KeywordComponent(String keyword, String keywordGroup, SwingRepresentation swingRepresentation,
+                     String keywordDescription, JTextArea jTextArea, String[] options) {
+        this(keyword, keywordGroup, swingRepresentation, keywordDescription, jTextArea);
+        this.options = options;
+    }
+
+    /**
+     * <p>
+     * fillPanel</p>
+     *
+     * @param jPanel             a {@link javax.swing.JPanel} object.
+     * @param gridBagLayout      a {@link java.awt.GridBagLayout} object.
+     * @param gridBagConstraints a {@link java.awt.GridBagConstraints} object.
+     */
+    static void fillPanel(JPanel jPanel, GridBagLayout gridBagLayout, GridBagConstraints gridBagConstraints) {
+        JLabel jfill = new JLabel(" ");
+        gridBagConstraints.weightx = 1;
+        gridBagConstraints.weighty = 1;
+        gridBagConstraints.fill = GridBagConstraints.BOTH;
+        gridBagConstraints.gridwidth = GridBagConstraints.REMAINDER;
+        gridBagConstraints.gridheight = GridBagConstraints.REMAINDER;
+        gridBagLayout.setConstraints(jfill, gridBagConstraints);
+        jPanel.add(jfill);
+    }
+
+    /**
+     * <p>
+     * isKeywordModified</p>
+     *
+     * @return a boolean.
+     */
+    static boolean isKeywordModified() {
+        return isModified;
+    }
+
+    /**
+     * <p>
+     * setKeywordModified</p>
+     *
+     * @param b a boolean.
+     */
+    static void setKeywordModified(boolean b) {
+        isModified = b;
     }
 
     /**
@@ -286,17 +280,17 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * <p>
      * clearKeywordComponent</p>
      */
-    public void clearKeywordComponent() {
+    void clearKeywordComponent() {
         synchronized (this) {
             active = false;
-            if (init == false) {
+            if (!init) {
                 return;
             }
             if (swingRepresentation == SwingRepresentation.CHECKBOX) {
                 ((JCheckBox) keywordValues.get(0)).setSelected(false);
             } else if (swingRepresentation == SwingRepresentation.CHECKBOXES) {
-                for (ListIterator li = keywordValues.listIterator(); li.hasNext(); ) {
-                    ((JCheckBox) li.next()).setSelected(false);
+                for (Component keywordValue : keywordValues) {
+                    ((JCheckBox) keywordValue).setSelected(false);
                 }
             } else if (swingRepresentation == SwingRepresentation.COMBOBOX) {
                 JComboBox jcb = (JComboBox) keywordValues.get(1);
@@ -358,7 +352,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden equals method return true if object equals this, or if it of
      * the same class and has the same Tinker Keyword.
      */
@@ -389,7 +383,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      *
      * @param keywordData a {@link ffx.utilities.Keyword} object.
      */
-    public void getKeywordData(Keyword keywordData) {
+    void getKeywordData(Keyword keywordData) {
         synchronized (this) {
             if (keywordData == null || !active) {
                 return;
@@ -435,7 +429,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      *
      * @return a {@link java.lang.String} object.
      */
-    public String getKeywordDescription() {
+    String getKeywordDescription() {
         return keywordDescription;
     }
 
@@ -445,7 +439,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      *
      * @return a {@link java.lang.String} object.
      */
-    public String getKeywordGroup() {
+    String getKeywordGroup() {
         return keywordGroup;
     }
 
@@ -455,7 +449,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      *
      * @return a {@link javax.swing.JPanel} object.
      */
-    public JPanel getKeywordGUI() {
+    JPanel getKeywordGUI() {
         synchronized (this) {
             if (keywordGUI == null) {
                 if (!init) {
@@ -525,7 +519,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * @param s A Keyword line, not including the Keyword itself.
      */
     @SuppressWarnings("unchecked")
-    public void loadKeywordEntry(String s) {
+    void loadKeywordEntry(String s) {
         synchronized (this) {
             if (!init) {
                 initSwingComponents();
@@ -552,10 +546,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     break;
                 }
             }
-            active = true;
-            if (toString() == null) {
-                active = false;
-            }
+            active = toString() != null;
         }
     }
 
@@ -565,10 +556,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     @Override
     public void mouseClicked(MouseEvent evt) {
         synchronized (this) {
-            active = true;
-            if (toString() == null) {
-                active = false;
-            }
+            active = toString() != null;
             output.setText(keyword + ": " + keywordDescription);
             JViewport jsp = (JViewport) output.getParent();
             jsp.setViewPosition(new Point(20, 20));
@@ -647,7 +635,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overridden toString methods facilitates Keyword output to a file.
      */
     @Override
@@ -658,6 +646,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
             }
             StringBuilder s;
             // Torsion entries are long...
+            // Some static layout variables
+            String spaces = "                             ";
             if (!keyword.equalsIgnoreCase("TORSION")) {
                 s = new StringBuilder(keyword
                         + spaces.substring(0, 18 - keyword.length()));
@@ -691,7 +681,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                     }
                     String v = tf.getText();
                     if (v.length() < 8) {
-                        s.append(v).append(spaces.substring(0, 8 - v.length()));
+                        s.append(v).append(spaces, 0, 8 - v.length());
                     } else {
                         s.append(v);
                     }
@@ -703,7 +693,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                         if (count == 0) {
                             return null;
                         }
-                        String entries[] = new String[count];
+                        String[] entries = new String[count];
                         for (int i = 0; i < count; i++) {
                             entries[i] = (String) cb.getItemAt(i);
                         }

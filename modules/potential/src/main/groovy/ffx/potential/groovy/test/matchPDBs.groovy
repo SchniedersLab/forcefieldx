@@ -1,42 +1,41 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy.test
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
 
 import groovy.cli.picocli.CliBuilder
 
@@ -63,20 +62,20 @@ int atomsUsed = 1;
 PDBFileMatcher fileMatcher;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.matchPDBs [options] <sourcefiles> <filestomatch>');
-cli.h(longOpt:'help', 'Print this message.');
-cli.d(longOpt:'parseDeep', args:1, argName:'true', 'Accept files with valid coordinate file format (true) or look only at extension (false).');
-cli.v(longOpt:'verbose', 'Flag to print progress messages.');
-cli.hL(longOpt:'headerLink', args:1, argName:'true', 'Will print a HEADER line in matched PDBs with filename of source file.');
-cli.b(longOpt:'bFactors', args:1, argName:'false', 'Will replace B-factors in matched PDBs with B-factors from source.');
-cli.sB(longOpt:'ssBondRecords', args:1, argName:'false', 'Will re-introduce SSBOND records from source to matched PDBs.');
-cli.s(longOpt:'superpose', args:1, argName:'true', 'Will use BioJava alignment tool with default settings to calculate RMSDs.');
-cli.a(longOpt:'atomsUsed', args:1, argName:'1', 'Over-ridden by superpose. Will use only CA (protein) and N1/9 (nucleic acid) for RMSD (1), all protein/nucleic acid atoms (2), all non-water atoms (3), or all atoms including water (4).');
-cli.p(longOpt:'parallel', args:1, argName:'true', 'Will parallelize comparisons');
-cli.x(longOpt:'suffix', args:1, argName:'_match', 'Suffix for modified copies of matched files.');
-cli.r(longOpt:'robustAtomMatch', args:1, argName:'false', 'If true, if an atom\'s counterpart from another file cannot be easily found, will scan over atoms to find the counterpart.');
-cli.c(longOpt:'crystRecord', args:1, argName:'false', 'If true, uses source CRYST1 record if available to replace or add to matched file.');
-cli.sm(longOpt:'simple', 'Set to use a simple match (ignores all flags except parallel, simply prints output of RMSD matching)');
+def cli = new CliBuilder(usage: ' ffxc test.matchPDBs [options] <sourcefiles> <filestomatch>');
+cli.h(longOpt: 'help', 'Print this message.');
+cli.d(longOpt: 'parseDeep', args: 1, argName: 'true', 'Accept files with valid coordinate file format (true) or look only at extension (false).');
+cli.v(longOpt: 'verbose', 'Flag to print progress messages.');
+cli.hL(longOpt: 'headerLink', args: 1, argName: 'true', 'Will print a HEADER line in matched PDBs with filename of source file.');
+cli.b(longOpt: 'bFactors', args: 1, argName: 'false', 'Will replace B-factors in matched PDBs with B-factors from source.');
+cli.sB(longOpt: 'ssBondRecords', args: 1, argName: 'false', 'Will re-introduce SSBOND records from source to matched PDBs.');
+cli.s(longOpt: 'superpose', args: 1, argName: 'true', 'Will use BioJava alignment tool with default settings to calculate RMSDs.');
+cli.a(longOpt: 'atomsUsed', args: 1, argName: '1', 'Over-ridden by superpose. Will use only CA (protein) and N1/9 (nucleic acid) for RMSD (1), all protein/nucleic acid atoms (2), all non-water atoms (3), or all atoms including water (4).');
+cli.p(longOpt: 'parallel', args: 1, argName: 'true', 'Will parallelize comparisons');
+cli.x(longOpt: 'suffix', args: 1, argName: '_match', 'Suffix for modified copies of matched files.');
+cli.r(longOpt: 'robustAtomMatch', args: 1, argName: 'false', 'If true, if an atom\'s counterpart from another file cannot be easily found, will scan over atoms to find the counterpart.');
+cli.c(longOpt: 'crystRecord', args: 1, argName: 'false', 'If true, uses source CRYST1 record if available to replace or add to matched file.');
+cli.sm(longOpt: 'simple', 'Set to use a simple match (ignores all flags except parallel, simply prints output of RMSD matching)');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();

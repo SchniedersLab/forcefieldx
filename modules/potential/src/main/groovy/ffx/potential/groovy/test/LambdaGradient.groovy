@@ -1,3 +1,40 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.groovy.test
 
 import edu.rit.pj.ParallelTeam
@@ -34,8 +71,15 @@ class LambdaGradient extends PotentialScript {
     private TopologyOptions topology
 
     @Mixin
-    GradientOptions gradientOptions
+    private GradientOptions gradientOptions
 
+
+    /**
+     * --ls or --lambdaScan Scan lambda values.
+     */
+    @Option(names = ['--ls', '--lambdaScan'], paramLabel = 'false',
+            description = 'Scan lambda values.')
+    boolean lambdaScan = false
 
     /**
      * --lm or --lambdaMoveSize Size of the lambda moves during the test.
@@ -130,11 +174,11 @@ class LambdaGradient extends PotentialScript {
             }
             arguments = new ArrayList<>()
             arguments.add(mola.getFile().getName())
-            topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0))
+            topologyList.add(alchemical.processFile(topology, mola, 0))
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(alchemical.openFile(potentialFunctions, Optional.of(topology), threadsPer, arguments.get(i), i))
+                topologyList.add(alchemical.openFile(potentialFunctions, topology, threadsPer, arguments.get(i), i))
             }
         }
 
@@ -167,20 +211,33 @@ class LambdaGradient extends PotentialScript {
         assert (n % 3 == 0)
         int nAtoms = n / 3
 
-        // Compute the Lambda = 1.0 energy.
-        double lambda = 1.0
+        // Compute the Lambda = 0.0 energy.
+        double lambda = 0.0
         linter.setLambda(lambda)
         potential.getCoordinates(x)
-        e1 = potential.energy(x, true)
 
-        // Compute the Lambda = 0.0 energy.
-        lambda = 0.0
+        e0 = potential.energyAndGradient(x, gradient)
+        double dEdL = linter.getdEdL()
+        logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e0, dEdL))
+
+        // Scan intermediate lambda values.
+        if (lambdaScan) {
+            for (int i = 1; i <= 8; i++) {
+                lambda = i * 0.1;
+                linter.setLambda(lambda)
+                double e = potential.energyAndGradient(x, gradient)
+                dEdL = linter.getdEdL()
+                logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e, dEdL))
+            }
+        }
+
+        // Compute the Lambda = 1.0 energy.
+        lambda = 1.0
         linter.setLambda(lambda)
-        e0 = potential.energy(x, true)
-
-        logger.info(String.format(" E(0):      %20.8f.", e0))
-        logger.info(String.format(" E(1):      %20.8f.", e1))
-        logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1 - e0))
+        e1 = potential.energyAndGradient(x, gradient)
+        dEdL = linter.getdEdL()
+        logger.info(String.format(" L=%4.2f E=%12.6f dE/dL=%12.6f", lambda, e1, dEdL))
+        logger.info(String.format(" E(1)-E(0): %12.6f.\n", e1 - e0))
 
         // Finite-difference step size.
         double width = 2.0 * gradientOptions.dx
@@ -209,7 +266,7 @@ class LambdaGradient extends PotentialScript {
             double e = potential.energyAndGradient(x, gradient)
 
             // Analytic dEdL, d2E/dL2 and dE/dL/dX
-            double dEdL = linter.getdEdL()
+            dEdL = linter.getdEdL()
 
             double d2EdL2 = linter.getd2EdL2()
             for (int i = 0; i < n; i++) {
@@ -407,41 +464,3 @@ class LambdaGradient extends PotentialScript {
         return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
     }
 }
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */

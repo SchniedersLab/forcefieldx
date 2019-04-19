@@ -1,3 +1,40 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.algorithms.groovy
 
 import java.util.stream.Collectors
@@ -119,7 +156,6 @@ class Thermodynamics extends AlgorithmsScript {
             System.setProperty("lambdaterm", "true")
         }
 
-        double initLambda = alchemical.getInitialLambda()
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
@@ -135,27 +171,33 @@ class Thermodynamics extends AlgorithmsScript {
         int size = world.size()
         int rank = (size > 1) ? world.rank() : 0
 
+        double initLambda = alchemical.getInitialLambda(size, rank)
+
         // Segment of code for MultiDynamics and OSRW.
         List<File> structureFiles = arguments.stream().
                 map { fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath()) }.
                 collect(Collectors.toList())
 
         File firstStructure = structureFiles.get(0)
-        String baseFilename = FilenameUtils.removeExtension(firstStructure.getPath())
-        File histogramRestart = new File(baseFilename + ".his")
+        String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst(~/\.[^.]+$/, "")
+        File histogramRestart = new File(filePathNoExtension + ".his")
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
-        String withRankName = baseFilename
+        String withRankName = filePathNoExtension
+
         if (size > 1) {
             List<File> rankedFiles = new ArrayList<>(nArgs)
+            String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
+            rankDirName = String.format("%s%d", rankDirName, rank)
+            File rankDirectory = new File(rankDirName)
+            if (!rankDirectory.exists()) {
+                rankDirectory.mkdir()
+            }
+            rankDirName = rankDirName + File.separator
+            withRankName = String.format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension))
+
             for (File structureFile : structureFiles) {
-                File rankDirectory = new File(structureFile.getParent() + File.separator
-                        + Integer.toString(rank))
-                if (!rankDirectory.exists()) {
-                    rankDirectory.mkdir()
-                }
-                withRankName = rankDirectory.getPath() + File.separator + baseFilename;
-                rankedFiles.add(new File(rankDirectory.getPath() + File.separator + structureFile.getName()))
+                rankedFiles.add(new File(String.format("%s%s", rankDirName, FilenameUtils.getName(structureFile.getName()))))
             }
             structureFiles = rankedFiles
         }
@@ -163,9 +205,7 @@ class Thermodynamics extends AlgorithmsScript {
         File lambdaRestart = new File(withRankName + ".lam")
         File dyn = new File(withRankName + ".dyn")
 
-        /**
-         * Read in files.
-         */
+        // Read in files.
         if (!arguments || arguments.isEmpty()) {
             MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
             if (mola == null) {
@@ -173,39 +213,29 @@ class Thermodynamics extends AlgorithmsScript {
             }
             arguments = new ArrayList<>()
             arguments.add(mola.getFile().getName())
-            topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0))
+            topologyList.add(alchemical.processFile(topology, mola, 0))
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology),
+                topologyList.add(multidynamics.openFile(algorithmFunctions, topology,
                         threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank))
             }
         }
 
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
-        /**
-         * Configure the potential to test.
-         */
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ")
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
-
+        LambdaInterface linter = (LambdaInterface) potential
         logger.info(sb.toString())
 
-        LambdaInterface linter = (LambdaInterface) potential
-
-        // End of boilerplate code.
-
-        if (!dyn.exists()) {
-            dyn = null
-        }
         boolean lamExists = lambdaRestart.exists()
         boolean hisExists = histogramRestart.exists()
 
         boolean updatesDisabled = topologies[0].getForceField().getBoolean(
-                ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+                ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
         if (updatesDisabled) {
-            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
+            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
         }
         double[] x = new double[potential.getNumberOfVariables()]
         potential.getCoordinates(x)
@@ -220,11 +250,13 @@ class Thermodynamics extends AlgorithmsScript {
 
         osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0],
                 additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
+        if (!lamExists) {
+            osrw.setLambda(initLambda)
+        }
 
         // Can be either the TT-OSRW or a Barostat on top of it.
-        // Cannot be the Potential underneath the TT-OSRW.
         CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0],
-                dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists)
+                dynamics, lambdaParticle, barostat, hisExists)
 
         if (osrwOptions.mc) {
             osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
@@ -248,41 +280,3 @@ class Thermodynamics extends AlgorithmsScript {
         return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
     }
 }
-
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */

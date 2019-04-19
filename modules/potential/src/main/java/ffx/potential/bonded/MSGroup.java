@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
 import javax.media.j3d.BranchGroup;
@@ -61,11 +61,8 @@ public abstract class MSGroup extends MSNode {
 
     private static final Logger logger = Logger.getLogger(MSGroup.class.getName());
     /**
-     * Constructs the Geometry of this MultiScaleGroup and stores the terms as
-     * children in the Term node.
+     * Constructs the Geometry of this MultiScaleGroup and stores the terms as children in the Term node.
      */
-    private static double[] da = new double[3];
-    private static double[] db = new double[3];
     // Atoms Node
     private MSNode atomNode = new MSNode("Atoms");
     // Valence Energy Terms
@@ -203,7 +200,7 @@ public abstract class MSGroup extends MSNode {
     public void reOrderAtoms() {
         ArrayList<Atom> atomList = getAtomList();
         int nAtoms = atomList.size();
-        Atom atoms[] = new Atom[nAtoms];
+        Atom[] atoms = new Atom[nAtoms];
         atoms = atomList.toArray(atoms);
 
         boolean sorted;
@@ -304,9 +301,7 @@ public abstract class MSGroup extends MSNode {
         setBonds(newBondNode);
         bondTime += System.nanoTime() - time;
 
-        /**
-         * Find intra-group angles.
-         */
+        // Find intra-group angles.
         time = System.nanoTime();
         ArrayList<Angle> angles = new ArrayList<>();
         for (Atom atom : getAtomList()) {
@@ -331,9 +326,7 @@ public abstract class MSGroup extends MSNode {
         setAngles(newAngleNode);
         angleTime += System.nanoTime() - time;
 
-        /**
-         * Find Stretch-Bends.
-         */
+        // Find Stretch-Bends.
         time = System.nanoTime();
         for (Angle angle : angles) {
             StretchBend newStretchBend = StretchBend.stretchBendFactory(angle, forceField);
@@ -345,9 +338,7 @@ public abstract class MSGroup extends MSNode {
         setStretchBends(newStretchBendNode);
         stretchBendTime += System.nanoTime() - time;
 
-        /**
-         * Urey-Bradleys.
-         */
+        // Urey-Bradleys.
         time = System.nanoTime();
         for (Angle angle : angles) {
             UreyBradley newUreyBradley = UreyBradley.ureyBradlyFactory(angle, forceField);
@@ -359,9 +350,7 @@ public abstract class MSGroup extends MSNode {
         setUreyBradleys(newUreyBradleyNode);
         ureyBradleyTime += System.nanoTime() - time;
 
-        /**
-         * Out-of-Plane Bends.
-         */
+        // Out-of-Plane Bends.
         time = System.nanoTime();
         for (Angle angle : angles) {
             OutOfPlaneBend opBend = OutOfPlaneBend.outOfPlaneBendFactory(angle, forceField);
@@ -373,9 +362,7 @@ public abstract class MSGroup extends MSNode {
         setOutOfPlaneBends(newOutOfPlaneBendNode);
         outOfPlaneBendTime += System.nanoTime() - time;
 
-        /**
-         * Find Intra-Group Torsions.
-         */
+        // Find Intra-Group Torsions.
         time = System.nanoTime();
         ArrayList<Torsion> torsions = new ArrayList<>();
         for (Bond middleBond : bonds) {
@@ -401,9 +388,7 @@ public abstract class MSGroup extends MSNode {
         setTorsions(newTorsionNode);
         torsionTime += System.nanoTime() - time;
 
-        /**
-         * Find Intra-Group Stretch-Torsions.
-         */
+        // Find Intra-Group Stretch-Torsions.
         time = System.nanoTime();
         for (Torsion torsion : torsions) {
             StretchTorsion stretchTorsion = StretchTorsion.stretchTorsionFactory(torsion, forceField);
@@ -415,9 +400,7 @@ public abstract class MSGroup extends MSNode {
         setStretchTorsions(newStretchTorsionNode);
         stretchTorsionTime += System.nanoTime() - time;
 
-        /**
-         * Find Intra-Group Stretch-Torsions.
-         */
+        // Find Intra-Group Angle-Torsions.
         time = System.nanoTime();
         for (Torsion torsion : torsions) {
             AngleTorsion angleTorsion = AngleTorsion.angleTorsionFactory(torsion, forceField);
@@ -429,9 +412,7 @@ public abstract class MSGroup extends MSNode {
         setAngleTorsions(newAngleTorsionNode);
         angleTorsionTime += System.nanoTime() - time;
 
-        /**
-         * Find Pi-Orbital Torsions.
-         */
+        // Find Pi-Orbital Torsions.
         time = System.nanoTime();
         for (Bond bond : bonds) {
             PiOrbitalTorsion piOrbitalTorsion = PiOrbitalTorsion.piOrbitalTorsionFactory(bond, forceField);
@@ -443,9 +424,7 @@ public abstract class MSGroup extends MSNode {
         setPiOrbitalTorsions(newPiOrbitalTorsionNode);
         piOrbitalTorsionTime += System.nanoTime() - time;
 
-        /**
-         * Find Improper-Torsions.
-         */
+        // Find Improper-Torsions.
         time = System.nanoTime();
         ArrayList<Atom> atoms = getAtomList();
         for (Atom atom : atoms) {
@@ -462,9 +441,7 @@ public abstract class MSGroup extends MSNode {
         setImproperTorsions(newImproperTorsionNode);
         improperTorsionTime += System.nanoTime() - time;
 
-        /**
-         * Find Torsion-Torsions.
-         */
+        // Find Torsion-Torsions.
         time = System.nanoTime();
         for (Angle angle : angles) {
             Atom atom1 = angle.atoms[0];
@@ -509,6 +486,8 @@ public abstract class MSGroup extends MSNode {
         MSNode a = new MSNode("Angles");
         MSNode d = new MSNode("Dihedrals");
         int index = 0;
+        double[] da = new double[3];
+        double[] db = new double[3];
         ArrayList<Atom> atomList = getAtomList();
         for (Atom a1 : atomList) {
             index++;
@@ -710,7 +689,7 @@ public abstract class MSGroup extends MSNode {
      *
      * @param newJoint a {@link ffx.potential.bonded.Joint} object.
      */
-    public void addJoint(Joint newJoint) {
+    void addJoint(Joint newJoint) {
         joints.add(newJoint);
     }
 
@@ -726,7 +705,7 @@ public abstract class MSGroup extends MSNode {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<Joint> getJoints() {
+    ArrayList<Joint> getJoints() {
         return joints;
     }
 
@@ -742,6 +721,8 @@ public abstract class MSGroup extends MSNode {
      */
     public Joint createJoint(MSGroup group1, MSGroup group2, ForceField forceField) {
         Joint joint = null;
+        double[] da = new double[3];
+        double[] db = new double[3];
         for (Atom a1 : group1.getAtomList()) {
             a1.getXYZ(da);
             for (Atom a2 : group2.getAtomList()) {
@@ -1122,29 +1103,12 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * Sets the BondsKnown Variable
-     *
-     * public void setBondsKnown(boolean b) { bondsKnown = b; }
-     */
-    /**
      * Set the value of Center to d.
      *
      * @param d an array of double.
      */
     public void setCenter(double[] d) {
         center = d;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
-        if (newColorModel == RendererCache.ColorModel.MOLECULE && (color == null || mat == null)) {
-            return;
-        }
-        atomNode.setColor(newColorModel, color, mat);
     }
 
     /**
@@ -1232,11 +1196,41 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
+     * <p>
+     * updateAtoms</p>
+     */
+    public void updateAtoms() {
+        for (Atom a : getAtomList()) {
+            a.update();
+        }
+    }
+
+    /**
+     * <p>
+     * updateBonds</p>
+     */
+    public void updateBonds() {
+        for (ROLS b : getBondList()) {
+            b.update();
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
-    public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
+    public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
+        if (newColorModel == RendererCache.ColorModel.MOLECULE && (color == null || mat == null)) {
+            return;
+        }
+        atomNode.setColor(newColorModel, color, mat);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
         atomNode.setView(newViewModel, newShapes);
         bondNode.setView(newViewModel, newShapes);
     }
@@ -1260,23 +1254,4 @@ public abstract class MSGroup extends MSNode {
         updateBonds();
     }
 
-    /**
-     * <p>
-     * updateAtoms</p>
-     */
-    public void updateAtoms() {
-        for (Atom a : getAtomList()) {
-            a.update();
-        }
-    }
-
-    /**
-     * <p>
-     * updateBonds</p>
-     */
-    public void updateBonds() {
-        for (ROLS b : getBondList()) {
-            b.update();
-        }
-    }
 }

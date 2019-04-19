@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.crystal;
 
 import java.util.List;
@@ -55,10 +55,8 @@ import static java.lang.String.format;
  * <br>
  *
  * @author Michael J. Schnieders
- *
- * @since 1.0
- *
  * @see Crystal
+ * @since 1.0
  */
 public class ReplicatesCrystal extends Crystal {
 
@@ -91,10 +89,10 @@ public class ReplicatesCrystal extends Crystal {
      * Constructor for a ReplicatesCrystal.
      *
      * @param unitCell The base unit cell.
-     * @param l Number of replicates along the a-axis.
-     * @param m Number of replicates along the b-axis.
-     * @param n Number of replicates along the c-axis.
-     * @param cutOff2 Twice the cut-off distance.
+     * @param l        Number of replicates along the a-axis.
+     * @param m        Number of replicates along the b-axis.
+     * @param n        Number of replicates along the c-axis.
+     * @param cutOff2  Twice the cut-off distance.
      * @since 1.0
      */
     public ReplicatesCrystal(Crystal unitCell, int l, int m, int n, double cutOff2) {
@@ -110,203 +108,13 @@ public class ReplicatesCrystal extends Crystal {
         this.n = n;
         this.cutOff = cutOff2 / 2.0;
 
-        /**
-         * At this point, the ReplicatesCrystal references a SpaceGroup instance
-         * whose symmetry operators are inconsistent. This is corrected by
-         * generating symmetry operators to fill up the ReplicatesCrystal based
-         * on the asymmetric unit.
+        /*
+          At this point, the ReplicatesCrystal references a SpaceGroup instance
+          whose symmetry operators are inconsistent. This is corrected by
+          generating symmetry operators to fill up the ReplicatesCrystal based
+          on the asymmetric unit.
          */
         updateReplicateOperators();
-    }
-
-    /**
-     * Update the list of symmetry operators used to generate the replicates
-     * super cell from the asymmetric unit.
-     */
-    private void updateReplicateOperators() {
-        List<SymOp> symOps = spaceGroup.symOps;
-        /**
-         * First, we remove the existing symmetry operators.
-         */
-        symOps.clear();
-
-        /**
-         * Now create symmetry operators for each replicate. Note that the first
-         * symOp is still equivalent to the asymmetric unit and the first set of
-         * symOps are still equivalent to the unit cell.
-         */
-        double dX = 1.0 / (double) l;
-        double dY = 1.0 / (double) m;
-        double dZ = 1.0 / (double) n;
-        for (int i = 0; i < l; i++) {
-            for (int j = 0; j < m; j++) {
-                for (int k = 0; k < n; k++) {
-                    int ii = 0;
-                    for (SymOp symOp : unitCell.spaceGroup.symOps) {
-                        double repTrans[] = new double[3];
-                        repTrans[0] = (symOp.tr[0] + i) * dX;
-                        repTrans[1] = (symOp.tr[1] + j) * dY;
-                        repTrans[2] = (symOp.tr[2] + k) * dZ;
-                        SymOp repSymOp = new SymOp(symOp.rot, repTrans);
-                        symOps.add(repSymOp);
-                        if (logger.isLoggable(Level.FINEST)) {
-                            logger.finest(format("\n SymOp (%2d,%2d,%2d): %d", i, j, k, ii));
-                            logger.finest(repSymOp.toString());
-                        }
-                        ii++;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Change the cell parameters for the base unit cell, which is followed by
-     * an update of the ReplicateCrystal parameters and possibly the number of
-     * replicated cells.
-     *
-     * @param a The length of the a-axis for the base unit cell (in Angstroms).
-     * @param b The length of the b-axis for the base unit cell (in Angstroms).
-     * @param c The length of the c-axis for the base unit cell (in Angstroms).
-     * @param alpha The angle between the b-axis and c-axis (in Degrees).
-     * @param beta The angle between the a-axis and c-axis (in Degrees).
-     * @param gamma The angle between the a-axis and b-axis (in Degrees).
-     * @return True is returned if the unit cell and replicates cell are updated
-     * successfully.
-     */
-    @Override
-    public boolean changeUnitCellParameters(double a, double b, double c,
-                                            double alpha, double beta, double gamma) {
-
-        /**
-         * First, update the parameters of the unit cell.
-         */
-        if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
-            /**
-             * Then, update the parameters of the ReplicatesCrystal and possibly
-             * the number of replicates.
-             */
-            return updateReplicatesDimentions();
-        }
-        return false;
-    }
-
-    private boolean updateReplicatesDimentions() {
-        /**
-         * Then, update the parameters of the ReplicatesCrystal and possibly
-         * the number of replicates.
-         */
-        int ll = 1;
-        int mm = 1;
-        int nn = 1;
-
-        while (unitCell.interfacialRadiusA * ll < cutOff) {
-            ll++;
-        }
-        while (unitCell.interfacialRadiusB * mm < cutOff) {
-            mm++;
-        }
-        while (unitCell.interfacialRadiusC * nn < cutOff) {
-            nn++;
-        }
-        if (super.changeUnitCellParameters(unitCell.a * ll, unitCell.b * mm, unitCell.c * nn,
-                unitCell.alpha, unitCell.beta, unitCell.gamma)) {
-            l = ll;
-            m = mm;
-            n = nn;
-            updateReplicateOperators();
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public void setCheckRestrictions(boolean checkRestrictions) {
-        this.checkRestrictions = checkRestrictions;
-        unitCell.setCheckRestrictions(checkRestrictions);
-    }
-
-    @Override
-    public boolean getCheckRestrictions() {
-        return unitCell.getCheckRestrictions();
-    }
-
-    /**
-     * Two crystals are equal only if all unit cell parameters are exactly the
-     * same.
-     */
-    @Override
-    public boolean strictEquals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
-        if (!(obj instanceof ReplicatesCrystal)) {
-            return false;
-        }
-
-        if (this == obj) {
-            return true;
-        }
-
-        ReplicatesCrystal other = (ReplicatesCrystal) obj;
-
-        if (!this.unitCell.strictEquals(other.unitCell)) {
-            return false;
-        }
-
-        return (a == other.a && b == other.b && c == other.c
-                && alpha == other.alpha && beta == other.beta && gamma == other.gamma
-                && spaceGroup.number == other.spaceGroup.number
-                && spaceGroup.symOps.size() == other.spaceGroup.symOps.size());
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Returns the unit cell for this ReplicatesCrystal. This is useful for the
-     * reciprocal space portion of PME that operates on the unit cell even
-     * though the real space cutoff requires a ReplicatesCrystal.
-     */
-    @Override
-    public Crystal getUnitCell() {
-        return unitCell;
-    }
-
-    public double getDensity(double mass) {
-        return unitCell.getDensity(mass);
-    }
-
-    public void setDensity(double dens, double mass) {
-        unitCell.setDensity(dens, mass);
-        updateReplicatesDimentions();
-    }
-
-    public void randomParameters(double dens, double mass) {
-        unitCell.randomParameters(dens, mass);
-        updateReplicatesDimentions();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Include information about the base unit cell and replicates cell.
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder(unitCell.toString());
-
-        sb.append("\n\n Replicates Cell\n");
-        sb.append(String.format("  Dimension:                    (%3d x%3d x%3d)\n", l, m, n));
-        sb.append(String.format("  A-axis:                              %8.3f\n", a));
-        sb.append(String.format("  B-axis:                              %8.3f\n", b));
-        sb.append(String.format("  C-axis:                              %8.3f\n", c));
-        sb.append(String.format("  Alpha:                               %8.3f\n", alpha));
-        sb.append(String.format("  Beta:                                %8.3f\n", beta));
-        sb.append(String.format("  Gamma:                               %8.3f\n", gamma));
-        sb.append(String.format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
-        return sb.toString();
     }
 
     /**
@@ -315,7 +123,7 @@ public class ReplicatesCrystal extends Crystal {
      * cell is already sufficiently large, then it is returned.
      *
      * @param unitCell The unit cell of the crystal.
-     * @param cutOff2 Two times the cutoff distance.
+     * @param cutOff2  Two times the cutoff distance.
      * @return A Crystal or ReplicatesCrystal large enough to satisfy the
      * minimum image convention.
      */
@@ -345,6 +153,210 @@ public class ReplicatesCrystal extends Crystal {
             return new ReplicatesCrystal(unitCell, l, m, n, cutOff2);
         } else {
             return unitCell;
+        }
+    }
+
+    /**
+     * Return the density of the ReplicatesCrystal.
+     *
+     * @param mass The mass of the ReplicatesCrystal.
+     * @return The density.
+     */
+    public double getDensity(double mass) {
+        return unitCell.getDensity(mass);
+    }
+
+    /**
+     * Update the ReplicatesCrystal dimensions to the target density.
+     *
+     * @param density Target density.
+     * @param mass    Mass of the ReplicatesCrystal.
+     */
+    public void setDensity(double density, double mass) {
+        unitCell.setDensity(density, mass);
+        updateReplicatesDimensions();
+    }
+
+    /**
+     * Update the ReplicatesCrystal using random parameters with the target density.
+     *
+     * @param density Target density.
+     * @param mass    Mass of the ReplicatesCrystal.
+     */
+    public void randomParameters(double density, double mass) {
+        unitCell.randomParameters(density, mass);
+        updateReplicatesDimensions();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCheckRestrictions(boolean checkRestrictions) {
+        this.checkRestrictions = checkRestrictions;
+        unitCell.setCheckRestrictions(checkRestrictions);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean getCheckRestrictions() {
+        return unitCell.getCheckRestrictions();
+    }
+
+    /**
+     * Two crystals are equal only if all unit cell parameters are exactly the same.
+     */
+    @Override
+    public boolean strictEquals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+
+        if (!(obj instanceof ReplicatesCrystal)) {
+            return false;
+        }
+
+        if (this == obj) {
+            return true;
+        }
+
+        ReplicatesCrystal other = (ReplicatesCrystal) obj;
+
+        if (!this.unitCell.strictEquals(other.unitCell)) {
+            return false;
+        }
+
+        return (a == other.a && b == other.b && c == other.c
+                && alpha == other.alpha && beta == other.beta && gamma == other.gamma
+                && spaceGroup.number == other.spaceGroup.number
+                && spaceGroup.symOps.size() == other.spaceGroup.symOps.size());
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the unit cell for this ReplicatesCrystal. This is useful for the
+     * reciprocal space portion of PME that operates on the unit cell even
+     * though the real space cutoff requires a ReplicatesCrystal.
+     */
+    @Override
+    public Crystal getUnitCell() {
+        return unitCell;
+    }
+
+    /**
+     * Change the cell parameters for the base unit cell, which is followed by
+     * an update of the ReplicateCrystal parameters and possibly the number of
+     * replicated cells.
+     *
+     * @param a     The length of the a-axis for the base unit cell (in Angstroms).
+     * @param b     The length of the b-axis for the base unit cell (in Angstroms).
+     * @param c     The length of the c-axis for the base unit cell (in Angstroms).
+     * @param alpha The angle between the b-axis and c-axis (in Degrees).
+     * @param beta  The angle between the a-axis and c-axis (in Degrees).
+     * @param gamma The angle between the a-axis and b-axis (in Degrees).
+     * @return True is returned if the unit cell and replicates cell are updated
+     * successfully.
+     */
+    @Override
+    public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta, double gamma) {
+
+        // First, update the parameters of the unit cell.
+        if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
+
+            // Then, update the parameters of the ReplicatesCrystal and possibly the number of replicates.
+            return updateReplicatesDimensions();
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Include information about the base unit cell and replicates cell.
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(unitCell.toString());
+
+        sb.append("\n\n Replicates Cell\n");
+        sb.append(format("  Dimension:                    (%3d x%3d x%3d)\n", l, m, n));
+        sb.append(format("  A-axis:                              %8.3f\n", a));
+        sb.append(format("  B-axis:                              %8.3f\n", b));
+        sb.append(format("  C-axis:                              %8.3f\n", c));
+        sb.append(format("  Alpha:                               %8.3f\n", alpha));
+        sb.append(format("  Beta:                                %8.3f\n", beta));
+        sb.append(format("  Gamma:                               %8.3f\n", gamma));
+        sb.append(format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
+        return sb.toString();
+    }
+
+    private boolean updateReplicatesDimensions() {
+        // Then, update the parameters of the ReplicatesCrystal and possibly the number of replicates.
+        int ll = 1;
+        int mm = 1;
+        int nn = 1;
+
+        while (unitCell.interfacialRadiusA * ll < cutOff) {
+            ll++;
+        }
+        while (unitCell.interfacialRadiusB * mm < cutOff) {
+            mm++;
+        }
+        while (unitCell.interfacialRadiusC * nn < cutOff) {
+            nn++;
+        }
+        if (super.changeUnitCellParameters(unitCell.a * ll, unitCell.b * mm, unitCell.c * nn,
+                unitCell.alpha, unitCell.beta, unitCell.gamma)) {
+            l = ll;
+            m = mm;
+            n = nn;
+            updateReplicateOperators();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Update the list of symmetry operators used to generate the replicates
+     * super cell from the asymmetric unit.
+     */
+    private void updateReplicateOperators() {
+        List<SymOp> symOps = spaceGroup.symOps;
+
+        // First, we remove the existing symmetry operators.
+        symOps.clear();
+
+        /*
+          Now create symmetry operators for each replicate. Note that the first
+          symOp is still equivalent to the asymmetric unit and the first set of
+          symOps are still equivalent to the unit cell.
+         */
+        double dX = 1.0 / (double) l;
+        double dY = 1.0 / (double) m;
+        double dZ = 1.0 / (double) n;
+        for (int i = 0; i < l; i++) {
+            for (int j = 0; j < m; j++) {
+                for (int k = 0; k < n; k++) {
+                    int ii = 0;
+                    for (SymOp symOp : unitCell.spaceGroup.symOps) {
+                        double[] repTrans = new double[3];
+                        repTrans[0] = (symOp.tr[0] + i) * dX;
+                        repTrans[1] = (symOp.tr[1] + j) * dY;
+                        repTrans[2] = (symOp.tr[2] + k) * dZ;
+                        SymOp repSymOp = new SymOp(symOp.rot, repTrans);
+                        symOps.add(repSymOp);
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest(format("\n SymOp (%2d,%2d,%2d): %d", i, j, k, ii));
+                            logger.finest(repSymOp.toString());
+                        }
+                        ii++;
+                    }
+                }
+            }
         }
     }
 }

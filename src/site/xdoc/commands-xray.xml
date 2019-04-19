@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>X-ray Commands</title>
@@ -21,21 +21,73 @@
                 <tbody>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/xray/anneal.groovy" >xray.anneal</a>
+                            <a href="commands/xray.Anneal.html">xray.Anneal</a>
                         </td>
-                        <td>Apply simulated annealing using a reciprocal space objective function.</td>
+                        <td>Run simulated annealing to optimize a structure using a reciprocal space objective
+                            function.
+                        </td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/xray/minimize.groovy" >xray.minimize</a>
+                            <a href="commands/xray.AverageMTZ.html">xray.AverageMTZ</a>
+                        </td>
+                        <td>Average multiple MTZ files.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.CIF2MTZ.html">xray.CIF2MTZ</a>
+                        </td>
+                        <td>Convert a CIF diffraction file to MTZ format.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.ComputeFc.html">xray.ComputeFc</a>
+                        </td>
+                        <td>Write out computed structure factors.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.Deuterate.html">xray.Deuterate</a>
+                        </td>
+                        <td>Deuterate exchangable hydrogens of the PDB model.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.Dynamics.html">xray.Dynamics</a>
+                        </td>
+                        <td>Run Dynamics simulations using a reciprocal space objective function.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.ManyBody.html">xray.ManyBody</a>
+                        </td>
+                        <td>Globally optimize the side-chains of a protein using a reciprocal space objective
+                            function.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.Minimize.html">xray.Minimize</a>
                         </td>
                         <td>X-ray Refinement using a reciprocal space objective function.</td>
                     </tr>
                     <tr>
                         <td>
-                            <a href="modules/xray/scripts/xray/scaleBulk.groovy" >xray.scaleBulk</a>
+                            <a href="commands/xray.ModelvsData.html">xray.ModelvsData</a>
                         </td>
-                        <td>Compute the bulk solvent contribution to the X-ray target.</td>
+                        <td>Compare the calculated diffraction of the model to the diffraction data.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.MTZInfo.html">xray.MTZInfo</a>
+                        </td>
+                        <td>Write out information on an MTZ file.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="commands/xray.Timer.html">xray.Timer</a>
+                        </td>
+                        <td>Time the computation of the reciprocal space objective function and gradient.</td>
                     </tr>
                 </tbody>
             </table>

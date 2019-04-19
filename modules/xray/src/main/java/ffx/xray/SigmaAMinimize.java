@@ -1,44 +1,47 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.isNaN;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -71,9 +74,9 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private final Crystal crystal;
     private final SigmaAEnergy sigmaAEnergy;
     private final int n;
-    private final double x[];
-    private final double grad[];
-    private final double scaling[];
+    private final double[] x;
+    private final double[] grad;
+    private final double[] scaling;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -102,14 +105,14 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         scaling = new double[n];
 
         for (int i = 0; i < refinementData.nbins; i++) {
-            // for optimizationscaling, best to move to 0.0
+            // For optimizationscaling, best to move to 0.0.
             x[i] = refinementData.sigmaa[i] - 1.0;
             scaling[i] = 1.0;
             x[i + refinementData.nbins] = refinementData.sigmaw[i];
             scaling[i + refinementData.nbins] = 2.0;
         }
 
-        // generate Es
+        // Generate Es
         int type = SplineEnergy.Type.FCTOESQ;
         SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
                 refinementData, refinementData.fcesq, type);
@@ -127,18 +130,16 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         // generate initial w estimate
         ReflectionSpline spline = new ReflectionSpline(reflectionList,
                 refinementData.nbins);
-        int nmean[] = new int[refinementData.nbins];
+        int[] nmean = new int[refinementData.nbins];
         for (int i = 0; i < refinementData.nbins; i++) {
             nmean[i] = 0;
         }
         double mean = 0.0, tot = 0.0;
-        double fc[][] = refinementData.fctot;
-        double fo[][] = refinementData.fsigf;
+        double[][] fc = refinementData.fctot;
+        double[][] fo = refinementData.fsigf;
         for (HKL ih : reflectionList.hkllist) {
             int i = ih.index();
-            if (ih.allowed() == 0.0
-                    || Double.isNaN(fc[i][0])
-                    || Double.isNaN(fo[i][0])) {
+            if (ih.allowed() == 0.0 || isNaN(fc[i][0]) || isNaN(fo[i][0])) {
                 continue;
             }
 
@@ -154,13 +155,11 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             nmean[spline.i1()]++;
             tot++;
 
-            x[spline.i1() + refinementData.nbins] += (wi
-                    - x[spline.i1() + refinementData.nbins])
-                    / nmean[spline.i1()];
+            x[spline.i1() + refinementData.nbins] += (wi - x[spline.i1() + refinementData.nbins]) / nmean[spline.i1()];
             mean += (wi - mean) / tot;
         }
-        logger.info(String.format(" Starting mean w:    %8.3f", mean));
-        logger.info(String.format(" Starting w scaling: %8.3f", 1.0 / mean));
+        logger.info(format(" Starting mean w:    %8.3f", mean));
+        logger.info(format(" Starting w scaling: %8.3f", 1.0 / mean));
         for (int i = 0; i < refinementData.nbins; i++) {
             x[i] -= x[i + refinementData.nbins];
             x[i] *= scaling[i];
@@ -174,7 +173,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      *
      * @return a {@link ffx.xray.SigmaAEnergy} object.
      */
-    public SigmaAEnergy getSigmaAEnergy() {
+    SigmaAEnergy getSigmaAEnergy() {
         return sigmaAEnergy;
     }
 
@@ -193,11 +192,11 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      * @param x an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public double[] getCoordinates(double x[]) {
+    public double[] getCoordinates(double[] x) {
         if (x == null) {
             x = new double[this.x.length];
         }
-        System.arraycopy(this.x, 0, x, 0, this.x.length);
+        arraycopy(this.x, 0, x, 0, this.x.length);
         return x;
     }
 
@@ -207,8 +206,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      *
      * @return a double.
      */
-    public double calculateLikelihood() {
-
+    double calculateLikelihood() {
         sigmaAEnergy.setScaling(scaling);
         sigmaAEnergy.energyAndGradient(x, grad);
         sigmaAEnergy.setScaling(null);
@@ -272,10 +270,10 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
         switch (status) {
             case 0:
-                logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+                logger.info(format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
                 break;
             case 1:
-                logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
+                logger.info(format("\n Optimization terminated at step %d.\n", nSteps));
                 break;
             default:
                 logger.warning("\n Optimization failed.\n");
@@ -290,7 +288,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             mtime += System.nanoTime();
-            sb.append(String.format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
+            sb.append(format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
             logger.info(sb.toString());
         }
 
@@ -315,14 +313,14 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time");
         }
         if (info == null) {
-            logger.info(String.format("%6d %12.2f %10.2f",
+            logger.info(format("%6d %12.2f %10.2f",
                     iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8.3f",
+                logger.info(format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8.3f",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
-                logger.info(String.format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8s",
+                logger.info(format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8s",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }

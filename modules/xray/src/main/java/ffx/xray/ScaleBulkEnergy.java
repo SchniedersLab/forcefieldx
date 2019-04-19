@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.logging.Logger;
@@ -83,49 +83,47 @@ public class ScaleBulkEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(ScaleBulkEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
-    private static final double u11[][] = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u22[][] = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u33[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
-    private static final double u12[][] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
-    private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
-    private final double recipt[][];
-    private final double j11[][];
-    private final double j22[][];
-    private final double j33[][];
-    private final double j12[][];
-    private final double j13[][];
-    private final double j23[][];
+    private static final double[][] u11 = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u22 = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u33 = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
+    private static final double[][] u12 = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u13 = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
+    private static final double[][] u23 = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
+    private final double[][] recipt;
+    private final double[][] j11;
+    private final double[][] j22;
+    private final double[][] j33;
+    private final double[][] j12;
+    private final double[][] j13;
+    private final double[][] j23;
 
-    private final ReflectionList reflectionlist;
+    private final ReflectionList reflectionList;
     private final Crystal crystal;
     private final DiffractionRefinementData refinementData;
-    private final double fc[][];
-    private final double fctot[][];
-    private final double fo[][];
+    private final double[][] fc;
+    private final double[][] fctot;
+    private final double[][] fo;
     private final int n;
     private final int solvent_n;
-    protected double[] optimizationScaling = null;
+    private double[] optimizationScaling = null;
     private final ParallelTeam parallelTeam;
     private final ScaleBulkEnergyRegion scaleBulkEnergyRegion;
-    double totalEnergy;
+    private double totalEnergy;
     private STATE state = STATE.BOTH;
-    private final int threadCount;
 
     /**
      * <p>
      * Constructor for ScaleBulkEnergy.</p>
      *
-     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
-     *                       object.
+     * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
      * @param n              a int.
      * @param parallelTeam   the ParallelTeam to execute the ScaleBulkEnergy.
      */
-    public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata,
+    public ScaleBulkEnergy(ReflectionList reflectionList, DiffractionRefinementData refinementdata,
                            int n, ParallelTeam parallelTeam) {
-        this.reflectionlist = reflectionlist;
-        this.crystal = reflectionlist.crystal;
+        this.reflectionList = reflectionList;
+        this.crystal = reflectionList.crystal;
         this.refinementData = refinementdata;
         this.fc = refinementdata.fc;
         this.fctot = refinementdata.fctot;
@@ -141,8 +139,7 @@ public class ScaleBulkEnergy implements Potential {
         j13 = mat3Mat3(mat3Mat3(crystal.A, u13), recipt);
         j23 = mat3Mat3(mat3Mat3(crystal.A, u23), recipt);
 
-        // parallelTeam = new ParallelTeam(1);
-        threadCount = parallelTeam.getThreadCount();
+        int threadCount = parallelTeam.getThreadCount();
         this.parallelTeam = parallelTeam;
         scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
     }
@@ -198,14 +195,14 @@ public class ScaleBulkEnergy implements Potential {
     private class ScaleBulkEnergyRegion extends ParallelRegion {
 
         boolean gradient = true;
-        double x[];
-        double g[];
+        double[] x;
+        double[] g;
         double solvent_k;
         double model_k;
         double solvent_ueq;
-        private final double model_b[] = new double[6];
-        private final double ustar[][] = new double[3][3];
-        private final double resm[][] = new double[3][3];
+        private final double[] model_b = new double[6];
+        private final double[][] ustar = new double[3][3];
+        private final double[][] resm = new double[3][3];
         SharedDouble r;
         SharedDouble rf;
         SharedDouble rfree;
@@ -213,7 +210,7 @@ public class ScaleBulkEnergy implements Potential {
         SharedDouble sum;
         SharedDouble sumfo;
         SharedDoubleArray grad;
-        ScaleBulkEnergyLoop scaleBulkEnergyLoop[];
+        ScaleBulkEnergyLoop[] scaleBulkEnergyLoop;
 
         public ScaleBulkEnergyRegion(int nThreads) {
             scaleBulkEnergyLoop = new ScaleBulkEnergyLoop[nThreads];
@@ -254,9 +251,7 @@ public class ScaleBulkEnergy implements Potential {
                 solvent_ueq = x[2];
             }
 
-            /**
-             * Generate Ustar
-             */
+            // Generate Ustar.
             mat3SymVec6(crystal.A, model_b, resm);
             mat3Mat3(resm, recipt, ustar);
 
@@ -278,7 +273,7 @@ public class ScaleBulkEnergy implements Potential {
             }
 
             try {
-                execute(0, reflectionlist.hkllist.size() - 1, scaleBulkEnergyLoop[ti]);
+                execute(0, reflectionList.hkllist.size() - 1, scaleBulkEnergyLoop[ti]);
             } catch (Exception e) {
                 logger.info(e.toString());
             }
@@ -291,28 +286,18 @@ public class ScaleBulkEnergy implements Potential {
                     g[i] = grad.get(i);
                 }
             }
-
-            /*
-             logger.info(String.format("Bulk R         %16.8f", r.get()));
-             logger.info(String.format("Bulk Rf        %16.8f", rf.get()));
-             logger.info(String.format("Bulk Rfree     %16.8f", rfree.get()));
-             logger.info(String.format("Bulk Rfreef    %16.8f", rfreef.get()));
-             logger.info(String.format("Bulk Sum       %16.8f", sum.get()));
-             logger.info(String.format("Bulk Sum Fo    %16.8f", sumfo.get()));
-             logger.info(String.format("Bulk Sum/SumFo %16.8f", sum.get()/sumfo.get()));
-             */
         }
 
         private class ScaleBulkEnergyLoop extends IntegerForLoop {
 
-            private final double resv[] = new double[3];
-            private final double ihc[] = new double[3];
+            private final double[] resv = new double[3];
+            private final double[] ihc = new double[3];
             private final ComplexNumber resc = new ComplexNumber();
             private final ComplexNumber fcc = new ComplexNumber();
             private final ComplexNumber fsc = new ComplexNumber();
             private final ComplexNumber fct = new ComplexNumber();
             private final ComplexNumber kfct = new ComplexNumber();
-            private final double lgrad[];
+            private final double[] lgrad;
             private double lr;
             private double lrf;
             private double lrfree;
@@ -339,7 +324,7 @@ public class ScaleBulkEnergy implements Potential {
             public void run(int lb, int ub) throws Exception {
 
                 for (int j = lb; j <= ub; j++) {
-                    HKL ih = reflectionlist.hkllist.get(j);
+                    HKL ih = reflectionList.hkllist.get(j);
                     int i = ih.index();
                     if (Double.isNaN(fc[i][0])
                             || Double.isNaN(fo[i][0])
@@ -347,9 +332,7 @@ public class ScaleBulkEnergy implements Potential {
                         continue;
                     }
 
-                    /**
-                     * Constants
-                     */
+                    // Constants
                     double s = Crystal.invressq(crystal, ih);
                     ihc[0] = ih.h();
                     ihc[1] = ih.k();
@@ -360,9 +343,7 @@ public class ScaleBulkEnergy implements Potential {
                     double ksExpBS = solvent_k * expBS;
                     double expU = exp(0.25 * u);
 
-                    /**
-                     * Structure Factors
-                     */
+                    // Structure Factors
                     refinementData.getFcIP(i, fcc);
                     refinementData.getFsIP(i, fsc);
                     fct.copy(fcc);
@@ -374,15 +355,11 @@ public class ScaleBulkEnergy implements Potential {
                     kfct.copy(fct);
                     kfct.timesIP(expU);
 
-                    /**
-                     * Total structure factor (for refinement)
-                     */
+                    // Total structure factor (for refinement)
                     fctot[i][0] = kfct.re();
                     fctot[i][1] = kfct.im();
 
-                    /**
-                     * Target
-                     */
+                    // Target
                     double f1 = refinementData.getF(i);
                     double akfct = kfct.abs();
                     double af1 = abs(f1);
@@ -402,21 +379,15 @@ public class ScaleBulkEnergy implements Potential {
                     }
 
                     if (gradient) {
-                        /**
-                         * model_k/model_b - common derivative element
-                         */
+                        // model_k/model_b - common derivative element
                         double dfm = 0.25 * akfct * dr;
-                        /**
-                         * bulk solvent - common derivative element
-                         */
+                        // bulk solvent - common derivative element
                         double afsc = fsc.abs();
                         double dfb = expBS * (fcc.re() * fsc.re()
                                 + fcc.im() * fsc.im()
                                 + ksExpBS * afsc * afsc);
 
-                        /**
-                         * model_k derivative
-                         */
+                        // model_k derivative
                         lgrad[0] += dfm;
                         if (solvent_n > 1) {
                             double iafct = 1.0 / fct.abs();
@@ -498,7 +469,7 @@ public class ScaleBulkEnergy implements Potential {
      * @param print    a boolean.
      * @return a double.
      */
-    public double target(double x[], double g[],
+    public double target(double[] x, double[] g,
                          boolean gradient, boolean print) {
 
         try {
@@ -529,12 +500,12 @@ public class ScaleBulkEnergy implements Potential {
             sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
                     (r / rf) * 100.0, (rfree / rfreef) * 100.0));
             sb.append("x: ");
-            for (int i = 0; i < x.length; i++) {
-                sb.append(String.format("%8g ", x[i]));
+            for (double x1 : x) {
+                sb.append(String.format("%8g ", x1));
             }
             sb.append("\ng: ");
-            for (int i = 0; i < g.length; i++) {
-                sb.append(String.format("%8g ", g[i]));
+            for (double v : g) {
+                sb.append(String.format("%8g ", v));
             }
             sb.append("\n");
             logger.info(sb.toString());

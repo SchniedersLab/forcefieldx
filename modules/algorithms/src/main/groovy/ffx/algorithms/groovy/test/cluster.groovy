@@ -1,46 +1,49 @@
-/**
- * Title: Force Field X.
- *
- * Description: Force Field X - Software for Molecular Biophysics.
- *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- *
- * This file is part of Force Field X.
- *
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- *
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- *
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
-
-package ffx.algorithms.groovy.test;
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
+package ffx.algorithms.groovy.test
 
 import groovy.cli.picocli.CliBuilder
 
-import ffx.potential.parsers.CoordinateFileFilter
+import ffx.algorithms.AlgorithmFunctions
+import ffx.algorithms.AlgorithmUtils
+import ffx.algorithms.misc.ClusterStructures
+import ffx.algorithms.misc.ClusterStructures.ClustAlg
+import ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction
 import ffx.potential.parsers.PDBFileFilter
 import static ffx.algorithms.misc.ClusterStructures.ClustAlg.AV_LINK
 import static ffx.algorithms.misc.ClusterStructures.ClustAlg.CLINK
@@ -50,17 +53,15 @@ import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.CA_R
 import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.DIHEDRALS
 import static ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction.RMSD
 
-boolean copyFiles = true;
-boolean parallel = true;
-String[] sourceFileNames;
-File[] clusterFiles;
-ffx.algorithms.AlgorithmFunctions utils;
-String outputDirectoryName = "ffx_cluster_";
-ffx.algorithms.misc.ClusterStructures.ClustAlg algorithm = ffx.algorithms.misc.ClusterStructures.ClustAlg.AV_LINK;
-ffx.algorithms.misc.ClusterStructures.ClusterDistanceFunction distFunction = RMSD;
-int numClusters = 0;
-int cacheSize = 1000;
-double rmsdCutoff = 1.0;
+boolean copyFiles = true
+boolean parallel = true
+AlgorithmFunctions utils
+String outputDirectoryName = "ffx_cluster_"
+ClustAlg algorithm = AV_LINK
+ClusterDistanceFunction distFunction = RMSD
+int numClusters = 0
+int cacheSize = 1000
+double rmsdCutoff = 1.0
 
 // Create the command line parser.
 def cli = new CliBuilder(usage: ' ffxc test.cluster [options] <pdbfilename>');
@@ -82,9 +83,9 @@ if (options.h || arguments == null || arguments.size() < 1) {
 }
 
 try {
-    utils = getAlgorithmUtils();
+    utils = getAlgorithmUtils()
 } catch (MissingMethodException ex) {
-    utils = new ffx.algorithms.AlgorithmUtils();
+    utils = new AlgorithmUtils()
 }
 
 if (options.w) {
@@ -163,11 +164,7 @@ if (numClusters < 1 && rmsdCutoff <= 0) {
 }
 
 PDBFileFilter pdbFilter = new PDBFileFilter();
-CoordinateFileFilter coordinateFilter = new CoordinateFileFilter();
-List<File> modelFiles = new ArrayList<>();
-int numTempFiles = 0;
-File tempDirectory = null;
-String tempDirName = "";
+List<File> modelFiles = new ArrayList<>()
 
 // Temporary, simplified system for loading files: one directory of PDBs.
 String dirname = arguments.get(i);
@@ -350,13 +347,13 @@ if (tempDirectory != null) {
     //FileUtils.deleteDirectory(tempDirectory);
 }*/
 
-ffx.algorithms.misc.ClusterStructures clusterer = new ffx.algorithms.misc.ClusterStructures(utils, modelFiles);
-clusterer.setAlgorithm(algorithm);
-clusterer.setNumClusters(numClusters);
-clusterer.setOutputDirectoryPrefix(outputDirectoryName);
-clusterer.setDistanceFunction(distFunction);
-clusterer.setCopyFiles(copyFiles);
-clusterer.setClusterParallel(parallel);
-clusterer.setCacheSize(cacheSize);
-clusterer.setRmsdCutoff(rmsdCutoff);
-clusterer.cluster();
+ClusterStructures clusterer = new ClusterStructures(utils, modelFiles)
+clusterer.setAlgorithm(algorithm)
+clusterer.setNumClusters(numClusters)
+clusterer.setOutputDirectoryPrefix(outputDirectoryName)
+clusterer.setDistanceFunction(distFunction)
+clusterer.setCopyFiles(copyFiles)
+clusterer.setClusterParallel(parallel)
+clusterer.setCacheSize(cacheSize)
+clusterer.setRmsdCutoff(rmsdCutoff)
+clusterer.cluster()

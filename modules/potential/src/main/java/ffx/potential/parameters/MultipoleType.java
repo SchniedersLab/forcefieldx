@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parameters;
 
 import java.util.Arrays;
@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -84,19 +85,27 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     /**
      * Conversion from electron-Angstroms^2 to Buckinghams
      */
-    public static final double BUCKINGHAM = DEBYE * DEBYE;
+    private static final double BUCKINGHAM = DEBYE * DEBYE;
     /**
      * Conversion from Bohr to Angstroms
      */
-    public static final double BOHR = 0.52917720859;
+    private static final double BOHR = 0.52917720859;
     /**
      * Conversion from Bohr^2 to Angstroms^2
      */
-    public static final double BOHR2 = BOHR * BOHR;
+    private static final double BOHR2 = BOHR * BOHR;
     /**
      * Conversion from electron**2/Ang to kcal/mole.
      */
     public static final double ELECTRIC = 332.063709;
+    /**
+     * Constant <code>zeroM</code>
+     */
+    public static final double[] zeroM = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    /**
+     * Constant <code>zeroD</code>
+     */
+    public static final double[] zeroD = new double[]{0.0, 0.0, 0.0};
     /**
      * Partial atomic charge (e).
      */
@@ -104,11 +113,11 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     /**
      * Atomic dipole. 1 x 3 (e Angstroms).
      */
-    public final double dipole[];
+    public final double[] dipole;
     /**
      * Atomic quadrupole. 3 x 3 (e Angstroms^2).
      */
-    public final double quadrupole[][];
+    public final double[][] quadrupole;
     /**
      * Local frame definition method.
      */
@@ -122,15 +131,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * dz, qxx, qyy, qzz, qxy, qxz, qyz
      */
     private final double[] multipole;
-
-    /**
-     * Constant <code>zeroM</code>
-     */
-    public static final double[] zeroM = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    /**
-     * Constant <code>zeroD</code>
-     */
-    public static final double[] zeroD = new double[]{0.0, 0.0, 0.0};
 
     /**
      * Multipole Constructor. Conversion to electron Angstroms should be
@@ -195,15 +195,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * Exposes multipole array for editing; makes this process explicit.
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[] getMultipoleReference() {
-        return multipole;
-    }
-
-    /**
      * <p>Getter for the field <code>charge</code>.</p>
      *
      * @return An uneditable copy of this type's charge. To make changes, use
@@ -242,7 +233,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      *
      * @param increment a int.
      */
-    public void incrementType(int increment) {
+    void incrementType(int increment) {
         for (int i = 0; i < frameAtomTypes.length; i++) {
             // Frame atom types of 0 are unchanged.
             if (frameAtomTypes[i] > 0) {
@@ -260,12 +251,11 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @param typeMap a lookup between new atom types and known atom types.
      * @return a {@link ffx.potential.parameters.MultipoleType} object.
      */
-    public MultipoleType patchTypes(HashMap<AtomType, AtomType> typeMap) {
+    MultipoleType patchTypes(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
         int len = frameAtomTypes.length;
-        /**
-         * Look for a MultipoleType that contain a mapped atom class.
-         */
+
+        // Look for a MultipoleType that contain a mapped atom class.
         for (AtomType newType : typeMap.keySet()) {
             for (int i = 0; i < len; i++) {
                 if (frameAtomTypes[i] == newType.type || frameAtomTypes[i] == 0) {
@@ -273,9 +263,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
                 }
             }
         }
-        /**
-         * If found, create a new MultipoleType that bridges to known classes.
-         */
+
+        // If found, create a new MultipoleType that bridges to known classes.
         if (count > 0 && count < len) {
             int newFrame[] = Arrays.copyOf(frameAtomTypes, len);
             for (AtomType newType : typeMap.keySet()) {
@@ -326,12 +315,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @return a boolean.
      */
     public static boolean assignMultipole(Atom atom, ForceField forceField,
-                                          double multipole[], int i, int axisAtom[][], MultipoleFrameDefinition frame[]) {
+                                          double[] multipole, int i, int[][] axisAtom,
+                                          MultipoleFrameDefinition[] frame) {
         MultipoleType type = multipoleTypeFactory(atom, forceField);
         if (type == null) {
             return false;
         }
-        System.arraycopy(type.getMultipole(), 0, multipole, 0, 10);
+        arraycopy(type.getMultipole(), 0, multipole, 0, 10);
         axisAtom[i] = atom.getAxisAtomIndices();
         frame[i] = atom.getMultipoleType().frameDefinition;
         return true;
@@ -360,7 +350,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             logger.fine(message);
             double polarizability = 0.0;
             double thole = 0.0;
-            int polarizationGroup[] = null;
+            int[] polarizationGroup = null;
             polarizeType = new PolarizeType(atomType.type,
                     polarizability, thole, polarizationGroup);
             forceField.addForceFieldType(polarizeType);
@@ -373,8 +363,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         MultipoleType multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
             atom.setMultipoleType(multipoleType);
-            // Atom axisAtom = null;
-            // atom.setAxisAtoms(axisAtom);
             atom.setAxisAtoms(null);
             return multipoleType;
         }
@@ -384,6 +372,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         if (bonds == null || bonds.size() < 1) {
             String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
             logger.severe(message);
+            return null;
         }
 
         // 1 reference atom.
@@ -418,9 +407,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             }
         }
 
-        /**
-         * 3 reference atoms.
-         */
+        // 3 reference atoms.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
             String key2 = atom2.getAtomType().getKey();
@@ -461,10 +448,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             }
         }
 
-        /**
-         * Revert to a 2 reference atom definition that may include a 1-3 site.
-         * For example a hydrogen on water.
-         */
+        // Revert to a 2 reference atom definition that may include a 1-3 site. For example a hydrogen on water.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
             String key2 = atom2.getAtomType().getKey();
@@ -523,14 +507,14 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @return Whether this multipole underwent chiral inversion.
      */
     public static boolean checkMultipoleChirality(double[] multipole, MultipoleFrameDefinition frame,
-                                                  double localOrigin[], double frameCoords[][]) {
+                                                  double[] localOrigin, double[][] frameCoords) {
         if (frame != MultipoleFrameDefinition.ZTHENX) {
             return false;
         }
-        double zAxis[] = new double[3];
-        double xAxis[] = new double[3];
-        double yAxis[] = new double[3];
-        double yMinOrigin[] = new double[3];
+        double[] zAxis = new double[3];
+        double[] xAxis = new double[3];
+        double[] yAxis = new double[3];
+        double[] yMinOrigin = new double[3];
         zAxis[0] = frameCoords[0][0];
         zAxis[1] = frameCoords[0][1];
         zAxis[2] = frameCoords[0][2];
@@ -570,10 +554,10 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @return the rotation matrix
      */
     public static double[][] getRotationMatrix(MultipoleFrameDefinition frame,
-                                               double localOrigin[], double frameCoords[][]) {
+                                               double[] localOrigin, double[][] frameCoords) {
         double[][] rotmat = new double[3][3];
-        double zAxis[] = new double[3];
-        double xAxis[] = new double[3];
+        double[] zAxis = new double[3];
+        double[] xAxis = new double[3];
         switch (frame) {
             case BISECTOR:
                 zAxis[0] = frameCoords[0][0];
@@ -597,7 +581,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
                 norm(xAxis, xAxis);
                 break;
             case ZTHENBISECTOR:
-                double yAxis[] = new double[3];
+                double[] yAxis = new double[3];
                 zAxis[0] = frameCoords[0][0];
                 zAxis[1] = frameCoords[0][1];
                 zAxis[2] = frameCoords[0][2];
@@ -677,7 +661,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @param dipole        an array of {@link double} objects.
      * @param rotatedDipole an array of {@link double} objects.
      */
-    public static void rotateDipole(double rotmat[][], double dipole[], double rotatedDipole[]) {
+    public static void rotateDipole(double[][] rotmat, double[] dipole, double[] rotatedDipole) {
         for (int i = 0; i < 3; i++) {
             double[] rotmati = rotmat[i];
             for (int j = 0; j < 3; j++) {
@@ -695,8 +679,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @param rotatedDipole     an array of {@link double} objects.
      * @param rotatedQuadrupole an array of {@link double} objects.
      */
-    public static void rotateMultipole(double rotmat[][], double dipole[],
-                                       double quadrupole[][], double rotatedDipole[], double rotatedQuadrupole[][]) {
+    public static void rotateMultipole(double[][] rotmat, double[] dipole,
+                                       double[][] quadrupole, double[] rotatedDipole, double[][] rotatedQuadrupole) {
         for (int i = 0; i < 3; i++) {
             double[] rotmati = rotmat[i];
             double[] quadrupolei = rotatedQuadrupole[i];
@@ -722,14 +706,14 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * Pack charge, dipole, quad into 1d tensor array form.
      *
      * @param charge a double.
-     * @param dipl   an array of {@link double} objects.
+     * @param dipole an array of {@link double} objects.
      * @param quad   an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public static double[] pack(double charge, double[] dipl, double[][] quad) {
+    private static double[] pack(double charge, double[] dipole, double[][] quad) {
         return new double[]{
                 charge,
-                dipl[0], dipl[1], dipl[2],
+                dipole[0], dipole[1], dipole[2],
                 quad[0][0], quad[1][1], quad[2][2], quad[0][1], quad[0][2], quad[1][2]};
     }
 
@@ -791,7 +775,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      *
      * @return String
      */
-    public String toBohrString() {
+    private String toBohrString() {
         StringBuilder multipoleBuffer = new StringBuilder("multipole");
         if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
             multipoleBuffer.append(format("  %5d", frameAtomTypes[0]));
@@ -847,13 +831,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             multipoleBuffer.append(format("(%3d,%3d,%3d,%3d): ",
                     frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
         } else {
-            multipoleBuffer.append(format("("));
+            multipoleBuffer.append("(");
             for (int i : frameAtomTypes) {
                 multipoleBuffer.append(format("%3d,", i));
             }
             int comma = multipoleBuffer.lastIndexOf(",");
             multipoleBuffer.replace(comma, comma + 1, "");
-            multipoleBuffer.append(format("): "));
+            multipoleBuffer.append("): ");
         }
         multipoleBuffer.append(format("[%6.3f / %6.3f %6.3f %6.3f / %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f]",
                 charge,
@@ -909,81 +893,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return toBohrString();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String s1, String s2) {
-        String keys1[] = s1.split(" ");
-        String keys2[] = s2.split(" ");
-
-        int len = keys1.length;
-        if (keys1.length > keys2.length) {
-            len = keys2.length;
-        }
-        int c1[] = new int[len];
-        int c2[] = new int[len];
-        for (int i = 0; i < len; i++) {
-            c1[i] = abs(Integer.parseInt(keys1[i]));
-            c2[i] = abs(Integer.parseInt(keys2[i]));
-            if (c1[i] < c2[i]) {
-                return -1;
-            } else if (c1[i] > c2[i]) {
-                return 1;
-            }
-        }
-
-        if (keys1.length < keys2.length) {
-            return -1;
-        } else if (keys1.length > keys2.length) {
-            return 1;
-        }
-
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (other == null || !(other instanceof MultipoleType)) {
-            return false;
-        }
-        MultipoleType multipoleType = (MultipoleType) other;
-        int c[] = multipoleType.frameAtomTypes;
-        if (c.length != frameAtomTypes.length) {
-            return false;
-        }
-        for (int i = 0; i < c.length; i++) {
-            if (c[i] != this.frameAtomTypes[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 29 * hash + Arrays.hashCode(frameAtomTypes);
-        return hash;
-    }
-
-    /**
      * Average two MultipoleType instances. The atom types that define the frame
      * of the new type must be supplied.
      *
@@ -1031,7 +940,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @param weights an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public static double[] weightMultipole(MultipoleType[] types, double[] weights) {
+    private static double[] weightMultipole(MultipoleType[] types, double[] weights) {
         if (types == null || weights == null || types.length != weights.length) {
             throw new IllegalArgumentException();
         }
@@ -1059,86 +968,122 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * Indices into a 1D tensor array based on compressed tensor notation. This
-     * makes multipole code much easier to read.
+     * {@inheritDoc}
      */
-    /** Constant <code>chrg=t000</code> */
+    @Override
+    public String toString() {
+        return toBohrString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String s1, String s2) {
+        String[] keys1 = s1.split(" ");
+        String[] keys2 = s2.split(" ");
+
+        int len = keys1.length;
+        if (keys1.length > keys2.length) {
+            len = keys2.length;
+        }
+        int[] c1 = new int[len];
+        int[] c2 = new int[len];
+        for (int i = 0; i < len; i++) {
+            c1[i] = abs(Integer.parseInt(keys1[i]));
+            c2[i] = abs(Integer.parseInt(keys2[i]));
+            if (c1[i] < c2[i]) {
+                return -1;
+            } else if (c1[i] > c2[i]) {
+                return 1;
+            }
+        }
+
+        if (keys1.length < keys2.length) {
+            return -1;
+        } else if (keys1.length > keys2.length) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (!(other instanceof MultipoleType)) {
+            return false;
+        }
+        MultipoleType multipoleType = (MultipoleType) other;
+        int c[] = multipoleType.frameAtomTypes;
+        if (c.length != frameAtomTypes.length) {
+            return false;
+        }
+        for (int i = 0; i < c.length; i++) {
+            if (c[i] != this.frameAtomTypes[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 29 * hash + Arrays.hashCode(frameAtomTypes);
+        return hash;
+    }
+
+    /* Indices into a 1D tensor array based on compressed tensor notation. This makes multipole code easier to read. */
+
     /**
      * Constant <code>chrg=t000</code>
      */
-    public static final int t000 = 0, chrg = t000;
+    public static final int t000 = 0;
     /**
      * Constant <code>t100=1</code>
      */
-    /** Constant <code>diplx=t100</code> */
-    /**
-     * Constant <code>diplx=t100</code>
-     */
-    public static final int t100 = 1, diplx = t100;
+    public static final int t100 = 1;
     /**
      * Constant <code>t010=2</code>
      */
-    /** Constant <code>diply=t010</code> */
-    /**
-     * Constant <code>diply=t010</code>
-     */
-    public static final int t010 = 2, diply = t010;
+    public static final int t010 = 2;
     /**
      * Constant <code>t001=3</code>
      */
-    /** Constant <code>diplz=t100</code> */
-    /**
-     * Constant <code>diplz=t100</code>
-     */
-    public static final int t001 = 3, diplz = t100;
+    public static final int t001 = 3;
     /**
      * Constant <code>t200=4</code>
      */
-    /** Constant <code>quadxx=t200</code> */
-    /**
-     * Constant <code>quadxx=t200</code>
-     */
-    public static final int t200 = 4, quadxx = t200;
+    public static final int t200 = 4;
     /**
      * Constant <code>t020=5</code>
      */
-    /** Constant <code>quadyy=t020</code> */
-    /**
-     * Constant <code>quadyy=t020</code>
-     */
-    public static final int t020 = 5, quadyy = t020;
+    public static final int t020 = 5;
     /**
      * Constant <code>t002=6</code>
      */
-    /** Constant <code>quadzz=t002</code> */
-    /**
-     * Constant <code>quadzz=t002</code>
-     */
-    public static final int t002 = 6, quadzz = t002;
+    public static final int t002 = 6;
     /**
      * Constant <code>t110=7</code>
      */
-    /** Constant <code>quadxy=t110</code> */
-    /**
-     * Constant <code>quadxy=t110</code>
-     */
-    public static final int t110 = 7, quadxy = t110;
+    public static final int t110 = 7;
     /**
      * Constant <code>t101=8</code>
      */
-    /** Constant <code>quadxz=t101</code> */
-    /**
-     * Constant <code>quadxz=t101</code>
-     */
-    public static final int t101 = 8, quadxz = t101;
+    public static final int t101 = 8;
     /**
      * Constant <code>t011=9</code>
      */
-    /** Constant <code>quadyz=t011</code> */
-    /**
-     * Constant <code>quadyz=t011</code>
-     */
-    public static final int t011 = 9, quadyz = t011;
+    public static final int t011 = 9;
     /**
      * Constant <code>t300=10</code>
      */

@@ -1,44 +1,45 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -68,13 +69,16 @@ import static ffx.potential.parameters.AngleType.units;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class Angle extends BondedTerm implements BondedEnergy {
+public class Angle extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(Angle.class.getName());
 
+    /**
+     * Angle modes include Normal or IN-Plane
+     */
     public enum AngleMode {
 
-        NORMAL, IN_PLANE;
+        NORMAL, IN_PLANE
     }
 
     /**
@@ -89,7 +93,13 @@ public class Angle extends BondedTerm implements BondedEnergy {
      * Number of hydrogens on the central atom that are not part of this Angle.
      */
     public int nh = 0;
+    /**
+     * Scale factor to apply to angle bending.
+     */
     private double rigidScale = 1.0;
+    /**
+     * Fourth atom for in-plane angles.
+     */
     private Atom atom4 = null;
 
     /**
@@ -127,12 +137,12 @@ public class Angle extends BondedTerm implements BondedEnergy {
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @return a {@link ffx.potential.bonded.Angle} object.
      */
-    public static Angle angleFactory(Bond b1, Bond b2, ForceField forceField) {
+    static Angle angleFactory(Bond b1, Bond b2, ForceField forceField) {
         Angle newAngle = new Angle(b1, b2);
         Atom ac = b1.getCommonAtom(b2);
         Atom a1 = b1.get1_2(ac);
         Atom a3 = b2.get1_2(ac);
-        int c[] = new int[3];
+        int[] c = new int[3];
         c[0] = a1.getAtomType().atomClass;
         c[1] = ac.getAtomType().atomClass;
         c[2] = a3.getAtomType().atomClass;
@@ -153,7 +163,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
      * @param mode a {@link ffx.potential.bonded.Angle.AngleMode} object.
      * @param a4   a {@link ffx.potential.bonded.Atom} object.
      */
-    public void setAngleMode(AngleMode mode, Atom a4) {
+    void setAngleMode(AngleMode mode, Atom a4) {
         angleMode = mode;
         atom4 = a4;
     }
@@ -174,10 +184,8 @@ public class Angle extends BondedTerm implements BondedEnergy {
      */
     public void setAngleType(AngleType a) {
         angleType = a;
-        /**
-         * Count the number of hydrogens attached to the central atom, but that
-         * are not part of the angle.
-         */
+
+        // Count the number of hydrogens attached to the central atom, but that are not part of the angle.
         ArrayList<Bond> ba = atoms[1].getBonds();
         nh = 0;
         for (Bond b1 : ba) {
@@ -188,6 +196,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
                 }
             }
         }
+
         // Some angle bending parameters are generic for any number of hydrogens
         while (angleType.angle.length <= nh) {
             nh--;
@@ -236,7 +245,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
      *
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
-    public Atom getCentralAtom() {
+    Atom getCentralAtom() {
         return atoms[1];
     }
 
@@ -256,7 +265,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
      * @return The common Bond between this Angle and Angle a, or null if this
      * == a or no common bond exists
      */
-    public Bond getCommonBond(Angle a) {
+    Bond getCommonBond(Angle a) {
         // Comparing an angle to itself returns null
         // Comparing to a null angle return null
         if (a == this || a == null) {
@@ -284,7 +293,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
      * @return The other Bond that makes up this Angle, or null if Bond b is not
      * part of this Angle
      */
-    public Bond getOtherBond(Bond b) {
+    Bond getOtherBond(Bond b) {
         if (b == bonds[0]) {
             return bonds[1];
         }
@@ -300,7 +309,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
      *
      * @return The 4th atom of a trigonal center.
      */
-    public Atom getTrigonalAtom() {
+    Atom getTrigonalAtom() {
         if (atoms[1].isTrigonal()) {
             for (Bond b : atoms[1].getBonds()) {
                 if (b != bonds[0] && b != bonds[1]) {
@@ -309,6 +318,30 @@ public class Angle extends BondedTerm implements BondedEnergy {
             }
         }
         return null;
+    }
+
+    /**
+     * Log details for this Angle energy term.
+     */
+    public void log() {
+        switch (angleMode) {
+            case NORMAL:
+                logger.info(format(
+                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
+                        atoms[0].getIndex(), atoms[0].getAtomType().name,
+                        atoms[1].getIndex(), atoms[1].getAtomType().name,
+                        atoms[2].getIndex(), atoms[2].getAtomType().name,
+                        angleType.angle[nh], value, energy));
+                break;
+            case IN_PLANE:
+                logger.info(format(
+                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
+                        atoms[0].getIndex(), atoms[0].getAtomType().name,
+                        atoms[1].getIndex(), atoms[1].getAtomType().name,
+                        atoms[2].getIndex(), atoms[2].getAtomType().name,
+                        angleType.angle[nh], value, energy));
+                break;
+        }
     }
 
     /**
@@ -325,48 +358,22 @@ public class Angle extends BondedTerm implements BondedEnergy {
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
 
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        double a2[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 0.
-         */
-        double v10[] = new double[3];
-        /**
-         * Vector from Atom 1 to Atom 2.
-         */
-        double v12[] = new double[3];
-        /**
-         * Vector from Atom 3 to Atom 0.
-         */
-        double v30[] = new double[3];
-        /**
-         * Vector from Atom 2 to Atom 0.
-         */
-        double v20[] = new double[3];
-        /**
-         * Vector v10 cross v30.
-         */
-        double p[] = new double[3];
-        /**
-         * Work vectors for in-plane angles.
-         */
-        double ip[] = new double[3];
-        double jp[] = new double[3];
-        double kp[] = new double[3];
-        double lp[] = new double[3];
-        /**
-         * Gradient on atoms 0, 1, 2 & 3.
-         */
-        double g0[] = new double[3];
-        double g1[] = new double[3];
-        double g2[] = new double[3];
-        double g3[] = new double[3];
+        // Vector from Atom 1 to Atom 0.
+        double[] v10 = new double[3];
+        // Vector from Atom 1 to Atom 2.
+        double[] v12 = new double[3];
+        // Vector from Atom 3 to Atom 0.
+        double[] v30 = new double[3];
+        // Vector from Atom 2 to Atom 0.
+        double[] v20 = new double[3];
 
         energy = 0.0;
         value = 0.0;
         double prefactor = units * rigidScale * angleType.forceConstant * esvLambda;
 
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        double[] a2 = new double[3];
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
@@ -380,6 +387,8 @@ public class Angle extends BondedTerm implements BondedEnergy {
                         double rab2 = dot(v10, v10);
                         double rcb2 = dot(v12, v12);
                         if (rab2 != 0.0 && rcb2 != 0.0) {
+                            // Vector v10 cross v30.
+                            double[] p = new double[3];
                             cross(v12, v10, p);
                             double cosine = dot(v10, v12) / sqrt(rab2 * rcb2);
                             cosine = min(1.0, max(-1.0, cosine));
@@ -399,15 +408,16 @@ public class Angle extends BondedTerm implements BondedEnergy {
                                 rp = max(rp, 0.000001);
                                 double terma = -deddt / (rab2 * rp);
                                 double termc = deddt / (rcb2 * rp);
+                                // Gradient on atoms 0, 1, 2 & 3.
+                                double[] g0 = new double[3];
+                                double[] g1 = new double[3];
+                                double[] g2 = new double[3];
                                 cross(v10, p, g0);
                                 cross(v12, p, g2);
                                 scalar(g0, terma, g0);
                                 scalar(g2, termc, g2);
                                 sum(g0, g2, g1);
                                 scalar(g1, -1.0, g1);
-                                //atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                //atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                //atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
                                 int i0 = atoms[0].getIndex() - 1;
                                 gradX.add(threadID, i0, g0[0]);
                                 gradY.add(threadID, i0, g0[1]);
@@ -425,14 +435,21 @@ public class Angle extends BondedTerm implements BondedEnergy {
                         }
                         break;
                     case IN_PLANE:
-                        double a4[] = new double[3];
+                        double[] a4 = new double[3];
                         atom4.getXYZ(a4);
                         diff(a0, a4, v10);
                         diff(a1, a4, v20);
                         diff(a2, a4, v30);
+                        // Vector v10 cross v30.
+                        double[] p = new double[3];
                         cross(v10, v30, p);
                         double rp2 = dot(p, p);
                         double delta = -dot(p, v20) / rp2;
+                        // Work vectors for in-plane angles.
+                        double[] ip = new double[3];
+                        double[] jp = new double[3];
+                        double[] kp = new double[3];
+                        double[] lp = new double[3];
                         scalar(p, delta, ip);
                         sum(ip, v20, ip);
                         diff(v10, ip, jp);
@@ -460,20 +477,25 @@ public class Angle extends BondedTerm implements BondedEnergy {
                                         + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
                                 double term0 = -deddt / (jp2 * lpr);
                                 double term2 = deddt / (kp2 * lpr);
-                                double ded0[] = new double[3];
-                                double ded2[] = new double[3];
-                                double dedp[] = new double[3];
-                                double x21[] = new double[3];
-                                double x01[] = new double[3];
-                                double xp2[] = new double[3];
-                                double xd2[] = new double[3];
-                                double dpd0[] = new double[3];
-                                double dpd2[] = new double[3];
+                                double[] ded0 = new double[3];
+                                double[] ded2 = new double[3];
+                                double[] dedp = new double[3];
+                                double[] x21 = new double[3];
+                                double[] x01 = new double[3];
+                                double[] xp2 = new double[3];
+                                double[] xd2 = new double[3];
+                                double[] dpd0 = new double[3];
+                                double[] dpd2 = new double[3];
                                 cross(jp, lp, ded0);
                                 scalar(ded0, term0, ded0);
                                 cross(kp, lp, ded2);
                                 scalar(ded2, term2, ded2);
                                 sum(ded0, ded2, dedp);
+                                // Gradient on atoms 0, 1, 2 & 3.
+                                double[] g0 = new double[3];
+                                double[] g1 = new double[3];
+                                double[] g2 = new double[3];
+                                double[] g3 = new double[3];
                                 scalar(dedp, -1.0, g1);
                                 double delta2 = 2.0 * delta;
                                 double pt2 = dot(dedp, p) / rp2;
@@ -498,10 +520,6 @@ public class Angle extends BondedTerm implements BondedEnergy {
                                 sum(g0, g1, g3);
                                 sum(g2, g3, g3);
                                 scalar(g3, -1.0, g3);
-                                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                                // atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
                                 int i0 = atoms[0].getIndex() - 1;
                                 gradX.add(threadID, i0, g0[0]);
                                 gradY.add(threadID, i0, g0[1]);
@@ -533,6 +551,8 @@ public class Angle extends BondedTerm implements BondedEnergy {
                         double rab2 = dot(v10, v10);
                         double rcb2 = dot(v12, v12);
                         if (rab2 != 0.0 && rcb2 != 0.0) {
+                            // Vector v10 cross v30.
+                            double[] p = new double[3];
                             cross(v12, v10, p);
                             double cosine = dot(v10, v12) / sqrt(rab2 * rcb2);
                             cosine = min(1.0, max(-1.0, cosine));
@@ -546,15 +566,16 @@ public class Angle extends BondedTerm implements BondedEnergy {
                                 rp = max(rp, 0.000001);
                                 double terma = -deddt / (rab2 * rp);
                                 double termc = deddt / (rcb2 * rp);
+                                // Gradient on atoms 0, 1, 2 & 3.
+                                double[] g0 = new double[3];
+                                double[] g1 = new double[3];
+                                double[] g2 = new double[3];
                                 cross(v10, p, g0);
                                 cross(v12, p, g2);
                                 scalar(g0, terma, g0);
                                 scalar(g2, termc, g2);
                                 sum(g0, g2, g1);
                                 scalar(g1, -1.0, g1);
-                                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
                                 int i0 = atoms[0].getIndex() - 1;
                                 gradX.add(threadID, i0, g0[0]);
                                 gradY.add(threadID, i0, g0[1]);
@@ -572,14 +593,23 @@ public class Angle extends BondedTerm implements BondedEnergy {
                         }
                         break;
                     case IN_PLANE:
-                        double a4[] = new double[3];
+                        double[] a4 = new double[3];
                         atom4.getXYZ(a4);
                         diff(a0, a4, v10);
                         diff(a1, a4, v20);
                         diff(a2, a4, v30);
+                        // Vector v10 cross v30.
+                        double[] p = new double[3];
                         cross(v10, v30, p);
                         double rp2 = dot(p, p);
                         double delta = -dot(p, v20) / rp2;
+
+                        // Work vectors for in-plane angles.
+                        double[] ip = new double[3];
+                        double[] jp = new double[3];
+                        double[] kp = new double[3];
+                        double[] lp = new double[3];
+
                         scalar(p, delta, ip);
                         sum(ip, v20, ip);
                         diff(v10, ip, jp);
@@ -601,20 +631,27 @@ public class Angle extends BondedTerm implements BondedEnergy {
                                 double deddt = prefactor * dv * toDegrees(2.0);
                                 double term0 = -deddt / (jp2 * lpr);
                                 double term2 = deddt / (kp2 * lpr);
-                                double ded0[] = new double[3];
-                                double ded2[] = new double[3];
-                                double dedp[] = new double[3];
-                                double x21[] = new double[3];
-                                double x01[] = new double[3];
-                                double xp2[] = new double[3];
-                                double xd2[] = new double[3];
-                                double dpd0[] = new double[3];
-                                double dpd2[] = new double[3];
+                                double[] ded0 = new double[3];
+                                double[] ded2 = new double[3];
+                                double[] dedp = new double[3];
+                                double[] x21 = new double[3];
+                                double[] x01 = new double[3];
+                                double[] xp2 = new double[3];
+                                double[] xd2 = new double[3];
+                                double[] dpd0 = new double[3];
+                                double[] dpd2 = new double[3];
                                 cross(jp, lp, ded0);
                                 scalar(ded0, term0, ded0);
                                 cross(kp, lp, ded2);
                                 scalar(ded2, term2, ded2);
                                 sum(ded0, ded2, dedp);
+
+                                // Gradient on atoms 0, 1, 2 & 3.
+                                double[] g0 = new double[3];
+                                double[] g1 = new double[3];
+                                double[] g2 = new double[3];
+                                double[] g3 = new double[3];
+
                                 scalar(dedp, -1.0, g1);
                                 double delta2 = 2.0 * delta;
                                 double pt2 = dot(dedp, p) / rp2;
@@ -639,10 +676,6 @@ public class Angle extends BondedTerm implements BondedEnergy {
                                 sum(g0, g1, g3);
                                 sum(g2, g3, g3);
                                 scalar(g3, -1.0, g3);
-                                // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-                                // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-                                // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                                // atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
                                 int i0 = atoms[0].getIndex() - 1;
                                 gradX.add(threadID, i0, g0[0]);
                                 gradY.add(threadID, i0, g0[1]);
@@ -674,37 +707,13 @@ public class Angle extends BondedTerm implements BondedEnergy {
     }
 
     /**
-     * Log details for this Angle energy term.
-     */
-    public void log() {
-        switch (angleMode) {
-            case NORMAL:
-                logger.info(String.format(
-                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
-                        atoms[0].getIndex(), atoms[0].getAtomType().name,
-                        atoms[1].getIndex(), atoms[1].getAtomType().name,
-                        atoms[2].getIndex(), atoms[2].getAtomType().name,
-                        angleType.angle[nh], value, energy));
-                break;
-            case IN_PLANE:
-                logger.info(String.format(
-                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
-                        atoms[0].getIndex(), atoms[0].getAtomType().name,
-                        atoms[1].getIndex(), atoms[1].getAtomType().name,
-                        atoms[2].getIndex(), atoms[2].getAtomType().name,
-                        angleType.angle[nh], value, energy));
-                break;
-        }
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
      * Overidden toString Method returns the Term's id.
      */
     @Override
     public String toString() {
-        return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+        return format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
     /**
@@ -729,6 +738,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
         if (this1 > a1) {
             return 1;
         }
+
         int this0 = atoms[0].getIndex();
         int a0 = a.atoms[0].getIndex();
         if (this0 < a0) {
@@ -739,12 +749,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
         }
         int this2 = atoms[2].getIndex();
         int a2 = a.atoms[2].getIndex();
-        if (this2 < a2) {
-            return -1;
-        }
-        if (this2 > a2) {
-            return 1;
-        }
-        return 0;
+
+        return Integer.compare(this2, a2);
     }
 }

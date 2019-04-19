@@ -1,50 +1,50 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential;
 
 import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import org.apache.commons.math3.util.FastMath;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
@@ -109,10 +109,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     private double energy2 = 0;
     /**
-     * Compute both topology energies in parallel instead of sequentially.
-     */
-    private boolean inParallel = false;
-    /**
      * Region for computing energy/gradient in parallel.
      */
     private final EnergyRegion region;
@@ -123,11 +119,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Include a valence restaint energy for atoms being "disappeared."
      */
-    private boolean doValenceRestraint1 = true;
+    private boolean doValenceRestraint1;
     /**
      * Include a valence restaint energy for atoms being "disappeared."
      */
-    private boolean doValenceRestraint2 = true;
+    private boolean doValenceRestraint2;
     /**
      * End-state restraint energy of topology 1 (kcal/mol).
      */
@@ -177,10 +173,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     private double lambda = 1.0;
     /**
-     * Current lambda value minus one.
-     */
-    private double oneMinusLambda = 0.0;
-    /**
      * Value of the switching function at lambda.
      */
     private double f1L = 1.0;
@@ -215,70 +207,61 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Mass array for shared and softcore atoms.
      */
-    private final double mass[];
+    private final double[] mass;
     /**
      * VARIABLE_TYPE array for shared and softcore atoms.
      */
-    private final VARIABLE_TYPE variableTypes[];
+    private final VARIABLE_TYPE[] variableTypes;
     /**
      * Scaling array for shared and softcore atoms.
      */
-    private double scaling[] = null;
+    private double[] scaling = null;
     /**
      * Topology 1 coordinates.
      */
-    private final double x1[];
+    private final double[] x1;
     /**
      * Topology 2 coordinates.
      */
-    private final double x2[];
+    private final double[] x2;
     /**
      * Topology 1 coordinate gradient.
      */
-    private final double g1[];
+    private final double[] g1;
     /**
      * Topology 2 coordinate gradient.
      */
-    private final double g2[];
+    private final double[] g2;
     /**
      * Topology 1 restraint gradient for end state bonded terms.
      */
-    private final double rg1[];
+    private final double[] rg1;
     /**
      * Topology 2 restraint gradient for end state bonded terms.
      */
-    private final double rg2[];
+    private final double[] rg2;
     /**
      * Topology 1 derivative of the coordinate gradient with respect to lambda.
      */
-    private final double gl1[];
+    private final double[] gl1;
     /**
      * Topology 2 derivative of the coordinate gradient with respect to lambda.
      */
-    private final double gl2[];
+    private final double[] gl2;
     /**
      * Topology 1 derivative of the coordinate gradient with respect to lambda
      * for end state bonded terms
      */
-    private final double rgl1[];
+    private final double[] rgl1;
     /**
      * Topology 2 derivative of the coordinate gradient with respect to lambda
      * for end state bonded terms
      */
-    private final double rgl2[];
+    private final double[] rgl2;
     /**
      * Returns true if we should unpin this atom. Replaces prior uses of atom.applyLambda(). Is often set to Atom::applyLambda.
      */
     private final Predicate<Atom> doUnpin;
-    /**
-     * Square of the maximum distance permissible between two shared atoms.
-     */
-    private final double maxDisc2 = 0.09;
-    /**
-     * Square of the minimum distance between shared atoms which will cause a
-     * warning. Intended to cover anything larger than a rounding error.
-     */
-    private final double minDiscWarn2 = 0.00001;
     /**
      * Topology 1 Potential.
      */
@@ -303,14 +286,26 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      * Topology 2 ForceFieldEnergy.
      */
     private final ForceFieldEnergy forceFieldEnergy2;
-
+    /**
+     * State for calculating energies.
+     */
     private STATE state = STATE.BOTH;
-
+    /**
+     * Number of active atoms in Topology 1.
+     */
     private final int nActive1;
+    /**
+     * Number of active atoms in Topology 2.
+     */
     private final int nActive2;
-    private final Atom activeAtoms1[];
-    private final Atom activeAtoms2[];
-
+    /**
+     * Array of active atoms in Topology 1.
+     */
+    private final Atom[] activeAtoms1;
+    /**
+     * Array of active atoms in Topology 2.
+     */
+    private final Atom[] activeAtoms2;
     /**
      * Will default to a power-1 PowerSwitch function.
      */
@@ -324,8 +319,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      * @param topology2 a {@link ffx.crystal.CrystalPotential} object.
      * @param atoms2    an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
-                              CrystalPotential topology2, Atom atoms2[]) {
+    public DualTopologyEnergy(CrystalPotential topology1, Atom[] atoms1,
+                              CrystalPotential topology2, Atom[] atoms2) {
         this(topology1, atoms1, topology2, atoms2, 1.0);
     }
 
@@ -338,8 +333,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      * @param atoms2    an array of {@link ffx.potential.bonded.Atom} objects.
      * @param lamExp    a double.
      */
-    public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
-                              CrystalPotential topology2, Atom atoms2[], double lamExp) {
+    public DualTopologyEnergy(CrystalPotential topology1, Atom[] atoms1,
+                              CrystalPotential topology2, Atom[] atoms2, double lamExp) {
         this(topology1, atoms1, topology2, atoms2, new PowerSwitch(1.0, lamExp));
     }
 
@@ -352,8 +347,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      * @param atoms2         an array of {@link ffx.potential.bonded.Atom} objects.
      * @param switchFunction a {@link UnivariateSwitchingFunction} object.
      */
-    public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
-                              CrystalPotential topology2, Atom atoms2[],
+    public DualTopologyEnergy(CrystalPotential topology1, Atom[] atoms1,
+                              CrystalPotential topology2, Atom[] atoms2,
                               UnivariateSwitchingFunction switchFunction) {
         potential1 = topology1;
         potential2 = topology2;
@@ -375,9 +370,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             doUnpin = Atom::applyLambda;
         }
 
-        /**
-         * Check that all atoms that are not undergoing alchemy are common to
-         * both topologies.
+        /*
+          Check that all atoms that are not undergoing alchemy are common to
+          both topologies.
          */
         int shared1 = 0;
         int shared2 = 0;
@@ -427,9 +422,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         nTotal = nShared + nSoftCore1 + nSoftCore2;
         nVariables = 3 * nTotal;
 
-        /**
-         * Check that all Dual-Topology atoms start with identical coordinates.
-         */
+        // Check that all Dual-Topology atoms start with identical coordinates.
         int i1 = 0;
         int i2 = 0;
         for (int i = 0; i < nShared; i++) {
@@ -446,9 +439,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             assert (a1.getZ() == a2.getZ());
         }
 
-        /**
-         * Allocate memory for coordinates and derivatives.
-         */
+        // Allocate memory for coordinates and derivatives.
         x1 = new double[nActive1 * 3];
         x2 = new double[nActive2 * 3];
         g1 = new double[nActive1 * 3];
@@ -460,9 +451,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         rgl1 = new double[nActive1 * 3];
         rgl2 = new double[nActive2 * 3];
 
-        /**
-         * All variables are coordinates.
-         */
+        // All variables are coordinates.
         index = 0;
         variableTypes = new VARIABLE_TYPE[nVariables];
         for (int i = 0; i < nTotal; i++) {
@@ -471,9 +460,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             variableTypes[index++] = VARIABLE_TYPE.Z;
         }
 
-        /**
-         * Fill the mass array.
-         */
+        // Fill the mass array.
         int commonIndex = 0;
         int softcoreIndex = 3 * nShared;
         mass = new double[nVariables];
@@ -502,7 +489,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         region = new EnergyRegion();
         team = new ParallelTeam(1);
         this.switchFunction = switchFunction;
-        logger.info(String.format(" Dual topology using switching function %s", switchFunction));
+        logger.info(format(" Dual topology using switching function %s", switchFunction));
     }
 
     /**
@@ -559,10 +546,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             doUnpin = Atom::applyLambda;
         }
 
-        /**
-         * Check that all atoms that are not undergoing alchemy are common to
-         * both topologies.
-         */
+        // Check that all atoms that are not undergoing alchemy are common to both topologies.
         int shared1 = 0;
         int shared2 = 0;
         int activeCount1 = 0;
@@ -611,9 +595,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         nTotal = nShared + nSoftCore1 + nSoftCore2;
         nVariables = 3 * nTotal;
 
-        /**
-         * Allocate memory for coordinates and derivatives.
-         */
+        // Allocate memory for coordinates and derivatives.
         x1 = new double[nActive1 * 3];
         x2 = new double[nActive2 * 3];
         g1 = new double[nActive1 * 3];
@@ -625,9 +607,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         rgl1 = new double[nActive1 * 3];
         rgl2 = new double[nActive2 * 3];
 
-        /**
-         * Check that all Dual-Topology atoms start with identical coordinates.
-         */
+        // Check that all Dual-Topology atoms start with identical coordinates.
         int i1 = 0;
         int i2 = 0;
         for (int i = 0; i < nShared; i++) {
@@ -645,9 +625,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             //reconcileAtoms(a1, a2, Level.INFO);
         }
 
-        /**
-         * All variables are coordinates.
-         */
+        // All variables are coordinates.
         index = 0;
         variableTypes = new VARIABLE_TYPE[nVariables];
         for (int i = 0; i < nTotal; i++) {
@@ -656,9 +634,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             variableTypes[index++] = VARIABLE_TYPE.Z;
         }
 
-        /**
-         * Fill the mass array.
-         */
+        // Fill the mass array.
         int commonIndex = 0;
         int softcoreIndex = 3 * nShared;
         mass = new double[nVariables];
@@ -688,7 +664,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         region = new EnergyRegion();
         team = new ParallelTeam(1);
         this.switchFunction = switchFunction;
-        logger.info(String.format(" Dual topology using switching function %s", switchFunction));
+        logger.info(format(" Dual topology using switching function %s", switchFunction));
     }
 
     /**
@@ -709,14 +685,22 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             dist += (dx * dx);
             xyzAv[i] = xyz1[i] + (0.5 * dx);
         }
-        if (dist > maxDisc2) {
-            logger.log(Level.SEVERE, String.format(" Distance between atoms %s "
-                            + "and %s is %7.4f >> maximum allowed %7.4f", a1, a2,
-                    FastMath.sqrt(dist), FastMath.sqrt(maxDisc2)));
-        } else if (dist > minDiscWarn2) {
-            logger.log(warnlev, String.format(" Distance between atoms %s "
-                            + "and %s is %7.4f; moving atoms together.", a1, a2,
-                    FastMath.sqrt(dist)));
+
+        // Square of the maximum distance permissible between two shared atoms.
+        double maxDist2 = 0.09;
+
+        /*
+          Square of the minimum distance between shared atoms which will cause a
+          warning. Intended to cover anything larger than a rounding error.
+         */
+        double minDistWarn2 = 0.00001;
+
+        if (dist > maxDist2) {
+            logger.log(Level.SEVERE, format(" Distance between atoms %s "
+                    + "and %s is %7.4f >> maximum allowed %7.4f", a1, a2, sqrt(dist), sqrt(maxDist2)));
+        } else if (dist > minDistWarn2) {
+            logger.log(warnlev, format(" Distance between atoms %s "
+                    + "and %s is %7.4f; moving atoms together.", a1, a2, sqrt(dist)));
             a1.setXYZ(xyzAv);
             a2.setXYZ(xyzAv);
         } else if (dist > 0) {
@@ -744,7 +728,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             region.setVerbose(verbose);
             team.execute(region);
         } catch (Exception ex) {
-            throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
+            throw new EnergyException(format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
         }
         return totalEnergy;
     }
@@ -775,7 +759,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             region.setVerbose(verbose);
             team.execute(region);
         } catch (Exception ex) {
-            throw new EnergyException(String.format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
+            throw new EnergyException(format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
         }
         return totalEnergy;
     }
@@ -796,7 +780,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         return scaling;
     }
 
-    private void packCoordinates(double x[]) {
+    private void packCoordinates(double[] x) {
         if (scaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -805,15 +789,14 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
-    private void packGradient(double x[], double g[]) {
+    private void packGradient(double[] x, double[] g) {
         if (g == null) {
             g = new double[nVariables];
         }
         int indexCommon = 0;
         int indexUnique = nShared * 3;
-        /**
-         * Coordinate Gradient from Topology 1.
-         */
+
+        // Coordinate Gradient from Topology 1.
         int index = 0;
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
@@ -827,9 +810,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                 g[indexUnique++] = f1L * g1[index] + f2L * rg1[index++];
             }
         }
-        /**
-         * Coordinate Gradient from Topology 2.
-         */
+
+        // Coordinate Gradient from Topology 2.
         indexCommon = 0;
         index = 0;
         for (int i = 0; i < nActive2; i++) {
@@ -854,11 +836,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
-    private void unpackCoordinates(double x[]) {
+    private void unpackCoordinates(double[] x) {
 
-        /**
-         * Unscale the coordinates.
-         */
+        // Unscale the coordinates.
         if (scaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -965,7 +945,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      *
      * @param secondTopology Load from second topology
      */
-    public void reloadCommonMasses(boolean secondTopology) {
+    void reloadCommonMasses(boolean secondTopology) {
         int commonIndex = 0;
         if (secondTopology) {
             for (int i = 0; i < nActive2; i++) {
@@ -998,12 +978,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      * @param parallel a boolean.
      */
     public void setParallel(boolean parallel) {
-        this.inParallel = parallel;
         if (team != null) {
             try {
                 team.shutdown();
             } catch (Exception e) {
-                logger.severe(String.format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
+                logger.severe(format(" Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s", e.toString()));
             }
         }
         team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
@@ -1067,7 +1046,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
-            oneMinusLambda = 1.0 - lambda;
+            double oneMinusLambda = 1.0 - lambda;
             lambdaInterface1.setLambda(lambda);
             lambdaInterface2.setLambda(oneMinusLambda);
 
@@ -1079,7 +1058,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             dF2dL = -1.0 * switchFunction.firstDerivative(oneMinusLambda);
             d2F2dL2 = switchFunction.secondDerivative(oneMinusLambda);
         } else {
-            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+            String message = format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.severe(message);
         }
     }
@@ -1157,9 +1136,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int index = 0;
         int indexCommon = 0;
         int indexUnique = nShared * 3;
-        /**
-         * Coordinate Gradient from Topology 1.
-         */
+        // Coordinate Gradient from Topology 1.
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
             if (!doUnpin.test(a)) {
@@ -1179,9 +1156,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             }
         }
 
-        /**
-         * Coordinate Gradient from Topology 2.
-         */
+        // Coordinate Gradient from Topology 2.
         index = 0;
         indexCommon = 0;
         for (int i = 0; i < nActive2; i++) {
@@ -1211,7 +1186,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public void setVelocity(double[] velocity) {
-        double vel[] = new double[3];
+        double[] vel = new double[3];
         int indexCommon = 0;
         int indexUnique = 3 * nShared;
         for (int i = 0; i < nActive1; i++) {
@@ -1249,7 +1224,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public void setAcceleration(double[] acceleration) {
-        double accel[] = new double[3];
+        double[] accel = new double[3];
         int indexCommon = 0;
         int indexUnique = 3 * nShared;
         for (int i = 0; i < nActive1; i++) {
@@ -1286,7 +1261,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
-        double prev[] = new double[3];
+        double[] prev = new double[3];
         int indexCommon = 0;
         int indexUnique = 3 * nShared;
         for (int i = 0; i < nActive1; i++) {
@@ -1328,7 +1303,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         int indexCommon = 0;
         int indexUnique = nShared * 3;
-        double vel[] = new double[3];
+        double[] vel = new double[3];
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
             atom.getVelocity(vel);
@@ -1366,7 +1341,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         int indexCommon = 0;
         int indexUnique = nShared * 3;
-        double accel[] = new double[3];
+        double[] accel = new double[3];
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
             atom.getAcceleration(accel);
@@ -1404,7 +1379,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         int indexCommon = 0;
         int indexUnique = nShared * 3;
-        double prev[] = new double[3];
+        double[] prev = new double[3];
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
             atom.getPreviousAcceleration(prev);
@@ -1461,7 +1436,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             }
             return ffe1Destroy && ffe2Destroy;
         } catch (Exception ex) {
-            logger.warning(String.format(" Exception in shutting down DualTopologyEnergy: %s", ex));
+            logger.warning(format(" Exception in shutting down DualTopologyEnergy: %s", ex));
             logger.info(Utilities.stackTraceToString(ex));
             return false;
         }
@@ -1477,7 +1452,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         private final Energy1Section e1sect;
         private final Energy2Section e2sect;
 
-        public EnergyRegion() {
+        EnergyRegion() {
             e1sect = new Energy1Section();
             e2sect = new Energy2Section();
         }
@@ -1504,7 +1479,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
             unpackCoordinates(x);
         }
 
@@ -1514,10 +1489,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
 
         @Override
-        public void finish() throws Exception {
-            /**
-             * Apply the dual-topology scaling for the total energy.
-             */
+        public void finish() {
+            // Apply the dual-topology scaling for the total energy.
             totalEnergy = f1L * energy1 + f2L * restraintEnergy1
                     + f2L * energy2 + f1L * restraintEnergy2;
 
@@ -1528,7 +1501,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             }
 
             if (verbose) {
-                logger.info(String.format(" Total dual-topology energy: %12.4f", totalEnergy));
+                logger.info(format(" Total dual-topology energy: %12.4f", totalEnergy));
             }
             setVerbose(false);
             setGradient(false);
@@ -1575,20 +1548,13 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                     restraintd2EdL2_1 = 0.0;
                 }
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+                    logger.fine(format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
                             f1L * energy1, f2L * restraintEnergy1));
-                    logger.fine(String.format(" Topology 1:    %15.8f * (%.2f)", energy1, f1L));
-                    logger.fine(String.format(" T1 Restraints: %15.8f * (%.2f)", restraintEnergy1, f2L));
+                    logger.fine(format(" Topology 1:    %15.8f * (%.2f)", energy1, f1L));
+                    logger.fine(format(" T1 Restraints: %15.8f * (%.2f)", restraintEnergy1, f2L));
                 }
             } else {
                 energy1 = potential1.energy(x1, verbose);
-                /**
-                 * The if branch here shuts off most energy terms, and then
-                 * recalculates those (primarily bonded) terms which are
-                 * unaffected by lambda. This is then added back to the original
-                 * energy, so you have lambda * (most) plus (lambda + 1-lambda)
-                 * * (special bonded terms).
-                 */
                 if (doValenceRestraint1 && potential1 instanceof ForceFieldEnergy) {
                     ForceFieldEnergy ffE1 = (ForceFieldEnergy) potential1;
                     ffE1.setLambdaBondedTerms(true);
@@ -1601,7 +1567,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                     restraintEnergy1 = 0.0;
                 }
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
+                    logger.fine(format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
                             f1L * energy1, f2L * restraintEnergy1));
                 }
             }
@@ -1627,9 +1593,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                 fill(gl2, 0.0);
                 fill(rgl2, 0.0);
 
-                /**
-                 * Compute the energy and gradient of topology 2.
-                 */
+                // Compute the energy and gradient of topology 2.
                 energy2 = potential2.energyAndGradient(x2, g2, verbose);
                 dEdL_2 = -lambdaInterface2.getdEdL();
                 d2EdL2_2 = lambdaInterface2.getd2EdL2();
@@ -1651,10 +1615,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                     restraintd2EdL2_2 = 0.0;
                 }
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+                    logger.fine(format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
                             f2L * energy2, f1L * restraintEnergy2));
-                    logger.fine(String.format(" Topology 2:    %15.8f * (%.2f)", energy2, f2L));
-                    logger.fine(String.format(" T2 Restraints: %15.8f * (%.2f)", restraintEnergy2, f1L));
+                    logger.fine(format(" Topology 2:    %15.8f * (%.2f)", energy2, f2L));
+                    logger.fine(format(" T2 Restraints: %15.8f * (%.2f)", restraintEnergy2, f1L));
                 }
             } else {
                 energy2 = potential2.energy(x2, verbose);
@@ -1670,7 +1634,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                     restraintEnergy2 = 0.0;
                 }
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
+                    logger.fine(format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n",
                             f2L * energy2, f1L * restraintEnergy2));
                 }
             }

@@ -1,43 +1,44 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.Arrays;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.max;
 
@@ -65,29 +66,16 @@ public class Rotamer {
      * Torsions chi 5-7 are only currently used for nucleic acids.
      */
     public final double chi5;
-    public final double chi6;
-    public final double chi7;
-    public final double angles[];
-    public final double sigmas[];
-    public final AminoAcid3 name;
-    public final NucleicAcid3 nucleicName;
-    public final int length;
-    public final ResidueState originalState;
-    public final boolean isState;
+    final double chi6;
+    final double chi7;
 
-    /**
-     * Factory method to construct an original-coordinates Rotamer from a residue.
-     * Intended to address a bug in decompose-original.
-     *
-     * @param res Residue to construct default rotamer for.
-     * @return Original-coordinates rotamer.
-     */
-    public static Rotamer defaultRotamerFactory(Residue res) {
-        ResidueState origState = res.storeState();
-        double[] chi = RotamerLibrary.measureRotamer(res, false);
-        double[] sigmas = new double[chi.length];
-        return new Rotamer(res, chi, sigmas);
-    }
+    public final double[] angles;
+    public final double[] sigmas;
+    public final int length;
+    public final AminoAcid3 name;
+    final ResidueState originalState;
+    final boolean isState;
+    private final NucleicAcid3 nucleicName;
 
     /**
      * Constructs a Rotamer from a Residue, an array of torsions, and optionally
@@ -101,13 +89,13 @@ public class Rotamer {
     public Rotamer(Residue res, double[] chis, double[] sigmas) {
         int nChi = chis.length;
         angles = new double[nChi];
-        Arrays.fill(angles, 0);
-        System.arraycopy(chis, 0, angles, 0, nChi);
+        fill(angles, 0);
+        arraycopy(chis, 0, angles, 0, nChi);
 
         // Hooray, 
         double[] tempVals = new double[7];
-        Arrays.fill(tempVals, 0);
-        System.arraycopy(chis, 0, tempVals, 0, nChi);
+        fill(tempVals, 0);
+        arraycopy(chis, 0, tempVals, 0, nChi);
 
         chi1 = tempVals[0];
         chi2 = tempVals[1];
@@ -119,9 +107,9 @@ public class Rotamer {
 
         this.sigmas = new double[nChi];
         if (sigmas != null) {
-            System.arraycopy(sigmas, 0, this.sigmas, 0, nChi);
+            arraycopy(sigmas, 0, this.sigmas, 0, nChi);
         } else {
-            Arrays.fill(sigmas, 0);
+            fill(sigmas, 0);
         }
 
         switch (res.getResidueType()) {
@@ -254,26 +242,6 @@ public class Rotamer {
     }
 
     /**
-     * Constructs a Rotamer from a ResidueState.
-     *
-     * @param resState Residue state to be represented by this Rotamer.
-     * @return A Rotamer wrapping a ResidueState.
-     */
-    public static Rotamer stateToRotamer(ResidueState resState) {
-        Residue res = resState.getStateResidue();
-        double[] vals = RotamerLibrary.measureRotamer(res, false);
-        switch (res.getResidueType()) {
-            case AA:
-                return new Rotamer(res.getAminoAcid3(), resState, vals);
-            case NA:
-                return new Rotamer(res.getNucleicAcid3(), resState, vals);
-            case UNK:
-            default:
-                return new Rotamer(resState, vals);
-        }
-    }
-
-    /**
      * <p>Constructor for Rotamer.</p>
      *
      * @param name         a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
@@ -360,5 +328,39 @@ public class Rotamer {
             sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
         }
         return sb.toString();
+    }
+
+    /**
+     * Factory method to construct an original-coordinates Rotamer from a residue.
+     * Intended to address a bug in decompose-original.
+     *
+     * @param res Residue to construct default rotamer for.
+     * @return Original-coordinates rotamer.
+     */
+    public static Rotamer defaultRotamerFactory(Residue res) {
+        ResidueState origState = res.storeState();
+        double[] chi = RotamerLibrary.measureRotamer(res, false);
+        double[] sigmas = new double[chi.length];
+        return new Rotamer(res, chi, sigmas);
+    }
+
+    /**
+     * Constructs a Rotamer from a ResidueState.
+     *
+     * @param resState Residue state to be represented by this Rotamer.
+     * @return A Rotamer wrapping a ResidueState.
+     */
+    static Rotamer stateToRotamer(ResidueState resState) {
+        Residue res = resState.getStateResidue();
+        double[] vals = RotamerLibrary.measureRotamer(res, false);
+        switch (res.getResidueType()) {
+            case AA:
+                return new Rotamer(res.getAminoAcid3(), resState, vals);
+            case NA:
+                return new Rotamer(res.getNucleicAcid3(), resState, vals);
+            case UNK:
+            default:
+                return new Rotamer(resState, vals);
+        }
     }
 }

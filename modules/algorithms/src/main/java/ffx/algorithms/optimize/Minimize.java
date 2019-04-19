@@ -1,42 +1,43 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.algorithms.optimize;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -44,11 +45,13 @@ import static java.util.Arrays.fill;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
+import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 
 /**
@@ -109,7 +112,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     /**
      * The final RMS gradient.
      */
-    protected double rmsGradient;
+    double rmsGradient;
     /**
      * The return status of the optimization.
      */
@@ -158,6 +161,99 @@ public class Minimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
         fill(scaling, 12.0);
+    }
+
+    /**
+     * Enumerates available molecular minimization engines; presently limited to the
+     * FFX reference engine and the OpenMM engine.
+     * <p>
+     * Distinct from the force field energy Platform,
+     * as the FFX engine can use OpenMM energies, but not vice-versa.
+     */
+    public enum MinimizationEngine {
+        FFX(true, true), OPENMM(false, true);
+
+        // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
+        // is internally stored as a bit field.
+        private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(ForceFieldEnergy.Platform.class);
+
+        /**
+         * Constructs a DynamicsEngine using the two presently known types of
+         * Platform.
+         *
+         * @param ffx    Add support for the FFX reference energy platform.
+         * @param openMM Add support for the OpenMM energy platforms.
+         */
+        MinimizationEngine(boolean ffx, boolean openMM) {
+            if (ffx) {
+                platforms.add(ForceFieldEnergy.Platform.FFX);
+            }
+            if (openMM) {
+                platforms.add(ForceFieldEnergy.Platform.OMM);
+                platforms.add(ForceFieldEnergy.Platform.OMM_REF);
+                platforms.add(ForceFieldEnergy.Platform.OMM_CUDA);
+                platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
+                platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
+            }
+        }
+
+        /**
+         * Checks if this energy Platform is supported by this DynamicsEngine
+         *
+         * @param platform The requested platform.
+         * @return If supported
+         */
+        public boolean supportsPlatform(ForceFieldEnergy.Platform platform) {
+            return platforms.contains(platform);
+        }
+
+        /**
+         * Gets the set of Platforms supported by this DynamicsEngine
+         *
+         * @return An EnumSet
+         */
+        public EnumSet<ForceFieldEnergy.Platform> getSupportedPlatforms() {
+            return EnumSet.copyOf(platforms);
+        }
+    }
+
+    private static MinimizationEngine defaultEngine(Potential potentialEnergy) {
+        if (System.getProperty("minimize-engine") != null) {
+            if (System.getProperty("minimize-engine").equalsIgnoreCase("OMM")) {
+                return MinimizationEngine.OPENMM;
+            } else {
+                return MinimizationEngine.FFX;
+            }
+        } else {
+            if (potentialEnergy instanceof ffx.potential.ForceFieldEnergyOpenMM) {
+                return MinimizationEngine.OPENMM;
+            } else {
+                return MinimizationEngine.FFX;
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * dynamicsFactory.</p>
+     *
+     * @param assembly        a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param listener        a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param engine          a {@link MolecularDynamics.DynamicsEngine} object.
+     * @return a {@link MolecularDynamics} object.
+     */
+    public static Minimize minimizeFactory(MolecularAssembly assembly, Potential potentialEnergy,
+                                           AlgorithmListener listener, MinimizationEngine engine) {
+        switch (engine) {
+            case OPENMM:
+                logger.info(" Creating OpenMM Minimization Object");
+                return new MinimizeOpenMM(assembly, (ForceFieldEnergyOpenMM) potentialEnergy, listener);
+            case FFX:
+            default:
+                logger.info(" Creating FFX Minimization Object");
+                return new Minimize(assembly, potentialEnergy, listener);
+        }
     }
 
     /**

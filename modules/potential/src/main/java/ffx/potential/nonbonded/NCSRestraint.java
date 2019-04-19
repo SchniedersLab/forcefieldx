@@ -1,43 +1,44 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.nonbonded;
 
 import java.util.logging.Logger;
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -55,22 +56,21 @@ import static ffx.numerics.math.VectorMath.rsq;
  * to the asymmetric unit atoms.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class NCSRestraint implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(NCSRestraint.class.getName());
-    private Crystal ncsCrystal = null;
-    private SpaceGroup spaceGroup = null;
-    private final Atom atoms[];
-    private int nAtoms = 0;
+    private Crystal ncsCrystal;
+    private SpaceGroup spaceGroup;
+    private final Atom[] atoms;
+    private int nAtoms;
     private final double forceConstant = 10.0;
-    private final double transOp[][] = new double[3][3];
-    private int nSymm = 0;
-    private final double a1[] = new double[3];
-    private final double a2[] = new double[3];
-    private final double dx[] = new double[3];
+    private final double[][] transOp = new double[3][3];
+    private int nSymm;
+    private final double[] a1 = new double[3];
+    private final double[] a2 = new double[3];
+    private final double[] dx = new double[3];
     private double lambda = 1.0;
     private final double lambdaExp = 2.0;
     private double lambdaPow = pow(lambda, lambdaExp);
@@ -78,9 +78,8 @@ public class NCSRestraint implements LambdaInterface {
     private double d2LambdaPow = lambdaExp * (lambdaExp - 1.0) * pow(lambda, lambdaExp - 2.0);
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
-    private final double lambdaWindow = 1.0;
-    private final double lambdaGradient[];
-    private boolean lambdaTerm = false;
+    private final double[] lambdaGradient;
+    private boolean lambdaTerm;
 
     /**
      * This NCSRestraint is based on the unit cell parameters and symmetry
@@ -90,7 +89,7 @@ public class NCSRestraint implements LambdaInterface {
      * @param forceField the ForceField parameters
      * @param crystal    the Crystal specifies symmetry and PBCs.
      */
-    public NCSRestraint(Atom atoms[], ForceField forceField, Crystal crystal) {
+    public NCSRestraint(Atom[] atoms, ForceField forceField, Crystal crystal) {
         this.ncsCrystal = crystal;
         this.atoms = atoms;
         nAtoms = atoms.length;
@@ -108,7 +107,7 @@ public class NCSRestraint implements LambdaInterface {
             d2LambdaPow = 0.0;
         }
 
-        logger.info(String.format("\n NCS Restraint%s", crystal.toString()));
+        logger.info(format("\n NCS Restraint%s", crystal.toString()));
 
     }
 
@@ -120,11 +119,8 @@ public class NCSRestraint implements LambdaInterface {
      * @return a double.
      */
     public double residual(boolean gradient, boolean print) {
-        /**
-         * Check that the number of atom is multiple of the number of symmetry
-         * operators.
-         */
 
+        // Check that the number of atom is multiple of the number of symmetry operators.
         if (nAtoms % nSymm != 0) {
             return 0;
         }
@@ -151,11 +147,9 @@ public class NCSRestraint implements LambdaInterface {
                     continue;
                 }
 
-                /**
-                 * Apply the symmetry operator to superpose the reference atom
-                 * with its symmetry mate.
-                 */
+                // Apply the symmetry operator to superpose the reference atom with its symmetry mate.
                 ncsCrystal.applySymOp(a1, a1, symOp);
+
                 // Symmetry mate atom.
                 Atom atom2 = atoms[offset + j];
                 atom2.getXYZ(a2);
@@ -173,10 +167,8 @@ public class NCSRestraint implements LambdaInterface {
                     final double dedy = dx[1] * fx2;
                     final double dedz = dx[2] * fx2;
                     atom2.addToXYZGradient(-lambdaPow * dedx, -lambdaPow * dedy, -lambdaPow * dedz);
-                    /**
-                     * Rotate the force on the reference atom back into the
-                     * asymmetric unit.
-                     */
+
+                    // Rotate the force on the reference atom back into the asymmetric unit.
                     final double dedx1 = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
                     final double dedy1 = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
                     final double dedz1 = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
@@ -208,6 +200,9 @@ public class NCSRestraint implements LambdaInterface {
     public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = lambda;
+
+            double lambdaWindow = 1.0;
+
             if (this.lambda < lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
                 double l = dldgl * this.lambda;

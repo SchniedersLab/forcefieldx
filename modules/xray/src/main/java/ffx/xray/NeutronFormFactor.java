@@ -1,44 +1,45 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -46,10 +47,10 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import static ffx.crystal.Crystal.quad_form;
 import static ffx.numerics.math.VectorMath.b2u;
 import static ffx.numerics.math.VectorMath.determinant3;
 import static ffx.numerics.math.VectorMath.diff;
@@ -65,7 +66,7 @@ import static ffx.numerics.math.VectorMath.vec3Mat3;
  * This implementation uses the coefficients from International Tables, Vol. C,
  * chapter 4.4.4.
  *
- * @author Timothy D. Fenn<br>
+ * @author Timothy D. Fenn
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
  * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000600"
@@ -81,15 +82,15 @@ public final class NeutronFormFactor implements FormFactor {
     private static final Logger logger = Logger.getLogger(ffx.xray.NeutronFormFactor.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
     private static final double twopi32 = pow(2.0 * PI, -1.5);
-    private static final double vx[] = {1.0, 0.0, 0.0};
-    private static final double vy[] = {0.0, 1.0, 0.0};
-    private static final double vz[] = {0.0, 0.0, 1.0};
-    private static final double u11[][] = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u22[][] = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u33[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
-    private static final double u12[][] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
-    private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
-    private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
+    private static final double[] vx = {1.0, 0.0, 0.0};
+    private static final double[] vy = {0.0, 1.0, 0.0};
+    private static final double[] vz = {0.0, 0.0, 1.0};
+    private static final double[][] u11 = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u22 = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u33 = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
+    private static final double[][] u12 = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double[][] u13 = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
+    private static final double[][] u23 = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
     private static final HashMap<String, double[][]> formfactors = new HashMap<>();
     private static final String[] atoms = {"H", "D", "He", "Li", "Be", "B", "C",
             "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K",
@@ -201,24 +202,22 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     private final Atom atom;
-    protected final int ffindex;
-    private final double xyz[] = new double[3];
-    private final double dxyz[] = new double[3];
-    private final double a[] = new double[2];
-    private final double ainv[] = new double[1];
-    private final double binv[] = new double[1];
-    private final double u[][][] = new double[1][3][3];
-    private final double uinv[][][] = new double[1][3][3];
-    private final double jmat[][][] = new double[6][3][3];
-    private final double gradp[] = new double[6];
-    private final double gradu[] = new double[6];
-    private final double resv[] = new double[3];
-    private final double resm[][] = new double[3][3];
-    private double biso;
     private double uadd;
-    private double uaniso[] = null;
     private double occ;
     private boolean hasAnisou;
+    private final double[] xyz = new double[3];
+    private final double[] dxyz = new double[3];
+    private final double[] a = new double[2];
+    private final double[] ainv = new double[1];
+    private final double[] binv = new double[1];
+    private final double[][][] u = new double[1][3][3];
+    private final double[][][] uinv = new double[1][3][3];
+    private final double[][][] jmat = new double[6][3][3];
+    private final double[] gradp = new double[6];
+    private final double[] gradu = new double[6];
+    private final double[] resv = new double[3];
+    private final double[][] resm = new double[3][3];
+    private double[] uaniso = null;
 
     /**
      * <p>
@@ -249,10 +248,10 @@ public final class NeutronFormFactor implements FormFactor {
      * @param badd a double.
      * @param xyz  an array of double.
      */
-    public NeutronFormFactor(Atom atom, double badd, double xyz[]) {
+    public NeutronFormFactor(Atom atom, double badd, double[] xyz) {
         this.atom = atom;
         this.uadd = b2u(badd);
-        double ffactor[][];
+        double[][] ffactor;
 
         String key;
         if (atom.getAtomicNumber() == 1) {
@@ -266,11 +265,9 @@ public final class NeutronFormFactor implements FormFactor {
         }
 
         ffactor = getFormFactor(key);
-        ffindex = (int) ffactor[0][0];
-
-        System.arraycopy(ffactor[1], 0, a, 0, ffactor[1].length);
+        arraycopy(ffactor[1], 0, a, 0, ffactor[1].length);
         if (a[1] != 0.0) {
-            logger.severe("complex neutron form factor method not supported");
+            logger.severe(" Complex neutron form factor method not supported");
         }
         occ = atom.getOccupancy();
 
@@ -292,8 +289,7 @@ public final class NeutronFormFactor implements FormFactor {
      * @return a int.
      */
     public static int getFormFactorIndex(String atom) {
-        double ffactor[][];
-
+        double[][] ffactor;
         ffactor = getFormFactor(atom);
         if (ffactor != null) {
             return (int) ffactor[0][0];
@@ -310,8 +306,7 @@ public final class NeutronFormFactor implements FormFactor {
      * @return an array of double.
      */
     public static double[] getFormFactorA(String atom) {
-
-        double ffactor[][];
+        double[][] ffactor;
         ffactor = getFormFactor(atom);
         if (ffactor != null) {
             return ffactor[1];
@@ -327,14 +322,13 @@ public final class NeutronFormFactor implements FormFactor {
      * @param atom a {@link java.lang.String} object.
      * @return an array of double.
      */
-    public static double[][] getFormFactor(String atom) {
-        double ffactor[][] = null;
+    private static double[][] getFormFactor(String atom) {
+        double[][] ffactor = null;
 
         if (formfactors.containsKey(atom)) {
-            ffactor = (double[][]) formfactors.get(atom);
+            ffactor = formfactors.get(atom);
         } else {
-            String message = "Form factor for atom: " + atom
-                    + " not found!";
+            String message = "Form factor for atom: " + atom + " not found!";
             logger.severe(message);
         }
 
@@ -349,7 +343,7 @@ public final class NeutronFormFactor implements FormFactor {
      * @return a double.
      */
     public double f(HKL hkl) {
-        double sum = a[0] * exp(-twopi2 * Crystal.quad_form(hkl, u[0]));
+        double sum = a[0] * exp(-twopi2 * quad_form(hkl, u[0]));
         return occ * sum;
     }
 
@@ -357,13 +351,13 @@ public final class NeutronFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public double rho(double f, double lambda, double xyz[]) {
+    public double rho(double f, double lambda, double[] xyz) {
         diff(this.xyz, xyz, xyz);
         double r = r(xyz);
         if (r > atom.getFormFactorWidth()) {
             return f;
         }
-        double sum = ainv[0] * exp(-0.5 * Crystal.quad_form(xyz, uinv[0]));
+        double sum = ainv[0] * exp(-0.5 * quad_form(xyz, uinv[0]));
         return f + (lambda * occ * twopi32 * sum);
     }
 
@@ -371,7 +365,7 @@ public final class NeutronFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void rhoGrad(double xyz[], double dfc, RefinementMode refinementmode) {
+    public void rhoGrad(double[] xyz, double dfc, RefinementMode refinementmode) {
         diff(this.xyz, xyz, dxyz);
         double r = r(dxyz);
         double r2 = r * r;
@@ -408,7 +402,7 @@ public final class NeutronFormFactor implements FormFactor {
             refineocc = true;
         }
 
-        double aex = ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]));
+        double aex = ainv[0] * exp(-0.5 * quad_form(dxyz, uinv[0]));
 
         if (refinexyz) {
             vec3Mat3(dxyz, uinv[0], resv);
@@ -438,12 +432,12 @@ public final class NeutronFormFactor implements FormFactor {
                 scalarMat3Mat3(-1.0, uinv[0], u23, resm);
                 mat3Mat3(resm, uinv[0], jmat[5]);
 
-                gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[0][0][0]);
-                gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[0][1][1]);
-                gradu[2] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[2]) - uinv[0][2][2]);
-                gradu[3] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[3]) - uinv[0][0][1] * 2.0);
-                gradu[4] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[4]) - uinv[0][0][2] * 2.0);
-                gradu[5] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[5]) - uinv[0][1][2] * 2.0);
+                gradu[0] += aex * 0.5 * (-quad_form(dxyz, jmat[0]) - uinv[0][0][0]);
+                gradu[1] += aex * 0.5 * (-quad_form(dxyz, jmat[1]) - uinv[0][1][1]);
+                gradu[2] += aex * 0.5 * (-quad_form(dxyz, jmat[2]) - uinv[0][2][2]);
+                gradu[3] += aex * 0.5 * (-quad_form(dxyz, jmat[3]) - uinv[0][0][1] * 2.0);
+                gradu[4] += aex * 0.5 * (-quad_form(dxyz, jmat[4]) - uinv[0][0][2] * 2.0);
+                gradu[5] += aex * 0.5 * (-quad_form(dxyz, jmat[5]) - uinv[0][1][2] * 2.0);
             }
         }
 
@@ -478,7 +472,7 @@ public final class NeutronFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void update(double xyz[]) {
+    public void update(double[] xyz) {
         update(xyz, u2b(uadd));
     }
 
@@ -486,15 +480,15 @@ public final class NeutronFormFactor implements FormFactor {
      * {@inheritDoc}
      */
     @Override
-    public void update(double xyz[], double badd) {
+    public void update(double[] xyz, double badd) {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];
-        biso = atom.getTempFactor();
+        double biso = atom.getTempFactor();
         uadd = b2u(badd);
         occ = atom.getOccupancy();
 
-        // check occ is valid
+        // Check occ is valid.
         if (occ < 0.0) {
             StringBuilder sb = new StringBuilder();
             sb.append("negative occupancy for atom: ").append(atom.toString()).append("\n");
@@ -504,7 +498,7 @@ public final class NeutronFormFactor implements FormFactor {
             atom.setOccupancy(0.0);
         }
 
-        // check if anisou changed
+        // Check if anisou changed.
         if (atom.getAnisou(null) == null) {
             if (uaniso == null) {
                 uaniso = new double[6];
@@ -554,7 +548,6 @@ public final class NeutronFormFactor implements FormFactor {
 
         double det = determinant3(u[0]);
         ainv[0] = a[0] / sqrt(det);
-        // b[i] = pow(det, 0.33333333333);
         det = determinant3(uinv[0]);
         binv[0] = pow(det, 0.33333333333);
     }

@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
 import javax.media.j3d.Appearance;
@@ -79,101 +79,64 @@ import com.sun.j3d.utils.geometry.Sphere;
  */
 public class RendererCache {
 
-    // Scene Attributes
-    /**
-     * Constant <code>lineAttributes</code>
-     */
-    public static final LineAttributes lineAttributes = new LineAttributes();
-    /**
-     * Constant <code>pointAttributes</code>
-     */
-    public static final PointAttributes pointAttributes = new PointAttributes();
-    /**
-     * Constant <code>coloringAttributes</code>
-     */
-    public static final ColoringAttributes coloringAttributes = new ColoringAttributes();
-    /**
-     * Constant <code>renderingAttributes</code>
-     */
-    public static final RenderingAttributes renderingAttributes = new RenderingAttributes();
-    /**
-     * Constant <code>transparencyAttributes</code>
-     */
-    public static final TransparencyAttributes transparencyAttributes = new TransparencyAttributes();
-    /**
-     * Constant <code>fillPolygonAttributes</code>
-     */
-    public static final PolygonAttributes fillPolygonAttributes = new PolygonAttributes();
-    /**
-     * Constant <code>pointPolygonAttributes</code>
-     */
-    public static final PolygonAttributes pointPolygonAttributes = new PolygonAttributes();
-    /**
-     * Constant <code>linePolygonAttributes</code>
-     */
-    public static final PolygonAttributes linePolygonAttributes = new PolygonAttributes();
-    // Create colors that will be used frequently
+    public enum ColorModel {
+
+        CPK, GROUP, RESIDUE, POLYMER, MOLECULE, MONOCHROME, USERCOLOR, PARTIALCHARGE, PICK, SELECT, REVERT, STRUCTURE, APPLYUSERCOLOR
+    }
+
+    public enum ViewModel {
+
+        WIREFRAME, BALLANDSTICK, SPACEFILL, RMIN, TUBE, INVISIBLE, RESTRICT, SHOWHYDROGENS, HIDEHYDROGENS, DETAIL, RIBBON, SHOWVRML, HIDEVRML, INDUCEDDIPOLE, FORCE, VELOCITY, ACCELERATION, HIDEVECTORS, UNIT, RELATIVE, ABSOLUTE, POINTS, LINES, FILL, DESTROY
+    }
+
     /**
      * Constant <code>ORANGE</code>
      */
-    public static final Color3f ORANGE = new Color3f(Color.orange);
+    static final Color3f ORANGE = new Color3f(Color.orange);
     /**
      * Constant <code>RED</code>
      */
-    public static final Color3f RED = new Color3f(Color.red);
+    static final Color3f RED = new Color3f(Color.red);
     /**
      * Constant <code>BLUE</code>
      */
-    public static final Color3f BLUE = new Color3f(Color.blue);
+    static final Color3f BLUE = new Color3f(Color.blue);
     /**
      * Constant <code>GRAY</code>
      */
-    public static final Color3f GRAY = new Color3f(Color.lightGray);
+    static final Color3f GRAY = new Color3f(Color.lightGray);
     /**
      * Constant <code>YELLOW</code>
      */
-    public static final Color3f YELLOW = new Color3f(Color.yellow);
+    static final Color3f YELLOW = new Color3f(Color.yellow);
     /**
      * Constant <code>CYAN</code>
      */
-    public static final Color3f CYAN = new Color3f(Color.cyan);
+    static final Color3f CYAN = new Color3f(Color.cyan);
     /**
      * Constant <code>GREEN</code>
      */
-    public static final Color3f GREEN = new Color3f(Color.green);
+    static final Color3f GREEN = new Color3f(Color.green);
     /**
      * Constant <code>WHITE</code>
      */
-    public static final Color3f WHITE = new Color3f(Color.white);
+    static final Color3f WHITE = new Color3f(Color.white);
     /**
      * Constant <code>PINK</code>
      */
-    public static final Color3f PINK = new Color3f(Color.pink);
+    static final Color3f PINK = new Color3f(Color.pink);
     /**
      * Constant <code>MAGENTA</code>
      */
-    public static final Color3f MAGENTA = new Color3f(Color.magenta);
+    static final Color3f MAGENTA = new Color3f(Color.magenta);
+    /**
+     * Constant <code>nullAp</code>
+     */
+    static final Appearance nullAp;
     /**
      * Constant <code>BLACK</code>
      */
     public static final Color3f BLACK = new Color3f(Color.black);
-    /**
-     * Constant <code>NULLColor</code>
-     */
-    public static final Color3f NULLColor = new Color3f(Color.darkGray);
-    /**
-     * Constant <code>bgColor</code>
-     */
-    public static final Color bgColor = Color.black;
-    // Some default values for the 3D Universe
-    /**
-     * Constant <code>colorModel</code>
-     */
-    public static ColorModel colorModel = ColorModel.CPK;
-    /**
-     * Constant <code>viewModel</code>
-     */
-    public static ViewModel viewModel = ViewModel.WIREFRAME;
     /**
      * Constant <code>detail=3</code>
      */
@@ -182,14 +145,6 @@ public class RendererCache {
      * Constant <code>radius=1.0d</code>
      */
     public static double radius = 1.0d;
-    /**
-     * Constant <code>bondRadius=1.0d</code>
-     */
-    public static double bondRadius = 1.0d;
-    /**
-     * Constant <code>vectorScale=1.8d</code>
-     */
-    public static double vectorScale = 1.8d;
     /**
      * Constant <code>bondwidth=3</code>
      */
@@ -221,83 +176,17 @@ public class RendererCache {
     /**
      * Constant <code>viewModelHash</code>
      */
-    public static final Hashtable<String, ViewModel> viewModelHash = new Hashtable<String, ViewModel>();
+    public static final Hashtable<String, ViewModel> viewModelHash = new Hashtable<>();
     /**
      * Constant <code>colorModelHash</code>
      */
-    public static final Hashtable<String, ColorModel> colorModelHash = new Hashtable<String, ColorModel>();
-    /*
-     * Viewing Models - These strings need to be coordinated with the Locale
-     * keys such that the following would return true.
-     * spacefillLocaleKey.equalsIgnoreCase(ViewModel.SPACEFILL)
-     */
-    private static final Transform3D localToVworld = new Transform3D();
-    private static final Transform3D worldToImagePlate = new Transform3D();
-    private static final Hashtable<Color3f, Material> materials = new Hashtable<Color3f, Material>();
-    /*
-     * Color Models - These strings need to be coordinated with the Locale keys
-     * so that the following would return true.
-     * cpkLocaleKey.equalsIgnoreCase(ColorModel.CPK)
-     */
-    private static List<Transform3D> transform3DPool = Collections.synchronizedList(new ArrayList<Transform3D>());
+    public static final Hashtable<String, ColorModel> colorModelHash = new Hashtable<>();
+
     /**
-     * Constant <code>spherePool</code>
+     * <p>
+     * Constructor for RendererCache.</p>
      */
-    protected static List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<BranchGroup>());
-    private static List<BranchGroup> doubleCylinderPool = Collections.synchronizedList(new ArrayList<BranchGroup>());
-    private static final Geometry sphereGeom[] = new Geometry[11];
-    private static final Geometry cylgeom[][] = new Geometry[3][11];
-    private static final Geometry conegeom[][] = new Geometry[2][4];
-    static private final Hashtable<Color3f, Appearance> pointAppearances = new Hashtable<Color3f, Appearance>();
-    static private final Hashtable<Color3f, Appearance> lineAppearances = new Hashtable<Color3f, Appearance>();
-    static private final Hashtable<Color3f, Appearance> fillAppearances = new Hashtable<Color3f, Appearance>();
-    private static ShaderProgram shaderProgram = null;
-    private static final Color3f negCharge[] = new Color3f[1000];
-    private static final Color3f posCharge[] = new Color3f[1000];
-    // For hiding live, but recycled Java3D Nodes
-    /**
-     * Constant <code>nullAp</code>
-     */
-    static public final Appearance nullAp;
-
-    static {
-        coloringAttributes.setShadeModel(ColoringAttributes.NICEST);
-        coloringAttributes.setColor(new Color3f(0, 0, 0));
-        lineAttributes.setLineAntialiasingEnable(true);
-        lineAttributes.setLinePattern(LineAttributes.PATTERN_SOLID);
-        lineAttributes.setLineWidth(1.0f);
-        pointAttributes.setPointAntialiasingEnable(true);
-        pointAttributes.setPointSize(1.0f);
-        fillPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_FILL);
-        fillPolygonAttributes.setCullFace(PolygonAttributes.CULL_BACK);
-        linePolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_LINE);
-        pointPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_POINT);
-        renderingAttributes.setVisible(true);
-        renderingAttributes.setDepthBufferEnable(true);
-        renderingAttributes.setDepthBufferWriteEnable(true);
-        renderingAttributes.setIgnoreVertexColors(true);
-        transparencyAttributes.setTransparencyMode(TransparencyAttributes.NONE);
-    }
-
-    static {
-        ViewModel values[] = ViewModel.values();
-        for (ViewModel value : values) {
-            viewModelHash.put(value.toString(), value);
-        }
-    }
-
-    static {
-        ColorModel values[] = ColorModel.values();
-        for (ColorModel value : values) {
-            colorModelHash.put(value.toString(), value);
-        }
-    }
-
-    static {
-        nullAp = new Appearance();
-        RenderingAttributes ra = new RenderingAttributes();
-        ra.setVisible(false);
-        nullAp.setRenderingAttributes(ra);
+    public RendererCache() {
     }
 
     /**
@@ -309,8 +198,7 @@ public class RendererCache {
      *                    object.
      * @return a {@link javax.media.j3d.Appearance} object.
      */
-    public static Appearance appearanceFactory(Color3f col,
-                                               ViewModel polygonType) {
+    static Appearance appearanceFactory(Color3f col, ViewModel polygonType) {
         if (col == null) {
             return null;
         }
@@ -351,92 +239,15 @@ public class RendererCache {
         return cone;
     }
 
-    static private Appearance createAppearance(Color3f col,
-                                               ViewModel polygonType) {
-        Appearance ap = null;
-        if (shaderProgram != null) {
-            ShaderAppearance sap = new ShaderAppearance();
-            sap.setShaderProgram(shaderProgram);
-            ap = sap;
-        }
-        if (ap == null) {
-            ap = new Appearance();
-        }
-        Material mat = materialFactory(col);
-        ap.setMaterial(mat);
-        ap.setRenderingAttributes(renderingAttributes);
-        ap.setColoringAttributes(coloringAttributes);
-        ap.setLineAttributes(lineAttributes);
-        ap.setPointAttributes(pointAttributes);
-        if (polygonType == RendererCache.ViewModel.FILL) {
-            ap.setPolygonAttributes(fillPolygonAttributes);
-            fillAppearances.put(col, ap);
-        } else if (polygonType == RendererCache.ViewModel.POINTS) {
-            ap.setPolygonAttributes(pointPolygonAttributes);
-            pointAppearances.put(col, ap);
-        } else {
-            ap.setPolygonAttributes(linePolygonAttributes);
-            lineAppearances.put(col, ap);
-        }
-        return ap;
-    }
-
     /**
-     * This method creates a Cylinder
+     * <p>
+     * getPolarGeom</p>
      *
-     * @param ap  a {@link javax.media.j3d.Appearance} object.
      * @param res a int.
-     * @return a {@link javax.media.j3d.Shape3D} object.
+     * @return a {@link javax.media.j3d.Geometry} object.
      */
-    protected static final Shape3D createCylinder(Appearance ap, int res) {
-        if (res < 0) {
-            res = 0;
-        }
-        if (res > 10) {
-            res = 10;
-        }
-        final Shape3D cyl = new Shape3D();
-        cyl.setAppearance(ap);
-        cyl.addGeometry(getCylinderGeom(0, res));
-        cyl.addGeometry(getCylinderGeom(1, res));
-        cyl.addGeometry(getCylinderGeom(2, res));
-        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
-        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
-        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
-        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
-        cyl.setCapability(Shape3D.ENABLE_PICK_REPORTING);
-        cyl.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
-        return cyl;
-    }
-
-    /**
-     * This method creates a single Sphere from the given appearance
-     */
-    private static Shape3D createSphere(Appearance ap, int div) {
-        Shape3D shape3d = new Shape3D();
-        shape3d.setAppearance(ap);
-        shape3d.addGeometry(getSphereGeom(div));
-        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
-        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
-        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
-        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
-        shape3d.setCapability(Shape3D.ENABLE_PICK_REPORTING);
-        shape3d.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
-        return shape3d;
-    }
-
-    private static final TransformGroup createTransformGroup(
-            Transform3D transform3D) {
-        TransformGroup transformGroup;
-        if (transform3D == null) {
-            transformGroup = new TransformGroup();
-        } else {
-            transformGroup = new TransformGroup(transform3D);
-        }
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
-        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        transformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
-        return transformGroup;
+    protected static Geometry getPolarGeom(int res) {
+        return getSphereGeom(res);
     }
 
     /**
@@ -448,8 +259,7 @@ public class RendererCache {
      * @param div a int.
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
-    public static final BranchGroup doubleCylinderFactory(Atom a1, Atom a2,
-                                                          int div) {
+    static BranchGroup doubleCylinderFactory(Atom a1, Atom a2, int div) {
         BranchGroup branchGroup;
         if (doubleCylinderPool.size() > 0) {
             branchGroup = doubleCylinderPool.remove(0);
@@ -492,7 +302,7 @@ public class RendererCache {
      *             object.
      * @return a {@link javax.vecmath.Color3f} object.
      */
-    public static final Color3f getColor(Atom a, ColorModel mode) {
+    static Color3f getColor(Atom a, ColorModel mode) {
         switch (mode) {
             case CPK:
                 return Atom.AtomColor.get(a.getAtomicNumber());
@@ -501,7 +311,7 @@ public class RendererCache {
             case SELECT:
                 return selectionColor;
             case PARTIALCHARGE:
-                int index = 0;
+                int index;
                 double charge = a.getCharge();
                 if (charge < 0.0d) {
                     float c = (float) (charge * 1000.0);
@@ -537,31 +347,13 @@ public class RendererCache {
 
     /**
      * <p>
-     * getConeGeom</p>
-     *
-     * @param num a int.
-     * @param res a int.
-     * @return a {@link javax.media.j3d.Geometry} object.
-     */
-    protected static Geometry getConeGeom(int num, int res) {
-        if (res > 3) {
-            res = 3;
-        }
-        if (conegeom[num][res] == null) {
-            initConeGeom(res);
-        }
-        return conegeom[num][res];
-    }
-
-    /**
-     * <p>
      * getCylinderGeom</p>
      *
      * @param num a int.
      * @param res a int.
      * @return a {@link javax.media.j3d.Geometry} object.
      */
-    public static final Geometry getCylinderGeom(int num, int res) {
+    static Geometry getCylinderGeom(int num, int res) {
         if (res < 0) {
             res = 0;
         }
@@ -576,17 +368,6 @@ public class RendererCache {
 
     /**
      * <p>
-     * getPolarGeom</p>
-     *
-     * @param res a int.
-     * @return a {@link javax.media.j3d.Geometry} object.
-     */
-    protected static final Geometry getPolarGeom(int res) {
-        return getSphereGeom(res);
-    }
-
-    /**
-     * <p>
      * getScreenCoordinate</p>
      *
      * @param canvas  a {@link javax.media.j3d.Canvas3D} object.
@@ -594,8 +375,7 @@ public class RendererCache {
      * @param point3d a {@link javax.vecmath.Point3d} object.
      * @param point   a {@link javax.vecmath.Point2d} object.
      */
-    public static void getScreenCoordinate(Canvas3D canvas, Node node,
-                                           Point3d point3d, final Point2d point) {
+    static void getScreenCoordinate(Canvas3D canvas, Node node, Point3d point3d, final Point2d point) {
         if (point == null) {
             return;
         }
@@ -609,11 +389,11 @@ public class RendererCache {
         worldToImagePlate.transform(point3d);
         // Final step to the 2D Screen.
         canvas.getPixelLocationFromImagePlate(point3d, point);
-        /**
-         * Now we have the location where the point will be rendered on the
-         * screen depending on resize, placement, size, and eye point policies.
-         * This should only be called on points that reside within the clipping
-         * planes.
+        /*
+          Now we have the location where the point will be rendered on the
+          screen depending on resize, placement, size, and eye point policies.
+          This should only be called on points that reside within the clipping
+          planes.
          */
     }
 
@@ -624,7 +404,7 @@ public class RendererCache {
      * @param res a int.
      * @return a {@link javax.media.j3d.Geometry} object.
      */
-    public static final Geometry getSphereGeom(int res) {
+    static Geometry getSphereGeom(int res) {
         if (res < 0) {
             res = 0;
         }
@@ -635,6 +415,185 @@ public class RendererCache {
             initSphereGeom(res);
         }
         return sphereGeom[res];
+    }
+
+    /**
+     * <p>
+     * materialFactory</p>
+     *
+     * @param col a {@link javax.vecmath.Color3f} object.
+     * @return a {@link javax.media.j3d.Material} object.
+     */
+    static Material materialFactory(Color3f col) {
+        if (col == null) {
+            return null;
+        }
+        Material mat = materials.get(col);
+        if (mat == null) {
+            mat = new Material(col, BLACK, col, WHITE, 75.0f);
+            mat.setLightingEnable(true);
+            materials.put(col, mat);
+        }
+        return mat;
+    }
+
+    /**
+     * <p>
+     * poolDoubleCylinder</p>
+     *
+     * @param branchGroup a {@link javax.media.j3d.BranchGroup} object.
+     */
+    static void poolDoubleCylinder(BranchGroup branchGroup) {
+        if (branchGroup != null) {
+            doubleCylinderPool.add(branchGroup);
+        }
+    }
+
+    /**
+     * <p>
+     * poolSphere</p>
+     *
+     * @param tg a {@link javax.media.j3d.BranchGroup} object.
+     */
+    static void poolSphere(BranchGroup tg) {
+        if (tg != null) {
+            spherePool.add(tg);
+        }
+    }
+
+    /**
+     * <p>
+     * poolTransform3D</p>
+     *
+     * @param transform3D a {@link javax.media.j3d.Transform3D} object.
+     */
+    static void poolTransform3D(Transform3D transform3D) {
+        if (transform3D != null) {
+            transform3DPool.add(transform3D);
+        }
+    }
+
+    /**
+     * <p>
+     * sphereFactory</p>
+     *
+     * @param ap          a {@link javax.media.j3d.Appearance} object.
+     * @param div         a int.
+     * @param transform3D a {@link javax.media.j3d.Transform3D} object.
+     * @return a {@link javax.media.j3d.BranchGroup} object.
+     */
+    static BranchGroup sphereFactory(Appearance ap, int div, Transform3D transform3D) {
+        BranchGroup branchGroup;
+        if (spherePool.size() > 0) {
+            branchGroup = spherePool.remove(0);
+            if (branchGroup != null) {
+                TransformGroup transformGroup = (TransformGroup) branchGroup.getChild(0);
+                transformGroup.setTransform(transform3D);
+                Shape3D sphere = (Shape3D) transformGroup.getChild(0);
+                sphere.setAppearance(ap);
+                return branchGroup;
+            }
+        }
+        branchGroup = new BranchGroup();
+        branchGroup.setCapability(BranchGroup.ALLOW_DETACH);
+        branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_READ);
+        branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
+        TransformGroup transformGroup = createTransformGroup(transform3D);
+        Shape3D sphere = createSphere(ap, div);
+        transformGroup.addChild(sphere);
+        branchGroup.addChild(transformGroup);
+        branchGroup.compile();
+        return branchGroup;
+    }
+
+    /**
+     * <p>
+     * toAtomColor</p>
+     *
+     * @param s a {@link java.lang.String} object.
+     * @return a {@link javax.vecmath.Color3f} object.
+     */
+    static Color3f toAtomColor(String s) {
+        String c = s.toLowerCase();
+        if (c.startsWith("h")) {
+            return WHITE;
+        }
+        if (c.startsWith("c")) {
+            return GRAY;
+        }
+        if (c.startsWith("n")) {
+            return BLUE;
+        }
+        if (c.startsWith("o")) {
+            return RED;
+        }
+        if (c.startsWith("p")) {
+            return GREEN;
+        }
+        if (c.startsWith("s")) {
+            return YELLOW;
+        }
+        return NULLColor;
+    }
+
+    /**
+     * <p>
+     * transform3DFactory</p>
+     *
+     * @return a {@link javax.media.j3d.Transform3D} object.
+     */
+    static Transform3D transform3DFactory() {
+        Transform3D transform3D;
+        if (transform3DPool.size() > 0) {
+            transform3D = transform3DPool.get(0);
+            if (transform3D != null) {
+                return transform3D;
+            }
+        }
+        transform3D = new Transform3D();
+        return transform3D;
+    }
+
+    /**
+     * <p>
+     * transform3DFactory</p>
+     *
+     * @param position a {@link javax.vecmath.Vector3d} object.
+     * @param scale    a double.
+     * @return a {@link javax.media.j3d.Transform3D} object.
+     */
+    static Transform3D transform3DFactory(Vector3d position, double scale) {
+        Transform3D transform3D;
+        if (transform3DPool.size() > 0) {
+            transform3D = transform3DPool.get(0);
+            if (transform3D != null) {
+                transform3D.setTranslation(position);
+                transform3D.setScale(scale);
+                return transform3D;
+            }
+        }
+        transform3D = new Transform3D();
+        transform3D.setTranslation(position);
+        transform3D.setScale(scale);
+        return transform3D;
+    }
+
+    /**
+     * <p>
+     * getConeGeom</p>
+     *
+     * @param num a int.
+     * @param res a int.
+     * @return a {@link javax.media.j3d.Geometry} object.
+     */
+    private static Geometry getConeGeom(int num, int res) {
+        if (res > 3) {
+            res = 3;
+        }
+        if (conegeom[num][res] == null) {
+            initConeGeom(res);
+        }
+        return conegeom[num][res];
     }
 
     private static void initConeGeom(int res) {
@@ -687,198 +646,174 @@ public class RendererCache {
     }
 
     /**
-     * <p>
-     * materialFactory</p>
+     * This method creates a Cylinder
      *
-     * @param col a {@link javax.vecmath.Color3f} object.
-     * @return a {@link javax.media.j3d.Material} object.
+     * @param ap  a {@link javax.media.j3d.Appearance} object.
+     * @param res a int.
+     * @return a {@link javax.media.j3d.Shape3D} object.
      */
-    public static Material materialFactory(Color3f col) {
-        if (col == null) {
-            return null;
+    private static Shape3D createCylinder(Appearance ap, int res) {
+        if (res < 0) {
+            res = 0;
         }
-        Material mat = materials.get(col);
-        if (mat == null) {
-            mat = new Material(col, BLACK, col, WHITE, 75.0f);
-            mat.setLightingEnable(true);
-            materials.put(col, mat);
+        if (res > 10) {
+            res = 10;
         }
-        return mat;
-    }
-
-    // A pool of TransformGroups with one child, a sphere.
-
-    /**
-     * <p>
-     * poolDoubleCylinder</p>
-     *
-     * @param branchGroup a {@link javax.media.j3d.BranchGroup} object.
-     */
-    public static void poolDoubleCylinder(BranchGroup branchGroup) {
-        if (branchGroup != null) {
-            doubleCylinderPool.add(branchGroup);
-        }
-    }
-
-    // A pool of TransformGroups with one child, a sphere.
-
-    /**
-     * <p>
-     * poolSphere</p>
-     *
-     * @param tg a {@link javax.media.j3d.BranchGroup} object.
-     */
-    public static void poolSphere(BranchGroup tg) {
-        if (tg != null) {
-            spherePool.add(tg);
-        }
+        final Shape3D cyl = new Shape3D();
+        cyl.setAppearance(ap);
+        cyl.addGeometry(getCylinderGeom(0, res));
+        cyl.addGeometry(getCylinderGeom(1, res));
+        cyl.addGeometry(getCylinderGeom(2, res));
+        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
+        cyl.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
+        cyl.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
+        cyl.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+        cyl.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
+        return cyl;
     }
 
     /**
-     * <p>
-     * poolTransform3D</p>
-     *
-     * @param transform3D a {@link javax.media.j3d.Transform3D} object.
+     * This method creates a single Sphere from the given appearance
      */
-    public static void poolTransform3D(Transform3D transform3D) {
-        if (transform3D != null) {
-            transform3DPool.add(transform3D);
-        }
+    private static Shape3D createSphere(Appearance ap, int div) {
+        Shape3D shape3d = new Shape3D();
+        shape3d.setAppearance(ap);
+        shape3d.addGeometry(getSphereGeom(div));
+        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
+        shape3d.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_WRITE);
+        shape3d.setCapability(Shape3D.ALLOW_APPEARANCE_READ);
+        shape3d.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+        shape3d.setCapability(Shape3D.ALLOW_PICKABLE_WRITE);
+        return shape3d;
     }
 
+    private static TransformGroup createTransformGroup(Transform3D transform3D) {
+        TransformGroup transformGroup;
+        if (transform3D == null) {
+            transformGroup = new TransformGroup();
+        } else {
+            transformGroup = new TransformGroup(transform3D);
+        }
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        transformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        transformGroup.setCapability(TransformGroup.ALLOW_CHILDREN_READ);
+        return transformGroup;
+    }
+
+    private static Appearance createAppearance(Color3f col, ViewModel polygonType) {
+        Appearance ap = null;
+        if (shaderProgram != null) {
+            ShaderAppearance sap = new ShaderAppearance();
+            sap.setShaderProgram(shaderProgram);
+            ap = sap;
+        }
+        if (ap == null) {
+            ap = new Appearance();
+        }
+        Material mat = materialFactory(col);
+        ap.setMaterial(mat);
+        ap.setRenderingAttributes(renderingAttributes);
+        ap.setColoringAttributes(coloringAttributes);
+        ap.setLineAttributes(lineAttributes);
+        ap.setPointAttributes(pointAttributes);
+        if (polygonType == RendererCache.ViewModel.FILL) {
+            ap.setPolygonAttributes(fillPolygonAttributes);
+            fillAppearances.put(col, ap);
+        } else if (polygonType == RendererCache.ViewModel.POINTS) {
+            ap.setPolygonAttributes(pointPolygonAttributes);
+            pointAppearances.put(col, ap);
+        } else {
+            ap.setPolygonAttributes(linePolygonAttributes);
+            lineAppearances.put(col, ap);
+        }
+        return ap;
+    }
+
+    private static final Transform3D localToVworld = new Transform3D();
+    private static final Transform3D worldToImagePlate = new Transform3D();
+    private static final Hashtable<Color3f, Material> materials = new Hashtable<>();
+    private static List<Transform3D> transform3DPool = Collections.synchronizedList(new ArrayList<>());
+    private static List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<>());
+    private static List<BranchGroup> doubleCylinderPool = Collections.synchronizedList(new ArrayList<>());
+    private static final Geometry[] sphereGeom = new Geometry[11];
+    private static final Geometry[][] cylgeom = new Geometry[3][11];
+    private static final Geometry[][] conegeom = new Geometry[2][4];
+    private static final Hashtable<Color3f, Appearance> pointAppearances = new Hashtable<>();
+    private static final Hashtable<Color3f, Appearance> lineAppearances = new Hashtable<>();
+    private static final Hashtable<Color3f, Appearance> fillAppearances = new Hashtable<>();
+    private static ShaderProgram shaderProgram = null;
+    private static final Color3f[] negCharge = new Color3f[1000];
+    private static final Color3f[] posCharge = new Color3f[1000];
     /**
-     * <p>
-     * sphereFactory</p>
-     *
-     * @param ap          a {@link javax.media.j3d.Appearance} object.
-     * @param div         a int.
-     * @param transform3D a {@link javax.media.j3d.Transform3D} object.
-     * @return a {@link javax.media.j3d.BranchGroup} object.
+     * Constant <code>NULLColor</code>
      */
-    public static final BranchGroup sphereFactory(Appearance ap, int div,
-                                                  Transform3D transform3D) {
-        BranchGroup branchGroup;
-        if (spherePool.size() > 0) {
-            branchGroup = spherePool.remove(0);
-            if (branchGroup != null) {
-                TransformGroup transformGroup = (TransformGroup) branchGroup.getChild(0);
-                transformGroup.setTransform(transform3D);
-                Shape3D sphere = (Shape3D) transformGroup.getChild(0);
-                sphere.setAppearance(ap);
-                return branchGroup;
-            }
-        }
-        branchGroup = new BranchGroup();
-        branchGroup.setCapability(BranchGroup.ALLOW_DETACH);
-        branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_READ);
-        branchGroup.setCapability(BranchGroup.ALLOW_CHILDREN_EXTEND);
-        TransformGroup transformGroup = createTransformGroup(transform3D);
-        Shape3D sphere = createSphere(ap, div);
-        transformGroup.addChild(sphere);
-        branchGroup.addChild(transformGroup);
-        branchGroup.compile();
-        return branchGroup;
-    }
-
+    private static final Color3f NULLColor = new Color3f(Color.darkGray);
     /**
-     * <p>
-     * toAtomColor</p>
-     *
-     * @param s a {@link java.lang.String} object.
-     * @return a {@link javax.vecmath.Color3f} object.
+     * Constant <code>lineAttributes</code>
      */
-    public static final Color3f toAtomColor(String s) {
-        String c = s.toLowerCase();
-        if (c.startsWith("h")) {
-            return WHITE;
-        }
-        if (c.startsWith("c")) {
-            return GRAY;
-        }
-        if (c.startsWith("n")) {
-            return BLUE;
-        }
-        if (c.startsWith("o")) {
-            return RED;
-        }
-        if (c.startsWith("p")) {
-            return GREEN;
-        }
-        if (c.startsWith("s")) {
-            return YELLOW;
-        }
-        return NULLColor;
-    }
-
+    private static final LineAttributes lineAttributes = new LineAttributes();
     /**
-     * <p>
-     * transform3DFactory</p>
-     *
-     * @return a {@link javax.media.j3d.Transform3D} object.
+     * Constant <code>pointAttributes</code>
      */
-    public static final Transform3D transform3DFactory() {
-        Transform3D transform3D;
-        if (transform3DPool.size() > 0) {
-            transform3D = transform3DPool.get(0);
-            if (transform3D != null) {
-                return transform3D;
-            }
+    private static final PointAttributes pointAttributes = new PointAttributes();
+    /**
+     * Constant <code>coloringAttributes</code>
+     */
+    private static final ColoringAttributes coloringAttributes = new ColoringAttributes();
+    /**
+     * Constant <code>renderingAttributes</code>
+     */
+    private static final RenderingAttributes renderingAttributes = new RenderingAttributes();
+    /**
+     * Constant <code>transparencyAttributes</code>
+     */
+    private static final TransparencyAttributes transparencyAttributes = new TransparencyAttributes();
+    /**
+     * Constant <code>fillPolygonAttributes</code>
+     */
+    private static final PolygonAttributes fillPolygonAttributes = new PolygonAttributes();
+    /**
+     * Constant <code>pointPolygonAttributes</code>
+     */
+    private static final PolygonAttributes pointPolygonAttributes = new PolygonAttributes();
+    /**
+     * Constant <code>linePolygonAttributes</code>
+     */
+    private static final PolygonAttributes linePolygonAttributes = new PolygonAttributes();
+
+    static {
+        coloringAttributes.setShadeModel(ColoringAttributes.NICEST);
+        coloringAttributes.setColor(new Color3f(0, 0, 0));
+        lineAttributes.setLineAntialiasingEnable(true);
+        lineAttributes.setLinePattern(LineAttributes.PATTERN_SOLID);
+        lineAttributes.setLineWidth(1.0f);
+        pointAttributes.setPointAntialiasingEnable(true);
+        pointAttributes.setPointSize(1.0f);
+        fillPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_FILL);
+        fillPolygonAttributes.setCullFace(PolygonAttributes.CULL_BACK);
+        linePolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_LINE);
+        pointPolygonAttributes.setPolygonMode(PolygonAttributes.POLYGON_POINT);
+        renderingAttributes.setVisible(true);
+        renderingAttributes.setDepthBufferEnable(true);
+        renderingAttributes.setDepthBufferWriteEnable(true);
+        renderingAttributes.setIgnoreVertexColors(true);
+        transparencyAttributes.setTransparencyMode(TransparencyAttributes.NONE);
+
+        ViewModel[] values = ViewModel.values();
+        for (ViewModel value : values) {
+            viewModelHash.put(value.toString(), value);
         }
-        transform3D = new Transform3D();
-        return transform3D;
-    }
 
-    /**
-     * <p>
-     * transform3DFactory</p>
-     *
-     * @param position a {@link javax.vecmath.Vector3d} object.
-     * @param scale    a double.
-     * @return a {@link javax.media.j3d.Transform3D} object.
-     */
-    public static final Transform3D transform3DFactory(Vector3d position,
-                                                       double scale) {
-        Transform3D transform3D;
-        if (transform3DPool.size() > 0) {
-            transform3D = transform3DPool.get(0);
-            if (transform3D != null) {
-                transform3D.setTranslation(position);
-                transform3D.setScale(scale);
-                return transform3D;
-            }
+        ColorModel[] colorModelValues = ColorModel.values();
+        for (ColorModel value : colorModelValues) {
+            colorModelHash.put(value.toString(), value);
         }
-        transform3D = new Transform3D();
-        transform3D.setTranslation(position);
-        transform3D.setScale(scale);
-        return transform3D;
-    }
 
-    /**
-     * <p>
-     * Constructor for RendererCache.</p>
-     */
-    public RendererCache() {
-    }
-
-    /**
-     * <p>
-     * Constructor for RendererCache.</p>
-     *
-     * @param v a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
-     * @param c a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
-     */
-    public RendererCache(ViewModel v, ColorModel c) {
-        viewModel = v;
-        colorModel = c;
-    }
-
-    public enum ColorModel {
-
-        CPK, GROUP, RESIDUE, POLYMER, MOLECULE, MONOCHROME, USERCOLOR, PARTIALCHARGE, PICK, SELECT, REVERT, STRUCTURE, APPLYUSERCOLOR
-    }
-
-    public enum ViewModel {
-
-        WIREFRAME, BALLANDSTICK, SPACEFILL, RMIN, TUBE, INVISIBLE, RESTRICT, SHOWHYDROGENS, HIDEHYDROGENS, DETAIL, RIBBON, SHOWVRML, HIDEVRML, INDUCEDDIPOLE, FORCE, VELOCITY, ACCELERATION, HIDEVECTORS, UNIT, RELATIVE, ABSOLUTE, POINTS, LINES, FILL, DESTROY
+        nullAp = new Appearance();
+        RenderingAttributes ra = new RenderingAttributes();
+        ra.setVisible(false);
+        nullAp.setRenderingAttributes(ra);
     }
 }

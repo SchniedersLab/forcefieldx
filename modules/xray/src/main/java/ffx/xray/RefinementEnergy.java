@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.ArrayList;
@@ -78,7 +78,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * MolecularAssembly instances being refined.
      */
-    private final MolecularAssembly molecularAssemblies[];
+    private final MolecularAssembly[] molecularAssemblies;
     /**
      * Compute fast varying forces, slowly varying forces, or both.
      */
@@ -87,10 +87,6 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * Container to huge experimental data.
      */
     private final DataContainer data;
-    /**
-     * The refinement model.
-     */
-    private final RefinementModel refinementModel;
     /**
      * An array of atoms being refined.
      */
@@ -104,17 +100,13 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      */
     private final Atom[] activeAtomArray;
     /**
-     * The number of active atoms.
-     */
-    private final int nActive;
-    /**
      * An array of XYZIndex values.
      */
-    private final List<Integer> xIndex[];
+    private final List<Integer>[] xIndex;
     /**
      * The Potential based on experimental data.
      */
-    protected CrystalPotential dataEnergy;
+    private CrystalPotential dataEnergy;
     /**
      * A thermostat instance.
      */
@@ -126,15 +118,15 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * The number of XYZ coordinates being refined.
      */
-    protected int nXYZ;
+    int nXYZ;
     /**
      * The number of b-factor parameters being refined.
      */
-    protected int nBFactor;
+    int nBFactor;
     /**
      * The number of occupancy parameters being refined.
      */
-    protected int nOccupancy;
+    int nOccupancy;
     /**
      * The total number of parameters being refined.
      */
@@ -146,15 +138,15 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * Atomic coordinates for computing the chemical energy.
      */
-    private double xChemical[][];
+    private double[][] xChemical;
     /**
      * Array for storing chemical gradient.
      */
-    private double gChemical[][];
+    private double[][] gChemical;
     /**
      * Array for storing the experimental gradient.
      */
-    private double gXray[];
+    private double[] gXray;
     /**
      * Total potential energy.
      */
@@ -162,11 +154,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * Optimization scale factors.
      */
-    protected double[] optimizationScaling = null;
-    /**
-     * If true, collect lambda derivatives.
-     */
-    protected boolean lambdaTerm;
+    private double[] optimizationScaling;
     /**
      * Print a file if there is an error in the energy.
      */
@@ -192,19 +180,20 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * @param optimizationScaling scaling of refinement parameters
      */
     public RefinementEnergy(DataContainer data,
-                            RefinementMode refinementMode, double optimizationScaling[]) {
+                            RefinementMode refinementMode, double[] optimizationScaling) {
 
         this.data = data;
         this.refinementMode = refinementMode;
         this.optimizationScaling = optimizationScaling;
         molecularAssemblies = data.getMolecularAssemblies();
-        refinementModel = data.getRefinementModel();
         atomArray = data.getAtomArray();
         nAtoms = atomArray.length;
 
+        RefinementModel refinementModel = data.getRefinementModel();
+
         // Determine if lambda derivatives are needed.
         ForceField forceField = molecularAssemblies[0].getForceField();
-        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        // boolean lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
         printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, true);
 
         // Fill an active atom array.
@@ -218,7 +207,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 nUse++;
             }
         }
-        nActive = count;
+        int nActive = count;
         activeAtomArray = new Atom[count];
         count = 0;
         for (Atom a : atomArray) {
@@ -231,7 +220,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         thermostat = null;
         kTScale = 1.0;
 
-        // determine size of fit
+        // Determine size of fit.
         n = nXYZ = nBFactor = nOccupancy = 0;
         switch (refinementMode) {
             case COORDINATES:
@@ -240,7 +229,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             case COORDINATES_AND_BFACTORS:
             case COORDINATES_AND_OCCUPANCIES:
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-                // coordinate params
+                // Coordinate params.
                 nXYZ = nActive * 3;
             case BFACTORS:
             case OCCUPANCIES:
@@ -262,7 +251,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                             if (a.getAnisou(null) == null) {
                                 if (diffractionData.isAddAnisou()) {
                                     logger.info(format(" Adding ANISOU to %s.", a.describe(Descriptions.Resnum_Name)));
-                                    double anisou[] = new double[6];
+                                    double[] anisou = new double[6];
                                     double u = b2u(a.getTempFactor());
                                     anisou[0] = anisou[1] = anisou[2] = u;
                                     anisou[3] = anisou[4] = anisou[5] = 0.0;
@@ -292,7 +281,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                         }
                     }
 
-                    // occupancy params
+                    // Occupancy params.
                     if (refinementMode == RefinementMode.OCCUPANCIES
                             || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                             || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
@@ -625,7 +614,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * @param xChem The xChem parameters for the particular MolecularAssembly
      *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */
-    public void getAssemblyi(int i, double x[], double xChem[]) {
+    private void getAssemblyi(int i, double[] x, double[] xChem) {
         assert (x != null && xChem != null);
         for (int j = 0; j < xChem.length; j += 3) {
             int index = j / 3;
@@ -644,7 +633,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * @param xChem The xChem parameters for the particular MolecularAssembly
      *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */
-    public void setAssemblyi(int i, double x[], double xChem[]) {
+    private void setAssemblyi(int i, double[] x, double[] xChem) {
         assert (x != null && xChem != null);
         for (int j = 0; j < xChem.length; j += 3) {
             int index = j / 3;
@@ -807,9 +796,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
         int assemblysize = molecularAssemblies.length;
-        /**
-         * Compute the chemical energy and gradient.
-         */
+
+        // Compute the chemical energy and gradient.
         for (int i = 0; i < assemblysize; i++) {
             ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
             double curdEdL = forceFieldEnergy.getdEdL();
@@ -837,9 +825,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
         int assemblysize = molecularAssemblies.length;
-        /**
-         * Compute the chemical energy and gradient.
-         */
+
+        // Compute the chemical energy and gradient.
         for (int i = 0; i < assemblysize; i++) {
             ForceFieldEnergy forceFieldEnergy = molecularAssemblies[i].getPotentialEnergy();
             double curE = forceFieldEnergy.getd2EdL2();
@@ -847,9 +834,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         }
         d2EdL2 *= kTScale;
 
-        /**
-         * No 2nd derivative for scattering term.
-         */
+        // No 2nd derivative for scattering term.
         return d2EdL2;
     }
 
@@ -864,9 +849,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         }
         int assemblysize = molecularAssemblies.length;
 
-        /**
-         * Compute the chemical energy and gradient.
-         */
+        // Compute the chemical energy and gradient.
         for (int i = 0; i < assemblysize; i++) {
             ForceFieldEnergy forcefieldEnergy = molecularAssemblies[i].getPotentialEnergy();
             Arrays.fill(gChemical[i], 0.0);
@@ -878,9 +861,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             }
         }
 
-        /**
-         * Normalize gradients for multiple-counted atoms.
-         */
+        // Normalize gradients for multiple-counted atoms.
         if (assemblysize > 1) {
             for (int i = 0; i < nXYZ; i++) {
                 gradient[i] /= assemblysize;
@@ -890,9 +871,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             gradient[i] *= kTScale;
         }
 
-        /**
-         * Compute the X-ray target energy and gradient.
-         */
+        // Compute the X-ray target energy and gradient.
         if (gXray == null || gXray.length != nXYZ) {
             gXray = new double[nXYZ];
         } else {
@@ -938,9 +917,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
-        int assemblysize = molecularAssemblies.length;
-        for (int i = 0; i < assemblysize; i++) {
-            ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
+        for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+            ForceFieldEnergy fe = molecularAssembly.getPotentialEnergy();
             fe.setEnergyTermState(state);
         }
         dataEnergy.setEnergyTermState(state);
@@ -958,7 +936,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             return;
         }
         int index = 0;
-        double vel[] = new double[3];
+        double[] vel = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             if (atomArray[i].isActive()) {
                 vel[0] = velocity[index++];
@@ -981,7 +959,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             return;
         }
         int index = 0;
-        double accel[] = new double[3];
+        double[] accel = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             if (atomArray[i].isActive()) {
                 accel[0] = acceleration[index++];
@@ -1004,7 +982,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             return;
         }
         int index = 0;
-        double prev[] = new double[3];
+        double[] prev = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             if (atomArray[i].isActive()) {
                 prev[0] = previousAcceleration[index++];
@@ -1028,7 +1006,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             velocity = new double[n];
         }
         int index = 0;
-        double v[] = new double[3];
+        double[] v = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atomArray[i];
             if (a.isActive()) {
@@ -1054,7 +1032,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             acceleration = new double[n];
         }
         int index = 0;
-        double a[] = new double[3];
+        double[] a = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             if (atomArray[i].isActive()) {
                 atomArray[i].getAcceleration(a);
@@ -1079,7 +1057,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             previousAcceleration = new double[n];
         }
         int index = 0;
-        double a[] = new double[3];
+        double[] a = new double[3];
         for (int i = 0; i < nAtoms; i++) {
             if (atomArray[i].isActive()) {
                 atomArray[i].getPreviousAcceleration(a);

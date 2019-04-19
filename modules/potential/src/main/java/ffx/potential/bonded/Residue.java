@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.bonded;
 
 import javax.media.j3d.Canvas3D;
@@ -47,12 +47,11 @@ import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.System.arraycopy;
 
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
@@ -70,6 +69,109 @@ import static ffx.utilities.HashCodeUtil.hash;
 public class Residue extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(Residue.class.getName());
+
+    /**
+     * The location of a residue within a chain.
+     */
+    public enum ResiduePosition {
+
+        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
+    }
+
+    public enum AA {
+
+        GLYCINE, ALANINE, VALINE, LEUCINE, ISOLEUCINE, SERINE, THREONINE,
+        CYSTEINE, PROLINE, PHENYLALANINE, TYROSINE, TRYPTOPHAN, ASPARTATE,
+        ASPARAGINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
+        HISTIDINE
+    }
+
+    public enum AA1 {
+
+        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B,
+        J, f, a, n, m, X
+    }
+
+    public enum AA3 {
+
+        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
+        GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
+        NME, UNK, ASH, GLH, LYD, CYD, TYD
+    }
+
+    public enum NA {
+
+        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE,
+        DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE
+    }
+
+    public enum NA1 {
+
+        A, C, G, U, D, I, B, T, P, Q, R, X
+    }
+
+    public enum NA3 {
+
+        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
+
+        /**
+         * Best-guess parse of a String to an NA3.
+         *
+         * @param name Parse to NA3.
+         * @return Corresponding NA3.
+         * @throws IllegalArgumentException For 'DU', which has no implemented NA3.
+         */
+        public static NA3 parse(String name) throws IllegalArgumentException {
+            // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
+            switch (name.toUpperCase()) {
+                case "ADE":
+                case "A":
+                    return A;
+                case "CYT":
+                case "C":
+                    return C;
+                case "GUA":
+                case "G":
+                    return G;
+                case "URI":
+                case "U":
+                    return U;
+                case "DAD":
+                case "DA":
+                    return DA;
+                case "DCY":
+                case "DC":
+                    return DC;
+                case "DGU":
+                case "DG":
+                    return DG;
+                case "DTY":
+                case "THY":
+                case "DT":
+                    return DT;
+                case "DU":
+                    throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
+                case "MPO":
+                    return MPO;
+                case "DPO":
+                    return DPO;
+                case "TPO":
+                    return TPO;
+                default:
+                    return UNK;
+            }
+        }
+    }
+
+    public enum ResidueType {
+
+        NA, AA, UNK
+    }
+
+    public enum SSType {
+
+        NONE, HELIX, SHEET, TURN
+    }
 
     /**
      * The residue number of this residue in a chain.
@@ -90,8 +192,26 @@ public class Residue extends MSGroup {
     /**
      * Residue type.
      */
-    protected ResidueType residueType = ResidueType.UNK;
+    ResidueType residueType;
+    /**
+     * The rotamers for this residue.
+     */
+    private Rotamer[] rotamers = null;
+    /**
+     * The current rotamer in use.
+     */
+    private Rotamer currentRotamer = null;
+    /**
+     * Short string describing this residue.
+     */
+    private String shortString = null;
+    /**
+     * 3-letter amino acid code.
+     */
     private AA3 aa;
+    /**
+     * 3-letter nucleic acid code.
+     */
     private NA3 na;
     /**
      * These arrays store default coordinates for certain atoms in nucleic acid
@@ -107,35 +227,7 @@ public class Residue extends MSGroup {
      * <p>
      * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
      */
-    private double[] O3sNorthCoords = null;
-    private double[] O3sSouthCoords = null;
-    private double[] C1sCoords = null;
-    private double[] O4sCoords = null;
-    private double[] C4sCoords = null;
-
-    private Rotamer currentRotamer = null;
-    private Rotamer originalRotamer = null;
-    /**
-     * Constant <code>origAtEnd=</code>
-     */
-    protected static final boolean origAtEnd;
-    private static final boolean addOrigRot;
-    private Rotamer rotamers[] = null;
-
-    static {
-        String origAtEndStr = System.getProperty("ro-origAtEnd");
-        if (origAtEndStr != null) {
-            origAtEnd = Boolean.parseBoolean(origAtEndStr);
-        } else {
-            origAtEnd = false;
-        }
-        String origRotStr = System.getProperty("ro-addOrigRot");
-        if (origRotStr != null) {
-            addOrigRot = Boolean.parseBoolean(origRotStr);
-        } else {
-            addOrigRot = false;
-        }
-    }
+    private double[] O3sNorthCoords, O3sSouthCoords, C1sCoords, O4sCoords, C4sCoords;
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -186,8 +278,7 @@ public class Residue extends MSGroup {
      * @param chainID   a {@link java.lang.Character} object.
      * @param segID     a {@link java.lang.String} object.
      */
-    public Residue(String name, int resNumber, ResidueType rt, Character chainID,
-                   String segID) {
+    public Residue(String name, int resNumber, ResidueType rt, Character chainID, String segID) {
         this(name, rt);
         this.resNumber = resNumber;
         this.chainID = chainID;
@@ -213,20 +304,6 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * Deprecated method to get this Residue's rotamers (should now pass in an
-     * instance of a RotamerLibrary, where previously RotamerLibrary was largely
-     * a static class).
-     *
-     * @return Rotamers
-     */
-    /**
-    @Deprecated
-    public Rotamer[] getRotamers() {
-        logger.warning(" Deprecated code path; use Residue.getRotamers(RotamerLibrary library) instead!");
-        return this.getRotamers(RotamerLibrary.getDefaultLibrary());
-    } */
-
-    /**
      * Gets the Rotamers for this residue, potentially incorporating the
      * original coordinates if RotamerLibrary's original coordinates rotamer
      * flag has been set.
@@ -236,24 +313,20 @@ public class Residue extends MSGroup {
      */
     public Rotamer[] getRotamers(RotamerLibrary library) {
 
-        /**
-         * If the rotamers for this residue have been cached, return them.
-         */
+        // If the rotamers for this residue have been cached, return them.
         if (rotamers != null) {
             return rotamers;
         }
 
-        /**
-         * Return rotamers for this residue from the RotamerLibrary.
-         */
+        // Return rotamers for this residue from the RotamerLibrary.
         Rotamer[] libRotamers = library.getRotamers(this);
 
-        /**
-         * If there are no rotamers, and addOrigRot is true, return an array with
-         * only an original-coordinates rotamer. Else if there are no rotamers,
-         * return (null) library rotamers. If there are rotamers, and original
-         * coordinates are turned off, return (filled) library rotamers. Else,
-         * continue generating the rotamers array.
+        /*
+          If there are no rotamers, and addOrigRot is true, return an array with
+          only an original-coordinates rotamer. Else if there are no rotamers,
+          return (null) library rotamers. If there are rotamers, and original
+          coordinates are turned off, return (filled) library rotamers. Else,
+          continue generating the rotamers array.
          */
         if (libRotamers == null) {
             if (addOrigRot) {
@@ -266,8 +339,9 @@ public class Residue extends MSGroup {
                         try {
                             aa3 = AminoAcid3.valueOf(getName());
                         } catch (Exception e) {
+                            //
                         }
-                        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                        Rotamer originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
                         rotamers[0] = originalRotamer;
                         break;
                     case NA:
@@ -275,27 +349,27 @@ public class Residue extends MSGroup {
                         try {
                             na3 = NucleicAcid3.valueOf(getName());
                         } catch (Exception e) {
+                            //
                         }
                         originalRotamer = new Rotamer(na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
                         rotamers[0] = originalRotamer;
                         break;
                     default:
-                        originalRotamer = null;
                         rotamers = libRotamers; // Resets to null.
                 }
                 return rotamers;
             } else {
-                return libRotamers;
+                // No rotamers for this residue.
+                return null;
             }
         } else if (!library.getUsingOrigCoordsRotamer()) {
             return libRotamers;
         }
 
-        /**
-         * Define the current coordinates as a new rotamer.
-         */
+        // Define the current coordinates as a new rotamer.
         ResidueState origState = storeState();
         double[] chi = RotamerLibrary.measureRotamer(this, false);
+        Rotamer originalRotamer;
         switch (residueType) {
             case AA:
                 AminoAcid3 aa3 = this.getAminoAcid3();
@@ -316,41 +390,18 @@ public class Residue extends MSGroup {
                 break;
         }
 
-        /**
-         * Add the new rotamer to those from the library and cache the result.
-         */
+        // Add the new rotamer to those from the library and cache the result.
         int nRots = libRotamers.length;
         rotamers = new Rotamer[nRots + 1];
         if (origAtEnd) {
-            System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
+            arraycopy(libRotamers, 0, rotamers, 0, nRots);
             rotamers[rotamers.length - 1] = originalRotamer;
         } else {
-            System.arraycopy(libRotamers, 0, rotamers, 1, nRots);
+            arraycopy(libRotamers, 0, rotamers, 1, nRots);
             rotamers[0] = originalRotamer;
         }
 
-        /**
-         * Return the rotamer array.
-         */
         return rotamers;
-    }
-
-    /**
-     * Add a rotamer to this Residue's cached array of rotamers.
-     *
-     * @param rotamer The rotamer to add.
-     */
-    public void addRotamer(Rotamer rotamer) {
-        if (rotamers != null) {
-            Rotamer libRotamers[] = rotamers;
-            int nRots = libRotamers.length;
-            rotamers = new Rotamer[nRots + 1];
-            System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
-            rotamers[rotamers.length - 1] = rotamer;
-        } else {
-            rotamers = new Rotamer[1];
-            rotamers[0] = rotamer;
-        }
     }
 
     /**
@@ -360,21 +411,6 @@ public class Residue extends MSGroup {
      */
     public ResidueType getResidueType() {
         return residueType;
-    }
-
-    /**
-     * <p>isDeoxy.</p>
-     *
-     * @return a boolean.
-     */
-    public boolean isDeoxy() {
-        if (getResidueType() == ResidueType.NA) {
-            Atom HOs = (Atom) getAtomNode("HO\'");
-            if (HOs == null) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -553,67 +589,6 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Allows adding Atoms to the Residue.
-     */
-    @Override
-    public MSNode addMSNode(MSNode o) {
-        Atom currentAtom = null;
-        if (o instanceof Atom) {
-            Atom newAtom = (Atom) o;
-            Character newAlt = newAtom.getAltLoc();
-            MSNode atoms = getAtomNode();
-            currentAtom = (Atom) atoms.contains(newAtom);
-            if (currentAtom == null) {
-                currentAtom = newAtom;
-
-                currentAtom.setResName(getName());
-                currentAtom.setResidueNumber(resNumber);
-
-                atoms.add(newAtom);
-                setFinalized(false);
-            } else {
-                /**
-                 * Allow overwriting of the root alternate conformer (' ' or 'A').
-                 */
-                Character currentAlt = currentAtom.getAltLoc();
-                if (currentAlt.equals(' ') || currentAlt.equals('A')) {
-                    if (!newAlt.equals(' ') && !newAlt.equals('A')) {
-                        newAtom.setXyzIndex(currentAtom.getXyzIndex());
-                        atoms.remove(currentAtom);
-                        currentAtom = newAtom;
-
-                        currentAtom.setResName(getName());
-                        currentAtom.setResidueNumber(resNumber);
-
-                        atoms.add(currentAtom);
-                        setFinalized(false);
-                    }
-                }
-            }
-        } else {
-            logger.warning("Only an Atom can be added to a Residue.");
-        }
-        return currentAtom;
-    }
-
-    /**
-     * <p>
-     * deleteAtom</p>
-     *
-     * @param atomToDelete a {@link ffx.potential.bonded.Atom} object.
-     */
-    public void deleteAtom(Atom atomToDelete) {
-        MSNode atoms = getAtomNode();
-        if (atoms.contains(atomToDelete) != null) {
-            logger.info(" The following atom is being deleted from the model:\n"
-                    + atomToDelete.toString());
-            atoms.remove(atomToDelete);
-        }
-    }
-
-    /**
      * Returns a list of side chain atoms; for our purposes, nucleic acid side
      * chain atoms are the sugar and the phosphate.
      *
@@ -692,6 +667,7 @@ public class Residue extends MSGroup {
     /**
      * <p>Returns the NucleicAcid3 corresponding to this Residue, with additional robust checking for 1- or 2-letter names.
      * </p>
+     *
      * @param matchShortName Try to match 1- or 2-letter names (e.g. A to ADE).
      * @return a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
      */
@@ -778,58 +754,274 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * Uses a name to add an Atom to a List<Atom> if the Atom exists for this
-     * residue.
-     *
-     * @param atList List to add to.
-     * @param name   Atom to add.
-     * @return If atom exists.
+     * Initializes this (presumably nucleic acid) Residue's C1s, O4s, C4s,
+     * O3sNorth, and O3sSouth default coordinates based on default PDB atom
+     * locations; to preserve rotamer independence, this must be called before
+     * any NA rotamers are applied.
      */
-    private boolean tryAddAtom(List<Atom> atList, String name) {
+    public void initializeDefaultAtomicCoordinates() {
+        if (residueType != ResidueType.NA) {
+            return;
+        }
+        boolean isDeoxy;
         try {
-            Atom at = (Atom) getAtomNode(name);
-            if (at != null) {
-                atList.add(at);
-                return true;
-            } else {
-                return false;
+            switch (NucleicAcid3.valueOf(this.getName())) {
+                case DAD:
+                case DCY:
+                case DGU:
+                case DTY:
+                    isDeoxy = true;
+                    break;
+                case CYT:
+                case ADE:
+                case THY:
+                case URI:
+                case GUA:
+                default:
+                    isDeoxy = false;
+                    break;
             }
-        } catch (Exception ex) {
-            return false;
+            C1sCoords = new double[3];
+            ((Atom) getAtomNode("C1\'")).getXYZ(C1sCoords);
+            O4sCoords = new double[3];
+            ((Atom) getAtomNode("O4\'")).getXYZ(O4sCoords);
+            C4sCoords = new double[3];
+            ((Atom) getAtomNode("C4\'")).getXYZ(C4sCoords);
+
+            /*
+              With the place flag set false, applySugarPucker returns
+              hypothetical O3' coordinates based on default atom positions and
+              the supplied sugar pucker.
+             */
+            O3sNorthCoords = RotamerLibrary.applySugarPucker(this, RotamerLibrary.NucleicSugarPucker.C3_ENDO, isDeoxy, false);
+            O3sSouthCoords = RotamerLibrary.applySugarPucker(this, RotamerLibrary.NucleicSugarPucker.C2_ENDO, isDeoxy, false);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, toString(), e);
         }
     }
 
-    private void assignResidueType() {
-        String name = getName().toUpperCase();
-        switch (residueType) {
-            case AA:
-                aa = null;
-                try {
-                    if (name.length() >= 2) {
-                        aa = AA3.valueOf(name);
-                    } else if (name.length() == 1) {
-                        AA1 aa1 = AA1.valueOf(name);
-                        aa = AA1toAA3.get(aa1);
-                    }
-                } catch (Exception e) {
-                    logger.fine(String.format("Exception assigning AA3 for residue: %s", name));
-                    aa = AA3.UNK;
-                }
-                break;
-            case NA:
-                na = null;
-                try {
-                    if (name.length() >= 2) {
-                        na = NA3.parse(name);
-                    } else if (name.length() == 1) {
-                        NA1 na1 = NA1.valueOf(name);
-                        na = NA1toNA3.get(na1);
-                    }
-                } catch (Exception e) {
-                    na = NA3.UNK;
-                }
-                break;
+    /**
+     * Returns this Residues Parent Polymer name.
+     *
+     * @return a {@link java.lang.Character} object.
+     */
+    public Character getChainID() {
+        return chainID;
+    }
+
+    /**
+     * Returns this Residue's sequence number.
+     *
+     * @return a int.
+     */
+    public int getResidueNumber() {
+        return resNumber;
+    }
+
+    /**
+     * <p>
+     * printSideChainCOM</p>
+     */
+    public void logSideChainCOM() {
+        double[] com = this.getSideChainCOM();
+        logger.info(String.format(" %s %8.3f %8.3f %8.3f ", getName(), com[0], com[1], com[2]));
+    }
+
+    /**
+     * <p>
+     * setNumber</p>
+     *
+     * @param n a int.
+     */
+    public void setNumber(int n) {
+        resNumber = n;
+        for (Atom atom : getAtomList()) {
+            atom.setResidueNumber(n);
         }
+    }
+
+    /**
+     * <p>
+     * Setter for the field <code>chainID</code>.</p>
+     *
+     * @param c a {@link java.lang.Character} object.
+     */
+    public void setChainID(Character c) {
+        chainID = c;
+
+        for (Atom atom : getAtomList()) {
+            atom.setChainID(c);
+        }
+    }
+
+    /**
+     * <p>
+     * Getter for the field <code>segID</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getSegID() {
+        return segID;
+    }
+
+    /**
+     * Formats this residue with some optional inclusions.
+     * <p>
+     * [residue type]-[chain ID]ResNumber-Name.
+     *
+     * @param addResType Include the residue type
+     * @param addChainID Include the chain ID.
+     * @return A descriptive string.
+     */
+    public String toFormattedString(boolean addResType, boolean addChainID) {
+        StringBuilder sb = new StringBuilder();
+        if (addResType) {
+            sb.append(residueType.toString()).append("-");
+        }
+        if (addChainID) {
+            sb.append(chainID);
+        }
+        sb.append(toString());
+        return sb.toString();
+    }
+
+    /**
+     * Add a rotamer to this Residue's cached array of rotamers.
+     *
+     * @param rotamer The rotamer to add.
+     */
+    void addRotamer(Rotamer rotamer) {
+        if (rotamers != null) {
+            Rotamer[] libRotamers = rotamers;
+            int nRots = libRotamers.length;
+            rotamers = new Rotamer[nRots + 1];
+            arraycopy(libRotamers, 0, rotamers, 0, nRots);
+            rotamers[rotamers.length - 1] = rotamer;
+        } else {
+            rotamers = new Rotamer[1];
+            rotamers[0] = rotamer;
+        }
+    }
+
+    /**
+     * <p>
+     * deleteAtom</p>
+     *
+     * @param atomToDelete a {@link ffx.potential.bonded.Atom} object.
+     */
+    void deleteAtom(Atom atomToDelete) {
+        MSNode atoms = getAtomNode();
+        if (atoms.contains(atomToDelete) != null) {
+            logger.info(" The following atom is being deleted from the model:\n"
+                    + atomToDelete.toString());
+            atoms.remove(atomToDelete);
+        }
+    }
+
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's default
+     * O3' coordinates given a North pucker.
+     *
+     * @return a new double[] with default XYZ coordinates for O3' in a North
+     * pucker.
+     */
+    double[] getO3sNorth() {
+        double[] ret = new double[3];
+        arraycopy(O3sNorthCoords, 0, ret, 0, ret.length);
+        return ret;
+    }
+
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's default
+     * O3' coordinates given a South pucker.
+     *
+     * @return a new double[] with default XYZ coordinates for O3' in a South
+     * pucker.
+     */
+    double[] getO3sSouth() {
+        double[] ret = new double[3];
+        arraycopy(O3sSouthCoords, 0, ret, 0, ret.length);
+        return ret;
+    }
+
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's original
+     * C1' coordinates.
+     *
+     * @return a new double[] with original XYZ coordinates for C1'.
+     */
+    double[] getC1sCoords() {
+        double[] ret = new double[3];
+        arraycopy(C1sCoords, 0, ret, 0, ret.length);
+        return ret;
+    }
+
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's original
+     * O4' coordinates.
+     *
+     * @return a new double[] with original XYZ coordinates for O4'.
+     */
+    double[] getO4sCoords() {
+        double[] ret = new double[3];
+        arraycopy(O4sCoords, 0, ret, 0, ret.length);
+        return ret;
+    }
+
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's original
+     * C4' coordinates.
+     *
+     * @return a new double[] with original XYZ coordinates for C4'.
+     */
+    double[] getC4sCoords() {
+        double[] ret = new double[3];
+        arraycopy(C4sCoords, 0, ret, 0, ret.length);
+        return ret;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Allows adding Atoms to the Residue.
+     */
+    @Override
+    public MSNode addMSNode(MSNode o) {
+        Atom currentAtom = null;
+        if (o instanceof Atom) {
+            Atom newAtom = (Atom) o;
+            Character newAlt = newAtom.getAltLoc();
+            MSNode atoms = getAtomNode();
+            currentAtom = (Atom) atoms.contains(newAtom);
+            if (currentAtom == null) {
+                currentAtom = newAtom;
+
+                currentAtom.setResName(getName());
+                currentAtom.setResidueNumber(resNumber);
+
+                atoms.add(newAtom);
+                setFinalized(false);
+            } else {
+                // Allow overwriting of the root alternate conformer (' ' or 'A').
+                Character currentAlt = currentAtom.getAltLoc();
+                if (currentAlt.equals(' ') || currentAlt.equals('A')) {
+                    if (!newAlt.equals(' ') && !newAlt.equals('A')) {
+                        newAtom.setXyzIndex(currentAtom.getXyzIndex());
+                        atoms.remove(currentAtom);
+                        currentAtom = newAtom;
+
+                        currentAtom.setResName(getName());
+                        currentAtom.setResidueNumber(resNumber);
+
+                        atoms.add(currentAtom);
+                        setFinalized(false);
+                    }
+                }
+            }
+        } else {
+            logger.warning("Only an Atom can be added to a Residue.");
+        }
+        return currentAtom;
     }
 
     /**
@@ -838,7 +1030,7 @@ public class Residue extends MSGroup {
     @Override
     public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
         if (RendererCache.labelResidues) {
-            double d[] = getCenter();
+            double[] d = getCenter();
             point3d.x = d[0];
             point3d.y = d[1];
             point3d.z = d[2];
@@ -915,161 +1107,6 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * Returns the position of this (presumably nucleic acid) Residue's default
-     * O3' coordinates given a North pucker.
-     *
-     * @return a new double[] with default XYZ coordinates for O3' in a North
-     * pucker.
-     */
-    public double[] getO3sNorth() {
-        double[] ret = new double[3];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = O3sNorthCoords[i];
-        }
-        return ret;
-    }
-
-    /**
-     * Returns the position of this (presumably nucleic acid) Residue's default
-     * O3' coordinates given a South pucker.
-     *
-     * @return a new double[] with default XYZ coordinates for O3' in a South
-     * pucker.
-     */
-    public double[] getO3sSouth() {
-        double[] ret = new double[3];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = O3sSouthCoords[i];
-        }
-        return ret;
-    }
-
-    /**
-     * Returns the position of this (presumably nucleic acid) Residue's original
-     * C1' coordinates.
-     *
-     * @return a new double[] with original XYZ coordinates for C1'.
-     */
-    public double[] getC1sCoords() {
-        double[] ret = new double[3];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = C1sCoords[i];
-        }
-        return ret;
-    }
-
-    /**
-     * Returns the position of this (presumably nucleic acid) Residue's original
-     * O4' coordinates.
-     *
-     * @return a new double[] with original XYZ coordinates for O4'.
-     */
-    public double[] getO4sCoords() {
-        double[] ret = new double[3];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = O4sCoords[i];
-        }
-        return ret;
-    }
-
-    /**
-     * Returns the position of this (presumably nucleic acid) Residue's original
-     * C4' coordinates.
-     *
-     * @return a new double[] with original XYZ coordinates for C4'.
-     */
-    public double[] getC4sCoords() {
-        double[] ret = new double[3];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = C4sCoords[i];
-        }
-        return ret;
-    }
-
-    /**
-     * Initializes this (presumably nucleic acid) Residue's C1s, O4s, C4s,
-     * O3sNorth, and O3sSouth default coordinates based on default PDB atom
-     * locations; to preserve rotamer independence, this must be called before
-     * any NA rotamers are applied.
-     */
-    public void initializeDefaultAtomicCoordinates() {
-        if (residueType != ResidueType.NA) {
-            return;
-        }
-        boolean isDeoxy;
-        try {
-            switch (NucleicAcid3.valueOf(this.getName())) {
-                case DAD:
-                case DCY:
-                case DGU:
-                case DTY:
-                    isDeoxy = true;
-                    break;
-                case CYT:
-                case ADE:
-                case THY:
-                case URI:
-                case GUA:
-                default:
-                    isDeoxy = false;
-                    break;
-            }
-            C1sCoords = new double[3];
-            ((Atom) getAtomNode("C1\'")).getXYZ(C1sCoords);
-            O4sCoords = new double[3];
-            ((Atom) getAtomNode("O4\'")).getXYZ(O4sCoords);
-            C4sCoords = new double[3];
-            ((Atom) getAtomNode("C4\'")).getXYZ(C4sCoords);
-
-            /**
-             * With the place flag set false, applySugarPucker returns
-             * hypothetical O3' coordinates based on default atom positions and
-             * the supplied sugar pucker.
-             */
-            O3sNorthCoords = RotamerLibrary.applySugarPucker(this, RotamerLibrary.NucleicSugarPucker.C3_ENDO, isDeoxy, false);
-            O3sSouthCoords = RotamerLibrary.applySugarPucker(this, RotamerLibrary.NucleicSugarPucker.C2_ENDO, isDeoxy, false);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, toString(), e);
-        }
-    }
-
-    /**
-     * Returns the position of this Residue's Alpha Carbon (if it is an amino
-     * acid).
-     *
-     * @return a {@link javax.vecmath.Vector3d} object.
-     */
-    public Vector3d getAlpha3d() {
-        Atom a = (Atom) getAtomNode("CA");
-        if (a == null) {
-            return null;
-        }
-        Vector3d temp = new Vector3d();
-        a.getV3D(temp);
-        return temp;
-    }
-
-    /**
-     * Returns this Residues Parent Polymer name.
-     *
-     * @return a {@link java.lang.Character} object.
-     */
-    public Character getChainID() {
-        return chainID;
-    }
-
-    // Public data access methods
-
-    /**
-     * Returns this Residue's sequence number.
-     *
-     * @return a int.
-     */
-    public int getResidueNumber() {
-        return resNumber;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -1100,47 +1137,10 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>getSideChainCOM.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    public double[] getSideChainCOM() {
-        Vector3d v = new Vector3d();
-        Vector3d v2 = new Vector3d();
-        int count = 0;
-        for (ListIterator li = getSideChainAtoms().listIterator(); li.hasNext(); ) {
-            Atom a = (Atom) li.next();
-            String id = a.getName();
-            if (!id.equals("CA") && !id.equals("N") && !id.equals("C")
-                    && !id.equals("O")) {
-                a.getV3D(v2);
-                v.add(v2);
-                count++;
-            } else if (id.equals("CA")) {
-                a.print();
-            }
-        }
-        v.scale(1.0 / count);
-        double ret[] = new double[3];
-        v.get(ret);
-        return ret;
-    }
-
-    /**
-     * <p>
-     * printSideChainCOM</p>
-     */
-    public void logSideChainCOM() {
-        double com[] = this.getSideChainCOM();
-        logger.info(String.format(" %s %8.3f %8.3f %8.3f ", getName(), com[0], com[1], com[2]));
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
-    public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
+    public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
 // If Color by Residue, pass this Residue's Color
         if (newColorModel == RendererCache.ColorModel.RESIDUE) {
             switch (residueType) {
@@ -1165,76 +1165,6 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>
-     * setNumber</p>
-     *
-     * @param n a int.
-     */
-    public void setNumber(int n) {
-        resNumber = n;
-        for (Atom atom : getAtomList()) {
-            atom.setResidueNumber(n);
-        }
-    }
-
-    /**
-     * <p>
-     * Setter for the field <code>chainID</code>.</p>
-     *
-     * @param c a {@link java.lang.Character} object.
-     */
-    public void setChainID(Character c) {
-        chainID = c;
-
-        for (Atom atom : getAtomList()) {
-            atom.setChainID(c);
-        }
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>segID</code>.</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getSegID() {
-        return segID;
-    }
-
-    /**
-     * <p>
-     * setSSType</p>
-     *
-     * @param ss a {@link ffx.potential.bonded.Residue.SSType} object.
-     */
-    public void setSSType(SSType ss) {
-        ssType = ss;
-    }
-
-    private String shortString = null;
-
-    /**
-     * Formats this residue with some optional inclusions.
-     * <p>
-     * [residue type]-[chain ID]ResNumber-Name.
-     *
-     * @param addResType Include the residue type
-     * @param addChainID Include the chain ID.
-     * @return A descriptive string.
-     */
-    public String toFormattedString(boolean addResType, boolean addChainID) {
-        StringBuilder sb = new StringBuilder();
-        if (addResType) {
-            sb.append(residueType.toString()).append("-");
-        }
-        if (addChainID) {
-            sb.append(chainID);
-        }
-        sb.append(toString());
-        return sb.toString();
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -1245,145 +1175,154 @@ public class Residue extends MSGroup {
         return shortString;
     }
 
-    private static Point3d point3d = new Point3d();
-    private static Point2d point2d = new Point2d();
     /**
-     * Constant <code>NA1Set</code>
+     * <p>getSideChainCOM.</p>
+     *
+     * @return an array of {@link double} objects.
      */
-    public static final EnumSet NA1Set = EnumSet.allOf(NA1.class);
+    private double[] getSideChainCOM() {
+        Vector3d v = new Vector3d();
+        Vector3d v2 = new Vector3d();
+        int count = 0;
+        for (Atom a : getSideChainAtoms()) {
+            String id = a.getName();
+            if (!id.equals("CA") && !id.equals("N") && !id.equals("C")
+                    && !id.equals("O")) {
+                a.getV3D(v2);
+                v.add(v2);
+                count++;
+            } else if (id.equals("CA")) {
+                a.print();
+            }
+        }
+        v.scale(1.0 / count);
+        double[] ret = new double[3];
+        v.get(ret);
+        return ret;
+    }
+
     /**
-     * Constant <code>NA3Set</code>
+     * Uses a name to add an Atom to a List<Atom> if the Atom exists for this
+     * residue.
+     *
+     * @param atList List to add to.
+     * @param name   Atom to add.
+     * @return If atom exists.
      */
-    public static final EnumSet NA3Set = EnumSet.allOf(NA3.class);
-    /**
-     * Constant <code>NASet</code>
-     */
-    public static final EnumSet NASet = EnumSet.allOf(NA.class);
+    private boolean tryAddAtom(List<Atom> atList, String name) {
+        try {
+            Atom at = (Atom) getAtomNode(name);
+            if (at != null) {
+                atList.add(at);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private void assignResidueType() {
+        String name = getName().toUpperCase();
+        switch (residueType) {
+            case AA:
+                aa = null;
+                try {
+                    if (name.length() >= 2) {
+                        aa = AA3.valueOf(name);
+                    } else if (name.length() == 1) {
+                        AA1 aa1 = AA1.valueOf(name);
+                        aa = AA1toAA3.get(aa1);
+                    }
+                } catch (Exception e) {
+                    logger.fine(String.format("Exception assigning AA3 for residue: %s", name));
+                    aa = AA3.UNK;
+                }
+                break;
+            case NA:
+                na = null;
+                try {
+                    if (name.length() >= 2) {
+                        na = NA3.parse(name);
+                    } else if (name.length() == 1) {
+                        NA1 na1 = NA1.valueOf(name);
+                        na = NA1toNA3.get(na1);
+                    }
+                } catch (Exception e) {
+                    na = NA3.UNK;
+                }
+                break;
+        }
+    }
+
     /**
      * Constant <code>NA1toNA3</code>
      */
-    public static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
+    private static final HashMap<NA1, NA3> NA1toNA3 = new HashMap<>();
     /**
      * Constant <code>NA3Color</code>
      */
-    public static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
-    /**
-     * Constant <code>AA1Set</code>
-     */
-    public static final EnumSet AA1Set = EnumSet.allOf(AA1.class);
-    /**
-     * Constant <code>AA3Set</code>
-     */
-    public static final EnumSet AA3Set = EnumSet.allOf(AA3.class);
-    /**
-     * Constant <code>AASet</code>
-     */
-    public static final EnumSet AASet = EnumSet.allOf(AA.class);
+    private static final HashMap<NA3, Color3f> NA3Color = new HashMap<>();
     /**
      * Constant <code>AA1toAA3</code>
      */
-    public static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
+    private static final HashMap<AA1, AA3> AA1toAA3 = new HashMap<>();
     /**
      * Constant <code>AA3toAA1</code>
      */
-    public static final HashMap<AA3, AA1> AA3toAA1 = new HashMap<>();
+    private static final HashMap<AA3, AA1> AA3toAA1 = new HashMap<>();
     /**
      * Constant <code>AA3Color</code>
      */
-    public static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
+    private static final HashMap<AA3, Color3f> AA3Color = new HashMap<>();
     /**
      * Constant <code>SSTypeColor</code>
      */
-    public static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
+    private static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
     /**
      * Constant <code>Ramachandran="new String[17]"</code>
      */
     public static String[] Ramachandran = new String[17];
-
     /**
-     * Converts an NA3 enum to an equivalent NA1; if simpleCodes is true,
-     * ignores the differences between DNA and RNA (deoxy-cytosine and cytosine
-     * are both returned as C, for example).
-     *
-     * @param na3         To convert
-     * @param simpleCodes Whether to use the same codes for DNA and RNA
-     * @return NA1 code
+     * Constant <code>origAtEnd=</code>
      */
-    public static NA1 NucleicAcid3toNA1(NucleicAcid3 na3, boolean simpleCodes) {
-        if (simpleCodes) {
-            switch (na3) {
-                case ADE:
-                case DAD:
-                    return NA1.A;
-                case CYT:
-                case DCY:
-                    return NA1.C;
-                case GUA:
-                case DGU:
-                    return NA1.G;
-                case URI:
-                    return NA1.U;
-                case THY:
-                case DTY:
-                    return NA1.T;
-                default:
-                    return NA1.X;
-            }
-        } else {
-            switch (na3) {
-                case ADE:
-                    return NA1.A;
-                case DAD:
-                    return NA1.D;
-                case CYT:
-                    return NA1.C;
-                case DCY:
-                    return NA1.I;
-                case GUA:
-                    return NA1.G;
-                case DGU:
-                    return NA1.B;
-                case URI:
-                    return NA1.U;
-                case THY:
-                    return NA1.T;
-                case DTY:
-                    return NA1.T;
-                default:
-                    return NA1.X;
-            }
-        }
-    }
-
-    /*
+    static final boolean origAtEnd;
     /**
-     * Since enumeration values must start with a letter, an 'M' is added to
-     * modified bases whose IUPAC name starts with an integer.
-     *
-    public enum NucleicAcid3 {
-
-        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
-        H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
-    };
-    public enum NA1 {
-
-        A, C, G, U, D, I, B, T, P, Q, R, X;
-    }
-
-    public enum NA3 {
-
-        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
-    }
+     * Flag to indicate use of original coordinates as a rotamer.
      */
+    private static final boolean addOrigRot;
+    private static Point3d point3d = new Point3d();
+    private static Point2d point2d = new Point2d();
+
     static {
-        NA1 na1[] = NA1.values();
-        NA3 na3[] = NA3.values();
+
+        String origAtEndStr = System.getProperty("ro-origAtEnd");
+        if (origAtEndStr != null) {
+            origAtEnd = Boolean.parseBoolean(origAtEndStr);
+        } else {
+            origAtEnd = false;
+        }
+        String origRotStr = System.getProperty("ro-addOrigRot");
+        if (origRotStr != null) {
+            addOrigRot = Boolean.parseBoolean(origRotStr);
+        } else {
+            addOrigRot = false;
+        }
+
+        AA1[] aa1 = AA1.values();
+        AA3[] aa3 = AA3.values();
+        for (int i = 0; i < AA1.values().length; i++) {
+            AA1toAA3.put(aa1[i], aa3[i]);
+            AA3toAA1.put(aa3[i], aa1[i]);
+        }
+
+        NA1[] na1 = NA1.values();
+        NA3[] na3 = NA3.values();
         for (int i = 0; i < NA1.values().length; i++) {
             NA1toNA3.put(na1[i], na3[i]);
         }
-    }
 
-    static {
         NA3Color.put(NA3.A, RendererCache.RED);
         NA3Color.put(NA3.C, RendererCache.MAGENTA);
         NA3Color.put(NA3.G, RendererCache.BLUE);
@@ -1396,18 +1335,7 @@ public class Residue extends MSGroup {
         NA3Color.put(NA3.DPO, RendererCache.GREEN);
         NA3Color.put(NA3.TPO, RendererCache.GREEN);
         NA3Color.put(NA3.UNK, RendererCache.CYAN);
-    }
 
-    static {
-        AA1 aa1[] = AA1.values();
-        AA3 aa3[] = AA3.values();
-        for (int i = 0; i < AA1.values().length; i++) {
-            AA1toAA3.put(aa1[i], aa3[i]);
-            AA3toAA1.put(aa3[i], aa1[i]);
-        }
-    }
-
-    static {
         AA3Color.put(AA3.ALA, RendererCache.GRAY);
         AA3Color.put(AA3.ARG, RendererCache.BLUE);
         AA3Color.put(AA3.ASN, RendererCache.BLUE);
@@ -1438,16 +1366,12 @@ public class Residue extends MSGroup {
         AA3Color.put(AA3.NH2, RendererCache.BLUE);
         AA3Color.put(AA3.NME, RendererCache.BLUE);
         AA3Color.put(AA3.UNK, RendererCache.MAGENTA);
-    }
 
-    static {
         SSTypeColor.put(SSType.NONE, RendererCache.WHITE);
         SSTypeColor.put(SSType.SHEET, RendererCache.PINK);
         SSTypeColor.put(SSType.HELIX, RendererCache.BLUE);
         SSTypeColor.put(SSType.TURN, RendererCache.YELLOW);
-    }
 
-    static {
         Ramachandran[0] = "Default (Extended)       [-135.0  135.0]";
         Ramachandran[1] = "Alpha Helix (R)          [ -57.0  -47.0]";
         Ramachandran[2] = "Alpha Helix (L)          [  57.0   47.0]";
@@ -1467,106 +1391,4 @@ public class Residue extends MSGroup {
         Ramachandran[16] = "Beta-Hairpin 3' (i+2)    [ -80.0  -10.0]";
     }
 
-    /**
-     * The location of a residue within a chain.
-     */
-    public enum ResiduePosition {
-
-        FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
-    }
-
-    public enum AA {
-
-        GLYCINE, ALANINE, VALINE, LEUCINE, ISOLEUCINE, SERINE, THREONINE,
-        CYSTEINE, PROLINE, PHENYLALANINE, TYROSINE, TRYPTOPHAN, ASPARTATE,
-        ASPARAGINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
-        HISTIDINE;
-    }
-
-    public enum AA1 {
-
-        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B,
-        J, f, a, n, m, X;
-    }
-
-    public enum AA3 {
-
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
-        GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
-        NME, UNK, ASH, GLH, LYD, CYD, TYD;
-    }
-
-    public enum NA {
-
-        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE,
-        DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE;
-    }
-
-    public enum NA1 {
-
-        A, C, G, U, D, I, B, T, P, Q, R, X;
-    }
-
-    public enum NA3 {
-
-        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
-
-        /**
-         * Best-guess parse of a String to an NA3.
-         * 
-         * @param name Parse to NA3.
-         * @return Corresponding NA3.
-         * @throws IllegalArgumentException For 'DU', which has no implemented NA3.
-         */
-        public static NA3 parse(String name) throws IllegalArgumentException {
-            // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
-            switch (name.toUpperCase()) {
-                case "ADE":
-                case "A":
-                    return A;
-                case "CYT":
-                case "C":
-                    return C;
-                case "GUA":
-                case "G":
-                    return G;
-                case "URI":
-                case "U":
-                    return U;
-                case "DAD":
-                case "DA":
-                    return DA;
-                case "DCY":
-                case "DC":
-                    return DC;
-                case "DGU":
-                case "DG":
-                    return DG;
-                case "DTY":
-                case "THY":
-                case "DT":
-                    return DT;
-                case "DU":
-                    throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
-                case "MPO":
-                    return MPO;
-                case "DPO":
-                    return DPO;
-                case "TPO":
-                    return TPO;
-                default:
-                    return UNK;
-            }
-        }
-    }
-
-    public enum ResidueType {
-
-        NA, AA, UNK;
-    }
-
-    public enum SSType {
-
-        NONE, HELIX, SHEET, TURN;
-    }
 }

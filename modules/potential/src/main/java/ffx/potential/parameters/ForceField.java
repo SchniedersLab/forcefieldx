@@ -1,52 +1,49 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parameters;
 
-import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,10 +63,232 @@ public class ForceField {
     private static final Logger logger = Logger.getLogger(ForceField.class.getName());
 
     /**
+     * Available force fields.
+     */
+    public enum ForceFieldName {
+
+        AMBER99SB,
+        AMBER99SB_TIP3F,
+        AMBER99SB_TIP3AMOEBA,
+        AMOEBA_WATER,
+        AMOEBA_WATER_2003,
+        AMOEBA_WATER_2014,
+        AMOEBA_2004,
+        AMOEBA_2009,
+        AMOEBA_PROTEIN_2004,
+        AMOEBA_PROTEIN_2004_U1,
+        AMOEBA_PROTEIN_2013,
+        AMOEBA_DIRECT_2013,
+        AMOEBA_FIXED_2013,
+        AMOEBA_BIO_2009,
+        AMOEBA_BIO_2009_ORIG,
+        AMOEBA_BIO_2018,
+        AMOEBA_NUC_2017,
+        IAMOEBA_WATER,
+        OPLS_AAL
+    }
+
+    public enum ForceFieldString {
+        BIOMTn,
+        CAVMODEL,
+        ARRAY_REDUCTION,
+        EPSILONRULE,
+        FFT_METHOD,
+        FORCEFIELD,
+        NCSGROUP,
+        MTRIX1,
+        MTRIX2,
+        MTRIX3,
+        MODRES,
+        POLARIZATION,
+        RADIUSRULE,
+        RADIUSSIZE,
+        RADIUSTYPE,
+        REAL_SCHEDULE,
+        RECIP_SCHEDULE,
+        RELATIVE_SOLVATION,
+        SCF_PREDICTOR,
+        SCF_ALGORITHM,
+        SPACEGROUP,
+        VDWINDEX,
+        VDWTYPE,
+        VDW_SCHEDULE,
+        GK_RADIIOVERRIDE,
+        GK_RADIIBYNUMBER,
+        PLATFORM,
+        /* Only meaningful for OpenMM; Java is always double-precision */
+        PRECISION
+    }
+
+    public enum ForceFieldDouble {
+
+        /* Unit cell parameters */
+        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA,
+        /* Van der Waals' cutoff and softcoring parameters */
+        VDW_CUTOFF, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA,
+        /* Van der Waals masking rules */
+        VDW_12_SCALE, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE,
+        /* Van der Waals Softcore path for OpenMM */
+        SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START, SOFTCORE_AMOEBA_VDW_MAX,
+        /* Electrostatics switch for full path non bonded force scaling using OpenMM */
+        ELEC_START,
+        /* Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. */
+        LAMBDA_START,
+        /* Polarization parameters */
+        POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
+        CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
+        /* Polarization masking rules */
+        POLAR_12_SCALE, POLAR_13_SCALE, POLAR_14_SCALE, POLAR_14_INTRA, POLAR_15_SCALE, DIRECT_11_SCALE,
+        /* Electrostatics parameters */
+        EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY,
+        /* Electrostatics masking rules */
+        MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE, MPOLE_15_SCALE,
+        /* Permanent electrostatics softcoring  */
+        PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA,
+        /* Permanent electrostatics lambda window */
+        PERMANENT_LAMBDA_START, PERMANENT_LAMBDA_END,
+        /* Polarization softcoring */
+        POLARIZATION_LAMBDA_EXPONENT, POLARIZATION_LAMBDA_ALPHA,
+        /* Polarization lambda window */
+        POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END,
+        DUAL_TOPOLOGY_LAMBDA_EXPONENT,
+        /* Generalized Kirkwood dielectric and debugging */
+        GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE, GK_HYDROGEN_OVERLAPSCALE, GK_GLOBAL_RADIISCALE, GK_CUTOFF,
+        /* Miscellaneous */
+        RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
+        /* OpenMM finite-difference lambda step size */
+        FD_DLAMBDA,
+        /* OpenMM coefficient of friction for Langevin integrator */
+        FRICTION_COEFF,
+        /* OpenMM collision frequency for Langevin integrator */
+        COLLISION_FREQ,
+        /* Unit Conversions */
+        ANGTORUNIT, STRTORUNIT,
+        /* Cutoff used for building frozen neighbor lists */
+        NEIGHBOR_LIST_CUTOFF
+    }
+
+    public enum ForceFieldInteger {
+
+        FF_THREADS(1),
+        PME_ORDER(5),
+        PME_REAL_THREADS(1),
+        PME_GRID_X,
+        PME_GRID_Y,
+        PME_GRID_Z,
+        LIGAND_START,
+        LIGAND_STOP,
+        SCF_CYCLES,
+        SCF_PREDICTOR_ORDER,
+        CUDA_DEVICE(0),
+
+        /* Flags for bonded-term force groups. If not specified, they default to DEFAULT_BONDED_FORCE_GROUP */
+        BOND_FORCE_GROUP(0), ANGLE_FORCE_GROUP(0), TORSION_FORCE_GROUP(0), ANGLE_TORSION_FORCE_GROUP(0),
+        IMPROPER_TORSION_FORCE_GROUP(0), OUT_OF_PLANE_BEND_FORCE_GROUP(0), PI_ORBITAL_TORSION_FORCE_GROUP(0),
+        STRETCH_BEND_FORCE_GROUP(0), STRETCH_TORSION_FORCE_GROUP(0), IN_PLANE_ANGLE_FORCE_GROUP(0),
+        UREY_BRADLEY_FORCE_GROUP(0), TORSION_TORSION_FORCE_GROUP(0), BOND_RESTRAINT_FORCE_GROUP(0),
+
+        /* Flags for nonbonded-term force groups. If not specified, they default to DEFAULT_NONBONDED_FORCE_GROUP */
+        COM_RESTRAINT_FORCE_GROUP(0), COORD_RESTRAINT_FORCE_GROUP(0), GK_FORCE_GROUP(1),
+        NCS_RESTRAINT_FORCE_GROUP(0), PME_FORCE_GROUP(1), VDW_FORCE_GROUP(1);
+
+        // Describes the default value of this ForceFieldInteger.
+        private final int defaultValue;
+        // Set true if the default value is a meaningful constant value.
+        private final boolean constantDefault;
+
+        ForceFieldInteger() {
+            this(1, false);
+        }
+
+        ForceFieldInteger(int defaultValue) {
+            this(defaultValue, true);
+        }
+
+        ForceFieldInteger(int defaultValue, boolean constantDefault) {
+            this.defaultValue = defaultValue;
+            this.constantDefault = constantDefault;
+        }
+
+        /**
+         * Returns the default value of this ForceFieldInteger if it is meaningful.
+         * <p>
+         * Throws an Exception if it either does not have a meaningful default, or
+         * if the default is determined via a formula. For example, PME_GRID_X is
+         * generally determined as a function of a-axis length and PME grid spacing.
+         *
+         * @return Default value if meaningful.
+         * @throws RuntimeException If default value not meaningful.
+         */
+        public int getDefaultValue() throws RuntimeException {
+            if (constantDefault) {
+                return defaultValue;
+            } else {
+                throw new RuntimeException(format(" ForceFieldInteger %s " +
+                        "either does not have a defined default, or default is " +
+                        "determined formulaically", this.toString()));
+            }
+        }
+
+        /**
+         * Checks whether there is a meaningful, constant default.
+         *
+         * @return If meaningful constant default exists.
+         */
+        public boolean getDefaultMeaningful() {
+            return constantDefault;
+        }
+    }
+
+    public enum ForceFieldBoolean {
+
+        APERIODIC, BONDTERM, ANGLETERM, COMRESTRAINTERM, GKTERM, IMPROPERTERM,
+        OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM, STRBNDTERM,
+        TORSIONTERM, ANGTORSTERM, STRTORSTERM,
+        TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
+        RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS, REDUCE_HYDROGENS,
+        USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES,
+        LIGAND_VAPOR_ELEC, LIGAND_GK_ELEC,
+        NO_LIGAND_CONDENSED_SCF, USE_SCF_PRECONDITIONER,
+        INTERMOLECULAR_SOFTCORE, INTRAMOLECULAR_SOFTCORE,
+        LAMBDA_VALENCE_RESTRAINTS, TORSION_LAMBDATERM, RECIPTERM, NATIVE_ENVIRONMENT_APPROXIMATION,
+        CHECK_ALL_NODE_CHARGES, GK_USEFITRADII, GK_VERBOSERADII, PRINT_ON_FAILURE,
+        DISABLE_NEIGHBOR_UPDATES, ENFORCE_PBC, PME_QI,
+        /* Term-specific flags for softcoring. Any will imply LAMBDATERM is true. */
+        ELEC_LAMBDATERM, GK_LAMBDATERM, VDW_LAMBDATERM,
+        /* Flag to set Hydrogen bonds to rigid and flag to signify alchemical behavior*/
+        RIGID_HYDROGEN, RIGID_BONDS, RIGID_HYDROGEN_ANGLES, VOLUME, FD_TWO_SIDED,
+        HEAVY_HYDROGEN, HEAVY_HYDROGENS
+    }
+
+    public enum ForceFieldType {
+
+        KEYWORD,
+        ANGLE,
+        ANGTORS,
+        ATOM,
+        BIOTYPE,
+        BOND,
+        CHARGE,
+        ISOLVRAD,
+        IMPTORS,
+        MULTIPOLE,
+        OPBEND,
+        PITORS,
+        POLARIZE,
+        STRBND,
+        STRTORS,
+        TORSION,
+        TORTORS,
+        UREYBRAD,
+        VDW,
+        RELATIVESOLV
+    }
+
+    /**
      * A map between a force field name and its internal parameter file.
      */
     private static final Map<ForceFieldName, URL> forceFields = new EnumMap<>(ForceFieldName.class);
-    private static final boolean noRenumbering = System.getProperty("noPatchRenumbering") != null;
 
     static {
         ClassLoader cl = ForceField.class.getClassLoader();
@@ -80,28 +299,15 @@ public class ForceField {
     }
 
     /**
-     * <p>
-     * Get for the URL for the named force field.</p>
-     *
-     * @param forceField a
-     *                   {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
-     * @return a {@link java.net.URL} object.
+     * Flag to prevent patch renumbering.
      */
-    public static URL getForceFieldURL(ForceFieldName forceField) {
-        if (forceField == null) {
-            return null;
-        }
-        return forceFields.get(forceField);
-    }
+    private static final boolean noRenumbering = System.getProperty("noPatchRenumbering") != null;
 
     /**
      * URL to the force field parameter file.
      */
     public URL forceFieldURL;
-    /**
-     * Reference to the keyword file in use.
-     */
-    public File keywordFile;
+
     /**
      * The CompositeConfiguration that contains key=value property pairs from a
      * number of sources.
@@ -131,27 +337,14 @@ public class ForceField {
     /**
      * ForceField Constructor.
      *
-     * @param properties    a
-     *                      {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param parameterFile a {@link java.io.File} object.
-     */
-    public ForceField(CompositeConfiguration properties, File parameterFile) {
-        this(properties);
-        this.keywordFile = parameterFile;
-    }
-
-    /**
-     * ForceField Constructor.
-     *
-     * @param properties a
-     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ForceField(CompositeConfiguration properties) {
         this.properties = properties;
-        /**
-         * Each force field "type" implements the "Comparator<String>" interface
-         * so that passing an "empty" instance of the "type" to its TreeMap
-         * constructor will keep the types sorted.
+        /*
+          Each force field "type" implements the "Comparator<String>" interface
+          so that passing an "empty" instance of the "type" to its TreeMap
+          constructor will keep the types sorted.
          */
         angleTypes = new TreeMap<>(new AngleType(new int[3], 0, new double[1], null));
         atomTypes = new TreeMap<>(new AtomType(0, 0, null, null, 0, 0, 0));
@@ -200,123 +393,17 @@ public class ForceField {
     }
 
     /**
-     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
-     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
-     * ELEC_LAMBDATERM, or GK_LAMBDATERM.
+     * <p>
+     * Get for the URL for the named force field.</p>
      *
-     * @param toSet         Boolean to set true if otherBooleans true.
-     * @param otherBooleans Booleans that imply toSet is true.
-     * @return If toSet is true.
+     * @param forceField a {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
+     * @return a {@link java.net.URL} object.
      */
-    private boolean trueImpliedBoolean(ForceFieldBoolean toSet, ForceFieldBoolean... otherBooleans) {
-        // Short-circuit if it's already true.
-        if (getBoolean(toSet, false)) {
-            return true;
+    public static URL getForceFieldURL(ForceFieldName forceField) {
+        if (forceField == null) {
+            return null;
         }
-
-        // Check all the other booleans that imply toSet.
-        for (ForceFieldBoolean otherBool : otherBooleans) {
-            if (getBoolean(otherBool, false)) {
-                addForceFieldBoolean(toSet, true);
-                logger.info(String.format(" Setting implied boolean %s true due to boolean %s", toSet.toString(), otherBool.toString()));
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns the minimum atom class value.
-     *
-     * @return a int.
-     */
-    public int minClass() {
-        int minClass = maxClass();
-        for (AtomType type : atomTypes.values()) {
-            if (type.atomClass < minClass) {
-                minClass = type.atomClass;
-            }
-        }
-        return minClass;
-    }
-
-    /**
-     * Returns the minimum atom type value.
-     *
-     * @return a int.
-     */
-    public int minType() {
-        int minType = maxType();
-        for (String key : atomTypes.keySet()) {
-            int type = Integer.parseInt(key);
-            if (type < minType) {
-                minType = type;
-            }
-        }
-        return minType;
-    }
-
-    /**
-     * Returns the minimum Biotype value.
-     *
-     * @return a int.
-     */
-    public int minBioType() {
-        int minBioType = maxBioType();
-        for (String key : bioTypes.keySet()) {
-            int type = Integer.parseInt(key);
-            if (type < minBioType) {
-                minBioType = type;
-            }
-        }
-        return minBioType;
-    }
-
-    /**
-     * Returns the maximum atom class value.
-     *
-     * @return a int.
-     */
-    public int maxClass() {
-        int maxClass = 0;
-        for (AtomType type : atomTypes.values()) {
-            if (type.atomClass > maxClass) {
-                maxClass = type.atomClass;
-            }
-        }
-        return maxClass;
-    }
-
-    /**
-     * Returns the maximum atom type value.
-     *
-     * @return a int.
-     */
-    public int maxType() {
-        int maxType = 0;
-        for (String key : atomTypes.keySet()) {
-            int type = Integer.parseInt(key);
-            if (type > maxType) {
-                maxType = type;
-            }
-        }
-        return maxType;
-    }
-
-    /**
-     * Returns the maximum Biotype.
-     *
-     * @return a int.
-     */
-    public int maxBioType() {
-        int maxBioType = 0;
-        for (String key : bioTypes.keySet()) {
-            int type = Integer.parseInt(key);
-            if (type > maxBioType) {
-                maxBioType = type;
-            }
-        }
-        return maxBioType;
+        return forceFields.get(forceField);
     }
 
     /**
@@ -503,45 +590,6 @@ public class ForceField {
 
     }
 
-    private void modifiedResidue(String modres) {
-        String tokens[] = modres.trim().split(" +");
-        String modResname = tokens[0].toUpperCase();
-        String stdName = tokens[1].toUpperCase();
-        HashMap<String, AtomType> patchAtomTypes = getAtomTypes(modResname);
-        HashMap<String, AtomType> stdAtomTypes = getAtomTypes(stdName);
-
-        HashMap<String, AtomType> patchTypes = new HashMap<>();
-        int len = tokens.length;
-        for (int i = 2; i < len; i++) {
-            String atomName = tokens[i].toUpperCase();
-            if (!patchTypes.containsKey(atomName) && patchAtomTypes.containsKey(atomName)) {
-                AtomType type = patchAtomTypes.get(atomName);
-                patchTypes.put(atomName, type);
-            }
-        }
-
-        HashMap<AtomType, AtomType> typeMap = new HashMap<>();
-        for (String atomName : stdAtomTypes.keySet()) {
-            boolean found = false;
-            for (int i = 2; i < len; i++) {
-                if (atomName.equalsIgnoreCase(tokens[i])) {
-                    found = true;
-                }
-            }
-            if (!found) {
-                AtomType stdType = stdAtomTypes.get(atomName);
-                // Edit new BioType records to point to an existing force field type.
-                AtomType patchType = updateBioType(modResname, atomName, stdType.type);
-                if (patchType != null) {
-                    typeMap.put(patchType, stdType);
-                    logger.info(" " + patchType.toString() + " -> " + stdType.toString());
-                }
-            }
-        }
-
-        patchClassesAndTypes(typeMap, patchTypes);
-    }
-
     /**
      * Enums are uppercase with underscores, but property files use lower case
      * with dashes.
@@ -583,8 +631,7 @@ public class ForceField {
      * <p>
      * getDouble</p>
      *
-     * @param forceFieldDouble a
-     *                         {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
      * @return a double.
      * @throws java.lang.Exception if any.
      */
@@ -604,8 +651,7 @@ public class ForceField {
      * <p>
      * getDouble</p>
      *
-     * @param forceFieldDouble a
-     *                         {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
      * @param defaultValue     a double.
      * @return a double.
      */
@@ -624,7 +670,6 @@ public class ForceField {
      * @param forceFieldDouble ForceFieldDouble to check.
      * @return Ever specified.
      * @throws java.lang.NullPointerException If forceFieldDouble is null.
-     * @throws java.lang.NullPointerException if any.
      */
     public boolean hasDouble(ForceFieldDouble forceFieldDouble) throws NullPointerException {
         if (forceFieldDouble == null) {
@@ -638,13 +683,11 @@ public class ForceField {
      * <p>
      * getInteger</p>
      *
-     * @param forceFieldInteger a
-     *                          {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
      * @return a int.
      * @throws java.lang.Exception if any.
      */
-    public int getInteger(ForceFieldInteger forceFieldInteger)
-            throws Exception {
+    public int getInteger(ForceFieldInteger forceFieldInteger) throws Exception {
         if (forceFieldInteger == null) {
             throw new Exception("NULL keyword");
         }
@@ -659,13 +702,11 @@ public class ForceField {
      * <p>
      * getInteger</p>
      *
-     * @param forceFieldInteger a
-     *                          {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
      * @param defaultValue      a int.
      * @return a int.
      */
-    public int getInteger(ForceFieldInteger forceFieldInteger,
-                          int defaultValue) {
+    public int getInteger(ForceFieldInteger forceFieldInteger, int defaultValue) {
         try {
             return getInteger(forceFieldInteger);
         } catch (Exception e) {
@@ -677,13 +718,11 @@ public class ForceField {
      * <p>
      * getString</p>
      *
-     * @param forceFieldString a
-     *                         {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
      * @return a {@link java.lang.String} object.
      * @throws java.lang.Exception if any.
      */
-    public String getString(ForceFieldString forceFieldString)
-            throws Exception {
+    public String getString(ForceFieldString forceFieldString) throws Exception {
         if (forceFieldString == null) {
             throw new Exception("NULL keyword");
         }
@@ -698,13 +737,11 @@ public class ForceField {
      * <p>
      * getString</p>
      *
-     * @param forceFieldString a
-     *                         {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
      * @param defaultString    a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
      */
-    public String getString(ForceFieldString forceFieldString,
-                            String defaultString) {
+    public String getString(ForceFieldString forceFieldString, String defaultString) {
         try {
             return getString(forceFieldString);
         } catch (Exception e) {
@@ -716,13 +753,11 @@ public class ForceField {
      * <p>
      * getBoolean</p>
      *
-     * @param forceFieldBoolean a
-     *                          {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
      * @return a boolean.
      * @throws java.lang.Exception if any.
      */
-    public boolean getBoolean(ForceFieldBoolean forceFieldBoolean)
-            throws Exception {
+    public boolean getBoolean(ForceFieldBoolean forceFieldBoolean) throws Exception {
         if (forceFieldBoolean == null) {
             throw new Exception("NULL keyword");
         }
@@ -737,13 +772,11 @@ public class ForceField {
      * <p>
      * getBoolean</p>
      *
-     * @param forceFieldBoolean a
-     *                          {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
      * @param defaultBoolean    a {@link java.lang.Boolean} object.
      * @return a boolean.
      */
-    public boolean getBoolean(ForceFieldBoolean forceFieldBoolean,
-                              Boolean defaultBoolean) {
+    public boolean getBoolean(ForceFieldBoolean forceFieldBoolean, Boolean defaultBoolean) {
         try {
             return getBoolean(forceFieldBoolean);
         } catch (Exception e) {
@@ -768,12 +801,12 @@ public class ForceField {
                 return;
             }
             // properties.clearProperty(key);
-            logger.info(String.format("  Existing %s %8.3f", key, old));
+            logger.info(format("  Existing %s %8.3f", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format("  Added    %s %8.3f", key, value));
+            logger.info(format("  Added    %s %8.3f", key, value));
         }
     }
 
@@ -793,12 +826,12 @@ public class ForceField {
             if (old == value) {
                 return;
             }
-            logger.info(String.format("  Existing %s %d", key, old));
+            logger.info(format("  Existing %s %d", key, old));
             // properties.clearProperty(key);
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info(String.format("  Added    %s %d", key, value));
+            logger.info(format("  Added    %s %d", key, value));
             properties.addProperty(key, value);
         }
     }
@@ -812,31 +845,31 @@ public class ForceField {
     public static boolean isForceFieldKeyword(String keyword) {
         keyword = keyword.toUpperCase();
         try {
-            ForceFieldBoolean forceFieldBoolean = ForceFieldBoolean.valueOf(keyword);
+            ForceFieldBoolean.valueOf(keyword);
             return true;
         } catch (Exception e) {
             // Ignore.
         }
         try {
-            ForceFieldDouble forceFieldDouble = ForceFieldDouble.valueOf(keyword);
+            ForceFieldDouble.valueOf(keyword);
             return true;
         } catch (Exception e) {
             // Ignore.
         }
         try {
-            ForceFieldInteger forceFieldInteger = ForceFieldInteger.valueOf(keyword);
+            ForceFieldInteger.valueOf(keyword);
             return true;
         } catch (Exception e) {
             // Ignore.
         }
         try {
-            ForceFieldString forceFieldString = ForceFieldString.valueOf(keyword);
+            ForceFieldString.valueOf(keyword);
             return true;
         } catch (Exception e) {
             // Ignore.
         }
         try {
-            ForceFieldType forceFieldType = ForceFieldType.valueOf(keyword);
+            ForceFieldType.valueOf(keyword);
             return true;
         } catch (Exception e) {
             // Ignore.
@@ -860,13 +893,12 @@ public class ForceField {
             if (old.equalsIgnoreCase(value)) {
                 return;
             }
-            //properties.clearProperty(key);
-            logger.info(String.format("  Existing %s %s.", key, old));
+            logger.info(format("  Existing %s %s.", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format("  Added    %s %s", key, value));
+            logger.info(format("  Added    %s %s", key, value));
         }
     }
 
@@ -887,12 +919,12 @@ public class ForceField {
                 return;
             }
             // properties.clearProperty(key);
-            logger.info(String.format("  Existing %s %s", key, Boolean.toString(old)));
+            logger.info(format("  Existing %s %s", key, Boolean.toString(old)));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format("  Added    %s %s", key, Boolean.toString(value)));
+            logger.info(format("  Added    %s %s", key, Boolean.toString(value)));
         }
     }
 
@@ -986,31 +1018,6 @@ public class ForceField {
             }
         }
         return null;
-    }
-
-    /**
-     * All atoms whose atomName begins with name in the passed molecule will be
-     * updated to the new type. The case where an atom such as CD is should map
-     * to both CD1 and CD2.
-     *
-     * @param molecule a {@link java.lang.String} object.
-     * @param atom     a {@link java.lang.String} object.
-     * @param newType  a int.
-     * @return a {@link ffx.potential.parameters.AtomType} object.
-     */
-    public AtomType updateBioType(String molecule, String atom, int newType) {
-        int type = 0;
-        for (BioType bioType : bioTypes.values()) {
-            if (bioType.moleculeName.equalsIgnoreCase(molecule)) {
-                if (atom.length() <= bioType.atomName.length()) {
-                    if (bioType.atomName.toUpperCase().startsWith(atom.toUpperCase())) {
-                        type = bioType.atomType;
-                        bioType.atomType = newType;
-                    }
-                }
-            }
-        }
-        return getAtomType(Integer.toString(type));
     }
 
     /**
@@ -1306,12 +1313,12 @@ public class ForceField {
         for (String key : polarizeTypes.keySet()) {
             PolarizeType polarizeType = polarizeTypes.get(key);
             int orig = Integer.parseInt(key);
-            int types[] = polarizeType.polarizationGroup;
+            int[] types = polarizeType.polarizationGroup;
             if (types == null) {
                 continue;
             }
-            for (int i = 0; i < types.length; i++) {
-                int type = types[i];
+
+            for (int type : types) {
                 String key2 = Integer.toString(type);
                 PolarizeType polarizeType2 = polarizeTypes.get(key2);
                 if (polarizeType2 == null) {
@@ -1326,10 +1333,9 @@ public class ForceField {
                     continue;
                 }
                 boolean found = false;
-                for (int j = 0; j < types2.length; j++) {
-                    int type2 = types2[j];
-                    for (int k = 0; k < types.length; k++) {
-                        if (type2 == types[k]) {
+                for (int type2 : types2) {
+                    for (int type3 : types) {
+                        if (type2 == type3) {
                             found = true;
                         }
                     }
@@ -1387,30 +1393,6 @@ public class ForceField {
     }
 
     /**
-     * <p>printMultipoleTypes.</p>
-     */
-    public void printMultipoleTypes() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Loaded multipole types: \n"));
-        for (String key : multipoleTypes.keySet()) {
-            sb.append(String.format(" m %s : \n", key, multipoleTypes.get(key).key));
-        }
-        logger.info(sb.toString());
-    }
-
-    /**
-     * <p>printAtomTypes.</p>
-     */
-    public void printAtomTypes() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Loaded atom types: \n"));
-        for (String key : atomTypes.keySet()) {
-            sb.append(String.format(" a %s : \n", key, atomTypes.get(key).key));
-        }
-        logger.info(sb.toString());
-    }
-
-    /**
      * Return a String for any Force Field keyword.
      *
      * @param type ForceFieldType
@@ -1419,15 +1401,15 @@ public class ForceField {
     public String toString(ForceFieldType type) {
         StringBuilder sb = new StringBuilder("\n");
         Map t = forceFieldTypes.get(type);
-        if (t.size() > 0) {
-            Set set = t.keySet();
-            Iterator i = set.iterator();
-            while (i.hasNext()) {
-                sb.append(t.get(i.next())).append("\n");
-            }
-            return sb.toString();
+
+        if (t.size() == 0) {
+            return "";
         }
-        return "";
+
+        for (Object o : t.entrySet()) {
+            sb.append(o.toString()).append("\n");
+        }
+        return sb.toString();
     }
 
     /**
@@ -1467,6 +1449,31 @@ public class ForceField {
     }
 
     /**
+     * All atoms whose atomName begins with name in the passed molecule will be
+     * updated to the new type. The case where an atom such as CD is should map
+     * to both CD1 and CD2.
+     *
+     * @param molecule a {@link java.lang.String} object.
+     * @param atom     a {@link java.lang.String} object.
+     * @param newType  a int.
+     * @return a {@link ffx.potential.parameters.AtomType} object.
+     */
+    private AtomType updateBioType(String molecule, String atom, int newType) {
+        int type = 0;
+        for (BioType bioType : bioTypes.values()) {
+            if (bioType.moleculeName.equalsIgnoreCase(molecule)) {
+                if (atom.length() <= bioType.atomName.length()) {
+                    if (bioType.atomName.toUpperCase().startsWith(atom.toUpperCase())) {
+                        type = bioType.atomType;
+                        bioType.atomType = newType;
+                    }
+                }
+            }
+        }
+        return getAtomType(Integer.toString(type));
+    }
+
+    /**
      * Patches that add new atom classes/types that bond to existing atom
      * classes/types require "hybrid" force field types that include a mixture
      * of new and existing types.
@@ -1474,7 +1481,7 @@ public class ForceField {
      * @param typeMap    A look-up from new types to existing types.
      * @param patchTypes a {@link java.util.HashMap} object.
      */
-    public void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap, HashMap<String, AtomType> patchTypes) {
+    private void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap, HashMap<String, AtomType> patchTypes) {
 
         for (BondType bondType : bondTypes.values().toArray(new BondType[0])) {
             BondType newType = bondType.patchClasses(typeMap);
@@ -1574,224 +1581,159 @@ public class ForceField {
     }
 
     /**
-     * Available force fields.
+     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
+     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
+     * ELEC_LAMBDATERM, or GK_LAMBDATERM.
+     *
+     * @param toSet         Boolean to set true if otherBooleans true.
+     * @param otherBooleans Booleans that imply toSet is true.
      */
-    public enum ForceFieldName {
-
-        AMBER99SB,
-        AMBER99SB_TIP3F,
-        AMBER99SB_TIP3AMOEBA,
-        AMOEBA_WATER,
-        AMOEBA_WATER_2003,
-        AMOEBA_WATER_2014,
-        AMOEBA_2004,
-        AMOEBA_2009,
-        AMOEBA_PROTEIN_2004,
-        AMOEBA_PROTEIN_2004_U1,
-        AMOEBA_PROTEIN_2013,
-        AMOEBA_DIRECT_2013,
-        AMOEBA_FIXED_2013,
-        AMOEBA_BIO_2009,
-        AMOEBA_BIO_2009_ORIG,
-        AMOEBA_BIO_2018,
-        AMOEBA_NUC_2017,
-        IAMOEBA_WATER,
-        OPLS_AAL
-    }
-
-    public enum ForceFieldString {
-        BIOMTn,
-        CAVMODEL,
-        ARRAY_REDUCTION,
-        EPSILONRULE,
-        FFT_METHOD,
-        FORCEFIELD,
-        NCSGROUP,
-        MTRIX1,
-        MTRIX2,
-        MTRIX3,
-        MODRES,
-        POLARIZATION,
-        RADIUSRULE,
-        RADIUSSIZE,
-        RADIUSTYPE,
-        REAL_SCHEDULE,
-        RECIP_SCHEDULE,
-        RELATIVE_SOLVATION,
-        SCF_PREDICTOR,
-        SCF_ALGORITHM,
-        SPACEGROUP,
-        VDWINDEX,
-        VDWTYPE,
-        VDW_SCHEDULE,
-        GK_RADIIOVERRIDE,
-        GK_RADIIBYNUMBER,
-        PLATFORM,
-        PRECISION /* Only meaningful for OpenMM; Java is always double-precision */;
-    }
-
-    public enum ForceFieldDouble {
-
-        /* Unit cell parameters */
-        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA,
-        /* Van der Waals' cutoff and softcoring parameters */
-        VDW_CUTOFF, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA,
-        /* Van der Waals masking rules */
-        VDW_12_SCALE, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE,
-        /* Van der Waals Softcore path for OpenMM */
-        SOFTCORE_AMOEBA_VDW_MIDPOINT, NON_SOFTCORE_AMOEBA_VDW_START,
-        /* Electrostatics switch for full path non bonded force scaling using OpenMM */
-        ELEC_START,
-        /* Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. */
-        LAMBDA_START,
-        /* Polarization parameters */
-        POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
-        CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
-        /* Polarization masking rules */
-        POLAR_12_SCALE, POLAR_13_SCALE, POLAR_14_SCALE, POLAR_14_INTRA, POLAR_15_SCALE, DIRECT_11_SCALE,
-        /* Electrostatics parameters */
-        EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY,
-        /* Electrostatics masking rules */
-        MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE, MPOLE_15_SCALE,
-        /* Permanent electrostatics softcoring  */
-        PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA,
-        /* Permanent electrostatics lambda window */
-        PERMANENT_LAMBDA_START, PERMANENT_LAMBDA_END,
-        /* Polarization softcoring */
-        POLARIZATION_LAMBDA_EXPONENT, POLARIZATION_LAMBDA_ALPHA,
-        /* Polarization lambda window */
-        POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END,
-        DUAL_TOPOLOGY_LAMBDA_EXPONENT,
-        /* Generalized Kirkwood dielectric and debugging */
-        GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE, GK_HYDROGEN_OVERLAPSCALE, GK_GLOBAL_RADIISCALE, GK_CUTOFF,
-        /* Miscellaneous */
-        RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
-        /* OpenMM finite-difference lambda step size */
-        FD_DLAMBDA,
-        /* OpenMM coefficient of friction for Langevin integrator */
-        FRICTION_COEFF,
-        /* OpenMM collision frequency for Langevin integrator */
-        COLLISION_FREQ,
-        /* Unit Conversions */
-        ANGTORUNIT, STRTORUNIT,
-        /* Cutoff used for building frozen neighbor lists */
-        NEIGHBOR_LIST_CUTOFF
-    }
-
-    public enum ForceFieldInteger {
-
-        FF_THREADS(1),
-        PME_ORDER(5),
-        PME_REAL_THREADS(1),
-        PME_GRID_X,
-        PME_GRID_Y,
-        PME_GRID_Z,
-        LIGAND_START,
-        LIGAND_STOP,
-        SCF_CYCLES,
-        SCF_PREDICTOR_ORDER,
-        CUDA_DEVICE(0),
-
-        /* Flags for bonded-term force groups. If not specified, they default to DEFAULT_BONDED_FORCE_GROUP */
-        BOND_FORCE_GROUP(0), ANGLE_FORCE_GROUP(0), TORSION_FORCE_GROUP(0), ANGLE_TORSION_FORCE_GROUP(0),
-        IMPROPER_TORSION_FORCE_GROUP(0), OUT_OF_PLANE_BEND_FORCE_GROUP(0), PI_ORBITAL_TORSION_FORCE_GROUP(0),
-        STRETCH_BEND_FORCE_GROUP(0), STRETCH_TORSION_FORCE_GROUP(0), IN_PLANE_ANGLE_FORCE_GROUP(0),
-        UREY_BRADLEY_FORCE_GROUP(0), TORSION_TORSION_FORCE_GROUP(0), BOND_RESTRAINT_FORCE_GROUP(0),
-
-        /* Flags for nonbonded-term force groups. If not specified, they default to DEFAULT_NONBONDED_FORCE_GROUP */
-        COM_RESTRAINT_FORCE_GROUP(0), COORD_RESTRAINT_FORCE_GROUP(0), GK_FORCE_GROUP(1),
-        NCS_RESTRAINT_FORCE_GROUP(0), PME_FORCE_GROUP(1), VDW_FORCE_GROUP(1);
-
-        // Describes the default value of this ForceFieldInteger.
-        private final int defaultValue;
-        // Set true if the default value is a meaningful constant value.
-        private final boolean constantDefault;
-
-        ForceFieldInteger() {
-            this(1, false);
+    private void trueImpliedBoolean(ForceFieldBoolean toSet, ForceFieldBoolean... otherBooleans) {
+        // Short-circuit if it's already true.
+        if (getBoolean(toSet, false)) {
+            return;
         }
 
-        ForceFieldInteger(int defaultValue) {
-            this(defaultValue, true);
+        // Check all the other booleans that imply toSet.
+        for (ForceFieldBoolean otherBool : otherBooleans) {
+            if (getBoolean(otherBool, false)) {
+                addForceFieldBoolean(toSet, true);
+                logger.info(format(" Setting implied boolean %s true due to boolean %s", toSet.toString(), otherBool.toString()));
+            }
         }
+    }
 
-        ForceFieldInteger(int defaultValue, boolean constantDefault) {
-            this.defaultValue = defaultValue;
-            this.constantDefault = constantDefault;
+    /**
+     * Returns the minimum atom class value.
+     *
+     * @return a int.
+     */
+    private int minClass() {
+        int minClass = maxClass();
+        for (AtomType type : atomTypes.values()) {
+            if (type.atomClass < minClass) {
+                minClass = type.atomClass;
+            }
         }
+        return minClass;
+    }
 
-        /**
-         * Returns the default value of this ForceFieldInteger if it is meaningful.
-         * <p>
-         * Throws an Exception if it either does not have a meaningful default, or
-         * if the default is determined via a formula. For example, PME_GRID_X is
-         * generally determined as a function of a-axis length and PME grid spacing.
-         *
-         * @return Default value if meaningful.
-         * @throws RuntimeException If default value not meaningful.
-         */
-        public int getDefaultValue() throws RuntimeException {
-            if (constantDefault) {
-                return defaultValue;
-            } else {
-                throw new RuntimeException(String.format(" ForceFieldInteger %s " +
-                        "either does not have a defined default, or default is " +
-                        "determined formulaically", this.toString()));
+    /**
+     * Returns the minimum atom type value.
+     *
+     * @return a int.
+     */
+    private int minType() {
+        int minType = maxType();
+        for (String key : atomTypes.keySet()) {
+            int type = Integer.parseInt(key);
+            if (type < minType) {
+                minType = type;
+            }
+        }
+        return minType;
+    }
+
+    /**
+     * Returns the minimum Biotype value.
+     *
+     * @return a int.
+     */
+    private int minBioType() {
+        int minBioType = maxBioType();
+        for (String key : bioTypes.keySet()) {
+            int type = Integer.parseInt(key);
+            if (type < minBioType) {
+                minBioType = type;
+            }
+        }
+        return minBioType;
+    }
+
+    /**
+     * Returns the maximum atom class value.
+     *
+     * @return a int.
+     */
+    private int maxClass() {
+        int maxClass = 0;
+        for (AtomType type : atomTypes.values()) {
+            if (type.atomClass > maxClass) {
+                maxClass = type.atomClass;
+            }
+        }
+        return maxClass;
+    }
+
+    /**
+     * Returns the maximum atom type value.
+     *
+     * @return a int.
+     */
+    private int maxType() {
+        int maxType = 0;
+        for (String key : atomTypes.keySet()) {
+            int type = Integer.parseInt(key);
+            if (type > maxType) {
+                maxType = type;
+            }
+        }
+        return maxType;
+    }
+
+    /**
+     * Returns the maximum Biotype.
+     *
+     * @return a int.
+     */
+    private int maxBioType() {
+        int maxBioType = 0;
+        for (String key : bioTypes.keySet()) {
+            int type = Integer.parseInt(key);
+            if (type > maxBioType) {
+                maxBioType = type;
+            }
+        }
+        return maxBioType;
+    }
+
+    private void modifiedResidue(String modres) {
+        String[] tokens = modres.trim().split(" +");
+        String modResname = tokens[0].toUpperCase();
+        String stdName = tokens[1].toUpperCase();
+        HashMap<String, AtomType> patchAtomTypes = getAtomTypes(modResname);
+        HashMap<String, AtomType> stdAtomTypes = getAtomTypes(stdName);
+
+        HashMap<String, AtomType> patchTypes = new HashMap<>();
+        int len = tokens.length;
+        for (int i = 2; i < len; i++) {
+            String atomName = tokens[i].toUpperCase();
+            if (!patchTypes.containsKey(atomName) && patchAtomTypes.containsKey(atomName)) {
+                AtomType type = patchAtomTypes.get(atomName);
+                patchTypes.put(atomName, type);
             }
         }
 
-        /**
-         * Checks whether there is a meaningful, constant default.
-         *
-         * @return If meaningful constant default exists.
-         */
-        public boolean getDefaultMeaningful() {
-            return constantDefault;
+        HashMap<AtomType, AtomType> typeMap = new HashMap<>();
+        for (String atomName : stdAtomTypes.keySet()) {
+            boolean found = false;
+            for (int i = 2; i < len; i++) {
+                if (atomName.equalsIgnoreCase(tokens[i])) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                AtomType stdType = stdAtomTypes.get(atomName);
+                // Edit new BioType records to point to an existing force field type.
+                AtomType patchType = updateBioType(modResname, atomName, stdType.type);
+                if (patchType != null) {
+                    typeMap.put(patchType, stdType);
+                    logger.info(" " + patchType.toString() + " -> " + stdType.toString());
+                }
+            }
         }
-    }
 
-    public enum ForceFieldBoolean {
-
-        APERIODIC, BONDTERM, ANGLETERM, COMRESTRAINTERM, GKTERM, IMPROPERTERM,
-        OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM, STRBNDTERM,
-        TORSIONTERM, ANGTORSTERM, STRTORSTERM,
-        TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
-        RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS, REDUCE_HYDROGENS,
-        USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES,
-        LIGAND_VAPOR_ELEC, LIGAND_GK_ELEC,
-        NO_LIGAND_CONDENSED_SCF, USE_SCF_PRECONDITIONER,
-        INTERMOLECULAR_SOFTCORE, INTRAMOLECULAR_SOFTCORE,
-        LAMBDA_VALENCE_RESTRAINTS, TORSION_LAMBDATERM, RECIPTERM, NATIVE_ENVIRONMENT_APPROXIMATION,
-        CHECK_ALL_NODE_CHARGES, GK_USEFITRADII, GK_VERBOSERADII, PRINT_ON_FAILURE,
-        DISABLE_NEIGHBOR_UPDATES, ENFORCE_PBC, PME_QI,
-        /* Term-specific flags for softcoring. Any will imply LAMBDATERM is true. */
-        ELEC_LAMBDATERM, GK_LAMBDATERM, VDW_LAMBDATERM,
-        /* Flag to set Hydrogen bonds to rigid and flag to signify alchemical behavior*/
-        RIGID_HYDROGEN, RIGID_BONDS, RIGID_HYDROGEN_ANGLES, VOLUME, FD_TWO_SIDED, HEAVY_HYDROGENS
-    }
-
-    public enum ForceFieldType {
-
-        KEYWORD,
-        ANGLE,
-        ANGTORS,
-        ATOM,
-        BIOTYPE,
-        BOND,
-        CHARGE,
-        ISOLVRAD,
-        IMPTORS,
-        MULTIPOLE,
-        OPBEND,
-        PITORS,
-        POLARIZE,
-        STRBND,
-        STRTORS,
-        TORSION,
-        TORTORS,
-        UREYBRAD,
-        VDW,
-        RELATIVESOLV
+        patchClassesAndTypes(typeMap, patchTypes);
     }
 
 }

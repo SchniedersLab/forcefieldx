@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray.parsers;
 
 import java.io.DataInputStream;
@@ -75,13 +75,10 @@ import ffx.xray.parsers.MTZWriter.MTZType;
  * This class parses CCP4 MTZ files.<br>
  *
  * @author Timothy D. Fenn<br>
- *
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
- *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
  * target="_blank">CCP4 library documentation</a>
- *
  * @since 1.0
  */
 public class MTZFilter implements DiffractionFileFilter {
@@ -98,13 +95,13 @@ public class MTZFilter implements DiffractionFileFilter {
 
     private class Dataset {
 
-        public String project;
-        public String dataset;
+        String project;
+        String dataset;
         public double lambda;
         public double[] cell = new double[6];
     }
 
-    private static enum Header {
+    private enum Header {
 
         VERS, TITLE, NCOL, SORT, SYMINF, SYMM, RESO, VALM, COL, COLUMN, NDIF,
         PROJECT, CRYSTAL, DATASET, DCELL, DWAVEL, BATCH,
@@ -132,7 +129,6 @@ public class MTZFilter implements DiffractionFileFilter {
 
     private int nColumns;
     private int nReflections;
-    private int nBatches;
     private int spaceGroupNum;
     private String spaceGroupName;
     private double resLow;
@@ -145,13 +141,17 @@ public class MTZFilter implements DiffractionFileFilter {
     public MTZFilter() {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File mtzFile) {
         return getReflectionList(mtzFile, null);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File mtzFile, CompositeConfiguration properties) {
         ByteOrder byteOrder = ByteOrder.nativeOrder();
@@ -161,13 +161,12 @@ public class MTZFilter implements DiffractionFileFilter {
             fileInputStream = new FileInputStream(mtzFile);
             dataInputStream = new DataInputStream(fileInputStream);
 
-            byte headerOffset[] = new byte[4];
-            byte bytes[] = new byte[80];
+            byte[] headerOffset = new byte[4];
+            byte[] bytes = new byte[80];
             int offset = 0;
 
             // Eat "MTZ" title.
             dataInputStream.read(bytes, offset, 4);
-            String mtzstr = new String(bytes);
 
             // Header offset.
             dataInputStream.read(headerOffset, offset, 4);
@@ -198,7 +197,7 @@ public class MTZFilter implements DiffractionFileFilter {
             dataInputStream.skipBytes((headerOffsetI - 4) * 4);
 
             for (Boolean parsing = true; parsing; dataInputStream.read(bytes, offset, 80)) {
-                mtzstr = new String(bytes);
+                String mtzstr = new String(bytes);
                 parsing = parseHeader(mtzstr);
             }
         } catch (EOFException e) {
@@ -233,18 +232,18 @@ public class MTZFilter implements DiffractionFileFilter {
 
         Column column;
         if (fo > 0) {
-            column = (Column) columns.get(fo);
+            column = columns.get(fo);
         } else if (fPlus > 0) {
-            column = (Column) columns.get(fPlus);
+            column = columns.get(fPlus);
         } else {
-            column = (Column) columns.get(fc);
+            column = columns.get(fc);
         }
-        Dataset dataSet = (Dataset) dataSets.get(column.id - dsetOffset);
+        Dataset dataSet = dataSets.get(column.id - dsetOffset);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             sb.append(format(" Reading %s\n", mtzFile.getName()));
-            sb.append(format("  Setting up reflection list based on MTZ file.\n"));
+            sb.append("  Setting up reflection list based on MTZ file.\n");
             sb.append(format("  Space group number: %d (name: %s)\n",
                     spaceGroupNum, SpaceGroup.spaceGroupNames[spaceGroupNum - 1]));
             sb.append(format("  Resolution:         %8.3f\n", 0.999999 * resHigh));
@@ -266,14 +265,18 @@ public class MTZFilter implements DiffractionFileFilter {
         return new ReflectionList(crystal, resolution, properties);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getResolution(File mtzFile, Crystal crystal) {
         ReflectionList reflectionList = getReflectionList(mtzFile, null);
-        return reflectionList.maxres;
+        return reflectionList.getMaxResolution();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionList,
                             DiffractionRefinementData refinementData, CompositeConfiguration properties) {
@@ -288,13 +291,13 @@ public class MTZFilter implements DiffractionFileFilter {
             fileInputStream = new FileInputStream(mtzFile);
             dataInputStream = new DataInputStream(fileInputStream);
 
-            byte headerOffset[] = new byte[4];
-            byte bytes[] = new byte[80];
+            byte[] headerOffset = new byte[4];
+            byte[] bytes = new byte[80];
             int offset = 0;
 
             // Eat "MTZ" title.
             dataInputStream.read(bytes, offset, 4);
-            String mtzstr = null;
+            //String mtzstr;
 
             // Header offset.
             dataInputStream.read(headerOffset, offset, 4);
@@ -325,7 +328,7 @@ public class MTZFilter implements DiffractionFileFilter {
             dataInputStream.skipBytes((headerOffsetI - 4) * 4);
 
             for (Boolean parsing = true; parsing; dataInputStream.read(bytes, offset, 80)) {
-                mtzstr = new String(bytes);
+                String mtzstr = new String(bytes);
                 parsing = parseHeader(mtzstr);
             }
 
@@ -355,7 +358,7 @@ public class MTZFilter implements DiffractionFileFilter {
             dataInputStream.skipBytes(80);
 
             // Check if HKLs need to be transposed or not.
-            float data[] = new float[nColumns];
+            float[] data = new float[nColumns];
             HKL mate = new HKL();
             int nPosIgnore = 0;
             int nTransIgnore = 0;
@@ -370,13 +373,13 @@ public class MTZFilter implements DiffractionFileFilter {
                 int ih = (int) data[h];
                 int ik = (int) data[k];
                 int il = (int) data[l];
-                boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, false);
+                reflectionList.findSymHKL(ih, ik, il, mate, false);
                 HKL hklpos = reflectionList.getHKL(mate);
                 if (hklpos == null) {
                     nPosIgnore++;
                 }
 
-                friedel = reflectionList.findSymHKL(ih, ik, il, mate, true);
+                reflectionList.findSymHKL(ih, ik, il, mate, true);
                 HKL hkltrans = reflectionList.getHKL(mate);
                 if (hkltrans == null) {
                     nTransIgnore++;
@@ -418,15 +421,15 @@ public class MTZFilter implements DiffractionFileFilter {
                 sb.append(format(" Setting R free flag to MTZ default: %d\n", refinementData.rfreeflag));
             }
 
-            // reopen to start at beginning
+            // Reopen to start at beginning
             fileInputStream = new FileInputStream(mtzFile);
             dataInputStream = new DataInputStream(fileInputStream);
 
-            // skip initial header
+            // Skip initial header
             dataInputStream.skipBytes(80);
 
-            // read in data
-            double anofSigF[][] = new double[refinementData.n][4];
+            // Read in data
+            double[][] anofSigF = new double[refinementData.n][4];
             for (int i = 0; i < refinementData.n; i++) {
                 anofSigF[i][0] = anofSigF[i][1] = anofSigF[i][2] = anofSigF[i][3] = Double.NaN;
             }
@@ -538,12 +541,12 @@ public class MTZFilter implements DiffractionFileFilter {
     /**
      * Average the computed structure factors for two systems.
      *
-     * @param mtzFile1 This file will be overwritten and become the new average.
-     * @param mtzFile2 Second MTZ file.
+     * @param mtzFile1       This file will be overwritten and become the new average.
+     * @param mtzFile2       Second MTZ file.
      * @param reflectionlist List of HKLs.
-     * @param iter The iteration in the running average.
-     * @param properties The CompositeConfiguration defines the properties of
-     * each system.
+     * @param iter           The iteration in the running average.
+     * @param properties     The CompositeConfiguration defines the properties of
+     *                       each system.
      */
     public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
                            int iter, CompositeConfiguration properties) {
@@ -573,14 +576,14 @@ public class MTZFilter implements DiffractionFileFilter {
     /**
      * Read the structure factors.
      *
-     * @param mtzFile a {@link java.io.File} object.
+     * @param mtzFile        a {@link java.io.File} object.
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-     * @param fcData a {@link ffx.xray.DiffractionRefinementData} object.
-     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param fcData         a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param properties     a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return a boolean.
      */
-    public boolean readFcs(File mtzFile, ReflectionList reflectionList,
-                           DiffractionRefinementData fcData, CompositeConfiguration properties) {
+    private boolean readFcs(File mtzFile, ReflectionList reflectionList,
+                            DiffractionRefinementData fcData, CompositeConfiguration properties) {
 
         int nRead, nIgnore, nRes, nFriedel, nCut;
         ByteOrder byteOrder = ByteOrder.nativeOrder();
@@ -592,13 +595,12 @@ public class MTZFilter implements DiffractionFileFilter {
             fileInputStream = new FileInputStream(mtzFile);
             dataInputStream = new DataInputStream(fileInputStream);
 
-            byte headerOffset[] = new byte[4];
-            byte bytes[] = new byte[80];
+            byte[] headerOffset = new byte[4];
+            byte[] bytes = new byte[80];
             int offset = 0;
 
             // Eat "MTZ" title.
             dataInputStream.read(bytes, offset, 4);
-            String mtzString = null;
 
             // Header offset.
             dataInputStream.read(headerOffset, offset, 4);
@@ -629,7 +631,7 @@ public class MTZFilter implements DiffractionFileFilter {
             dataInputStream.skipBytes((headerOffsetI - 4) * 4);
 
             for (Boolean parsing = true; parsing; dataInputStream.read(bytes, offset, 80)) {
-                mtzString = new String(bytes);
+                String mtzString = new String(bytes);
                 parsing = parseHeader(mtzString);
             }
 
@@ -651,7 +653,7 @@ public class MTZFilter implements DiffractionFileFilter {
             // Skip initial header.
             dataInputStream.skipBytes(80);
 
-            float data[] = new float[nColumns];
+            float[] data = new float[nColumns];
             HKL mate = new HKL();
 
             // Read in data.
@@ -666,7 +668,7 @@ public class MTZFilter implements DiffractionFileFilter {
                 int ih = (int) data[h];
                 int ik = (int) data[k];
                 int il = (int) data[l];
-                boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, false);
+                reflectionList.findSymHKL(ih, ik, il, mate, false);
                 HKL hkl = reflectionList.getHKL(mate);
 
                 if (hkl != null) {
@@ -719,15 +721,12 @@ public class MTZFilter implements DiffractionFileFilter {
     /**
      * Parse the header.
      *
-     * @param str
+     * @param str The header to parse.
      * @return
      */
     private Boolean parseHeader(String str) {
-        Boolean parsing = true;
-        Column column;
+        boolean parsing = true;
         Dataset dataSet;
-
-        int nDataSet;
         String[] strArray = str.split("\\s+");
 
         if (headerParsed) {
@@ -741,7 +740,7 @@ public class MTZFilter implements DiffractionFileFilter {
             case NCOL:
                 nColumns = parseInt(strArray[1]);
                 nReflections = parseInt(strArray[2]);
-                nBatches = parseInt(strArray[3]);
+                int nBatches = parseInt(strArray[3]);
                 break;
             case SORT:
                 break;
@@ -767,11 +766,11 @@ public class MTZFilter implements DiffractionFileFilter {
                 break;
             case COL:
             case COLUMN:
-                nDataSet = parseInt(strArray[5]);
+                int nDataSet = parseInt(strArray[5]);
                 if (nDataSet == 0) {
                     dsetOffset = 0;
                 }
-                column = new Column();
+                Column column = new Column();
                 columns.add(column);
                 column.label = strArray[1];
                 column.type = strArray[2].charAt(0);
@@ -785,7 +784,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     dsetOffset = 0;
                 }
                 try {
-                    dataSet = (Dataset) dataSets.get(nDataSet - dsetOffset);
+                    dataSet = dataSets.get(nDataSet - dsetOffset);
                 } catch (IndexOutOfBoundsException e) {
                     dataSet = new Dataset();
                     dataSets.add(dataSet);
@@ -800,7 +799,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     dsetOffset = 0;
                 }
                 try {
-                    dataSet = (Dataset) dataSets.get(nDataSet - dsetOffset);
+                    dataSet = dataSets.get(nDataSet - dsetOffset);
                 } catch (IndexOutOfBoundsException e) {
                     dataSet = new Dataset();
                     dataSets.add(dataSet);
@@ -813,7 +812,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     dsetOffset = 0;
                 }
                 try {
-                    dataSet = (Dataset) dataSets.get(nDataSet - dsetOffset);
+                    dataSet = dataSets.get(nDataSet - dsetOffset);
                 } catch (IndexOutOfBoundsException e) {
                     dataSet = new Dataset();
                     dataSets.add(dataSet);
@@ -831,7 +830,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     dsetOffset = 0;
                 }
                 try {
-                    dataSet = (Dataset) dataSets.get(nDataSet - dsetOffset);
+                    dataSet = dataSets.get(nDataSet - dsetOffset);
                 } catch (IndexOutOfBoundsException e) {
                     dataSet = new Dataset();
                     dataSets.add(dataSet);
@@ -958,7 +957,7 @@ public class MTZFilter implements DiffractionFileFilter {
         if (fo < 0 && sigFo < 0
                 && fPlus > 0 && sigFPlus > 0
                 && fMinus > 0 && sigFMinus > 0) {
-            sb.append(format(" Reading Fplus/Fminus column to fill in Fo\n"));
+            sb.append(" Reading Fplus/Fminus column to fill in Fo\n");
         }
         if (logger.isLoggable(Level.INFO) && print) {
             logger.info(sb.toString());
@@ -1060,7 +1059,7 @@ public class MTZFilter implements DiffractionFileFilter {
      *
      * @return the nColumns
      */
-    public int getnColumns() {
+    int getnColumns() {
         return nColumns;
     }
 
@@ -1069,7 +1068,7 @@ public class MTZFilter implements DiffractionFileFilter {
      *
      * @return the nReflections
      */
-    public int getnReflections() {
+    int getnReflections() {
         return nReflections;
     }
 
@@ -1078,7 +1077,7 @@ public class MTZFilter implements DiffractionFileFilter {
      *
      * @return the spaceGroupNum
      */
-    public int getSpaceGroupNum() {
+    int getSpaceGroupNum() {
         return spaceGroupNum;
     }
 

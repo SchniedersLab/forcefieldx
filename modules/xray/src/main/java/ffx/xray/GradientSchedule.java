@@ -1,43 +1,44 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray;
 
 import java.util.logging.Logger;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerSchedule;
@@ -47,25 +48,22 @@ import edu.rit.util.Range;
  * <p>GradientSchedule class.</p>
  *
  * @author Armin Avdic
- *
  * @since 1.0
  */
 public class GradientSchedule extends IntegerSchedule {
 
-    private static final Logger logger = Logger.getLogger(GradientSchedule.class.getName());
-
     private int nThreads;
-    private boolean threadDone[];
-    private Range ranges[];
-    private final int lowerBounds[];
+    private boolean[] threadDone;
+    private Range[] ranges;
+    private final int[] lowerBounds;
     private final int nAtoms;
-    private int weights[];
+    private int[] weights;
 
     /**
      * <p>Constructor for GradientSchedule.</p>
      *
      * @param nThreads a int.
-     * @param nAtoms a int.
+     * @param nAtoms   a int.
      */
     protected GradientSchedule(int nThreads, int nAtoms) {
         this.nThreads = nThreads;
@@ -80,17 +78,21 @@ public class GradientSchedule extends IntegerSchedule {
      *
      * @param weights an array of {@link int} objects.
      */
-    public void updateWeights(int weights[]) {
+    void updateWeights(int[] weights) {
         this.weights = weights;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isFixedSchedule() {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void start(int nThreads, Range chunkRange) {
         this.nThreads = nThreads;
@@ -107,7 +109,9 @@ public class GradientSchedule extends IntegerSchedule {
         defineRanges();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Range next(int threadID) {
         if (!threadDone[threadID]) {
@@ -128,9 +132,9 @@ public class GradientSchedule extends IntegerSchedule {
     private void defineRanges() {
         double totalWeight = totalWeight();
 
-        /**
-         * Infrequent edge case where the total weight is less than or equal to
-         * the number of threads.
+        /*
+          Infrequent edge case where the total weight is less than or equal to
+          the number of threads.
          */
         if (totalWeight <= nThreads) {
             Range temp = new Range(0, nAtoms - 1);
@@ -138,9 +142,9 @@ public class GradientSchedule extends IntegerSchedule {
             return;
         }
 
-        /**
-         * Handle the case where we only have a single thread, which will
-         * receive all the atoms.
+        /*
+          Handle the case where we only have a single thread, which will
+          receive all the atoms.
          */
         if (nThreads == 1) {
             ranges[0] = new Range(0, nAtoms - 1);
@@ -170,22 +174,15 @@ public class GradientSchedule extends IntegerSchedule {
 
         int lastThread = currentThread;
 
-        /**
-         * Loop over all threads that will receive work except the final one.
-         */
+        // Loop over all threads that will receive work except the final one.
         for (currentThread = 0; currentThread < lastThread - 1; currentThread++) {
             ranges[currentThread] = new Range(lowerBounds[currentThread], lowerBounds[currentThread + 1] - 1);
-            //logger.info(String.format("Range for thread %d %s.", currentThread, ranges[currentThread]));
         }
-        /**
-         * Final range for the last thread that will receive work.
-         */
-        ranges[lastThread - 1] = new Range(lowerBounds[lastThread - 1], lastAtom);
-        //logger.info(String.format("Range for thread %d %s.", lastThread - 1, ranges[lastThread - 1]));
 
-        /**
-         * Left-over threads with null ranges.
-         */
+        // Final range for the last thread that will receive work.
+        ranges[lastThread - 1] = new Range(lowerBounds[lastThread - 1], lastAtom);
+
+        // Left-over threads with null ranges.
         for (int it = lastThread; it < nThreads; it++) {
             ranges[it] = null;
         }
@@ -197,15 +194,9 @@ public class GradientSchedule extends IntegerSchedule {
      * @return an array of {@link int} objects.
      */
     public int[] getThreadWeights() {
-        if (lowerBounds != null) {
-            int[] weightsToReturn = new int[nThreads];
-            for (int i = 0; i < nThreads; i++) {
-                weightsToReturn[i] = weights[i];
-            }
-            return weightsToReturn;
-        } else {
-            return null;
-        }
+        int[] weightsToReturn = new int[nThreads];
+        arraycopy(weights, 0, weightsToReturn, 0, nThreads);
+        return weightsToReturn;
     }
 
     /**
@@ -214,14 +205,8 @@ public class GradientSchedule extends IntegerSchedule {
      * @return an array of {@link int} objects.
      */
     public int[] getLowerBounds() {
-        if (lowerBounds != null) {
-            int[] boundsToReturn = new int[nThreads];
-            for (int i = 0; i < nThreads; i++) {
-                boundsToReturn[i] = lowerBounds[i + 1];
-            }
-            return boundsToReturn;
-        } else {
-            return null;
-        }
+        int[] boundsToReturn = new int[nThreads];
+        arraycopy(lowerBounds, 1, boundsToReturn, 0, nThreads);
+        return boundsToReturn;
     }
 }

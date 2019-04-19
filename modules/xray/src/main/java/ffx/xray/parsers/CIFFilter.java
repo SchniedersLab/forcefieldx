@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.xray.parsers;
 
 import java.io.BufferedReader;
@@ -59,13 +59,12 @@ import ffx.xray.DiffractionRefinementData;
  * CIF file reader
  *
  * @author Timothy D. Fenn
- *
  * @since 1.0
  */
 public class CIFFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(CIFFilter.class.getName());
-    private final double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
+    private final double[] cell = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
     private double resHigh = -1.0;
     private String spacegroupName = null;
     private int spacegroupNum = -1;
@@ -75,7 +74,7 @@ public class CIFFilter implements DiffractionFileFilter {
     private int rFree = -1;
     private int nAll, nObs;
 
-    private static enum Header {
+    private enum Header {
 
         d_resolution_high, number_all, number_obs, length_a, length_b, length_c,
         angle_alpha, angle_beta, angle_gamma, Int_Tables_number,
@@ -98,13 +97,17 @@ public class CIFFilter implements DiffractionFileFilter {
     public CIFFilter() {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File cifFile) {
         return getReflectionList(cifFile, null);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File cifFile, CompositeConfiguration properties) {
         try {
@@ -116,11 +119,11 @@ public class CIFFilter implements DiffractionFileFilter {
                 if (string.startsWith("_refln.")) {
                     break;
                 }
-                String strArray[] = string.split("\\s+");
+                String[] strArray = string.split("\\s+");
                 if (strArray[0].startsWith("_reflns")
                         || strArray[0].startsWith("_cell")
                         || strArray[0].startsWith("_symmetry")) {
-                    String cifArray[] = strArray[0].split("\\.+");
+                    String[] cifArray = strArray[0].split("\\.+");
                     switch (Header.toHeader(cifArray[1])) {
                         case d_resolution_high:
                             resHigh = Double.parseDouble(strArray[1]);
@@ -153,7 +156,7 @@ public class CIFFilter implements DiffractionFileFilter {
                             spacegroupNum = Integer.parseInt(strArray[1]);
                             break;
                         case space_group_name_H_M:
-                            String spacegroupNameArray[] = string.split("'+");
+                            String[] spacegroupNameArray = string.split("'+");
                             if (spacegroupNameArray.length > 1) {
                                 spacegroupName = spacegroupNameArray[1];
                             } else if (strArray.length > 1) {
@@ -181,15 +184,15 @@ public class CIFFilter implements DiffractionFileFilter {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("\nOpening %s\n", cifFile.getName()));
-            sb.append(String.format("setting up Reflection List based on CIF:\n"));
-            sb.append(String.format("  spacegroup #: %d (name: %s)\n",
+            sb.append(format("\nOpening %s\n", cifFile.getName()));
+            sb.append("setting up Reflection List based on CIF:\n");
+            sb.append(format("  spacegroup #: %d (name: %s)\n",
                     spacegroupNum, SpaceGroup.spaceGroupNames[spacegroupNum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", 0.999999 * resHigh));
-            sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+            sb.append(format("  resolution: %8.3f\n", 0.999999 * resHigh));
+            sb.append(format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
-            sb.append(String.format("\n  CIF # HKL (observed): %d\n", nObs));
-            sb.append(String.format("  CIF # HKL (all):      %d\n", nAll));
+            sb.append(format("\n  CIF # HKL (observed): %d\n", nObs));
+            sb.append(format("  CIF # HKL (all):      %d\n", nAll));
             logger.info(sb.toString());
         }
 
@@ -200,28 +203,26 @@ public class CIFFilter implements DiffractionFileFilter {
             sampling = properties.getDouble("sampling", 1.0 / 1.5);
         }
         Resolution resolution = new Resolution(0.999999 * resHigh, sampling);
-        ReflectionList reflectionlist = new ReflectionList(crystal,
-                resolution, properties);
-        return reflectionlist;
+        return new ReflectionList(crystal, resolution, properties);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getResolution(File cifFile, Crystal crystal) {
-
         double resolution = Double.POSITIVE_INFINITY;
-
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
             String string;
             int nCol = 0;
             boolean inHKL = false;
             while ((string = br.readLine()) != null) {
-                String strArray[] = string.split("\\s+");
+                String[] strArray = string.split("\\s+");
                 if (strArray[0].startsWith("_refln.")) {
                     inHKL = true;
                     br.mark(0);
-                    String cifArray[] = strArray[0].split("\\.+");
+                    String[] cifArray = strArray[0].split("\\.+");
                     switch (Header.toHeader(cifArray[1])) {
                         case index_h:
                             h = nCol;
@@ -259,7 +260,7 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
 
                 // Some files split data on to multiple lines.
-                String strArray[] = string.trim().split("\\s+");
+                String[] strArray = string.trim().split("\\s+");
                 while (strArray.length < nCol) {
                     string = string + " " + br.readLine();
                     strArray = string.trim().split("\\s+");
@@ -282,7 +283,9 @@ public class CIFFilter implements DiffractionFileFilter {
         return resolution;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readFile(File cifFile, ReflectionList reflectionList,
                             DiffractionRefinementData refinementData, CompositeConfiguration properties) {
@@ -294,7 +297,7 @@ public class CIFFilter implements DiffractionFileFilter {
         boolean intensitiesToAmplitudes = false;
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Opening %s\n", cifFile.getName()));
+        sb.append(format(" Opening %s\n", cifFile.getName()));
         if (refinementData.rfreeflag < 0) {
             refinementData.setFreeRFlag(1);
             sb.append(format(" Setting R free flag to CIF default: %d\n", refinementData.rfreeflag));
@@ -307,11 +310,11 @@ public class CIFFilter implements DiffractionFileFilter {
             int nCol = 0;
             boolean inHKL = false;
             while ((string = br.readLine()) != null) {
-                String stringArray[] = string.split("\\s+");
+                String[] stringArray = string.split("\\s+");
                 if (stringArray[0].startsWith("_refln.")) {
                     inHKL = true;
                     br.mark(0);
-                    String cifArray[] = stringArray[0].split("\\.+");
+                    String[] cifArray = stringArray[0].split("\\.+");
                     switch (Header.toHeader(cifArray[1])) {
                         case index_h:
                             h = nCol;
@@ -378,7 +381,7 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
 
                 // Some files split data on to multiple lines.
-                String strArray[] = string.trim().split("\\s+");
+                String[] strArray = string.trim().split("\\s+");
                 while (strArray.length < nCol) {
                     string = string + " " + br.readLine();
                     strArray = string.trim().split("\\s+");
@@ -419,7 +422,7 @@ public class CIFFilter implements DiffractionFileFilter {
             br = new BufferedReader(new FileReader(cifFile));
             inHKL = false;
             while ((string = br.readLine()) != null) {
-                String strArray[] = string.split("\\s+");
+                String[] strArray = string.split("\\s+");
                 if (strArray[0].startsWith("_refln.")) {
                     br.mark(0);
                     inHKL = true;
@@ -432,7 +435,7 @@ public class CIFFilter implements DiffractionFileFilter {
             br.reset();
 
             // Read in data.
-            double anofSigF[][] = new double[refinementData.n][4];
+            double[][] anofSigF = new double[refinementData.n][4];
             for (int i = 0; i < refinementData.n; i++) {
                 anofSigF[i][0] = anofSigF[i][1] = anofSigF[i][2] = anofSigF[i][3] = Double.NaN;
             }
@@ -449,7 +452,7 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
 
                 // Some files split data on to multiple lines.
-                String strArray[] = string.trim().split("\\s+");
+                String[] strArray = string.trim().split("\\s+");
                 while (strArray.length < nCol) {
                     string = string + " " + br.readLine();
                     strArray = string.trim().split("\\s+");
@@ -547,28 +550,19 @@ public class CIFFilter implements DiffractionFileFilter {
                 refinementData.intensities_to_amplitudes();
             }
         } catch (IOException ioe) {
-            System.out.println("IO Exception: " + ioe.getMessage());
+            System.out.println(" IO Exception: " + ioe.getMessage());
             return false;
         }
 
-        sb.append(String.format(" HKL data is %s\n",
-                transpose ? "transposed" : "not transposed"));
-        sb.append(String.format(" HKL read in:                             %d\n",
-                nRead));
-        sb.append(String.format(" HKL read as friedel mates:               %d\n",
-                nFriedel));
-        sb.append(String.format(" HKL with NaN (ignored):                  %d\n",
-                nNAN));
-        sb.append(String.format(" HKL NOT read in (status <, -, h or l):   %d\n",
-                nCIFIgnore));
-        sb.append(String.format(" HKL NOT read in (too high resolution):   %d\n",
-                nRes));
-        sb.append(String.format(" HKL NOT read in (not in internal list?): %d\n",
-                nIgnore));
-        sb.append(String.format(" HKL NOT read in (F/sigF cutoff):         %d\n",
-                nCut));
-        sb.append(String.format(" HKL in internal list:                    %d\n",
-                reflectionList.hkllist.size()));
+        sb.append(format(" HKL data is %s\n", transpose ? "transposed" : "not transposed"));
+        sb.append(format(" HKL read in:                             %d\n", nRead));
+        sb.append(format(" HKL read as friedel mates:               %d\n", nFriedel));
+        sb.append(format(" HKL with NaN (ignored):                  %d\n", nNAN));
+        sb.append(format(" HKL NOT read in (status <, -, h or l):   %d\n", nCIFIgnore));
+        sb.append(format(" HKL NOT read in (too high resolution):   %d\n", nRes));
+        sb.append(format(" HKL NOT read in (not in internal list?): %d\n", nIgnore));
+        sb.append(format(" HKL NOT read in (F/sigF cutoff):         %d\n", nCut));
+        sb.append(format(" HKL in internal list:                    %d\n", reflectionList.hkllist.size()));
 
         if (logger.isLoggable(Level.INFO)) {
             logger.info(sb.toString());

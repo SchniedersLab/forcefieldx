@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential.parsers;
 
 import java.io.BufferedWriter;
@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import org.apache.commons.io.FilenameUtils;
 import org.biojava.nbio.structure.Atom;
@@ -70,7 +71,6 @@ import edu.rit.pj.ParallelTeam;
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
- *
  */
 public class PDBFileMatcher {
 
@@ -91,13 +91,12 @@ public class PDBFileMatcher {
     private long[] fixTimes;
     private boolean robustMatch = false;
     private boolean fixCryst = false;
-    private boolean fixModel = false;
 
     /**
      * <p>Constructor for PDBFileMatcher.</p>
      *
      * @param sourceFiles an array of {@link java.io.File} objects.
-     * @param matchFiles an array of {@link java.io.File} objects.
+     * @param matchFiles  an array of {@link java.io.File} objects.
      */
     public PDBFileMatcher(File[] sourceFiles, File[] matchFiles) {
         this.sourceFiles = sourceFiles;
@@ -211,21 +210,21 @@ public class PDBFileMatcher {
                 try {
                     parallelTeam.execute(new MatchingRegion());
                 } catch (Exception ex) {
-                    logger.severe(String.format(" Exception matching files in parallel: %s", ex.toString()));
+                    logger.severe(format(" Exception matching files in parallel: %s", ex.toString()));
                 }
                 for (int i = 0; i < iterationTimes.length; i++) {
-                    logger.info(String.format(" Iteration %d time: %12.9f sec", i, 1.0E-9 * iterationTimes[i]));
+                    logger.info(format(" Iteration %d time: %12.9f sec", i, 1.0E-9 * iterationTimes[i]));
                 }
             } else {
                 sequentialFileMatch();
             }
             fixAtoms = fixSSBonds || fixBFactors;
-            fixModel = fixAtoms || headerLink || fixCryst;
+            boolean fixModel = fixAtoms || headerLink || fixCryst;
             if (fixModel) {
                 fixFiles();
             }
         } catch (Exception ex) {
-            logger.severe(String.format(" Error in matching: %s", ex.toString()));
+            logger.severe(format(" Error in matching: %s", ex.toString()));
         }
     }
 
@@ -241,13 +240,13 @@ public class PDBFileMatcher {
             try {
                 parallelTeam.execute(new FixerRegion());
             } catch (Exception ex) {
-                logger.severe(String.format(" Exception fixing files in parallel: %s", ex.toString()));
+                logger.severe(format(" Exception fixing files in parallel: %s", ex.toString()));
             }
         } else {
             sequentialFixer();
         }
         for (int i = 0; i < fixTimes.length; i++) {
-            logger.info(String.format(" File %d fix time: %12.9f sec", i, 1.0E-9 * fixTimes[i]));
+            logger.info(format(" File %d fix time: %12.9f sec", i, 1.0E-9 * fixTimes[i]));
         }
     }
 
@@ -284,7 +283,7 @@ public class PDBFileMatcher {
                         matchAtoms.addAll(group.getAtoms());
                     }
                 }
-                matchArray = matchAtoms.toArray(new Atom[matchAtoms.size()]);
+                matchArray = matchAtoms.toArray(new Atom[0]);
 
                 List<Atom> sourceAtoms = new ArrayList<>();
                 List<Chain> sourceChains = sourceStructure.getChains();
@@ -295,7 +294,7 @@ public class PDBFileMatcher {
                         sourceAtoms.addAll(group.getAtoms());
                     }
                 }
-                sourceArray = sourceAtoms.toArray(new Atom[sourceAtoms.size()]);
+                sourceArray = sourceAtoms.toArray(new Atom[0]);
                 break;
 
             case 3:
@@ -309,7 +308,7 @@ public class PDBFileMatcher {
                         }
                     }
                 }
-                matchArray = matchAtoms.toArray(new Atom[matchAtoms.size()]);
+                matchArray = matchAtoms.toArray(new Atom[0]);
 
                 sourceAtoms = new ArrayList<>();
                 sourceChains = sourceStructure.getChains();
@@ -321,7 +320,7 @@ public class PDBFileMatcher {
                         }
                     }
                 }
-                sourceArray = sourceAtoms.toArray(new Atom[sourceAtoms.size()]);
+                sourceArray = sourceAtoms.toArray(new Atom[0]);
                 break;
 
             case 4:
@@ -330,70 +329,7 @@ public class PDBFileMatcher {
                 break;
             default:
                 throw new IllegalArgumentException("atomsUsed is not 1-4: this has not been properly checked at an earlier stage.");
-        } // Returns simpleRMSD(matchArray, sourceArray) below old code.
-
-        /*List<Atom> matchAtoms = new ArrayList<>();
-         Structure matchStructure = matchFile.getStructure();
-         List<Chain> matchChains = matchStructure.getChains();
-         if (atomsUsed == 4) {
-         matchAtoms = StructureTools.getAllAtomArray(matchStructure);
-         }
-         for (Chain chain : matchChains) {
-         List<Group> matchGroups = chain.getSeqResGroups();
-         for (Group group : matchGroups) {
-         String groupType = group.getType();
-         if (groupType.equalsIgnoreCase("HETATOM")) {
-         if (atomsUsed < 3) {
-         continue;
-         } else if (atomsUsed < 4 && group.isWater()) {
-         continue;
-         }
-         }
-         if (atomsUsed != 1) {
-         matchAtoms.addAll(group.getAtoms());
-         } else {
-         try {
-         matchAtoms.add(getReferenceAtom(group));
-         } catch (StructureException ex) {
-         String refAtomType = (groupType.equalsIgnoreCase("AminoAcid") ? "CA" : "N1/9");
-         // refAtomType should be binary between amino acid and nucleic acid, as HETATOM is eliminated.
-         logger.info(String.format(" Reference atom %s could not be found for group %s",
-         refAtomType, group.toString()));
-         }
-         }
-         }
-         }
-         Atom[] match = new Atom[matchAtoms.size()];
-         matchAtoms.toArray(match);
-         matchAtoms.clear();
-
-         List<Atom> sourceAtoms = new ArrayList<>();
-         List<Chain> sourceChains = sourceStructure.getChains();
-         for (Chain chain : sourceChains) {
-         List<Group> sourceGroups = chain.getSeqResGroups();
-         for (Group group : sourceGroups) {
-         String groupType = group.getType();
-         if (groupType.equalsIgnoreCase("HETATOM")) {
-         if (atomsUsed < 3) {
-         continue;
-         } else if (atomsUsed < 4 && group.isWater()) {
-         continue;
-         }
-         }
-         if (atomsUsed != 1) {
-         sourceAtoms.addAll(group.getAtoms());
-         } else {
-         try {
-         sourceAtoms.add(getReferenceAtom(group));
-         } catch (StructureException ex) {
-         logger.info(String.format(" Reference atom could not be found for group %s", group.toString()));
-         }
-         }
-         }
-         }
-         Atom[] sourceArray = new Atom[sourceAtoms.size()];
-         sourceAtoms.toArray(sourceArray);
-         sourceAtoms.clear();*/
+        }
         return simpleRMSD(sourceArray, matchArray);
     }
 
@@ -408,15 +344,8 @@ public class PDBFileMatcher {
                 Atom atomFromB = getMatchingAtom(atomFromA, atomsB, i);
                 ++numMatches; // Done here in case of exceptions thrown.
                 rmsd += getSqDistance(atomFromA, atomFromB);
-                /*double dist2 = getSqDistance(atomFromA, atomFromB) - comp; // Kahan summation algorithm.
-                 double temp = rmsd + dist2;
-                 comp = (temp - rmsd) - dist2;
-                 rmsd = temp;*/
             } catch (IllegalArgumentException ex) {
-                if (!atomFromA.getElement().isHydrogen()) {
-                    // Will eventually move logger statement here.
-                }
-                logger.info(String.format(" Error in finding mate for atom %s", atomFromA.toString()));
+                logger.info(format(" Error in finding mate for atom %s", atomFromA.toString()));
             }
         }
         if (numMatches == 0) {
@@ -436,16 +365,12 @@ public class PDBFileMatcher {
         return dx * dx + dy * dy + dz * dz;
     }
 
-    private double getDistance(Atom a1, Atom a2) {
-        return Math.sqrt(getSqDistance(a1, a2));
-    }
-
     /**
      * Finds atom1's match in atoms2[], given an array index to search first.
      *
-     * @param atom1 An Atom
+     * @param atom1  An Atom
      * @param atoms2 An Atom[] to search
-     * @param i Index in atoms2 to check first.
+     * @param i      Index in atoms2 to check first.
      * @return atom1's match in atoms2.
      * @throws IllegalArgumentException If no match can be found.
      */
@@ -453,7 +378,8 @@ public class PDBFileMatcher {
         Atom atom2;
         try {
             atom2 = atoms2[i];
-        } catch (ArrayIndexOutOfBoundsException ex) { // May be important if one structure lacks hydrogens.
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            // May be important if one structure lacks hydrogen.
             atom2 = atoms2[0];
         }
         if (compareAtoms(atom1, atom2)) {
@@ -468,9 +394,9 @@ public class PDBFileMatcher {
      * type, and PDB serial number as a guess; if robustMatch is set true, will
      * search all Atoms in structure2.
      *
-     * @param atom1 An Atom
+     * @param atom1      An Atom
      * @param structure2 A Structure to search
-     * @param searchAll Whether to search all Atoms in structure2.
+     * @param searchAll  Whether to search all Atoms in structure2.
      * @return atom1's match in structure2
      * @throws IllegalArgumentException If no match can be found.
      */
@@ -514,7 +440,7 @@ public class PDBFileMatcher {
      * Searches for atom1's match in atoms2; first checks for an equivalent
      * atom, then performs a search over all atoms in atoms2.
      *
-     * @param atom1 An Atom.
+     * @param atom1  An Atom.
      * @param atoms2 An Atom[] to search.
      * @return atom1's match in atom2.
      * @throws IllegalArgumentException If no match could be found.
@@ -532,7 +458,7 @@ public class PDBFileMatcher {
                 }
             }
         }
-        throw new IllegalArgumentException(String.format("No matching atom for %s found", atom1.toString()));
+        throw new IllegalArgumentException(format("No matching atom for %s found", atom1.toString()));
     }
 
     /**
@@ -541,8 +467,8 @@ public class PDBFileMatcher {
      * element, group PDB code, atom serial (if false, also checks group
      * number), and atom name (currently only accepts H-H1 mismatches).
      *
-     * @param a1
-     * @param a2
+     * @param a1 Atom 1.
+     * @param a2 Atom 2.
      * @return if considered equivalent.
      */
     private boolean compareAtoms(Atom a1, Atom a2) {
@@ -564,37 +490,10 @@ public class PDBFileMatcher {
         String a2Name = a2.getName();
         if (!a1Name.equalsIgnoreCase(a2Name)) {
             // Courtesy of MSMBuilder, I have to keep track of Hs which should be H1.
-            if (!((a1Name.equalsIgnoreCase("H") && a2Name.equalsIgnoreCase("H1"))
-                    || (a2Name.equalsIgnoreCase("H") && a1Name.equalsIgnoreCase("H1")))) {
-                return false;
-            }
+            return (a1Name.equalsIgnoreCase("H") && a2Name.equalsIgnoreCase("H1"))
+                    || (a2Name.equalsIgnoreCase("H") && a1Name.equalsIgnoreCase("H1"));
         }
         return true;
-    }
-
-    /**
-     * May rework once I figure out whether BioJava likes to keep atom names
-     * intact or not: returns CA (proteins), N1/9 (nucleic acids), or the first
-     * returned atom (default) as in FFX's Residue.getReferenceAtom().
-     *
-     * @param group Residue to get reference atom for.
-     * @return CA or N1/9 Atom.
-     * @throws StructureException If no proper reference Atom could be found.
-     */
-    private Atom getReferenceAtom(Group group) throws StructureException {
-        switch (group.getType()) {
-            case AMINOACID:
-                return group.getAtom("CA");
-            case NUCLEOTIDE:
-                Atom retAtom = group.getAtom("N1");
-                if (retAtom == null) {
-                    return group.getAtom("N9");
-                } else {
-                    return retAtom;
-                }
-            default:
-                return group.getAtoms().get(0);
-        }
     }
 
     private File createVersionedCopy(File origFile) throws IOException {
@@ -619,56 +518,9 @@ public class PDBFileMatcher {
     }
 
     /**
-     * Compares two SSBonds based on chain IDs, insertion codes, and residue
-     * numbers; not order-sensitive.
-     *
-     * @param bond1
-     * @param bond2
-     * @return If bond1 and bond2 are equivalent.
-     */
-//    private boolean compareSSBonds(SSBond bond1, SSBond bond2) {
-//        List<String> bond1ChainIDs = new ArrayList<>(2);
-//        bond1ChainIDs.add(bond1.getChainID1());
-//        bond1ChainIDs.add(bond1.getChainID2());
-//        List<String> bond2ChainIDs = new ArrayList<>(2);
-//        bond2ChainIDs.add(bond2.getChainID1());
-//        bond2ChainIDs.add(bond2.getChainID2());
-//        for (String resID : bond1ChainIDs) {
-//            if (!bond2ChainIDs.contains(resID)) {
-//                return false;
-//            }
-//        }
-//
-//        List<String> bond1InsCodes = new ArrayList<>(2);
-//        bond1InsCodes.add(bond1.getInsCode1());
-//        bond1InsCodes.add(bond1.getInsCode2());
-//        List<String> bond2InsCodes = new ArrayList<>(2);
-//        bond2InsCodes.add(bond2.getInsCode1());
-//        bond2InsCodes.add(bond2.getInsCode2());
-//        for (String resID : bond1InsCodes) {
-//            if (!bond2InsCodes.contains(resID)) {
-//                return false;
-//            }
-//        }
-//
-//        List<String> bond1ResNums = new ArrayList<>(2);
-//        bond1ResNums.add(bond1.getResnum1());
-//        bond1ResNums.add(bond1.getResnum2());
-//        List<String> bond2ResNums = new ArrayList<>(2);
-//        bond2ResNums.add(bond2.getResnum1());
-//        bond2ResNums.add(bond2.getResnum2());
-//        for (String resID : bond1ResNums) {
-//            if (!bond2ResNums.contains(resID)) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-
-    /**
      * Creates a duplicate PDBCrystallographicInfo object.
      *
-     * @param sourceInfo
+     * @param sourceInfo Source Information.
      * @return duplicate of sourceInfo
      * @throws IllegalArgumentException if sourceInfo not crystallographic.
      */
@@ -690,24 +542,22 @@ public class PDBFileMatcher {
      * Interior code of file matching loop: intended to ensure consistency
      * between sequential and parallel versions of code.
      *
-     * @param currentFilePair
-     * @param filereader
-     * @param aligner
+     * @param currentFilePair File pair.
+     * @param filereader      PDB File Reader.
+     * @param aligner         Structure Pair Aligner.
      * @throws IOException
      */
     private void matchFile(FileFilePair currentFilePair, PDBFileReader filereader,
                            StructurePairAligner aligner) throws IOException {
         Structure currentStructure = filereader.getStructure(currentFilePair.getMatchedFile());
         currentFilePair.setStructure(currentStructure);
-        int numSources = sourceFiles.length;
-        for (int j = 0; j < numSources; j++) {
-            File currentSource = sourceFiles[j];
+        for (File currentSource : sourceFiles) {
             Structure sourceStructure = filereader.getStructure(currentSource);
             try {
                 double rmsd = calculateRMSD(currentFilePair, sourceStructure, aligner);
                 currentFilePair.attemptReplace(currentSource, rmsd);
             } catch (StructureException ex) {
-                logger.warning(String.format(" Error in calculating RMSD for match %s and source %s : %s",
+                logger.warning(format(" Error in calculating RMSD for match %s and source %s : %s",
                         currentFilePair.getMatchedFile().getName(), currentSource.getName(), ex.toString()));
             }
         }
@@ -722,7 +572,7 @@ public class PDBFileMatcher {
 
         File sourceFile = currentPair.getSourceFile();
         if (sourceFile == null) {
-            throw new IOException(String.format("No source file was matched to file %s", matchFile.toString()));
+            throw new IOException(format("No source file was matched to file %s", matchFile.toString()));
         }
 
         Structure sourceStructure = null;
@@ -737,25 +587,6 @@ public class PDBFileMatcher {
             }
             // Other methods can go here.
         }
-        if (fixSSBonds) {
-//            if (sourceStructure == null) {
-//                sourceStructure = filereader.getStructure(sourceFile);
-//            }
-//            List<SSBond> sourceBonds = sourceStructure.getSSBonds();
-//            List<SSBond> matchBonds = matchStructure.getSSBonds();
-//            for (SSBond sourceBond : sourceBonds) {
-//                boolean isContained = false;
-//                for (SSBond matchBond : matchBonds) {
-//                    if (compareSSBonds(matchBond, sourceBond)) {
-//                        isContained = true;
-//                        break;
-//                    }
-//                }
-//                if (!isContained) {
-//                    matchStructure.addSSBond(sourceBond.clone());
-//                }
-//            }
-        }
         if (fixCryst) {
             if (sourceStructure == null) {
                 sourceStructure = filereader.getStructure(sourceFile);
@@ -765,7 +596,7 @@ public class PDBFileMatcher {
                 PDBCrystallographicInfo duplicateInfo = cloneCrystalInfo(crystalInfo);
                 matchStructure.setCrystallographicInfo(duplicateInfo);
             } catch (IllegalArgumentException ex) {
-                logger.warning(String.format(" No crystal information for source structure "
+                logger.warning(format(" No crystal information for source structure "
                         + "%s: nothing attached to file %s", sourceFile.toString(), matchFile.toString()));
             }
         }
@@ -790,8 +621,8 @@ public class PDBFileMatcher {
                 }
             }
 
-            String toInsert = String.format("REMARK%4d SOURCE FILE: %s", remarkNumber, sourceFile.getName());
-            toInsert = toInsert.concat(String.format("REMARK%4d RMSD:%11.6f ANGSTROMS", remarkNumber, currentPair.getRMSD()));
+            String toInsert = format("REMARK%4d SOURCE FILE: %s", remarkNumber, sourceFile.getName());
+            toInsert = toInsert.concat(format("REMARK%4d RMSD:%11.6f ANGSTROMS", remarkNumber, currentPair.getRMSD()));
             pdbBuilder.insert(position, toInsert);
             pdb = pdbBuilder.toString();
         }
@@ -801,7 +632,7 @@ public class PDBFileMatcher {
             try {
                 bw.write(pdb);
             } catch (IOException ex) {
-                logger.warning(String.format(" Error writing to file %s", newFile.getName()));
+                logger.warning(format(" Error writing to file %s", newFile.getName()));
             }
         }
     }
@@ -809,16 +640,15 @@ public class PDBFileMatcher {
     private void sequentialFileMatch() {
         PDBFileReader filereader = new PDBFileReader();
         StructurePairAligner aligner = new StructurePairAligner();
-        //int numSources = sourceFiles.length;
         try {
             for (int i = 0; i < matchFilePairs.length; i++) {
-                Long iterTime = -System.nanoTime();
+                long iterTime = -System.nanoTime();
                 FileFilePair currentFilePair = matchFilePairs[i];
                 matchFile(currentFilePair, filereader, aligner);
                 iterationTimes[i] = iterTime + System.nanoTime();
             }
         } catch (IOException ex) {
-            logger.severe(String.format(" Exception matching files %s", ex.toString()));
+            logger.severe(format(" Exception matching files %s", ex.toString()));
         }
     }
 
@@ -830,7 +660,7 @@ public class PDBFileMatcher {
             try {
                 fixFile(currentPair, filereader);
             } catch (IOException ex) {
-
+                //
             }
             fixTime += System.nanoTime();
             fixTimes[i] += fixTime;
@@ -905,24 +735,16 @@ public class PDBFileMatcher {
         private File sourceFile;
         private double rmsd;
 
-        public FileFilePair(File matchFile) {
+        FileFilePair(File matchFile) {
             this.matchFile = matchFile;
             rmsd = Double.MAX_VALUE;
         }
 
-        public FileFilePair(File matchFile, File sourceFile) {
+        FileFilePair(File matchFile, File sourceFile) {
             this(matchFile);
             this.sourceFile = sourceFile;
         }
 
-        public FileFilePair(File match, File sourceFile, double rmsd) {
-            this(match, sourceFile);
-            this.rmsd = rmsd;
-        }
-
-        public void setSourceFile(File sourceFile) {
-            this.sourceFile = sourceFile;
-        }
 
         public void setRMSD(double rmsd) {
             this.rmsd = rmsd;
@@ -932,11 +754,11 @@ public class PDBFileMatcher {
             this.matchStructure = structure;
         }
 
-        public File getSourceFile() {
+        File getSourceFile() {
             return sourceFile;
         }
 
-        public File getMatchedFile() {
+        File getMatchedFile() {
             return matchFile;
         }
 
@@ -953,10 +775,10 @@ public class PDBFileMatcher {
          * and returns true; otherwise returns false.
          *
          * @param newSource Source file to check
-         * @param rmsd A double
+         * @param rmsd      A double
          * @return Whether replaced
          */
-        public boolean attemptReplace(File newSource, double rmsd) {
+        boolean attemptReplace(File newSource, double rmsd) {
             if (rmsd < this.rmsd) {
                 this.sourceFile = newSource;
                 this.rmsd = rmsd;
@@ -967,7 +789,7 @@ public class PDBFileMatcher {
 
         /**
          * {@inheritDoc}
-         *
+         * <p>
          * Overidden equals method that return true if object is equals to this,
          * or is of the same class and has the same alignedFile and sourceFile.
          */
@@ -991,72 +813,11 @@ public class PDBFileMatcher {
                 sb.append("NULL");
             }
             if (rmsd != Double.MAX_VALUE) {
-                sb.append(String.format("\nRMSD: %f", rmsd));
+                sb.append(format("\nRMSD: %f", rmsd));
             } else {
                 sb.append("\nRMSD: NAN (not set)");
             }
             return sb.toString();
         }
     }
-
-    /*private class AtomAtomPair {
-     private final Atom atom1;
-     private Atom atom2;
-
-     public AtomAtomPair(Atom atom1) {
-     this.atom1 = atom1;
-     }
-     public AtomAtomPair(Atom atom1, Atom atom2) {
-     this(atom1);
-     this.atom2 = atom2;
-     }
-
-     public Atom getAtom1() {
-     return atom1;
-     }
-     public Atom getAtom2() {
-     return atom2;
-     }
-     public Atom[] getAtoms() {
-     Atom[] ret = {atom1, atom2};
-     return ret;
-     }
-     public void setAtom2(Atom a2) {
-     this.atom2 = a2;
-     }
-     /**
-     * Returns true and sets atom2 if a2 matches (using compareAtoms) atom1.
-     * @param a2 Candidate Atom match for atom1
-     * @return If a match
-     */
-    /*public boolean tryMatch(Atom a2) {
-     if (compareAtoms(atom1, a2)) {
-     this.atom2 = a2;
-     return true;
-     } else {
-     return false;
-     }
-     }*/
-    /**
-     * {@inheritDoc}
-     *
-     * Overidden equals method that return true if object is equals to this, or
-     * is of the same class and has the same alignedFile and sourceFile.
-     */
-    /*@Override
-     public boolean equals(Object object) {
-     if (this == object) {
-     return true;
-     } else if (object == null || getClass() != object.getClass()) {
-     return false;
-     }
-     AtomAtomPair other = (AtomAtomPair) object;
-     return atom1.equals(other.getAtom1()) && atom2.equals(other.getAtom2());
-     }
-
-     @Override
-     public String toString() {
-     return new StringBuilder("Atom 1: ").append(atom1.toString()).append("   Atom 2: ").append(atom2.toString()).toString();
-     }
-     }*/
 }
