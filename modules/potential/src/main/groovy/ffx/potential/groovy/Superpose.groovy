@@ -215,6 +215,17 @@ class Superpose extends PotentialScript {
             double[] xUsed = new double[nUsedVars]
             double[] x2Used = new double[nUsedVars]
 
+            if (writeSnapshots) {
+                AssemblyState origState = new AssemblyState(activeAssembly);
+                forceFieldEnergy.getCoordinates(x2);
+                copyCoordinates(nUsed, usedIndices, x2, x2Used);
+                double[] translate = ffx.potential.utils.Superpose.calculateTranslation(x2Used, massUsed);
+                ffx.potential.utils.Superpose.applyTranslation(x2, translate);
+                forceFieldEnergy.setCoordinates(x2);
+                outputFilter.writeFile(outFile, true);
+                origState.revertState();
+            }
+
             // Check which molecular assemblies to do RMSD comparisons among.
             if (frameComparison == false) {
                 // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
