@@ -39,6 +39,7 @@ package ffx.potential.groovy
 
 import com.google.common.collect.MinMaxPriorityQueue
 import ffx.potential.AssemblyState
+import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
 
 import java.util.logging.Level
@@ -86,7 +87,7 @@ class Energy extends PotentialScript {
      */
 
     @Option(names = ['--fl', '--findlowest'], paramLabel = "0",
-            description = 'Find this number of lowest-energy structures in a .arc file (does not function with .pdb)')
+            description = 'Find this number of lowest-energy structures in a .arc file')
     private int fl = 0
 
     /**
@@ -197,8 +198,7 @@ class Energy extends PotentialScript {
         }
 
         SystemFilter systemFilter = potentialFunctions.getFilter()
-        if (systemFilter instanceof XYZFilter) {
-            XYZFilter xyzFilter = (XYZFilter) systemFilter
+        if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
 
             double[] x2 = new double[nVars]
             double[] mass = new double[nVars / 3]
@@ -239,7 +239,7 @@ class Energy extends PotentialScript {
              * Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size N/
              */
 
-            MinMaxPriorityQueue<StateContainer> lowestEnergyQueue;
+            MinMaxPriorityQueue<StateContainer> lowestEnergyQueue
             if (fl > 0) {
                 lowestEnergyQueue = MinMaxPriorityQueue
                         .maximumSize(numSnaps)
@@ -249,7 +249,7 @@ class Energy extends PotentialScript {
                 lowestEnergyQueue.add(firstContainer)
             }
 
-            while (xyzFilter.readNext()) {
+            while (systemFilter.readNext()) {
                 //Arrays for holding coordinates of heavy atoms after rotation and translation.
                 double[] xHeavy = new double[nHeavyVars]
                 double[] x2Heavy = new double[nHeavyVars]
@@ -306,7 +306,6 @@ class Energy extends PotentialScript {
                     lowestEnergyQueue.add(new StateContainer(assemblyState, lowestEnergy))
                     ++maxnum;
                 }
-
             }
 
             if (fl > 0) {
@@ -336,7 +335,6 @@ class Energy extends PotentialScript {
                     potentialFunctions.saveAsPDB(assemblyState.mola, saveFile)
 
                 }
-
 
                 StateContainer savedState = lowestEnergyQueue.removeLast()
                 AssemblyState lowestAssembly = savedState.getState()
