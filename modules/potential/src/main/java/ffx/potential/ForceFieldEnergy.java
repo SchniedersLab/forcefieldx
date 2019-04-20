@@ -2560,7 +2560,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @param coords an array of {@link double} objects.
      */
-    protected void setCoordinates(double[] coords) {
+    public void setCoordinates(double[] coords) {
         if (coords == null) {
             return;
         }

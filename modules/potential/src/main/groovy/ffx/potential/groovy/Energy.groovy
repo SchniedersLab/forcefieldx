@@ -40,11 +40,17 @@ package ffx.potential.groovy
 import java.util.logging.Level
 import static java.lang.String.format
 
+import com.google.common.collect.MinMaxPriorityQueue
+
+import org.apache.commons.io.FilenameUtils
+
 import ffx.numerics.Potential
+import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 
@@ -75,6 +81,13 @@ class Energy extends PotentialScript {
     @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
             description = 'Starting no-electrostatics atom for 1st topology')
     private int es1 = 1
+    /**
+     * * --fl or --findLowest Return the n lowest energy structures from an ARC or PDB file.
+     */
+
+    @Option(names = ['--fl', '--findLowest'], paramLabel = "0",
+            description = 'Return the n lowest energy structures from an ARC or PDB file.')
+    private int fl = 0
 
     /**
      * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
@@ -90,8 +103,41 @@ class Energy extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     private List<String> filenames = null
 
+
     public double energy = 0.0
     public ForceFieldEnergy forceFieldEnergy = null
+
+
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
+
+    private AssemblyState assemblyState = null
+
+    private class StateContainer implements Comparable<StateContainer> {
+        private final AssemblyState state
+        private final double e
+
+        StateContainer(AssemblyState state, double e) {
+            this.state = state
+            this.e = e
+        }
+
+        AssemblyState getState() {
+            return state
+        }
+
+        double getEnergy() {
+            return e
+        }
+
+        @Override
+        int compareTo(StateContainer o) {
+            return Double.compare(e, o.getEnergy())
+        }
+    }
 
     /**
      * Execute the script.
@@ -141,7 +187,7 @@ class Energy extends PotentialScript {
             double[] g = new double[nVars]
             int nAts = nVars / 3
             energy = forceFieldEnergy.energyAndGradient(x, g, true)
-            logger.info(format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
+            logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
             for (int i = 0; i < nAts; i++) {
                 int i3 = 3 * i
                 logger.info(format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
@@ -151,15 +197,77 @@ class Energy extends PotentialScript {
         }
 
         SystemFilter systemFilter = potentialFunctions.getFilter()
-        if (systemFilter instanceof XYZFilter) {
-            XYZFilter xyzFilter = (XYZFilter) systemFilter
-            while (xyzFilter.readNext()) {
+
+        if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
+
+            int numSnaps = fl
+            double lowestEnergy = energy
+            assemblyState = new AssemblyState(activeAssembly)
+            int index = 1
+
+            // Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size N/
+            MinMaxPriorityQueue<StateContainer> lowestEnergyQueue = null
+            if (fl > 0) {
+                lowestEnergyQueue = MinMaxPriorityQueue
+                        .maximumSize(numSnaps)
+                        .create()
+                lowestEnergyQueue.add(new StateContainer(assemblyState, lowestEnergy))
+            }
+
+            while (systemFilter.readNext()) {
+                index++
                 forceFieldEnergy.getCoordinates(x)
-                energy = forceFieldEnergy.energy(x, true)
+                energy = forceFieldEnergy.energy(x, false)
+                logger.info(format(" Snapshot %4d: %16.8f (kcal/mol)", index, energy))
+
+                if (fl > 0) {
+                    lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), energy))
+                }
+            }
+
+            if (fl > 0) {
+                if (numSnaps > index) {
+                    logger.warning(format(
+                            " Requested %d snapshots, but file %s has only %d snapshots. All %d energies will be reported",
+                            numSnaps, filename, index, index))
+                    numSnaps = index
+                }
+
+                File saveDir = baseDir
+                String modelFilename = activeAssembly.getFile().getAbsolutePath()
+                if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+                    saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+                }
+                String dirName = saveDir.toString() + File.separator
+                String fileName = FilenameUtils.getName(modelFilename)
+
+                for (int i = 0; i < numSnaps - 1; i++) {
+                    StateContainer savedState = lowestEnergyQueue.removeLast()
+                    AssemblyState finalAssembly = savedState.getState()
+                    finalAssembly.revertState()
+                    double finalEnergy = savedState.getEnergy()
+                    logger.info(format(" The potential energy found is %16.8f (kcal/mol)", finalEnergy))
+                    File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+                    MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
+                    potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
+                }
+
+                StateContainer savedState = lowestEnergyQueue.removeLast()
+                AssemblyState lowestAssembly = savedState.getState()
+                lowestEnergy = savedState.getEnergy()
+
+                assemblyState.revertState()
+                logger.info(format(" The lowest potential energy found is %16.8f (kcal/mol)", lowestEnergy))
+
+                // Prints our final energy (which will be the lowest energy
+                File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+                MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
+                potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
             }
         }
 
         return this
+
     }
 
     @Override
@@ -167,3 +275,4 @@ class Energy extends PotentialScript {
         return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy)
     }
 }
+
