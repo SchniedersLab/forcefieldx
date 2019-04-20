@@ -63,31 +63,31 @@ import picocli.CommandLine.Parameters
 class Superpose extends PotentialScript {
 
     /**
-     * --atoms defines which atoms to calculate RMSD on.
+     * --aS or --atomSelection The atom selection [HEAVY (0) / ALL (1) / CALPHA (2)] for the RMSD calculation (CALPHA chooses N1 or N9 for nucleic acids).
      */
-    @Option(names = ['--rA', '--rmsdAtoms'], paramLabel = "HEAVY",
-            description = 'Atoms to be included in RMSD calculation. Select [ALL/HEAVY/ALPHA] to choose which atoms are used for RMSD (nucleic acids will use N1 or N9 in place of alpha carbons).')
-    private String atomSelection = "HEAVY"
+    @Option(names = ['--aS', '--atomSelection'], paramLabel = "0",
+            description = 'The atom selection [HEAVY (0) / ALL (1) / CALPHA (2)] for the RMSD calculation (CALPHA chooses N1 or N9 for nucleic acids).')
+    private String atomSelection = "0"
 
     /**
-     * --atoms defines which atoms to calculate RMSD on.
+     * -A or --allvsAll Frames to be compared within the arc file. Select [true] for all versus all comparison; select [false] for one versus all comparison.
      */
-    @Option(names = ['--fC', '--frameComparison'], paramLabel = "true",
-            description = 'Frames to be compared within the arc file. Select [true] for all versus all comparison; select [false] for one versus all comparison.')
-    private boolean frameComparison = true
+    @Option(names = ['-A', '--allvsAll'], paramLabel = "false",
+            description = 'Compare all snapshots versus all others, instead of the first snapshot versus all others.')
+    private boolean frameComparison = false
 
     /**
-     * -s or --start defines which atoms in the structure will be used in RMSD calculation.
+     * -s or --start Atom number where RMSD calculation of structure will begin.
      */
-    @Option(names = ['-s', '--start'], paramLabel = "-1",
-            description = 'Atom number where RMSD calculation of structure will begin.')
-    private int start = -1
+    @Option(names = ['-s', '--start'], paramLabel = "1",
+            description = 'Starting atom to include in the RMSD calculation.')
+    private int start = 1
 
     /**
-     * --fi or --finish defines which atoms in the structure will be used in RMSD calculation.
+     * -f or --final Atom number where RMSD calculation of structure will end.
      */
-    @Option(names = ['-f', '--fi'], paramLabel = "Max_Value",
-            description = 'Atom number where RMSD calculation of structure will end.')
+    @Option(names = ['-f', '--final'], paramLabel = "nAtoms",
+            description = 'Final atom to include in the RMSD calculation.')
     private int finish = Integer.MAX_VALUE
 
     /**
@@ -140,14 +140,18 @@ class Superpose extends PotentialScript {
                 mass[i] = atoms[i].getMass()
             }
 
-            // Begin streaming the possible atom indices, filtering out inactive atoms.
-            // TODO: Decide if we only want active atoms.
-            IntStream atomIndexStream = IntStream.range(0, atoms.length).
-                    filter({ int i -> return atoms[i].isActive() }).
-                    filter({ int i -> return atoms[i].xyzIndex >= start && atoms[i].xyzIndex <= finish })
-            if (start > -1 || finish < Integer.MAX_VALUE) {
-                logger.info(String.format("Calculating RMSD on residues %d to %d.", start, finish))
+            if (finish > nAtoms - 1) {
+                finish = nAtoms - 1
             }
+            if (start < 0 || start > finish) {
+                start = 0
+            }
+
+            // Note that atoms are indexed from 0 to nAtoms - 1.
+            logger.info(format(" Atoms from %d to %d will be considered.", start + 1, finish + 1))
+
+            // Begin streaming the possible atom indices, filtering out inactive atoms.
+            IntStream atomIndexStream = IntStream.range(start, finish + 1).filter({ int i -> return atoms[i].isActive() })
 
             // String describing the selection type.
             String selectionType = "All Atoms"
@@ -160,7 +164,11 @@ class Superpose extends PotentialScript {
                     atomIndexStream = atomIndexStream.filter({ int i -> atoms[i].isHeavy() })
                     selectionType = "Heavy Atoms"
                     break
-
+                case "ALL":
+                case "1":
+                    // Unmodified stream; we have just checked for active atoms.
+                    selectionType = "All Atoms"
+                    break
                 case "ALPHA":
                 case "2":
                     // Filter only for reference atoms: carbons named CA (protein) or nitrogens named N1 or N9 (nucleic acids).
@@ -171,23 +179,17 @@ class Superpose extends PotentialScript {
                         boolean naReference = (atName.equals("N1") || atName.equals("N9")) && ati.getAtomType().atomicNumber == 7
                         return proteinReference || naReference
                     })
-                    selectionType = "Reference Atoms (i.e. alpha carbons and N1/N9 for nucleic acids)";
+                    selectionType = "C-Alpha Atoms (or N1/N9 for nucleic acids)"
                     break
-
-                case "ALL":
-                case "1":
-                    selectionType = "All Atoms"
-                    // Unmodified stream; we have just checked for active atoms.
-                    break
-
                 default:
-                    logger.severe(String.format(" Could not parse %s as an atom selection! Must be ALL, HEAVY, or ALPHA", atomSelection))
+                    logger.severe(format(" Could not parse %s as an atom selection! Must be ALL, HEAVY, or ALPHA", atomSelection))
                     break
             }
 
+            logger.info(" Superpose selection criteria: " + selectionType)
+
             // Indices of atoms used in alignment and RMSD calculations.
             int[] usedIndices = atomIndexStream.toArray()
-            System.out.println("used indices length: " + usedIndices.length)
             int nUsed = usedIndices.length
             int nUsedVars = nUsed * 3
             double[] massUsed = Arrays.stream(usedIndices).
@@ -197,12 +199,12 @@ class Superpose extends PotentialScript {
             double[] x2Used = new double[nUsedVars]
 
             // Check which molecular assemblies to do RMSD comparisons among.
-            if (frameComparison == false) {
+            if (!frameComparison) {
                 // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
-                rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
-            } else if (frameComparison == true) {
-                rmsd(systemFilter, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, 1)
-                SystemFilter systemFilter1
+                rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
+            } else {
+                rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
+                SystemFilter systemFilter1 = null
                 if (systemFilter instanceof PDBFilter) {
                     systemFilter1 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                     systemFilter1.readFile()
@@ -212,23 +214,21 @@ class Superpose extends PotentialScript {
                 while (systemFilter1.readNext(false, false)) {
                     int snapshot1 = systemFilter1.getSnapshot()
                     forceFieldEnergy.getCoordinates(x)
-                    SystemFilter systemFilter2
+                    SystemFilter systemFilter2 = null
                     if (systemFilter instanceof PDBFilter) {
                         systemFilter2 = new PDBFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                         systemFilter2.readFile()
                     } else if (systemFilter instanceof XYZFilter) {
                         systemFilter2 = new XYZFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                     }
-                    rmsd(systemFilter2, nUsed, usedIndices, selectionType, x, x2, xUsed, x2Used, massUsed, snapshot1)
+                    rmsd(systemFilter2, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, snapshot1)
                 }
-            } else{
-                logger.severe(String.format(" Could not parse %s as a frame comparison! Must be true or false", frameComparison))
             }
         }
         return this
     }
 
-    void rmsd(SystemFilter systemFilter, int nUsed, int[] usedIndices, String selectionType, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1) {
+    void rmsd(SystemFilter systemFilter, int nUsed, int[] usedIndices, double[] x, double[] x2, double[] xUsed, double[] x2Used, double[] massUsed, int snapshot1) {
         while (systemFilter.readNext(false, false)) {
             int snapshot2 = systemFilter.getSnapshot()
             // Only calculate RMSD for snapshots if they aren't the same snapshot.
@@ -251,8 +251,8 @@ class Superpose extends PotentialScript {
                 double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
 
                 logger.info(format(
-                        "\n Coordinate RMSD Based On %s (Angstroms) on Model %d and Model %d\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                        selectionType, snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
+                        " Coordinate RMSD for %d and %d: Original %7.3f, After Translation %7.3f, After Rotation %7.3f",
+                        snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
 
             }
         }
