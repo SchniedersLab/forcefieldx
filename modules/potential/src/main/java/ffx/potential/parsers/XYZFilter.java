@@ -313,41 +313,23 @@ public class XYZFilter extends SystemFilter {
         catch (IOException e) {
             logger.severe(e.toString());
         }
-        int numModels=1;
-        try {
-            String data;
+        int numModels=0;
+        try{
+            String data = bufferedReaderCount.readLine();
             Atom[] atoms = activeMolecularAssembly.getAtomArray();
             int nSystem = atoms.length;
-
-            if (bufferedReaderCount == null) {
-                bufferedReaderCount = new BufferedReader(new FileReader(currentFile));
-                // Read past the first N + 1 lines that begin with an integer.
-                for (int i = 0; i < nSystem + 1; i++) {
-                    data = bufferedReaderCount.readLine();
-                    while (!firstTokenIsInteger(data)) {
-                        data = bufferedReaderCount.readLine();
-                    }
-                }
+            int numLines = 1;
+            while(data != null){
+                data = bufferedReaderCount.readLine();
+                numLines++;
             }
-            numModels++;
-            return numModels;
-        } catch (FileNotFoundException e) {
-            String message = format("Exception opening file %s.", currentFile);
+            numModels = (int) Math.floor(numLines/nSystem);
+        }catch(Exception e){
+            String message = format("Exception.", xyzFile);
             logger.log(Level.WARNING, message, e);
-        } catch (IOException e) {
-            String message = format("Exception reading from file %s.", currentFile);
-            logger.log(Level.WARNING, message, e);
-        }
-        return 1;
-    }
-
-    /*public int countNumModels(){
-        int numModels = 1;
-        while(readNext()){
-            numModels++;
         }
         return numModels;
-    }*/
+    }
 
     /**
      * {@inheritDoc}
