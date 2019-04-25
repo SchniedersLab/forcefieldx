@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
+import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.ParallelTeam
@@ -161,6 +162,8 @@ class Minimizer extends AlgorithmsScript {
         LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
         linter?.setLambda(lambda)
 
+        SystemFilter systemFilter = algorithmFunctions.getFilter()
+
         double[] x = new double[potential.getNumberOfVariables()]
         potential.getCoordinates(x)
         potential.energy(x, true)
@@ -203,28 +206,41 @@ class Minimizer extends AlgorithmsScript {
             String fileName = FilenameUtils.getName(modelFilename)
             String ext = FilenameUtils.getExtension(fileName)
             fileName = FilenameUtils.removeExtension(fileName)
-
             File saveFile
+            SystemFilter writeFilter
             if (ext.toUpperCase().contains("XYZ")) {
                 saveFile = new File(dirName + fileName + ".xyz")
+                writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                 algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
             } else if (ext.toUpperCase().contains("ARC")) {
                 saveFile = new File(dirName + fileName + ".arc")
+                saveFile = algorithmFunctions.versionFile(saveFile)
+                writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
                 algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
             } else {
                 saveFile = new File(dirName + fileName + ".pdb")
-                algorithmFunctions.saveAsPDB(activeAssembly, saveFile)
+                saveFile = algorithmFunctions.versionFile(saveFile)
+                writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+                int numModels = systemFilter.countNumModels()
+                if(numModels>1){
+                    writeFilter.setModelNumbering(true, 0)
+                }
+                writeFilter.writeFile(saveFile, true, false, false)
             }
 
-            SystemFilter systemFilter = algorithmFunctions.getFilter()
-            saveFile = activeAssembly.getFile()
-
-            if (systemFilter instanceof XYZFilter) {
-                XYZFilter xyzFilter = (XYZFilter) systemFilter
-                while (xyzFilter.readNext()) {
-                    minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
-                    boolean append = true
-                    xyzFilter.writeFile(saveFile, append)
+            if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
+                while (systemFilter.readNext()) {
+                    if (systemFilter instanceof PDBFilter) {
+                        saveFile.append("ENDMDL\n")
+                        minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                        writeFilter.writeFile(saveFile, true, false, false)
+                    } else if(systemFilter instanceof XYZFilter){
+                        minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                        writeFilter.writeFile(saveFile, true)
+                    }
+                }
+                if(systemFilter instanceof PDBFilter) {
+                    saveFile.append("END\n")
                 }
             }
         }

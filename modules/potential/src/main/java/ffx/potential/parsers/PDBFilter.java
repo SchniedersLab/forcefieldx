@@ -222,6 +222,8 @@ public final class PDBFilter extends SystemFilter {
     private boolean noVersioning = false;
     private final static Set<String> backboneNames;
 
+    private File readFile;
+
     /**
      * Standardize atom names to PDB standard by default.
      */
@@ -249,6 +251,7 @@ public final class PDBFilter extends SystemFilter {
         super(files, molecularAssembly, forceField, properties);
         bondList = new ArrayList<>();
         this.fileType = FileType.PDB;
+        readFile = files.get(0);
     }
 
     /**
@@ -264,6 +267,7 @@ public final class PDBFilter extends SystemFilter {
         super(file, molecularAssembly, forceField, properties);
         bondList = new ArrayList<>();
         this.fileType = FileType.PDB;
+        readFile = file;
     }
 
     /**
@@ -279,6 +283,7 @@ public final class PDBFilter extends SystemFilter {
         super(file, molecularAssemblies, forceField, properties);
         bondList = new ArrayList<>();
         this.fileType = FileType.PDB;
+        readFile = file;
     }
 
     /**
@@ -367,8 +372,8 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param set a boolean.
      */
-    public void setModelNumbering(boolean set) {
-        modelsWritten = 1;
+    public void setModelNumbering(boolean set, int modelsWritten) {
+        this.modelsWritten = modelsWritten;
     }
 
     /**
@@ -3307,6 +3312,48 @@ public final class PDBFilter extends SystemFilter {
         return modelsRead;
     }
 
+    @Override
+    public int countNumModels(){
+        Pattern model = Pattern.compile("MODEL");
+        int numModels = 0;
+        boolean eof = true;
+        for (MolecularAssembly system : systems) {
+            try {
+                BufferedReader currentReader;
+                if (readers.containsKey(system)) {
+                    currentReader = readers.get(system);
+                    if (!currentReader.ready()) {
+                        currentReader = new BufferedReader(new FileReader(readFile));
+                        readers.put(system, currentReader);
+                    }
+                } else {
+                    currentReader = new BufferedReader(new FileReader(readFile));
+                    readers.put(system, currentReader);
+                }
+                // Skip to appropriate model.
+                String line = currentReader.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    Matcher match = model.matcher(line);
+                    if (match.find()) {
+                        numModels++;
+                        eof = false;
+                    }
+                    line = currentReader.readLine();
+                }
+                if (eof) {
+                    logger.log(Level.INFO, String.format(" End of file reached for %s", readFile));
+                    currentReader.close();
+                    return numModels;
+                }
+            } catch (IOException ex) {
+                logger.info(String.format(" Exception in parsing frame %d of %s:"
+                        + " %s", modelsRead, system.toString(), ex.toString()));
+            }
+        }
+        return numModels;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -3333,18 +3380,16 @@ public final class PDBFilter extends SystemFilter {
         modelsRead = resetPosition ? 1 : modelsRead + 1;
         boolean eof = true;
         for (MolecularAssembly system : systems) {
-            File file = system.getFile();
-            currentFile = file;
             try {
                 BufferedReader currentReader;
                 if (readers.containsKey(system)) {
                     currentReader = readers.get(system);
                     if (!currentReader.ready()) {
-                        currentReader = new BufferedReader(new FileReader(currentFile));
+                        currentReader = new BufferedReader(new FileReader(readFile));
                         readers.put(system, currentReader);
                     }
                 } else {
-                    currentReader = new BufferedReader(new FileReader(currentFile));
+                    currentReader = new BufferedReader(new FileReader(readFile));
                     readers.put(system, currentReader);
                 }
                 // Skip to appropriate model.
@@ -3365,7 +3410,7 @@ public final class PDBFilter extends SystemFilter {
                     line = currentReader.readLine();
                 }
                 if (eof) {
-                    logger.log(Level.INFO, String.format(" End of file reached for %s", file));
+                    logger.log(Level.INFO, String.format(" End of file reached for %s", readFile));
                     currentReader.close();
                     return false;
                 }

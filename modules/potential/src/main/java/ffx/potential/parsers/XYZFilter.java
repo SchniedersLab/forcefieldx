@@ -302,6 +302,35 @@ public class XYZFilter extends SystemFilter {
         return snapShot;
     }
 
+    @Override
+    public int countNumModels(){
+        File xyzFile = activeMolecularAssembly.getFile();
+        BufferedReader bufferedReaderCount = null;
+        try{
+            FileReader fr = new FileReader(xyzFile);
+            bufferedReaderCount = new BufferedReader(fr);
+        }
+        catch (IOException e) {
+            logger.severe(e.toString());
+        }
+        int numModels=0;
+        try{
+            String data = bufferedReaderCount.readLine();
+            Atom[] atoms = activeMolecularAssembly.getAtomArray();
+            int nSystem = atoms.length;
+            int numLines = 1;
+            while(data != null){
+                data = bufferedReaderCount.readLine();
+                numLines++;
+            }
+            numModels = (int) Math.floor(numLines/nSystem);
+        }catch(Exception e){
+            String message = format("Exception.", xyzFile);
+            logger.log(Level.WARNING, message, e);
+        }
+        return numModels;
+    }
+
     /**
      * {@inheritDoc}
      */

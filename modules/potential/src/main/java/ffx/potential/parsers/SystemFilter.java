@@ -456,6 +456,8 @@ public abstract class SystemFilter {
      */
     public abstract void closeReader();
 
+    public int countNumModels(){return -1;}
+
     /**
      * <p>
      * Getter for the field <code>atomList</code>.</p>
