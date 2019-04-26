@@ -896,8 +896,8 @@ public class RotamerOptimization implements Terminatable {
                 }
             } catch (Exception ex) {
                 maxRotCheckDepth = defaultMaxRotCheckDepth;
-                logger.warning(String.format(" Could not parse %s value %s as valid integer; defaulting to %d", prop, propStr, maxRotCheckDepth));
-                logger.warning(String.format(" Exception: %s", ex));
+                logger.warning(format(" Could not parse %s value %s as valid integer; defaulting to %d", prop, propStr, maxRotCheckDepth));
+                logger.warning(format(" Exception: %s", ex));
             }
         } else {
             maxRotCheckDepth = defaultMaxRotCheckDepth;
@@ -912,7 +912,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 singT = Double.parseDouble(prop);
             } catch (Exception ex) {
-                logger.warning(String.format(" Exception in parsing ro-singularityThreshold: %s", ex));
+                logger.warning(format(" Exception in parsing ro-singularityThreshold: %s", ex));
                 singT = DEFAULT_SINGULARITY_THRESHOLD;
             }
         }
@@ -927,7 +927,7 @@ public class RotamerOptimization implements Terminatable {
                 try {
                     ort = Double.parseDouble(prop);
                 } catch (Exception ex) {
-                    logger.warning(String.format(" Exception in parsing ro-ommRecalculateThreshold: %s", ex));
+                    logger.warning(format(" Exception in parsing ro-ommRecalculateThreshold: %s", ex));
                     ort = DEFAULT_OMM_RECALCULATE_THRESHOLD;
                 }
             }
@@ -1058,7 +1058,7 @@ public class RotamerOptimization implements Terminatable {
                     rotEnergy = currentEnergy(resList);
                     logger.info(format(" %d Energy: %s", ++evaluatedPermutations, formatEnergy(rotEnergy)));
                 } catch (ArithmeticException ex) {
-                    logger.info(String.format(" %d Energy set to NaN (unreasonable conformation)", ++evaluatedPermutations));
+                    logger.info(format(" %d Energy set to NaN (unreasonable conformation)", ++evaluatedPermutations));
                 }
                 if (algorithmListener != null) {
                     algorithmListener.algorithmUpdate(molecularAssembly);
@@ -1407,7 +1407,7 @@ public class RotamerOptimization implements Terminatable {
                     try {
                         amoebaEnergy = currentEnergy(resList);
                     } catch (ArithmeticException ex) {
-                        logger.warning(String.format(" Exception %s in calculating full AMOEBA energy for permutation %d", ex.toString(), evaluatedPermutations));
+                        logger.warning(format(" Exception %s in calculating full AMOEBA energy for permutation %d", ex.toString(), evaluatedPermutations));
                     }
                     comparisonEnergy = amoebaEnergy;
                 }
@@ -1936,7 +1936,7 @@ public class RotamerOptimization implements Terminatable {
      */
     private void initResidue(Residue residue, Polymer polymer, int i) {
         if (residue == null) {
-            logger.warning(String.format(" Null residue %d for chain %c", i, polymer.getChainID()));
+            logger.warning(format(" Null residue %d for chain %c", i, polymer.getChainID()));
         } else {
             Rotamer[] rotamers = residue.getRotamers(library);
             if (rotamers != null) {
@@ -2187,7 +2187,7 @@ public class RotamerOptimization implements Terminatable {
                     energyWriter.close();
                 }
             } catch (IOException ex) {
-                logger.severe(String.format(" Exception in closing buffered energy writer."));
+                logger.severe(format(" Exception in closing buffered energy writer."));
             }
         }
 
@@ -2403,7 +2403,7 @@ public class RotamerOptimization implements Terminatable {
                 try {
                     newE = currentEnergy(rList);
                 } catch (ArithmeticException ex) {
-                    logger.fine(String.format(" Exception %s in energy calculations during independent for %s-%d", ex.toString(), residue, j));
+                    logger.fine(format(" Exception %s in energy calculations during independent for %s-%d", ex.toString(), residue, j));
                 }
                 if (newE < e) {
                     bestRotamer = j;
@@ -2671,7 +2671,7 @@ public class RotamerOptimization implements Terminatable {
                 e = currentEnergy(residueList);
             } catch (ArithmeticException ex) {
                 e = Double.NaN;
-                logger.severe(String.format(" Exception %s in calculating current energy at the end of triples", ex.toString()));
+                logger.severe(format(" Exception %s in calculating current energy at the end of triples", ex.toString()));
             }
 
             logIfMaster(format(" %12s %25s %25s", "Type", "Energy", "Lowest Possible Energy"));
@@ -2919,7 +2919,7 @@ public class RotamerOptimization implements Terminatable {
         try {
             e = currentEnergy(residueList);
         } catch (ArithmeticException ex) {
-            logger.severe(String.format(" Exception %s in calculating current energy at the end of self and pairs", ex.toString()));
+            logger.severe(format(" Exception %s in calculating current energy at the end of self and pairs", ex.toString()));
         }
         logIfMaster(format(" %15s %25f %25s", "Backbone:", backboneEnergy, ""));
         logIfMaster(format(" %15s %25f %25f", "Self:", sumSelfEnergy, sumLowSelfEnergy));
@@ -3103,7 +3103,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 fullEnergy = currentEnergy(residueList);
             } catch (Exception ex) {
-                logger.severe(String.format(" Exception %s in calculating full energy; FFX shutting down", ex.toString()));
+                logger.severe(format(" Exception %s in calculating full energy; FFX shutting down", ex.toString()));
             }
 
             logger.info(format(" Final summation of energies:    %16.5f", e));
@@ -3124,7 +3124,7 @@ public class RotamerOptimization implements Terminatable {
                 try {
                     e = currentEnergy(residueList);
                 } catch (ArithmeticException ex) {
-                    logger.fine(String.format(" Exception %s in calculating full AMOEBA energy at the end of brute force", ex.toString()));
+                    logger.fine(format(" Exception %s in calculating full AMOEBA energy at the end of brute force", ex.toString()));
                 }
             }
         }
@@ -3657,7 +3657,7 @@ public class RotamerOptimization implements Terminatable {
                         try {
                             startingEnergy = currentEnergy(currentWindow);
                         } catch (ArithmeticException ex) {
-                            logger.severe(String.format(" Exception %s in calculating starting energy of a window; FFX shutting down", ex.toString()));
+                            logger.severe(format(" Exception %s in calculating starting energy of a window; FFX shutting down", ex.toString()));
                         }
                         if (useForcedResidues) {
                             if (onlyRotameric.size() < 1) {
@@ -3669,7 +3669,7 @@ public class RotamerOptimization implements Terminatable {
                                 try {
                                     finalEnergy = currentEnergy(currentWindow);
                                 } catch (ArithmeticException ex) {
-                                    logger.severe(String.format(" Exception %s in calculating final energy of a window; FFX shutting down", ex.toString()));
+                                    logger.severe(format(" Exception %s in calculating final energy of a window; FFX shutting down", ex.toString()));
                                 }
                                 if (startingEnergy <= finalEnergy) {
                                     logger.warning("Optimization did not yield a better energy. Reverting to orginal coordinates.");
@@ -3682,7 +3682,7 @@ public class RotamerOptimization implements Terminatable {
                             try {
                                 finalEnergy = currentEnergy(currentWindow);
                             } catch (ArithmeticException ex) {
-                                logger.severe(String.format(" Exception %s in calculating final energy of a window; FFX shutting down", ex.toString()));
+                                logger.severe(format(" Exception %s in calculating final energy of a window; FFX shutting down", ex.toString()));
                             }
                             if (startingEnergy <= finalEnergy) {
                                 logger.warning("Optimization did not yield a better energy. Reverting to orginal coordinates.");
@@ -3906,13 +3906,13 @@ public class RotamerOptimization implements Terminatable {
                     try {
                         startingEnergy = currentEnergy(residuesList);
                     } catch (ArithmeticException ex) {
-                        logger.severe(String.format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
+                        logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
                     }
                     globalOptimization(residuesList);
                     try {
                         finalEnergy = currentEnergy(residuesList);
                     } catch (ArithmeticException ex) {
-                        logger.severe(String.format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
+                        logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
                     }
 
                     if (startingEnergy <= finalEnergy) {
@@ -4232,7 +4232,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
             } catch (ArithmeticException ex) {
-                logger.severe(String.format(" Exception %s in calculating beginning energy; FFX shutting down.", ex.toString()));
+                logger.severe(format(" Exception %s in calculating beginning energy; FFX shutting down.", ex.toString()));
             }
         }
 
@@ -4551,7 +4551,7 @@ public class RotamerOptimization implements Terminatable {
                 allocateSelfJobMap(residues, nResidues, false);
             }
 
-            logger.info(String.format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
+            logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
             energyWorkerTeam.execute(new SelfEnergyRegion(residues));
             long singlesTime = System.nanoTime() - energyStartTime;
             logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
@@ -4560,7 +4560,7 @@ public class RotamerOptimization implements Terminatable {
                 allocate2BodyJobMap(residues, nResidues, false);
             }
 
-            logger.info(String.format(" Number of 2-body energies to calculate: %d", twoBodyEnergyMap.size()));
+            logger.info(format(" Number of 2-body energies to calculate: %d", twoBodyEnergyMap.size()));
             energyWorkerTeam.execute(new TwoBodyEnergyRegion(residues));
 
             long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
@@ -4573,7 +4573,7 @@ public class RotamerOptimization implements Terminatable {
                     allocate3BodyJobMap(residues, nResidues, false);
                 }
 
-                logger.info(String.format(" Number of 3-Body energies to calculate: %d", threeBodyEnergyMap.size()));
+                logger.info(format(" Number of 3-Body energies to calculate: %d", threeBodyEnergyMap.size()));
                 energyWorkerTeam.execute(new ThreeBodyEnergyRegion(residues));
                 triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
                 logIfMaster(format(" Time for 3-Body energies: %12.4g", (triplesTime * 1.0E-9)));
@@ -4686,7 +4686,7 @@ public class RotamerOptimization implements Terminatable {
                 logger.info(format(" Energy of the system with rotamers in their default conformation: %s",
                         formatEnergy(defaultEnergy)));
             } catch (ArithmeticException ex) {
-                logger.severe(String.format(" Exception %s in calculating default energy; FFX shutting down", ex.toString()));
+                logger.severe(format(" Exception %s in calculating default energy; FFX shutting down", ex.toString()));
             }
         }
         return backboneEnergy;
@@ -4743,11 +4743,11 @@ public class RotamerOptimization implements Terminatable {
             }
             energy = currentEnergy(residues) - backboneEnergy;
             if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
-                logger.warning(String.format(" Experimental: re-computing self energy %s-%d using Force Field X", residues[i], ri));
+                logger.warning(format(" Experimental: re-computing self energy %s-%d using Force Field X", residues[i], ri));
                 energy = currentFFXPE() - backboneEnergy;
             }
             if (energy < singularityThreshold) {
-                String message = String.format(" Rejecting self energy for %s-%d is %10.5g << %10f, "
+                String message = format(" Rejecting self energy for %s-%d is %10.5g << %10f, "
                         + "likely in error.", residues[i], ri, energy, singularityThreshold);
                 logger.warning(message);
                 throw new EnergyException(message);
@@ -4782,11 +4782,11 @@ public class RotamerOptimization implements Terminatable {
             double subtract = -backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
             energy = currentEnergy(residues) + subtract;
             if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
-                logger.warning(String.format(" Experimental: re-computing pair energy %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj));
+                logger.warning(format(" Experimental: re-computing pair energy %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj));
                 energy = currentFFXPE() + subtract;
             }
             if (energy < singularityThreshold) {
-                String message = String.format(" Rejecting pair energy for %s-%d %s-%d is %10.5g << %10f, "
+                String message = format(" Rejecting pair energy for %s-%d %s-%d is %10.5g << %10f, "
                         + "likely in error.", residues[i], ri, residues[j], rj, energy, singularityThreshold);
                 logger.warning(message);
                 throw new EnergyException(message);
@@ -4828,11 +4828,11 @@ public class RotamerOptimization implements Terminatable {
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(j, rj, k, rk);
             energy = currentEnergy(residues) + subtract;
             if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
-                logger.warning(String.format(" Experimental: re-computing triple energy %s-%d %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj, residues[k], rk));
+                logger.warning(format(" Experimental: re-computing triple energy %s-%d %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj, residues[k], rk));
                 energy = currentFFXPE() + subtract;
             }
             if (energy < singularityThreshold) {
-                String message = String.format(" Rejecting triple energy for %s-%d %s-%d %s-%d is %10.5g << %10f, "
+                String message = format(" Rejecting triple energy for %s-%d %s-%d %s-%d is %10.5g << %10f, "
                         + "likely in error.", residues[i], ri, residues[j], rj, residues[k], rk, energy, singularityThreshold);
                 logger.warning(message);
                 throw new EnergyException(message);
@@ -4881,11 +4881,11 @@ public class RotamerOptimization implements Terminatable {
             energy = currentEnergy(residues) + subtract;
 
             if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
-                logger.warning(String.format(" Experimental: re-computing quad energy %s-%d %s-%d %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl));
+                logger.warning(format(" Experimental: re-computing quad energy %s-%d %s-%d %s-%d %s-%d using Force Field X", residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl));
                 energy = currentFFXPE() + subtract;
             }
             if (energy < singularityThreshold) {
-                String message = String.format(" Rejecting quad energy for %s-%d %s-%d %s-%d %s-%d is %10.5g << %10f, "
+                String message = format(" Rejecting quad energy for %s-%d %s-%d %s-%d %s-%d is %10.5g << %10f, "
                         + "likely in error.", residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl, energy, singularityThreshold);
                 logger.warning(message);
                 throw new EnergyException(message);
@@ -5471,7 +5471,7 @@ public class RotamerOptimization implements Terminatable {
                             if (Double.isFinite(minPairEnergies[ri][rj]) && Double.isFinite(minMax[0])) {
                                 minPairEnergies[ri][rj] += minMax[0];
                             } else {
-                                logger.severe(String.format(" An ri-rj pair %s-%d %s-%d with NaN minimum was caught incorrectly!", residuei.toFormattedString(false, true), ri, residuej.toFormattedString(false, true), rj));
+                                logger.severe(format(" An ri-rj pair %s-%d %s-%d with NaN minimum was caught incorrectly!", residuei.toFormattedString(false, true), ri, residuej.toFormattedString(false, true), rj));
                             }
                             if (Double.isFinite(maxPairEnergies[ri][rj]) && Double.isFinite(minMax[1])) {
                                 maxPairEnergies[ri][rj] += minMax[1];
@@ -5482,7 +5482,7 @@ public class RotamerOptimization implements Terminatable {
                         } else {
                             // A NaN minimum energy for some pair indicates it's definitely not part of the GMEC.
                             minPairEnergies[ri][rj] = Double.NaN;
-                            logger.info(String.format(" Eliminating pair %s-%d %s-%d that always clashes.", residuei.toFormattedString(false, true), ri, residuej.toFormattedString(false, true), rj));
+                            logger.info(format(" Eliminating pair %s-%d %s-%d that always clashes.", residuei.toFormattedString(false, true), ri, residuej.toFormattedString(false, true), rj));
                             eliminateRotamerPair(residues, i, ri, j, rj, print);
                             eliminated = true;
                         }
@@ -5505,7 +5505,7 @@ public class RotamerOptimization implements Terminatable {
                 }
 
                 if (pairEliminationEnergy == Double.MAX_VALUE) {
-                    logIfMaster(String.format(" All rotamer pairs for residues %s and %s have possible conflicts; cannot perform any eliminations!", residuei.toFormattedString(false, true), residuej), Level.FINE);
+                    logIfMaster(format(" All rotamer pairs for residues %s and %s have possible conflicts; cannot perform any eliminations!", residuei.toFormattedString(false, true), residuej), Level.FINE);
                 } else {
                     double comparisonEnergy = pairEliminationEnergy + ensembleBuffer;
                     for (int ri = 0; ri < lenri; ri++) {
@@ -5632,7 +5632,7 @@ public class RotamerOptimization implements Terminatable {
         Residue resi = residues[i];
         Residue resj = residues[j];
         if (check(i, ri) || check(j, rj) || check(i, ri, j, rj)) {
-            throw new IllegalArgumentException(String.format(" Called for minMaxE2 on an eliminated pair %s-%d %s-%d", resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj));
+            throw new IllegalArgumentException(format(" Called for minMaxE2 on an eliminated pair %s-%d %s-%d", resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj));
         }
 
         // Minimum summation over third residues k.
@@ -5757,7 +5757,7 @@ public class RotamerOptimization implements Terminatable {
         Residue resk = residues[k];
         if (check(i, ri) || check(j, rj) || check(k, rk) || check(i, ri, j, rj) || check(i, ri, k, rk) || check(j, rj, k, rk)) {
             // Not implemented: check(i, ri, j, rj, k, rk).
-            throw new IllegalArgumentException(String.format(" Called for minMaxE2 on an eliminated triple %s-%d %s-%d %s-%d", resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk));
+            throw new IllegalArgumentException(format(" Called for minMaxE2 on an eliminated triple %s-%d %s-%d %s-%d", resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk));
         }
 
         // These two are a summation of mins/maxes over all fourth residues l.
@@ -6707,7 +6707,7 @@ public class RotamerOptimization implements Terminatable {
             selfEnergy[i][ri] = e;
         } catch (NullPointerException | ArrayIndexOutOfBoundsException ex) {
             if (!quiet) {
-                logger.warning(String.format(" NPE or array index error for (%3d,%2d)", i, ri));
+                logger.warning(format(" NPE or array index error for (%3d,%2d)", i, ri));
             }
             throw ex;
         }
@@ -6748,7 +6748,7 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
             if (indJ == -1) {
-                throw new IllegalArgumentException(String.format(" Residue %d not found in neighbors of %d; assumed past cutoff.", j, i));
+                throw new IllegalArgumentException(format(" Residue %d not found in neighbors of %d; assumed past cutoff.", j, i));
             } else {
                 twoBodyEnergy[i][ri][indJ][rj] = e;
             }
@@ -6849,13 +6849,13 @@ public class RotamerOptimization implements Terminatable {
         int indexJ = allResiduesList.indexOf(residues[j]);
         int indexK = allResiduesList.indexOf(residues[k]);
         if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
-            throw new IllegalArgumentException(String.format(" Residue %d not found in neighbors of %d; assumed past cutoff.", j, i));
+            throw new IllegalArgumentException(format(" Residue %d not found in neighbors of %d; assumed past cutoff.", j, i));
         } else {
             try {
                 threeBodyEnergy[i][ri][indJ][rj][indK][rk] = e;
             } catch (NullPointerException | ArrayIndexOutOfBoundsException ex) {
                 if (!quiet) {
-                    String message = String.format(" Could not access threeBodyEnergy array for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
+                    String message = format(" Could not access threeBodyEnergy array for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
                     logger.warning(message);
                 }
                 throw ex;
@@ -6909,7 +6909,7 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
             if (indJ == -1) {
-                logger.fine(String.format(" Residue %d not found in neighbors of %d; assumed past cutoff.", j, i));
+                logger.fine(format(" Residue %d not found in neighbors of %d; assumed past cutoff.", j, i));
                 return 0;
             } else {
                 return twoBodyEnergy[i][ri][indJ][rj];
@@ -6993,7 +6993,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 return threeBodyEnergy[i][ri][indJ][rj][indK][rk];
             } catch (NullPointerException | ArrayIndexOutOfBoundsException ex) {
-                String message = String.format(" Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
+                String message = format(" Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
                 logger.warning(message);
                 throw ex;
             }
@@ -7557,7 +7557,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 backboneEnergy = computeBackboneEnergy(residues);
             } catch (ArithmeticException ex) {
-                logger.severe(String.format(" Exception %s in calculating backbone energy; FFX shutting down.", ex.toString()));
+                logger.severe(format(" Exception %s in calculating backbone energy; FFX shutting down.", ex.toString()));
             }
             logIfMaster(format(" Backbone energy:  %s\n", formatEnergy(backboneEnergy)));
 
