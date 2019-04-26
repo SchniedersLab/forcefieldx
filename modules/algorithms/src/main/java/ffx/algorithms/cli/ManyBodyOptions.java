@@ -342,9 +342,10 @@ public class ManyBodyOptions {
                 logger.severe(String.format(" Exception in parsing rotamer file: %s\n%s", iox, Utilities.stackTraceToString(iox)));
             }
         } else {
-            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), useOrigCoordsRotamer);
+            rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.int2Library(library), useOrigCoordsRotamer);
         }
 
+        rotamerOptimization.setRotamerLibrary(rLib);
         rotamerOptimization.setDecomposeOriginal(decompose);
 
         if (algorithm == 0) {
