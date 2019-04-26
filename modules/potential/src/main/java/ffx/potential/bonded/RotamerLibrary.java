@@ -123,7 +123,8 @@ public class RotamerLibrary {
          * @return A ProteinLibrary.
          * @throws IllegalArgumentException If no matching ProteinLibrary found.
          */
-        public static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
+        @Deprecated
+        private static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
             for (ProteinLibrary lib : ProteinLibrary.values()) {
                 if (library == lib.oldIntegerConstant) {
                     return lib;
