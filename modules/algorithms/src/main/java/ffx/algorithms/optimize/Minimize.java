@@ -247,11 +247,9 @@ public class Minimize implements OptimizationListener, Terminatable {
                                            AlgorithmListener listener, MinimizationEngine engine) {
         switch (engine) {
             case OPENMM:
-                logger.info(" Creating OpenMM Minimization Object");
                 return new MinimizeOpenMM(assembly, (ForceFieldEnergyOpenMM) potentialEnergy, listener);
             case FFX:
             default:
-                logger.info(" Creating FFX Minimization Object");
                 return new Minimize(assembly, potentialEnergy, listener);
         }
     }

@@ -481,6 +481,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Update active atoms.
+     */
+    public void setActiveAtoms() {
+        openMMSystem.updateAtomMass();
+        openMMContext.reinitContext();
+    }
+
+    /**
      * getIntegrator returns the integrator used for the context
      *
      * @return integrator
@@ -589,6 +597,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return 0.0;
         }
 
+        // Make sure a context has been created.
         getContext();
 
         updateParameters(atoms);
@@ -654,13 +663,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
+        // Make sure a context has been created.
         getContext();
 
         setCoordinates(x);
         setOpenMMPositions(x, x.length);
 
         int infoMask = OpenMM_State_Energy + OpenMM_State_Forces;
-
         PointerByReference state = openMMContext.getState(infoMask);
 
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
@@ -902,7 +911,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param atoms Atoms in this list are considered.
      */
-    private void updateParameters(Atom[] atoms) {
+    public void updateParameters(Atom[] atoms) {
         openMMSystem.updateParameters(atoms);
     }
 
@@ -2070,6 +2079,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     } else {
                         addCustomNonbondedSoftcoreForce();
                     }
+
                     // Re-initialize the context.
                     openMMContext.reinitContext();
                     softcoreCreated = true;
@@ -2161,6 +2171,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 numParticles++;
             }
             logger.log(Level.INFO, format("  Atoms \t\t%6d\t%12.3f", atoms.length, totalMass));
+        }
+
+        private void updateAtomMass() {
+            int index = 0;
+            for (Atom atom : atoms) {
+                double mass = 0.0;
+                if (atom.isActive()) {
+                    mass = atom.getMass();
+                }
+                OpenMM_System_setParticleMass(system, index++, mass);
+            }
         }
 
         /**
@@ -3250,8 +3271,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_AmoebaVdwForce_setParticleExclusions(amoebaVDWForce, i, exclusions);
                 OpenMM_IntArray_resize(exclusions, 0);
             }
-            OpenMM_IntArray_destroy(exclusions);
 
+            OpenMM_IntArray_destroy(exclusions);
             ForceField.ForceFieldInteger vdwForceGroup = ForceField.ForceFieldInteger.VDW_FORCE_GROUP;
             int forceGroup = forceField.getInteger(vdwForceGroup, vdwForceGroup.getDefaultValue());
             OpenMM_Force_setForceGroup(amoebaVDWForce, forceGroup);
