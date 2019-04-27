@@ -261,6 +261,22 @@ public class ManyBodyOptions {
     double cutoff = 2.0;
 
     /**
+     * --clashThreshold The threshold for pruning clashes. If two self-energies on the same residue have an
+     * energy difference greater than 25 kcal/mol, the high energy rotamers get pruned.
+     */
+    @Option(names = {"--clashThreshold"}, paramLabel = "25.0",
+            description = "The threshold for pruning clashes.")
+    double clashThreshold = 25.0;
+
+    /**
+     * --pairClashThreshold The threshold for pruning clashes. If two pair-energies on the same residues have an
+     * energy difference greater than 25 kcal/mol, the high energy rotamers get pruned.
+     */
+    @Option(names = {"--pairClashThreshold"}, paramLabel = "25.0",
+            description = "The threshold for pruning pair clashes.")
+    double pairClashThreshold = 25.0;
+
+    /**
      * -fR or --forceResidues Force residues in this range to be considered for
      * sliding window radii, regardless of whether they lack rotamers.
      */
@@ -345,6 +361,9 @@ public class ManyBodyOptions {
             rLib = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(library), useOrigCoordsRotamer);
         }
 
+        rotamerOptimization.setRotamerLibrary(rLib);
+        rotamerOptimization.setSingletonClashThreshold(clashThreshold);
+        rotamerOptimization.setPairClashThreshold(pairClashThreshold);
         rotamerOptimization.setDecomposeOriginal(decompose);
 
         if (algorithm == 0) {
