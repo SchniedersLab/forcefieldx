@@ -1782,7 +1782,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public void setFixedCharges(Atom atoms[]) {
+    public void setFixedCharges(Atom[] atoms) {
         if (particleMeshEwald != null) {
             particleMeshEwald.setFixedCharges(atoms);
         }
@@ -2580,7 +2580,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * {@inheritDoc}
      */
     @Override
-    public double[] getCoordinates(double x[]) {
+    public double[] getCoordinates(double[] x) {
         int n = getNumberOfVariables();
         if (x == null || x.length < n) {
             x = new double[n];
@@ -2856,7 +2856,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param forceConstant the force constant in kcal/mole.
      * @param flatBottom    Radius of a flat-bottom potential in Angstroms.
      */
-    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
+    private void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
         restraintBondTerm = true;
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};

@@ -555,7 +555,7 @@ public class VanDerWaals implements MaskingInterface,
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
             assert (i == ai.getXyzIndex() - 1);
-            double xyz[] = ai.getXYZ(null);
+            double[] xyz = ai.getXYZ(null);
             int i3 = i * 3;
             coordinates[i3 + XX] = xyz[XX];
             coordinates[i3 + YY] = xyz[YY];
@@ -646,7 +646,7 @@ public class VanDerWaals implements MaskingInterface,
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    private final void buildNeighborList(Atom[] atoms) {
+    private void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
         if (esvTerm) {  // TODO: Move ESV neighborlist construction into the parallel team.
             neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
@@ -1749,7 +1749,8 @@ public class VanDerWaals implements MaskingInterface,
             public void run(int lb, int ub) {
                 double e = 0.0;
                 double[] xyzS = reduced[0];
-                int[][] list = neighborLists[0];        // neighborLists array: [nSymm][nAtoms][nNeighbors]
+                // neighborLists array: [nSymm][nAtoms][nNeighbors]
+                int[][] list = neighborLists[0];
                 for (int i = lb; i <= ub; i++) {
                     if (!use[i]) {
                         continue;
@@ -1820,7 +1821,6 @@ public class VanDerWaals implements MaskingInterface,
                                     soft = true;
                                 }
                             }
-
                             /*
                               The setFactors(i,k) method is empty unless ESVs
                               are present. If OSRW lambda present,

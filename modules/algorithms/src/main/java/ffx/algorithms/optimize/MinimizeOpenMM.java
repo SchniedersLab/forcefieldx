@@ -152,7 +152,7 @@ public class MinimizeOpenMM extends Minimize {
             // Calculate the starting energy before optimization.
             double e = forceFieldEnergyOpenMM.energy(x2);
             logger.info(format(" Initial energy:                 %12.6f (kcal/mol)", e));
-            
+
             // Run the minimization.
             OpenMM_LocalEnergyMinimizer_minimize(context, eps / (OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ), maxIterations);
 
@@ -205,10 +205,8 @@ public class MinimizeOpenMM extends Minimize {
             grmsFFX = sqrt(grmsFFX / n);
 
             time += System.nanoTime();
-            logger.info(format(" Final energy for OpenMM         %12.6f vs. FFX %12.6f in %8.3f (sec).",
-                    energy, ffxEnergy, time * 1.0e-9));
-            logger.info(format(" Convergence criteria for OpenMM %12.6f vs. FFX %12.6f (kcal/mol/A).",
-                    rmsGradient, grmsFFX));
+            logger.info(format(" Final energy for OpenMM         %12.6f vs. FFX %12.6f in %8.3f (sec).", energy, ffxEnergy, time * 1.0e-9));
+            logger.info(format(" Convergence criteria for OpenMM %12.6f vs. FFX %12.6f (kcal/mol/A).", rmsGradient, grmsFFX));
 
         }
 

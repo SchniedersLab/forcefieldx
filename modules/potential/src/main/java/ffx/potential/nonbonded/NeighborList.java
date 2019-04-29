@@ -300,9 +300,11 @@ public class NeighborList extends ParallelRegion {
      */
     private int[] molecules = null;
     /**
-     * Inactive interactions.
+     * If true, interactions between two inactive atoms are included in the Neighborlist.
+     * Set to true to match OpenMM behavior (i.e. interactions between two atoms with zero mass are included).
+     * Set to false for more efficient "pure Java" optimizations.
      */
-    private boolean inactiveInteractions = false;
+    private boolean inactiveInteractions = true;
     /**
      * Disable updates to the NeighborList; use with caution.
      */
