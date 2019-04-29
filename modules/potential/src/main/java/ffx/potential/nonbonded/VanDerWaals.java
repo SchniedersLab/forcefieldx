@@ -701,7 +701,8 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     private double getLongRangeCorrection() {
-        if (esvTerm) {  // Need to treat esvLambda chain terms below before you can do this.
+        // Need to treat esvLambda chain terms below before you can do this.
+        if (esvTerm) {
             throw new UnsupportedOperationException();
         }
 
@@ -871,8 +872,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * The energy routine may be called repeatedly.
      *
-     * @param gradient If true, gradients with respect to atomic coordinates are
-     *                 computed.
+     * @param gradient If true, gradients with respect to atomic coordinates are computed.
      * @param print    If true, there is verbose printing.
      * @return The energy.
      * @since 1.0
@@ -2053,9 +2053,7 @@ public class VanDerWaals implements MaskingInterface,
 
                         // Loop over the neighbor list.
                         final int[] neighbors = list[i];
-                        final int npair = neighbors.length;
-                        for (int j = 0; j < npair; j++) {
-                            final int k = neighbors[j];
+                        for (final int k : neighbors) {
                             Atom atomk = atoms[k];
                             if (!use[k] || !include(atomi, atomk)) {
                                 continue;
@@ -2100,10 +2098,8 @@ public class VanDerWaals implements MaskingInterface,
                                 final double ev = radEpsi[a2 + EPS];
                                 final double eps_lambda = ev * lambda5;
                                 final double rho = r * irv;
-                                // final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
                                 final double rhoDisp1 = vdwForm.rhoDisp1(rho);
                                 final double rhoDisp = rhoDisp1 * rho;
-                                // final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
                                 final double rhoDelta1 = vdwForm.rhoDelta1(rho + vdwForm.delta);
                                 final double rhoDelta = rhoDelta1 * (rho + vdwForm.delta);
                                 final double alphaRhoDelta = alpha + rhoDelta;

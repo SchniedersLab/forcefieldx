@@ -139,6 +139,7 @@ public class CrystalReciprocalSpace {
     private final RowSchedule atomicRowSchedule;
     private final RowSchedule solventRowSchedule;
     private final RowSchedule bulkSolventRowSchedule;
+
     private final ParallelTeam parallelTeam;
     private final Atom[] atoms;
     private final Crystal crystal;
@@ -529,12 +530,9 @@ public class CrystalReciprocalSpace {
                         break;
                     case ROW:
                         atomicRowRegion
-                                = new RowRegion(fftX, fftY, fftZ,
-                                densityGrid, (aRadGrid + 2) * 2, nSymm,
-                                threadCount, crystal, atoms, coordinates);
+                                = new RowRegion(fftX, fftY, fftZ, densityGrid, nSymm, threadCount, atoms, coordinates);
                         solventRowRegion
-                                = new BulkSolventRowRegion(fftX, fftY, fftZ,
-                                solventGrid, (aRadGrid + 2) * 2, bulkNSymm,
+                                = new BulkSolventRowRegion(fftX, fftY, fftZ, solventGrid, bulkNSymm,
                                 threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
                         if (solventModel == SolventModel.GAUSSIAN) {
                             atomicRowRegion.setInitValue(0.0);
@@ -559,12 +557,9 @@ public class CrystalReciprocalSpace {
                     case SLICE:
                     default:
                         atomicSliceRegion
-                                = new SliceRegion(fftX, fftY, fftZ,
-                                densityGrid, (aRadGrid + 2) * 2, nSymm,
-                                threadCount, crystal, atoms, coordinates);
+                                = new SliceRegion(fftX, fftY, fftZ, densityGrid, nSymm, threadCount, atoms, coordinates);
                         solventSliceRegion
-                                = new BulkSolventSliceRegion(fftX, fftY, fftZ,
-                                solventGrid, (aRadGrid + 2) * 2, bulkNSymm,
+                                = new BulkSolventSliceRegion(fftX, fftY, fftZ, solventGrid, bulkNSymm,
                                 threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
                         if (solventModel == SolventModel.GAUSSIAN) {
                             atomicSliceRegion.setInitValue(0.0);
@@ -641,9 +636,7 @@ public class CrystalReciprocalSpace {
                     break;
 
                 case ROW:
-                    atomicRowRegion = new RowRegion(fftX, fftY, fftZ,
-                            densityGrid, (aRadGrid + 2) * 2, nSymm,
-                            threadCount, crystal, atoms, coordinates);
+                    atomicRowRegion = new RowRegion(fftX, fftY, fftZ, densityGrid, nSymm, threadCount, atoms, coordinates);
                     atomicRowRegion.setInitValue(0.0);
                     atomicRowLoops = new AtomicRowLoop[threadCount];
                     for (int i = 0; i < threadCount; i++) {
@@ -657,9 +650,7 @@ public class CrystalReciprocalSpace {
 
                 case SLICE:
                 default:
-                    atomicSliceRegion = new SliceRegion(fftX, fftY, fftZ,
-                            densityGrid, (aRadGrid + 2) * 2, nSymm,
-                            threadCount, crystal, atoms, coordinates);
+                    atomicSliceRegion = new SliceRegion(fftX, fftY, fftZ, densityGrid, nSymm, threadCount, atoms, coordinates);
                     atomicSliceRegion.setInitValue(0.0);
                     atomicSliceLoops = new AtomicSliceLoop[threadCount];
                     for (int i = 0; i < threadCount; i++) {
@@ -1714,7 +1705,7 @@ public class CrystalReciprocalSpace {
         final double[] xf = new double[3];
         final double[] grid;
 
-        public AtomicDensityLoop(SpatialDensityRegion region) {
+        AtomicDensityLoop(SpatialDensityRegion region) {
             super(region, region.getNsymm(), region.actualCount);
             grid = region.getGrid();
         }
@@ -1776,7 +1767,7 @@ public class CrystalReciprocalSpace {
         final double[] xf = new double[3];
         final double[] grid;
 
-        public SolventDensityLoop(SpatialDensityRegion region) {
+        SolventDensityLoop(SpatialDensityRegion region) {
             super(region, region.getNsymm(), region.actualCount);
             grid = region.getGrid();
         }
@@ -1859,21 +1850,21 @@ public class CrystalReciprocalSpace {
         int previousUB, previousLB;
         int actualWeight;
 
-        public AtomicRowLoop(RowRegion region) {
+        AtomicRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
             grid = region.getGrid();
             optLocal = new int[fftZ * fftY];
         }
 
-        public double getThreadTime() {
+        double getThreadTime() {
             return timer;
         }
 
-        public int getNumberofSlices() {
+        int getNumberofSlices() {
             return (previousUB - previousLB + 1);
         }
 
-        public int getThreadWeight() {
+        int getThreadWeight() {
             return actualWeight;
         }
 

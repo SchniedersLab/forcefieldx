@@ -47,7 +47,6 @@ import edu.rit.pj.IntegerSchedule;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public abstract class SpatialDensityLoop extends IntegerForLoop {
 
@@ -61,13 +60,12 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
      * <p>
      * Constructor for SpatialDensityLoop.</p>
      *
-     * @param region a {@link ffx.potential.nonbonded.SpatialDensityRegion}
-     * object.
-     * @param nSymm a int.
+     * @param region        a {@link ffx.potential.nonbonded.SpatialDensityRegion} object.
+     * @param nSymm         a int.
      * @param atomsPerChunk an array of int.
      */
     public SpatialDensityLoop(SpatialDensityRegion region, int nSymm,
-                              int atomsPerChunk[]) {
+                              int[] atomsPerChunk) {
         this.spatialDensityRegion = region;
         this.nSymm = nSymm;
         this.spatialDensitySchedule = new SpatialDensitySchedule(region.nThreads,
@@ -86,7 +84,9 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
                 spatialDensityRegion.nAtoms, spatialDensityRegion.actualCount, 0.97);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IntegerSchedule schedule() {
         return spatialDensitySchedule;
@@ -115,7 +115,9 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
         return this;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run(int lb, int ub) {
         // Loop over work cells
@@ -161,7 +163,7 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
 
     private void gridCell(int ia, int ib, int ic) {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            final int pairList[] = spatialDensityRegion.cellList[iSymm];
+            final int[] pairList = spatialDensityRegion.cellList[iSymm];
             final int index = spatialDensityRegion.index(ia, ib, ic);
             final int start = spatialDensityRegion.cellStart[iSymm][index];
             final int stop = start + spatialDensityRegion.cellCount[iSymm][index];

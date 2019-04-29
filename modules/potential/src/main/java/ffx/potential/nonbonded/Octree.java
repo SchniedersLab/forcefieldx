@@ -54,7 +54,6 @@ import ffx.potential.bonded.Atom;
  * <p>Octree class.</p>
  *
  * @author Stephen LuCore
- *
  */
 public class Octree {
 
@@ -66,7 +65,7 @@ public class Octree {
     private static int maxTreeDepth = 10;
 
     private int depth;
-    private Octree children[];
+    private Octree[] children;
     private List<Atom> contents = new ArrayList<>();
     private Point3d corner;
     private double edgeLength;
@@ -74,8 +73,8 @@ public class Octree {
     /**
      * <p>Constructor for Octree.</p>
      *
-     * @param depth a int.
-     * @param corner a {@link javax.vecmath.Point3d} object.
+     * @param depth      a int.
+     * @param corner     a {@link javax.vecmath.Point3d} object.
      * @param edgeLength a double.
      */
     public Octree(int depth, Point3d corner, double edgeLength) {
@@ -88,19 +87,15 @@ public class Octree {
      * <p>debugPrintStats.</p>
      *
      * @param writePartitionFile a boolean.
-     * @param partFile a {@link java.io.File} object.
+     * @param partFile           a {@link java.io.File} object.
      */
     public void debugPrintStats(boolean writePartitionFile, File partFile) {
         List<Octree> nodes = new ArrayList<>();
         List<Octree> leaves = new ArrayList<>();
         debugFindNodes(nodes);
         int maxDepth = 0;
-//        for (Octree node : nodes) {
-//            maxDepth = (node.getDepth() > maxDepth) ? node.getDepth() : maxDepth;
-//        }
         int minContents = Integer.MAX_VALUE, maxContents = 0;
         double minEdgeLength = Double.MAX_VALUE, maxEdgeLength = 0;
-        double minVolume = Double.MAX_VALUE, maxVolume = 0;
         double minConc = Double.MAX_VALUE, maxConc = 0;
         for (Octree node : nodes) {
             if (node.getChildren() == null) {
@@ -118,7 +113,7 @@ public class Octree {
                 maxConc = (nodeConc > maxConc) ? nodeConc : maxConc;
             }
         }
-        logger.info(format(" Octree Leaf Stats:"));
+        logger.info(" Octree Leaf Stats:");
         logger.info(format("    Max Depth:        %10d", maxDepth));
         logger.info(format("    Min/Max Atoms:    %10d", minContents));
         logger.info(format("                      %10d", maxContents));
@@ -126,7 +121,7 @@ public class Octree {
         logger.info(format("                      %10.2g", Math.pow(maxEdgeLength, 3)));
         logger.info(format("    Min/Max Conc:     %10.2g", minConc));
         logger.info(format("                      %10.2g", maxConc));
-        logger.info(format(" "));
+        logger.info(" ");
         if (writePartitionFile) {
             try {
                 logger.info(format(" Writing atom partition file to %s", partFile.getName()));
@@ -238,7 +233,6 @@ public class Octree {
             }
         }
         contents.add(atom);
-        //logger.info(format("atom %d:    %d / %d    %d / %d", atom.getXYZIndex(), contents.size(), maxAtomsPerVolume, depth, maxTreeDepth));
         if (contents.size() > maxAtomsPerVolume && depth < maxTreeDepth) {
             if (children != null) {
                 if (!warnedAboutSplit) {
@@ -257,7 +251,7 @@ public class Octree {
                         i++;
                     }
                 } else {
-                    boolean indices[] = partitionAtom(contents.get(i));
+                    boolean[] indices = partitionAtom(contents.get(i));
                     Atom current = contents.remove(i);
                     for (int j = 0; j < 8; j++) {
                         if (indices[j]) {
@@ -393,7 +387,7 @@ public class Octree {
      *
      * @return a double.
      */
-    public double getEdgeLength() {
+    private double getEdgeLength() {
         return edgeLength;
     }
 

@@ -38,43 +38,37 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 
 /**
  * The SliceLoop class is used to parallelize placing onto a 3D grid
- *
+ * <p>
  * 1) Multipoles using B-splines or
- *
+ * <p>
  * 2) Diffraction form factors.
- *
+ * <p>
  * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is operated
  * on by only a single thread to logically enforce atomic updates of grid
  * magnitudes.
  *
  * @author Armin Avdic
- *
  */
 public abstract class SliceLoop extends IntegerForLoop {
 
-    /**
-     * Constant <code>logger</code>
-     */
-    private static final Logger logger = Logger.getLogger(SliceLoop.class.getName());
     int nAtoms;
     int nSymm;
-    public SliceRegion sliceRegion;
-    public boolean rebuildList = false;
-    public ArrayList<Integer> buildListA = new ArrayList<>();
-    public ArrayList<Integer> buildListS = new ArrayList<>();
+    protected boolean rebuildList = false;
+    protected ArrayList<Integer> buildListA = new ArrayList<>();
+    protected ArrayList<Integer> buildListS = new ArrayList<>();
+    protected SliceRegion sliceRegion;
 
     /**
      * <p>Setter for the field <code>rebuildList</code>.</p>
      *
      * @param rebuildList a boolean.
      */
-    public void setRebuildList(boolean rebuildList) {
+    void setRebuildList(boolean rebuildList) {
         this.rebuildList = rebuildList;
     }
 
@@ -83,7 +77,7 @@ public abstract class SliceLoop extends IntegerForLoop {
      *
      * @param zAtListBuild an array of {@link int} objects.
      */
-    public void saveZValues(int zAtListBuild[][]) {
+    public void saveZValues(int[][] zAtListBuild) {
 
     }
 
@@ -91,18 +85,18 @@ public abstract class SliceLoop extends IntegerForLoop {
      * <p>checkList.</p>
      *
      * @param zAtListBuild an array of {@link int} objects.
-     * @param buff a int.
+     * @param buff         a int.
      * @return a boolean.
      */
-    public boolean checkList(int zAtListBuild[][], int buff) {
+    public boolean checkList(int[][] zAtListBuild, int buff) {
         return false;
     }
 
     /**
      * <p>Constructor for SliceLoop.</p>
      *
-     * @param nAtoms a int.
-     * @param nSymm a int.
+     * @param nAtoms      a int.
+     * @param nSymm       a int.
      * @param sliceRegion a {@link ffx.potential.nonbonded.SliceRegion} object.
      */
     public SliceLoop(int nAtoms, int nSymm, SliceRegion sliceRegion) {
@@ -122,7 +116,9 @@ public abstract class SliceLoop extends IntegerForLoop {
         assert (nSymm <= sliceRegion.nSymm);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run(int lb, int ub) throws Exception {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -140,8 +136,8 @@ public abstract class SliceLoop extends IntegerForLoop {
      *
      * @param iSymm the SymOp to apply.
      * @param iAtom the index of the Atom to put onto the grid.
-     * @param lb the lower bound along the z-axis.
-     * @param ub the upper bound along the z-axis.
+     * @param lb    the lower bound along the z-axis.
+     * @param ub    the upper bound along the z-axis.
      */
     public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
 }

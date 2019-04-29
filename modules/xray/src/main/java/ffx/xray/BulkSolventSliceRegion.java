@@ -73,7 +73,6 @@ public class BulkSolventSliceRegion extends SliceRegion {
      * @param gY           a int.
      * @param gZ           a int.
      * @param grid         an array of double.
-     * @param basisSize    a int.
      * @param nSymm        a int.
      * @param threadCount  a int.
      * @param crystal      a {@link ffx.crystal.Crystal} object.
@@ -82,13 +81,11 @@ public class BulkSolventSliceRegion extends SliceRegion {
      * @param cutoff       a double.
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
-    public BulkSolventSliceRegion(int gX, int gY, int gZ, double[] grid, int basisSize, int nSymm, int threadCount,
+    public BulkSolventSliceRegion(int gX, int gY, int gZ, double[] grid, int nSymm, int threadCount,
                                   Crystal crystal, Atom[] atoms, double[][][] coordinates, double cutoff,
                                   ParallelTeam parallelTeam) {
-        super(gX, gY, gZ, grid, basisSize, nSymm, threadCount, crystal, atoms, coordinates);
-
+        super(gX, gY, gZ, grid, nSymm, threadCount, atoms, coordinates);
         this.gZ = gZ;
-
         // Asymmetric unit atoms never selected by this class.
         fill(select[0], false);
         bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
