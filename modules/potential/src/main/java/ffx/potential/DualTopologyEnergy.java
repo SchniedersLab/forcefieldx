@@ -780,15 +780,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         return scaling;
     }
 
-    private void packCoordinates(double[] x) {
-        if (scaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= scaling[i];
-            }
-        }
-    }
-
     private void packGradient(double[] x, double[] g) {
         if (g == null) {
             g = new double[nVariables];
@@ -827,24 +818,13 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             }
         }
 
-        if (scaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= scaling[i];
-                g[i] /= scaling[i];
-            }
-        }
+        scaleCoordinatesAndGradient(x, g);
     }
 
     private void unpackCoordinates(double[] x) {
 
         // Unscale the coordinates.
-        if (scaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= scaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         int index = 0;
         int indexCommon = 0;
@@ -1497,7 +1477,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             if (gradient) {
                 packGradient(x, g);
             } else {
-                packCoordinates(x);
+                scaleCoordinates(x);
             }
 
             if (verbose) {

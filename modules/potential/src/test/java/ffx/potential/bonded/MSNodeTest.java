@@ -71,8 +71,7 @@ public class MSNodeTest {
         assertNull(dataNode.getParent());
         assertNotNull(dataNode.getAtomList());
         assertNotNull(dataNode.getBondList());
-        assertNotNull(dataNode
-                .getList(BondedTerm.class, new ArrayList<ROLS>()));
+        assertNotNull(dataNode.getList(BondedTerm.class, new ArrayList<>()));
         assertNotNull(dataNode.getChildList());
     }
 

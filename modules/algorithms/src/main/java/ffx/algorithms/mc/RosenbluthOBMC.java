@@ -52,7 +52,6 @@ import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
@@ -340,15 +339,14 @@ public class RosenbluthOBMC implements MonteCarloListener {
 
     private Torsion getChiZeroTorsion(Residue residue) {
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-        ArrayList<ROLS> torsions = residue.getTorsionList();
+        ArrayList<Torsion> torsions = residue.getTorsionList();
         switch (name) {
             case VAL: {
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom CG1 = (Atom) residue.getAtomNode("CG1");
-                for (ROLS rols : torsions) {
-                    Torsion torsion = (Torsion) rols;
+                for (Torsion torsion : torsions) {
                     if (torsion.compare(N, CA, CB, CG1)) {
                         return torsion;
                     }
@@ -360,8 +358,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom CG1 = (Atom) residue.getAtomNode("CG1");
-                for (ROLS rols : torsions) {
-                    Torsion torsion = (Torsion) rols;
+                for (Torsion torsion : torsions) {
                     if (torsion.compare(N, CA, CB, CG1)) {
                         return torsion;
                     }
@@ -373,8 +370,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom OG = (Atom) residue.getAtomNode("OG");
-                for (ROLS rols : torsions) {
-                    Torsion torsion = (Torsion) rols;
+                for (Torsion torsion : torsions) {
                     if (torsion.compare(N, CA, CB, OG)) {
                         return torsion;
                     }
@@ -386,8 +382,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom OG1 = (Atom) residue.getAtomNode("OG1");
-                for (ROLS rols : torsions) {
-                    Torsion torsion = (Torsion) rols;
+                for (Torsion torsion : torsions) {
                     if (torsion.compare(N, CA, CB, OG1)) {
                         return torsion;
                     }
@@ -399,8 +394,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom SG = (Atom) residue.getAtomNode("SG");
-                for (ROLS rols : torsions) {
-                    Torsion torsion = (Torsion) rols;
+                for (Torsion torsion : torsions) {
                     if (torsion.compare(N, CA, CB, SG)) {
                         return torsion;
                     }
@@ -412,8 +406,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom SG = (Atom) residue.getAtomNode("SG");
-                for (ROLS rols : torsions) {
-                    Torsion torsion = (Torsion) rols;
+                for (Torsion torsion : torsions) {
                     if (torsion.compare(N, CA, CB, SG)) {
                         return torsion;
                     }
@@ -425,8 +418,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom CG = (Atom) residue.getAtomNode("CG");
-                for (ROLS rols : torsions) {
-                    Torsion torsion = (Torsion) rols;
+                for (Torsion torsion : torsions) {
                     if (torsion.compare(N, CA, CB, CG)) {
                         return torsion;
                     }
@@ -446,9 +438,8 @@ public class RosenbluthOBMC implements MonteCarloListener {
      */
     private void setState(Residue target, ResidueState state) {
         target.revertState(state);
-        ArrayList<ROLS> torsions = target.getTorsionList();
-        for (ROLS rols : torsions) {
-            rols.update();
+        for (Torsion torsion : target.getTorsionList()) {
+            torsion.update();
         }
     }
 

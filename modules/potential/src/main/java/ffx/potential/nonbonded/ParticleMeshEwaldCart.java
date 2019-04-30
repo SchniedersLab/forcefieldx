@@ -1980,7 +1980,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     /**
      * <p>
-     * getGradients</p>
+     * getGradient</p>
      *
      * @param grad an array of double.
      */

@@ -603,12 +603,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         updateParameters(atoms);
 
         // Unscale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         setCoordinates(x);
         setOpenMMPositions(x, x.length);
@@ -628,12 +623,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Rescale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
+        scaleCoordinates(x);
 
         return e;
     }
@@ -656,12 +646,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Un-scale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         // Make sure a context has been created.
         getContext();
@@ -713,13 +698,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         fillGradients(forces, g);
 
         // Scale the coordinates and gradients.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
+        scaleCoordinatesAndGradient(x, g);
 
         OpenMM_State_destroy(state);
         return e;
@@ -738,10 +717,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * {@inheritDoc}
      *
      * <p>
-     * getGradients</p>
+     * getGradient</p>
      */
     @Override
-    public double[] getGradients(double[] g) {
+    public double[] getGradient(double[] g) {
         return openMMContext.getGradients(g);
     }
 
@@ -926,7 +905,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /**
      * Private method for internal use, so we don't have subclasses calling
-     * super.energy, and this class delegating to the subclass's getGradients
+     * super.energy, and this class delegating to the subclass's getGradient
      * method.
      *
      * @param forces Reference to forces returned by OpenMM.

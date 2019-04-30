@@ -417,12 +417,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         int assemblysize = molecularAssemblies.length;
         switch (refinementMode) {
@@ -465,12 +460,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 logger.log(Level.SEVERE, message);
         }
 
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
+        scaleCoordinates(x);
+
         totalEnergy = e;
         return e;
     }
@@ -502,12 +493,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         int assemblysize = molecularAssemblies.length;
         switch (refinementMode) {
@@ -593,14 +579,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 logger.log(Level.SEVERE, message);
         }
 
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
-
+        scaleCoordinatesAndGradient(x, g);
 
         totalEnergy = e;
         return e;

@@ -90,7 +90,7 @@ public interface ROLS {
      * @param nodes a {@link java.util.ArrayList} object.
      * @return a {@link java.util.ArrayList} object.
      */
-    ArrayList<ROLS> getList(Class<?> c, ArrayList<ROLS> nodes);
+    <T> ArrayList<T> getList(Class<T> c, ArrayList<T> nodes);
 
     /**
      * <p>
@@ -100,7 +100,7 @@ public interface ROLS {
      * @param count a long.
      * @return a long.
      */
-    long getMSCount(Class<?> c, long count);
+    <T> long getMSCount(Class<T> c, long count);
 
     /**
      * <p>
@@ -109,7 +109,7 @@ public interface ROLS {
      * @param c a {@link java.lang.Class} object.
      * @return a {@link ffx.potential.bonded.ROLS} object.
      */
-    ROLS getMSNode(Class<?> c);
+    <T> T getMSNode(Class<T> c);
 
     /**
      * <p>

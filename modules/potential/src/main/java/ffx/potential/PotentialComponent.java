@@ -114,17 +114,6 @@ public enum PotentialComponent {
     }
 
     /**
-     * <p>getAllChildren.</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<PotentialComponent> getAllChildren() {
-        List<PotentialComponent> allChildren = new ArrayList<>();
-        getRecursive(this, allChildren);
-        return allChildren;
-    }
-
-    /**
      * <p>is.</p>
      *
      * @param category a {@link ffx.potential.PotentialComponent} object.
@@ -134,14 +123,7 @@ public enum PotentialComponent {
         if (this == category) {
             return true;
         }
-        return (parent != null) ? parent.is(category) : false;
-    }
-
-    private void getRecursive(PotentialComponent node, List<PotentialComponent> children) {
-        children.addAll(node.getChildren());
-        for (PotentialComponent child : children) {
-            getRecursive(child, children);
-        }
+        return (parent != null) && parent.is(category);
     }
 
     private void addChild(PotentialComponent child) {

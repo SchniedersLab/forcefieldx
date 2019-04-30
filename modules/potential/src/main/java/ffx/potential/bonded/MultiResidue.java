@@ -278,9 +278,9 @@ public class MultiResidue extends Residue {
 
         // Update atom references to local geometry.
         ArrayList<Atom> atoms = residue.getAtomList();
-        ArrayList<ROLS> bonds = residue.getBondList();
-        ArrayList<ROLS> angles = residue.getAngleList();
-        ArrayList<ROLS> torsions = residue.getTorsionList();
+        ArrayList<Bond> bonds = residue.getBondList();
+        ArrayList<Angle> angles = residue.getAngleList();
+        ArrayList<Torsion> torsions = residue.getTorsionList();
         if (prev != null) {
             atoms.addAll(prev.getAtomList());
             bonds.addAll(prev.getBondList());
@@ -320,24 +320,21 @@ public class MultiResidue extends Residue {
             atom.clearGeometry();
         }
         for (Atom atom : atoms) {
-            for (ROLS bond : bonds) {
-                Bond b = (Bond) bond;
+            for (Bond b : bonds) {
                 if (b.containsAtom(atom)) {
                     atom.setBond(b);
                 }
             }
         }
         for (Atom atom : atoms) {
-            for (ROLS angle : angles) {
-                Angle a = (Angle) angle;
+            for (Angle a : angles) {
                 if (a.containsAtom(atom)) {
                     atom.setAngle(a);
                 }
             }
         }
         for (Atom atom : atoms) {
-            for (ROLS torsion : torsions) {
-                Torsion t = (Torsion) torsion;
+            for (Torsion t : torsions) {
                 if (t.containsAtom(atom)) {
                     atom.setTorsion(t);
                 }

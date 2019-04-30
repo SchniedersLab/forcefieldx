@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.potential;
 
-import java.util.logging.Logger;
-
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly.FractionalMode;
@@ -53,25 +51,20 @@ import ffx.potential.bonded.Atom;
  */
 public class XtalEnergy implements Potential {
 
-    /**
-     * The logger.
-     */
-    private static final Logger logger = Logger.getLogger(XtalEnergy.class.getName());
-
     private final ForceFieldEnergy forceFieldEnergy;
     private final MolecularAssembly molecularAssembly;
-    private final Atom activeAtoms[];
+    private final Atom[] activeAtoms;
     private final int nActive;
 
-    private final double xyz[];
-    private final double gr[];
+    private final double[] xyz;
+    private final double[] gr;
     private final int nParams;
 
     private final Crystal crystal;
-    private final VARIABLE_TYPE type[];
-    private final double mass[];
+    private final VARIABLE_TYPE[] type;
+    private final double[] mass;
     private final Crystal unitCell;
-    private double scaling[];
+    private double[] scaling;
     private double totalEnergy;
 
     private FractionalMode fractionalMode = FractionalMode.OFF;
@@ -85,12 +78,10 @@ public class XtalEnergy implements Potential {
     public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
         this.forceFieldEnergy = forceFieldEnergy;
         this.molecularAssembly = molecularAssembly;
-        Atom atoms[] = molecularAssembly.getAtomArray();
-        int nAtoms = atoms.length;
+        Atom[] atoms = molecularAssembly.getAtomArray();
 
         int n = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
+        for (Atom a : atoms) {
             if (a.isActive()) {
                 n++;
             }
@@ -99,8 +90,7 @@ public class XtalEnergy implements Potential {
 
         activeAtoms = new Atom[nActive];
         int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
+        for (Atom a : atoms) {
             if (a.isActive()) {
                 activeAtoms[index++] = a;
             }
@@ -147,33 +137,19 @@ public class XtalEnergy implements Potential {
      */
     @Override
     public double energy(double[] x) {
-        /**
-         * Un-scale coordinates if applicable.
-         */
-        if (scaling != null) {
-            for (int i = 0; i < nParams; i++) {
-                x[i] /= scaling[i];
-            }
-        }
 
-        /**
-         * Set atomic coordinates & lattice parameters.
-         */
+        // Un-scale coordinates if applicable.
+        unscaleCoordinates(x);
+
+        // Set atomic coordinates & lattice parameters.
         setCoordinates(x);
 
         totalEnergy = forceFieldEnergy.energy(false, false);
 
-        /**
-         * Scale coordinates if applicable.
-         */
-        if (scaling != null) {
-            for (int i = 0; i < nParams; i++) {
-                x[i] *= scaling[i];
-            }
-        }
+        // Scale coordinates if applicable.
+        scaleCoordinates(x);
 
         return totalEnergy;
-
     }
 
     /**
@@ -181,34 +157,19 @@ public class XtalEnergy implements Potential {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
-        /**
-         * Un-scale coordinates if applicable.
-         */
-        if (scaling != null) {
-            for (int i = 0; i < nParams; i++) {
-                x[i] /= scaling[i];
-            }
-        }
+        // Un-scale coordinates if applicable.
+        unscaleCoordinates(x);
 
-        /**
-         * Set atomic coordinates & lattice parameters.
-         */
+        // Set atomic coordinates & lattice parameters.
         setCoordinates(x);
 
-        /**
-         * Calculate system energy and Cartesian coordinate gradient.
-         */
+        // Calculate system energy and Cartesian coordinate gradient.
         double e = forceFieldEnergy.energyAndGradient(xyz, gr);
 
-        /**
-         * Both coordinates and gradient are scaled if applicable.
-         */
+        // Both coordinates and gradient are scaled if applicable.
         packGradient(x, g);
 
-        /**
-         * Calculate finite-difference partial derivatives of lattice
-         * parameters.
-         */
+        // Calculate finite-difference partial derivatives of lattice  parameters.
         unitCellParameterDerivatives(x, g);
 
         totalEnergy = e;
@@ -218,10 +179,12 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     * @param x
-     * @param g
+     * Use finite-differences to compute unit cell derivatives.
+     *
+     * @param x Coordinates and unit cell parameters.
+     * @param g gradient.
      */
-    private void unitCellParameterDerivatives(double x[], double g[]) {
+    private void unitCellParameterDerivatives(double[] x, double[] g) {
 
         double eps = 1.0e-5;
         double deps = Math.toDegrees(eps);
@@ -350,9 +313,8 @@ public class XtalEnergy implements Potential {
                 g[index] = 0.0;
                 break;
         }
-        /**
-         * Scale finite-difference partial derivatives of lattice parameters.
-         */
+
+        // Scale finite-difference partial derivatives of lattice parameters.
         if (scaling != null) {
             index = 3 * nActive;
             g[index] /= scaling[index];
@@ -371,6 +333,11 @@ public class XtalEnergy implements Potential {
 
     /**
      * Calculate finite-difference derivative for any parameter.
+     *
+     * @param x     Coordinates and unit cell parameters.
+     * @param index Parameter index.
+     * @param eps   Step size.
+     * @return Finite-difference derivative.
      */
     private double finiteDifference(double[] x, int index, double eps) {
         double scale = 1.0;
@@ -391,11 +358,11 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     * @param x
-     * @param index1
-     * @param index2
-     * @param eps
-     * @return finite-difference derivative.
+     * @param x      Coordinates and unit cell parameters.
+     * @param index1 Parameter index 1.
+     * @param index2 Parameter index 2.
+     * @param eps    Step size.
+     * @return Finite-difference derivative.
      */
     private double finiteDifference2(double[] x, int index1, int index2, double eps) {
         double scale1 = 1.0;
@@ -423,11 +390,11 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     * @param x
-     * @param index1
-     * @param index2
-     * @param index3
-     * @param eps
+     * @param x      Coordinates and unit cell parameters.
+     * @param index1 Parameter index 1.
+     * @param index2 Parameter index 2.
+     * @param index3 Parameter index 3.
+     * @param eps    Step size.
      * @return finite-difference derivative.
      */
     private double finiteDifference3(double[] x, int index1, int index2, int index3, double eps) {
@@ -464,10 +431,10 @@ public class XtalEnergy implements Potential {
     /**
      * Apply scaling for the optimizer if applicable.
      *
-     * @param x
-     * @param g
+     * @param x Coordinates and unit cell parameters.
+     * @param g Atomic coordinate gradient.
      */
-    private void packGradient(double x[], double g[]) {
+    private void packGradient(double[] x, double[] g) {
         // Scale fractional coordinates and gradient.
         if (scaling != null) {
             int len = x.length;
@@ -489,7 +456,7 @@ public class XtalEnergy implements Potential {
      * @param x First 3*nActive parameters are coordinates, next 6 are x
      *          parameters.
      */
-    private void setCoordinates(double x[]) {
+    private void setCoordinates(double[] x) {
         assert (x != null);
 
         // Before applying new lattice parameters, store factional coordinates.

@@ -63,13 +63,21 @@ import static ffx.crystal.Crystal.invressq;
  */
 public class SplineEnergy implements Potential {
 
+    public interface Type {
+
+        int FOFC = 1;
+        int F1F2 = 2;
+        int FCTOESQ = 3;
+        int FOTOESQ = 4;
+    }
+
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
-    private final ReflectionList reflectionlist;
+    private final ReflectionList reflectionList;
     private final ReflectionSpline spline;
-    private final int nparams;
+    private final int nParams;
     private final int type;
     private final Crystal crystal;
-    private final DiffractionRefinementData refinementdata;
+    private final DiffractionRefinementData refinementData;
     private final double[][] fc;
     private final double[][] fo;
     private double[] optimizationScaling = null;
@@ -81,31 +89,23 @@ public class SplineEnergy implements Potential {
      * <p>
      * Constructor for SplineEnergy.</p>
      *
-     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
-     * @param nparams        a int.
+     * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param nParams        a int.
      * @param type           a int.
      */
-    public SplineEnergy(ReflectionList reflectionlist,
-                        DiffractionRefinementData refinementdata, int nparams, int type) {
-        this.reflectionlist = reflectionlist;
-        this.crystal = reflectionlist.crystal;
-        this.refinementdata = refinementdata;
+    SplineEnergy(ReflectionList reflectionList,
+                        DiffractionRefinementData refinementData, int nParams, int type) {
+        this.reflectionList = reflectionList;
+        this.crystal = reflectionList.crystal;
+        this.refinementData = refinementData;
         this.type = type;
-        this.fc = refinementdata.fc;
-        this.fo = refinementdata.fsigf;
+        this.fc = refinementData.fc;
+        this.fo = refinementData.fsigf;
 
         // initialize params
-        this.spline = new ReflectionSpline(reflectionlist, nparams);
-        this.nparams = nparams;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        this.spline = new ReflectionSpline(reflectionList, nParams);
+        this.nParams = nParams;
     }
 
     /**
@@ -125,14 +125,14 @@ public class SplineEnergy implements Potential {
         double rfree = 0.0;
         double rfreef = 0.0;
         double sum = 0.0;
-        double sumfo = 0.0;
+        double sumfo = 1.0;
 
         // Zero out the gradient.
         if (gradient) {
             fill(g, 0.0);
         }
 
-        for (HKL ih : reflectionlist.hkllist) {
+        for (HKL ih : reflectionList.hkllist) {
             int i = ih.index();
             if (isNaN(fc[i][0]) || isNaN(fo[i][0]) || fo[i][1] <= 0.0) {
                 continue;
@@ -147,7 +147,7 @@ public class SplineEnergy implements Potential {
             double s = invressq(crystal, ih);
             // Spline setup
             double fh = spline.f(s, x);
-            refinementdata.getFcTotIP(i, fct);
+            refinementData.getFcTotIP(i, fct);
 
             double d2 = 0.0;
             double dr = 0.0;
@@ -155,7 +155,7 @@ public class SplineEnergy implements Potential {
             switch (type) {
                 case Type.FOFC:
                     w = 1.0;
-                    double f1 = refinementdata.getF(i);
+                    double f1 = refinementData.getF(i);
                     double f2 = fct.abs();
                     double d = f1 - fh * f2;
                     d2 = d * d;
@@ -166,11 +166,10 @@ public class SplineEnergy implements Potential {
                     w = 2.0 / ih.epsilonc();
                     double ieps = 1.0 / eps;
                     f1 = pow(fct.abs(), 2.0) * ieps;
-                    f2 = pow(refinementdata.getF(i), 2) * ieps;
+                    f2 = pow(refinementData.getF(i), 2) * ieps;
                     d = fh * f1 - f2;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
-                    sumfo = 1.0;
                     break;
                 case Type.FCTOESQ:
                     w = 2.0 / ih.epsilonc();
@@ -178,15 +177,13 @@ public class SplineEnergy implements Potential {
                     d = f1 * fh - 1.0;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
-                    sumfo = 1.0;
                     break;
                 case Type.FOTOESQ:
                     w = 2.0 / ih.epsilonc();
-                    f1 = pow(refinementdata.getF(i) / sqrt(eps), 2);
+                    f1 = pow(refinementData.getF(i) / sqrt(eps), 2);
                     d = f1 * fh - 1.0;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
-                    sumfo = 1.0;
                     break;
             }
 
@@ -194,7 +191,7 @@ public class SplineEnergy implements Potential {
 
             double afo = abs(fo[i][0]);
             double afh = abs(fh * fct.abs());
-            if (refinementdata.isFreeR(i)) {
+            if (refinementData.isFreeR(i)) {
                 rfree += abs(afo - afh);
                 rfreef += afo;
             } else {
@@ -216,8 +213,7 @@ public class SplineEnergy implements Potential {
             }
         }
 
-        // Tim - should this only be done for Type.FOFC??
-        if (gradient) {
+        if (gradient && type == Type.FOFC) {
             double isumfo = 1.0 / sumfo;
             for (int i = 0; i < g.length; i++) {
                 g[i] *= isumfo;
@@ -254,22 +250,9 @@ public class SplineEnergy implements Potential {
      */
     @Override
     public double energy(double[] x) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
+        unscaleCoordinates(x);
         double sum = target(x, null, false, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
-
+        scaleCoordinates(x);
         return sum;
     }
 
@@ -278,23 +261,9 @@ public class SplineEnergy implements Potential {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
+        unscaleCoordinates(x);
         double sum = target(x, g, true, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
-
+        scaleCoordinatesAndGradient(x, g);
         return sum;
     }
 
@@ -303,7 +272,7 @@ public class SplineEnergy implements Potential {
      */
     @Override
     public void setScaling(double[] scaling) {
-        if (scaling != null && scaling.length == nparams) {
+        if (scaling != null && scaling.length == nParams) {
             optimizationScaling = scaling;
         } else {
             optimizationScaling = null;
@@ -420,16 +389,17 @@ public class SplineEnergy implements Potential {
      * {@inheritDoc}
      */
     @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean destroy() {
         // Should be handled upstream.
         return true;
     }
 
-    public interface Type {
-
-        int FOFC = 1;
-        int F1F2 = 2;
-        int FCTOESQ = 3;
-        int FOTOESQ = 4;
-    }
 }

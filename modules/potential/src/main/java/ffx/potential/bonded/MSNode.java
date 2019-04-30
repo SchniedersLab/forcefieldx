@@ -183,9 +183,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getBondList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(Bond.class, arrayList);
+    public ArrayList<Bond> getBondList() {
+        return getList(Bond.class, new ArrayList<>());
     }
 
     /**
@@ -193,9 +192,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getAngleList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(Angle.class, arrayList);
+    public ArrayList<Angle> getAngleList() {
+        return getList(Angle.class, new ArrayList<>());
     }
 
     /**
@@ -203,9 +201,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getStretchBendList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(StretchBend.class, arrayList);
+    public ArrayList<StretchBend> getStretchBendList() {
+        return getList(StretchBend.class, new ArrayList<>());
     }
 
     /**
@@ -213,9 +210,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getUreyBradleyList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(UreyBradley.class, arrayList);
+    public ArrayList<UreyBradley> getUreyBradleyList() {
+        return getList(UreyBradley.class, new ArrayList<>());
     }
 
     /**
@@ -223,9 +219,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getOutOfPlaneBendList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(OutOfPlaneBend.class, arrayList);
+    public ArrayList<OutOfPlaneBend> getOutOfPlaneBendList() {
+        return getList(OutOfPlaneBend.class, new ArrayList<>());
     }
 
     /**
@@ -233,9 +228,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(Torsion.class, arrayList);
+    public ArrayList<Torsion> getTorsionList() {
+        return getList(Torsion.class, new ArrayList<>());
     }
 
     /**
@@ -243,9 +237,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getAngleTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(AngleTorsion.class, arrayList);
+    public ArrayList<AngleTorsion> getAngleTorsionList() {
+        return getList(AngleTorsion.class, new ArrayList<>());
     }
 
     /**
@@ -253,9 +246,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getStretchTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(StretchTorsion.class, arrayList);
+    public ArrayList<StretchTorsion> getStretchTorsionList() {
+        return getList(StretchTorsion.class, new ArrayList<>());
     }
 
     /**
@@ -263,9 +255,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getPiOrbitalTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(PiOrbitalTorsion.class, arrayList);
+    public ArrayList<PiOrbitalTorsion> getPiOrbitalTorsionList() {
+        return getList(PiOrbitalTorsion.class, new ArrayList<>());
     }
 
     /**
@@ -273,9 +264,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getTorsionTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(TorsionTorsion.class, arrayList);
+    public ArrayList<TorsionTorsion> getTorsionTorsionList() {
+        return getList(TorsionTorsion.class, new ArrayList<>());
     }
 
     /**
@@ -283,9 +273,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<ROLS> getImproperTorsionList() {
-        ArrayList<ROLS> arrayList = new ArrayList<>();
-        return getList(ImproperTorsion.class, arrayList);
+    public ArrayList<ImproperTorsion> getImproperTorsionList() {
+        return getList(ImproperTorsion.class, new ArrayList<>());
     }
 
     /**
@@ -345,16 +334,22 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return nodes;
     }
 
-    private <U extends MSNode, T extends U> void castDescendants(Class<T> clas, List<U> nodes) {
-        if (clas.isInstance(this)) {
-            nodes.add(clas.cast(this));
+    /**
+     * @param c     a {@link java.lang.Class} object.
+     * @param nodes Nodes
+     * @param <U>   a U object.
+     * @param <T>   a T object.
+     */
+    private <U extends MSNode, T extends U> void castDescendants(Class<T> c, List<U> nodes) {
+        if (c.isInstance(this)) {
+            nodes.add(c.cast(this));
         }
         if (isLeaf()) {
             return;
         }
         for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
             MSNode node = (MSNode) e.nextElement();
-            node.castDescendants(clas, nodes);
+            node.castDescendants(c, nodes);
         }
     }
 
@@ -445,7 +440,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * {@inheritDoc}
      */
     @Override
-    public long getMSCount(Class<?> c, long count) {
+    public <T> long getMSCount(Class<T> c, long count) {
         if (c.isInstance(this)) {
             count++;
         }
@@ -463,11 +458,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * {@inheritDoc}
      */
     @Override
-    public ROLS getMSNode(Class<?> c) {
+    public <T> T getMSNode(Class<T> c) {
         TreeNode[] nodes = getPath();
         for (TreeNode n : nodes) {
             if (c.isInstance(n)) {
-                return (ROLS) n;
+                return c.cast(n);
             }
         }
         return null;
@@ -477,9 +472,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * {@inheritDoc}
      */
     @Override
-    public ArrayList<ROLS> getList(Class<?> c, ArrayList<ROLS> nodes) {
+    public <T> ArrayList<T> getList(Class<T> c, ArrayList<T> nodes) {
         if (c.isInstance(this)) {
-            nodes.add(this);
+            nodes.add(c.cast(this));
         }
         if (isLeaf() || !canBeChild(c)) {
             return nodes;

@@ -107,10 +107,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
         if (!(object instanceof ROLSP)) {
             return false;
         }
-        if (this == object) {
-            return true;
-        }
-        return false;
+        return this == object;
     }
 
     /**
@@ -168,7 +165,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
             }
             parallelMethod = PARALLELMETHOD.NONE;
         } else {
-            logger.info("Parallel setView method called by: " + parallelMethod);
+            logger.info(" Parallel setView method called by: " + parallelMethod);
         }
     }
 

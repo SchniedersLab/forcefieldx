@@ -1979,7 +1979,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     }
 
     /**
-     * <p>getGradients.</p>
+     * <p>getGradient.</p>
      *
      * @param grad an array of {@link double} objects.
      */

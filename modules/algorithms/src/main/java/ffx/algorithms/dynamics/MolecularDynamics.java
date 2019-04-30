@@ -543,7 +543,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         potential.getAcceleration(a);
         potential.getPreviousAcceleration(aPrevious);
         if (potential instanceof ForceFieldEnergy) {
-            gradient = ((ForceFieldEnergy) potential).getGradients(gradient);
+            gradient = ((ForceFieldEnergy) potential).getGradient(gradient);
         }
         thermostat.setNumberOfVariables(numberOfVariables, x, v, mass,
                 potential.getVariableTypes(), true);

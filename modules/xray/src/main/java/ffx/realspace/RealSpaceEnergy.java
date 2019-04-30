@@ -159,12 +159,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         double e = 0.0;
 
         // Unscale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         if (refineXYZ) {
             int index = 0;
@@ -188,13 +183,8 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
             e = realSpaceData.computeRealSpaceTarget();
         }
 
-        // Scale the coordinates and gradients.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
+        // Scale the coordinates.
+        scaleCoordinates(x);
 
         totalEnergy = e;
         return e;
@@ -207,12 +197,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
         // Unscale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         if (refineXYZ) {
             int index = 0;
@@ -239,13 +224,8 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
         }
 
         // Scale the coordinates and gradients.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
+        scaleCoordinatesAndGradient(x, g);
+
         totalEnergy = e;
         return e;
     }

@@ -64,6 +64,53 @@ public interface Potential {
     double energy(double[] x);
 
     /**
+     * Default method to unscale coordinates.
+     *
+     * @param x Input parameters.
+     */
+    default void unscaleCoordinates(double[] x) {
+        double[] scaling = getScaling();
+        if (scaling != null) {
+            int nParams = x.length;
+            for (int i = 0; i < nParams; i++) {
+                x[i] /= scaling[i];
+            }
+        }
+    }
+
+    /**
+     * Default method to unscale coordinates.
+     *
+     * @param x Input parameters.
+     */
+    default void scaleCoordinates(double[] x) {
+        double[] scaling = getScaling();
+        if (scaling != null) {
+            int nParams = x.length;
+            for (int i = 0; i < nParams; i++) {
+                x[i] *= scaling[i];
+            }
+        }
+    }
+
+    /**
+     * Default method to unscale coordinates.
+     *
+     * @param x Input parameters.
+     * @param g Gradient array.
+     */
+    default void scaleCoordinatesAndGradient(double[] x, double[] g) {
+        double[] scaling = getScaling();
+        if (scaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= scaling[i];
+                g[i] /= scaling[i];
+            }
+        }
+    }
+
+    /**
      * This method is called repeatedly to compute the function energy and
      * gradient.
      *

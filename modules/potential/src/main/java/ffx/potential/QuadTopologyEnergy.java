@@ -43,6 +43,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import static java.util.Arrays.fill;
 
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
@@ -166,16 +167,16 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         this.dualTopB = dualTopologyB;
         dualTopB.setCrystal(dualTopA.getCrystal());
         dualTopB.reloadCommonMasses(true);
-        linterA = (LambdaInterface) dualTopologyA;
-        linterB = (LambdaInterface) dualTopologyB;
+        linterA = dualTopologyA;
+        linterB = dualTopologyB;
         nVarA = dualTopA.getNumberOfVariables();
         nVarB = dualTopB.getNumberOfVariables();
 
-        /**
-         * Following logic is to A, deal with Integer to int array
-         * conversion issues, and B, ensure the set of unique variables is a 
-         * unique set. Unique elements may come from either the provided list, or
-         * from the non-shared elements of the dual topologies.
+        /*
+          Following logic is to A, deal with Integer to int array
+          conversion issues, and B, ensure the set of unique variables is a
+          unique set. Unique elements may come from either the provided list, or
+          from the non-shared elements of the dual topologies.
          */
         Set<Integer> uniqueASet = new LinkedHashSet<>();
         if (uniqueAList != null) {
@@ -196,11 +197,11 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         //uniquesA = uniqueASet.stream().mapToInt(Integer::intValue).toArray();
         //uniqueA = uniquesA.length;
 
-        /**
-         * Following logic is to A, deal with Integer to int array
-         * conversion issues, and B, ensure the set of unique variables is a 
-         * unique set. Unique elements may come from either the provided list, or
-         * from the non-shared elements of the dual topologies.
+        /*
+          Following logic is to A, deal with Integer to int array
+          conversion issues, and B, ensure the set of unique variables is a
+          unique set. Unique elements may come from either the provided list, or
+          from the non-shared elements of the dual topologies.
          */
         Set<Integer> uniqueBSet = new LinkedHashSet<>();
         if (uniqueBList != null) {
@@ -227,8 +228,8 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         indexGlobalToB = new int[nVarTot];
         // -1 indicates this index in the global array does not point to one in 
         // the dual topology.
-        Arrays.fill(indexGlobalToA, -1);
-        Arrays.fill(indexGlobalToB, -1);
+        fill(indexGlobalToA, -1);
+        fill(indexGlobalToB, -1);
 
         if (uniqueA > 0) {
             int commonIndex = 0;
@@ -283,34 +284,6 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
 
         region = new EnergyRegion();
         team = new ParallelTeam(1);
-    }
-
-    /**
-     * Copies from an object array of length nVarTot to two object arrays of
-     * length nVarA and nVarB.
-     *
-     * @param <T>  Type of object
-     * @param from Copy from
-     * @param toA  Copy shared and A-specific to
-     * @param toB  Copy shared and B-specific to
-     */
-    private <T> void copyTo(T[] from, T[] toA, T[] toB) {
-        if (toA == null) {
-            toA = Arrays.copyOf(from, nVarA);
-        }
-        if (toB == null) {
-            toB = Arrays.copyOf(from, nVarB);
-        }
-        for (int i = 0; i < nVarTot; i++) {
-            int index = indexGlobalToA[i];
-            if (index >= 0) {
-                toA[index] = from[i];
-            }
-            index = indexGlobalToB[i];
-            if (index >= 0) {
-                toB[index] = from[i];
-            }
-        }
     }
 
     /**
@@ -394,7 +367,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     private void addDoublesFrom(double[] to, double[] fromA, double[] fromB) {
         to = (to == null) ? new double[nVarTot] : to;
-        Arrays.fill(to, 0.0);
+        fill(to, 0.0);
         for (int i = 0; i < nVarA; i++) {
             to[indexAToGlobal[i]] = fromA[i];
         }
@@ -779,7 +752,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         private final EnergyASection sectA;
         private final EnergyBSection sectB;
 
-        public EnergyRegion() {
+        EnergyRegion() {
             sectA = new EnergyASection();
             sectB = new EnergyBSection();
         }
@@ -805,7 +778,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
             doublesTo(x, xA, xB);
         }
 
@@ -815,7 +788,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
 
         @Override
-        public void finish() throws Exception {
+        public void finish() {
             totalEnergy = energyA + energyB;
             if (gradient) {
                 addDoublesFrom(g, gA, gB);
