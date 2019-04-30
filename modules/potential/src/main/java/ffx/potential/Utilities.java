@@ -48,6 +48,8 @@ import java.util.ListIterator;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
@@ -259,20 +261,15 @@ public final class Utilities {
             resname = resname.intern();
         }
 
-        // logger.info(" Pattern " + key.toString() + " Resname " + resname);
-
         if (resname.equals("1") || resname.equals("2")) {
             // Special case where atom string keys aren't unique
             Atom alpha = backbone.get(start + 1);
             Atom carbonyl = backbone.get(start + 2);
             Atom beta = null;
-            List alphabonds = alpha.getBonds();
-            Bond abond;
-            for (ListIterator li = alphabonds.listIterator(); li.hasNext(); ) {
-                abond = (Bond) li.next();
-                beta = abond.get1_2(alpha);
-                // Don't want the peptide nitrogen or alpha hydrogen or carbonyl
-                // carbon
+            List<Bond> alphabonds = alpha.getBonds();
+            for (Bond bond : alphabonds) {
+                beta = bond.get1_2(alpha);
+                // Don't want the peptide nitrogen or alpha hydrogen or carbonyl carbon
                 if (beta.getAtomicNumber() != 7 && beta.getAtomicNumber() != 1 && beta != carbonyl) {
                     break;
                 }
@@ -284,9 +281,8 @@ public final class Utilities {
             List<Bond> betabonds = beta.getBonds();
             Atom gamma;
             int carboncount = 0;
-            for (ListIterator<Bond> li = betabonds.listIterator(); li.hasNext(); ) {
-                abond = li.next();
-                gamma = abond.get1_2(beta);
+            for (Bond bond : betabonds) {
+                gamma = bond.get1_2(beta);
                 if (gamma.getAtomicNumber() == 6) {
                     carboncount++;
                 }
@@ -318,12 +314,14 @@ public final class Utilities {
             Residue.NA3.valueOf(resname.toUpperCase());
             residue = new Residue(resname, Residue.ResidueType.NA);
         } catch (Exception e) {
+            //
         }
         if (residue == null) {
             try {
                 Residue.AA3.valueOf(resname.toUpperCase());
                 residue = new Residue(resname, Residue.ResidueType.AA);
             } catch (Exception e) {
+                //
             }
         }
         if (residue == null) {
@@ -454,21 +452,19 @@ public final class Utilities {
         }
 
         // Loop through existing segIDs to find the first one that is unused.
-        int n = segIDs.size();
         int m = 0;
-        for (int i = 0; i < n; i++) {
-            String segID = segIDs.get(i);
+        for (String segID : segIDs) {
             if (segID.endsWith(c.toString())) {
                 m++;
             }
         }
 
         // If the count is greater than 0, then append it.
-        String newSegID = null;
+        String newSegID;
         if (m == 0) {
             newSegID = c.toString();
         } else {
-            newSegID = c.toString() + Integer.toString(m);
+            newSegID = c.toString() + m;
         }
 
         segIDs.add(newSegID);
@@ -1112,7 +1108,7 @@ public final class Utilities {
      */
     private static List<Atom> getAtomListFromPool() {
         if (atomListPool.isEmpty()) {
-            return new ArrayList<Atom>();
+            return new ArrayList<>();
         }
         return atomListPool.remove(0);
     }
@@ -1258,9 +1254,7 @@ public final class Utilities {
             }
         }
 
-        for (int i = 0; i <= length; i++) {
-            sidePolymer.remove(0);
-        }
+        sidePolymer.subList(0, length + 1).clear();
 
         return assignResidue(backbone, start, atoms, sidePolymer);
     }
@@ -1275,18 +1269,14 @@ public final class Utilities {
         if (i > 35) {
             i = i % 36;
         }
-        Character c = null;
+        Character c;
         if (i < 26) {
-            /**
-             * 65 is 'A'. 90 is 'Z'.
-             */
-            c = Character.valueOf((char) (i + 65));
+            // 65 is 'A'. 90 is 'Z'.
+            c = (char) (i + 65);
         } else {
             i -= 26;
-            /**
-             * 48 is '0'. 57 is '9'.
-             */
-            c = Character.valueOf((char) (i + 48));
+            // 48 is '0'. 57 is '9'.
+            c = (char) (i + 48);
         }
         return c;
     }
@@ -1336,6 +1326,6 @@ public final class Utilities {
             diff(da, db, d);
             rms += d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
         }
-        return Math.sqrt(rms / n1);
+        return sqrt(rms / n1);
     }
 }

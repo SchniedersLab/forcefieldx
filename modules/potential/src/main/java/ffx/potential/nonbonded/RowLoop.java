@@ -38,52 +38,38 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 
 /**
  * The RowLoop class is used to parallelize placing onto a 3D grid
- *
+ * <p>
  * 1) Multipoles using B-splines or
- *
+ * <p>
  * 2) Diffraction form factors.
- *
+ * <p>
  * Each "row" of the grid (i.e. fixed values of the z and y-coordinates) is
  * operated on by only a single thread to logically enforce atomic updates of
  * grid magnitudes.
  *
  * @author Armin Avdic
- *
  */
 public abstract class RowLoop extends IntegerForLoop {
 
-    /**
-     * Constant <code>logger</code>
-     */
-    private static final Logger logger = Logger.getLogger(RowLoop.class.getName());
+    protected ArrayList<Integer> buildListA = new ArrayList<>();
+    protected ArrayList<Integer> buildListS = new ArrayList<>();
+
     private int nAtoms;
     private int nSymm;
-    public RowRegion rowRegion;
-    public boolean rebuildList = false;
-    public ArrayList<Integer> buildListA = new ArrayList<>();
-    public ArrayList<Integer> buildListS = new ArrayList<>();
-
-    /**
-     * <p>Setter for the field <code>rebuildList</code>.</p>
-     *
-     * @param rebuildList a boolean.
-     */
-    public void setRebuildList(boolean rebuildList) {
-        this.rebuildList = rebuildList;
-    }
+    protected RowRegion rowRegion;
+    protected boolean rebuildList = false;
 
     /**
      * <p>saveZYValues.</p>
      *
      * @param zAtListBuild an array of {@link int} objects.
      */
-    public void saveZYValues(int zAtListBuild[][][]) {
+    public void saveZYValues(int[][][] zAtListBuild) {
 
     }
 
@@ -91,18 +77,18 @@ public abstract class RowLoop extends IntegerForLoop {
      * <p>checkList.</p>
      *
      * @param zAtListBuild an array of {@link int} objects.
-     * @param buff a int.
+     * @param buff         a int.
      * @return a boolean.
      */
-    public boolean checkList(int zAtListBuild[][][], int buff) {
+    public boolean checkList(int[][][] zAtListBuild, int buff) {
         return false;
     }
 
     /**
      * <p>Constructor for RowLoop.</p>
      *
-     * @param nAtoms a int.
-     * @param nSymm a int.
+     * @param nAtoms    a int.
+     * @param nSymm     a int.
      * @param rowRegion a {@link ffx.potential.nonbonded.RowRegion} object.
      */
     public RowLoop(int nAtoms, int nSymm, RowRegion rowRegion) {
@@ -122,7 +108,9 @@ public abstract class RowLoop extends IntegerForLoop {
         assert (nSymm <= rowRegion.nSymm);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run(int lb, int ub) throws Exception {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -140,8 +128,8 @@ public abstract class RowLoop extends IntegerForLoop {
      *
      * @param iSymm the SymOp to apply.
      * @param iAtom the index of the Atom to put onto the grid.
-     * @param lb the lower bound for the y and z-axes.
-     * @param ub the upper bound for the y and z-axes.
+     * @param lb    the lower bound for the y and z-axes.
+     * @param ub    the upper bound for the y and z-axes.
      */
     public abstract void gridDensity(int iSymm, int iAtom, int lb, int ub);
 }

@@ -120,8 +120,8 @@ public class ScaleBulkEnergy implements Potential {
      * @param n              a int.
      * @param parallelTeam   the ParallelTeam to execute the ScaleBulkEnergy.
      */
-    public ScaleBulkEnergy(ReflectionList reflectionList, DiffractionRefinementData refinementdata,
-                           int n, ParallelTeam parallelTeam) {
+    ScaleBulkEnergy(ReflectionList reflectionList, DiffractionRefinementData refinementdata,
+                    int n, ParallelTeam parallelTeam) {
         this.reflectionList = reflectionList;
         this.crystal = reflectionList.crystal;
         this.refinementData = refinementdata;
@@ -144,53 +144,6 @@ public class ScaleBulkEnergy implements Potential {
         scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 
     private class ScaleBulkEnergyRegion extends ParallelRegion {
 
@@ -212,7 +165,7 @@ public class ScaleBulkEnergy implements Potential {
         SharedDoubleArray grad;
         ScaleBulkEnergyLoop[] scaleBulkEnergyLoop;
 
-        public ScaleBulkEnergyRegion(int nThreads) {
+        ScaleBulkEnergyRegion(int nThreads) {
             scaleBulkEnergyLoop = new ScaleBulkEnergyLoop[nThreads];
             r = new SharedDouble();
             rf = new SharedDouble();
@@ -305,7 +258,7 @@ public class ScaleBulkEnergy implements Potential {
             private double lsum;
             private double lsumfo;
 
-            public ScaleBulkEnergyLoop() {
+            ScaleBulkEnergyLoop() {
                 lgrad = new double[g.length];
             }
 
@@ -469,8 +422,7 @@ public class ScaleBulkEnergy implements Potential {
      * @param print    a boolean.
      * @return a double.
      */
-    public double target(double[] x, double[] g,
-                         boolean gradient, boolean print) {
+    public double target(double[] x, double[] g, boolean gradient, boolean print) {
 
         try {
             scaleBulkEnergyRegion.init(x, g, gradient);
@@ -519,21 +471,9 @@ public class ScaleBulkEnergy implements Potential {
      */
     @Override
     public double energy(double[] x) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
+        unscaleCoordinates(x);
         double sum = target(x, null, false, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
+        scaleCoordinates(x);
         return sum;
     }
 
@@ -542,22 +482,9 @@ public class ScaleBulkEnergy implements Potential {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
+        unscaleCoordinates(x);
         double sum = target(x, g, true, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
+        scaleCoordinatesAndGradient(x, g);
         return sum;
     }
 
@@ -646,5 +573,53 @@ public class ScaleBulkEnergy implements Potential {
     public boolean destroy() {
         // The parallelTeam should have been passed in by DiffractionData, which handles destroying it.
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

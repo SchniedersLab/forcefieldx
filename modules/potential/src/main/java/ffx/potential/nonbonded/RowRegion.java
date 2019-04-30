@@ -51,64 +51,57 @@ import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 
 /**
  * The RowRegion class is used to parallelize placing onto a 3D grid
- *
+ * <p>
  * 1) Multipoles using B-splines or
- *
+ * <p>
  * 2) Diffraction form factors.
- *
+ * <p>
  * Each "row" of 3D grid (i.e. fixed values of the z and y-coordinates) is
  * operated on by only a single thread to logically enforce atomic updates of
  * grid magnitudes.
  *
  * @author Armin Avdic
- *
  */
 public class RowRegion extends ParallelRegion {
 
-    // A list of atoms.
-    Atom atoms[];
+    /**
+     * A list of atoms.
+     */
+    Atom[] atoms;
+    Crystal crystal;
     int nAtoms;
     int nSymm;
     int gX, gY, gZ;
-    int basisSize;
     int threadCount;
-    int weight[];
-
-    DoubleBuffer gridBuffer;
-    GridInitLoop gridInitLoop[];
-    Crystal crystal;
-    double initValue = 0.0;
-    int gridSize;
-    double grid[];
-    boolean rebuildList = true;
-    public int zyAtListBuild[][][];
     public int buff = 3;
+    public boolean[][] select;
 
-    protected RowLoop rowLoop[];
-    protected double coordinates[][][];
-    public boolean select[][];
+    protected RowLoop[] rowLoop;
+    protected double[][][] coordinates;
 
-    // Constructor
+    private DoubleBuffer gridBuffer;
+    private GridInitLoop[] gridInitLoop;
+    private double initValue = 0.0;
+    private int gridSize;
+    private double[] grid;
+    private boolean rebuildList;
+    private int[][][] zyAtListBuild;
 
     /**
      * <p>Constructor for RowRegion.</p>
      *
-     * @param gX a int.
-     * @param gY a int.
-     * @param gZ a int.
-     * @param grid an array of {@link double} objects.
-     * @param basisSize a int.
-     * @param nSymm a int.
+     * @param gX          a int.
+     * @param gY          a int.
+     * @param gZ          a int.
+     * @param grid        an array of {@link double} objects.
+     * @param nSymm       a int.
      * @param threadCount a int.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param atoms       an array of {@link ffx.potential.bonded.Atom} objects.
      * @param coordinates an array of {@link double} objects.
      */
-    public RowRegion(int gX, int gY, int gZ, double grid[],
-                     int basisSize, int nSymm,
-                     int threadCount, Crystal crystal,
-                     Atom atoms[], double coordinates[][][]) {
-        weight = new int[threadCount];
+    public RowRegion(int gX, int gY, int gZ, double[] grid,
+                     int nSymm, int threadCount,
+                     Atom[] atoms, double[][][] coordinates) {
 
         this.atoms = atoms;
         this.nAtoms = atoms.length;
@@ -116,7 +109,6 @@ public class RowRegion extends ParallelRegion {
         this.gY = gY;
         this.gZ = gZ;
         gridSize = gX * gY * gZ * 2;
-        this.basisSize = basisSize;
         this.nSymm = nSymm;
         this.threadCount = threadCount;
         this.coordinates = coordinates;
@@ -141,13 +133,12 @@ public class RowRegion extends ParallelRegion {
      * <p>Setter for the field <code>crystal</code>.</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param gX a int.
-     * @param gY a int.
-     * @param gZ a int.
+     * @param gX      a int.
+     * @param gY      a int.
+     * @param gZ      a int.
      */
     public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
         this.crystal = crystal.getUnitCell();
-        //assert(this.crystal.spaceGroup.getNumberOfSymOps() == nSymm);
         this.gX = gX;
         this.gY = gY;
         this.gZ = gZ;
@@ -190,7 +181,7 @@ public class RowRegion extends ParallelRegion {
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public void setAtoms(Atom atoms[]) {
+    public void setAtoms(Atom[] atoms) {
         this.atoms = atoms;
         nAtoms = atoms.length;
         select = new boolean[nSymm][nAtoms];
@@ -214,7 +205,7 @@ public class RowRegion extends ParallelRegion {
      *
      * @param grid a {@link java.nio.DoubleBuffer} object.
      */
-    public void setGridBuffer(DoubleBuffer grid) {
+    void setGridBuffer(DoubleBuffer grid) {
         gridBuffer = grid;
     }
 
@@ -236,14 +227,18 @@ public class RowRegion extends ParallelRegion {
         return grid;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void start() {
         selectAtoms();
         rebuildList = (rebuildList || rowLoop[0].checkList(zyAtListBuild, buff));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finish() {
         if (rebuildList) {
@@ -252,15 +247,14 @@ public class RowRegion extends ParallelRegion {
         rebuildList = false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() throws Exception {
         int threadIndex = getThreadIndex();
         RowLoop loop = rowLoop[threadIndex];
-        /**
-         * This lets the same SpatialDensityLoops be used with different
-         * SpatialDensityRegions.
-         */
+        // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
         loop.setNsymm(nSymm);
         try {
             execute(0, gridSize - 1, gridInitLoop[threadIndex]);
@@ -286,7 +280,7 @@ public class RowRegion extends ParallelRegion {
      *
      * @param loops an array of {@link ffx.potential.nonbonded.RowLoop} objects.
      */
-    public void setDensityLoop(RowLoop loops[]) {
+    public void setDensityLoop(RowLoop[] loops) {
         rowLoop = loops;
     }
 

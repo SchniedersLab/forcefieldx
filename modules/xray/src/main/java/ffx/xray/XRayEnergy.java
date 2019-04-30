@@ -171,12 +171,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         double e = 0.0;
 
         // Unscale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         if (refineXYZ) {
             // update coordinates
@@ -230,12 +225,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         }
 
         // Scale the coordinates and gradients.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
+        scaleCoordinates(x);
 
         totalEnergy = e;
         return e;
@@ -249,12 +239,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         double e = 0.0;
 
         // Unscale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         if (refineXYZ) {
             for (Atom a : activeAtomArray) {
@@ -271,10 +256,10 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 a.setTempFactorGradient(0.0);
                 if (a.getAnisou(null) != null) {
                     if (a.getAnisouGradient(null) == null) {
-                        double ganisou[] = new double[6];
+                        double[] ganisou = new double[6];
                         a.setAnisouGradient(ganisou);
                     } else {
-                        double ganisou[] = a.getAnisouGradient(null);
+                        double[] ganisou = a.getAnisouGradient(null);
                         ganisou[0] = ganisou[1] = ganisou[2] = 0.0;
                         ganisou[3] = ganisou[4] = ganisou[5] = 0.0;
                         a.setAnisouGradient(ganisou);
@@ -366,13 +351,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         }
 
         // Scale the coordinates and gradients.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
+        scaleCoordinatesAndGradient(x, g);
+
         totalEnergy = e;
         return e;
     }

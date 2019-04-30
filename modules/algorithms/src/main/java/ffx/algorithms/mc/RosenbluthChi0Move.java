@@ -47,6 +47,7 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.Torsion;
 
 /**
  * Represents a random chi[0] spin of the target residue. For use with
@@ -124,9 +125,8 @@ public class RosenbluthChi0Move implements MCMove {
      * Update all torsions.
      */
     private void updateTorsions() {
-        List<ROLS> torsions = target.getTorsionList();
-        for (ROLS rols : torsions) {
-            rols.update();
+        for (Torsion torsion : target.getTorsionList()) {
+            torsion.update();
         }
     }
 

@@ -108,13 +108,16 @@ class SaveAsPDB extends PotentialScript {
         File saveFile = potentialFunctions.versionFile(modelFile)
 
         PDBFilter saveFilter
-        if (extension == "arc") {
+
+        int numModels = openFilter.countNumModels()
+        if(numModels>1){
             BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile))
             bw.write("MODEL        1\n")
             bw.flush()
             potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
             bw.close()
-        } else {
+        }
+        else {
             potentialFunctions.saveAsPDB(activeAssembly, saveFile)
         }
         try {
@@ -124,10 +127,9 @@ class SaveAsPDB extends PotentialScript {
             throw t
         }
 
-        saveFilter.setModelNumbering(true)
-
         //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
-        if (openFilter != null && openFilter instanceof XYZFilter && extension == "arc") {
+        if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter) && numModels>1) {
+            saveFilter.setModelNumbering(true, 1)
             try {
                 while (openFilter.readNext(false)) {
                     saveFile.append("ENDMDL\n")

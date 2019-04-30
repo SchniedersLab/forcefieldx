@@ -51,71 +51,66 @@ import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 
 /**
  * The SliceLoop class is used to parallelize placing onto a 3D grid
- *
+ * <p>
  * 1) Multipoles using B-splines or
- *
+ * <p>
  * 2) Diffraction form factors.
- *
+ * <p>
  * Each "slice" of the grid (i.e. a fixed value of the z-coordinate) is operated
  * on by only a single thread to logically enforce atomic updates of grid
  * magnitudes.
  *
  * @author Armin Avdic
- *
  */
 public class SliceRegion extends ParallelRegion {
 
-    // A list of atoms.
-    Atom atoms[];
+
+    public int buff = 3;
+    public boolean[][] select;
+
+    /**
+     * A list of atoms.
+     */
+    Atom[] atoms;
     int nAtoms;
+    Crystal crystal;
     int nSymm;
     int gX, gY, gZ;
-    int basisSize;
     int threadCount;
-    int weight[];
 
-    DoubleBuffer gridBuffer;
-    GridInitLoop gridInitLoop[];
-    Crystal crystal;
-    double initValue = 0.0;
-    int gridSize;
-    double grid[];
-    boolean rebuildList = true;
-    protected SliceLoop sliceLoop[];
-    protected double coordinates[][][];
-    public boolean select[][];
-    public int zAtListBuild[][];
-    public int buff = 3;
+    protected SliceLoop[] sliceLoop;
+    protected double[][][] coordinates;
 
-    // Constructor
+    private DoubleBuffer gridBuffer;
+    private GridInitLoop[] gridInitLoop;
+    private double initValue = 0.0;
+    private int gridSize;
+    private double[] grid;
+    private boolean rebuildList;
+    private int[][] zAtListBuild;
+
 
     /**
      * <p>Constructor for SliceRegion.</p>
      *
-     * @param gX a int.
-     * @param gY a int.
-     * @param gZ a int.
-     * @param grid an array of {@link double} objects.
-     * @param basisSize a int.
-     * @param nSymm a int.
+     * @param gX          a int.
+     * @param gY          a int.
+     * @param gZ          a int.
+     * @param grid        an array of {@link double} objects.
+     * @param nSymm       a int.
      * @param threadCount a int.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param atoms       an array of {@link ffx.potential.bonded.Atom} objects.
      * @param coordinates an array of {@link double} objects.
      */
-    public SliceRegion(int gX, int gY, int gZ, double grid[],
-                       int basisSize, int nSymm,
-                       int threadCount, Crystal crystal,
-                       Atom atoms[], double coordinates[][][]) {
-        weight = new int[threadCount];
-
+    public SliceRegion(int gX, int gY, int gZ, double[] grid,
+                       int nSymm, int threadCount,
+                       Atom[] atoms, double[][][] coordinates) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.gX = gX;
         this.gY = gY;
         this.gZ = gZ;
         gridSize = gX * gY * gZ * 2;
-        this.basisSize = basisSize;
         this.nSymm = nSymm;
         this.threadCount = threadCount;
         this.coordinates = coordinates;
@@ -140,13 +135,12 @@ public class SliceRegion extends ParallelRegion {
      * <p>Setter for the field <code>crystal</code>.</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param gX a int.
-     * @param gY a int.
-     * @param gZ a int.
+     * @param gX      a int.
+     * @param gY      a int.
+     * @param gZ      a int.
      */
     public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
         this.crystal = crystal.getUnitCell();
-        //assert(this.crystal.spaceGroup.getNumberOfSymOps() == nSymm);
         this.gX = gX;
         this.gY = gY;
         this.gZ = gZ;
@@ -158,7 +152,7 @@ public class SliceRegion extends ParallelRegion {
      *
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
-    public void setAtoms(Atom atoms[]) {
+    public void setAtoms(Atom[] atoms) {
         this.atoms = atoms;
         nAtoms = atoms.length;
         select = new boolean[nSymm][nAtoms];
@@ -183,7 +177,7 @@ public class SliceRegion extends ParallelRegion {
      *
      * @param grid a {@link java.nio.DoubleBuffer} object.
      */
-    public void setGridBuffer(DoubleBuffer grid) {
+    void setGridBuffer(DoubleBuffer grid) {
         gridBuffer = grid;
     }
 
@@ -205,14 +199,18 @@ public class SliceRegion extends ParallelRegion {
         return grid;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void start() {
         selectAtoms();
         rebuildList = (rebuildList || sliceLoop[0].checkList(zAtListBuild, buff));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finish() {
         if (rebuildList) {
@@ -221,15 +219,14 @@ public class SliceRegion extends ParallelRegion {
         rebuildList = false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() throws Exception {
         int threadIndex = getThreadIndex();
         SliceLoop loop = sliceLoop[threadIndex];
-        /**
-         * This lets the same SpatialDensityLoops be used with different
-         * SpatialDensityRegions.
-         */
+        // This lets the same SpatialDensityLoops be used with different SpatialDensityRegions.
         loop.setNsymm(nSymm);
         loop.setRebuildList(rebuildList);
         try {
@@ -256,7 +253,7 @@ public class SliceRegion extends ParallelRegion {
      *
      * @param loops an array of {@link ffx.potential.nonbonded.SliceLoop} objects.
      */
-    public void setDensityLoop(SliceLoop loops[]) {
+    public void setDensityLoop(SliceLoop[] loops) {
         sliceLoop = loops;
     }
 

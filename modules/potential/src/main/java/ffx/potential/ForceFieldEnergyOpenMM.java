@@ -1,40 +1,40 @@
-/**
- * Title: Force Field X.
- * <p>
- * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
- * <p>
- * This file is part of Force Field X.
- * <p>
- * Force Field X is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 3 as published by
- * the Free Software Foundation.
- * <p>
- * Force Field X is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- * <p>
- * You should have received a copy of the GNU General Public License along with
- * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
- * Linking this library statically or dynamically with other modules is making a
- * combined work based on this library. Thus, the terms and conditions of the
- * GNU General Public License cover the whole combination.
- * <p>
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent modules, and
- * to copy and distribute the resulting executable under terms of your choice,
- * provided that you also meet, for each linked independent module, the terms
- * and conditions of the license of that module. An independent module is a
- * module which is not derived from or based on this library. If you modify this
- * library, you may extend this exception to your version of the library, but
- * you are not obligated to do so. If you do not wish to do so, delete this
- * exception statement from your version.
- */
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.potential;
 
 import java.io.File;
@@ -268,10 +268,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public final int enforcePBC;
     /**
-     * Value of the lambda state variable.
-     */
-    private double lambda = 1.0;
-    /**
      * Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. This is useful for conformational
      * optimization if full removal of vdW interactions is not desired (i.e. lambdaStart = ~0.2).
      */
@@ -485,6 +481,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Update active atoms.
+     */
+    public void setActiveAtoms() {
+        openMMSystem.updateAtomMass();
+        openMMContext.reinitContext();
+    }
+
+    /**
      * getIntegrator returns the integrator used for the context
      *
      * @return integrator
@@ -593,17 +597,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return 0.0;
         }
 
+        // Make sure a context has been created.
         getContext();
 
         updateParameters(atoms);
 
         // Unscale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
         setCoordinates(x);
         setOpenMMPositions(x, x.length);
@@ -623,12 +623,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Rescale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
+        scaleCoordinates(x);
 
         return e;
     }
@@ -651,20 +646,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Un-scale the coordinates.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
+        unscaleCoordinates(x);
 
+        // Make sure a context has been created.
         getContext();
 
         setCoordinates(x);
         setOpenMMPositions(x, x.length);
 
         int infoMask = OpenMM_State_Energy + OpenMM_State_Forces;
-
         PointerByReference state = openMMContext.getState(infoMask);
 
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
@@ -708,13 +698,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         fillGradients(forces, g);
 
         // Scale the coordinates and gradients.
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
+        scaleCoordinatesAndGradient(x, g);
 
         OpenMM_State_destroy(state);
         return e;
@@ -733,10 +717,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * {@inheritDoc}
      *
      * <p>
-     * getGradients</p>
+     * getGradient</p>
      */
     @Override
-    public double[] getGradients(double[] g) {
+    public double[] getGradient(double[] g) {
         return openMMContext.getGradients(g);
     }
 
@@ -802,13 +786,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
-        // If we're using the "lambdaStart" flag, the step-size must be scaled down.
-        if (lambdaStart > 0.0) {
-            width *= (1.0 - lambdaStart);
-        }
-
         // Compute the finite difference derivative.
-        return (ePlus - eMinus) / width;
+        double dEdL = (ePlus - eMinus) / width;
+
+        // logger.info(format(" getdEdL currentLambda: CL=%8.6f L=%8.6f dEdL=%12.6f", currentLambda, lambda, dEdL));
+        return dEdL;
     }
 
     /**
@@ -870,18 +852,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return;
         }
 
+        super.setLambda(lambda);
+
         this.lambda = lambda;
 
         // Remove the beginning of the normal Lambda path.
+        double mappedLambda = lambda;
         if (lambdaStart > 0) {
             double windowSize = 1.0 - lambdaStart;
-            lambda = lambdaStart + lambda * windowSize;
+            mappedLambda = lambdaStart + lambda * windowSize;
         }
 
-        super.setLambda(lambda);
-
         if (openMMSystem != null) {
-            openMMSystem.setLambda(lambda);
+            openMMSystem.setLambda(mappedLambda);
 
             if (atoms != null) {
                 List<Atom> atomList = new ArrayList<>();
@@ -907,7 +890,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param atoms Atoms in this list are considered.
      */
-    private void updateParameters(Atom[] atoms) {
+    public void updateParameters(Atom[] atoms) {
         openMMSystem.updateParameters(atoms);
     }
 
@@ -922,7 +905,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /**
      * Private method for internal use, so we don't have subclasses calling
-     * super.energy, and this class delegating to the subclass's getGradients
+     * super.energy, and this class delegating to the subclass's getGradient
      * method.
      *
      * @param forces Reference to forces returned by OpenMM.
@@ -1251,7 +1234,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // Set lambda to 1.0 when creating a context to avoid OpenMM compiling out any terms.
             double currentLambda = lambda;
             if (lambdaTerm) {
-                setLambda(1.0);
+                ForceFieldEnergyOpenMM.this.setLambda(1.0);
             }
 
             // Create a context.
@@ -1259,7 +1242,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             // Revert to the current lambda value.
             if (lambdaTerm) {
-                setLambda(currentLambda);
+                ForceFieldEnergyOpenMM.this.setLambda(currentLambda);
             }
 
             // Set initial positions.
@@ -2075,6 +2058,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     } else {
                         addCustomNonbondedSoftcoreForce();
                     }
+
                     // Re-initialize the context.
                     openMMContext.reinitContext();
                     softcoreCreated = true;
@@ -2166,6 +2150,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 numParticles++;
             }
             logger.log(Level.INFO, format("  Atoms \t\t%6d\t%12.3f", atoms.length, totalMass));
+        }
+
+        private void updateAtomMass() {
+            int index = 0;
+            for (Atom atom : atoms) {
+                double mass = 0.0;
+                if (atom.isActive()) {
+                    mass = atom.getMass();
+                }
+                OpenMM_System_setParticleMass(system, index++, mass);
+            }
         }
 
         /**
@@ -3255,8 +3250,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_AmoebaVdwForce_setParticleExclusions(amoebaVDWForce, i, exclusions);
                 OpenMM_IntArray_resize(exclusions, 0);
             }
-            OpenMM_IntArray_destroy(exclusions);
 
+            OpenMM_IntArray_destroy(exclusions);
             ForceField.ForceFieldInteger vdwForceGroup = ForceField.ForceFieldInteger.VDW_FORCE_GROUP;
             int forceGroup = forceField.getInteger(vdwForceGroup, vdwForceGroup.getDefaultValue());
             OpenMM_Force_setForceGroup(amoebaVDWForce, forceGroup);

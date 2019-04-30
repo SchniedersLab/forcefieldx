@@ -144,7 +144,7 @@ public class SigmaAEnergy implements Potential {
      * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
      * @param parallelTeam   the ParallelTeam to execute the SigmaAEnergy.
      */
-    public SigmaAEnergy(ReflectionList reflectionList,
+    SigmaAEnergy(ReflectionList reflectionList,
                         DiffractionRefinementData refinementData,
                         ParallelTeam parallelTeam) {
         this.reflectionList = reflectionList;
@@ -169,7 +169,6 @@ public class SigmaAEnergy implements Potential {
         sa = new double[n];
         wa = new double[n];
 
-        // parallelTeam = new ParallelTeam(1);
         this.parallelTeam = parallelTeam;
         sigmaARegion = new SigmaARegion(this.parallelTeam.getThreadCount());
 
@@ -208,55 +207,6 @@ public class SigmaAEnergy implements Potential {
         double z = (x + sim_p) / sim_q;
         return sim_A * log(x + sim_g) + 0.5 * sim_B * log(z * z + 1.0)
                 + sim_r * atan(z) + x + 1.0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setVelocity(double[] velocity) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getVelocity(double[] velocity) {
-
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -313,22 +263,9 @@ public class SigmaAEnergy implements Potential {
      */
     @Override
     public double energy(double[] x) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
+        unscaleCoordinates(x);
         double sum = target(x, null, false, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-            }
-        }
-
+        scaleCoordinates(x);
         return sum;
     }
 
@@ -337,23 +274,9 @@ public class SigmaAEnergy implements Potential {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] /= optimizationScaling[i];
-            }
-        }
-
+        unscaleCoordinates(x);
         double sum = target(x, g, true, false);
-
-        if (optimizationScaling != null) {
-            int len = x.length;
-            for (int i = 0; i < len; i++) {
-                x[i] *= optimizationScaling[i];
-                g[i] /= optimizationScaling[i];
-            }
-        }
-
+        scaleCoordinatesAndGradient(x, g);
         return sum;
     }
 
@@ -462,7 +385,7 @@ public class SigmaAEnergy implements Potential {
         SharedDoubleArray grad;
         SigmaALoop[] sigmaALoop;
 
-        public SigmaARegion(int nThreads) {
+        SigmaARegion(int nThreads) {
             sigmaALoop = new SigmaALoop[nThreads];
             nsum = new SharedInteger();
             nsumr = new SharedInteger();
@@ -781,5 +704,54 @@ public class SigmaAEnergy implements Potential {
                 }
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

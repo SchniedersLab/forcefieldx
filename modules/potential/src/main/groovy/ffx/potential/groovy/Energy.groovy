@@ -40,14 +40,19 @@ package ffx.potential.groovy
 import java.util.logging.Level
 import static java.lang.String.format
 
+import com.google.common.collect.MinMaxPriorityQueue
+
+import org.apache.commons.io.FilenameUtils
+
 import ffx.numerics.Potential
+import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-import ffx.potential.utils.Superpose
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -76,6 +81,13 @@ class Energy extends PotentialScript {
     @Option(names = ['--es1', '--noElecStart1'], paramLabel = "1",
             description = 'Starting no-electrostatics atom for 1st topology')
     private int es1 = 1
+    /**
+     * * --fl or --findLowest Return the n lowest energy structures from an ARC or PDB file.
+     */
+
+    @Option(names = ['--fl', '--findLowest'], paramLabel = "0",
+            description = 'Return the n lowest energy structures from an ARC or PDB file.')
+    private int fl = 0
 
     /**
      * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
@@ -91,8 +103,41 @@ class Energy extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     private List<String> filenames = null
 
+
     public double energy = 0.0
     public ForceFieldEnergy forceFieldEnergy = null
+
+
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
+
+    private AssemblyState assemblyState = null
+
+    private class StateContainer implements Comparable<StateContainer> {
+        private final AssemblyState state
+        private final double e
+
+        StateContainer(AssemblyState state, double e) {
+            this.state = state
+            this.e = e
+        }
+
+        AssemblyState getState() {
+            return state
+        }
+
+        double getEnergy() {
+            return e
+        }
+
+        @Override
+        int compareTo(StateContainer o) {
+            return Double.compare(e, o.getEnergy())
+        }
+    }
 
     /**
      * Execute the script.
@@ -100,7 +145,7 @@ class Energy extends PotentialScript {
     Energy run() {
 
         if (!init()) {
-            return
+            return this
         }
 
         if (filenames != null && filenames.size() > 0) {
@@ -108,7 +153,7 @@ class Energy extends PotentialScript {
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return this
         }
 
         String filename = activeAssembly.getFile().getAbsolutePath()
@@ -142,7 +187,7 @@ class Energy extends PotentialScript {
             double[] g = new double[nVars]
             int nAts = nVars / 3
             energy = forceFieldEnergy.energyAndGradient(x, g, true)
-            logger.info(format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
+            logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
             for (int i = 0; i < nAts; i++) {
                 int i3 = 3 * i
                 logger.info(format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
@@ -152,91 +197,82 @@ class Energy extends PotentialScript {
         }
 
         SystemFilter systemFilter = potentialFunctions.getFilter()
-        if (systemFilter instanceof XYZFilter) {
-            XYZFilter xyzFilter = (XYZFilter) systemFilter
 
-            double[] x2 = new double[nVars]
-            double[] mass = new double[nVars / 3]
+        if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
 
-            int nAtoms = atoms.length;
-            for (int i = 0; i < nAtoms; i++) {
-                mass[i] = atoms[i].getMass()
+            int numSnaps = fl
+            double lowestEnergy = energy
+            assemblyState = new AssemblyState(activeAssembly)
+            int index = 1
+
+            // Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size N/
+            MinMaxPriorityQueue<StateContainer> lowestEnergyQueue = null
+            if (fl > 0) {
+                lowestEnergyQueue = MinMaxPriorityQueue
+                        .maximumSize(numSnaps)
+                        .create()
+                lowestEnergyQueue.add(new StateContainer(assemblyState, lowestEnergy))
             }
 
-            //Get heavy atom masses.
-            int nHeavyVars = forceFieldEnergy.getNumberOfHeavyAtomVariables()
-            double[] massHeavy = new double[nHeavyVars / 3]
-            for (int i = 0; i < nHeavyVars / 3; i++) {
-                if (!atoms[i].isHydrogen()) {
-                    massHeavy[i] = atoms[i].getMass()
+            while (systemFilter.readNext()) {
+                index++
+                forceFieldEnergy.getCoordinates(x)
+                energy = forceFieldEnergy.energy(x, false)
+                logger.info(format(" Snapshot %4d: %16.8f (kcal/mol)", index, energy))
+
+                if (fl > 0) {
+                    lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), energy))
                 }
             }
 
-            //Array containing heavy atom indices.
-            int[] heavyAtomPositions = new int[nHeavyVars / 3];
-            int j = 0;
-            for (int i = 0; i < nVars / 3; i++) {
-                if (!atoms[i].isHydrogen()) {
-                    heavyAtomPositions[j] = i
-                    j++
+            if (fl > 0) {
+                if (numSnaps > index) {
+                    logger.warning(format(
+                            " Requested %d snapshots, but file %s has only %d snapshots. All %d energies will be reported",
+                            numSnaps, filename, index, index))
+                    numSnaps = index
                 }
-            }
 
-            while (xyzFilter.readNext()) {
-                //Arrays for holding coordinates of heavy atoms after rotation and translation.
-                double[] xHeavy = new double[nHeavyVars]
-                double[] x2Heavy = new double[nHeavyVars]
-
-                forceFieldEnergy.getCoordinates(x2)
-                energy = forceFieldEnergy.energy(x2, true)
-
-                //Original RMSD.
-                for (int i = 0; i < nHeavyVars / 3; i++) {
-                    int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i * 3] = x[positionOfHeavyAtom]
-                    xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
-                    xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
-                    x2Heavy[i * 3] = x2[positionOfHeavyAtom]
-                    x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
-                    x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
+                File saveDir = baseDir
+                String modelFilename = activeAssembly.getFile().getAbsolutePath()
+                if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+                    saveDir = new File(FilenameUtils.getFullPath(modelFilename))
                 }
-                double origRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy);
+                String dirName = saveDir.toString() + File.separator
+                String fileName = FilenameUtils.getName(modelFilename)
 
-                //Translated RMSD.
-                Superpose.translate(x, mass, x2, mass)
-                for (int i = 0; i < nHeavyVars / 3; i++) {
-                    int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i * 3] = x[positionOfHeavyAtom]
-                    xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
-                    xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
-                    x2Heavy[i * 3] = x2[positionOfHeavyAtom]
-                    x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
-                    x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
+                for (int i = 0; i < numSnaps - 1; i++) {
+                    StateContainer savedState = lowestEnergyQueue.removeLast()
+                    AssemblyState finalAssembly = savedState.getState()
+                    finalAssembly.revertState()
+                    double finalEnergy = savedState.getEnergy()
+                    logger.info(format(" The potential energy found is %16.8f (kcal/mol)", finalEnergy))
+                    File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+                    MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
+                    potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
                 }
-                double transRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
 
-                //Rotated RMSD.
-                Superpose.rotate(x, x2, mass)
-                for (int i = 0; i < nHeavyVars / 3; i++) {
-                    int positionOfHeavyAtom = heavyAtomPositions[i]
-                    xHeavy[i * 3] = x[positionOfHeavyAtom]
-                    xHeavy[i * 3 + 1] = x[positionOfHeavyAtom + 1]
-                    xHeavy[i * 3 + 2] = x[positionOfHeavyAtom + 2]
-                    x2Heavy[i * 3] = x2[positionOfHeavyAtom]
-                    x2Heavy[i * 3 + 1] = x2[positionOfHeavyAtom + 1]
-                    x2Heavy[i * 3 + 2] = x2[positionOfHeavyAtom + 2]
-                }
-                double rotRMSDHeavy = Superpose.rmsd(xHeavy, x2Heavy, massHeavy)
-                logger.info(format(
-                        "\n Coordinate RMSD Based On Heavy Atoms (Angstroms)\n Original:\t\t%7.3f\n After Translation:\t%7.3f\n After Rotation:\t%7.3f\n",
-                        origRMSDHeavy, transRMSDHeavy, rotRMSDHeavy))
+                StateContainer savedState = lowestEnergyQueue.removeLast()
+                AssemblyState lowestAssembly = savedState.getState()
+                lowestEnergy = savedState.getEnergy()
+
+                assemblyState.revertState()
+                logger.info(format(" The lowest potential energy found is %16.8f (kcal/mol)", lowestEnergy))
+
+                // Prints our final energy (which will be the lowest energy
+                File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+                MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
+                potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
             }
         }
+
         return this
+
     }
 
     @Override
     List<Potential> getPotentials() {
-        return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy);
+        return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy)
     }
 }
+

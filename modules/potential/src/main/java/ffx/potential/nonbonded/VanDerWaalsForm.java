@@ -59,7 +59,6 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
  * Waals functional form.
  *
  * @author Michael J. Schnieders
- *
  */
 public class VanDerWaalsForm {
 
@@ -90,24 +89,79 @@ public class VanDerWaalsForm {
     }
 
     /**
+     * van der Waals functional form.
+     */
+    public VDW_TYPE vdwType;
+    public EPSILON_RULE epsilonRule;
+    public RADIUS_RULE radiusRule;
+    public RADIUS_SIZE radiusSize;
+    public RADIUS_TYPE radiusType;
+
+    private final VDWPowers vdwPowers;
+
+    /**
+     * vdW Dispersive Power (e.g. 6).
+     */
+    final int dispersivePower;
+
+    /**
+     * First constant suggested by Halgren for the Buffered-14-7 potential.
+     */
+    public final double gamma;
+    final double gamma1;
+
+    /**
+     * Second constant suggested by Halgren for the Buffered-14-7 potential.
+     */
+    public final double delta;
+
+    /**
+     * Define some handy constants.
+     */
+    final double t1n;
+    final int repDispPower;
+    private final int dispersivePower1;
+    private final int repDispPower1;
+
+    /**
+     * Define scale factors between 1-2, 1-3, etc. atoms.
+     */
+    protected double scale12;
+    protected double scale13;
+    double scale14;
+
+    /**
+     * Maximum number of classes in the force field.
+     */
+    int maxClass;
+    /**
+     * Store combined radius and epsilon values.
+     */
+    double[][] radEps;
+    /**
+     * Constant <code>RADMIN=0</code>
+     */
+    static final byte RADMIN = 0;
+    /**
+     * Constant <code>EPS=1</code>
+     */
+    static final byte EPS = 1;
+
+    /**
      * <p>Constructor for VanDerWaalsForm.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
-    public VanDerWaalsForm(ForceField forceField) {
+    VanDerWaalsForm(ForceField forceField) {
 
-        /**
-         * Set-up default rules.
-         */
+        // Set-up default rules.
         vdwType = VDW_TYPE.BUFFERED_14_7;
         epsilonRule = EPSILON_RULE.HHG;
         radiusRule = RADIUS_RULE.CUBIC_MEAN;
         radiusSize = RADIUS_SIZE.DIAMETER;
         radiusType = RADIUS_TYPE.R_MIN;
 
-        /**
-         * Define functional form.
-         */
+        // Define functional form.
         String value = forceField.getString(VDWTYPE, vdwType.toString());
         try {
             vdwType = VDW_TYPE.valueOf(toEnumForm(value));
@@ -127,9 +181,7 @@ public class VanDerWaalsForm {
                 break;
         }
 
-        /**
-         * Define epsilon combining rule.
-         */
+        // Define epsilon combining rule.
         value = forceField.getString(EPSILONRULE, epsilonRule.toString());
         try {
             epsilonRule = EPSILON_RULE.valueOf(toEnumForm(value));
@@ -137,9 +189,7 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized EPSILONRULE %s; defaulting to %s.", value, epsilonRule));
         }
 
-        /**
-         * Define radius combining rule.
-         */
+        // Define radius combining rule.
         value = forceField.getString(RADIUSRULE, radiusRule.toString());
         try {
             radiusRule = RADIUS_RULE.valueOf(toEnumForm(value));
@@ -147,9 +197,7 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized RADIUSRULE %s; defaulting to %s.", value, radiusRule));
         }
 
-        /**
-         * Define radius size.
-         */
+        // Define radius size.
         value = forceField.getString(RADIUSSIZE, radiusSize.toString());
         try {
             radiusSize = RADIUS_SIZE.valueOf(toEnumForm(value));
@@ -157,9 +205,7 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized RADIUSSIZE %s; defaulting to %s.", value, radiusSize));
         }
 
-        /**
-         * Define radius type.
-         */
+        // Define radius type.
         value = forceField.getString(RADIUSTYPE, radiusType.toString());
         try {
             radiusType = RADIUS_TYPE.valueOf(toEnumForm(value));
@@ -167,9 +213,8 @@ public class VanDerWaalsForm {
             logger.info(format(" Unrecognized RADIUSTYPE %s; defaulting to %s", value, radiusType));
         }
 
-        /**
-         * Configure van der Waals well shape parameters.
-         */
+        // Configure van der Waals well shape parameters.
+        int repulsivePower;
         switch (vdwType) {
             case LENNARD_JONES:
                 repulsivePower = 12;
@@ -189,19 +234,16 @@ public class VanDerWaalsForm {
         repDispPower = repulsivePower - dispersivePower;
         dispersivePower1 = dispersivePower - 1;
         repDispPower1 = repDispPower - 1;
-        delta1 = 1.0 + delta;
+        double delta1 = 1.0 + delta;
         t1n = pow(delta1, dispersivePower);
         gamma1 = 1.0 + gamma;
 
         scale12 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_12_SCALE, 0.0);
         scale13 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_13_SCALE, 0.0);
         scale14 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_14_SCALE, 1.0);
-        scale15 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_15_SCALE, 1.0);
+        double scale15 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_15_SCALE, 1.0);
 
-        /**
-         * The convention in TINKER is a vdw-14-scale factor of 2.0 means to
-         * scale by 0.5.
-         */
+        // The convention in TINKER is a vdw-14-scale factor of 2.0 means to scale by 0.5.
         if (scale12 > 1.0) {
             scale12 = 1.0 / scale12;
         }
@@ -211,6 +253,7 @@ public class VanDerWaalsForm {
         if (scale14 > 1.0) {
             scale14 = 1.0 / scale14;
         }
+
         if (scale15 != 1.0) {
             logger.severe(" Van Der Waals 1-5 masking rules are not supported.");
         }
@@ -225,9 +268,7 @@ public class VanDerWaalsForm {
         }
         radEps = new double[maxClass + 1][2 * (maxClass + 1)];
 
-        /**
-         * Scale factor to convert to vdW size to Rmin.
-         */
+        // Scale factor to convert to vdW size to Rmin.
         double radScale;
         switch (radiusSize) {
             case DIAMETER:
@@ -248,9 +289,7 @@ public class VanDerWaalsForm {
 
         }
 
-        /**
-         * Atom Class numbering starts at 1.
-         */
+        // Atom Class numbering starts at 1.
         for (VDWType vdwi : vdwTypes.values()) {
             int i = vdwi.atomClass;
             double ri = radScale * vdwi.radius;
@@ -311,7 +350,7 @@ public class VanDerWaalsForm {
      * @param rho a double.
      * @return a double.
      */
-    public double rhoDisp1(double rho) {
+    double rhoDisp1(double rho) {
         return vdwPowers.rhoDisp1(rho);
     }
 
@@ -321,70 +360,9 @@ public class VanDerWaalsForm {
      * @param rhoDelta a double.
      * @return a double.
      */
-    public double rhoDelta1(double rhoDelta) {
+    double rhoDelta1(double rhoDelta) {
         return vdwPowers.rhoDisp1(rhoDelta);
     }
-
-    /**
-     * van der Waals functional form.
-     */
-    public VDW_TYPE vdwType;
-    public EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
-    public RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
-    public RADIUS_SIZE radiusSize = RADIUS_SIZE.DIAMETER;
-    public RADIUS_TYPE radiusType = RADIUS_TYPE.R_MIN;
-
-    private final VDWPowers vdwPowers;
-
-    /**
-     * vdW Repulsive Power (e.g. 12).
-     */
-    public final int repulsivePower;
-    /**
-     * vdW Dispersive Power (e.g. 6).
-     */
-    public final int dispersivePower;
-
-    /**
-     * First constant suggested by Halgren for the Buffered-14-7 potential.
-     */
-    public final double gamma;
-    public final double gamma1;
-
-    /**
-     * Second constant suggested by Halgren for the Buffered-14-7 potential.
-     */
-    public final double delta;
-    public final double delta1;
-
-    /**
-     * Define some handy constants.
-     */
-    protected final double t1n;
-    protected final int dispersivePower1;
-    protected final int repDispPower;
-    protected final int repDispPower1;
-
-    /**
-     * Define scale factors between 1-2, 1-3, etc. atoms.
-     */
-    protected double scale12 = 0.0;
-    protected double scale13 = 0.0;
-    protected double scale14 = 1.0;
-    protected double scale15 = 1.0;
-
-    /**
-     * Maximum number of classes in the force field.
-     */
-    protected int maxClass;
-    /**
-     * Store combined radius and epsilon values.
-     */
-    protected double radEps[][];
-    /** Constant <code>RADMIN=0</code> */
-    protected static final byte RADMIN = 0;
-    /** Constant <code>EPS=1</code> */
-    protected static final byte EPS = 1;
 
     /**
      * <p>Getter for the field <code>scale14</code>.</p>

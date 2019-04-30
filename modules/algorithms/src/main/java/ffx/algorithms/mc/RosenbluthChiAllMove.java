@@ -58,7 +58,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
@@ -746,27 +745,21 @@ public class RosenbluthChiAllMove implements MCMove {
     }
 
     private void updateBonds() {
-        List<ROLS> bonds = target.getBondList();
-        for (ROLS rols : bonds) {
-            ((Bond) rols).update();
+        for (Bond bond : target.getBondList()) {
+            bond.update();
         }
-//        bonds.stream().forEach(b -> ((Bond) b).update());
     }
 
     private void updateAngles() {
-        List<ROLS> angles = target.getAngleList();
-        for (ROLS rols : angles) {
-            ((Angle) rols).update();
+        for (Angle angle : target.getAngleList()) {
+            angle.update();
         }
-//        angles.stream().forEach(a -> ((Angle) a).update());
     }
 
     private void updateTorsions() {
-        List<ROLS> torsions = target.getTorsionList();
-        for (ROLS rols : torsions) {
-            ((Torsion) rols).update();
+        for (Torsion torsion : target.getTorsionList()) {
+            torsion.update();
         }
-//        torsions.stream().forEach(t -> ((Torsion) t).update());
     }
 
     /**
@@ -1135,8 +1128,8 @@ public class RosenbluthChiAllMove implements MCMove {
                 || (residue.getAminoAcid3() != AminoAcid3.LYS && residue.getAminoAcid3() != AminoAcid3.LYD)) {
             logger.severe("Yeah that ain't a lysine.");
         }
-        double chi[] = new double[4];
-        ArrayList<ROLS> torsions = residue.getTorsionList();
+        double[] chi = new double[4];
+        ArrayList<Torsion> torsions = residue.getTorsionList();
         Atom N = (Atom) residue.getAtomNode("N");
         Atom CA = (Atom) residue.getAtomNode("CA");
         Atom CB = (Atom) residue.getAtomNode("CB");
@@ -1147,8 +1140,7 @@ public class RosenbluthChiAllMove implements MCMove {
         logger.info(format(" Here's the atoms I found: \n%s\n%s\n%s\n%s\n%s\n%s\n%s", N, CA, CB, CD, CE, CG, NZ));
         logger.info(format(" Num torsions: %d", torsions.size()));
         int count = 0;
-        for (ROLS rols : torsions) {
-            Torsion torsion = (Torsion) rols;
+        for (Torsion torsion : torsions) {
             torsion.energy(false);
             logger.info(format(" Torsion numba %d: %s", count++, torsion));
             if (torsion.compare(N, CA, CB, CG)) {

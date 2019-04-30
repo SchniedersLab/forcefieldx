@@ -175,9 +175,7 @@ public class MultiTerminus extends Residue {
     private void updateBondedTerms() {
         StringBuilder sb = new StringBuilder();
         sb.append("Updating bonded terms: \n");
-        List<ROLS> bonds = getBondList();
-        for (ROLS bond1 : bonds) {
-            Bond bond = (Bond) bond1;
+        for (Bond bond : getBondList()) {
             BondType oldType = bond.bondType;
             int c[] = new int[2];
             c[0] = bond.atoms[0].getAtomType().atomClass;
@@ -194,9 +192,7 @@ public class MultiTerminus extends Residue {
                 }
             }
         }
-        List<ROLS> angles = getAngleList();
-        for (ROLS angle1 : angles) {
-            Angle angle = (Angle) angle1;
+        for (Angle angle : getAngleList()) {
             AngleType oldType = angle.angleType;
             Angle dummy = Angle.angleFactory(angle.bonds[0], angle.bonds[1], forceField);
             AngleType newType = dummy.angleType;
@@ -210,9 +206,7 @@ public class MultiTerminus extends Residue {
                 }
             }
         }
-        List<ROLS> torsions = getTorsionList();
-        for (ROLS torsion : torsions) {
-            Torsion tors = (Torsion) torsion;
+        for (Torsion tors : getTorsionList()) {
             TorsionType oldType = tors.torsionType;
             Torsion dummy = Torsion.torsionFactory(tors.bonds[0], tors.bonds[1], tors.bonds[2], forceField);
             TorsionType newType = dummy.torsionType;
@@ -593,32 +587,29 @@ public class MultiTerminus extends Residue {
     private void updateGeometry() {
         // Update atom references to local geometry.
         ArrayList<Atom> atoms = this.getAtomList();
-        ArrayList<ROLS> bonds = this.getBondList();
-        ArrayList<ROLS> angles = this.getAngleList();
-        ArrayList<ROLS> torsions = this.getTorsionList();
+        ArrayList<Bond> bonds = this.getBondList();
+        ArrayList<Angle> angles = this.getAngleList();
+        ArrayList<Torsion> torsions = this.getTorsionList();
 
         for (Atom atom : atoms) {
             atom.clearGeometry();
         }
         for (Atom atom : atoms) {
-            for (ROLS bond : bonds) {
-                Bond b = (Bond) bond;
+            for (Bond b : bonds) {
                 if (b.containsAtom(atom)) {
                     atom.setBond(b);
                 }
             }
         }
         for (Atom atom : atoms) {
-            for (ROLS angle : angles) {
-                Angle a = (Angle) angle;
+            for (Angle a : angles) {
                 if (a.containsAtom(atom)) {
                     atom.setAngle(a);
                 }
             }
         }
         for (Atom atom : atoms) {
-            for (ROLS torsion : torsions) {
-                Torsion t = (Torsion) torsion;
+            for (Torsion t : torsions) {
                 if (t.containsAtom(atom)) {
                     atom.setTorsion(t);
                 }

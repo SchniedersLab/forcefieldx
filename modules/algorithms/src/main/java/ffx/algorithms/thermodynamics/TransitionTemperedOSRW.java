@@ -233,7 +233,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             try {
                 HistogramReader osrwHistogramReader = new HistogramReader(this, new FileReader(histogramFile));
                 osrwHistogramReader.readHistogramFile();
-                logger.info(String.format("\n Continuing OSRW histogram from %s.", histogramFile.getName()));
+                logger.info(format("\n Continuing OSRW histogram from %s.", histogramFile.getName()));
                 readHistogramRestart = true;
             } catch (FileNotFoundException ex) {
                 logger.info(" Histogram restart file could not be found and will be ignored.");
@@ -245,7 +245,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             try {
                 LambdaReader osrwLambdaReader = new LambdaReader(this, new FileReader(lambdaFile));
                 osrwLambdaReader.readLambdaFile(resetNumSteps);
-                logger.info(String.format("\n Continuing OSRW lambda from %s.", lambdaFile.getName()));
+                logger.info(format("\n Continuing OSRW lambda from %s.", lambdaFile.getName()));
             } catch (FileNotFoundException ex) {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
             }
@@ -278,7 +278,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         try {
             temperOffset = Double.parseDouble(propString);
         } catch (NumberFormatException ex) {
-            logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+            logger.info(format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
             temperOffset = defaultOffset;
         }
         if (temperOffset < 0.0) {
@@ -291,7 +291,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         try {
             testType = IntegrationType.valueOf(propString.toUpperCase());
         } catch (Exception ex) {
-            logger.warning(String.format(" Invalid argument %s to ttosrw-integrationType; resetting to SIMPSONS", propString));
+            logger.warning(format(" Invalid argument %s to ttosrw-integrationType; resetting to SIMPSONS", propString));
             testType = SIMPSONS;
         }
         integrationType = testType;
@@ -390,7 +390,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         try {
             temperOffset = Double.parseDouble(propString);
         } catch (NumberFormatException ex) {
-            logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+            logger.info(format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
             temperOffset = defaultOffset;
         }
         if (temperOffset < 0.0) {
@@ -443,8 +443,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
                 int FLcenter = FLambdaBin + iFL;
 
-                // If either of the following FL edge conditions are true,
-                // then there are no counts and we continue.
+                // If either of the following FL edge conditions are true, then there are no counts and we continue.
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
@@ -471,9 +470,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         biasEnergy = bias1D + gLdEdL;
 
         if (print) {
-            logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
-            logger.info(String.format(" %s %16.8f  %s",
-                    "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
+            logger.info(format(" Bias Energy        %16.8f", biasEnergy));
+            logger.info(format(" %s %16.8f  (Kcal/mole)", "OSRW Potential    ", forceFieldEnergy + biasEnergy));
         }
 
         if (mcRestart) {
@@ -487,10 +485,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             if (energyCount % printFrequency == 0) {
                 double dBdL = dUdLambda - dForceFieldEnergydL;
                 if (lambdaBins < 1000) {
-                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                    logger.info(format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
                             lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
                 } else {
-                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                    logger.info(format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
                             lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
                 }
             }
@@ -568,7 +566,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
     private void optimization(double e, double[] x, double[] gradient) {
         if (energyCount % osrwOptimizationFrequency == 0) {
-            logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
+            logger.info(format(" OSRW Minimization (Step %d)", energyCount));
 
             // Set the underlying Potential's Lambda value to 1.0.
             lambdaInterface.setLambda(1.0);
@@ -625,7 +623,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             double eCheck = potential.energyAndGradient(x, gradient);
 
             if (abs(eCheck - e) > osrwOptimizationTolerance) {
-                logger.warning(String.format(
+                logger.warning(format(
                         " TT-OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
             }
         }
@@ -695,7 +693,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
             slope *= recipSlopeLen;
             val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
-            logger.fine(String.format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
+            logger.fine(format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
         }
 
         // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
@@ -768,7 +766,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             // If the weight is less than 1.0, then a walker has activated tempering.
             if (!tempering && weight < 1.0) {
                 tempering = true;
-                logger.info(String.format(" Tempering activated due to received weight of (%8.6f)", weight));
+                logger.info(format(" Tempering activated due to received weight of (%8.6f)", weight));
             }
 
             if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
@@ -875,7 +873,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     protected void checkRecursionKernelSize(double dEdLambda) {
         if (dEdLambda > maxFLambda) {
-            logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
+            logger.info(format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
 
             double origDeltaG = updateFLambda(false, false);
@@ -894,7 +892,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             FLambdaBins = newFLambdaBins;
             kernelValues = new double[FLambdaBins];
             maxFLambda = minFLambda + dFL * FLambdaBins;
-            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
+            logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
             double newFreeEnergy = updateFLambda(false, false);
@@ -902,7 +900,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         }
         if (dEdLambda < minFLambda) {
-            logger.info(String.format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
+            logger.info(format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
                     dEdLambda, minFLambda));
 
             double origDeltaG = updateFLambda(false, false);
@@ -924,7 +922,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             FLambdaBins = newFLambdaBins;
             kernelValues = new double[FLambdaBins];
 
-            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
+            logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
             double newFreeEnergy = updateFLambda(false, false);
@@ -1153,8 +1151,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         biasEnergy = bias1D + gLdEdL;
 
         if (print) {
-            logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
-            logger.info(String.format(" %s %16.8f  %s",
+            logger.info(format(" %s %16.8f", "Bias Energy       ", biasEnergy));
+            logger.info(format(" %s %16.8f  %s",
                     "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
 
@@ -1169,10 +1167,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             if (energyCount % printFrequency == 0) {
                 double dBdL = dUdLambda - dForceFieldEnergydL;
                 if (lambdaBins < 1000) {
-                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                    logger.info(format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
                             lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
                 } else {
-                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                    logger.info(format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
                             lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
                 }
             }
@@ -1258,7 +1256,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             ttOSRWLambdaRestart.close();
             logger.info(format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
         } catch (IOException ex) {
-            String message = String.format(" Exception writing TTOSRW lambda restart file %s.", lambdaFile);
+            String message = format(" Exception writing TTOSRW lambda restart file %s.", lambdaFile);
             logger.log(Level.INFO, Utilities.stackTraceToString(ex));
             logger.log(Level.SEVERE, message, ex);
         }
@@ -1276,9 +1274,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 logger.fine(" Sending the termination message.");
                 world.send(rank, killBuf);
                 logger.fine(" Termination message was sent successfully.");
-                logger.fine(String.format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
+                logger.fine(format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
             } catch (Exception ex) {
-                String message = String.format(" Asynchronous Multiwalker OSRW termination signal " +
+                String message = format(" Asynchronous Multiwalker OSRW termination signal " +
                         "failed to be sent for process %d.", rank);
                 logger.log(Level.SEVERE, message, ex);
             }
@@ -1323,7 +1321,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
-        logger.info(String.format(" Set lambda write out threshold to %f lambda", lambdaWriteOut));
+        logger.info(format(" Set lambda write out threshold to %f lambda", lambdaWriteOut));
     }
 
 }

@@ -68,7 +68,7 @@ public class Renderer extends Behavior {
     private ArrayList<MSNode> nodesCache = null;
     private boolean doTransform, doView, doColor;
     private boolean doTransformCache, doViewCache, doColorCache;
-    private JLabel statusBar = null;
+    private JLabel statusBar;
     private RendererCache.ViewModel viewModel, viewModelCache;
     private RendererCache.ColorModel colorModel, colorModelCache;
     private WakeupOnBehaviorPost postid;
@@ -86,8 +86,7 @@ public class Renderer extends Behavior {
         statusBar = s;
         if (System.getProperty("ffe.timer", "false").equalsIgnoreCase("true")) {
             timer = true;
-            if (System.getProperty("ffe.timer.gc", "false").equalsIgnoreCase(
-                    "true")) {
+            if (System.getProperty("ffe.timer.gc", "false").equalsIgnoreCase("true")) {
                 gc = true;
             }
         }
@@ -133,16 +132,14 @@ public class Renderer extends Behavior {
      * @param node  a {@link ffx.potential.bonded.MSNode} object.
      * @param t     a boolean.
      * @param v     a boolean.
-     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     *              object.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
      * @param c     a boolean.
-     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     *              object.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void arm(MSNode node, boolean t, boolean v,
                     RendererCache.ViewModel vtype, boolean c,
                     RendererCache.ColorModel ctype) {
-        ArrayList<MSNode> temp = new ArrayList<MSNode>();
+        ArrayList<MSNode> temp = new ArrayList<>();
         temp.add(node);
         arm(temp, t, v, vtype, c, ctype);
     }
@@ -164,10 +161,7 @@ public class Renderer extends Behavior {
      * @return Whether a node has been cued
      */
     public boolean isArmed() {
-        if (nodesToUpdate != null) {
-            return true;
-        }
-        return false;
+        return nodesToUpdate != null;
     }
 
     /**
@@ -177,10 +171,7 @@ public class Renderer extends Behavior {
      * @return a boolean.
      */
     public boolean isCacheFull() {
-        if (nodesCache != null) {
-            return true;
-        }
-        return false;
+        return nodesCache != null;
     }
 
     /**
@@ -228,7 +219,7 @@ public class Renderer extends Behavior {
             }
         }
         // Perform the requested rendering operation
-        ArrayList<ArrayList<BranchGroup>> newChildren = new ArrayList<ArrayList<BranchGroup>>();
+        ArrayList<ArrayList<BranchGroup>> newChildren = new ArrayList<>();
         for (MSNode nodeToUpdate : nodesToUpdate) {
             if (nodeToUpdate == null) {
                 continue;
@@ -243,7 +234,7 @@ public class Renderer extends Behavior {
                 }
             }
             if (doView) {
-                ArrayList<BranchGroup> newShapes = new ArrayList<BranchGroup>();
+                ArrayList<BranchGroup> newShapes = new ArrayList<>();
                 newChildren.add(newShapes);
                 nodeToUpdate.setView(viewModel, newShapes);
                 if (statusBar != null) {
@@ -301,7 +292,7 @@ public class Renderer extends Behavior {
                 } else {
                     ArrayList<BranchGroup> newShapes = newChildren.get(i);
                     if (!newShapes.isEmpty()) {
-                        MolecularAssembly ma = (MolecularAssembly) nodeToUpdate.getMSNode(MolecularAssembly.class);
+                        MolecularAssembly ma = nodeToUpdate.getMSNode(MolecularAssembly.class);
                         ma.sceneGraphChange(newShapes);
                     }
                 }
@@ -328,10 +319,10 @@ public class Renderer extends Behavior {
         Runtime runtime = Runtime.getRuntime();
         frameDuration = getView().getLastFrameDuration();
         if (gc) {
-            System.out.print("Running Finalization and GC for acccurate memory usage...");
+            logger.info(" Running Finalization and GC for accurate memory usage.");
             runtime.runFinalization();
             runtime.gc();
-            logger.info(" Done\nProceeding with graphics operation...");
+            logger.info(" Done\n Proceeding with graphics operation...");
         }
     }
 
@@ -339,7 +330,7 @@ public class Renderer extends Behavior {
         Runtime runtime = Runtime.getRuntime();
         frameNumber = getView().getFrameNumber();
         frameDuration = getView().getLastFrameDuration();
-        logger.info("Frame Duration After Op: " + frameDuration / 1000);
+        logger.info(" Frame Duration After Op: " + frameDuration / 1000);
         if (gc) {
             runtime.runFinalization();
             runtime.gc();

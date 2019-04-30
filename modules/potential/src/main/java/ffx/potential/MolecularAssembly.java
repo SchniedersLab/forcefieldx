@@ -88,7 +88,6 @@ import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
@@ -1072,9 +1071,8 @@ public class MolecularAssembly extends MSGroup {
      * The mass of the heavy atom is reduced by 2 AMU.
      */
     private void applyHeavyHydrogen() {
-        ArrayList<ROLS> bonds = getBondList();
-        for (ROLS b : bonds) {
-            Bond bond = (Bond) b;
+        ArrayList<Bond> bonds = getBondList();
+        for (Bond bond : bonds) {
             Atom a1 = bond.getAtom(0);
             Atom a2 = bond.getAtom(1);
             if (a1.isHydrogen() && a2.isHeavy()) {
@@ -1904,7 +1902,7 @@ public class MolecularAssembly extends MSGroup {
     }
 
     private Shape3D renderWire() {
-        ArrayList<ROLS> bonds = getBondList();
+        ArrayList<Bond> bonds = getBondList();
         int numbonds = bonds.size();
         if (numbonds < 1) {
             return null;
@@ -1917,10 +1915,8 @@ public class MolecularAssembly extends MSGroup {
         float[] a1 = {0, 0, 0};
         float[] a2 = {0, 0, 0};
         float[] col = new float[4];
-        Bond bond;
 
-        Atom atom1,
-                atom2;
+        Atom atom1, atom2;
         LineArray la = new LineArray(4 * numbonds, GeometryArray.COORDINATES | GeometryArray.COLOR_4 | GeometryArray.NORMALS);
         la.setCapability(LineArray.ALLOW_COORDINATE_WRITE);
         la.setCapability(LineArray.ALLOW_COORDINATE_READ);
@@ -1932,8 +1928,7 @@ public class MolecularAssembly extends MSGroup {
                 = new Atom[4 * numbonds];
         int i = 0;
         col[3] = 0.9f;
-        for (ListIterator<ROLS> li = bonds.listIterator(); li.hasNext(); ) {
-            bond = (Bond) li.next();
+        for (Bond bond : bonds) {
             bond.setWire(la, i);
             atom1 = bond.getAtom(0);
             atom2 = bond.getAtom(1);
@@ -2198,8 +2193,8 @@ public class MolecularAssembly extends MSGroup {
              * the same ArrayList.
              */
             super.setView(newViewModel, myNewShapes);
-            ArrayList<ROLS> moleculeList = getList(Molecule.class, new ArrayList<>());
-            for (ROLS m : moleculeList) {
+            ArrayList<Molecule> moleculeList = getList(Molecule.class, new ArrayList<>());
+            for (Molecule m : moleculeList) {
                 m.setView(newViewModel, myNewShapes);
             }
             for (MSNode m : molecules.getChildList()) {

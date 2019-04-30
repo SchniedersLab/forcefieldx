@@ -99,7 +99,7 @@ public class SaveAsPDBTest {
         // Evaluate the script.
         saveAsPDB.run();
 
-        // Delate all created space grouop directories.
+        // Delete all created space group directories.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
         } catch (IOException e) {

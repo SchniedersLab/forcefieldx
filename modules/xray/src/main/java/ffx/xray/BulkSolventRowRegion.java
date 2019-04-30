@@ -72,7 +72,6 @@ public class BulkSolventRowRegion extends RowRegion {
      * @param gY           a int.
      * @param gZ           a int.
      * @param grid         an array of double.
-     * @param basisSize    a int.
      * @param nSymm        a int.
      * @param threadCount  a int.
      * @param crystal      a {@link ffx.crystal.Crystal} object.
@@ -82,15 +81,12 @@ public class BulkSolventRowRegion extends RowRegion {
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
     public BulkSolventRowRegion(int gX, int gY, int gZ, double[] grid,
-                                int basisSize, int nSymm, int threadCount, Crystal crystal,
+                                int nSymm, int threadCount, Crystal crystal,
                                 Atom[] atoms, double[][][] coordinates,
                                 double cutoff, ParallelTeam parallelTeam) {
-        super(gX, gY, gZ, grid, basisSize, nSymm,
-                threadCount, crystal, atoms, coordinates);
-
+        super(gX, gY, gZ, grid, nSymm, threadCount, atoms, coordinates);
         this.gZ = gZ;
         this.gY = gY;
-
         // Asymmetric unit atoms never selected by this class.
         fill(select[0], false);
         bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);

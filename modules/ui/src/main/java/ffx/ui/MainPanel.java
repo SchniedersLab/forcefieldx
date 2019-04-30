@@ -111,7 +111,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
-import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
@@ -1350,9 +1349,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             parentTransform3D.get(parentPosition);
             parentTransform3D.setTranslation(zero);
             // parentTransform3D.setScale(1.0d);
-            ArrayList<Atom> atoms = m.getAtomList();
-            ArrayList<ROLS> bonds = m.getBondList();
-            for (Atom atom : atoms) {
+            for (Atom atom : m.getAtomList()) {
                 atom.removeFromParent();
                 atom.setXyzIndex(atomNum++);
                 mergedAtoms.add(atom);
@@ -1361,10 +1358,9 @@ public final class MainPanel extends JPanel implements ActionListener,
                 atomPosition.add(parentPosition);
                 atom.moveTo(atomPosition);
             }
-            for (ROLS msm : bonds) {
-                Bond bond = (Bond) msm;
+            for (Bond bond : m.getBondList()) {
                 bond.removeFromParent();
-                mergedBonds.add((Bond) msm);
+                mergedBonds.add(bond);
             }
         }
         for (FFXSystem sys : systems) {
