@@ -43,6 +43,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static java.util.Collections.sort;
+
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.bonded.Atom;
@@ -204,7 +206,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py
      * script (available from the wiki) to draw these easily in PyMol.
      */
-    public boolean printInducedDipoles = Boolean.valueOf(System.getProperty("pme.printInducedDipoles", "false"));
+    boolean printInducedDipoles = Boolean.valueOf(System.getProperty("pme.printInducedDipoles", "false"));
 
     /**
      * Log the seven components of total electrostatic energy at each
@@ -591,7 +593,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
             if (polarizeType != null) {
                 if (polarizeType.polarizationGroup != null) {
                     growGroup(group, ai);
-                    Collections.sort(group);
+                    sort(group);
                     ip11[index] = new int[group.size()];
                     int j = 0;
                     for (int k : group) {
@@ -641,7 +643,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
                     list.add(k);
                 }
             }
-            Collections.sort(list);
+            sort(list);
             ip12[i] = new int[list.size()];
             int j = 0;
             for (int k : list) {
@@ -671,7 +673,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
                 }
             }
             ip13[i] = new int[list.size()];
-            Collections.sort(list);
+            sort(list);
             int j = 0;
             for (int k : list) {
                 ip13[i][j++] = k;
@@ -690,14 +692,14 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     private void growGroup(List<Integer> group, Atom seed) {
         List<Bond> bonds = seed.getBonds();
-        for (Bond bi : bonds) {
-            Atom aj = bi.get1_2(seed);
-            int tj = aj.getType();
+        for (Bond bond : bonds) {
+            Atom atom = bond.get1_2(seed);
+            int tj = atom.getType();
             boolean added = false;
             PolarizeType polarizeType = seed.getPolarizeType();
             for (int type : polarizeType.polarizationGroup) {
                 if (type == tj) {
-                    Integer index = aj.getIndex() - 1;
+                    Integer index = atom.getIndex() - 1;
                     if (!group.contains(index)) {
                         group.add(index);
                         added = true;
@@ -706,7 +708,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
                 }
             }
             if (added) {
-                growGroup(group, aj);
+                growGroup(group, atom);
             }
         }
     }

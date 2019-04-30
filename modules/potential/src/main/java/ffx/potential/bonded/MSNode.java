@@ -480,7 +480,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
             return nodes;
         }
         for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-            ROLS node = (ROLS) e.nextElement();
+            MSNode node = (MSNode) e.nextElement();
             node.getList(c, nodes);
         }
         return nodes;
