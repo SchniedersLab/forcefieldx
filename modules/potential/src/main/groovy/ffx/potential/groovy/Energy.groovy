@@ -97,6 +97,14 @@ class Energy extends PotentialScript {
     private int ef1 = -1
 
     /**
+     * -v or --verbose enables printing out all energy components for multi-snapshot files (
+     * the first snapshot is always printed verbosely).
+     */
+    @Option(names = ['-v', '--verbose'], paramLabel = "false",
+            description = "Print out all energy components for multi-snapshot files")
+    private boolean verbose = false;
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -217,8 +225,13 @@ class Energy extends PotentialScript {
             while (systemFilter.readNext()) {
                 index++
                 forceFieldEnergy.getCoordinates(x)
-                energy = forceFieldEnergy.energy(x, false)
-                logger.info(format(" Snapshot %4d: %16.8f (kcal/mol)", index, energy))
+                if (verbose) {
+                    logger.info(format(" Snapshot %4d", index));
+                    energy = forceFieldEnergy.energy(x, true);
+                } else {
+                    energy = forceFieldEnergy.energy(x, false)
+                    logger.info(format(" Snapshot %4d: %16.8f (kcal/mol)", index, energy))
+                }
 
                 if (fl > 0) {
                     lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), energy))
