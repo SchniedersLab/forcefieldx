@@ -282,7 +282,7 @@ public class GaussVol {
     /**
      * Print the tree.
      */
-    void printTree() {
+    public void printTree() {
         tree.printTree();
     }
 
@@ -367,8 +367,17 @@ public class GaussVol {
          * Print overlaps.
          */
         public void printOverlap() {
-            logger.info(format(" Gaussian Overlap %d: radius %6.3f, volume %6.3f, center (%6.3f,%6.3f,%6.3f)",
-                    level, g.a, g.v, g.c[0], g.c[1], g.c[2]));
+            //  cout << std::setprecision(4) << std::setw(7) << level << " " << std::setw(7)  << atom << " " << std::setw(7)
+            // << parent_index << " " <<  std::setw(7) << children_startindex << " " << std::setw(7) << children_count
+            // << " " << std::setw(10) << self_volume << " " << std::setw(10) << volume << " " << std::setw(10)
+            // << gamma1i << " " << std::setw(10) << g.a << " " << std::setw(10) << g.c[0] << " " <<  std::setw(10)
+            // << g.c[1] << " " <<  std::setw(10) << g.c[2] << " " <<  std::setw(10) << dv1[0] << " " << std::setw(10)
+            // << dv1[1] << " " << std::setw(10) << dv1[2] << " " << std::setw(10) << sfp << endl;
+            logger.info(format(" Gaussian Overlap %d: Atom: %d, Parent: %d, ChildrenStartIndex: %d, ChildrenCount: %d," +
+                            "Volume: %6.3f, Gamma: %6.3f, Gauss.a: %6.3f, Gauss.v: %6.3f, Gauss.center (%6.3f,%6.3f,%6.3f)," +
+                            "dedx: %6.3f, dedy: %6.3f, dedz: %6.3f, sfp: %6.3f",
+                    level, atom, parentIndex, childrenStartindex, childrenCount, volume, gamma1i, g.a, g.v,
+                    g.c[0], g.c[1], g.c[2], dv1[0], dv1[1], dv1[2], sfp));
         }
 
         /**
@@ -435,6 +444,7 @@ public class GaussVol {
 
             overlaps.add(overlap);
 
+            logger.info(String.format("Initializing Tree Using Following Inputs"));
             // list of atoms start at slot #1
             for (int iat = 0; iat < nAtoms; iat++) {
                 overlap = new GaussianOverlap();
@@ -445,6 +455,8 @@ public class GaussVol {
                 overlap.g.a = a;
                 overlap.g.c = pos[iat];
                 overlap.volume = vol;
+                logger.info(String.format("Atom: %s, Gaussian Volume: %8.6f, Center: (%8.6f,%8.6f,%8.6f)", iat, overlap.g.v,
+                        overlap.g.c[0],overlap.g.c[1],overlap.g.c[2]));
                 //overlap.dv1 = new double[3];
                 overlap.dvv1 = 1.; //dVi/dVi
                 overlap.selfVolume = 0.;
@@ -481,7 +493,7 @@ public class GaussVol {
             root.childrenCount = noverlaps;
 
             // Sort neighbors by overlap volume.
-            Collections.sort(overlaps);
+            Collections.sort(children_overlaps);
 
             int root_level = root.level;
 
@@ -661,6 +673,7 @@ public class GaussVol {
             double a1 = a1i - ai;
 
             psi1i[0] = volcoeff * ov.volume; //for free volumes
+            //logger.info(format("Atom: %d, psi1i: %8.6f",ov.atom, psi1i[0]));
             f1i[0] = volcoeff * ov.sfp;
 
             psip1i[0] = volcoeffp * ov.volume; //for self volumes
@@ -952,6 +965,10 @@ public class GaussVol {
          * Print the contents of the tree.
          */
         void printTree() {
+            //logger.info("slot level LastAtom parent ChStart ChCount SelfV V gamma a x y z dedx dedy dedz sfp");
+            for(int i=1; i<=nAtoms; i++){
+                printTreeR(i);
+            }
 
         }
 
@@ -961,7 +978,12 @@ public class GaussVol {
          * @param slot
          */
         void printTreeR(int slot) {
-
+            GaussianOverlap ov = overlaps.get(slot);
+            logger.info(String.format("tg:      %d ",slot));
+            ov.printOverlap();
+            for(int i=ov.childrenStartindex; i< ov.childrenStartindex+ov.childrenCount; i++){
+                printTreeR(i);
+            }
         }
 
         /**
