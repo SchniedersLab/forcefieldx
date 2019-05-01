@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.DoubleBinaryOperator;
 import java.util.logging.Logger;
 import static java.util.Arrays.fill;
 
@@ -280,7 +281,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         tempA = new double[nVarA];
         tempB = new double[nVarB];
         mass = new double[nVarTot];
-        doublesFrom(mass, dualTopA.getMass(), dualTopB.getMass());
+        doublesFromFunction(mass, dualTopA.getMass(), dualTopB.getMass(), Math::max);
 
         region = new EnergyRegion();
         team = new ParallelTeam(1);
@@ -352,8 +353,37 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nVarB; i++) {
             int index = indexBToGlobal[i];
             // Assert this is either a unique from B or it's equal to what came from A.
+            // If the assert fails, this call should likely be replaced by one to doublesFromFunction.
             assert (index >= nShared || to[index] == fromB[i]);
             to[index] = fromB[i];
+        }
+    }
+
+    /**
+     * Copies from double arrays of length nVarA and nVarB to an object array of
+     * length nVarTot, with some convention applied for common indices.
+     *
+     * @param to    Copy to
+     * @param fromA Copy shared and A-specific from
+     * @param fromB Copy B-specific from
+     * @param funct Function f(A,B) for treating common indices.
+     */
+    private void doublesFromFunction(double[] to, double[] fromA, double[] fromB, DoubleBinaryOperator funct) {
+        to = (to == null) ? new double[nVarTot] : to;
+        for (int i = 0; i < nVarA; i++) {
+            to[indexAToGlobal[i]] = fromA[i];
+        }
+        for (int i = 0; i < nVarB; i++) {
+            int index = indexBToGlobal[i];
+            if (index < nShared) {
+                double current = to[index];
+                logger.finer(String.format(" Current %g, i %d, index %d", current, i, index));
+                to[index] = funct.applyAsDouble(current, fromB[i]);
+                logger.finer(String.format(" New: %g", to[index]));
+            } else {
+                logger.finer(String.format(" Applying %g to i %d index %d, current %g", fromB[i], i, index, to[index]));
+                to[index] = fromB[i];
+            }
         }
     }
 
