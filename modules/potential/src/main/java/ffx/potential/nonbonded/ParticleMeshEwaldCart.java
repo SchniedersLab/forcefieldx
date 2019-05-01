@@ -148,10 +148,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
 
-    public void setESVList(List<ExtendedVariable> list) {
-        logger.severe("Cartesian PME does not support ESV handling.");
-    }
-
+    /**
+     * The electrostatics functional form in use.
+     */
+    private ELEC_FORM elecForm;
     /**
      * Unit cell and spacegroup information.
      */
@@ -240,13 +240,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * [nSymm][nAtoms]
      */
     private int[][] preconditionerCounts;
-    private double preconditionerCutoff = 4.5;
+    private double preconditionerCutoff;
     private double preconditionerEwald = 0.0;
     private final int preconditionerListSize = 50;
 
     // *************************************************************************
     // Lambda state variables.
-
+    /**
+     * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
+     */
     private LambdaMode lambdaMode = LambdaMode.OFF;
     /**
      * Current state.
@@ -446,7 +448,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Specify an SCF predictor algorithm.
      */
-    private SCFPredictor scfPredictor = SCFPredictor.LS;
+    private SCFPredictor scfPredictor;
     /**
      * Induced dipole predictor order.
      */
@@ -482,14 +484,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     // Mutable Particle Mesh Ewald constants.
 
     private double aewald;
-    private double alsq2;
     private double an0;
     private double an1;
     private double an2;
     private double an3;
     private double an4;
     private double an5;
-    private double piEwald;
     private double aewald3;
     private double off;
     private double off2;
@@ -608,7 +608,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final long[] realSpaceSCFTime;
     private long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
     private long bornRadiiTotal, gkEnergyTotal;
-    private ELEC_FORM elecForm;
     private static final double TO_SECONDS = 1.0e-9;
     /**
      * The sqrt of PI.
@@ -936,7 +935,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         if (gpuFFT) {
             sectionThreads = 2;
-            realSpaceThreads = parallelTeam.getThreadCount();
             reciprocalThreads = 1;
             sectionTeam = new ParallelTeam(sectionThreads);
             realSpaceTeam = parallelTeam;
@@ -963,8 +961,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             } else {
                 // If pme-real-threads is not defined, then do real and reciprocal space parts sequentially.
                 sectionThreads = 1;
-                realSpaceThreads = maxThreads;
-                reciprocalThreads = maxThreads;
                 sectionTeam = new ParallelTeam(sectionThreads);
                 realSpaceTeam = parallelTeam;
                 fftTeam = parallelTeam;
@@ -5770,10 +5766,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private void setEwaldParameters(double off, double aewald) {
         off2 = off * off;
-        alsq2 = 2.0 * aewald * aewald;
-        if (aewald <= 0.0) {
-            piEwald = Double.POSITIVE_INFINITY;
-        } else {
+        double alsq2 = 2.0 * aewald * aewald;
+        double piEwald = Double.POSITIVE_INFINITY;
+        if (aewald > 0.0) {
             piEwald = 1.0 / (SQRT_PI * aewald);
         }
         aewald3 = 4.0 / 3.0 * pow(aewald, 3.0) / SQRT_PI;
@@ -5922,7 +5917,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
             }
             if (flag) {
-                sb.append("\n" + atoms[i].toString() + "\n");
+                sb.append("\n").append(atoms[i].toString()).append("\n");
                 sb.append(format("%d", i + 1));
                 for (int j = 0; j < 10; j++) {
                     sb.append(format(" %8.3f", localMultipole[i][j]));
@@ -5987,6 +5982,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (bonds == null || bonds.size() < 1) {
             String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
             logger.severe(message);
+            return false;
         }
 
         // 1 reference atom.
@@ -6202,9 +6198,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             final int ib = i;
             final int ic = ax[1];
             int id = 0;
-            double x[] = coordinates[iSymm][0];
-            double y[] = coordinates[iSymm][1];
-            double z[] = coordinates[iSymm][2];
+            double[] x = coordinates[iSymm][0];
+            double[] y = coordinates[iSymm][1];
+            double[] z = coordinates[iSymm][2];
             origin[0] = x[ib];
             origin[1] = y[ib];
             origin[2] = z[ib];
@@ -6712,7 +6708,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         private final ReduceLoop[] reduceLoop;
         private double aewaldCopy;
 
-        public InducedDipolePreconditionerRegion(int threadCount) {
+        InducedDipolePreconditionerRegion(int threadCount) {
             inducedPreconditionerFieldLoop = new InducedPreconditionerFieldLoop[threadCount];
             reduceLoop = new ReduceLoop[threadCount];
         }
@@ -6757,8 +6753,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             private double[] fX, fY, fZ;
             private double[] fXCR, fYCR, fZCR;
 
-            public InducedPreconditionerFieldLoop() {
-            }
+            InducedPreconditionerFieldLoop() { }
 
             @Override
             public IntegerSchedule schedule() {
@@ -6798,9 +6793,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             public void run(int lb, int ub) {
                 final double[] dx = new double[3];
                 final double[][] transOp = new double[3][3];
-                /**
-                 * Loop over a chunk of atoms.
-                 */
+
+                // Loop over a chunk of atoms.
                 int[][] lists = preconditionerLists[0];
                 int[] counts = preconditionerCounts[0];
                 for (int i = lb; i <= ub; i++) {
@@ -7135,7 +7129,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         private final PCGInitLoop[] pcgLoop;
 
-        public PCGInitRegion1(int nt) {
+        PCGInitRegion1(int nt) {
             pcgLoop = new PCGInitLoop[nt];
         }
 
@@ -7274,7 +7268,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         private final SharedDouble sumShared;
         private final SharedDouble sumCRShared;
 
-        public PCGIterRegion1(int nt) {
+        PCGIterRegion1(int nt) {
             iterLoop1 = new PCGIterLoop1[nt];
             iterLoop2 = new PCGIterLoop2[nt];
             dotShared = new SharedDouble();
@@ -7591,7 +7585,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         private final PCGLoop[] pcgLoop;
 
-        public PCGRegion(int nt) {
+        PCGRegion(int nt) {
             pcgLoop = new PCGLoop[nt];
         }
 
