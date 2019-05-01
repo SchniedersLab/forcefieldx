@@ -59,6 +59,12 @@ import static org.apache.commons.math3.util.FastMath.pow
 @Command(description = " Calculate the surface area and volume of molecular system.", name = "ffxc Volume")
 class Volume extends PotentialScript {
 
+    private static final double angToNm =0.1
+    private static final double nmToAng =10.0
+    private static final double nmVolumeToAngVolume=1000
+    private static final double kjToKcal=1.0/4.184
+    private static final double offset=0.00005
+
     /**
      * The final argument(s) should be one or more filenames.
      */
@@ -105,7 +111,9 @@ class Volume extends PotentialScript {
         // Input
         boolean[] isHydrogen = new boolean[nAtoms]
         double[] radii = new double[nAtoms]
+        double[] radiiOffset = new double[nAtoms]
         double[] volume = new double[nAtoms]
+        double[] volumeOffset = new double[nAtoms]
         double[] gamma = new double[nAtoms]
         double[][] positions = new double[nAtoms][3]
 
@@ -114,18 +122,32 @@ class Volume extends PotentialScript {
         double[] totalVolume = new double[1]
         double[] energy = new double[1]
         double[] gradV = new double[nAtoms]
+        double selfVolumeSum = 0
         double[] freeVolume = new double[nAtoms]
         double[] selfVolume = new double[nAtoms]
 
+        double[][] forceOffset = new double[nAtoms][3]
+        double[] totalVolumeOffset = new double[1]
+        double[] energyOffset = new double[1]
+        double[] gradVOffset = new double[nAtoms]
+        double selfVolumeOffsetSum = 0
+        double[] freeVolumeOffset = new double[nAtoms]
+        double[] selfVolumeOffset = new double[nAtoms]
+
+        double surfaceArea = 0
+
         int index = 0
         for (Atom atom : atoms) {
-            isHydrogen[index] = atom.isHydrogen()
-            radii[index] = atom.getVDWType().radius
+            //isHydrogen[index] = atom.isHydrogen()
+            isHydrogen[index] = false
+            radii[index] = atom.getVDWType().radius / 2.0 - 0.2//* angToNm / 2.0
+            radiiOffset[index] = radii[index] - offset
             volume[index] = 4.0 / 3.0 * Math.PI * pow(radii[index], 3)
+            volumeOffset[index] = 4.0 / 3.0 * Math.PI * pow(radiiOffset[index], 3)
             gamma[index] = 1.0
-            positions[index][0] = atom.getX()
-            positions[index][1] = atom.getY()
-            positions[index][2] = atom.getZ()
+            positions[index][0] = atom.getX() //* angToNm
+            positions[index][1] = atom.getY() //* angToNm
+            positions[index][2] = atom.getZ() //* angToNm
             index++
         }
 
@@ -133,17 +155,51 @@ class Volume extends PotentialScript {
 
         gaussVol.computeTree(positions)
         gaussVol.computeVolume(positions, totalVolume, energy, force, gradV, freeVolume, selfVolume)
+        //gaussVol.printTree()
 
-        logger.info(String.format(" Total Volume: %8.6f, Energy: %8.6f", totalVolume[0], energy[0]))
+
+        totalVolume[0]=totalVolume[0]//*nmVolumeToAngVolume
+        //TODO: Check Energy Conversion
+        energy[0]=energy[0]//*kjToKcal*nmVolumeToAngVolume
+
+        logger.info(String.format(" Total Volume of Molecule: %8.6f, Energy: %8.6f", totalVolume[0], energy[0]))
 
         int i = 0
         for (Atom atom : atoms) {
-            if (!atom.isHydrogen()) {
+            //if (!atom.isHydrogen()) {
                 logger.info(String.format(" Atom %s, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
                         atom.toString(), force[i][0], force[i][1], force[i][2], gradV[i], freeVolume[i], selfVolume[i]))
-            }
+                selfVolumeSum += selfVolume[i] / offset
+            //}
             i++
         }
+
+        GaussVol gaussVolOffest = new GaussVol(nAtoms, radiiOffset, volumeOffset, gamma, isHydrogen)
+
+        gaussVolOffest.computeTree(positions)
+        gaussVolOffest.computeVolume(positions, totalVolumeOffset, energyOffset, forceOffset, gradVOffset, freeVolumeOffset, selfVolumeOffset)
+        //gaussVolOffest.printTree()
+
+
+        totalVolumeOffset[0]=totalVolumeOffset[0]//*nmVolumeToAngVolume
+        //TODO: Check Energy Conversion
+        energyOffset[0]=energyOffset[0]//*kjToKcal*nmVolumeToAngVolume
+
+        logger.info(String.format(" Total Volume of Offset: %8.6f, Energy: %8.6f", totalVolumeOffset[0], energyOffset[0]))
+
+        int j = 0
+        for (Atom atom : atoms) {
+            //if (!atom.isHydrogen()) {
+                logger.info(String.format(" Atom %s, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
+                        atom.toString(), forceOffset[j][0], forceOffset[j][1], forceOffset[j][2], gradVOffset[j], freeVolumeOffset[j], selfVolumeOffset[j]))
+                selfVolumeOffsetSum += selfVolumeOffset[j] / offset
+            //}
+            j++
+        }
+        surfaceArea=selfVolumeSum-selfVolumeOffsetSum
+
+        logger.info(String.format("Solvent Accessible Surface Area: %8.6f", surfaceArea))
+
 
         return this
     }
