@@ -228,9 +228,9 @@ public class GaussVol {
      * @param self_volume
      */
     public void computeVolume(double[][] positions,
-                       double[] totalVolume, double[] totalEnergy,
-                       double[][] force, double[] gradV,
-                       double[] free_volume, double[] self_volume) {
+                              double[] totalVolume, double[] totalEnergy,
+                              double[][] force, double[] gradV,
+                              double[] free_volume, double[] self_volume) {
 
         tree.computeVolume2R(positions, totalVolume, totalEnergy, force, gradV, free_volume, self_volume);
         for (int i = 0; i < nAtoms; ++i) {
@@ -332,7 +332,8 @@ public class GaussVol {
         /**
          * Derivative wrt position of first atom (also stores P1..i in GPU version)
          */
-        double[] dv1 = new double[3];;
+        double[] dv1 = new double[3];
+        ;
         /**
          * Sum gammai for this overlap
          */
@@ -424,7 +425,6 @@ public class GaussVol {
                             double[] gammas, boolean[] ishydrogen) {
 
 
-
             // Reset tree
             overlaps = new ArrayList<>();
 
@@ -456,7 +456,7 @@ public class GaussVol {
                 overlap.g.c = pos[iat];
                 overlap.volume = vol;
                 logger.info(String.format("Atom: %s, Gaussian Volume: %8.6f, Center: (%8.6f,%8.6f,%8.6f)", iat, overlap.g.v,
-                        overlap.g.c[0],overlap.g.c[1],overlap.g.c[2]));
+                        overlap.g.c[0], overlap.g.c[1], overlap.g.c[2]));
                 //overlap.dv1 = new double[3];
                 overlap.dvv1 = 1.; //dVi/dVi
                 overlap.selfVolume = 0.;
@@ -966,7 +966,7 @@ public class GaussVol {
          */
         void printTree() {
             //logger.info("slot level LastAtom parent ChStart ChCount SelfV V gamma a x y z dedx dedy dedz sfp");
-            for(int i=1; i<=nAtoms; i++){
+            for (int i = 1; i <= nAtoms; i++) {
                 printTreeR(i);
             }
 
@@ -979,9 +979,9 @@ public class GaussVol {
          */
         void printTreeR(int slot) {
             GaussianOverlap ov = overlaps.get(slot);
-            logger.info(String.format("tg:      %d ",slot));
+            logger.info(String.format("tg:      %d ", slot));
             ov.printOverlap();
-            for(int i=ov.childrenStartindex; i< ov.childrenStartindex+ov.childrenCount; i++){
+            for (int i = ov.childrenStartindex; i < ov.childrenStartindex + ov.childrenCount; i++) {
                 printTreeR(i);
             }
         }
