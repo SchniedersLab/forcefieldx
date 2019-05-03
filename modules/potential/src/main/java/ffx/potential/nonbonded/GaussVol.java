@@ -252,7 +252,7 @@ public class GaussVol {
      *
      * @param positions
      */
-    void rescanTreeVolumes(double[][] positions) {
+    public void rescanTreeVolumes(double[][] positions) {
         tree.rescanTreeV(positions, radii, volumes, gammas, ishydrogen);
     }
 
@@ -444,7 +444,7 @@ public class GaussVol {
 
             overlaps.add(overlap);
 
-            logger.info(String.format("Initializing Tree Using Following Inputs"));
+            //logger.info(String.format("Initializing Tree Using Following Inputs"));
             // list of atoms start at slot #1
             for (int iat = 0; iat < nAtoms; iat++) {
                 overlap = new GaussianOverlap();
@@ -455,8 +455,8 @@ public class GaussVol {
                 overlap.g.a = a;
                 overlap.g.c = pos[iat];
                 overlap.volume = vol;
-                logger.info(String.format("Atom: %s, Gaussian Volume: %8.6f, Center: (%8.6f,%8.6f,%8.6f)", iat, overlap.g.v,
-                        overlap.g.c[0],overlap.g.c[1],overlap.g.c[2]));
+                //logger.info(String.format("Atom: %s, Gaussian Volume: %8.6f, Center: (%8.6f,%8.6f,%8.6f)", iat, overlap.g.v,
+                        //overlap.g.c[0],overlap.g.c[1],overlap.g.c[2]));
                 //overlap.dv1 = new double[3];
                 overlap.dvv1 = 1.; //dVi/dVi
                 overlap.selfVolume = 0.;
