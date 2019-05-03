@@ -76,7 +76,6 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
-import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -90,6 +89,12 @@ import ffx.potential.parameters.ISolvRadType;
 import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
+import static ffx.numerics.math.VectorMath.cross;
+import static ffx.numerics.math.VectorMath.dist;
+import static ffx.numerics.math.VectorMath.dist2;
+import static ffx.numerics.math.VectorMath.dot;
+import static ffx.numerics.math.VectorMath.norm;
+import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.t000;
@@ -474,8 +479,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
      * @param atoms             an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param particleMeshEwald a
-     *                          {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+     * @param particleMeshEwald a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
      * @param crystal           a {@link ffx.crystal.Crystal} object.
      * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
      */
@@ -688,12 +692,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         outputVolume = forceField.getBoolean(ForceField.ForceFieldBoolean.VOLUME, false);
-//        if (doVolume) {
-//            volumeRegion = new VolumeRegion(threadCount);
-//        } else {
-//            volumeRegion = null;
-//        }
-
     }
 
     /**
@@ -1122,9 +1120,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     public void computeBornRadii() {
 
-        /**
-         * Born radii are fixed.
-         */
+        // Born radii are fixed.
         if (fixedRadii) {
             return;
         }
@@ -1183,9 +1179,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     public double solvationEnergy(boolean gradient, boolean print) {
 
-        /**
-         * Initialize the gradient accumulation arrays.
-         */
+        // Initialize the gradient accumulation arrays.
         if (gradient) {
             for (int j = 0; j < nAtoms; j++) {
                 sharedBornGrad.set(j, 0.0);
@@ -1193,16 +1187,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         try {
-            /**
-             * Find the GK energy.
-             */
+            // Find the GK energy.
             gkTime = -System.nanoTime();
             gkEnergyRegion.setGradient(gradient);
             parallelTeam.execute(gkEnergyRegion);
             gkTime += System.nanoTime();
-            /**
-             * Find the nonpolar energy.
-             */
+
+            // Find the nonpolar energy.
             switch (nonPolar) {
                 case CAV:
                     cavitationTime = -System.nanoTime();
@@ -1241,9 +1232,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.log(Level.SEVERE, message, e);
         }
 
-        /**
-         * Compute the Born radii chain rule term.
-         */
+        // Compute the Born radii chain rule term.
         if (gradient) {
             try {
                 gkTime -= System.nanoTime();
@@ -1415,9 +1404,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (lambdaTerm) {
             this.lambda = lambda;
         } else {
-            /**
-             * If the lambdaTerm flag is false, lambda must be set to one.
-             */
+
+            // If the lambdaTerm flag is false, lambda must be set to one.
             this.lambda = 1.0;
             lPow = 1.0;
             dlPow = 0.0;
@@ -1609,8 +1597,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param r            atomic separation.
              * @param r2           atomic separation squared.
              * @param radius       base radius of the atom being descreened.
-             * @param scaledRadius scaled raduis of the atom doing the
-             *                     descreening.
+             * @param scaledRadius scaled raduis of the atom doing the descreening.
              * @return this contribution to the descreening integral.
              */
             private double integral(double r, double r2, double radius, double scaledRadius) {
@@ -2075,7 +2062,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         private final InducedGKFieldLoop[] inducedGKFieldLoop;
 
-        public InducedGKFieldRegion(int nt) {
+        InducedGKFieldRegion(int nt) {
             inducedGKFieldLoop = new InducedGKFieldLoop[nt];
             for (int i = 0; i < nt; i++) {
                 inducedGKFieldLoop[i] = new InducedGKFieldLoop();
@@ -2133,7 +2120,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public InducedGKFieldLoop() {
+            InducedGKFieldLoop() {
                 a = new double[3][2];
                 gux = new double[5];
                 guy = new double[5];
@@ -2193,7 +2180,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         uiyCR = inducedDipoleCR[0][i][1];
                         uizCR = inducedDipoleCR[0][i][2];
                         rbi = born[i];
-                        int list[] = neighborLists[iSymm][i];
+                        int[] list = neighborLists[iSymm][i];
                         for (int k : list) {
                             if (!use[k]) {
                                 continue;
@@ -2333,7 +2320,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final SharedInteger sharedInteractions;
         private final GKEnergyLoop[] gkEnergyLoop;
 
-        public GKEnergyRegion(int nt) {
+        GKEnergyRegion(int nt) {
             gkEnergyLoop = new GKEnergyLoop[nt];
             for (int i = 0; i < nt; i++) {
                 gkEnergyLoop[i] = new GKEnergyLoop();
@@ -2421,7 +2408,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public GKEnergyLoop() {
+            GKEnergyLoop() {
                 a = new double[6][4];
                 b = new double[5][3];
                 gc = new double[31];
@@ -3051,6 +3038,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gc[18] = zr * (a[0][2] + yr2 * a[0][3]);
                 gc[19] = yr * (a[0][2] + zr2 * a[0][3]);
                 gc[20] = zr * (3.0 * a[0][2] + zr2 * a[0][3]);
+
                 gux[11] = 3.0 * a[1][1] + xr2 * (6.0 * a[1][2] + xr2 * a[1][3]);
                 gux[12] = xr * yr * (3.0 * a[1][2] + xr2 * a[1][3]);
                 gux[13] = xr * zr * (3.0 * a[1][2] + xr2 * a[1][3]);
@@ -3061,16 +3049,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gux[18] = xr * zr * (a[1][2] + yr2 * a[1][3]);
                 gux[19] = xr * yr * (a[1][2] + zr2 * a[1][3]);
                 gux[20] = xr * zr * (3.0 * a[1][2] + zr2 * a[1][3]);
-                guy[11] = gux[12];
-                guy[12] = gux[14];
-                guy[13] = gux[15];
-                guy[14] = gux[17];
-                guy[15] = gux[18];
-                guy[16] = gux[19];
-                guy[17] = 3.0 * a[1][1] + yr2 * (6.0 * a[1][2] + yr2 * a[1][3]);
-                gux[18] = xr * zr * (a[1][2] + yr2 * a[1][3]);
-                gux[19] = xr * yr * (a[1][2] + zr2 * a[1][3]);
-                gux[20] = xr * zr * (3.0 * a[1][2] + zr2 * a[1][3]);
+
                 guy[11] = gux[12];
                 guy[12] = gux[14];
                 guy[13] = gux[15];
@@ -3081,6 +3060,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 guy[18] = yr * zr * (3.0 * a[1][2] + yr2 * a[1][3]);
                 guy[19] = a[1][1] + (yr2 + zr2) * a[1][2] + yr2 * zr2 * a[1][3];
                 guy[20] = yr * zr * (3.0 * a[1][2] + zr2 * a[1][3]);
+
                 guz[11] = gux[13];
                 guz[12] = gux[15];
                 guz[13] = gux[16];
@@ -3091,6 +3071,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 guz[18] = guy[19];
                 guz[19] = guy[20];
                 guz[20] = 3.0 * a[1][1] + zr2 * (6.0 * a[1][2] + zr2 * a[1][3]);
+
                 gqxx[11] = xr * (12.0 * a[2][1] + xr2 * (9.0 * a[2][2] + xr2 * a[2][3]));
                 gqxx[12] = yr * (2.0 * a[2][1] + xr2 * (5.0 * a[2][2] + xr2 * a[2][3]));
                 gqxx[13] = zr * (2.0 * a[2][1] + xr2 * (5.0 * a[2][2] + xr2 * a[2][3]));
@@ -3101,6 +3082,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqxx[18] = zr * xr2 * (a[2][2] + yr2 * a[2][3]);
                 gqxx[19] = yr * xr2 * (a[2][2] + zr2 * a[2][3]);
                 gqxx[20] = zr * xr2 * (3.0 * a[2][2] + zr2 * a[2][3]);
+
                 gqxy[11] = yr * (3.0 * a[2][1] + xr2 * (6.0 * a[2][2] + xr2 * a[2][3]));
                 gqxy[12] = xr * (3.0 * (a[2][1] + yr2 * a[2][2]) + xr2 * (a[2][2] + yr2 * a[2][3]));
                 gqxy[13] = xr * yr * zr * (3.0 * a[2][2] + xr2 * a[2][3]);
@@ -3111,6 +3093,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqxy[18] = xr * yr * zr * (3.0 * a[2][2] + yr2 * a[2][3]);
                 gqxy[19] = xr * (a[2][1] + (yr2 + zr2) * a[2][2] + yr2 * zr2 * a[2][3]);
                 gqxy[20] = xr * yr * zr * (3.0 * a[2][2] + zr2 * a[2][3]);
+
                 gqxz[11] = zr * (3.0 * a[2][1] + xr2 * (6.0 * a[2][2] + xr2 * a[2][3]));
                 gqxz[12] = xr * yr * zr * (3.0 * a[2][2] + xr2 * a[2][3]);
                 gqxz[13] = xr * (3.0 * (a[2][1] + zr2 * a[2][2]) + xr2 * (a[2][2] + zr2 * a[2][3]));
@@ -3121,6 +3104,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqxz[18] = xr * (a[2][1] + (zr2 + yr2) * a[2][2] + zr2 * yr2 * a[2][3]);
                 gqxz[19] = xr * yr * zr * (3.0 * a[2][2] + zr2 * a[2][3]);
                 gqxz[20] = xr * (3.0 * a[2][1] + zr2 * (6.0 * a[2][2] + zr2 * a[2][3]));
+
                 gqyy[11] = xr * yr2 * (3.0 * a[2][2] + xr2 * a[2][3]);
                 gqyy[12] = yr * (2.0 * a[2][1] + xr2 * 2.0 * a[2][2] + yr2 * (a[2][2] + xr2 * a[2][3]));
                 gqyy[13] = zr * yr2 * (a[2][2] + xr2 * a[2][3]);
@@ -3131,6 +3115,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqyy[18] = zr * (2.0 * a[2][1] + yr2 * (5.0 * a[2][2] + yr2 * a[2][3]));
                 gqyy[19] = yr * (2.0 * a[2][1] + zr2 * 2.0 * a[2][2] + yr2 * (a[2][2] + zr2 * a[2][3]));
                 gqyy[20] = zr * yr2 * (3.0 * a[2][2] + zr2 * a[2][3]);
+
                 gqyz[11] = xr * yr * zr * (3.0 * a[2][2] + xr2 * a[2][3]);
                 gqyz[12] = zr * (a[2][1] + (xr2 + yr2) * a[2][2] + xr2 * yr2 * a[2][3]);
                 gqyz[13] = yr * (a[2][1] + (xr2 + zr2) * a[2][2] + xr2 * zr2 * a[2][3]);
@@ -3141,6 +3126,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqyz[18] = yr * (3.0 * (a[2][1] + zr2 * a[2][2]) + yr2 * (a[2][2] + zr2 * a[2][3]));
                 gqyz[19] = zr * (3.0 * (a[2][1] + yr2 * a[2][2]) + zr2 * (a[2][2] + yr2 * a[2][3]));
                 gqyz[20] = yr * (3.0 * a[2][1] + zr2 * (6.0 * a[2][2] + zr2 * a[2][3]));
+
                 gqzz[11] = xr * zr2 * (3.0 * a[2][2] + xr2 * a[2][3]);
                 gqzz[12] = yr * (zr2 * a[2][2] + xr2 * (zr2 * a[2][3]));
                 gqzz[13] = zr * (2.0 * a[2][1] + xr2 * 2.0 * a[2][2] + zr2 * (a[2][2] + xr2 * a[2][3]));
@@ -3974,7 +3960,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         private final BornCRLoop[] bornCRLoop;
 
-        public BornCRRegion(int nt) {
+        BornCRRegion(int nt) {
             bornCRLoop = new BornCRLoop[nt];
             for (int i = 0; i < nt; i++) {
                 bornCRLoop[i] = new BornCRLoop();
@@ -4012,7 +3998,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public BornCRLoop() {
+            BornCRLoop() {
                 dx_local = new double[3];
                 ecav = 0.0;
             }
@@ -4139,10 +4125,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         double termi = PI4_3 / (rbi * rbi * rbi);
                         termi = factor / pow(termi, (4.0 * oneThird));
 
-                        int list[] = neighborLists[iSymOp][i];
-                        int nPair = list.length;
-                        for (int l = 0; l < nPair; l++) {
-                            int k = list[l];
+                        int[] list = neighborLists[iSymOp][i];
+                        for (int k : list) {
                             if (!nativeEnvironmentApproximation && !use[k]) {
                                 continue;
                             }
@@ -4215,7 +4199,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class DispersionRegion extends ParallelRegion {
 
-        private final DispersionLoop dispersionLoop[];
+        private final DispersionLoop[] dispersionLoop;
         private final SharedDouble sharedDispersion;
         private boolean gradient = false;
         private double[] cdisp;
@@ -4227,7 +4211,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private static final double RMINO = 1.7025;
         private static final double RMINH = 1.3275;
 
-        public DispersionRegion(int nt) {
+        DispersionRegion(int nt) {
             dispersionLoop = new DispersionLoop[nt];
             for (int i = 0; i < nt; i++) {
                 dispersionLoop[i] = new DispersionLoop();
@@ -4345,7 +4329,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public DispersionLoop() {
+            DispersionLoop() {
                 dx_local = new double[3];
             }
 
@@ -4383,10 +4367,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
-                    int list[] = neighborLists[0][i];
-                    int npair = list.length;
-                    for (int l = 0; l < npair; l++) {
-                        int k = list[l];
+                    int[] list = neighborLists[0][i];
+                    for (int k : list) {
                         final double rk = rDisp[k];
                         if (i != k && rk > 0.0 && use[k]) {
                             dx_local[0] = xi - x[k];
@@ -4673,7 +4655,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         // private long overlapTime = 0;
         // private long cavTime = 0;
 
-        public CavitationRegion(int nt) {
+        CavitationRegion(int nt) {
             atomOverlapLoop = new AtomOverlapLoop[nt];
             cavitationLoop = new CavitationLoop[nt];
             initLoop = new InitLoop[nt];
@@ -4760,7 +4742,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             public double value;
             public int key;
 
-            public IndexedDouble(double value, int key) {
+            IndexedDouble(double value, int key) {
                 this.value = value;
                 this.key = key;
             }
@@ -4771,13 +4753,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     return 0;
                 }
                 IndexedDouble d = (IndexedDouble) o;
-                if (value < d.value) {
-                    return -1;
-                } else if (value == d.value) {
-                    return 0;
-                } else {
-                    return 1;
-                }
+
+                return Double.compare(value, d.value);
             }
         }
 
@@ -4808,10 +4785,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double yr = y[i];
                     double zr = z[i];
                     double rri = r[i];
-                    final int list[] = neighborLists[0][i];
-                    int npair = list.length;
-                    for (int l = 0; l < npair; l++) {
-                        int k = list[l];
+                    final int[] list = neighborLists[0][i];
+                    for (int k : list) {
                         double rrik = rri + r[k];
                         double dx = x[k] - xr;
                         double dy = y[k] - yr;
@@ -4963,9 +4938,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private int j;
             private int ib;
 
-            /**
-             * Set pi multiples, overlap criterion and tolerances.
-             */
+            // Set pi multiples, overlap criterion and tolerances.
             private final static double pix2 = 2.0 * PI;
             private final static double pix4 = 4.0 * PI;
             private final static double pid2 = PI / 2.0;
@@ -4976,7 +4949,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public CavitationLoop() {
+            CavitationLoop() {
                 dArea = new double[3][];
                 ldArea = new double[3][];
                 allocateMemory(maxarc);
@@ -5047,7 +5020,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double rrisq = rri * rri;
                     double wght = surfaceTension;
                     boolean moved = false;
-                    surface(xi, yi, zi, rri, rri2, rrisq, wght, moved, ir);
+                    surface(rri, rri2, rrisq, wght, moved, ir);
                     if (area[ir] < 0.0) {
                         logger.log(GK_WARN_LEVEL, format(" Negative surface area set to 0 for atom %d.", ir));
                         area[ir] = 0.0;
@@ -5072,8 +5045,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             }
 
-            public void surface(double xi, double yi, double zi, double rri, double rri2,
-                                double rrisq, double wght, boolean moved, int ir) {
+            public void surface(double rri, double rri2, double rrisq, double wght, boolean moved, int ir) {
 
                 ib = 0;
                 int jb = 0;
@@ -5495,7 +5467,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param ir
              * @param arclen
              */
-            public boolean independentBoundaries(int k, double exang, int jb, int ir, double arclen) {
+            boolean independentBoundaries(int k, double exang, int jb, int ir, double arclen) {
                 int m = kout[i];
                 kout[i] = -1;
                 j = j + 1;
@@ -5526,11 +5498,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class VolumeRegion extends ParallelRegion {
 
-        private final VolumeLoop volumeLoop[];
+        private final VolumeLoop[] volumeLoop;
         private final SharedDouble sharedVolume;
         private final SharedDouble sharedArea;
         private final SharedDouble sharedVolumeCavitation;
-        private final int itab[];
+        private final int[] itab;
         private final static int MAXCUBE = 40;
         private final static int MAXARC = 1000;
         private final static int MAXMNB = 500;
@@ -5597,39 +5569,39 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Atomic radii.
          */
-        private final double radius[] = new double[nAtoms];
+        private final double[] radius = new double[nAtoms];
         /**
          * If true, atom is not used.
          */
-        private final boolean skip[] = new boolean[nAtoms];
+        private final boolean[] skip = new boolean[nAtoms];
         /**
          * Copy of the atomic coordinates. [X,Y,Z][Atom Number]
          */
-        private final double a[][] = new double[3][nAtoms];
+        private final double[][] a = new double[3][nAtoms];
         /**
          * If true, atom has no free surface.
          */
-        private final boolean nosurf[] = new boolean[nAtoms];
+        private final boolean[] nosurf = new boolean[nAtoms];
         /**
          * Atom free of neighbors.
          */
-        private final boolean afree[] = new boolean[nAtoms];
+        private final boolean[] afree = new boolean[nAtoms];
         /**
          * Atom buried.
          */
-        private final boolean abur[] = new boolean[nAtoms];
+        private final boolean[] abur = new boolean[nAtoms];
         /**
          * Begin and end pointers for atoms neighbors.
          */
-        private final int acls[][] = new int[2][nAtoms];
+        private final int[][] acls = new int[2][nAtoms];
         /**
          * Atom numbers of neighbors.
          */
-        private final int cls[] = new int[maxcls];
+        private final int[] cls = new int[maxcls];
         /**
          * Pointer from neighbor to torus.
          */
-        private final int clst[] = new int[maxcls];
+        private final int[] clst = new int[maxcls];
         /**
          * Number of temporary tori.
          */
@@ -5637,39 +5609,39 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Temporary torus atom numbers.
          */
-        private final int tta[][] = new int[2][maxtt];
+        private final int[][] tta = new int[2][maxtt];
         /**
          * First edge of each temporary torus.
          */
-        private final int ttfe[] = new int[maxtt];
+        private final int[] ttfe = new int[maxtt];
         /**
          * Last edge of each temporary torus.
          */
-        private final int ttle[] = new int[maxtt];
+        private final int[] ttle = new int[maxtt];
         /**
          * Pointer to next edge of temporary torus.
          */
-        private final int enext[] = new int[maxen];
+        private final int[] enext = new int[maxen];
         /**
          * Temporary torus buried.
          */
-        private final boolean ttbur[] = new boolean[maxtt];
+        private final boolean[] ttbur = new boolean[maxtt];
         /**
          * Temporary torus free.
          */
-        private final boolean ttfree[] = new boolean[maxtt];
+        private final boolean[] ttfree = new boolean[maxtt];
         /**
          * Torus center.
          */
-        private final double t[][] = new double[3][maxt];
+        private final double[][] t = new double[3][maxt];
         /**
          * Torus radius.
          */
-        private final double tr[] = new double[maxt];
+        private final double[] tr = new double[maxt];
         /**
          * Torus axis.
          */
-        private final double tax[][] = new double[3][maxt];
+        private final double[][] tax = new double[3][maxt];
         /**
          * Number of tori.
          */
@@ -5677,19 +5649,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Torus atom number.
          */
-        int ta[][] = new int[2][maxt];
+        int[][] ta = new int[2][maxt];
         /**
          * Torus first edge.
          */
-        int tfe[] = new int[maxt];
+        int[] tfe = new int[maxt];
         /**
          * Torus free edge of neighbor.
          */
-        boolean tfree[] = new boolean[maxt];
+        boolean[] tfree = new boolean[maxt];
         /**
          * Probe position coordinates.
          */
-        private final double p[][] = new double[3][maxp];
+        private final double[][] p = new double[3][maxp];
         /**
          * Number of probe positions.
          */
@@ -5697,11 +5669,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Probe position atom numbers.
          */
-        private final int pa[][] = new int[3][maxp];
+        private final int[][] pa = new int[3][maxp];
         /**
          * Vertex coordinates.
          */
-        private final double v[][] = new double[3][maxv];
+        private final double[][] v = new double[3][maxv];
         /**
          * Number of vertices.
          */
@@ -5709,11 +5681,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Vertex atom number.
          */
-        private final int va[] = new int[maxv];
+        private final int[] va = new int[maxv];
         /**
          * Vertex probe number.
          */
-        private final int vp[] = new int[maxv];
+        private final int[] vp = new int[maxv];
         /**
          * Number of concave edges.
          */
@@ -5721,19 +5693,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Vertex numbers for each concave edge.
          */
-        private final int env[][] = new int[2][maxen];
+        private final int[][] env = new int[2][maxen];
         /**
          * Concave face concave edge numbers.
          */
-        private final int fnen[][] = new int[3][maxfn];
+        private final int[][] fnen = new int[3][maxfn];
         /**
          * Circle center.
          */
-        private final double c[][] = new double[3][maxc];
+        private final double[][] c = new double[3][maxc];
         /**
          * Circle radius.
          */
-        private final double cr[] = new double[maxc];
+        private final double[] cr = new double[maxc];
         /**
          * Number of circles.
          */
@@ -5745,7 +5717,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Circle torus number.
          */
-        private final int ct[] = new int[maxc];
+        private final int[] ct = new int[maxc];
         /**
          * Number of convex edges.
          */
@@ -5753,23 +5725,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Convex edge circle number.
          */
-        private final int epc[] = new int[maxep];
+        private final int[] epc = new int[maxep];
         /**
          * Convex edge vertex number.
          */
-        private final int epv[][] = new int[2][maxep];
+        private final int[][] epv = new int[2][maxep];
         /**
          * First convex edge of each atom.
          */
-        private final int afe[] = new int[nAtoms];
+        private final int[] afe = new int[nAtoms];
         /**
          * Last convex edge of each atom.
          */
-        private final int ale[] = new int[nAtoms];
+        private final int[] ale = new int[nAtoms];
         /**
          * Pointer to next convex edge of atom.
          */
-        private final int epnext[] = new int[maxep];
+        private final int[] epnext = new int[maxep];
         /**
          * Number of saddle faces.
          */
@@ -5777,11 +5749,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Saddle face concave edge numbers.
          */
-        private final int fsen[][] = new int[2][maxfs];
+        private final int[][] fsen = new int[2][maxfs];
         /**
          * Saddle face convex edge numbers.
          */
-        private final int fsep[][] = new int[2][maxfs];
+        private final int[][] fsep = new int[2][maxfs];
         /**
          * Number of cycles.
          */
@@ -5789,11 +5761,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Number of convex edges in cycle.
          */
-        private final int cynep[] = new int[maxcy];
+        private final int[] cynep = new int[maxcy];
         /**
          * Cycle convex edge numbers.
          */
-        private final int cyep[][] = new int[MAXCYEP][maxcy];
+        private final int[][] cyep = new int[MAXCYEP][maxcy];
         /**
          * Number of convex faces.
          */
@@ -5801,44 +5773,47 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Atom number of convex face.
          */
-        private final int fpa[] = new int[maxfp];
+        private final int[] fpa = new int[maxfp];
         /**
          * Convex face cycle numbers
          */
-        private final int fpcy[][] = new int[MAXFPCY][maxfp];
+        private final int[][] fpcy = new int[MAXFPCY][maxfp];
         /**
          * Number of cycles bounding convex face.
          */
-        private final int fpncy[] = new int[maxfp];
+        private final int[] fpncy = new int[maxfp];
 
         // These are from the "nearby" method.
         /**
          * True if cube contains active atoms.
          */
-        private final boolean activeCube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+        private final boolean[][][] activeCube = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
         /**
          * True if cube or adjacent cubes have active atoms.
          */
-        private final boolean activeAdjacentCube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+        private final boolean[][][] activeAdjacentCube = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
         /**
          * Pointer to first atom in list for cube.
          */
-        private final int firstAtomPointer[][][] = new int[MAXCUBE][MAXCUBE][MAXCUBE];
+        private final int[][][] firstAtomPointer = new int[MAXCUBE][MAXCUBE][MAXCUBE];
         /**
          * Integer cube coordinates.
          */
-        private final int cubeCoordinates[][] = new int[3][nAtoms];
+        private final int[][] cubeCoordinates = new int[3][nAtoms];
         /**
          * Pointer to next atom in cube.
          */
-        private final int nextAtomPointer[] = new int[nAtoms];
+        private final int[] nextAtomPointer = new int[nAtoms];
+
+        private final static double SIZE = 0.000001;
+        private final double[] vector = new double[3];
 
         /**
          * VolumeRegion constructor.
          *
          * @param nt Number of threads.
          */
-        public VolumeRegion(int nt) {
+        VolumeRegion(int nt) {
             volumeLoop = new VolumeLoop[nt];
             for (int i = 0; i < nt; i++) {
                 volumeLoop[i] = new VolumeLoop();
@@ -5848,10 +5823,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             sharedVolumeCavitation = new SharedDouble();
             itab = new int[nAtoms];
 
-            /**
-             * Set atom coordinates and radii, the excluded buffer radius
-             * ("exclude") is added to atomic radii.
-             */
+            // Set atom coordinates and radii, the excluded buffer radius
+            // ("exclude") is added to atomic radii.
             for (int i = 0; i < nAtoms; i++) {
                 if (radius[i] == 0.0) {
                     skip[i] = true;
@@ -5899,13 +5872,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        private final static double SIZE = 0.000001;
-        private final double vector[] = new double[3];
-
-        public void wiggle() {
-            /**
-             * Apply a small perturbation of fixed magnitude to each atom.
-             */
+        void wiggle() {
+            // Apply a small perturbation of fixed magnitude to each atom.
             for (int i = 0; i < nAtoms; i++) {
                 getRandomVector(vector);
                 a[0][i] = x[i] + (SIZE * vector[0]);
@@ -5914,23 +5882,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        public void getRandomVector(double vector[]) {
+        void getRandomVector(double[] vector) {
             double x, y, s;
             x = 0;
             y = 0;
 
-            /**
-             * Get a pair of appropriate components in the plane.
-             */
+            // Get a pair of appropriate components in the plane.
             s = 2.0;
             while (s >= 1.0) {
                 x = (2.0 * Math.random()) - 1.0;
                 y = (2.0 * Math.random()) - 1.0;
                 s = (x * x) + (y * y);
             }
-            /**
-             * Construct the 3-dimensional random unit vector.
-             */
+
+            // Construct the 3-dimensional random unit vector.
             vector[2] = 1.0 - 2.0 * s;
             s = 2.0 * sqrt(1.0 - s);
             vector[1] = s * y;
@@ -5954,9 +5919,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private int mstart, mstop;
             private int isum, itemp, tcube;
             private final int mxcube = 15;
-            private final int inov[] = new int[MAXARC];
-            private final int cube[][][][] = new int[2][mxcube][mxcube][mxcube];
-            //private double evol, earea;
+            private final int[] inov = new int[MAXARC];
+            private final int[][][][] cube = new int[2][mxcube][mxcube][mxcube];
             private double xmin, ymin, zmin;
             private double xmax, ymax, zmax;
             private double aa, bb, temp, phi_term;
@@ -5978,15 +5942,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double xr, yr, zr;
             private double dist2, vdwsum;
             private double zstep;
-            private final double arci[] = new double[MAXARC];
-            private final double arcf[] = new double[MAXARC];
-            private final double dx[] = new double[MAXARC];
-            private final double dy[] = new double[MAXARC];
-            private final double dsq[] = new double[MAXARC];
-            private final double d[] = new double[MAXARC];
-            private boolean ttok, cinsp, cintp;
-            private final double vdwrad[] = new double[nAtoms];
-            private final double dex[][] = new double[3][nAtoms];
+            private final double[] arci = new double[MAXARC];
+            private final double[] arcf = new double[MAXARC];
+            private final double[] dx = new double[MAXARC];
+            private final double[] dy = new double[MAXARC];
+            private final double[] dsq = new double[MAXARC];
+            private final double[] d = new double[MAXARC];
+            private boolean ttok;
+            private final double[] vdwrad = new double[nAtoms];
+            private final double[][] dex = new double[3][nAtoms];
 
             // module limits
             double vdwcut, chgcut;
@@ -5994,13 +5958,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             double vdwtaper, chgtaper;
             double dpltaper, mpoletaper;
             double ewaldcut, usolvcut;
-            boolean use_ewald, use_lights;
-            boolean use_list, use_vlist;
-            boolean use_clist, use_mlist;
-            boolean use_ulist;
 
             // module nonpol
-            double solvprs, surften;
+            double solvprs;
             double spcut, spoff;
             double stcut, stoff;
 
@@ -6034,10 +5994,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 sharedVolumeCavitation.addAndGet(ecav);
             }
 
-            public void setRadius() {
-                /**
-                 * Initialize minimum and maximum range of atoms.
-                 */
+            void setRadius() {
+                // Initialize minimum and maximum range of atoms.
                 pix2 = 2.0 * PI;
                 rmax = 0.0;
                 xmin = x[0];
@@ -6047,10 +6005,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 zmin = z[0];
                 zmax = z[0];
 
-                /**
-                 * Assign van der Waals radii to the atoms; note that the radii
-                 * are incremented by the size of the probe; then get the
-                 * maximum and minimum ranges of atoms.
+                /*
+                  Assign van der Waals radii to the atoms; note that the radii
+                  are incremented by the size of the probe; then get the
+                  maximum and minimum ranges of atoms.
                  */
                 for (int i = 0; i < nAtoms; i++) {
                     radius[i] = atoms[i].getVDWType().radius / 2.0;
@@ -6090,7 +6048,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             /**
              * Find the analytical volume and surface area.
              */
-            public void calcVolume() {
+            void calcVolume() {
                 double volume = 0;
                 double area = 0;
 
@@ -6105,13 +6063,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 vam(volume, area);
             }
 
-            public void getVector(double ai[], double temp[][], int index) {
+            void getVector(double[] ai, double[][] temp, int index) {
                 ai[0] = temp[0][index];
                 ai[1] = temp[1][index];
                 ai[2] = temp[2][index];
             }
 
-            public void getVector(double ai[], double temp[][][], int index1, int index2) {
+            void getVector(double[] ai, double[][][] temp, int index1, int index2) {
                 ai[0] = temp[0][index1][index2];
                 ai[1] = temp[1][index1][index2];
                 ai[2] = temp[2][index1][index2];
@@ -6122,55 +6080,43 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * interface between two atoms, and finds the torus radius, center
              * and axis.
              */
-            public boolean gettor(int ia, int ja, double torcen[], double torad[], double torax[]) {
+            boolean gettor(int ia, int ja, double[] torcen, double[] torad, double[] torax) {
 
                 double dij, temp;
                 double temp1, temp2;
-                double vij[] = new double[3];
-                double uij[] = new double[3];
-                double bij[] = new double[3];
-                double ai[] = new double[3];
-                double aj[] = new double[3];
+                double[] vij = new double[3];
+                double[] uij = new double[3];
+                double[] bij = new double[3];
+                double[] ai = new double[3];
+                double[] aj = new double[3];
 
-                /**
-                 * Get the distance between the two atoms.
-                 */
+                // Get the distance between the two atoms.
                 ttok = false;
                 getVector(ai, a, ia);
                 getVector(aj, a, ja);
-                dij = VectorMath.dist(ai, aj);
+                dij = dist(ai, aj);
 
-                /**
-                 * Find a unit vector along interatomic (torus) axis.
-                 */
+                // Find a unit vector along interatomic (torus) axis.
                 for (int k = 0; k < 3; k++) {
                     vij[k] = a[k][ja] - a[k][ia];
                     uij[k] = vij[k] / dij;
                 }
 
-                /**
-                 * Find coordinates of the center of the torus.
-                 */
+                // Find coordinates of the center of the torus.
                 temp = 1.0 + ((radius[ia] + probe) * (radius[ia] + probe) - (radius[ja] + probe) * (radius[ja] + probe)) / (dij * dij);
                 for (int k = 0; k < 3; k++) {
                     bij[k] = a[k][ia] + 0.5 * vij[k] * temp;
                 }
 
-                /**
-                 * Skip if atoms too far apart (should not happen).
-                 */
+                // Skip if atoms too far apart (should not happen).
                 temp1 = (radius[ia] + radius[ja] + 2.0 * probe) * (radius[ia] + radius[ja] + 2.0 * probe) - dij * dij;
                 if (temp1 >= 0.0) {
 
-                    /**
-                     * Skip if one atom is inside the other.
-                     */
+                    // Skip if one atom is inside the other.
                     temp2 = dij * dij - (radius[ia] - radius[ja]) * (radius[ia] - radius[ja]);
                     if (temp2 >= 0.0) {
 
-                        /**
-                         * Store the torus radius, center, and axis.
-                         */
+                        // Store the torus radius, center, and axis.
                         ttok = true;
                         torad[0] = sqrt(temp1 * temp2) / (2.0 * dij);
                         for (int k = 0; k < 3; k++) {
@@ -6197,21 +6143,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 int jmincls = 0;
                 int jmold;
                 int ncls, nclsa;
-                int clsa[] = new int[maxclsa];
-                /**
-                 * Temporary neighbor list, before sorting.
-                 */
-                int tempNeighborList[] = new int[maxclsa];
+                int[] clsa = new int[maxclsa];
+
+                // Temporary neighbor list, before sorting.
+                int[] tempNeighborList = new int[maxclsa];
                 double radmax, width;
                 double sum, sumi;
                 double d2, r2;
                 double vect1, vect2, vect3;
-                /**
-                 * Minimum atomic coordinates (cube corner).
-                 */
-                double minAtomicCoordinates[] = new double[3];
-                double ai[] = new double[3];
-                double aj[] = new double[3];
+
+                // Minimum atomic coordinates (cube corner).
+                double[] minAtomicCoordinates = new double[3];
+                double[] ai = new double[3];
+                double[] aj = new double[3];
 
                 /*
                  * Ignore all atoms that are completely inside another atom;
@@ -6222,7 +6166,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         getVector(ai, a, i);
                         for (int j = i + 1; j < nAtoms; j++) {
                             getVector(aj, a, j);
-                            d2 = VectorMath.dist2(ai, aj);
+                            d2 = dist2(ai, aj);
                             r2 = (radius[i] - radius[j]) * (radius[i] - radius[j]);
                             if (!skip[j] && d2 < r2) {
                                 if (radius[i] < radius[j]) {
@@ -6235,9 +6179,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Check for new coordinate minima and radii maxima.
-                 */
+                // Check for new coordinate minima and radii maxima.
                 radmax = 0.0;
                 for (int k = 0; k < 3; k++) {
                     minAtomicCoordinates[k] = a[k][0];
@@ -6253,15 +6195,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Calculate width of cube from maximum
-                 * atom radius and probe radius.
-                 */
+                // Calculate width of cube from maximum atom radius and probe radius.
                 width = 2.0 * (radmax + probe);
 
-                /**
-                 * Set up cube arrays; first the integer coordinate arrays.
-                 */
+                // Set up cube arrays; first the integer coordinate arrays.
                 for (int i = 0; i < nAtoms; i++) {
                     for (int k = 0; k < 3; k++) {
                         cubeCoordinates[k][i] = (int) ((a[k][i] - minAtomicCoordinates[k]) / width);
@@ -6275,9 +6212,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Initialize head pointer and srn=2 arrays.
-                 */
+                // Initialize head pointer and srn=2 arrays.
                 for (int i = 0; i < MAXCUBE; i++) {
                     for (int j = 0; j < MAXCUBE; j++) {
                         for (int k = 0; k < MAXCUBE; k++) {
@@ -6288,20 +6223,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Initialize linked list pointers.
-                 */
+                // Initialize linked list pointers.
                 fill(nextAtomPointer, -1);
 
-                /**
-                 * Set up head and later pointers for each atom.
-                 */
+                // Set up head and later pointers for each atom.
                 outerloop:
                 for (iatom = 0; iatom < nAtoms; iatom++) {
 
-                    /**
-                     * Skip atoms with surface request numbers of zero.
-                     */
+                    // Skip atoms with surface request numbers of zero.
                     if (skip[iatom]) {
                         continue;
                     }
@@ -6310,51 +6239,41 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     int j = cubeCoordinates[1][iatom];
                     int k = cubeCoordinates[2][iatom];
                     if (firstAtomPointer[i][j][k] <= -1) {
-                        /**
-                         * First atom in this cube.
-                         */
+                        // First atom in this cube.
                         firstAtomPointer[i][j][k] = iatom;
                     } else {
                         int counter = 1;
-                        /**
-                         * Add to end of linked list.
-                         */
+                        // Add to end of linked list.
                         iptr = firstAtomPointer[i][j][k];
                         innerloop:
                         for (i = 0; i < counter; i++) {
                             getVector(aj, a, iptr);
-                            /**
-                             * Check for duplicate atoms, turn off one of them.
-                             */
-                            if (VectorMath.dist2(ai, aj) <= 0.0) {
+
+                            // Check for duplicate atoms, turn off one of them.
+                            if (dist2(ai, aj) <= 0.0) {
                                 skip[iatom] = true;
                                 continue outerloop;
                             }
-                            /**
-                             * Move on down the list.
-                             */
+
+                            // Move on down the list.
                             if (nextAtomPointer[iptr] <= -1.0) {
                                 continue;
                             }
                             iptr = nextAtomPointer[iptr];
                             counter++;
                         }
-                        /**
-                         * Store atom number.
-                         */
+
+                        // Store atom number.
                         nextAtomPointer[iptr] = iatom;
                     }
-                    /**
-                     * Check for surfaced atom.
-                     */
+
+                    // Check for surfaced atom.
                     if (!skip[iatom]) {
                         activeCube[i][j][k] = true;
                     }
                 }
 
-                /**
-                 * Check if this cube or any adjacent cube has active atoms.
-                 */
+                // Check if this cube or any adjacent cube has active atoms.
                 for (int k = 0; k < MAXCUBE; k++) {
                     for (int j = 0; j < MAXCUBE; j++) {
                         for (int i = 0; i < MAXCUBE; i++) {
@@ -6374,10 +6293,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
                 ncls = -1;
 
-                /**
-                 * Zero pointers for atom and find its cube.
-                 */
-                outerfor:
+                // Zero pointers for atom and find its cube.
                 for (int i = 0; i < nAtoms; i++) {
                     nclsa = -1;
                     nosurf[i] = skip[i];
@@ -6390,34 +6306,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     icj = cubeCoordinates[1][i];
                     ick = cubeCoordinates[2][i];
 
-                    /**
-                     * Skip iatom if its cube and adjoining cubes contain only
-                     * blockers.
-                     */
+                    // Skip iatom if its cube and adjoining cubes contain only blockers.
                     if (!activeAdjacentCube[ici][icj][ick]) {
                         continue;
                     }
                     sumi = 2.0 * probe + radius[i];
-                    /**
-                     * Check iatom cube and adjacent cubes for neighboring
-                     * atoms.
-                     */
-                    for2:
-                    for (jck = Math.max(ick - 1, 0); jck < Math.min(ick + 2, MAXCUBE); jck++) {
-                        for3:
-                        for (jcj = Math.max(icj - 1, 0); jcj < Math.min(icj + 2, MAXCUBE); jcj++) {
+
+                    // Check iatom cube and adjacent cubes for neighboring atoms.
+                    for (jck = max(ick - 1, 0); jck < min(ick + 2, MAXCUBE); jck++) {
+                        for (jcj = max(icj - 1, 0); jcj < min(icj + 2, MAXCUBE); jcj++) {
                             for4:
-                            for (jci = Math.max(ici - 1, 0); jci < Math.min(ici + 2, MAXCUBE); jci++) {
+                            for (jci = max(ici - 1, 0); jci < min(ici + 2, MAXCUBE); jci++) {
                                 int j = firstAtomPointer[jci][jcj][jck];
                                 int counter = 1;
-                                for5:
                                 for (int q = 0; q < counter; q++) {
-                                    for6:
                                     for (int z = 0; z < 1; z++) {
-                                        /**
-                                         * Check for end of linked list for this
-                                         * cube.
-                                         */
+                                        // Check for end of linked list for this cube.
                                         if (j <= -1) {
                                             continue for4;
                                         } else if (i == j) {
@@ -6426,9 +6330,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             continue;
                                         }
 
-                                        /**
-                                         * Distance check.
-                                         */
+                                        // Distance check.
                                         sum = sumi + radius[j];
                                         vect1 = abs(a[0][j] - a[0][i]);
                                         if (vect1 >= sum) {
@@ -6447,10 +6349,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             continue;
                                         }
 
-                                        /**
-                                         * Atoms are neighbors, save atom number
-                                         * in temporary array.
-                                         */
+                                        // Atoms are neighbors, save atom number in temporary array.
                                         if (!skip[j]) {
                                             nosurf[i] = false;
                                         }
@@ -6461,9 +6360,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         }
                                         tempNeighborList[nclsa] = j;
                                     }
-                                    /**
-                                     * Get number of next atom in cube.
-                                     */
+
+                                    // Get number of next atom in cube.
                                     j = nextAtomPointer[j];
                                     counter++;
                                 }
@@ -6473,17 +6371,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (nosurf[i]) {
                         continue;
                     }
-                    /**
-                     * Set up neighbors arrays with jatom in increasing order.
-                     */
+
+                    // Set up neighbors arrays with jatom in increasing order.
                     jmold = -1;
                     for (juse = 0; juse < nclsa + 1; juse++) {
                         jmin = nAtoms;
                         for (jcls = 0; jcls < nclsa + 1; jcls++) {
 
-                            /**
-                             * Don't use ones already sorted.
-                             */
+                            // Don't use ones already sorted.
                             if (tempNeighborList[jcls] > jmold) {
                                 if (tempNeighborList[jcls] < jmin) {
                                     jmin = tempNeighborList[jcls];
@@ -6497,9 +6392,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         clsa[juse] = jatom;
                     }
 
-                    /**
-                     * Set up pointers to first and last neighbors of atom.
-                     */
+                    // Set up pointers to first and last neighbors of atom.
                     if (nclsa > -1) {
                         acls[0][i] = ncls + 1;
                         for (int m = 0; m < nclsa + 1; m++) {
@@ -6521,16 +6414,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * positions by testing for a torus between each atom and its
              * neighbors
              */
-            public void torus() {
+            void torus() {
                 int ia, ja, jn;
                 int ibeg = -1;
                 int iend = -1;
-                double tt[] = new double[3];
-                double ttax[] = new double[3];
+                double[] tt = new double[3];
+                double[] ttax = new double[3];
 
-                /**
-                 * No torus is possible if there is only one atom.
-                 */
+                // No torus is possible if there is only one atom.
                 ntt = -1;
                 for (ia = 0; ia < nAtoms; ia++) {
                     afree[ia] = true;
@@ -6538,67 +6429,53 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 if (nAtoms < 1) {
                     return;
                 }
-                /**
-                 * Get beginning and end pointers to neighbors of this atom.
-                 */
+
+                // Get beginning and end pointers to neighbors of this atom.
                 for (ia = 0; ia < nAtoms; ia++) {
                     if (!nosurf[ia]) {
                         ibeg = acls[0][ia];
                         iend = acls[1][ia];
                     }
 
-                    /**
-                     * Check for no neighbors.
-                     */
+                    // Check for no neighbors.
                     if (ibeg > -1) {
                         for (jn = ibeg; jn < iend + 1; jn++) {
-                            /**
-                             * Clear pointer from neighbor to torus.
-                             */
+
+                            // Clear pointer from neighbor to torus.
                             clst[jn] = -1;
-                            /**
-                             * Get atom number of neighbor.
-                             */
+
+                            // Get atom number of neighbor.
                             ja = cls[jn];
-                            /**
-                             * Don't create torus twice.
-                             */
+
+                            // Don't create torus twice.
                             if (ja >= ia) {
-                                /**
-                                 * Do some solid geometry.
-                                 */
-                                double ttr[] = {0.0};
+
+                                // Do some solid geometry.
+                                double[] ttr = {0.0};
+
                                 ttok = gettor(ia, ja, tt, ttr, ttax);
                                 if (ttok) {
-                                    /**
-                                     * We have temporary torus; set up
-                                     * variables.
-                                     */
+                                    // We have temporary torus; set up variables.
                                     ntt++;
                                     if (ntt > maxtt) {
                                         //logger.severe("Too many Temporary Tori");
                                         throw new EnergyException("Too many Temporary Tori", false);
                                     }
-                                    /**
-                                     * Mark both atoms not free.
-                                     */
+
+                                    // Mark both atoms not free.
                                     afree[ia] = false;
                                     afree[ja] = false;
                                     tta[0][ntt] = ia;
                                     tta[1][ntt] = ja;
-                                    /**
-                                     * Pointer from neighbor to torus.
-                                     */
+
+                                    // Pointer from neighbor to torus.
                                     clst[jn] = ntt;
-                                    /**
-                                     * Initialize torus as both free and buried.
-                                     */
+
+                                    // Initialize torus as both free and buried.
                                     ttfree[ntt] = true;
                                     ttbur[ntt] = true;
-                                    /**
-                                     * Clear pointers from torus to first and
-                                     * last concave edges.
-                                     */
+
+                                    // Clear pointers from torus to first and last concave edges.
                                     ttfe[ntt] = -1;
                                     ttle[ntt] = -1;
                                 }
@@ -6613,31 +6490,29 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * sphere tangent to each triple of neighboring atoms.
              */
             public void place() {
-                int mnb[] = new int[MAXMNB];
-                int ikt[] = new int[MAXMNB];
-                int jkt[] = new int[MAXMNB];
-                int lkcls[] = new int[MAXMNB];
-                double tik[] = new double[3];
-                double tij[] = new double[3];
-                double uij[] = new double[3];
-                double uik[] = new double[3];
-                double uijk[] = new double[3];
-                double bij[] = new double[3];
-                double bijk[] = new double[3];
-                double aijk[] = new double[3];
-                double pijk[] = new double[3];
-                double tijik[] = new double[3];
-                double tempv[] = new double[3];
-                double utb[] = new double[3];
-                double ai[] = new double[3];
-                double ak[] = new double[3];
-                double discls[] = new double[MAXMNB];
-                double sumcls[] = new double[MAXMNB];
+                int[] mnb = new int[MAXMNB];
+                int[] ikt = new int[MAXMNB];
+                int[] jkt = new int[MAXMNB];
+                int[] lkcls = new int[MAXMNB];
+                double[] tik = new double[3];
+                double[] tij = new double[3];
+                double[] uij = new double[3];
+                double[] uik = new double[3];
+                double[] uijk = new double[3];
+                double[] bij = new double[3];
+                double[] bijk = new double[3];
+                double[] aijk = new double[3];
+                double[] pijk = new double[3];
+                double[] tijik = new double[3];
+                double[] tempv = new double[3];
+                double[] utb = new double[3];
+                double[] ai = new double[3];
+                double[] ak = new double[3];
+                double[] discls = new double[MAXMNB];
+                double[] sumcls = new double[MAXMNB];
                 boolean tb, tok, prbok;
 
-                /**
-                 * No possible placement if there are no temporary tori.
-                 */
+                // No possible placement if there are no temporary tori.
                 if (ntt <= -1) {
                     return;
                 }
@@ -6646,32 +6521,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 nfn = -1;
                 nen = -1;
                 nv = -1;
-                /**
-                 * Consider each torus in turn.
-                 */
+
+                // Consider each torus in turn.
                 for (int itt = 0; itt < ntt + 1; itt++) {
-                    /**
-                     * Get atom numbers.
-                     */
+                    // Get atom numbers.
                     int ia = tta[0][itt];
                     int ja = tta[1][itt];
 
-                    /**
-                     * Form mutual neighbor list; clear number of mutual
-                     * neighbors of atoms ia and ja.
-                     */
+                    // Form mutual neighbor list; clear number of mutual neighbors of atoms ia and ja.
                     int nmnb = -1;
 
-                    /**
-                     * Get beginning and end pointers for each atom's neighbor
-                     * list.
-                     */
+                    // Get beginning and end pointers for each atom's neighbor list.
                     int iptr = acls[0][ia];
                     int jptr = acls[0][ja];
-                    /**
-                     * For loops like this help replace go to statements from
-                     * the Tinker code.
-                     */
+
+                    // For loops like this help replace go to statements from the Tinker code.
                     outerloop:
                     for (int i = 0; i < 1; i++) {
 
@@ -6681,22 +6545,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         int iend = acls[1][ia];
                         int jend = acls[1][ja];
 
-                        /**
-                         * Collect mutual neighbors.
-                         */
+                        // Collect mutual neighbors.
                         int counter = 1;
                         int counter2 = 1;
                         for (int t = 0; t < counter2; t++) {
                             for (int q = 0; q < counter; q++) {
-                                /**
-                                 * Check for end of loop.
-                                 */
+
+                                // Check for end of loop.
                                 if (iptr > iend || jptr > jend) {
                                     continue outerloop;
                                 }
-                                /**
-                                 * Go move the lagging pointer.
-                                 */
+
+                                // Go move the lagging pointer.
                                 if (cls[iptr] < cls[jptr]) {
                                     iptr++;
                                     counter++;
@@ -6707,9 +6567,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     counter++;
                                 }
                             }
-                            /**
-                             * Both point at same neighbor; one more mutual
-                             * neighbor save atom number of mutual neighbor.
+                            /*
+                              Both point at same neighbor; one more mutual
+                              neighbor save atom number of mutual neighbor.
                              */
                             nmnb++;
                             if (nmnb > MAXMNB) {
@@ -6717,50 +6577,39 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 throw new EnergyException("Too many Mutual Neighbors", false);
                             }
                             mnb[nmnb] = cls[iptr];
-                            /**
-                             * Save pointers to second and third tori.
-                             */
+
+                            // Save pointers to second and third tori.
                             ikt[nmnb] = clst[iptr];
                             jkt[nmnb] = clst[jptr];
                             iptr++;
                             counter2++;
                         }
                     }
-                    /**
-                     * We have all the mutual neighbors of ia and ja if no
-                     * mutual neighbors, skip to end of loop.
-                     */
+                    // We have all the mutual neighbors of ia and ja if no mutual neighbors, skip to end of loop.
                     if (nmnb <= -1) {
                         ttbur[itt] = false;
                         continue;
                     }
-                    double hij[] = {0.0};
+                    double[] hij = {0.0};
                     ttok = gettor(ia, ja, bij, hij, uij);
                     for (int km = 0; km < nmnb + 1; km++) {
                         int ka = mnb[km];
                         getVector(ak, a, ka);
-                        discls[km] = VectorMath.dist2(bij, ak);
+                        discls[km] = dist2(bij, ak);
                         sumcls[km] = (probe + radius[ka]) * (probe + radius[ka]);
-                        /**
-                         * Initialize link to next farthest out neighbor.
-                         */
+                        // Initialize link to next farthest out neighbor.
                         lkcls[km] = -1;
                     }
-                    /**
-                     * Set up a linked list of neighbors in order of increasing
-                     * distance from ia-ja torus center.
-                     */
+
+                    // Set up a linked list of neighbors in order of increasing distance from ia-ja torus center.
                     int lkf = 0;
                     for (int z = 0; z < 1; z++) {
                         if (nmnb <= 0) {
                             continue;
                         }
-                        /**
-                         * Put remaining neighbors in linked list at proper
-                         * position.
-                         */
+                        // Put remaining neighbors in linked list at proper position.
                         for (l = 1; l < nmnb + 1; l++) {
-                            //if (!move) {
+
                             l1 = -1;
                             l2 = lkf;
                             int counter2 = 1;
@@ -6774,9 +6623,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     counter2++;
                                 }
                             }
-                            /**
-                             * Add to list.
-                             */
+
+                            // Add to list.
                             if (l1 == -1) {
                                 lkf = l;
                                 lkcls[l] = l2;
@@ -6786,82 +6634,69 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                         }
                     }
-                    /**
-                     * Loop through mutual neighbors.
-                     */
-                    for2:
+                    // Loop through mutual neighbors.
                     for (int km = 0; km < nmnb + 1; km++) {
-                        /**
-                         * Get atom number of neighbors.
-                         */
+
+                        // Get atom number of neighbors.
                         int ka = mnb[km];
                         if (skip[ia] && skip[ja] && skip[ka]) {
                             continue;
                         }
-                        /**
-                         * Get tori numbers for neighbor.
-                         */
+
+                        // Get tori numbers for neighbor.
                         int ik = ikt[km];
                         int jk = jkt[km];
 
-                        /**
-                         * Possible new triple, do some geometry to retrieve
-                         * saddle center, axis and radius.
-                         */
+                        // Possible new triple, do some geometry to retrieve saddle center, axis and radius.
                         prbok = false;
                         tb = false;
-                        double rij[] = {0.0};
+                        double[] rij = {0.0};
                         double hijk = 0.0;
                         tok = gettor(ia, ja, tij, rij, uij);
                         for (int w = 0; w < 1; w++) {
                             if (tok) {
                                 getVector(ai, a, ka);
-                                double dat2 = VectorMath.dist2(ai, tij);
+                                double dat2 = dist2(ai, tij);
                                 double rad2 = (radius[ka] + probe) * (radius[ka] + probe) - rij[0] * rij[0];
-                                /**
-                                 * If "ka" less than "ja", then all we care
-                                 * about is whether the torus is buried.
-                                 */
+
+                                // If "ka" less than "ja", then all we care about is whether the torus is buried.
                                 if (ka < ja) {
                                     if (rad2 <= 0.0 || dat2 > rad2) {
                                         continue;
                                     }
                                 }
 
-                                double rik[] = {0.0};
+                                double[] rik = {0.0};
                                 tok = gettor(ia, ka, tik, rik, uik);
                                 if (!tok) {
                                     continue;
                                 }
-                                double dotijk = VectorMath.dot(uij, uik);
+                                double dotijk = dot(uij, uik);
                                 dotijk = check(dotijk);
                                 double wijk = acos(dotijk);
                                 double swijk = sin(wijk);
 
-                                /**
-                                 * If the three atoms are colinear, then there
-                                 * is no probe placement; but we still care
-                                 * whether the torus is buried by atom "k".
-                                 */
+                                // If the three atoms are colinear, then there is no probe placement; but we still care
+                                // whether the torus is buried by atom "k".
                                 if (swijk == 0.0) {
                                     tb = (rad2 > 0.0 && dat2 <= rad2);
                                     continue;
                                 }
-                                VectorMath.cross(uij, uik, uijk);
+                                cross(uij, uik, uijk);
                                 for (int k = 0; k < 3; k++) {
                                     uijk[k] = uijk[k] / swijk;
                                 }
-                                VectorMath.cross(uijk, uij, utb);
+                                cross(uijk, uij, utb);
                                 for (int k = 0; k < 3; k++) {
                                     tijik[k] = tik[k] - tij[k];
                                 }
-                                double dotut = VectorMath.dot(uik, tijik);
+                                double dotut = dot(uik, tijik);
                                 double fact = dotut / swijk;
                                 for (int k = 0; k < 3; k++) {
                                     bijk[k] = tij[k] + utb[k] * fact;
                                 }
                                 getVector(ai, a, ia);
-                                double dba = VectorMath.dist2(ai, bijk);
+                                double dba = dist2(ai, bijk);
                                 double rip2 = (radius[ia] + probe) * (radius[ia] + probe);
                                 double rad = rip2 - dba;
                                 if (rad < 0.0) {
@@ -6878,22 +6713,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             continue;
                         }
 
-                        /**
-                         * Check for duplicate triples or any possible probe
-                         * positions.
-                         */
+                        // Check for duplicate triples or any possible probe positions.
                         if (ka < ja || !prbok) {
                             continue;
                         }
-                        /**
-                         * Altitude vector.
-                         */
+
+                        // Altitude vector.
                         for (int k = 0; k < 3; k++) {
                             aijk[k] = hijk * uijk[k];
                         }
-                        /**
-                         * We try two probe placements.
-                         */
+
+                        // We try two probe placements.
                         for3:
                         for (int ip = 0; ip < 2; ip++) {
                             for (int k = 0; k < 3; k++) {
@@ -6903,15 +6733,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     pijk[k] = bijk[k] - aijk[k];
                                 }
                             }
-                            /**
-                             * Mark three tori not free.
-                             */
+
+                            // Mark three tori not free.
                             ttfree[itt] = false;
                             ttfree[ik] = false;
                             ttfree[jk] = false;
-                            /**
-                             * Check for collisions.
-                             */
+
+                            // Check for collisions.
                             int lm = lkf;
                             int counter3 = 1;
                             for4:
@@ -6920,50 +6748,38 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     if (lm < 0) {
                                         continue for4;
                                     }
-                                    /**
-                                     * Get atom number of mutual neighbor.
-                                     */
+
+                                    // Get atom number of mutual neighbor.
                                     int la = mnb[lm];
-                                    /**
-                                     * Must not equal third atom.
-                                     */
+                                    // Must not equal third atom.
                                     if (la == ka) {
                                         continue;
                                     }
                                     getVector(ak, a, la);
-                                    /**
-                                     * Compare distance to sum of radii.
-                                     */
-                                    if (VectorMath.dist2(pijk, ak) <= sumcls[lm]) {
+                                    // Compare distance to sum of radii.
+                                    if (dist2(pijk, ak) <= sumcls[lm]) {
                                         continue for3;
                                     }
                                 }
                                 lm = lkcls[lm];
                                 counter3++;
                             }
-                            /**
-                             * We have a new probe position.
-                             */
+                            // We have a new probe position.
                             np++;
                             if (np > maxp) {
                                 //logger.severe("Too many Probe Positions");
                                 throw new EnergyException("Too many Probe Positions", false);
                             }
-                            /**
-                             * Mark three tori not buried.
-                             */
+                            // Mark three tori not buried.
                             ttbur[itt] = false;
                             ttbur[ik] = false;
                             ttbur[jk] = false;
-                            /**
-                             * Store probe center.
-                             */
+                            // Store probe center.
                             for (int k = 0; k < 3; k++) {
                                 p[k][np] = pijk[k];
                             }
-                            /**
-                             * Calculate vectors from probe to atom centers.
-                             */
+
+                            // Calculate vectors from probe to atom centers.
                             if (nv + 3 > maxv) {
                                 //logger.severe("Too many Vertices");
                                 throw new EnergyException("Too many Vertices", false);
@@ -6980,61 +6796,42 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             //        matrix[a++] = v[b][nv + c + 1];
                             //    }
                             //}
-                            /**
-                             * Calculate determinant of vectors defining
-                             * triangle.
-                             */
-                            //double det = VectorMath.determinant3(matrix);
+
+                            // Calculate determinant of vectors defining triangle.
                             double det = v[0][nv + 1] * v[1][nv + 2] * v[2][nv + 3]
                                     + v[0][nv + 2] * v[1][nv + 3] * v[2][nv + 1]
                                     + v[0][nv + 3] * v[1][nv + 1] * v[2][nv + 2]
                                     - v[0][nv + 3] * v[1][nv + 2] * v[2][nv + 1]
                                     - v[0][nv + 2] * v[1][nv + 1] * v[2][nv + 3]
                                     - v[0][nv + 1] * v[1][nv + 3] * v[2][nv + 2];
-                            /**
-                             * Now add probe coordinates to vertices.
-                             */
+                            // Now add probe coordinates to vertices.
                             for (int k = 0; k < 3; k++) {
                                 v[k][nv + 1] = p[k][np] + (v[k][nv + 1] * probe / (radius[ia] + probe));
                                 v[k][nv + 2] = p[k][np] + (v[k][nv + 2] * probe / (radius[ja] + probe));
                                 v[k][nv + 3] = p[k][np] + (v[k][nv + 3] * probe / (radius[ka] + probe));
                             }
-                            /**
-                             * Want the concave face to have counter-clockwise
-                             * orientation.
-                             */
+                            // Want the concave face to have counter-clockwise orientation.
                             if (det > 0.0) {
-                                /**
-                                 * Swap second and third vertices.
-                                 */
+                                // Swap second and third vertices.
                                 for (int k = 0; k < 3; k++) {
                                     tempv[k] = v[k][nv + 2];
                                     v[k][nv + 2] = v[k][nv + 3];
                                     v[k][nv + 3] = tempv[k];
                                 }
-                                /**
-                                 * Set up pointers from probe to atoms.
-                                 */
+                                // Set up pointers from probe to atoms.
                                 pa[0][np] = ia;
                                 pa[1][np] = ka;
                                 pa[2][np] = ja;
-                                /**
-                                 * Set pointers from vertices to atoms.
-                                 */
+                                // Set pointers from vertices to atoms.
                                 va[nv + 1] = ia;
                                 va[nv + 2] = ka;
                                 va[nv + 3] = ja;
-                                /**
-                                 * Insert concave edges into linked lists for
-                                 * appropriate tori.
-                                 */
+                                // Insert concave edges into linked lists for appropriate tori.
                                 inedge(nen + 1, ik);
                                 inedge(nen + 2, jk);
                                 inedge(nen + 3, itt);
                             } else {
-                                /**
-                                 * Similarly, if face already counter-clockwise.
-                                 */
+                                // Similarly, if face already counter-clockwise.
                                 pa[0][np] = ia;
                                 pa[1][np] = ja;
                                 pa[2][np] = ka;
@@ -7045,22 +6842,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 inedge(nen + 2, jk);
                                 inedge(nen + 3, ik);
                             }
-                            /**
-                             * Set up pointers from vertices to probe.
-                             */
+                            // Set up pointers from vertices to probe.
                             for (int kv = 1; kv < 4; kv++) {
                                 vp[nv + kv] = np;
                             }
-                            /**
-                             * Set up concave edges and concave face.
-                             */
+                            // Set up concave edges and concave face.
                             if (nen + 3 > maxen) {
                                 //logger.severe("Too many Concave Edges");
                                 throw new EnergyException("Too many Concave Edges", false);
                             }
-                            /**
-                             * Edges point to vertices.
-                             */
+                            // Edges point to vertices.
                             env[0][nen + 1] = nv + 1;
                             env[1][nen + 1] = nv + 2;
                             env[0][nen + 2] = nv + 2;
@@ -7071,16 +6862,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 //logger.severe("Too many Concave Faces");
                                 throw new EnergyException("Too many Concave Faces", false);
                             }
-                            /**
-                             * Face points to edges.
-                             */
+                            // Face points to edges.
                             for (int ke = 0; ke < 3; ke++) {
                                 fnen[ke][nfn + 1] = nen + ke + 1;
                             }
-                            /**
-                             * Increment counters for number of faces, edges,
-                             * and vertices.
-                             */
+                            // Increment counters for number of faces, edges, and vertices.
                             nfn++;
                             nen += 3;
                             nv += 3;
@@ -7093,10 +6879,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * The inedge method inserts a concave edge into the linked list for
              * its temporary torus.
              */
-            public void inedge(int edgeNumber, int torusNumber) {
-                /**
-                 * Check for a serious error in the calling arguments.
-                 */
+            void inedge(int edgeNumber, int torusNumber) {
+                // Check for a serious error in the calling arguments.
                 if (edgeNumber <= -1) {
                     //logger.severe("Bad Edge Number in INEDGE");
                     throw new EnergyException("Bad Edge Number in INEDGE", false);
@@ -7105,9 +6889,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     //logger.severe("Bad Torus Number in INEDGE");
                     throw new EnergyException("Bad Torus Number in INEDGE", false);
                 }
-                /**
-                 * Set beginning of list or add to end.
-                 */
+                // Set beginning of list or add to end.
                 if (ttfe[torusNumber] == -1) {
                     ttfe[torusNumber] = edgeNumber;
                     enext[edgeNumber] = -1;
@@ -7124,28 +6906,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * temporary tori arrays to the final tori arrays.
              */
             public void compress() {
-                double ai[] = new double[3];
-                double aj[] = new double[3];
-                /**
-                 * Initialize the number of non-buried tori.
-                 */
+                double[] ai = new double[3];
+                double[] aj = new double[3];
+                // Initialize the number of non-buried tori.
                 nt = -1;
                 if (ntt <= -1) {
                     return;
                 }
-                /**
-                 * If torus is free, then it is not buried; skip to end of loop
-                 * if buried torus.
-                 */
-                double trtemp[] = {0};
+                // If torus is free, then it is not buried; skip to end of loop if buried torus.
+                double[] trtemp = {0};
                 for (int itt = 0; itt < ntt + 1; itt++) {
                     if (ttfree[itt]) {
                         ttbur[itt] = false;
                     }
                     if (!ttbur[itt]) {
-                        /**
-                         * First, transfer information.
-                         */
+                        // First, transfer information.
                         nt++;
                         if (nt > maxt) {
                             //logger.severe("Too many non-buried tori.");
@@ -7167,9 +6942,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         ta[1][nt] = ja;
                         tfree[nt] = ttfree[itt];
                         tfe[nt] = ttfe[itt];
-                        /**
-                         * Special check for inconsistent probes.
-                         */
+                        // Special check for inconsistent probes.
                         int iptr = tfe[nt];
                         int ned = -1;
                         while (iptr != -1) {
@@ -7195,27 +6968,25 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * The saddles method constructs circles, convex edges, and saddle
              * faces.
              */
-            public void saddles() {
+            void saddles() {
                 final int maxent = 500;
                 int k, ia, in, ip;
                 int it, iv, itwo;
                 int ien, ient, nent;
                 int l1, l2, m1, n1;
-                int ten[] = new int[maxent];
-                int nxtang[] = new int[maxent];
+                int[] ten = new int[maxent];
+                int[] nxtang = new int[maxent];
                 double triple, factor;
                 double dtev, dt;
-                double ai[] = new double[3];
-                double aj[] = new double[3];
-                double ak[] = new double[3];
-                double atvect[] = new double[3];
-                double teang[] = new double[maxent];
-                double tev[][] = new double[3][maxent];
-                boolean sdstrt[] = new boolean[maxent];
+                double[] ai = new double[3];
+                double[] aj = new double[3];
+                double[] ak = new double[3];
+                double[] atvect = new double[3];
+                double[] teang = new double[maxent];
+                double[][] tev = new double[3][maxent];
+                boolean[] sdstrt = new boolean[maxent];
 
-                /**
-                 * Zero the number of circles, convex edges, and saddle faces.
-                 */
+                // Zero the number of circles, convex edges, and saddle faces.
                 nc = -1;
                 nep = -1;
                 nfs = -1;
@@ -7224,107 +6995,86 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     ale[ia] = -1;
                     abur[ia] = true;
                 }
-                /**
-                 * No saddle faces if no tori.
-                 */
+                // No saddle faces if no tori.
                 if (nt < 0) {
                     return;
                 }
-                /**
-                 * Cycle through tori.
-                 */
+
+                // Cycle through tori.
                 for (it = 0; it < nt + 1; it++) {
                     if (skip[ta[0][it]] && skip[ta[1][it]]) {
                         continue;
                     }
-                    /**
-                     * Set up two circles.
-                     */
+
+                    // Set up two circles.
                     for (in = 0; in < 2; in++) {
                         ia = ta[in][it];
-                        /**
-                         * Mark atom not buried.
-                         */
+
+                        // Mark atom not buried.
                         abur[ia] = false;
-                        /**
-                         * Vector from atom to torus center.
-                         */
+
+                        // Vector from atom to torus center.
                         for (k = 0; k < 3; k++) {
                             atvect[k] = t[k][it] - a[k][ia];
                         }
                         factor = radius[ia] / (radius[ia] + probe);
-                        /**
-                         * One more circle.
-                         */
+
+                        // One more circle.
                         nc++;
                         if (nc > maxc) {
                             //logger.severe("Too many Circles");
                             throw new EnergyException("Too many Circles", false);
                         }
-                        /**
-                         * Circle center.
-                         */
+
+                        // Circle center.
                         for (k = 0; k < 3; k++) {
                             c[k][nc] = a[k][ia] + factor * atvect[k];
                         }
-                        /**
-                         * Pointer from circle to atom.
-                         */
+
+                        // Pointer from circle to atom.
                         ca[nc] = ia;
-                        /**
-                         * Pointer from circle to torus.
-                         */
+
+                        // Pointer from circle to torus.
                         ct[nc] = it;
-                        /**
-                         * Circle radius.
-                         */
+
+                        // Circle radius.
                         cr[nc] = factor * tr[it];
                     }
-                    /**
-                     * Skip to special code if free torus.
-                     */
+
+                    // Skip to special code if free torus.
                     outerfor:
                     for (int i = 0; i < 1; i++) {
-                        freetorus:
                         for (int r = 0; r < 1; r++) {
                             if (tfree[it]) {
                                 continue;
                             }
-                            /**
-                             * Now we collect all the concave edges for this
-                             * torus; for each concave edge, calculate vector
-                             * from torus center through probe center and the
-                             * angle relative to first such vector.
+                            /*
+                              Now we collect all the concave edges for this
+                              torus; for each concave edge, calculate vector
+                              from torus center through probe center and the
+                              angle relative to first such vector.
                              */
 
-                            /**
-                             * Clear the number of concave edges for torus.
-                             */
+                            // Clear the number of concave edges for torus.
                             nent = -1;
-                            /**
-                             * Pointer to start of linked list.
-                             */
+
+                            // Pointer to start of linked list.
                             ien = tfe[it];
                             int counter = 1;
                             for (int q = 0; q < counter; counter++) {
                                 if (ien <= -1) {
                                     continue;
                                 }
-                                /**
-                                 * One more concave edge.
-                                 */
+                                // One more concave edge.
                                 nent++;
                                 if (nent > maxent) {
                                     //logger.severe("Too many Edges for Torus");
                                     throw new EnergyException("Too many Edges for Torus", false);
                                 }
-                                /**
-                                 * First vertex of edge.
-                                 */
+                                // First vertex of edge.
                                 iv = env[0][ien];
-                                /**
-                                 * Probe number of vertex.
-                                 */
+
+                                // Probe number of vertex.
                                 ip = vp[iv];
                                 for (k = 0; k < 3; k++) {
                                     tev[k][nent] = p[k][ip] - t[k][it];
@@ -7341,15 +7091,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 for (k = 0; k < 3; k++) {
                                     tev[k][nent] = tev[k][nent] / dtev;
                                 }
-                                /**
-                                 * Store concave edge number.
-                                 */
+
+                                // Store concave edge number.
                                 ten[nent] = ien;
                                 if (nent > 0) {
-                                    /**
-                                     * Calculate angle between this vector and
-                                     * first vector.
-                                     */
+
+                                    // Calculate angle between this vector and first vector.
                                     dt = 0.0;
                                     for (k = 0; k < 3; k++) {
                                         dt += tev[k][0] * tev[k][nent];
@@ -7361,9 +7108,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     if (dt < -1.0) {
                                         dt = -1.0;
                                     }
-                                    /**
-                                     * Store angle.
-                                     */
+
+                                    // Store angle.
                                     teang[nent] = Math.acos(dt);
 
                                     ai[0] = tev[0][0];
@@ -7375,9 +7121,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     ak[0] = tax[0][it];
                                     ak[1] = tax[1][it];
                                     ak[2] = tax[2][it];
-                                    /**
-                                     * Get the sign right.
-                                     */
+
+                                    // Get the sign right.
                                     triple = triple(ai, aj, ak);
                                     if (triple < 0.0) {
                                         teang[nent] = 2.0 * Math.PI - teang[nent];
@@ -7385,16 +7130,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 } else {
                                     teang[0] = 0.0;
                                 }
-                                /**
-                                 * Saddle face starts with this edge if it
-                                 * points parallel to torus axis vector (which
-                                 * goes from first to second atom).
-                                 */
-
+                                // Saddle face starts with this edge if it points parallel to torus axis vector (which
+                                // goes from first to second atom).
                                 sdstrt[nent] = (va[iv] == ta[0][it]);
-                                /**
-                                 * Next edge in list.
-                                 */
+                                // Next edge in list.
                                 ien = enext[ien];
                                 counter++;
                             }
@@ -7406,20 +7145,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 //logger.severe("Odd Number of Edges for Toruss");
                                 throw new EnergyException("Odd Number of Edges for Torus", false);
                             }
-                            /**
-                             * Set up linked list of concave edges in order of
-                             * increasing angle around the torus axis; clear
-                             * second linked (angle-ordered) list pointers.
-                             */
 
+                            // Set up linked list of concave edges in order of increasing angle around the torus axis; clear
+                            // second linked (angle-ordered) list pointers.
                             for (ient = 0; ient < nent + 1; ient++) {
                                 nxtang[ient] = -1;
                             }
                             for (ient = 1; ient < nent + 1; ient++) {
-                                /**
-                                 * We have an entry to put into linked list
-                                 * search for place to put it.
-                                 */
+                                // We have an entry to put into linked list search for place to put it.
                                 l1 = -1;
                                 l2 = 0;
                                 int counter2 = 1;
@@ -7433,11 +7166,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         counter2++;
                                     }
                                 }
-                                /**
-                                 * We are at end of linked list or between l1
-                                 * and l2; insert edge.
-                                 */
-
+                                // We are at end of linked list or between l1 and l2; insert edge.
                                 if (l1 <= -1) {
                                     //logger.severe("Logic Error in SADDLES");
                                     throw new EnergyException("Logic Error in SADDLES", true);
@@ -7445,94 +7174,57 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 nxtang[l1] = ient;
                                 nxtang[ient] = l2;
                             }
-                            /**
-                             * Collect pairs of concave edges into saddles
-                             * create convex edges while you're at it.
-                             */
+                            // Collect pairs of concave edges into saddles create convex edges while you're at it.
                             l1 = 0;
                             int counter3 = 1;
                             for (int t = 0; t < counter3; t++) {
                                 if (l1 <= -1) {
                                     continue outerfor;
                                 }
-                                /**
-                                 * Check for start of saddle.
-                                 */
+                                // Check for start of saddle.
                                 if (sdstrt[l1]) {
-                                    /**
-                                     * One more saddle face.
-                                     */
+
+                                    // One more saddle face.
                                     nfs++;
                                     if (nfs > maxfs) {
                                         //logger.severe("Too many Saddle Faces");
                                         throw new EnergyException("Too many Saddle Faces", false);
                                     }
-                                    /**
-                                     * Get edge number.
-                                     */
+                                    // Get edge number.
                                     ien = ten[l1];
-                                    /**
-                                     * First concave edge of saddle.
-                                     */
+                                    // First concave edge of saddle.
                                     fsen[0][nfs] = ien;
-                                    /**
-                                     * One more convex edge.
-                                     */
+                                    // One more convex edge.
                                     nep++;
                                     if (nep > maxep) {
                                         //logger.severe("Too many Convex Edges");
                                         throw new EnergyException("Too many Convex Edges", false);
                                     }
-                                    /**
-                                     * First convex edge points to second
-                                     * circle.
-                                     */
+                                    // First convex edge points to second circle.
                                     epc[nep] = nc;
-                                    /**
-                                     * Atom circle lies on.
-                                     */
+                                    // Atom circle lies on.
                                     ia = ca[nc];
-                                    /**
-                                     * Insert convex edge into linked list for
-                                     * atom.
-                                     */
+                                    // Insert convex edge into linked list for atom.
                                     ipedge(nep, ia);
-                                    /**
-                                     * First vertex of convex edge is second
-                                     * vertex of concave edge.
-                                     */
+                                    // First vertex of convex edge is second vertex of concave edge.
                                     epv[0][nep] = env[1][ien];
-                                    /**
-                                     * First convex edge of saddle.
-                                     */
+                                    // First convex edge of saddle.
                                     fsep[0][nfs] = nep;
-                                    /**
-                                     * One more convex edge.
-                                     */
+                                    // One more convex edge.
                                     nep++;
                                     if (nep > maxep) {
                                         //logger.severe("Too many Convex Edges");
                                         throw new EnergyException("Too many Convex Edges", false);
                                     }
-                                    /**
-                                     * Second convex edge points to fist circle.
-                                     */
+                                    // Second convex edge points to fist circle.
                                     epc[nep] = nc - 1;
                                     ia = ca[nc - 1];
-                                    /**
-                                     * Insert convex edge into linked list for
-                                     * atom.
-                                     */
+                                    // Insert convex edge into linked list for atom.
                                     ipedge(nep, ia);
-                                    /**
-                                     * Second vertex of second convex edge is
-                                     * first vertex of first concave edge.
-                                     */
+                                    // Second vertex of second convex edge is first vertex of first concave edge.
                                     epv[1][nep] = env[0][ien];
                                     l1 = nxtang[l1];
-                                    /**
-                                     * Wrap around.
-                                     */
+                                    // Wrap around.
                                     if (l1 <= -1) {
                                         l1 = 0;
                                     }
@@ -7546,108 +7238,64 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             throw new EnergyException("Three Starts in a Row", false);
                                         }
                                         n1 = nxtang[m1];
-                                        /**
-                                         * The old switcheroo.
-                                         */
+                                        // The old switcheroo.
                                         nxtang[l1] = n1;
                                         nxtang[m1] = l1;
                                         l1 = m1;
                                     }
                                     ien = ten[l1];
-                                    /**
-                                     * Second concave edge for saddle face.
-                                     */
+                                    // Second concave edge for saddle face.
                                     fsen[1][nfs] = ien;
-                                    /**
-                                     * Second vertex of first convex edge is
-                                     * first vertex of second concave edge.
-                                     */
+                                    // Second vertex of first convex edge is first vertex of second concave edge.
                                     epv[1][nep - 1] = env[0][ien];
-                                    /**
-                                     * First vertex of second convex edge is
-                                     * second vertex of second concave edge.
-                                     */
+                                    // First vertex of second convex edge is second vertex of second concave edge.
                                     epv[0][nep] = env[1][ien];
                                     fsep[1][nfs] = nep;
-                                    /**
-                                     * Quit if we have wrapped around to first
-                                     * edge.
-                                     */
+                                    // Quit if we have wrapped around to first edge.
                                     if (l1 == 0) {
                                         continue outerfor;
                                     }
                                 }
-                                /**
-                                 * Next concave edge.
-                                 */
+                                // Next concave edge.
                                 l1 = nxtang[l1];
                                 counter3++;
                             }
                         }
-                        /**
-                         * Free torus.
-                         */
-                        /**
-                         * Set up entire circles as convex edges for new saddle
-                         * surface; one more saddle face.
-                         */
+                        // Free torus.
+                        // Set up entire circles as convex edges for new saddle surface; one more saddle face.
                         nfs++;
                         if (nfs > maxfs) {
                             //logger.severe("Too many Saddle Faces");
                             throw new EnergyException("Too many Saddle Faces", false);
                         }
-                        /**
-                         * No concave edge for saddle.
-                         */
+                        // No concave edge for saddle.
                         fsen[0][nfs] = -1;
                         fsen[1][nfs] = -1;
-                        /**
-                         * One more convex edge.
-                         */
+                        // One more convex edge.
                         nep++;
                         ia = ca[nc];
-                        /**
-                         * Insert convex edge into linked list of atom.
-                         */
+                        // Insert convex edge into linked list of atom.
                         ipedge(nep, ia);
-                        /**
-                         * No vertices for convex edge.
-                         */
+                        // No vertices for convex edge.
                         epv[0][nep] = -1;
                         epv[1][nep] = -1;
-                        /**
-                         * Pointer from convex edge to second circle.
-                         */
+                        // Pointer from convex edge to second circle.
                         epc[nep] = nc;
-                        /**
-                         * First convex edge for saddle face.
-                         */
+                        // First convex edge for saddle face.
                         fsep[0][nfs] = nep;
-                        /**
-                         * One more convex edge.
-                         */
+                        // One more convex edge.
                         nep++;
                         ia = ca[nc - 1];
-                        /**
-                         * Insert second convex edge into linked list.
-                         */
+                        // Insert second convex edge into linked list.
                         ipedge(nep, ia);
-                        /**
-                         * No vertices for convex edge.
-                         */
+                        // No vertices for convex edge.
                         epv[0][nep] = -1;
                         epv[1][nep] = -1;
-                        /**
-                         * Convex edge points to first circle.
-                         */
+                        // Convex edge points to first circle.
                         epc[nep] = nc - 1;
-                        /**
-                         * Second convex edge for saddle face.
-                         */
+                        // Second convex edge for saddle face.
                         fsep[1][nfs] = nep;
-                        /**
-                         * Buried torus; do nothing with it.
-                         */
+                        // Buried torus; do nothing with it.
                     }
                 }
             }
@@ -7657,11 +7305,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * as a service routine by the Connolly surface area and volume
              * computation.
              */
-            public double triple(double x[], double y[], double z[]) {
+            public double triple(double[] x, double[] y, double[] z) {
                 double triple;
-                double xy[] = new double[3];
-                VectorMath.cross(x, y, xy);
-                triple = VectorMath.dot(xy, z);
+                double[] xy = new double[3];
+                cross(x, y, xy);
+                triple = dot(xy, z);
                 return triple;
             }
 
@@ -7672,10 +7320,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param edgeNumber
              * @param atomNumber
              */
-            public void ipedge(int edgeNumber, int atomNumber) {
-                /**
-                 * First, check for an error condition.
-                 */
+            void ipedge(int edgeNumber, int atomNumber) {
+                // First, check for an error condition.
                 if (edgeNumber <= -1) {
                     //logger.severe("Bad Edge Number in IPEDGE");
                     throw new EnergyException("Bad Edge Number in IPEDGE", true);
@@ -7684,9 +7330,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     //logger.severe("Bad Atom Number in IPEDGE");
                     throw new EnergyException("Bad Atom Number in IPEDGE", true);
                 }
-                /**
-                 * Set beginning of list or add to end.
-                 */
+                // Set beginning of list or add to end.
                 if (afe[atomNumber] == -1) {
                     afe[atomNumber] = edgeNumber;
                     epnext[edgeNumber] = -1;
@@ -7705,94 +7349,72 @@ public class GeneralizedKirkwood implements LambdaInterface {
             public void contact() {
                 final int maxepa = 300;
                 final int maxcypa = 100;
-                int jepa = 0;
-                int aic[] = new int[maxepa];
-                int aia[] = new int[maxepa];
-                int aep[] = new int[maxepa];
-                int av[][] = new int[2][maxepa];
-                int ncyepa[] = new int[maxcypa];
-                int cyepa[][] = new int[MAXCYEP][maxcypa];
-                double ai[] = new double[3];
-                double acvect[][] = new double[3][maxepa];
-                double aavect[][] = new double[3][maxepa];
-                double pole[] = new double[3];
-                double acr[] = new double[maxepa];
-                double unvect[] = new double[3];
-                boolean epused[] = new boolean[maxepa];
-                boolean cycy[][] = new boolean[maxcypa][maxcypa];
-                boolean cyused[] = new boolean[maxcypa];
-                boolean samef[][] = new boolean[maxcypa][maxcypa];
+                int jepa;
+                int[] aic = new int[maxepa];
+                int[] aia = new int[maxepa];
+                int[] aep = new int[maxepa];
+                int[][] av = new int[2][maxepa];
+                int[] ncyepa = new int[maxcypa];
+                int[][] cyepa = new int[MAXCYEP][maxcypa];
+                double[] ai = new double[3];
+                double[][] acvect = new double[3][maxepa];
+                double[][] aavect = new double[3][maxepa];
+                double[] pole = new double[3];
+                double[] acr = new double[maxepa];
+                double[] unvect = new double[3];
+                boolean[] epused = new boolean[maxepa];
+                boolean[][] cycy = new boolean[maxcypa][maxcypa];
+                boolean[] cyused = new boolean[maxcypa];
+                boolean[][] samef = new boolean[maxcypa][maxcypa];
 
-                /**
-                 * Zero out the number of cycles and convex faces.
-                 */
+                // Zero out the number of cycles and convex faces.
                 ncy = -1;
                 nfp = -1;
-                /**
-                 * Mark all free atoms not buried.
-                 */
+
+                // Mark all free atoms not buried.
                 for (int ia = 0; ia < nAtoms; ia++) {
                     if (afree[ia]) {
                         abur[ia] = false;
                     }
                 }
-                /**
-                 * Go through all atoms.
-                 */
+
+                // Go through all atoms.
                 firstloop:
                 for (int ia = 0; ia < nAtoms; ia++) {
                     if (skip[ia] || abur[ia]) {
                         continue;
                     }
-                    /**
-                     * Special code for completely solvent-accessible atom.
-                     */
+
+                    // Special code for completely solvent-accessible atom.
                     for (int o = 0; o < 1; o++) {
                         if (afree[ia]) {
                             continue;
                         }
-                        /**
-                         * Gather convex edges for atom Clear number of convex
-                         * edges for atom.
-                         */
+                        // Gather convex edges for atom Clear number of convex edges for atom.
                         int nepa = -1;
-                        /**
-                         * Pointer to first edge.
-                         */
+                        // Pointer to first edge.
                         int iep = afe[ia];
                         int counter = 1;
                         for (int j = 0; j < counter; j++) {
-                            /**
-                             * Check whether finished gathering.
-                             */
+                            // Check whether finished gathering.
                             if (iep <= -1) {
                                 continue;
                             }
-                            /**
-                             * One more edge.
-                             */
+                            // One more edge.
                             nepa++;
                             if (nepa > maxepa) {
                                 //logger.severe("Too many Convex Edges for Atom");
                                 throw new EnergyException("Too many Convex Edges for Atom", false);
                             }
-                            /**
-                             * Store vertices of edge.
-                             */
+                            // Store vertices of edge.
                             av[0][nepa] = epv[0][iep];
                             av[1][nepa] = epv[1][iep];
-                            /**
-                             * Store convex edge number.
-                             */
+                            // Store convex edge number.
                             aep[nepa] = iep;
                             int ic = epc[iep];
-                            /**
-                             * Store circle number.
-                             */
+                            // Store circle number.
                             aic[nepa] = ic;
-                            /**
-                             * Get neighboring atom.
-                             */
+                            // Get neighboring atom.
                             int it = ct[ic];
                             int ia2;
                             if (ta[0][it] == ia) {
@@ -7800,27 +7422,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             } else {
                                 ia2 = ta[0][it];
                             }
-                            /**
-                             * Store other atom number, we might need it
-                             * sometime.
-                             */
+                            // Store other atom number, we might need it sometime.
                             aia[nepa] = ia2;
-                            /**
-                             * Vector from atom to circle center; also vector
-                             * from atom to center of neighboring atom sometimes
-                             * we use one vector, sometimes the other.
+                            /*
+                              Vector from atom to circle center; also vector
+                              from atom to center of neighboring atom sometimes
+                              we use one vector, sometimes the other.
                              */
                             for (int k = 0; k < 3; k++) {
                                 acvect[k][nepa] = c[k][ic] - a[k][ia];
                                 aavect[k][nepa] = a[k][ia2] - a[k][ia];
                             }
-                            /**
-                             * Circle radius.
-                             */
+                            // Circle radius.
                             acr[nepa] = cr[ic];
-                            /**
-                             * Pointer to next edge.
-                             */
+                            // Pointer to next edge.
                             iep = epnext[iep];
                             counter++;
                         }
@@ -7828,22 +7443,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             //logger.severe("No Edges for Non-buried, Non-free Atom");
                             throw new EnergyException("No Edges for Non-buried, Non-free Atom", false);
                         }
-                        /**
-                         * Form cycles; initialize all the convex edges as not
-                         * used in cycle.
-                         */
+                        // Form cycles; initialize all the convex edges as not used in cycle.
                         for (int iepa = 0; iepa < nepa + 1; iepa++) {
                             epused[iepa] = false;
                         }
-                        /**
-                         * Save old number of cycles.
-                         */
+                        // Save old number of cycles.
                         int ncyold = ncy;
                         int nused = -1;
                         int ncypa = -1;
-                        /**
-                         * Look for starting edge.
-                         */
+                        // Look for starting edge.
                         int iepa = 0;
                         int counter3 = 1;
                         outerloop:
@@ -7857,54 +7465,34 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 }
                                 continue outerloop;
                             }
-                            /**
-                             * Cannot find starting edge; finished.
-                             */
-                            /**
-                             * Pointer to edge.
-                             */
+                            // Cannot find starting edge; finished.
+                            // Pointer to edge.
                             iep = aep[iepa];
-                            /**
-                             * One edge so far on this cycle.
-                             */
+                            // One edge so far on this cycle.
                             int ncyep = 0;
-                            /**
-                             * One more cycle for atom.
-                             */
+                            // One more cycle for atom.
                             ncypa++;
                             if (ncypa > maxcypa) {
                                 //logger.severe("Too many Cycles per Atom");
                                 throw new EnergyException("Too many Cycles per Atom", false);
                             }
-                            /**
-                             * Mark edge used in cycle.
-                             */
+                            // Mark edge used in cycle.
                             epused[iepa] = true;
                             nused++;
-                            /**
-                             * One more cycle for molecule.
-                             */
+                            // One more cycle for molecule.
                             ncy++;
                             if (ncy > maxcy) {
                                 //logger.severe("Too many Cycles");
                                 throw new EnergyException("Too many Cycles", false);
                             }
-                            /**
-                             * Index of edge in atom cycle array.
-                             */
+                            // Index of edge in atom cycle array.
                             cyepa[ncyep][ncypa] = iepa;
-                            /**
-                             * Store in molecule cycle array a pointer to edge.
-                             */
+                            // Store in molecule cycle array a pointer to edge.
                             cyep[ncyep][ncy] = iep;
-                            /**
-                             * Second vertex of this edge is the vertex to look
-                             * for next as the first vertex of another edge.
-                             */
+                            // Second vertex of this edge is the vertex to look for
+                            // next as the first vertex of another edge.
                             int lookv = av[1][iepa];
-                            /**
-                             * If no vertex, this cycle is finished.
-                             */
+                            // If no vertex, this cycle is finished.
                             for (int t = 0; t < 1; t++) {
                                 if (lookv <= -1) {
                                     continue;
@@ -7912,30 +7500,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 int counter2 = 1;
 
                                 for (int r = 0; r < counter2; r++) {
-                                    /**
-                                     * Look for next connected edge.
-                                     */
+                                    // Look for next connected edge.
                                     outer:
                                     for (jepa = 0; jepa < nepa + 1; jepa++) {
                                         for (int q = 0; q < 1; q++) {
                                             if (epused[jepa]) {
                                                 continue;
                                             }
-                                            /**
-                                             * Check second vertex of iepa
-                                             * versus first vertex of jepa.
-                                             */
+                                            // Check second vertex of iepa versus first vertex of jepa.
                                             if (av[0][jepa] != lookv) {
                                                 continue;
                                             }
-                                            /**
-                                             * Edges are connected pointer to
-                                             * edge.
-                                             */
+                                            // Edges are connected pointer to edge.
                                             iep = aep[jepa];
-                                            /**
-                                             * One more edge for this cycle.
-                                             */
+                                            // One more edge for this cycle.
                                             ncyep++;
                                             if (ncyep > MAXCYEP) {
                                                 //logger.severe("Too many Edges per Cycle");
@@ -7943,22 +7521,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             }
                                             epused[jepa] = true;
                                             nused++;
-                                            /**
-                                             * Store index in local edge array.
-                                             */
+                                            // Store index in local edge array.
                                             cyepa[ncyep][ncypa] = jepa;
-                                            /**
-                                             * Store pointer to edge.
-                                             */
+                                            // Store pointer to edge.
                                             cyep[ncyep][ncy] = iep;
-                                            /**
-                                             * New vertex to look for.
-                                             */
+                                            // New vertex to look for.
                                             lookv = av[1][jepa];
-                                            /**
-                                             * If no vertex, this cycle is in
-                                             * trouble.
-                                             */
+                                            // If no vertex, this cycle is in trouble.
                                             if (lookv <= -1) {
                                                 //logger.severe("Pointer Error in Cycle");
                                                 throw new EnergyException("Pointer Error in Cycle", true);
@@ -7968,50 +7537,34 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         }
                                     }
                                 }
-                                /**
-                                 * It better connect to first edge of cycle.
-                                 */
+                                // It better connect to first edge of cycle.
                                 if (lookv != av[0][iepa]) {
                                     //logger.severe("Cycle does not Close");
                                     throw new EnergyException("Cycle does not Close", true);
                                 }
                             }
-                            /**
-                             * This cycle is finished, store number of edges in
-                             * cycle.
-                             */
+                            // This cycle is finished, store number of edges in cycle.
                             ncyepa[ncypa] = ncyep;
                             cynep[ncy] = ncyep;
-                            /**
-                             * Look for more cycles.
-                             */
+                            // Look for more cycles.
                             if (nused < nepa) {
                                 counter3++;
                             }
                         }
-                        /**
-                         * Compare cycles for inside/outside relation; check to
-                         * see if cycle i is inside cycle j.
-                         */
+                        // Compare cycles for inside/outside relation; check to
+                        // see if cycle i is inside cycle j.
                         for (int icya = 0; icya < ncypa + 1; icya++) {
                             innerloop:
                             for (int jcya = 0; jcya < ncypa + 1; jcya++) {
                                 int jcy = ncyold + jcya + 1;
-                                /**
-                                 * Initialize.
-                                 */
+                                // Initialize.
                                 cycy[icya][jcya] = true;
-                                /**
-                                 * Check for same cycle.
-                                 */
+                                // Check for same cycle.
                                 if (icya == jcya || ncyepa[jcya] < 2) {
                                     continue;
                                 }
-                                /**
-                                 * If cycles i and j have a pair of edges
-                                 * belonging to the same circle, then they are
-                                 * outside each other.
-                                 */
+                                // If cycles i and j have a pair of edges belonging to the same circle,
+                                // then they are outside each other.
                                 for (int icyep = 0; icyep < ncyepa[icya] + 1; icyep++) {
                                     iepa = cyepa[icyep][icya];
                                     int ic = aic[iepa];
@@ -8029,11 +7582,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 ai[0] = aavect[0][iepa];
                                 ai[1] = aavect[1][iepa];
                                 ai[2] = aavect[2][iepa];
-                                double anaa = VectorMath.r(ai);
+                                double anaa = r(ai);
                                 double factor = radius[ia] / anaa;
-                                /**
-                                 * North pole and unit vector pointer south.
-                                 */
+                                // North pole and unit vector pointer south.
                                 for (int k = 0; k < 3; k++) {
                                     pole[k] = factor * aavect[k][iepa] + a[k][ia];
                                     unvect[k] = -aavect[k][iepa] / anaa;
@@ -8041,23 +7592,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 cycy[icya][jcya] = ptincy(pole, unvect, jcy);
                             }
                         }
-                        /**
-                         * Group cycles into faces; direct comparison for i and
-                         * j.
-                         */
+                        // Group cycles into faces; direct comparison for i and j.
                         for (int icya = 0; icya < ncypa + 1; icya++) {
                             for (int jcya = 0; jcya < ncypa + 1; jcya++) {
-                                /**
-                                 * Tentatively say that cycles i and j bound the
-                                 * same face if they are inside each other.
-                                 */
+                                // Tentatively say that cycles i and j bound the
+                                // same face if they are inside each other.
                                 samef[icya][jcya] = (cycy[icya][jcya] && cycy[jcya][icya]);
                             }
                         }
-                        /**
-                         * If i is in exterior of k, and k is in interior of i
-                         * and j, then i and j do not bound the same face.
-                         */
+                        // If i is in exterior of k, and k is in interior of i
+                        // and j, then i and j do not bound the same face.
                         for (int icya = 0; icya < ncypa + 1; icya++) {
                             for (int jcya = 0; jcya < ncypa + 1; jcya++) {
                                 if (icya != jcya) {
@@ -8072,9 +7616,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 }
                             }
                         }
-                        /**
-                         * Fill gaps so that "samef" falls into complete blocks.
-                         */
+                        // Fill gaps so that "samef" falls into complete blocks.
                         for (int icya = 0; icya < ncypa - 1; icya++) {
                             for (int jcya = icya + 1; jcya < ncypa; jcya++) {
                                 if (samef[icya][jcya]) {
@@ -8087,84 +7629,56 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 }
                             }
                         }
-                        /**
-                         * Group cycles belonging to the same face.
-                         */
+                        // Group cycles belonging to the same face.
                         for (int icya = 0; icya < ncypa + 1; icya++) {
                             cyused[icya] = false;
                         }
-                        /**
-                         * Clear number of cycles used in bounding faces.
-                         */
+                        // Clear number of cycles used in bounding faces.
                         nused = -1;
                         for (int icya = 0; icya < ncypa + 1; icya++) {
-                            /**
-                             * Check for already used.
-                             */
+                            // Check for already used.
                             if (cyused[icya]) {
                                 continue;
                             }
-                            /**
-                             * One more convex face.
-                             */
+                            // One more convex face.
                             nfp++;
                             if (nfp > maxfp) {
                                 //logger.severe("Too many Convex Faces");
                                 throw new EnergyException("Too many Convex Faces", false);
                             }
-                            /**
-                             * Clear number of cycles for face.
-                             */
+                            // Clear number of cycles for face.
                             fpncy[nfp] = -1;
-                            /**
-                             * Pointer from face to atom.
-                             */
+                            // Pointer from face to atom.
                             fpa[nfp] = ia;
-                            /**
-                             * Look for all other cycles belonging to same face.
-                             */
+                            // Look for all other cycles belonging to same face.
                             for (int jcya = 0; jcya < ncypa + 1; jcya++) {
-                                /**
-                                 * Check for cycle alraDY used in another face.
-                                 */
+                                // Check for cycle alraDY used in another face.
                                 if (cyused[jcya] || !samef[icya][jcya]) {
                                     continue;
                                 }
-                                /**
-                                 * Mark cycle used.
-                                 */
+                                // Mark cycle used.
                                 cyused[jcya] = true;
                                 nused++;
-                                /**
-                                 * One more cycle for face.
-                                 */
+                                // One more cycle for face.
                                 fpncy[nfp]++;
                                 if (fpncy[nfp] > MAXFPCY) {
                                     //logger.severe("Too many Cycles bounding Convex Face");
                                     throw new EnergyException("Too many Cycles bounding Convex Face", false);
                                 }
                                 int i = fpncy[nfp];
-                                /**
-                                 * Store cycle number.
-                                 */
+                                // Store cycle number.
                                 fpcy[i][nfp] = ncyold + jcya + 1;
-                                /**
-                                 * Check for finished.
-                                 */
+                                // Check for finished.
                                 if (nused >= ncypa) {
                                     continue firstloop;
                                 }
                             }
                         }
-                        /**
-                         * Should not fall though end of for loops.
-                         */
+                        // Should not fall though end of for loops.
                         //logger.severe("Not all Cycles grouped into Convex Faces");
                         throw new EnergyException("Not all Cycles grouped into Convex Faces", true);
                     }
-                    /**
-                     * Once face for free atom; no cycles.
-                     */
+                    // Once face for free atom; no cycles.
                     nfp++;
                     if (nfp > maxfp) {
                         //logger.severe("Too many Convex Faces");
@@ -8175,15 +7689,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
             }
 
-            public boolean ptincy(double pnt[], double unvect[], int icy) {
-                double acvect[] = new double[3];
-                double cpvect[] = new double[3];
-                double polev[] = new double[3];
-                double spv[][] = new double[3][MAXCYEP];
-                double epu[][] = new double[3][MAXCYEP];
-                /**
-                 * Check for being eaten by neighbor.
-                 */
+            boolean ptincy(double[] pnt, double[] unvect, int icy) {
+                double[] acvect = new double[3];
+                double[] cpvect = new double[3];
+                double[] polev = new double[3];
+                double[][] spv = new double[3][MAXCYEP];
+                double[][] epu = new double[3][MAXCYEP];
+                // Check for being eaten by neighbor.
                 int iatom = 0;
                 for (int ke = 0; ke < cynep[icy]; ke++) {
                     int iep = cyep[ke][icy];
@@ -8200,7 +7712,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         acvect[k] = a[k][iaoth] - a[k][iatom];
                         cpvect[k] = pnt[k] - c[k][ic];
                     }
-                    if (VectorMath.dot(acvect, cpvect) >= 0.0) {
+                    if (dot(acvect, cpvect) >= 0.0) {
                         return false;
                     }
                 }
@@ -8210,22 +7722,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 int nedge = cynep[icy];
                 for (int ke = 0; ke < cynep[icy]; ke++) {
 
-                    /**
-                     * Vertex number (use first vertex of edge).
-                     */
+                    // Vertex number (use first vertex of edge).
                     int iep = cyep[ke][icy];
                     iv = epv[0][iep];
                     if (iv != 0) {
-                        /**
-                         * Vector from north pole to vertex.
-                         */
+                        // Vector from north pole to vertex.
                         for (int k = 0; k < 3; k++) {
                             polev[k] = v[k][iv] - pnt[k];
                         }
-                        /**
-                         * Calculate multiplication factor.
-                         */
-                        double dt = VectorMath.dot(polev, unvect);
+                        // Calculate multiplication factor.
+                        double dt = dot(polev, unvect);
                         if (dt == 0.0) {
                             return true;
                         }
@@ -8233,9 +7739,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         if (f < 1.0) {
                             return true;
                         }
-                        /**
-                         * Projected vertex for this convex edge.
-                         */
+                        // Projected vertex for this convex edge.
                         for (int k = 0; k < 3; k++) {
                             spv[k][ke] = pnt[k] + f * polev[k];
                         }
@@ -8246,16 +7750,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 return (totang > 0.0);
             }
 
-            public double rotang(double epu[][], int nedge, double unvect[]) {
-                double crs[] = new double[3];
-                double ai[] = new double[3];
-                double aj[] = new double[3];
-                double ak[] = new double[3];
+            double rotang(double[][] epu, int nedge, double[] unvect) {
+                double[] crs = new double[3];
+                double[] ai = new double[3];
+                double[] aj = new double[3];
+                double[] ak = new double[3];
 
                 double totang = 0.0;
-                /**
-                 * Sum angles at vertices of cycle.
-                 */
+
+                // Sum angles at vertices of cycle.
                 for (int ke = 0; ke < nedge + 1; ke++) {
                     double dt;
                     if (ke < nedge) {
@@ -8265,17 +7768,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         aj[0] = epu[0][ke + 1];
                         aj[1] = epu[1][ke + 1];
                         aj[2] = epu[2][ke + 1];
-                        dt = VectorMath.dot(ai, aj);
-                        VectorMath.cross(ai, ai, crs);
+                        dt = dot(ai, aj);
+                        cross(ai, ai, crs);
                     } else {
                         ak[0] = epu[0][0];
                         ak[1] = epu[1][0];
                         ak[2] = epu[2][0];
-                        /**
-                         * Closing edge of cycle.
-                         */
-                        dt = VectorMath.dot(ai, ak);
-                        VectorMath.cross(ai, ak, crs);
+                        // Closing edge of cycle.
+                        dt = dot(ai, ak);
+                        cross(ai, ak, crs);
                     }
                     if (dt < -1.0) {
                         dt = -1.0;
@@ -8283,47 +7784,37 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         dt = 1.0;
                     }
                     double ang = acos(dt);
-                    if (VectorMath.dot(crs, unvect) > 0.0) {
+                    if (dot(crs, unvect) > 0.0) {
                         ang = -ang;
                     }
-                    /**
-                     * Add to total for cycle.
-                     */
+                    // Add to total for cycle.
                     totang += ang;
                 }
                 return totang;
             }
 
-            public void epuclc(double spv[][], int nedge, double epu[][]) {
-                double ai[] = new double[3];
-                /**
-                 * Calculate unit vectors along edges.
-                 */
+            void epuclc(double[][] spv, int nedge, double[][] epu) {
+                double[] ai = new double[3];
+                // Calculate unit vectors along edges.
                 for (int ke = 0; ke < nedge; ke++) {
-                    /**
-                     * Get index of second edge of corner.
-                     */
+                    // Get index of second edge of corner.
                     int ke2;
                     if (ke < nedge) {
                         ke2 = ke + 1;
                     } else {
                         ke2 = 0;
                     }
-                    /**
-                     * Unit vector along edge of cycle.
-                     */
+                    // Unit vector along edge of cycle.
                     for (int k = 0; k < 3; k++) {
                         epu[k][ke] = spv[k][ke2] - spv[k][ke];
                     }
                     getVector(ai, epu, ke);
-                    double epun = VectorMath.r(ai);
+                    double epun = r(ai);
                     if (epun <= 0.0) {
                         //logger.severe("Null Edge in Cycle");
                         throw new EnergyException("Null Edge in Cycle", true);
                     }
-                    /**
-                     * Normalize.
-                     */
+                    // Normalize.
                     if (epun > 0.0) {
                         for (int k = 0; k < 3; k++) {
                             epu[k][ke] = epu[k][ke] / epun;
@@ -8334,13 +7825,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                     }
                 }
-                /**
-                 * Vectors for null edges come from following or preceding
-                 * edges.
-                 */
+                // Vectors for null edges come from following or preceding edges.
                 for (int ke = 0; ke < nedge; ke++) {
                     getVector(ai, epu, ke);
-                    if (VectorMath.r(ai) <= 0.0) {
+                    if (r(ai) <= 0.0) {
                         int le = ke - 1;
                         if (le <= 0) {
                             le = nedge;
@@ -8356,11 +7844,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * The measpm method computes the volume of a single prism section
              * of the full interior polyhedron.
              */
-            public double measpm(int ifn) {
-                double pav[][] = new double[3][3];
-                double vect1[] = new double[3];
-                double vect2[] = new double[3];
-                double vect3[] = new double[3];
+            double measpm(int ifn) {
+                double[][] pav = new double[3][3];
+                double[] vect1 = new double[3];
+                double[] vect2 = new double[3];
+                double[] vect3 = new double[3];
                 double height = 0.0;
                 for (int ke = 0; ke < 3; ke++) {
                     int ien = fnen[ke][ifn];
@@ -8377,21 +7865,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     vect1[k] = pav[k][1] - pav[k][0];
                     vect2[k] = pav[k][2] - pav[k][0];
                 }
-                VectorMath.cross(vect1, vect2, vect3);
+                cross(vect1, vect2, vect3);
                 return height * vect3[2] / 2.0;
             }
 
-            public void measfp(int ifp, double av[]) {
+            void measfp(int ifp, double av[]) {
                 double angle;
-                double ai[] = new double[3];
-                double aj[] = new double[3];
-                double ak[] = new double[3];
-                double vect1[] = new double[3];
-                double vect2[] = new double[3];
-                double acvect[] = new double[3];
-                double aavect[] = new double[3];
-                double tanv[][][] = new double[3][2][MAXCYEP];
-                double radial[][] = new double[3][MAXCYEP];
+                double[] ai = new double[3];
+                double[] aj = new double[3];
+                double[] ak = new double[3];
+                double[] vect1 = new double[3];
+                double[] vect2 = new double[3];
+                double[] acvect = new double[3];
+                double[] aavect = new double[3];
+                double[][][] tanv = new double[3][2][MAXCYEP];
+                double[][] radial = new double[3][MAXCYEP];
                 double pcurve = 0.0;
                 double gcurve = 0.0;
                 int ia = fpa[ifp];
@@ -8419,8 +7907,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             acvect[k] = c[k][ic] - a[k][ia];
                             aavect[k] = a[k][ia2] - a[k][ia];
                         }
-                        VectorMath.norm(aavect, aavect);
-                        double dt = VectorMath.dot(acvect, aavect);
+                        norm(aavect, aavect);
+                        double dt = dot(acvect, aavect);
                         double geo = -dt / (radius[ia] * cr[ic]);
                         int iv1 = epv[0][iep];
                         int iv2 = epv[1][iep];
@@ -8433,19 +7921,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 radial[k][ke] = v[k][iv1] - a[k][ia];
                             }
                             getVector(ai, radial, ke);
-                            VectorMath.norm(ai, ai);
+                            norm(ai, ai);
                             radial[0][ke] = ai[0];
                             radial[1][ke] = ai[1];
                             radial[2][ke] = ai[2];
                             getVector(ai, tanv, 0, ke);
-                            VectorMath.cross(vect1, aavect, aj);
-                            VectorMath.norm(aj, aj);
+                            cross(vect1, aavect, aj);
+                            norm(aj, aj);
                             tanv[0][0][ke] = aj[0];
                             tanv[1][0][ke] = aj[1];
                             tanv[2][0][ke] = aj[2];
                             getVector(ak, tanv, 1, ke);
-                            VectorMath.cross(vect2, aavect, ak);
-                            VectorMath.norm(ak, ak);
+                            cross(vect2, aavect, ak);
+                            norm(ak, ak);
                             tanv[0][1][ke] = ak[0];
                             tanv[1][1][ke] = ak[1];
                             tanv[2][1][ke] = ak[2];
@@ -8485,14 +7973,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 av[1] = volp;
             }
 
-            public void measfs(int ifs, double saddle[]) {
+            void measfs(int ifs, double[] saddle) {
                 double areas = 0.0;
                 double vols = 0.0;
                 double areasp = 0.0;
                 double volsp = 0.0;
-                double vect1[] = new double[3];
-                double vect2[] = new double[3];
-                double aavect[] = new double[3];
+                double[] vect1 = new double[3];
+                double[] vect2 = new double[3];
+                double[] aavect = new double[3];
 
                 int iep = fsep[0][ifs];
                 int ic = epc[iep];
@@ -8502,7 +7990,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 for (int k = 0; k < 3; k++) {
                     aavect[k] = a[k][ia2] - a[k][ia1];
                 }
-                VectorMath.norm(aavect, aavect);
+                norm(aavect, aavect);
                 int iv1 = epv[0][iep];
                 int iv2 = epv[1][iep];
                 double phi;
@@ -8519,14 +8007,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     vect1[k] = a[k][ia2] - t[k][it];
                     vect2[k] = a[k][ia2] - t[k][it];
                 }
-                double d1 = -1.0 * VectorMath.dot(vect1, aavect);
-                double d2 = VectorMath.dot(vect2, aavect);
+                double d1 = -1.0 * dot(vect1, aavect);
+                double d2 = dot(vect2, aavect);
                 theta1 = atan2(d1, tr[it]);
                 theta2 = atan2(d2, tr[it]);
 
-                /**
-                 * Check for cusps.
-                 */
+                // Check for cusps.
                 double thetaq;
                 boolean cusp;
                 if (tr[it] < probe && theta1 > 0.0 && theta2 > 0.0) {
@@ -8557,15 +8043,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 iep = fsep[1][ifs];
                 int ic1 = epc[iep];
                 if (ca[ic1] != ia1) {
-                    //logger.severe("IA1 Inconsistency in MEASFS");
                     throw new EnergyException("IA1 Inconsistency in MEASFS", true);
                 }
                 for (int k = 0; k < 3; k++) {
                     vect1[k] = c[k][ic1] - a[k][ia1];
                     vect2[k] = c[k][ic2] - a[k][ia2];
                 }
-                double w1 = VectorMath.dot(vect1, aavect);
-                double w2 = -1.0 * VectorMath.dot(vect2, aavect);
+                double w1 = dot(vect1, aavect);
+                double w2 = -1.0 * dot(vect2, aavect);
                 double cone1 = phi * ((w1 * cr[ic1] * cr[ic1])) / 6.0;
                 double cone2 = phi * ((w2 * cr[ic2] * cr[ic2])) / 6.0;
                 term1 = (tr[it] * tr[it]) * probe * (sin(theta1) + sin(theta2));
@@ -8591,16 +8076,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 saddle[3] = volsp;
             }
 
-            public void measfn(int ifn, double av[]) {
-                double ai[] = new double[3];
-                double aj[] = new double[3];
-                double ak[] = new double[3];
-                double angle[] = new double[3];
-                double pvv[][] = new double[3][3];
-                double pav[][] = new double[3][3];
-                double planev[][] = new double[3][3];
-                double arean = 0.0;
-                double voln = 0.0;
+            void measfn(int ifn, double[] av) {
+                double[] ai = new double[3];
+                double[] aj = new double[3];
+                double[] ak = new double[3];
+                double[] angle = new double[3];
+                double[][] pvv = new double[3][3];
+                double[][] pav = new double[3][3];
+                double[][] planev = new double[3][3];
+                double arean;
+                double voln;
                 for (int ke = 0; ke < 3; ke++) {
                     int ien = fnen[ke][ifn];
                     int iv = env[0][ien];
@@ -8612,7 +8097,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                     if (probe > 0.0) {
                         getVector(ai, pvv, ke);
-                        VectorMath.norm(ai, ai);
+                        norm(ai, ai);
                     }
                 }
                 if (probe <= 0.0) {
@@ -8626,8 +8111,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         getVector(ai, pvv, ke);
                         getVector(aj, pvv, je);
                         getVector(ak, planev, ke);
-                        VectorMath.cross(ai, aj, ak);
-                        VectorMath.norm(ak, ak);
+                        cross(ai, aj, ak);
+                        norm(ak, ak);
                     }
                     for (int ke = 0; ke < 3; ke++) {
                         int je = ke - 1;
@@ -8639,7 +8124,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         getVector(ak, pvv, ke);
                         angle[ke] = vecang(ai, aj, ak, -1.0);
                         if (angle[ke] < 0.0) {
-                            //logger.severe("Negative Angle in MEASFN");
                             throw new EnergyException("Negative Angle in MEASFN", true);
                         }
                     }
@@ -8661,84 +8145,82 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * a collection of spherical and toroidal polygons and uses it to
              * compute the volume and surface area
              */
-            public void vam(double volume, double area) {
+            void vam(double volume, double area) {
                 if (nfn < 0) {
                     nfn = 0;
                 }
                 final int maxdot = 1000;
                 final int maxop = 100;
                 final int nscale = 20;
-                int ivs[] = new int[3];
-                int ispind[] = new int[3];
-                int ispnd2[] = new int[3];
-                int ifnop[] = new int[maxop];
-                int nlap[] = new int[nfn];
-                int enfs[] = new int[20 * nAtoms];
-                int fnt[][] = new int[3][nfn];
-                int nspt[][] = new int[3][nfn];
-                double cenop[][] = new double[3][maxop];
-                double sdot[] = new double[3];
-                double dotv[] = new double[nscale];
-                double tau[] = new double[3];
-                double ppm[] = new double[3];
-                double xpnt1[] = new double[3];
-                double xpnt2[] = new double[3];
-                double qij[] = new double[3];
-                double qji[] = new double[3];
-                double vects[][] = new double[3][3];
-                double vect1[] = new double[3];
-                double vect2[] = new double[3];
-                double vect3[] = new double[3];
-                double vect4[] = new double[3];
-                double vect5[] = new double[3];
-                double vect6[] = new double[3];
-                double vect7[] = new double[3];
-                double vect8[] = new double[3];
-                double upp[] = new double[3];
-                double thetaq[] = new double[3];
-                double sigmaq[] = new double[3];
-                double umq[] = new double[3];
-                double upq[] = new double[3];
-                double uc[] = new double[3];
-                double uq[] = new double[3];
-                double uij[] = new double[3];
-                double ai[] = new double[3];
-                double aj[] = new double[3];
-                double ak[] = new double[3];
-                double al[] = new double[3];
-                double dots[][] = new double[3][maxdot];
-                double tdots[][] = new double[3][maxdot];
-                double atmarea[] = new double[nAtoms];
-                double depths[] = new double[nfn];
-                double cora[] = new double[nfn];
-                double corv[] = new double[nfn];
-                double alts[][] = new double[3][nfn];
-                double fncen[][] = new double[3][nfn];
-                double fnvect[][][] = new double[3][3][nfn];
-                boolean ate[] = new boolean[maxop];
-                boolean badav[] = new boolean[nfn];
-                boolean badt[] = new boolean[nfn];
-                boolean fcins[][] = new boolean[3][nfn];
-                boolean fcint[][] = new boolean[3][nfn];
-                boolean fntrev[][] = new boolean[3][nfn];
-                boolean vip[] = new boolean[3];
+                int[] ivs = new int[3];
+                int[] ispind = new int[3];
+                int[] ispnd2 = new int[3];
+                int[] ifnop = new int[maxop];
+                int[] nlap = new int[nfn];
+                int[] enfs = new int[20 * nAtoms];
+                int[][] fnt = new int[3][nfn];
+                int[][] nspt = new int[3][nfn];
+                double[][] cenop = new double[3][maxop];
+                double[] sdot = new double[3];
+                double[] dotv = new double[nscale];
+                double[] tau = new double[3];
+                double[] ppm = new double[3];
+                double[] xpnt1 = new double[3];
+                double[] xpnt2 = new double[3];
+                double[] qij = new double[3];
+                double[] qji = new double[3];
+                double[][] vects = new double[3][3];
+                double[] vect1 = new double[3];
+                double[] vect2 = new double[3];
+                double[] vect3 = new double[3];
+                double[] vect4 = new double[3];
+                double[] vect5 = new double[3];
+                double[] vect6 = new double[3];
+                double[] vect7 = new double[3];
+                double[] vect8 = new double[3];
+                double[] upp = new double[3];
+                double[] thetaq = new double[3];
+                double[] sigmaq = new double[3];
+                double[] umq = new double[3];
+                double[] upq = new double[3];
+                double[] uc = new double[3];
+                double[] uq = new double[3];
+                double[] uij = new double[3];
+                double[] ai = new double[3];
+                double[] aj = new double[3];
+                double[] ak = new double[3];
+                double[] al = new double[3];
+                double[][] dots = new double[3][maxdot];
+                double[][] tdots = new double[3][maxdot];
+                double[] atmarea = new double[nAtoms];
+                double[] depths = new double[nfn];
+                double[] cora = new double[nfn];
+                double[] corv = new double[nfn];
+                double[][] alts = new double[3][nfn];
+                double[][] fncen = new double[3][nfn];
+                double[][][] fnvect = new double[3][3][nfn];
+                boolean[] ate = new boolean[maxop];
+                boolean[] badav = new boolean[nfn];
+                boolean[] badt = new boolean[nfn];
+                boolean[][] fcins = new boolean[3][nfn];
+                boolean[][] fcint = new boolean[3][nfn];
+                boolean[][] fntrev = new boolean[3][nfn];
+                boolean[] vip = new boolean[3];
+                boolean[] cintp = new boolean[1];
+                boolean[] cinsp = new boolean[1];
 
-                /**
-                 * Compute the volume of the interior polyhedron.
-                 */
+                // Compute the volume of the interior polyhedron.
                 double polyhedronVolume = 0.0;
                 for (int ifn = 0; ifn < nfn + 1; ifn++) {
                     polyhedronVolume += measpm(ifn);
                 }
 
-                /**
-                 * Compute the area and volume due to convex faces as well as
-                 * the area partitioned among the atoms.
-                 */
+                // Compute the area and volume due to convex faces as well as
+                // the area partitioned among the atoms.
                 double totap = 0.0;
                 double totvp = 0.0;
                 fill(atmarea, 0.0);
-                double convexFaces[] = {0.0, 0.0};
+                double[] convexFaces = {0.0, 0.0};
                 for (int ifp = 0; ifp < nfp + 1; ifp++) {
                     measfp(ifp, convexFaces);
                     int ia = fpa[ifp];
@@ -8747,15 +8229,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     totvp += convexFaces[1];
                 }
 
-                /**
-                 * Compute the area and volume due to saddle faces as well as
-                 * the spindle correction value.
-                 */
+                // Compute the area and volume due to saddle faces
+                // as well as the spindle correction value.
                 double totas = 0.0;
                 double totvs = 0.0;
                 double totasp = 0.0;
                 double totvsp = 0.0;
-                double saddle[] = {0.0, 0.0, 0.0, 0.0};
+                double[] saddle = {0.0, 0.0, 0.0, 0.0};
                 for (int ifs = 0; ifs < nfs + 1; ifs++) {
                     for (int k = 0; k < 2; k++) {
                         int ien = fsen[k][ifs];
@@ -8778,12 +8258,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Compute the area and volume due to concave faces.
-                 */
+                // Compute the area and volume due to concave faces.
                 double totan = 0.0;
                 double totvn = 0.0;
-                double concaveFaces[] = {0.0, 0.0};
+                double[] concaveFaces = {0.0, 0.0};
                 for (int ifn = 0; ifn < nfn + 1; ifn++) {
                     measfn(ifn, concaveFaces);
                     double arean = concaveFaces[0];
@@ -8792,9 +8270,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     totvn += voln;
                 }
 
-                /**
-                 * Compute the area and volume lens correction values.
-                 */
+                // Compute the area and volume lens correction values.
                 double alenst = 0.0;
                 double alensn = 0.0;
                 double vlenst = 0.0;
@@ -8803,7 +8279,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (probe <= 0.0) {
                         continue;
                     }
-                    int ndots[] = {maxdot};
+                    int[] ndots = {maxdot};
                     gendot(ndots, dots, probe, 0.0, 0.0, 0.0);
                     double dota = (4.0 * PI * probe * probe) / ndots[0];
                     for (int ifn = 0; ifn < nfn + 1; ifn++) {
@@ -8825,9 +8301,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                         // This assigned value was never used?
                         int ia = va[iv];
-                        /**
-                         * Get vertices and vectors.
-                         */
+                        // Get vertices and vectors.
                         for (int ke = 0; ke < 3; ke++) {
                             ien = fnen[ke][ifn];
                             ivs[ke] = env[0][ien];
@@ -8844,42 +8318,36 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 vects[k][ke] = v[k][ivs[ke]] - p[k][ip];
                             }
                         }
-                        /**
-                         * Calculate normal vectors for the three planes that
-                         * cut out the geodesic triangle.
-                         */
+                        // Calculate normal vectors for the three planes that
+                        // cut out the geodesic triangle.
                         getVector(ai, vects, 0);
                         getVector(aj, vects, 1);
                         getVector(ak, fnvect, 0, ifn);
-                        VectorMath.cross(ai, aj, ak);
-                        VectorMath.norm(ak, ak);
+                        cross(ai, aj, ak);
+                        norm(ak, ak);
                         getVector(ai, vects, 2);
                         getVector(ak, fnvect, 1, ifn);
-                        VectorMath.cross(aj, ai, ak);
-                        VectorMath.norm(ak, ak);
+                        cross(aj, ai, ak);
+                        norm(ak, ak);
                         getVector(aj, vects, 0);
                         getVector(ak, fnvect, 2, ifn);
-                        VectorMath.cross(ai, aj, ak);
-                        VectorMath.norm(ak, ak);
+                        cross(ai, aj, ak);
+                        norm(ak, ak);
                     }
                     for (int ifn = 0; ifn < nfn; ifn++) {
                         for (int jfn = ifn + 1; jfn < nfn + 1; jfn++) {
                             getVector(ai, fncen, ifn);
                             getVector(aj, fncen, jfn);
-                            double dij2 = VectorMath.dist2(ai, aj);
+                            double dij2 = dist2(ai, aj);
                             if (dij2 > 4.0 * probe * probe) {
                                 continue;
                             }
                             if (depths[ifn] > probe && depths[jfn] > probe) {
                                 continue;
                             }
-                            /**
-                             * These two probes may have intersecting surfaces.
-                             */
-                            double dpp = VectorMath.dist(ai, aj);
-                            /**
-                             * Compute the midpoint.
-                             */
+                            // These two probes may have intersecting surfaces.
+                            double dpp = dist(ai, aj);
+                            // Compute the midpoint.
                             for (int k = 0; k < 3; k++) {
                                 ppm[k] = (fncen[k][ifn] + fncen[k][jfn]) / 2.0;
                                 upp[k] = (fncen[k][jfn] - fncen[k][ifn]) / dpp;
@@ -8892,9 +8360,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             double rat = dpp / (2.0 * probe);
                             check(rat);
                             double rho = asin(rat);
-                            /**
-                             * Use circle-place intersection routine.
-                             */
+                            // Use circle-place intersection routine.
                             boolean alli = true;
                             boolean anyi = false;
                             boolean spindl = false;
@@ -8909,15 +8375,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 getVector(ai, fncen, ifn);
                                 getVector(aj, fnvect, ke, ifn);
                                 cirpln(ppm, rm, upp, ai, aj, cintp, cinsp, xpnt1, xpnt2);
-                                fcins[ke][ifn] = cinsp;
-                                fcint[ke][ifn] = cintp;
-                                if (!cinsp) {
+                                fcins[ke][ifn] = cinsp[0];
+                                fcint[ke][ifn] = cintp[0];
+                                if (!cinsp[0]) {
                                     alli = false;
                                 }
-                                if (cintp) {
+                                if (cintp[0]) {
                                     anyi = true;
                                 }
-                                if (!cintp) {
+                                if (!cintp[0]) {
                                     continue;
                                 }
                                 int it = fnt[ke][ifn];
@@ -8937,10 +8403,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     continue;
                                 }
 
-                                /**
-                                 * Check that the two ways of calculating
-                                 * intersection points match.
-                                 */
+                                // Check that the two ways of calculating intersection points match.
                                 rat = tr[it] / probe;
                                 check(rat);
                                 thetaq[ke] = acos(rat);
@@ -8962,16 +8425,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     umq[k] = (qij[k] - ppm[k]) / rm;
                                     upq[k] = (qij[k] - fncen[k][ifn]) / probe;
                                 }
-                                VectorMath.cross(uij, upp, vect1);
-                                double dt = VectorMath.dot(umq, vect1);
+                                cross(uij, upp, vect1);
+                                double dt = dot(umq, vect1);
                                 check(dt);
                                 sigmaq[ke] = acos(dt);
                                 getVector(ai, fnvect, ke, ifn);
-                                VectorMath.cross(upq, ai, vect1);
-                                VectorMath.norm(vect1, uc);
-                                VectorMath.cross(upp, upq, vect1);
-                                VectorMath.norm(vect1, uq);
-                                dt = VectorMath.dot(uc, uq);
+                                cross(upq, ai, vect1);
+                                norm(vect1, uc);
+                                cross(upp, upq, vect1);
+                                norm(vect1, uq);
+                                dt = dot(uc, uq);
                                 check(dt);
                                 tau[ke] = PI - acos(dt);
                             }
@@ -8981,12 +8444,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 getVector(ai, fncen, jfn);
                                 getVector(aj, fnvect, ke, jfn);
                                 cirpln(ppm, rm, upp, ai, aj, cinsp, cintp, xpnt1, xpnt2);
-                                fcins[ke][jfn] = cinsp;
-                                fcint[ke][jfn] = cintp;
-                                if (!cinsp) {
+                                fcins[ke][jfn] = cinsp[0];
+                                fcint[ke][jfn] = cintp[0];
+                                if (!cinsp[0]) {
                                     allj = false;
                                 }
-                                if (cintp) {
+                                if (cintp[0]) {
                                     anyj = true;
                                 }
                             }
@@ -8995,9 +8458,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (!case1 && !case2) {
                                 continue;
                             }
-                            /**
-                             * This kind of overlap can be handled.
-                             */
+                            // This kind of overlap can be handled.
                             nlap[ifn]++;
                             nlap[jfn]++;
                             for (int ke = 0; ke < 3; ke++) {
@@ -9017,7 +8478,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     getVector(ak, fncen, jfn);
                                     getVector(al, fnvect, ke2, jfn);
                                     cirpln(ai, probe, aj, ak, al, cinsp, cintp, xpnt1, xpnt2);
-                                    if (!cintp) {
+                                    if (!cintp[0]) {
                                         continue;
                                     }
                                     ien = fnen[ke2][jfn];
@@ -9027,19 +8488,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         vect7[k] = v[k][iv1] - fncen[k][jfn];
                                         vect8[k] = v[k][iv2] - fncen[k][jfn];
                                     }
-                                    /**
-                                     * Check whether point lies on spindle arc.
-                                     */
+                                    // Check whether point lies on spindle arc.
                                     for (int k = 0; k < 3; k++) {
                                         vect1[k] = xpnt1[k] - fncen[k][ifn];
                                         vect2[k] = xpnt2[k] - fncen[k][ifn];
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
                                         vect6[k] = xpnt2[k] - fncen[k][jfn];
                                     }
-                                    /**
-                                     * Continue to next if statement if any of
-                                     * the following are true.
-                                     */
+                                    // Continue to next if statement if any of the following are true.
                                     getVector(ai, fnvect, ke, ifn);
                                     getVector(aj, fnvect, ke2, jfn);
                                     endloop:
@@ -9083,7 +8539,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     getVector(ak, fncen, jfn);
                                     getVector(al, fnvect, ke2, jfn);
                                     cirpln(ak, probe, al, ai, aj, cinsp, cintp, xpnt1, xpnt2);
-                                    if (!cintp) {
+                                    if (!cintp[0]) {
                                         continue;
                                     }
                                     ien = fnen[ke2][jfn];
@@ -9093,19 +8549,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                         vect7[k] = v[k][iv1] - fncen[k][jfn];
                                         vect8[k] = v[k][iv2] - fncen[k][jfn];
                                     }
-                                    /**
-                                     * Check whether point lies on spindle arc.
-                                     */
+                                    // Check whether point lies on spindle arc.
                                     for (int k = 0; k < 3; k++) {
                                         vect1[k] = xpnt1[k] - fncen[k][ifn];
                                         vect2[k] = xpnt2[k] - fncen[k][ifn];
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
                                         vect6[k] = xpnt2[k] - fncen[k][jfn];
                                     }
-                                    /**
-                                     * Continue to next if statement if any of
-                                     * the following are true.
-                                     */
+                                    // Continue to next if statement if any of the following are true.
                                     getVector(ai, fnvect, ke, ifn);
                                     getVector(aj, fnvect, ke2, jfn);
                                     if (triple(vect3, vect1, ai) < 0.0
@@ -9144,9 +8595,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 corv[ifn] += vlens;
                                 corv[jfn] += vlens;
                             }
-                            /**
-                             * Check for vertex on opposing probe in face.
-                             */
+                            // Check for vertex on opposing probe in face.
                             outerloop:
                             for (int kv = 0; kv < 3; kv++) {
                                 vip[kv] = false;
@@ -9155,11 +8604,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 for (int k = 0; k < 3; k++) {
                                     vect1[k] = v[k][iv] - fncen[k][ifn];
                                 }
-                                VectorMath.norm(vect1, vect1);
+                                norm(vect1, vect1);
                                 for (int ke = 0; ke < 3; ke++) {
                                     getVector(ai, fnvect, ke, ifn);
                                     getVector(aj, v, iv);
-                                    double dt = VectorMath.dot(ai, aj);
+                                    double dt = dot(ai, aj);
                                     if (dt > 0.0) {
                                         continue outerloop;
                                     }
@@ -9179,15 +8628,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         if (nlap[ifn] <= -1) {
                             continue;
                         }
-                        /**
-                         * Gather all overlapping probes.
-                         */
+                        // Gather all overlapping probes.
                         int nop = -1;
                         for (int jfn = 0; jfn < nfn + 1; jfn++) {
                             if (ifn != jfn) {
                                 getVector(ai, fncen, ifn);
                                 getVector(aj, fncen, jfn);
-                                double dij2 = VectorMath.dist2(ai, aj);
+                                double dij2 = dist2(ai, aj);
                                 if (dij2 <= 4.0 * probe * probe) {
                                     if (depths[jfn] <= probe) {
                                         nop++;
@@ -9202,9 +8649,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     }
                                 }
                             }
-                            /**
-                             * Numerical calculation of the correction.
-                             */
+                            // Numerical calculation of the correction.
                             double areado = 0.0;
                             double voldo = 0.0;
                             double scinc = 1.0 / nscale;
@@ -9221,7 +8666,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 for (int ke = 0; ke < 3; ke++) {
                                     getVector(ai, fnvect, ke, ifn);
                                     getVector(aj, dots, idot);
-                                    double dt = VectorMath.dot(ai, aj);
+                                    double dt = dot(ai, aj);
                                     if (dt > 0.0) {
                                         move = true;
                                         break;
@@ -9237,7 +8682,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     jfn = ifnop[iop];
                                     getVector(ai, dots, idot);
                                     getVector(aj, fncen, jfn);
-                                    double ds2 = VectorMath.dist2(ai, aj);
+                                    double ds2 = dist2(ai, aj);
                                     if (ds2 > probe * probe) {
                                         areado += dota;
                                         break;
@@ -9252,14 +8697,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     for (int iop = 0; iop < nop + 1; iop++) {
                                         jfn = ifnop[iop];
                                         getVector(ai, fncen, jfn);
-                                        double ds2 = VectorMath.dist2(sdot, ai);
+                                        double ds2 = dist2(sdot, ai);
                                         if (ds2 > probe * probe) {
                                             for (int k = 0; k < 3; k++) {
                                                 vect1[k] = sdot[k] - fncen[k][jfn];
                                             }
                                             for (int ke = 0; ke < 3; ke++) {
                                                 getVector(ai, fnvect, ke, jfn);
-                                                double dt = VectorMath.dot(ai, vect1);
+                                                double dt = dot(ai, vect1);
                                                 if (dt > 0.0) {
                                                     move = true;
                                                     break;
@@ -9288,10 +8733,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     nate++;
                                 }
                             }
-                            /**
-                             * Use either the analytical or numerical
-                             * correction.
-                             */
+                            // Use either the analytical or numerical correction.
                             boolean usenum = (nate > nlap[ifn] || neatmx > 1 || badt[ifn]);
                             if (usenum) {
                                 cora[ifn] = coran;
@@ -9307,12 +8749,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                     }
                 }
-                /**
-                 * Finally, compute the total area and total volume.
-                 */
-                // logger.info(format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
+                // Finally, compute the total area and total volume.
                 area = totap + totas + totan - totasp - alenst;
-                // logger.info(format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
                 volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
                 //logger.info(format(" Volume = %16.8f, Area = %16.8f", volume, area));
                 //logger.info(format(" Total Volume        %16.8f", volume));
@@ -9328,12 +8766,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * surface points for a sphere with the input radius and coordinate
              * center.
              */
-            public void gendot(int ndots[], double dots[][], double radius,
-                               double xcenter, double ycenter, double zcenter) {
+            void gendot(int[] ndots, double[][] dots, double radius,
+                        double xcenter, double ycenter, double zcenter) {
                 int nequat = (int) sqrt(PI * ((double) ndots[0]));
-                //logger.info(format("nequat:\t%s", nequat));
                 int nvert = nequat / 2;
-                //logger.info(format("nvert:\t%s", nvert));
                 if (nvert < 0) {
                     nvert = 0;
                 }
@@ -9343,11 +8779,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double fi = (PI * ((double) i)) / ((double) nvert);
                     double z = cos(fi);
                     double xy = sin(fi);
-                    //logger.info(format("fi:\t%s", fi));
-                    //logger.info(format("z:\t%s", z));
-                    //logger.info(format("xy:\t%s", xy));
                     int nhoriz = (int) (nequat * xy);
-                    //logger.info(format("nhoriz:\t%s", nhoriz));
                     if (nhoriz < 0) {
                         nhoriz = 0;
                     }
@@ -9371,35 +8803,32 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * The cirpln method determines the points of intersection between a
              * specified circle and plane.
              */
-            public boolean cirpln(double circen[], double cirrad, double cirvec[], double plncen[],
-                                  double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
-                double cpvect[] = new double[3];
-                double pnt1[] = new double[3];
-                double vect1[] = new double[3];
-                double vect2[] = new double[3];
-                double uvect1[] = new double[3];
-                double uvect2[] = new double[3];
+            boolean cirpln(double[] circen, double cirrad, double[] cirvec,
+                           double[] plncen, double[] plnvec, boolean[] cinsp,
+                           boolean[] cintp, double[] xpnt1, double[] xpnt2) {
+                double[] cpvect = new double[3];
+                double[] pnt1 = new double[3];
+                double[] vect1 = new double[3];
+                double[] vect2 = new double[3];
+                double[] uvect1 = new double[3];
+                double[] uvect2 = new double[3];
                 for (int k = 0; k < 3; k++) {
                     cpvect[k] = plncen[k] - circen[k];
-                    //logger.info(format("cpvect:\t%s", cpvect[k]));
                 }
-                double dcp = VectorMath.dot(cpvect, plnvec);
-                cinsp = (dcp > 0.0);
-                VectorMath.cross(plnvec, cirvec, vect1);
-                if (VectorMath.r(vect1) > 0.0) {
-                    VectorMath.norm(vect1, uvect1);
-                    VectorMath.cross(cirvec, uvect1, vect2);
-                    if (VectorMath.r(vect2) > 0.0) {
-                        VectorMath.norm(vect2, uvect2);
-                        double dir = VectorMath.dot(uvect2, plnvec);
-                        //logger.info(format("dir:\t%s", dir));
+                double dcp = dot(cpvect, plnvec);
+                cinsp[0] = (dcp > 0.0);
+                cross(plnvec, cirvec, vect1);
+                if (r(vect1) > 0.0) {
+                    norm(vect1, uvect1);
+                    cross(cirvec, uvect1, vect2);
+                    if (r(vect2) > 0.0) {
+                        norm(vect2, uvect2);
+                        double dir = dot(uvect2, plnvec);
                         if (dir != 0.0) {
                             double ratio = dcp / dir;
-                            //logger.info(format("ratio:\t%s", ratio));
                             if (abs(ratio) <= cirrad) {
                                 for (int k = 0; k < 3; k++) {
                                     pnt1[k] = circen[k] + ratio * uvect2[k];
-                                    //logger.info(format("pnt1:\t%s", pnt1[k]));
                                 }
                                 double rlen = cirrad * cirrad - ratio * ratio;
                                 if (rlen < 0.0) {
@@ -9409,8 +8838,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 for (int k = 0; k < 3; k++) {
                                     xpnt1[k] = pnt1[k] - rlen * uvect1[k];
                                     xpnt2[k] = pnt1[k] + rlen * uvect1[k];
-                                    //logger.info(format("xpnt1:\t%s", xpnt1[k]));
-                                    //logger.info(format("xpnt2:\t%s", xpnt2[k]));
                                 }
                                 return true;
                             }
@@ -9425,10 +8852,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * respect to a coordinate axis; returns an angle in the range
              * [0,2*PI].
              */
-            public double vecang(double v1[], double v2[], double axis[], double hand) {
-                double a1 = VectorMath.r(v1);
-                double a2 = VectorMath.r(v2);
-                double dt = VectorMath.dot(v1, v2);
+            double vecang(double[] v1, double[] v2, double[] axis, double hand) {
+                double a1 = r(v1);
+                double a2 = r(v2);
+                double dt = dot(v1, v2);
                 double a12 = a1 * a2;
                 if (abs(a12) != 0.0) {
                     dt = dt / a12;
@@ -9444,11 +8871,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 return vecang;
             }
 
-            public double depth(int ip, double alt[]) {
-                double vect1[] = new double[3];
-                double vect2[] = new double[3];
-                double vect3[] = new double[3];
-                double vect4[] = new double[3];
+            public double depth(int ip, double[] alt) {
+                double[] vect1 = new double[3];
+                double[] vect2 = new double[3];
+                double[] vect3 = new double[3];
+                double[] vect4 = new double[3];
                 int ia1 = pa[0][ip];
                 int ia2 = pa[1][ip];
                 int ia3 = pa[2][ip];
@@ -9457,14 +8884,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     vect2[k] = a[k][ia2] - a[k][ia3];
                     vect3[k] = p[k][ip] - a[k][ia3];
                 }
-                VectorMath.cross(vect1, vect2, vect4);
-                VectorMath.norm(vect4, vect4);
-                double dot = VectorMath.dot(vect4, vect3);
+                cross(vect1, vect2, vect4);
+                norm(vect4, vect4);
+                double dot = dot(vect4, vect3);
                 for (int k = 0; k < 3; k++) {
                     alt[k] = vect4[k];
-                    //logger.info(format("alt:\t%s", alt[k]));
                 }
-                //logger.info(format("dot:\t%s", dot));
                 return dot;
             }
 
@@ -9477,17 +8902,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 return angle;
             }
 
-            public void calcDerivative(int lb, int ub) {
-                /**
-                 * Fix the step size in the z-direction; this value sets the
-                 * accuracy of the numerical derivatives; zstep=0.06 is a good
-                 * balance between compute time and accuracy.
+            void calcDerivative(int lb, int ub) {
+                /*
+                  Fix the step size in the z-direction; this value sets the
+                  accuracy of the numerical derivatives; zstep=0.06 is a good
+                  balance between compute time and accuracy.
                  */
                 zstep = 0.0601;
-                /**
-                 * Load the cubes based on coarse lattice; first of all set edge
-                 * length to the maximum diameter of any atom.
-                 */
+
+                // Load the cubes based on coarse lattice; first of all set edge
+                // length to the maximum diameter of any atom.
                 edge = 2.0 * rmax;
                 nx = (int) ((xmax - xmin) / edge);
                 ny = (int) ((ymax - ymin) / edge);
@@ -9496,9 +8920,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     //logger.severe(" VOLUME1  --  Increase the Value of MAXCUBE");
                     throw new EnergyException(" VOLUME1  --  Increase the Value of MAXCUBE", false);
                 }
-                /**
-                 * Initialize the coarse lattice of cubes.
-                 */
+
+                // Initialize the coarse lattice of cubes.
                 for (int i = 0; i <= nx; i++) {
                     for (int j = 0; j <= ny; j++) {
                         for (int k = 0; k <= nz; k++) {
@@ -9507,9 +8930,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                     }
                 }
-                /**
-                 * Find the number of atoms in each cube.
-                 */
+
+                // Find the number of atoms in each cube.
                 for (int m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
                         int i = (int) ((x[m] - xmin) / edge);
@@ -9519,12 +8941,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Determine the highest index in the array "itab" for the atoms
-                 * that fall into each cube; the first cube that has atoms
-                 * defines the first index for "itab"; the final index for the
-                 * atoms in the present cube is the final index of the last cube
-                 * plus the number of atoms in the present cube.
+                /*
+                  Determine the highest index in the array "itab" for the atoms
+                  that fall into each cube; the first cube that has atoms
+                  defines the first index for "itab"; the final index for the
+                  atoms in the present cube is the final index of the last cube
+                  plus the number of atoms in the present cube.
                  */
                 isum = 0;
                 for (int i = 0; i <= nx; i++) {
@@ -9539,11 +8961,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * "cube(1,,,)" now contains a pointer to the array "itab"
-                 * giving the position of the last entry for the list of atoms
-                 * in that cube of total number equal to "cube(0,,,)".
-                 */
+                // "cube(1,,,)" now contains a pointer to the array "itab"
+                // giving the position of the last entry for the list of atoms
+                // in that cube of total number equal to "cube(0,,,)".
                 for (int m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
                         int i = (int) ((x[m] - xmin) / edge);
@@ -9555,16 +8975,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Set "cube(1,,,)" to be the starting index in "itab" for atom
-                 * list of that cube; and "cube(0,,,)" to be the stop index.
-                 */
+                // Set "cube(1,,,)" to be the starting index in "itab" for atom
+                // list of that cube; and "cube(0,,,)" to be the stop index.
                 isum = 0;
                 for (int i = 0; i <= nx; i++) {
                     for (int j = 0; j <= ny; j++) {
                         for (int k = 0; k <= nz; k++) {
                             tcube = cube[0][i][j][k];
-                            //logger.info(format(" TCUBE %d %d %d %d", i, j, k, tcube));
                             if (tcube != -1) {
                                 isum += tcube;
                                 cube[0][i][j][k] = isum;
@@ -9574,10 +8991,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
 
-                /**
-                 * Process in turn each atom from the coordinate list; first
-                 * select the potential intersecting atoms.
-                 */
+                // Process in turn each atom from the coordinate list; first
+                // select the potential intersecting atoms.
                 for (ir = 0; ir < nAtoms; ir++) {
                     pre_dx = 0.0;
                     pre_dy = 0.0;
@@ -9591,9 +9006,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     xr = x[ir];
                     yr = y[ir];
                     zr = z[ir];
-                    /**
-                     * Find cubes to search for overlaps for current atom.
-                     */
+                    // Find cubes to search for overlaps for current atom.
                     istart = (int) ((xr - xmin) / edge);
                     istop = min(istart + 2, nx + 1);
                     istart = max(istart, 1);
@@ -9603,11 +9016,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     kstart = (int) ((zr - zmin) / edge);
                     kstop = min(kstart + 2, nz + 1);
                     kstart = max(kstart, 1);
-                    /**
-                     * Load all overlapping atoms into "inov".
-                     */
+                    // Load all overlapping atoms into "inov".
                     io = -1;
-                    //logger.info(format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
                     for (int i = istart - 1; i < istop; i++) {
                         for (int j = jstart - 1; j < jstop; j++) {
                             for (int k = kstart - 1; k < kstop; k++) {
@@ -9616,7 +9026,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     mstop = cube[0][i][j][k];
                                     for (int m = mstart; m <= mstop; m++) {
                                         in = itab[m];
-                                        //logger.info(format(" CHECK %d %d", ir, in));
                                         if (in != ir) {
                                             io++;
                                             if (io > MAXARC) {
@@ -9632,7 +9041,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             } else {
                                                 d[io] = sqrt(dsq[io]);
                                                 inov[io] = in;
-                                                //logger.info(format(" INIT %d %d %d %16.8f", ir, io, in, d[io]));
                                             }
                                         }
                                     }
@@ -9641,27 +9049,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
                     }
 
-                    //logger.info(format("ir %d io %d", ir, io));
-                    /**
-                     * Determine resolution along the z-axis.
-                     */
+                    // Determine resolution along the z-axis.
                     if (io != -1) {
                         ztop = zr + rr;
                         ztopshave = ztop - zstep;
                         zgrid = zr - rr;
-                        /**
-                         * Half of the part not covered by the planes.
-                         */
+                        // Half of the part not covered by the planes.
                         zgrid += 0.5 * (rrx2 - (((int) (rrx2 / zstep)) * zstep));
                         zstart = zgrid;
-                        /**
-                         * Section atom spheres perpendicular to the z-axis.
-                         */
+                        // Section atom spheres perpendicular to the z-axis.
                         while (zgrid <= ztop) {
-                            /**
-                             * "rsecr" is radius of circle of intersection of
-                             * "ir" sphere on the current sphere.
-                             */
+                            // "rsecr" is radius of circle of intersection of "ir" sphere on the current sphere.
                             rsec2r = rrsq - ((zgrid - zr) * (zgrid - zr));
                             if (rsec2r < 0.0) {
                                 rsec2r = 0.000001;
@@ -9681,52 +9079,47 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 cos_phi2 = (zgrid - (0.5 * zstep) - zr) / rr;
                                 phi2 = acos(cos_phi2);
                             }
-                            /**
-                             * Check intersection of neighbor circles.
-                             */
+                            // Check intersection of neighbor circles.
                             narc = -1;
                             for (int k = 0; k <= io; k++) {
                                 in = inov[k];
                                 rinsq = vdwrad[in] * vdwrad[in];
                                 rsec2n = rinsq - ((zgrid - z[in]) * (zgrid - z[in]));
-                                //logger.info(format(" NARC %d %d %16.8f %16.8f %16.8f", ir, k, rinsq, z[in], zgrid));
                                 if (rsec2n > 0.0) {
                                     rsecn = sqrt(rsec2n);
                                     if (d[k] < (rsecr + rsecn)) {
                                         rdiff = rsecr - rsecn;
-                                        //logger.info(format(" DIFF %d %d %16.8f %16.8f %16.8f", ir, k, d[k], rsecr, rsecn));
                                         if (d[k] <= abs(rdiff)) {
                                             if (rdiff < 0.0) {
                                                 narc = 0;
                                                 arci[narc] = 0.0;
                                                 arcf[narc] = pix2;
                                             }
-                                            //logger.info(format("%d Continue", ir));
                                             continue;
                                         }
                                         narc++;
                                         if (narc > MAXARC) {
                                             //logger.info("VOLUME1 -- Increase the Value of MAXARC");
                                         }
-                                        /**
-                                         * Initial and final arc endpoints are
-                                         * found for intersection of "ir" circle
-                                         * with another circle contained in same
-                                         * plane; the initial endpoint of the
-                                         * enclosed arc is stored in "arci", the
-                                         * final endpoint in "arcf"; get
-                                         * "cosine" via law of cosines.
+                                        /*
+                                          Initial and final arc endpoints are
+                                          found for intersection of "ir" circle
+                                          with another circle contained in same
+                                          plane; the initial endpoint of the
+                                          enclosed arc is stored in "arci", the
+                                          final endpoint in "arcf"; get
+                                          "cosine" via law of cosines.
                                          */
                                         cosine = (dsq[k] + rsec2r - rsec2n) / (2.0 * d[k] * rsecr);
                                         cosine = min(1.0, max(-1.0, cosine));
-                                        /**
-                                         * "alpha" is the angle between a line
-                                         * containing either point of
-                                         * intersection and the reference circle
-                                         * center and the line containing both
-                                         * circle centers; "beta" is the angle
-                                         * between the line containing both
-                                         * circle centers and x-axis.
+                                        /*
+                                          "alpha" is the angle between a line
+                                          containing either point of
+                                          intersection and the reference circle
+                                          center and the line containing both
+                                          circle centers; "beta" is the angle
+                                          between the line containing both
+                                          circle centers and x-axis.
                                          */
                                         alpha = acos(cosine);
                                         beta = atan2(dy[k], dx[k]);
@@ -9742,41 +9135,28 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                             tf -= pix2;
                                         }
                                         arci[narc] = ti;
-                                        /**
-                                         * If the arc crosses zero, then it is
-                                         * broken into two segments; the first
-                                         * ends at two pi and the second begins
-                                         * at zero.
-                                         */
+                                        // If the arc crosses zero, then it is broken into two segments; the first
+                                        // ends at two pi and the second begins at zero.
                                         if (tf < ti) {
                                             arcf[narc] = pix2;
                                             narc++;
                                             arci[narc] = 0.0;
-                                            //logger.info(format("ir= %d narc= %d arci= %16.8f", ir, narc, arci[narc]));
                                         }
                                         arcf[narc] = tf;
-                                        //logger.info(format(" ARCF %d %d %16.8f %16.8f", ir, narc, tf, ti));
-                                        // BELOW HERE
                                     }
                                 }
                             }
 
-                            /**
-                             * Find the pre-area and pre-forces on this section
-                             * (band), "pre-" means a multiplicative factor is
-                             * yet to be applied.
-                             */
+                            // Find the pre-area and pre-forces on this section
+                            // (band), "pre-" means a multiplicative factor is
+                            // yet to be applied.
                             if (narc == -1) {
-                                //logger.info(format(" %d cos_phi %16.8f %16.8f %16.8f %16.8f",
-                                //ir, phi1, cos_phi1, phi2, cos_phi2));
                                 seg_dz = pix2 * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
                                 pre_dz += seg_dz;
                             } else {
-                                /**
-                                 * Sort the arc endpoint arrays, each with
-                                 * "narc" entries, in order of increasing values
-                                 * of the arguments in "arci".
-                                 */
+                                // Sort the arc endpoint arrays, each with
+                                // "narc" entries, in order of increasing values
+                                // of the arguments in "arci".
                                 for (int k = 0; k < narc; k++) {
                                     aa = arci[k];
                                     bb = arcf[k];
@@ -9792,10 +9172,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     arci[itemp] = aa;
                                     arcf[itemp] = bb;
                                 }
-                                /**
-                                 * Consolidate arcs by removing overlapping arc
-                                 * endpoints.
-                                 */
+                                // Consolidate arcs by removing overlapping arc endpoints.
                                 temp = arcf[0];
                                 int j = 0;
                                 for (int k = 1; k <= narc; k++) {
@@ -9828,20 +9205,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     } else {
                                         arci[narc] = arcf[narc];
                                         arcf[narc] = temp;
-                                        // SOME PRINTS ARE WRONG AFTER FIRST ENTRY
-                                        //logger.info(format(" ARCF1 %d %16.8f", ir, arcf[0]));
                                     }
                                 }
 
-                                // SOME OF THE FOLLOWING PRINTS ARE WRONG
-                                //logger.info(format(" SORT %d %d %16.8f %16.8f", ir, narc, arci[0], arcf[0]));
-                                /**
-                                 * Compute the numerical pre-derivative values.
-                                 */
+                                // Compute the numerical pre-derivative values.
                                 for (int k = 0; k <= narc; k++) {
                                     theta1 = arci[k];
                                     theta2 = arcf[k];
-                                    //logger.info(format("%d theta1=%16.8f theta2=%16.8f", ir, theta1, theta2));
                                     if (theta2 >= theta1) {
                                         dtheta = theta2 - theta1;
                                     } else {
@@ -9854,9 +9224,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     pre_dx += seg_dx;
                                     pre_dy += seg_dy;
                                     pre_dz += seg_dz;
-                                    // SOME OF THE FOLLOWING PRINTS ARE WRONG
                                 }
-                                //logger.info(format(" LAST %d %16.8f %16.8f %16.8f", ir, pre_dx, pre_dy, pre_dz));
                             }
                             zgrid += zstep;
                         }
@@ -9864,23 +9232,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dex[0][ir] = 0.5 * rrsq * pre_dx;
                     dex[1][ir] = 0.5 * rrsq * pre_dy;
                     dex[2][ir] = 0.5 * rrsq * pre_dz;
-                    //logger.info(format(" de/dx:\t%s\t%s\t%s\t%s", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
                 }
             }
 
             public void Switch(String mode) {
-                // use limits
-                // use nonpol
-                // use shunt
                 double denom, term;
                 double off3, off4, off5;
                 double off6, off7;
                 double cut3, cut4, cut5;
                 double cut6, cut7;
 
-                /**
-                 * Get the switching window for the current potential type.
-                 */
+                // Get the switching window for the current potential type.
                 switch (mode) {
                     case "VDW":
                         off = vdwcut;
@@ -9924,9 +9286,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         break;
                 }
 
-                /**
-                 * Set switching coefficients to zero for truncation cutoffs.
-                 */
+                // Set switching coefficients to zero for truncation cutoffs.
                 c0 = 0.0;
                 c1 = 0.0;
                 c2 = 0.0;
@@ -9941,9 +9301,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 f5 = 0.0;
                 f6 = 0.0;
                 f7 = 0.0;
-                /**
-                 * Store the powers of the switching window cutoffs.
-                 */
+                // Store the powers of the switching window cutoffs.
                 off2 = off * off;
                 off3 = off2 * off;
                 off4 = off2 * off2;
@@ -9956,9 +9314,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 cut5 = cut2 * cut3;
                 cut6 = cut3 * cut3;
                 cut7 = cut3 * cut4;
-                /**
-                 * Get 5th degree multiplicative switching function coefficients.
-                 */
+                // Get 5th degree multiplicative switching function coefficients.
                 if (cut < off) {
                     denom = (off - cut) * (off - cut) * (off - cut) * (off - cut) * (off - cut);
                     c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
@@ -9968,9 +9324,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     c4 = 15.0 * (off + cut) / denom;
                     c5 = -6.0 / denom;
                 }
-                /**
-                 * Get 7th degree additive switching function coefficients.
-                 */
+                // Get 7th degree additive switching function coefficients.
                 if (cut < off && (mode.equals("CHARGE"))) {
                     term = 9.3 * cut * off / (off - cut);
                     denom = cut7 - 7.0 * cut6 * off + 21.0 * cut5 * off2 - 35.0 * cut4 * off3 + 35.0 * cut3 * off4 - 21.0 * cut2 * off5 + 7.0 * cut * off6 - off7;
@@ -9986,7 +9340,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
             }
 
-            public void enp() {
+            void enp() {
                 double evolume;
                 double cross;
                 double taper;
@@ -10001,42 +9355,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 stcut = cross + 3.9;
                 stoff = cross - 3.5;
 
-                /**
-                 * Zero out the nonpolar implicit solvation energy terms.
-                 */
+                // Zero out the nonpolar implicit solvation energy terms.
                 ecav = 0.0;
-                /**
-                 * Compute SASA and effective radius needed for cavity term.
-                 */
+                // Compute SASA and effective radius needed for cavity term.
                 reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));
                 reff2 = reff * reff;
                 reff3 = reff2 * reff;
                 reff4 = reff3 * reff;
                 reff5 = reff4 * reff;
-                /**
-                 * Compute solvent excluded volume needed for small solutes.
-                 */
+                // Compute solvent excluded volume needed for small solutes.
                 evolume = evol;
                 if (reff < spoff) {
                     evolume = evolume * solvprs;
                 }
-                /**
-                 * Find cavity energy from only the solvent excluded volume.
-                 */
+                // Find cavity energy from only the solvent excluded volume.
                 if (reff <= spcut) {
                     ecav = evolume;
                 } else if (reff > spcut && reff <= stoff) {
-                    /**
-                     * Find cavity energy from only a tapered volume term.
-                     */
+                    // Find cavity energy from only a tapered volume term.
                     mode = "GKV";
                     Switch(mode);
                     taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
                     ecav = taper * evolume;
                 } else if (reff > stoff && reff <= spoff) {
-                    /**
-                     * Find cavity energy using both volume and SASA terms.
-                     */
+                    // Find cavity energy using both volume and SASA terms.
                     mode = "GKV";
                     Switch(mode);
                     taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
@@ -10047,17 +9389,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     taper = 1.0 - taper;
                     ecav = ecav + taper * esurf;
                 } else if (reff > spoff && reff <= stcut) {
-                    /**
-                     * Find cavity energy from only a tapered SASA term.
-                     */
+                    // Find cavity energy from only a tapered SASA term.
                     mode = "GKSA";
                     Switch(mode);
                     taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
                     taper = 1.0 - taper;
                     ecav = taper * esurf;
-                    /**
-                     * Find cavity energy from only a SASA-based term.
-                     */
+                    // Find cavity energy from only a SASA-based term.
                 } else {
                     ecav = esurf;
                 }
@@ -10623,4 +9961,122 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         ATOMTYPE, BIOTYPE, NONE;
     }
+
+//    AMOEBA 2009 GK Radii
+//    solute-vdw	25	4.9140
+//    solute-vdw	26	3.7700
+//    solute-vdw	27	4.5840
+//    solute-vdw	28	3.5520
+//    solute-vdw	29	4.5840
+//    solute-vdw	30	3.5760
+//    solute-vdw	34	2.9964
+//    solute-vdw	35	2.3895
+//    solute-vdw	36	2.9964
+//    solute-vdw	37	2.3364
+//    solute-vdw	38	3.3840
+//    solute-vdw	39	2.5830
+//    solute-vdw	40	3.4380
+//    solute-vdw	41	2.6640
+//    solute-vdw	42	2.6820
+//    solute-vdw	43	3.6500
+//    solute-vdw	44	3.1790
+//    solute-vdw	45	3.7100
+//    solute-vdw	46	2.7000
+//    solute-vdw	49	3.1535
+//    solute-vdw	50	2.4300
+//    solute-vdw	51	2.5920
+//    solute-vdw	52	2.6640
+//    solute-vdw	53	3.4380
+//    solute-vdw	54	2.5200
+//    solute-vdw	55	3.0690
+//    solute-vdw	56	3.7100
+//    solute-vdw	57	2.3310
+//    solute-vdw	58	2.6550
+//    solute-vdw	59	2.6370
+//    solute-vdw	60	3.30285
+//    solute-vdw	61	2.3895
+//    solute-vdw	62	3.4020
+//    solute-vdw	63	2.6280
+//    solute-vdw	64	2.6820
+//    solute-vdw	67	5.3267
+//    solute-vdw	68	3.6841
+//    solute-vdw	69	3.8171
+//    solute-vdw	70	5.0806
+//    solute-vdw	71	3.9634
+//    solute-vdw	87	5.0540
+//    solute-vdw	88	3.9634
+//    solute-vdw	89	3.8000
+//    solute-vdw	90	2.9800
+//    solute-vdw	91	3.3390
+//    solute-vdw	92	3.5910
+//    solute-vdw	93	3.0000
+
+//    AMOEBA 2014 GK Radii
+//    solute-vdw	27	4.5840
+//    solute-vdw	28	3.5520
+//    solute-vdw	33	3.6000
+//    solute-vdw	65	4.4055
+//    solute-vdw	66	3.3240
+//    solute-vdw	79	4.5840
+//    solute-vdw	80	3.6516
+//    solute-vdw	82	4.5840
+//    solute-vdw	83	3.4920
+//    solute-vdw	403	5.3200
+//    solute-vdw	404	4.1720
+//    solute-vdw	427	3.4960
+//    solute-vdw	423	3.4776
+//    solute-vdw	425	3.4960
+//    solute-vdw	422	3.4132
+//    solute-vdw	426	2.7416
+//    solute-vdw	428	2.7416
+//    solute-vdw	424	2.7600
+//    solute-vdw	443	4.5360
+//    solute-vdw	444	4.6058
+//    solute-vdw	445	3.4440
+//    solute-vdw	446	3.3240
+//    solute-vdw	447	4.3470
+//    solute-vdw	448	4.8060
+//    solute-vdw	449	3.5520
+//    solute-vdw	450	4.2120
+//    solute-vdw	463	4.5840
+//    solute-vdw	464	3.3810
+//    solute-vdw	465	3.5520
+//    solute-vdw	466	4.2020
+//    solute-vdw	467	4.2895
+//    solute-vdw	468	3.2560
+//    solute-vdw	469	4.5840
+//    solute-vdw	470	4.3780
+//    solute-vdw	471	3.5520
+//    solute-vdw	472	4.5600
+//    solute-vdw      473     4.5600
+//    solute-vdw      474     4.5600
+//    solute-vdw      475     4.5600
+//    solute-vdw	476	3.381
+//    solute-vdw	477	3.5760
+//    solute-vdw      478     3.5760
+//    solute-vdw      479     3.5760
+//    solute-vdw	480	4.5600
+//    solute-vdw      481     4.5600
+//    solute-vdw      482     4.5600
+//    solute-vdw      483     4.5600
+//    solute-vdw      484     4.4760
+//    solute-vdw	485	3.5760
+//    solute-vdw      486     3.5760
+//    solute-vdw      487     3.5760
+//    solute-vdw	488	4.5600
+//    solute-vdw      489     4.5600
+//    solute-vdw      490     4.5600
+//    solute-vdw      491     4.5600
+//    solute-vdw      492     4.3780
+//    solute-vdw      493     3.5760
+//    solute-vdw      494     3.5760
+//    solute-vdw      495     3.5760
+//    solute-vdw	499	4.5840
+//    solute-vdw	500	4.6625
+//    solute-vdw	501	3.5760
+//    solute-vdw	502	4.5840
+//    solute-vdw	503	4.7760
+//    solute-vdw	504	3.5760
+
+
 }
