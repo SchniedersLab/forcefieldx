@@ -37,12 +37,9 @@
 //******************************************************************************
 package ffx.potential.nonbonded;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Double.isInfinite;
@@ -83,10 +80,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ISolvRadType;
-import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 import static ffx.numerics.math.VectorMath.cross;
@@ -122,21 +116,6 @@ import static ffx.potential.parameters.MultipoleType.t200;
 public class GeneralizedKirkwood implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
-
-    /**
-     * Set of force fields for which we have fitted GK/GB radii.
-     */
-    private static final Set<String> fittedForceFields;
-
-    static {
-        fittedForceFields = new HashSet<>();
-        /*
-          AMOEBA-PROTEIN-2013 and AMBER99SB as fitted by Stephen D. LuCore.
-          Various tweaks to both force fields also use the same radii.
-         */
-        String[] fitted = {"AMOEBA-PROTEIN-2013", "AMOEBA-DIRECT-2013", "AMOEBA-FIXED-2013", "AMBER99SB", "AMBER99SB-TIP3F"};
-        fittedForceFields.addAll(Arrays.asList(fitted));
-    }
 
     /**
      * Empirical constant that controls the GK cross-term.
@@ -179,11 +158,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Empirical scaling of the Bondi radii.
      */
-    private final double bondiScale;
-    /**
-     * Global adjustment to Born radii.
-     */
-    private final double globalRadiiScale;
+    double bondiScale;
     /**
      * Cavitation surface tension coefficient (kcal/mol/A^2).
      */
@@ -427,23 +402,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private boolean nativeEnvironmentApproximation;
     /**
-     * Provides maps from atomtypes or biotypes to fitted GK radii (by
-     * forcefield).
-     */
-    private boolean useFittedRadii;
-    private SolventRadii solventRadii;
-    private RADII_MAP_TYPE radiiMapType = RADII_MAP_TYPE.ATOMTYPE;
-    /**
      * Maps radii overrides (by AtomType) specified from the command line. e.g.
      * -DradiiOverride=134r1.20,135r1.20 sets atom types 134,135 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiOverride = new HashMap<>();
-    /**
-     * Maps radii overrides (by atom number) specified from the command line.
-     * This takes precendence over AtomType-based overrides. e.g.
-     * -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
-     */
-    private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
     /**
      * Control GK logging.
      */
@@ -503,58 +465,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
             GK_WARN_LEVEL = Level.WARNING;
         }
 
-        try {
-            epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON);
-            logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
-        } catch (Exception e) {
-            epsilon = dWater;
-        }
-
-        // Se the Kirkwood multipolar reaction field constants.
+        // Set the Kirkwood multipolar reaction field constants.
+        epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON, dWater);
         fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
         fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
         fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
 
-        String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
-                ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
-        forcefieldName = forcefieldName.replaceAll("_", "-");
+        // Define default Bondi scale factor, and HCT overlap scale factors.
+        bondiScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_BONDIOVERRIDE, DEFAULT_BONDI_SCALE);
+        heavyAtomOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, DEFAULT_OVERLAP_SCALE);
+        hydrogenOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, heavyAtomOverlapScale);
 
-        boolean doUseFitRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, false);
-
-        boolean hasFittedRadii = fittedForceFields.contains(forcefieldName.toUpperCase());
-
-        if (doUseFitRadii) {
-            if (hasFittedRadii) {
-                useFittedRadii = true;
-                solventRadii = new SolventRadii(forcefieldName, forceField);
-            }
-        } else if (hasFittedRadii) {
-            logger.log(Level.INFO, format(" (GK) Ignoring fitted radii for force field %s", forcefieldName));
-        }
-
-        boolean vRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_VERBOSERADII, false);
-        if (vRadii) {
-            logger.info(" (GK) Verbose radii enabled.");
-        }
-        verboseRadii = vRadii;
-
-        double bondiScaleValue;
-        try {
-            bondiScaleValue = forceField.getDouble(ForceField.ForceFieldDouble.GK_BONDIOVERRIDE);
-            logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScaleValue));
-        } catch (Exception ex) {
-            bondiScaleValue = useFittedRadii ? solventRadii.getDefaultBondi() : DEFAULT_BONDI_SCALE;
-            if (verboseRadii) {
-                logger.info(format(" (GK) Scaling default GLOBAL bondi radii by factor: %.2f", bondiScaleValue));
-            }
-        }
-        bondiScale = bondiScaleValue;
-
-        globalRadiiScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_GLOBAL_RADIISCALE, 1.0);
-        if (globalRadiiScale != 1.0) {
-            logger.info(format(" (GK) All non-overridden radii are scaled by factor: %.6f", globalRadiiScale));
-        }
-
+        // Process any radii override values.
         String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
             String[] tokens = radiiProp.split("A");
@@ -569,30 +491,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 radiiOverride.put(type, factor);
             }
         }
-
-        String radiiByNumber = forceField.getString(ForceField.ForceFieldString.GK_RADIIBYNUMBER, null);
-        if (radiiByNumber != null) {
-            String[] tokens = radiiByNumber.split(",");
-            for (String token : tokens) {
-                if (!token.contains("r")) {
-                    logger.severe("Invalid radius override.");
-                }
-                int separator = token.indexOf("r");
-                int num = Integer.parseInt(token.substring(0, separator));
-                double factor = Double.parseDouble(token.substring(separator + 1));
-                logger.info(format(" (GK) Scaling Atom Number %d with bondi factor %.2f", num, factor));
-                radiiByNumberMap.put(num, factor);
-            }
-        }
-
-        double defaultOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, DEFAULT_OVERLAP_SCALE);
-        if (doUseFitRadii && hasFittedRadii) {
-            defaultOverlapScale = solventRadii.getOverlapScale();
-        }
-
-        heavyAtomOverlapScale = defaultOverlapScale;
-        hydrogenOverlapScale = forceField.getDouble(
-                ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, heavyAtomOverlapScale);
 
         NonPolar nonpolarModel;
         try {
@@ -609,12 +507,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         nativeEnvironmentApproximation = forceField.getBoolean(
                 ForceField.ForceFieldBoolean.NATIVE_ENVIRONMENT_APPROXIMATION, false);
-
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
-
         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.GK_CUTOFF, particleMeshEwald.getEwaldCutoff());
         cut2 = cutoff * cutoff;
-
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_LAMBDATERM,
                 forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
 
@@ -689,6 +584,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (cavitationRegion != null) {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
+        }
+
+        // Print out all Base Radii
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine("   GK Base Radii");
+            for (int i = 0; i < nAtoms; i++) {
+                logger.info(format("   %s %8.6f %8.6f %5.3f", atoms[i].toString(),
+                        baseRadius[i], baseRadiusWithBondi[i], overlapScale[i]));
+            }
         }
 
         outputVolume = forceField.getBoolean(ForceField.ForceFieldBoolean.VOLUME, false);
@@ -901,200 +805,29 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         fill(use, true);
+
+        applyGKRadii();
+
+        // Set up HCT overlap scale factors and any requested radii overrides.
         for (int i = 0; i < nAtoms; i++) {
-            baseRadius[i] = 2.0;
             overlapScale[i] = heavyAtomOverlapScale;
             int atomicNumber = atoms[i].getAtomicNumber();
+            if (atomicNumber == 1) {
+                overlapScale[i] = hydrogenOverlapScale;
+            }
+
             AtomType atomType = atoms[i].getAtomType();
-
-            switch (atomicNumber) {
-                case 0:
-                    baseRadius[i] = 0.0;
-                    break;
-                case 1:
-                    baseRadius[i] = 1.2;
-                    overlapScale[i] = hydrogenOverlapScale;
-                    break;
-                case 2:
-                    baseRadius[i] = 1.4;
-                    break;
-                case 5:
-                    baseRadius[i] = 1.8;
-                    break;
-                case 6:
-                    baseRadius[i] = 1.7;
-                    break;
-                case 7:
-                    baseRadius[i] = 1.55;
-                    break;
-                case 8:
-                    baseRadius[i] = 1.52;
-                    break;
-                case 9:
-                    baseRadius[i] = 1.47;
-                    break;
-                case 10:
-                    baseRadius[i] = 1.54;
-                    break;
-                case 14:
-                    baseRadius[i] = 2.1;
-                    break;
-                case 15:
-                    baseRadius[i] = 1.8;
-                    break;
-                case 16:
-                    baseRadius[i] = 1.8;
-                    break;
-                case 17:
-                    baseRadius[i] = 1.75;
-                    break;
-                case 18:
-                    baseRadius[i] = 1.88;
-                    break;
-                case 34:
-                    baseRadius[i] = 1.9;
-                    break;
-                case 35:
-                    baseRadius[i] = 1.85;
-                    break;
-                case 36:
-                    baseRadius[i] = 2.02;
-                    break;
-                case 53:
-                    baseRadius[i] = 1.98;
-                    break;
-                case 54:
-                    baseRadius[i] = 2.16;
-                    break;
-                default:
-                    baseRadius[i] = 2.00;
-            }
-
             double bondiFactor = bondiScale;
-
-            int atomNumber = atoms[i].getIndex() + 1;
-            if (useFittedRadii) {
-                // First check to see if this atom is in the hardcoded maps.
-                switch (radiiMapType) {
-                    default:
-                    case ATOMTYPE:
-                        // Check for hard-coded AtomType bondi factor.
-                        if (solventRadii.getAtomBondiMap().containsKey(atomType.type)) {
-                            bondiFactor = solventRadii.getAtomBondiMap().get(atomType.type);
-                            if (verboseRadii) {
-                                logger.info(format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
-                                        atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                            }
-                        }
-                        // TODO: fix these manual overrides which only apply to AM-PRO-13.
-                        // Special case for ALA alpha carbon and alpha hydrogen.
-                        // Many aminos use types 8,12 for their CA,HA so these can't be specified in the map.
-                        if ((atoms[i].getAtomType().type == 8 || atoms[i].getAtomType().type == 12)) {
-                            if (atoms[i].getResidueName().equals("ALA")) {
-                                bondiFactor = 1.60;
-                                if (verboseRadii) {
-                                    logger.info(format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
-                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                                }
-                            }
-                        }
-                        // Special case for CYD CB,HB.  As above, atom types for the CB+HB are shared between CYS and CYD.
-                        // Currently, we only want S+HS on CYS.  So the CB,HB (types 43,44) are disabled in the table.
-                        if ((atoms[i].getAtomType().type == 43 || atoms[i].getAtomType().type == 44)) {
-                            if (atoms[i].getResidueName().equals("CYD")) {
-                                bondiFactor = 1.02;
-                                if (verboseRadii) {
-                                    logger.info(format(" (GK) TypeToBondi: Atom %3s-%-4s (%d) with AtomType %d to %.2f (bondi factor %.4f)",
-                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                                }
-                            }
-                        }
-                        break;
-                    case BIOTYPE:
-                        Map<String, BioType> bioTypes = forceField.getBioTypeMap();
-                        BioType bioType = null;
-                        for (BioType one : bioTypes.values()) {
-                            if (one.atomType == atomType.type) {
-                                bioType = one;
-                                break;
-                            }
-                        }
-                        if (bioType == null) {
-                            logger.severe(format("Couldn't find biotype for %s", atomType, toString()));
-                        }
-
-                        //                BioType bioType = forceField.getBioType(atoms[i].getResidueName(), atoms[i].getName());
-                        //                if (bioType == null) {
-                        //                    logger.info(format("Null biotype for atom: %3s-%-4s",
-                        //                            atoms[i].getResidueName(), atoms[i].getName()));
-                        //                }
-                        // Check for hard-coded BioType bondi factor.
-                        if (solventRadii.getBioBondiMap().containsKey(bioType.index)) {
-                            double factor = solventRadii.getBioBondiMap().get(bioType.index);
-                            bondiFactor = factor;
-                            if (verboseRadii) {
-                                logger.info(format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
-                                        atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
-                            }
-                        }
-                        // TODO: fix these manual overrides which only apply to AM-PRO-13.
-                        // Special case for ALA alpha carbon and alpha hydrogen.
-                        // Many aminos use types 8,12 for their CA,HA so these can't be specified in the map.
-                        if (bioType.index == 8 || bioType.index == 12) {
-                            if (atoms[i].getResidueName().equals("ALA")) {
-                                bondiFactor = 1.60;
-                                if (verboseRadii) {
-                                    logger.info(format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
-                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
-                                }
-                            }
-                        }
-                        // Special case for CYD CB,HB.  As above, atom types for the CB+HB are shared between CYS and CYD.
-                        // Currently, we only want S+HS on CYS.  So the CB,HB (types 43,44) are disabled in the table.
-                        if (bioType.index == 83 || bioType.index == 84) {
-                            if (atoms[i].getResidueName().equals("CYD")) {
-                                bondiFactor = 1.02;
-                                if (verboseRadii) {
-                                    logger.info(format(" (GK) BiotypeToBondi: Atom %3s-%-4s (%d) with BioType %d to %.2f (bondi factor %.4f)",
-                                            atoms[i].getResidueName(), atoms[i].getName(), atomNumber, bioType.index, baseRadius[i] * bondiFactor, bondiFactor));
-                                }
-                            }
-                        }
-                        break;
-                }
-            }
-            ISolvRadType iSolvRadType = forceField.getISolvRadType(Integer.toString(atomType.type));
-            if (iSolvRadType != null) {
-                bondiFactor = iSolvRadType.radiusScale;
-                if (verboseRadii) {
-                    logger.info(format(" (GK) ISolvRad parameter for Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
-                            atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-                }
-            }
-            // Finally, check for command-line bondi factor override.
-            if (radiiOverride.containsKey(atomType.type) && !radiiByNumberMap.containsKey(atomNumber)) {
+            if (radiiOverride.containsKey(atomType.type)) {
                 bondiFactor = radiiOverride.get(atomType.type);
-                logger.info(format(" (GK) Scaling Atom %3s-%-4s with AtomType %d to %.2f (bondi factor %.2f)",
-                        atoms[i].getResidueName(), atoms[i].getName(), atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
-            }
-            if (radiiByNumberMap.containsKey(atomNumber)) {
-                bondiFactor = radiiByNumberMap.get(atomNumber);
-                logger.info(format(" (GK) Scaling Atom number %d, %3s-%-4s, with factor %.2f",
-                        atomNumber, atoms[i].getResidueName(), atoms[i].getName(), bondiFactor));
-            }
-
-            if (!radiiOverride.containsKey(atomType.type)) {
-                bondiFactor *= globalRadiiScale;
-            } else {
-                logger.fine(format(" Not scaling atom type %d", atomType.type));
+                logger.info(format(" Scaling %s (atom type %d) to %7.4f (Bondi factor %7.4f)",
+                        atoms[i], atomType.type, baseRadius[i] * bondiFactor, bondiFactor));
             }
 
             baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
-
         }
 
         // Resets verboseRadii; reduces logging messages when mutating MultiResidues.
-        //verboseRadii = false;
         if (dispersionRegion != null) {
             dispersionRegion.init();
         }
@@ -1199,7 +932,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     cavitationTime = -System.nanoTime();
                     parallelTeam.execute(cavitationRegion);
                     if (doVolume) {
-                        parallelTeam.execute(volumeRegion);
+                        ParallelTeam serialTeam = new ParallelTeam(1);
+                        serialTeam.execute(volumeRegion);
                     }
                     cavitationTime += System.nanoTime();
                     break;
@@ -1211,7 +945,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     cavitationTime = -System.nanoTime();
                     parallelTeam.execute(cavitationRegion);
                     if (doVolume) {
-                        parallelTeam.execute(volumeRegion);
+                        ParallelTeam serialTeam = new ParallelTeam(1);
+                        serialTeam.execute(volumeRegion);
                     }
                     cavitationTime += System.nanoTime();
                     break;
@@ -1324,7 +1059,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         if (outputVolume) {
             try {
-                parallelTeam.execute(volumeRegion);
+                ParallelTeam serialTeam = new ParallelTeam(1);
+                serialTeam.execute(volumeRegion);
                 logger.info(format(" Total Volume        %16.8f", volumeRegion.getVolume()));
                 logger.info(format(" Total Area          %16.8f", volumeRegion.getArea()));
             } catch (Exception e) {
@@ -2502,6 +2238,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 continue;
                             }
                             interaction(i, k);
+
                         }
                         if (iSymm == 0) {
                             // Include self-interactions for the asymmetric unit atoms.
@@ -2681,6 +2418,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
                 // Compute the GK interaction energy.
                 double eik = energy(i, k);
+
                 gkEnergy += eik;
                 count++;
 
@@ -5713,7 +5451,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         /**
          * Circle atom number.
          */
-        private final int ca[] = new int[maxc];
+        private final int[] ca = new int[maxc];
         /**
          * Circle torus number.
          */
@@ -5957,7 +5695,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             double dplcut, mpolecut;
             double vdwtaper, chgtaper;
             double dpltaper, mpoletaper;
-            double ewaldcut, usolvcut;
 
             // module nonpol
             double solvprs;
@@ -9236,18 +8973,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             public void Switch(String mode) {
-                double denom, term;
-                double off3, off4, off5;
-                double off6, off7;
-                double cut3, cut4, cut5;
-                double cut6, cut7;
+                double denom;
 
                 // Get the switching window for the current potential type.
                 switch (mode) {
-                    case "VDW":
-                        off = vdwcut;
-                        cut = vdwtaper;
-                        break;
                     case "GKV":
                         off = spoff;
                         cut = spcut;
@@ -9256,33 +8985,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         off = stcut;
                         cut = stoff;
                         break;
-                    case "MPOLE":
-                        off = mpolecut;
-                        cut = mpoletaper;
-                        break;
-                    case "EWALD":
-                        off = ewaldcut;
-                        cut = ewaldcut;
-                        break;
-                    case "CHARGE":
-                        off = chgcut;
-                        cut = chgtaper;
-                        break;
-                    case "CHGDPL":
-                        off = sqrt(chgcut * dplcut);
-                        cut = sqrt(chgtaper * dpltaper);
-                        break;
-                    case "DIPOLE":
-                        off = dplcut;
-                        cut = dpltaper;
-                        break;
-                    case "USOLVE":
-                        off = usolvcut;
-                        cut = usolvcut;
-                        break;
                     default:
-                        off = Math.min(vdwcut, Math.min(chgcut, Math.min(dplcut, mpolecut)));
-                        cut = Math.min(vdwtaper, Math.min(chgtaper, Math.min(dpltaper, mpoletaper)));
+                        off = min(vdwcut, min(chgcut, min(dplcut, mpolecut)));
+                        cut = min(vdwtaper, min(chgtaper, min(dpltaper, mpoletaper)));
                         break;
                 }
 
@@ -9303,17 +9008,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 f7 = 0.0;
                 // Store the powers of the switching window cutoffs.
                 off2 = off * off;
-                off3 = off2 * off;
-                off4 = off2 * off2;
-                off5 = off2 * off3;
-                off6 = off3 * off3;
-                off7 = off3 * off4;
                 cut2 = cut * cut;
-                cut3 = cut2 * cut;
-                cut4 = cut2 * cut2;
-                cut5 = cut2 * cut3;
-                cut6 = cut3 * cut3;
-                cut7 = cut3 * cut4;
                 // Get 5th degree multiplicative switching function coefficients.
                 if (cut < off) {
                     denom = (off - cut) * (off - cut) * (off - cut) * (off - cut) * (off - cut);
@@ -9323,20 +9018,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
                     c4 = 15.0 * (off + cut) / denom;
                     c5 = -6.0 / denom;
-                }
-                // Get 7th degree additive switching function coefficients.
-                if (cut < off && (mode.equals("CHARGE"))) {
-                    term = 9.3 * cut * off / (off - cut);
-                    denom = cut7 - 7.0 * cut6 * off + 21.0 * cut5 * off2 - 35.0 * cut4 * off3 + 35.0 * cut3 * off4 - 21.0 * cut2 * off5 + 7.0 * cut * off6 - off7;
-                    denom = term * denom;
-                    f0 = cut3 * off3 * (-39.0 * cut + 64.0 * off) / denom;
-                    f1 = cut2 * off2 * (117.0 * cut2 - 100.0 * cut * off - 192.0 * off2) / denom;
-                    f2 = cut * off * (-117.0 * cut3 - 84.0 * cut2 * off + 534.0 * cut * off2 + 192.0 * off3) / denom;
-                    f3 = (39.0 * cut4 + 212.0 * cut3 * off - 450.0 * cut2 * off2 - 612.0 * cut * off3 - 64.0 * off4) / denom;
-                    f4 = (-92.0 * cut3 + 66.0 * cut2 * off + 684.0 * cut * off2 + 217.0 * off3) / denom;
-                    f5 = (42.0 * cut2 - 300.0 * cut * off - 267.0 * off2) / denom;
-                    f6 = (36.0 * cut + 139.0 * off) / denom;
-                    f7 = -25.0 / denom;
                 }
             }
 
@@ -9957,126 +9638,255 @@ public class GeneralizedKirkwood implements LambdaInterface {
         CAV, CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
 
-    private enum RADII_MAP_TYPE {
+    /**
+     * This maps atomic number to reasonable GK base radii.
+     */
+    private static final Map<Integer, Double> DEFAULT_RADII = new HashMap<>();
 
-        ATOMTYPE, BIOTYPE, NONE;
+    /**
+     * This map connects AMOEBA '09 atom classes to GK base radii.
+     */
+    private static final Map<Integer, Double> AMOEBA_2009_GK_RADII = new HashMap<>();
+
+    /**
+     * This map connects AMOEBA '14 atom classes to GK base radii.
+     */
+    private static final Map<Integer, Double> AMOEBA_2014_GK_RADII = new HashMap<>();
+
+    private void applyGKRadii() {
+        Map<Integer, Double> radiiMap = null;
+
+        String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
+                ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
+        forcefieldName = forcefieldName.replaceAll("_", "-");
+
+        if (forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true)) {
+            if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
+                radiiMap = AMOEBA_2009_GK_RADII;
+                bondiScale = 1.0;
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
+                radiiMap = AMOEBA_2014_GK_RADII;
+                bondiScale = 1.0;
+            }
+        }
+
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            baseRadius[i] = DEFAULT_RADII.get(atom.getAtomicNumber());
+            if (radiiMap != null) {
+                baseRadius[i] = radiiMap.get(atom.getAtomType().atomClass);
+            }
+        }
     }
 
-//    AMOEBA 2009 GK Radii
-//    solute-vdw	25	4.9140
-//    solute-vdw	26	3.7700
-//    solute-vdw	27	4.5840
-//    solute-vdw	28	3.5520
-//    solute-vdw	29	4.5840
-//    solute-vdw	30	3.5760
-//    solute-vdw	34	2.9964
-//    solute-vdw	35	2.3895
-//    solute-vdw	36	2.9964
-//    solute-vdw	37	2.3364
-//    solute-vdw	38	3.3840
-//    solute-vdw	39	2.5830
-//    solute-vdw	40	3.4380
-//    solute-vdw	41	2.6640
-//    solute-vdw	42	2.6820
-//    solute-vdw	43	3.6500
-//    solute-vdw	44	3.1790
-//    solute-vdw	45	3.7100
-//    solute-vdw	46	2.7000
-//    solute-vdw	49	3.1535
-//    solute-vdw	50	2.4300
-//    solute-vdw	51	2.5920
-//    solute-vdw	52	2.6640
-//    solute-vdw	53	3.4380
-//    solute-vdw	54	2.5200
-//    solute-vdw	55	3.0690
-//    solute-vdw	56	3.7100
-//    solute-vdw	57	2.3310
-//    solute-vdw	58	2.6550
-//    solute-vdw	59	2.6370
-//    solute-vdw	60	3.30285
-//    solute-vdw	61	2.3895
-//    solute-vdw	62	3.4020
-//    solute-vdw	63	2.6280
-//    solute-vdw	64	2.6820
-//    solute-vdw	67	5.3267
-//    solute-vdw	68	3.6841
-//    solute-vdw	69	3.8171
-//    solute-vdw	70	5.0806
-//    solute-vdw	71	3.9634
-//    solute-vdw	87	5.0540
-//    solute-vdw	88	3.9634
-//    solute-vdw	89	3.8000
-//    solute-vdw	90	2.9800
-//    solute-vdw	91	3.3390
-//    solute-vdw	92	3.5910
-//    solute-vdw	93	3.0000
+    static {
+        DEFAULT_RADII.put(0, 0.0);
+        DEFAULT_RADII.put(1, 1.2);
+        DEFAULT_RADII.put(2, 1.4);
+        DEFAULT_RADII.put(5, 1.8);
+        DEFAULT_RADII.put(6, 1.7);
+        DEFAULT_RADII.put(7, 1.55);
+        DEFAULT_RADII.put(8, 1.52);
+        DEFAULT_RADII.put(9, 1.47);
+        DEFAULT_RADII.put(10, 1.54);
+        DEFAULT_RADII.put(14, 2.1);
+        DEFAULT_RADII.put(15, 1.8);
+        DEFAULT_RADII.put(16, 1.8);
+        DEFAULT_RADII.put(17, 1.75);
+        DEFAULT_RADII.put(18, 1.88);
+        DEFAULT_RADII.put(34, 1.9);
+        DEFAULT_RADII.put(35, 1.85);
+        DEFAULT_RADII.put(36, 2.02);
+        DEFAULT_RADII.put(53, 1.98);
+        DEFAULT_RADII.put(54, 2.16);
+        for (int i = 0; i <= 118; i++) {
+            if (!DEFAULT_RADII.containsKey(i)) {
+                DEFAULT_RADII.put(i, 2.0);
+            }
+        }
 
-//    AMOEBA 2014 GK Radii
-//    solute-vdw	27	4.5840
-//    solute-vdw	28	3.5520
-//    solute-vdw	33	3.6000
-//    solute-vdw	65	4.4055
-//    solute-vdw	66	3.3240
-//    solute-vdw	79	4.5840
-//    solute-vdw	80	3.6516
-//    solute-vdw	82	4.5840
-//    solute-vdw	83	3.4920
-//    solute-vdw	403	5.3200
-//    solute-vdw	404	4.1720
-//    solute-vdw	427	3.4960
-//    solute-vdw	423	3.4776
-//    solute-vdw	425	3.4960
-//    solute-vdw	422	3.4132
-//    solute-vdw	426	2.7416
-//    solute-vdw	428	2.7416
-//    solute-vdw	424	2.7600
-//    solute-vdw	443	4.5360
-//    solute-vdw	444	4.6058
-//    solute-vdw	445	3.4440
-//    solute-vdw	446	3.3240
-//    solute-vdw	447	4.3470
-//    solute-vdw	448	4.8060
-//    solute-vdw	449	3.5520
-//    solute-vdw	450	4.2120
-//    solute-vdw	463	4.5840
-//    solute-vdw	464	3.3810
-//    solute-vdw	465	3.5520
-//    solute-vdw	466	4.2020
-//    solute-vdw	467	4.2895
-//    solute-vdw	468	3.2560
-//    solute-vdw	469	4.5840
-//    solute-vdw	470	4.3780
-//    solute-vdw	471	3.5520
-//    solute-vdw	472	4.5600
-//    solute-vdw      473     4.5600
-//    solute-vdw      474     4.5600
-//    solute-vdw      475     4.5600
-//    solute-vdw	476	3.381
-//    solute-vdw	477	3.5760
-//    solute-vdw      478     3.5760
-//    solute-vdw      479     3.5760
-//    solute-vdw	480	4.5600
-//    solute-vdw      481     4.5600
-//    solute-vdw      482     4.5600
-//    solute-vdw      483     4.5600
-//    solute-vdw      484     4.4760
-//    solute-vdw	485	3.5760
-//    solute-vdw      486     3.5760
-//    solute-vdw      487     3.5760
-//    solute-vdw	488	4.5600
-//    solute-vdw      489     4.5600
-//    solute-vdw      490     4.5600
-//    solute-vdw      491     4.5600
-//    solute-vdw      492     4.3780
-//    solute-vdw      493     3.5760
-//    solute-vdw      494     3.5760
-//    solute-vdw      495     3.5760
-//    solute-vdw	499	4.5840
-//    solute-vdw	500	4.6625
-//    solute-vdw	501	3.5760
-//    solute-vdw	502	4.5840
-//    solute-vdw	503	4.7760
-//    solute-vdw	504	3.5760
+        // *************************************************
+        // Initialize AMOEBA 2009 GK Radii.
 
+//        atom          1    1    He    "Helium Atom He"               2     4.003    0
+//        atom          2    2    Ne    "Neon Atom Ne"                10    20.179    0
+//        atom          3    3    Ar    "Argon Atom Ar"               18    39.948    0
+//        atom          4    4    Kr    "Krypton Atom Kr"             36    83.800    0
+//        atom          5    5    Xe    "Xenon Atom Xe"               54   131.290    0
+//        atom          6    6    Li+   "Lithium Ion Li+"              3     6.941    0
+//        atom          7    7    Na+   "Sodium Ion Na+"              11    22.990    0
+//        atom          8    8    K+    "Potassium Ion K+"            19    39.098    0
+//        atom          9    9    Rb+   "Rubidium Ion Rb+"            37    85.468    0
+//        atom         10   10    Cs+   "Cesium Ion Cs+"              55   132.905    0
+//        atom         11   11    Mg+   "Magnesium Ion Mg+2"          12    24.305    0
+//        atom         12   12    Ca+   "Calcium Ion Ca+2"            20    40.078    0
+//        atom         13   13    Zn+   "Zinc Ion Zn+2"               30    65.390    0
+//        atom         14   14    F-    "Fluoride Ion F-"              9    18.998    0
+//        atom         15   15    Cl-   "Chloride Ion Cl-"            17    35.453    0
+//        atom         16   16    Br-   "Bromide Ion Br-"             35    79.904    0
+//        atom         17   17    I-    "Iodide Ion I-"               53   126.904    0
+//        atom         18   18    C     "Cyanide Ion C"                6    12.011    1
+//        atom         19   19    N     "Cyanide Ion N"                7    14.007    1
+//        atom         20   20    B     "Tetrafluoroborate B"          5    10.810    4
+//        atom         21   21    F     "Tetrafluoroborate F"          9    18.998    1
+//        atom         22   22    P     "Hexafluorophosphate P"       15    30.974    6
+//        atom         23   23    F     "Hexafluorophosphate F"        9    18.998    1
+//        atom         24   24    N     "Dinitrogen N2"                7    14.007    1
+
+        AMOEBA_2009_GK_RADII.put(25, 4.9140 / 2.0); // 25    C     "Methane CH4"
+        AMOEBA_2009_GK_RADII.put(26, 3.7700 / 2.0); // 26    H     "Methane H4C"
+        AMOEBA_2009_GK_RADII.put(27, 4.5840 / 2.0); // 27    C     "Ethane CH3"
+        AMOEBA_2009_GK_RADII.put(28, 3.5520 / 2.0); // 28    H     "Ethane H3C"
+        AMOEBA_2009_GK_RADII.put(29, 4.5840 / 2.0); // 29    C     "Alkane -CH2-"
+        AMOEBA_2009_GK_RADII.put(30, 3.5760 / 2.0); // 30    H     "Alkane -H2C-"
+
+//        atom         33   31    C     "Alkane >CH-"                  6    12.011    4
+//        atom         34   32    H     "Alkane -HC<"                  1     1.008    1
+//        atom         35   33    C     "Alkane >C<"                   6    12.011    4
+        AMOEBA_2009_GK_RADII.put(34, 2.9964 / 2.0); // 34    O     "Water O"
+        AMOEBA_2009_GK_RADII.put(35, 2.3895 / 2.0); // 35    H     "Water H"
+        AMOEBA_2009_GK_RADII.put(36, 2.9964 / 2.0); // 36    O     "Methanol O"
+        AMOEBA_2009_GK_RADII.put(37, 2.3364 / 2.0); // 37    H     "Methanol HO"
+        AMOEBA_2009_GK_RADII.put(38, 3.3840 / 2.0); // 38    C     "Methanol CH3"
+        AMOEBA_2009_GK_RADII.put(39, 2.5830 / 2.0); // 39    H     "Methanol H3C"
+        AMOEBA_2009_GK_RADII.put(40, 3.4380 / 2.0); // 40    C     "Ethanol CH2"
+        AMOEBA_2009_GK_RADII.put(41, 2.6640 / 2.0); // 41    H     "Ethanol H3C"
+        AMOEBA_2009_GK_RADII.put(42, 2.6820 / 2.0); // 42    H     "Propanol Me-CH2"
+        AMOEBA_2009_GK_RADII.put(43, 3.6500 / 2.0); // 43    C     "isoPropanol >CH-"
+        AMOEBA_2009_GK_RADII.put(44, 3.1790 / 2.0); // 44    H     "Methyl Ether H3C"
+        AMOEBA_2009_GK_RADII.put(45, 3.7100 / 2.0); // 45    N     "Ammonia N"
+        AMOEBA_2009_GK_RADII.put(46, 2.7000 / 2.0); // 46    H     "Ammonia H3N"
+
+//        atom         63   47    N     "Ammonium Ion N+"              7    14.007    4
+//        atom         64   48    H     "Ammonium Ion H4N+"            1     1.008    1
+
+        AMOEBA_2009_GK_RADII.put(49, 3.1535 / 2.0); // 49    N     "Methyl Amine N"
+        AMOEBA_2009_GK_RADII.put(50, 2.4300 / 2.0); // 50    H     "Methyl Amine H2N"
+        AMOEBA_2009_GK_RADII.put(51, 2.5920 / 2.0); // 51    H     "Methyl Amine H3C"   "Ethyl Amine H2C"
+        AMOEBA_2009_GK_RADII.put(52, 2.6640 / 2.0); // 52    H     "Pyrrolidine C-CH2-C"
+        AMOEBA_2009_GK_RADII.put(53, 3.4380 / 2.0); // 53    C     "Formamide C=O"
+        AMOEBA_2009_GK_RADII.put(54, 2.5200 / 2.0); // 54    H     "Formamide HCO"
+        AMOEBA_2009_GK_RADII.put(55, 3.0690 / 2.0); // 55    O     "Formamide O"
+        AMOEBA_2009_GK_RADII.put(56, 3.7100 / 2.0); // 56    N     "Formamide N"
+        AMOEBA_2009_GK_RADII.put(57, 2.3310 / 2.0); // 57    H     "Formamide H2N"
+        AMOEBA_2009_GK_RADII.put(58, 2.6550 / 2.0); // 58    H     "Acetamide H3C"
+        AMOEBA_2009_GK_RADII.put(59, 2.6370 / 2.0); // 59    H     "NMeFormamide H3C"
+        AMOEBA_2009_GK_RADII.put(60, 3.30285 / 2.0); // 60    O     "Formic Acid OH"
+        AMOEBA_2009_GK_RADII.put(61, 2.3895 / 2.0); // 61    H     "Formic Acid HO"
+        AMOEBA_2009_GK_RADII.put(62, 3.4020 / 2.0); // 62    C     "Formic Acid C=O"
+        AMOEBA_2009_GK_RADII.put(63, 2.6280 / 2.0); // 63    H     "Formic Acid HC=O"
+        AMOEBA_2009_GK_RADII.put(64, 2.6820 / 2.0); // 64    H     "Acetaldehyde H3C"
+
+//        atom        164   65    S     "Hydrogen Sulfide S"          16    32.066    2
+//        atom        165   66    H     "Hydrogen Sulfide H2S"         1     1.008    1
+
+        AMOEBA_2009_GK_RADII.put(67, 5.3267 / 2.0); // 67    S     "Methyl Sulfide S"
+        AMOEBA_2009_GK_RADII.put(68, 3.6841 / 2.0); // 68    H     "Methyl Sulfide HS"
+        AMOEBA_2009_GK_RADII.put(69, 3.8171 / 2.0); // 69    H     "Methyl Sulfide H3C"
+        AMOEBA_2009_GK_RADII.put(70, 5.0806 / 2.0); // 70    C     "Ethyl Sulfide CH3"
+        AMOEBA_2009_GK_RADII.put(71, 3.9634 / 2.0); // 71    H     "Ethyl Sulfide H3C"
+
+//        atom        189   72    S     "Dimethyl Sulfoxide S=O"      16    32.066    3
+//        atom        190   73    O     "Dimethyl Sulfoxide S=O"       8    15.999    1
+//        atom        191   74    C     "Dimethyl Sulfoxide CH3"       6    12.011    4
+//        atom        192   75    H     "Dimethyl Sulfoxide H3C"       1     1.008    1
+//        atom        193   76    S     "Methyl Sulfonate SO3-"       16    32.066    4
+//        atom        194   77    O     "Methyl Sulfonate SO3-"        8    15.999    1
+//        atom        200   78    H     "Ethyl Sulfonate H2C"          1     1.008    1
+//        atom        207   79    C     "Hydrogen Cyanide CN"          6    12.011    2
+//        atom        208   80    N     "Hydrogen Cyanide CN"          7    14.007    1
+//        atom        209   81    H     "Hydrogen Cyanide HCN"         1     1.008    1
+//        atom        212   82    C     "Acetonitrile CH3"             6    12.011    4
+//        atom        213   83    H     "Acetonitrile H3C"             1     1.008    1
+//        atom        214   84    C     "Tricyanomethide CN"           6    12.011    2
+//        atom        215   85    N     "Tricyanomethide CN"           7    14.007    1
+//        atom        216   86    C     "Tricyanomethide >C-"          6    12.011    3
+
+        AMOEBA_2009_GK_RADII.put(87, 5.0540 / 2.0); // 87    C     "Benzene C"
+        AMOEBA_2009_GK_RADII.put(88, 3.9634 / 2.0); // 88    H     "Benzene HC"
+        AMOEBA_2009_GK_RADII.put(89, 3.8000 / 2.0); // 89    C     "Ethylbenzene C2"
+        AMOEBA_2009_GK_RADII.put(90, 2.9800 / 2.0); // 90    H     "Ethylbenzene H2"
+        AMOEBA_2009_GK_RADII.put(91, 3.3390 / 2.0); // 91    N     "Imidazole NH"
+        AMOEBA_2009_GK_RADII.put(92, 3.5910 / 2.0); // 92    C     "Imidazole N-C-N"
+        AMOEBA_2009_GK_RADII.put(93, 3.0000 / 2.0); // 93    H     "Imidazole HC"
+
+//        atom        282   94    C     "Indole C2"                    6    12.011    3
+//        atom        311   95    C     "3-Ethylindole CH2"            6    12.011    4
+//        atom        331   96    O     "3-Formylindole O=C"           8    15.999    1
+//        atom        333   97    N     "Benzamidine N"                7    14.007    3
+//        atom        334   98    H     "Benzamidine HN"               1     1.008    1
+//        atom        335   99    C     "Benzamidine N-C-N"            6    12.011    3
+//        atom        343  100    N     "Pyridinium N"                 7    14.007    3
+//        atom        347  101    H     "Pyridinium HN"                1     1.008    1
+
+        // *************************************************
+        // Initialize AMOEBA 2014 GK Radii.
+
+        AMOEBA_2014_GK_RADII.put(27, 4.5840 / 2.0); // 27    C     "Ethane CH3"
+        AMOEBA_2014_GK_RADII.put(28, 3.5520 / 2.0); // 28    H     "Ethane H3C"
+        AMOEBA_2014_GK_RADII.put(33, 3.6000 / 2.0); // 33    C     "Alkane >C<"
+        AMOEBA_2014_GK_RADII.put(65, 4.4055 / 2.0); // 65    S     "Hydrogen Sulfide S"
+        AMOEBA_2014_GK_RADII.put(66, 3.3240 / 2.0); // 66    H     "Hydrogen Sulfide H2S"
+        AMOEBA_2014_GK_RADII.put(79, 4.5840 / 2.0); // 79    C     "Acetonitrile CN"
+        AMOEBA_2014_GK_RADII.put(80, 3.6516 / 2.0); // 80    N     "Acetonitrile CN"
+        AMOEBA_2014_GK_RADII.put(82, 4.5840 / 2.0); // 82    C     "Acetonitrile CH3"
+        AMOEBA_2014_GK_RADII.put(83, 3.4920 / 2.0); // 83    H     "Acetonitrile H3C"
+        AMOEBA_2014_GK_RADII.put(403, 5.3200 / 2.0); // 403    C     "Ethene"
+        AMOEBA_2014_GK_RADII.put(404, 4.1720 / 2.0); // 404    H     "Ethene"
+        AMOEBA_2014_GK_RADII.put(422, 3.4132 / 2.0); // 422   N     "Pyridine"
+        AMOEBA_2014_GK_RADII.put(423, 3.4776 / 2.0); // 423   C     "Pyridine C-N"
+        AMOEBA_2014_GK_RADII.put(424, 2.7600 / 2.0); // 424   H     "Pyridine HCN"
+        AMOEBA_2014_GK_RADII.put(425, 3.4960 / 2.0); // 425   C     "Pyridine CCN"
+        AMOEBA_2014_GK_RADII.put(426, 2.7416 / 2.0); // 426   H     "Pyridine HCCN"
+        AMOEBA_2014_GK_RADII.put(427, 3.4960 / 2.0); // 427   C     "Pyridine C"
+        AMOEBA_2014_GK_RADII.put(428, 2.7416 / 2.0); // 428   H     "Pyridine HC"
+        AMOEBA_2014_GK_RADII.put(443, 4.5360 / 2.0); // 443    C     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(444, 4.6058 / 2.0); // 444    S     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(445, 3.4440 / 2.0); // 445    H     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(446, 3.3240 / 2.0); // 446    H     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(447, 4.3470 / 2.0); // 447    C     "DMSO"
+        AMOEBA_2014_GK_RADII.put(448, 4.8060 / 2.0); // 448    S     "DMSO"
+        AMOEBA_2014_GK_RADII.put(449, 3.5520 / 2.0); // 449    H     "DMSO"
+        AMOEBA_2014_GK_RADII.put(450, 4.2120 / 2.0); // 450    O     "DMSO"
+        AMOEBA_2014_GK_RADII.put(463, 4.5840 / 2.0); // 463    C     "MeF"
+        AMOEBA_2014_GK_RADII.put(464, 3.3810 / 2.0); // 464    F     "MeF"
+        AMOEBA_2014_GK_RADII.put(465, 3.5520 / 2.0); // 465    H     "MeF"
+        AMOEBA_2014_GK_RADII.put(466, 4.2020 / 2.0); // 466    C     "MeCl"
+        AMOEBA_2014_GK_RADII.put(467, 4.2895 / 2.0); // 467    Cl    "MeCl"
+        AMOEBA_2014_GK_RADII.put(468, 3.2560 / 2.0); // 468    H     "MeCl"
+        AMOEBA_2014_GK_RADII.put(469, 4.5840 / 2.0); // 469    C     "MeBr"
+        AMOEBA_2014_GK_RADII.put(470, 4.3780 / 2.0); // 470    Br    "MeBr"
+        AMOEBA_2014_GK_RADII.put(471, 3.5520 / 2.0); // 471    H     "MeBr"
+        AMOEBA_2014_GK_RADII.put(472, 4.5600 / 2.0); // 472    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(473, 4.5600 / 2.0); // 473    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(474, 4.5600 / 2.0); // 474    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(475, 4.5600 / 2.0); // 475    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(476, 3.381 / 2.0); // 476    F     "BenF"
+        AMOEBA_2014_GK_RADII.put(477, 3.5760 / 2.0); // 477    H     "BenF"
+        AMOEBA_2014_GK_RADII.put(478, 3.5760 / 2.0); // 478    H     "BenF"
+        AMOEBA_2014_GK_RADII.put(479, 3.5760 / 2.0); // 479    H     "BenF"
+        AMOEBA_2014_GK_RADII.put(480, 4.5600 / 2.0); // 480    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(481, 4.5600 / 2.0); // 481    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(482, 4.5600 / 2.0); // 482    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(483, 4.5600 / 2.0); // 483    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(484, 4.4760 / 2.0); // 484    Cl    "BenCl"
+        AMOEBA_2014_GK_RADII.put(485, 3.5760 / 2.0); // 485    H     "BenCl"
+        AMOEBA_2014_GK_RADII.put(486, 3.5760 / 2.0); // 486    H     "BenCl"
+        AMOEBA_2014_GK_RADII.put(487, 3.5760 / 2.0); // 487    H     "BenCl"
+        AMOEBA_2014_GK_RADII.put(488, 4.5600 / 2.0); // 488    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(489, 4.5600 / 2.0); // 489    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(490, 4.5600 / 2.0); // 490    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(491, 4.5600 / 2.0); // 491    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(492, 4.3780 / 2.0); // 492    Br    "BenBr"
+        AMOEBA_2014_GK_RADII.put(493, 3.5760 / 2.0); // 493    H     "BenBr"
+        AMOEBA_2014_GK_RADII.put(494, 3.5760 / 2.0); // 494    H     "BenBr"
+        AMOEBA_2014_GK_RADII.put(495, 3.5760 / 2.0); // 495    H     "BenBr"
+        AMOEBA_2014_GK_RADII.put(499, 4.5840 / 2.0); // 499    C     "MeCl2"
+        AMOEBA_2014_GK_RADII.put(500, 4.6625 / 2.0); // 500    Cl    "MeCl2"
+        AMOEBA_2014_GK_RADII.put(501, 3.5760 / 2.0); // 501    H     "MeCl2"
+        AMOEBA_2014_GK_RADII.put(502, 4.5840 / 2.0); // 502    C     "MeBr2"
+        AMOEBA_2014_GK_RADII.put(503, 4.7760 / 2.0); // 503    Br    "MeBr2"
+        AMOEBA_2014_GK_RADII.put(504, 3.5760 / 2.0); // 504    H     "MeBr2"
+    }
 
 }

@@ -38,6 +38,7 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
+import static java.lang.String.format;
 
 /**
  * The VDWType class defines a van der Waals type.
@@ -135,10 +136,10 @@ public final class VDWType extends BaseType implements Comparator<String> {
         String vdwString;
         // No reduction factor.
         if (reductionFactor <= 0e0) {
-            vdwString = String.format("vdw  %5d  %11.9f  %11.9f", atomClass,
+            vdwString = format("vdw  %5d  %11.9f  %11.9f", atomClass,
                     radius, wellDepth);
         } else {
-            vdwString = String.format("vdw  %5d  %11.9f  %11.9f  %5.3f",
+            vdwString = format("vdw  %5d  %11.9f  %11.9f  %5.3f",
                     atomClass, radius, wellDepth, reductionFactor);
         }
         return vdwString;

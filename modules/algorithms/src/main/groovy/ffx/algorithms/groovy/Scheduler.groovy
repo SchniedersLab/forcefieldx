@@ -87,6 +87,13 @@ class Scheduler extends AlgorithmsScript {
     int webport = 8080
 
     /**
+     * --ib or --infiniband Apply an offset (n) to the 3rd ethernet IP integer (*.*.X.*) to specify the InfiniBand IP (*.*.X+n.*).
+     */
+    @Option(names = ['--ib', '--infiniband'], paramLabel = '0',
+            description = 'Apply an offset to the 3rd ethernet IP integer (*.*.X.*) to specify the InfiniBand IP (*.*.X+n.*).')
+    int infiniband = 0
+
+    /**
      * -e or --hostfile to define the environment variable that points to the host file (default is PE_HOSTFILE).
      */
     @Option(names = ['-e', '--hostfile'], paramLabel = 'PE_HOSTFILE',
@@ -146,6 +153,14 @@ class Scheduler extends AlgorithmsScript {
                 int i = 0
                 for (line in nodes) {
                     hostnames[i] = line.split(" +")[0]
+                    InetAddress address = InetAddress.getByName(hostnames[i])
+                    hostnames[i] = address.getHostAddress()
+                    if (infiniband != 0) {
+                        String[] digits = hostnames[i].split("\\.")
+                        logger.info(digits[0] + " " + digits[1] + " " + digits[2] + " " + digits[3])
+                        digits[2] = Integer.toString(infiniband + Integer.parseInt(digits[2]))
+                        hostnames[i] = digits[0] + "." + digits[1] + "." + digits[2] + "." + digits[3]
+                    }
                     i++
                 }
             }

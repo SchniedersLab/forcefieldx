@@ -41,6 +41,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 
@@ -221,11 +223,11 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        StringBuilder angleString = new StringBuilder(String.format(
+        StringBuilder angleString = new StringBuilder(format(
                 "angle  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1],
                 atomClasses[2], forceConstant));
         for (double eq : angle) {
-            angleString.append(String.format("  %6.2f", eq));
+            angleString.append(format("  %6.2f", eq));
         }
         return angleString.toString();
     }

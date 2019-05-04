@@ -75,6 +75,7 @@ public class ForceField {
         AMOEBA_WATER_2014,
         AMOEBA_2004,
         AMOEBA_2009,
+        AMOEBA_2014,
         AMOEBA_PROTEIN_2004,
         AMOEBA_PROTEIN_2004_U1,
         AMOEBA_PROTEIN_2013,
@@ -114,7 +115,6 @@ public class ForceField {
         VDWTYPE,
         VDW_SCHEDULE,
         GK_RADIIOVERRIDE,
-        GK_RADIIBYNUMBER,
         PLATFORM,
         /* Only meaningful for OpenMM; Java is always double-precision */
         PRECISION
@@ -635,8 +635,7 @@ public class ForceField {
      * @return a double.
      * @throws java.lang.Exception if any.
      */
-    public double getDouble(ForceFieldDouble forceFieldDouble)
-            throws Exception {
+    public double getDouble(ForceFieldDouble forceFieldDouble) throws Exception {
         if (forceFieldDouble == null) {
             throw new Exception("NULL keyword");
         }
@@ -655,8 +654,7 @@ public class ForceField {
      * @param defaultValue     a double.
      * @return a double.
      */
-    public double getDouble(ForceFieldDouble forceFieldDouble,
-                            double defaultValue) {
+    public double getDouble(ForceFieldDouble forceFieldDouble, double defaultValue) {
         try {
             return getDouble(forceFieldDouble);
         } catch (Exception e) {
@@ -1254,25 +1252,6 @@ public class ForceField {
     }
 
     /**
-     * <p>getISolvRadType.</p>
-     *
-     * @param key a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.parameters.ISolvRadType} object.
-     */
-    public ISolvRadType getISolvRadType(String key) {
-        return iSolvRadTypes.get(key);
-    }
-
-    /**
-     * <p>Getter for the field <code>iSolvRadTypes</code>.</p>
-     *
-     * @return a {@link java.util.Map} object.
-     */
-    public Map<String, ISolvRadType> getISolvRadTypes() {
-        return iSolvRadTypes;
-    }
-
-    /**
      * <p>setTorsionScale.</p>
      *
      * @param scaleFactor a double.
@@ -1389,7 +1368,7 @@ public class ForceField {
      */
     public void print(String key) {
         ForceFieldType type = ForceFieldType.valueOf(key);
-        System.out.println(toString(type));
+        logger.info(toString(type));
     }
 
     /**
@@ -1406,7 +1385,7 @@ public class ForceField {
             return "";
         }
 
-        for (Object o : t.entrySet()) {
+        for (Object o : t.values()) {
             sb.append(o.toString()).append("\n");
         }
         return sb.toString();

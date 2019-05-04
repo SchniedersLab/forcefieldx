@@ -2435,18 +2435,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
                         // Loop over the neighbor list.
                         final int[] list = lists[i];
-                        int npair = list.length;
                         counts[i] = 0;
                         preCounts[i] = 0;
                         final int[] ewald = ewalds[i];
                         int[] preList = preLists[i];
-                        for (int j = 0; j < npair; j++) {
-                            int k = list[j];
+
+                        for (int k : list) {
                             if (!use[k]) {
                                 continue;
                             }
-                            boolean sameMolecule = (moleculei == molecule[k]);
                             if (lambdaMode == LambdaMode.VAPOR) {
+                                boolean sameMolecule = (moleculei == molecule[k]);
                                 if ((intermolecularSoftcore && !sameMolecule)
                                         || (intramolecularSoftcore && sameMolecule)) {
                                     continue;
@@ -2577,6 +2576,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                 fZCR[i] += (fimz - fipz);
                             }
                         }
+
                         for (Atom ak : ai.get1_5s()) {
                             maskp_local[ak.getIndex() - 1] = 1.0;
                         }
@@ -2774,6 +2774,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             }
                         }
                     }
+
                 }
             }
         }
@@ -3270,7 +3271,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     fieldCR[0][2][i] += fzCR;
                 }
                 if (aewald > 0.0) {
-
                     // Add the self and reciprocal space contributions.
                     for (int i = lb; i <= ub; i++) {
                         double[] mpolei = globalMultipole[0][i];
