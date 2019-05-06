@@ -1120,7 +1120,7 @@
         <tensorflow.version>1.13.1</tensorflow.version>
         <!-- Maven Core Plugin Versions -->
         <clean.version>3.1.0</clean.version>
-        <compiler.version>3.8.0</compiler.version>
+        <compiler.version>3.8.1</compiler.version>
         <deploy.version>3.0.0-M1</deploy.version>
         <install.version>3.0.0-M1</install.version>
         <resources.version>3.1.0</resources.version>
@@ -1136,7 +1136,7 @@
         <javadoc.version>3.1.0</javadoc.version>
         <jxr.version>3.0.0</jxr.version>
         <linkcheck.version>1.2</linkcheck.version>
-        <pmd.version>3.11.0</pmd.version>
+        <pmd.version>3.12.0</pmd.version>
         <project-info-reports.version>3.0.0</project-info-reports.version>
         <!-- Maven Tools Plugin Versions -->
         <antrun.version>1.8</antrun.version>

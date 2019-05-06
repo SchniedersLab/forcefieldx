@@ -37,17 +37,19 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.bonded.Atom
-import ffx.potential.nonbonded.GaussVol
+import static java.lang.String.format
+
 import org.apache.commons.io.FilenameUtils
+import static org.apache.commons.math3.util.FastMath.pow
 
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
+import ffx.potential.nonbonded.GaussVol
+
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
-
-import static org.apache.commons.math3.util.FastMath.pow
 
 /**
  * The SaveAsP1 script expands a specified file to P1
@@ -59,12 +61,7 @@ import static org.apache.commons.math3.util.FastMath.pow
 @Command(description = " Calculate the surface area and volume of molecular system.", name = "ffxc Volume")
 class Volume extends PotentialScript {
 
-    private static final double angToNm =0.1
-    private static final double nmToAng =10.0
-    private static final double nmVolumeToAngVolume=1000
-    private static final double kjToKcal=1.0/4.184
-    private static final double offset=0.00005
-    private static final double rminToSigma=1/pow(2, 1/6)
+    private static final double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0)
 
     /**
      * -v or --verbose enables printing out all energy components for multi-snapshot files (
@@ -73,6 +70,13 @@ class Volume extends PotentialScript {
     @CommandLine.Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
             description = "Include Hydrogen in calculation of overlaps and volumes")
     private boolean includeHydrogen = false
+
+    /**
+     * -p or --probe Add a probe radius offset to all atomic radii.
+     */
+    @CommandLine.Option(names = ['-p', '--probe'], paramLabel = "0.0",
+            description = "Add a probe radius offset to all atomic radii")
+    private double probe = 0.0
 
     /**
      * -v or --verbose enables printing out all energy components for multi-snapshot files (
@@ -128,121 +132,36 @@ class Volume extends PotentialScript {
         // Input
         boolean[] isHydrogen = new boolean[nAtoms]
         double[] radii = new double[nAtoms]
-        double[] radiiOffset = new double[nAtoms]
         double[] volume = new double[nAtoms]
-        double[] volumeOffset = new double[nAtoms]
         double[] gamma = new double[nAtoms]
         double[][] positions = new double[nAtoms][3]
 
-        // Output
-        double[][] force = new double[nAtoms][3]
-        double[] totalVolume = new double[1]
-        double[] energy = new double[1]
-        double[] gradV = new double[nAtoms]
-        double selfVolumeSum = 0
-        double[] freeVolume = new double[nAtoms]
-        double[] selfVolume = new double[nAtoms]
-
-        double[][] forceOffset = new double[nAtoms][3]
-        double[] totalVolumeOffset = new double[1]
-        double[] energyOffset = new double[1]
-        double[] gradVOffset = new double[nAtoms]
-        double selfVolumeOffsetSum = 0
-        double[] freeVolumeOffset = new double[nAtoms]
-        double[] selfVolumeOffset = new double[nAtoms]
-
-        double surfaceArea = 0
-
+        Arrays.fill(gamma, 1.0)
+        double fourThirdsPI = 4.0 / 3.0 * Math.PI
         int index = 0
         for (Atom atom : atoms) {
             isHydrogen[index] = atom.isHydrogen()
-            if(includeHydrogen){isHydrogen[index] = false}
-
-            radii[index] = atom.getVDWType().radius / 2.0 * rminToSigma //* angToNm
-            radiiOffset[index] = radii[index] - offset
-
-            volume[index] = 4.0 / 3.0 * Math.PI * pow(radii[index], 3)
-            volumeOffset[index] = 4.0 / 3.0 * Math.PI * pow(radiiOffset[index], 3)
-            gamma[index] = 1.0
-            positions[index][0] = atom.getX() //* angToNm
-            positions[index][1] = atom.getY() //* angToNm
-            positions[index][2] = atom.getZ() //* angToNm
+            if (includeHydrogen) {
+                isHydrogen[index] = false
+            }
+            radii[index] = atom.getVDWType().radius / 2.0 * rminToSigma
+            radii[index] += probe
+            volume[index] = fourThirdsPI * pow(radii[index], 3)
+            positions[index][0] = atom.getX()
+            positions[index][1] = atom.getY()
+            positions[index][2] = atom.getZ()
             index++
         }
 
-        /*
-         *  Run Volume calculation to get vdw volume of molecule
-         */
+        // Run Volume calculation to get vdw volume of molecule
         GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen)
+        gaussVol.computeVolumeAndSA(positions)
 
-        gaussVol.computeTree(positions)
-        gaussVol.computeVolume(positions, totalVolume, energy, force, gradV, freeVolume, selfVolume)
-        //gaussVol.printTree()  //Print out overlap tree for troubleshooting
-
-        totalVolume[0]=totalVolume[0] //*nmVolumeToAngVolume
-        energy[0]=energy[0] //*kjToKcal*nmVolumeToAngVolume
-
-        int i = 0
-        for (Atom atom : atoms) {
-            if(verbose){
-                if(includeHydrogen){
-                    logger.info(String.format(" Atom %s, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
-                            atom.toString(), force[i][0], force[i][1], force[i][2], gradV[i], freeVolume[i], selfVolume[i]))
-                }
-
-                else{
-                    if(!atom.isHydrogen()){
-                        logger.info(String.format(" Atom %s, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
-                                atom.toString(), force[i][0], force[i][1], force[i][2], gradV[i], freeVolume[i], selfVolume[i]))
-                    }
-                }
-
-            }
-
-            selfVolumeSum += selfVolume[i] / offset
-            i++
-        }
-        logger.info(String.format("\n Total Volume of Molecule: %8.6f, Energy: %8.6f", totalVolume[0], energy[0]))
-
-        /*
-         *  Run Volume calculation on radii that are slightly offset in order to do finite difference to get back surface area
-         */
-        GaussVol gaussVolOffest = new GaussVol(nAtoms, radiiOffset, volumeOffset, gamma, isHydrogen)
-        gaussVolOffest.computeTree(positions)
-        gaussVolOffest.computeVolume(positions, totalVolumeOffset, energyOffset, forceOffset, gradVOffset, freeVolumeOffset, selfVolumeOffset)
-        //gaussVolOffest.printTree()
-
-        totalVolumeOffset[0]=totalVolumeOffset[0] //*nmVolumeToAngVolume
-        energyOffset[0]=energyOffset[0] //*kjToKcal*nmVolumeToAngVolume
-
-        int j = 0
-        for (Atom atom : atoms) {
-            if(verbose){
-                if(includeHydrogen){
-                    logger.info(String.format(" Atom %s, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
-                            atom.toString(), force[j][0], force[j][1], force[j][2], gradV[j], freeVolume[j], selfVolume[j]))
-                }
-
-                else{
-                    if(!atom.isHydrogen()){
-                        logger.info(String.format(" Atom %s, Force: (%8.6f,%8.6f,%8.6f), GradV: %8.6f, FreeV: %8.6f, SelfV: %8.6f ",
-                                atom.toString(), force[j][0], force[j][1], force[j][2], gradV[j], freeVolume[j], selfVolume[j]))
-                    }
-                }
-
-            }
-            selfVolumeOffsetSum += selfVolumeOffset[j] / offset
-            j++
-        }
-
-        if(verbose){
-            logger.info(String.format(" Total Volume of Offset: %8.6f, Energy: %8.6f", totalVolumeOffset[0], energyOffset[0]))
-        }
-
-        surfaceArea=selfVolumeSum-selfVolumeOffsetSum
-
-        logger.info(String.format(" Surface Area: %8.6f", surfaceArea))
-
+        logger.info(format("\n Volume:              %8.3f (Ang^3)", gaussVol.getVolume()))
+        logger.info(format(" Volume Energy:       %8.3f (kcal/mol)", gaussVol.getVolumeEnergy()))
+        logger.info(format(" Surface Area:        %8.3f (Ang^2)", gaussVol.getSurfaceArea()))
+        logger.info(format(" Surface Area Energy: %8.3f (kcal/mol)", gaussVol.getSurfaceAreaEnergy()))
+        logger.info(format(" Volume + SA Energy:  %8.3f (kcal/mol)", gaussVol.getEnergy()))
 
         return this
     }
