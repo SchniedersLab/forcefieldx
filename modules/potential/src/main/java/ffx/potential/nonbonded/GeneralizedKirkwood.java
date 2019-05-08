@@ -569,12 +569,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gaussVol = null;
                 break;
             case GAUSS_DISP:
-                gaussVol = new GaussVol(nAtoms, null);
-                tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = null;
                 volumeRegion = null;
 
+                gaussVol = new GaussVol(nAtoms, null);
+                tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 boolean[] isHydrogen = new boolean[nAtoms];
                 double[] radii = new double[nAtoms];
                 double[] volume = new double[nAtoms];
@@ -1045,7 +1045,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         positions[i][1] = atoms[i].getY();
                         positions[i][2] = atoms[i].getZ();
                     }
-                    gaussVol.computeVolumeAndSA(positions);
+                    gaussVol.energyAndGradient(positions, grad[0]);
                     cavitationTime += System.nanoTime();
 
                     break;
@@ -1165,19 +1165,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             default:
                 solvationEnergy = gkEnergyRegion.getEnergy();
                 break;
-
-        }
-
-        if (outputVolume) {
-            try {
-                ParallelTeam serialTeam = new ParallelTeam(1);
-                serialTeam.execute(volumeRegion);
-                logger.info(format(" Total Volume        %16.8f", volumeRegion.getVolume()));
-                logger.info(format(" Total Area          %16.8f", volumeRegion.getArea()));
-            } catch (Exception e) {
-                String message = "Fatal exception computing volume.";
-                logger.log(Level.SEVERE, message, e);
-            }
         }
 
         if (lambdaTerm) {
