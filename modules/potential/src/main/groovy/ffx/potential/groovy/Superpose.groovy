@@ -60,7 +60,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Superpose [options] &lt;filename&gt;
  */
-@Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
+@Command(description = " Superpose frames of a trajectory file and calculate RMSD.", name = "ffxc Superpose")
 class Superpose extends PotentialScript {
 
     /**
