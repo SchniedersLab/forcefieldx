@@ -94,24 +94,19 @@ public class GaussVol {
 
     private static final Logger logger = Logger.getLogger(GaussVol.class.getName());
 
-    // Conversion factors from spheres to Gaussians
+    /**
+     * Conversion factors from spheres to Gaussians.
+     */
     private static double KFC = 2.2269859253;
     private static double PFC = 2.5;
-
-    // Have switching function
+    /**
+     * Minimum volume.
+     */
     private static double MIN_GVOL = Double.MIN_VALUE;
-
-    // Maximum overlap level
+    /**
+     * Maximum overlap level.
+     */
     private static int MAX_ORDER = 8;
-
-    /**
-     * Solvent pressure in kcal/mol/Ang^3.
-     */
-    private static final double solventPressure = 0.0327;
-    /**
-     * Surface tension in kcal/mol/Ang^2.
-     */
-    private static final double surfaceTension = 0.08;
     /**
      * Finite-Difference step size to compute surface area.
      */
@@ -121,44 +116,110 @@ public class GaussVol {
     // private static double ANG3 = 0.001;
     // private static double VOLMINA = 0.01 * ANG3;
     // private static double VOLMINB = 0.1 * ANG3;
-
-    // Volume cutoffs for switching function in Angstroms.
+    /**
+     * Volume cutoffs for switching function in Angstroms.
+     */
     private static double ANG3 = 1.0;
     private static double VOLMINA = 0.01 * ANG3;
     private static double VOLMINB = 0.1 * ANG3;
 
-    // Input to the volume and surface area computation.
-    private GaussianOverlapTree tree;
+    /**
+     * Number of atoms.
+     */
     private int nAtoms;
+    /**
+     * Atomic radii for all atoms. To approximate solvent excluded volume, or solvent accessible surface area,
+     * a probe radius can be added to each radius.
+     */
     private double[] radii;
+    /**
+     * All atomic radii with a small offset added, which are used to compute surface area using a
+     * finite-difference approach.
+     */
     private double[] radiiOffset;
+    /**
+     * Atomic "self" volumes for all atoms, which are computed from atomic radii.
+     */
     private double[] volumes;
+    /**
+     * Atomic "self" volumes for all atoms, which are computed from the radii plus offset array.
+     */
     private double[] volumeOffset;
+    /**
+     * Surface tension -- in our implementation these values are kept at 1.0.
+     */
     private double[] gammas;
+    /**
+     * Flag to denote if an atom is a hydrogen, which results in it not contributing to the volume or S.A.
+     */
     private boolean[] ishydrogen;
-
-    // Output observables.
+    /**
+     * The Gaussian Overlap Tree.
+     */
+    private GaussianOverlapTree tree;
+    /**
+     * Surface area (Ang^2).
+     */
     private double surfaceArea;
+    /**
+     * Surface area energy (kcal/mol).
+     */
     private double surfaceAreaEnergy;
+    /**
+     * Volume (Ang^3).
+     */
     private double volume;
+    /**
+     * Volume energy (kcal/mol).
+     */
     private double volumeEnergy;
+    /**
+     * Cavitation energy, which is a function of volume and/or surface area.
+     */
     private double cavitationEnergy;
+    /**
+     * The volume gradient, which does not include the solvent pressure constant (i.e. this is in Ang^2).
+     */
     private double[] volumeGradient;
+    /**
+     * The surface area gradient, which does not include the surface tension constant (i.e. this is in Ang).
+     */
     private double[] surfaceAreaGradient;
-
-    // Variables used in computing a combined volume + surface area cavitation energy.
+    /**
+     * Solvent pressure in kcal/mol/Ang^3.
+     */
+    private static final double solventPressure = 0.0327;
+    /**
+     * Surface tension in kcal/mol/Ang^2.
+     */
+    private static final double surfaceTension = 0.08;
+    /**
+     * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
+     */
     private double crossOver = 3.0 * surfaceTension / solventPressure;
-    // Begin turning off the Volume term.
+    /**
+     * Begin turning off the Volume term.
+     */
     private double volumeOff = crossOver - 3.5;
-    // Volume term is zero at the cut-off.
+    /**
+     * Volume term is zero at the cut-off.
+     */
     private double volumeCut = crossOver + 3.5;
-    // Begin turning off the SA term.
+    /**
+     * Begin turning off the SA term.
+     */
     private double surfaceAreaOff = crossOver + 3.9;
-    // SA term is zero at the cut-off.
+    /**
+     * SA term is zero at the cut-off.
+     */
     private double surfaceAreaCut = crossOver - 3.5;
-    // Volume multiplicative switch.
+    /**
+     * Volume multiplicative switch.
+     */
     private MultiplicativeSwitch volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
-    // Surface area multiplicative switch.
+    /**
+     * Surface area multiplicative switch.
+     */
     private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
 
     /**
@@ -448,6 +509,7 @@ public class GaussVol {
 
     /**
      * Collect the volume base cavitation energy and gradient contributions.
+     *
      * @param taperVolume
      * @param dTaperVolumedR
      * @param gradient
@@ -465,6 +527,7 @@ public class GaussVol {
 
     /**
      * Collect the surface area based cavitation energy and gradient contributions.
+     *
      * @param taperSA
      * @param dTaperSAdR
      * @param gradient
@@ -501,9 +564,9 @@ public class GaussVol {
      * @param self_volume
      */
     private void computeVolume(double[][] positions,
-                              double[] totalVolume, double[] totalEnergy,
-                              double[][] grad, double[] gradV,
-                              double[] free_volume, double[] self_volume) {
+                               double[] totalVolume, double[] totalEnergy,
+                               double[][] grad, double[] gradV,
+                               double[] free_volume, double[] self_volume) {
         tree.computeVolume2R(positions, totalVolume, totalEnergy, grad, gradV, free_volume, self_volume);
         for (int i = 0; i < nAtoms; ++i) {
             if (volumes[i] > 0) {
