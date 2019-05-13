@@ -38,664 +38,787 @@
 package ffx.potential.parameters;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
+import ffx.potential.bonded.Atom;
+
 /**
- * Provides Bondi scaling factors for atomic radii in Generalized Kirkwood
- * continuum solvent.
+ * Apply Generalized Kirkwood atomic radii.
  *
- * @author Stephen D. LuCore
+ * @author Michael J. Schnieders
  */
 public class SolventRadii {
 
-    private static final Logger logger = Logger.getLogger(ForceField.class.getName());
+    private SolventRadii() {
+    }
 
     /**
-     * The default Bondi scale factor.
+     * This maps atomic number to reasonable GK base radii.
      */
-    private double defaultBondi;
-    /**
-     * The default HCT overlap scale factor.
-     */
-    private double overlapScale;
-    /**
-     * Map atom types to scale factor.
-     */
-    private final HashMap<Integer, Double> atomtypeToBondi;
-    /**
-     * Map biotype to scale factor.
-     */
-    private final HashMap<Integer, Double> biotypeToBondi;
-    /**
-     * Map types to Bondi factors fit for AMOEBA_PROTEIN_2013.
-     */
-    private static final HashMap<Integer, Double> amoebapro13ByAtomtype = new HashMap<>();
-    private static final HashMap<Integer, Double> amoebapro13ByBiotype = new HashMap<>();
-    /**
-     * Map types to bondi factors fit for AMBER99SB.
-     */
-    private static final HashMap<Integer, Double> amber99sbByAtomtype = new HashMap<>();
-    private static final HashMap<Integer, Double> amber99sbByBiotype = new HashMap<>();
+    private static final Map<Integer, Double> DEFAULT_RADII = new HashMap<>();
 
     /**
-     * <p>Constructor for SolventRadii.</p>
-     *
-     * @param forceFieldString a {@link java.lang.String} object.
-     * @param forceField       a {@link ffx.potential.parameters.ForceField} object.
+     * This map connects AMOEBA '09 atom classes to GK base radii.
      */
-    public SolventRadii(String forceFieldString, ForceField forceField) {
-        switch (forceFieldString.toUpperCase()) {
-            case "AMOEBA-PROTEIN-2013":
-            case "AMOEBA-DIRECT-2013":
-            case "AMOEBA-FIXED-2013":
-                defaultBondi = 1.15;
-                overlapScale = 0.60;
-                atomtypeToBondi = amoebapro13ByAtomtype;
-                biotypeToBondi = amoebapro13ByBiotype;
-                break;
-            case "AMBER99SB-TIP3F":
-            case "AMBER99SB":
-                defaultBondi = 1.25;
-                overlapScale = 0.55;
-                atomtypeToBondi = amber99sbByAtomtype;
-                biotypeToBondi = amber99sbByBiotype;
-                break;
-            default:
-                defaultBondi = 0.0;
-                overlapScale = 0.0;
-                atomtypeToBondi = null;
-                biotypeToBondi = null;
-                logger.severe("No GK solvent radii available for forcefield: " + forceFieldString);
+    private static final Map<Integer, Double> AMOEBA_2009_GK_RADII = new HashMap<>();
+
+    /**
+     * This map connects AMOEBA '14 atom classes to GK base radii.
+     */
+    private static final Map<Integer, Double> AMOEBA_2014_GK_RADII = new HashMap<>();
+
+    public static double applyGKRadii(ForceField forceField, double bondiScale,
+                              Atom[] atoms, double[] baseRadius) {
+        Map<Integer, Double> radiiMap = null;
+
+        String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
+                ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
+        forcefieldName = forcefieldName.replaceAll("_", "-");
+
+        if (forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true)) {
+            if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
+                radiiMap = AMOEBA_2009_GK_RADII;
+                bondiScale = 1.0;
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
+                radiiMap = AMOEBA_2014_GK_RADII;
+                bondiScale = 1.0;
+            }
         }
 
-        // Parse properties and command-line overrides.
-        overlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, overlapScale);
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            baseRadius[i] = DEFAULT_RADII.get(atom.getAtomicNumber()) * bondiScale;
+            int key = atom.getAtomType().atomClass;
+            if (radiiMap != null && radiiMap.containsKey(key)) {
+                baseRadius[i] = radiiMap.get(key);
+            }
+        }
+
+        return bondiScale;
     }
+
+    // All solvation free energies are for 1 M standard state in both vacuum and solvent.
+    // No "phase potential" correction is applied for moving ions across the vacuum - liquid interface.
 
     /**
-     * <p>Getter for the field <code>defaultBondi</code>.</p>
+     * Lithium Ion Li+
+     * Wang Thesis: -116.91 kca/mol
      *
-     * @return a double.
+     * AMOEBA 2009 Class 6
      */
-    public double getDefaultBondi() {
-        return defaultBondi;
-    }
-
+    private static final double GK_AMOEBA_LITHIUM = 2.748;
     /**
-     * <p>Getter for the field <code>overlapScale</code>.</p>
+     * Sodium Ion Na+
+     * Wang Thesis:  -91.62 kcal/mol
+     * Grossfield et al: -91.8 kcal/mol
      *
-     * @return a double.
+     * AMOEBA 2009 Class 7
      */
-    public double getOverlapScale() {
-        return overlapScale;
-    }
-
+    private static final double GK_AMOEBA_SODIUM = 3.481;
     /**
-     * <p>getAtomBondiMap.</p>
+     * Potassium Ion K+
+     * Wang Thesis:  -74.32 kca/mol
+     * Grossfield et al: -74.5 kca/mol
      *
-     * @return a {@link java.util.HashMap} object.
+     * AMOEBA 2009 Class 8
      */
-    public HashMap<Integer, Double> getAtomBondiMap() {
-        return atomtypeToBondi;
-    }
-
+    private static final double GK_AMOEBA_POTASSIUM = 4.230;
     /**
-     * <p>getBioBondiMap.</p>
+     * Rubidium Ion Rb+
+     * Wang Thesis:  -69.05 kcal/mol
      *
-     * @return a {@link java.util.HashMap} object.
+     * AMOEBA 2009 Class 9
      */
-    public HashMap<Integer, Double> getBioBondiMap() {
-        return biotypeToBondi;
-    }
+    private static final double GK_AMOEBA_RUBIDIUM = 4.540;
+    /**
+     *  Cesium Ion Cs+
+     *  Wang Thesis:  -63.66 kcal/mol
+     *
+     *  AMOEBA 2009 Class 10
+     */
+    private static final double GK_AMOEBA_CESIUM = 4.908;
+    /**
+     * Magnesium Ion Mg+2
+     * Ren et al. 2006: -431.1 kcal/mol
+     * Expt: −435.4 kcal/mol
+     *
+     * AMOEBA 2009 Class 11
+     */
+    private static final double GK_AMOEBA_MAGNESIUM = 3.020;
+    /**
+     * Calcium Ion Ca+2
+     * Ren et al. 2006: -354.9 kcal/mol
+     * Expt: −357.2 kcal/mol
+     *
+     * AMOEBA 2009 Class 12
+     */
+    private static final double GK_AMOEBA_CALCIUM = 3.664;
+    /**
+     * Zinc Ion Zn+2
+     * Ren et al. 2011: −458.9
+     * Expt: −467.7 kcal/mol
+     *
+     * AMOEBA 2009 Class 13
+     */
+    private static final double GK_AMOEBA_ZINC = 2.844;
+    /**
+     * Fluoride Ion F-
+     * Wang Thesis: -116.71 kcal/mol
+     *
+     * AMOEBA 2009 Class 14
+     */
+    private static final double GK_AMOEBA_FLUORIDE = 2.734;
+    /**
+     * Chloride Ion Cl-
+     * Wang Thesis:  -86.12 kca/mol
+     * Grossfield et al: -86.5 kca/mol
+     *
+     * AMOEBA 2009 Class 15
+     */
+    private static final double GK_AMOEBA_CHLORIDE = 3.661;
+    /**
+     * Bromide Ion Br-
+     * Wang Thesis:  -79.66 kca/mol
+     *
+     * AMOEBA 2009 Class 16
+     */
+    private static final double GK_AMOEBA_BROMIDE = 3.959;
+    /**
+     * Iodide Ion I-
+     * Wang Thesis:  -71.25 kca/mol
+     *
+     * AMOEBA 2009 Class 17
+     */
+    private static final double GK_AMOEBA_IODIDE = 4.427;
+    /**
+     * Methane CH4 Carbon
+     *
+     * AMOEBA 2009 Class 25
+     */
+    private static final double GK_AMOEBA_METHANE_CH4 = 4.914;
+    /**
+     * Methane H4C Hydrogen
+     *
+     * AMOEBA 2009 Class 26
+     */
+    private static final double GK_AMOEBA_METHANE_H4C = 3.770;
+    /**
+     * Ethane CH3 Carbon
+     * Alkane -CH2-
+     * Alkane >CH-
+     * Alkane >C<
+     *
+     * AMOEBA 2009 Classes 27, 29, 31 and 33
+     */
+    private static final double GK_AMOEBA_ALKANE_C = 4.584;
+    /**
+     * Ethane H3C Hydrogen
+     * Alkane -H2C-
+     * Alkane -HC<
+     *
+     * AMOEBA 2009 Class 28, 30 and 32
+     */
+    private static final double GK_AMOEBA_ALKANE_H = 3.576;
+    /**
+     * Water Oxygen
+     *
+     * AMOEBA 2009 Class 34
+     *
+     * TODO: Combine with Alcohol Oxygen?
+     */
+    private static final double GK_AMOEBA_WATER_O = 2.9964;
+    /**
+     * Water Hydrogen
+     *
+     * AMOEBA 2009 Class 35
+     */
+    private static final double GK_AMOEBA_WATER_H = 2.3895;
+    /**
+     * Methanol O, Ethanol O, isoPropanol O, Methyl Ether O
+     * Phenol OH, p-Cresol OH
+     *
+     * AMOEBA 2009 Class 36
+     */
+    private static final double GK_AMOEBA_METHANOL_O = 2.9964;
+    /**
+     * Methanol HO, Ethanol HO, isoPropanol HO,
+     * Phenol HO, p-Cresol HO
+     *
+     * AMOEBA 2009 Class 37
+     */
+    private static final double GK_AMOEBA_METHANOL_HO = 2.3364;
+    /**
+     * Methanol CH3
+     *
+     * AMOEBA 2009 Class 38
+     *
+     * TODO: Combine with Ethanol C?
+     */
+    private static final double GK_AMOEBA_METHANOL_C = 3.384;
+    /**
+     * Methanol H3C, Ethanol H2C, isoPropanol >CH-
+     *
+     * AMOEBA 2009 Class 39
+     *
+     * TODO: Combine with Ethanol HC?
+     */
+    private static final double GK_AMOEBA_METHANOL_HC = 2.583;
+    /**
+     * Ethanol Carbon, Propanol Me-CH2, Propanol CH3, isoPropanol CH3
+     * Methyl Ether CH3
+     * Methyl Amine CH3, Ethyl Amine CH2, Ethyl Amine CH3, Propyl Amine CH3
+     * Propyl Amine Me-CH2, Dimethyl Amine CH3, Trimethyl Amine CH3
+     * Pyrrolidine C-CH2-C, Pyrrolidine CH2-N
+     * NMePyrrolidine CH2-N, NMePyrrolidine CH2<, NMePyrrolidine CH3-N
+     * Acetamide CH3, Propamide Me-CH2, Propamide CH3
+     * NMeFormamide CH3, NEtFormamide CH2-N
+     *
+     * AMOEBA 2009 Class 40
+     */
+    private static final double GK_AMOEBA_ETHANOL_C = 3.438;
+    /**
+     * Ethanol Hydrogen, Propanol H3C, isoPropanol H3C
+     * Ethyl Amine H3C, Propyl Amine H3C
+     * Propamide H3C, NEtFormamide H3C
+     * Ethyl Sulfonate H3C, Propyl Sulfonate H3C
+     * Ethylbenzene H2C, Ethylbenzene H3C, Toluene H3C
+     * 4-Ethylimidazole H2C, 4-Ethylimidazole H3C
+     * 3-Ethylindole H2C, 3-Ethylindole H3C
+     *
+     * AMOEBA 2009 Class 41
+     */
+    private static final double GK_AMOEBA_ETHANOL_H = 2.664;
+    /**
+     * Propanol Me-CH2,
+     * Propyl Amine Me-CH2
+     * NMePyrrolidine H3C-N
+     * Propamide Me-CH2
+     * Propyl Sulfonate Me-CH2
+     *
+     * AMOEBA 2009 Class 42
+     *
+     * TODO: Combine with Ethanol HC?
+     */
+    private static final double GK_AMOEBA_PROPANOL_H = 2.682;
+    /**
+     * Isopropanol >CH-
+     *
+     * AMOEBA 2009 Class 43
+     */
+    private static final double GK_AMOEBA_ISOPROPANOL_C = 3.650;
+    /**
+     * Methyl Ether H3C
+     *
+     * AMOEBA 2009 Class 44
+     *
+     * TODO: Is 3.179 too big?
+     */
+    private static final double GK_AMOEBA_METHYLETHER_H = 3.179;
+    /**
+     * Ammonia N
+     *
+     * AMOEBA 2009 Class 45
+     */
+    private static final double GK_AMOEBA_AMMONIA_N = 3.710;
+    /**
+     * Ammonia H
+     * Imidazole HN, 4-Ethylimidazole HND, 4-Ethylimidazole HNE
+     * Indole HN, 3-Ethylindole HN, 3-Formylindole HN
+     *
+     * AMOEBA 2009 Class 46
+     */
+    private static final double GK_AMOEBA_AMMONIA_H = 2.700;
+    /**
+     * Methyl Amine N, Ethyl Amine N, Dimethyl Amine N, Trimethyl Amine N
+     *
+     * AMOEBA 2009 Class 49
+     */
+    private static final double GK_AMOEBA_METHYLAMINE_N = 3.1535;
+    /**
+     * Methyl Amine H2N, Ethyl Amine H2N, Dimethyl Amine HN
+     *
+     * AMOEBA 2009 Class 50
+     */
+    private static final double GK_AMOEBA_METHYLAMINE_HN = 2.430;
+    /**
+     * Methyl Amine H3C, Ethyl Amine H2C
+     * Dimethyl Amine H3C, Trimethyl Amine H3C
+     * p-Cresol H3C
+     *
+     * AMOEBA 2009 Class 51
+     */
+    private static final double GK_AMOEBA_METHYLAMINE_HC = 2.592;
+    /**
+     * Pyrrolidine C-CH2-C, Pyrrolidine H2C-N
+     * NMePyrrolidine H2C-N, NMePyrrolidine H2C<
+     *
+     * AMOEBA 2009 Class 52
+     *
+     * TODO: Combine with Ethanol HC?
+     */
+    private static final double GK_AMOEBA_PYRROLIDINE_HC = 2.664;
+    /**
+     * Formamide C=O, Acetamide C=O
+     * NMeFormamide C=O, NMeAcetamide C=O
+     * DiMeFormamide C=O, DiMeAcetamide C=O
+     *
+     * AMOEBA 2009 Class 53
+     */
+    private static final double GK_AMOEBA_AMIDE_CO = 3.438;
+    /**
+     * Formamide HCO, NMeFormamide HCO, DiMeFormamide HCO
+     *
+     * AMOEBA 2009 Class 54
+     */
+    private static final double GK_AMOEBA_AMIDE_HCO = 2.520;
+    /**
+     * Formamide O, Acetamide O, NMeFormamide O
+     * NMeAcetamide O, DiMeFormamide O, DiMeAcetamide O
+     * Formic Acid O=C, Acetic Acid O=C, Formaldehyde O=C, Acetaldehyde O=C
+     *
+     * AMOEBA 2009 Class 55
+     */
+    private static final double GK_AMOEBA_CARBONYL_O = 3.069;
+    /**
+     * Formamide N, Acetamide N, NMeFormamide N, NMeAcetamide N,
+     * DiMeFormamide N, DiMeAcetamide N
+     *
+     * AMOEBA 2009 Class 56
+     */
+    private static final double GK_AMOEBA_AMIDE_N = 3.710;
+    /**
+     * Formamide H2N, Acetamide H2N, NMeFormamide HN, NMeAcetamide HN
+     *
+     * AMOEBA 2009 Class 57
+     */
+    private static final double GK_AMOEBA_AMIDE_HN = 2.331;
+    /**
+     * Acetamide H3C, NMeAcetamide H3C-C, DiMeAcetamide H3C-C
+     * NMeFormamide H3C, NMeAcetamide H3C-N, DiMeFormamide H3C, DiMeAcetamide H3C-N
+     *
+     * AMOEBA 2009 Classes 58 and 59
+     *
+     * TODO: Combine with Ethanol HC?
+     */
+    private static final double GK_AMOEBA_AMIDE_H3C = 2.650;
+    /**
+     * Formic Acid OH, Acetic Acid OH
+     *
+     * AMOEBA 2009 Class 60
+     */
+    private static final double GK_AMOEBA_CARBOXCYLIC_ACID_O = 3.30285;
+    /**
+     * Formic Acid HO, Acetic Acid HO
+     *
+     * AMOEBA 2009 Class 61
+     */
+    private static final double GK_AMOEBA_CARBOXCYLIC_ACID_HO = 2.3895;
+    /**
+     *  Formic Acid C=O, Acetic Acid C=O, Formaldehyde C=O, Acetaldehyde C=O
+     *  Methyl Sulfide CH3, Dimethyl Sulfide CH3, Dimethyl Disulfide CH3,
+     *  Ethyl Sulfide CH2, MeEt Sulfide CH3-S, MeEt Sulfide CH2-S
+     *
+     *  AMOEBA 2009 Class 62
+     */
+    private static final double GK_AMOEBA_CARBONYL_CO = 3.402;
+    /**
+     * Formic Acid HC=O, Formaldehyde HC=O, Acetaldehyde HC=O
+     * 3-Formylindole HC=O
+     *
+     * AMOEBA 2009 Class 63
+     */
+    private static final double GK_AMOEBA_FORMYL_HCO = 2.628;
+    /**
+     * Acetaldehyde H3C, Acetaldehyde H3C
+     *
+     * AMOEBA 2009 Class 64
+     */
+    private static final double GK_AMOEBA_ACETYL_HCO = 2.682;
+    /**
+     * Hydrogen Sulfide S
+     *
+     * AMOEBA 2009 Class 65
+     */
+    private static final double GK_AMOEBA_HSULFIDE_S = 4.4055;
+    /**
+     * Hydrogen Sulfide H
+     *
+     * AMOEBA 2009 Class 66
+     */
+    private static final double GK_AMOEBA_HSULFIDE_H = 3.3240;
+    /**
+     * Methyl Sulfide S, Dimethyl Sulfide S, Dimethyl Disulfide S
+     * Ethyl Sulfide S, MeEt Sulfide S
+     *
+     * AMOEBA 2009 Class 67
+     */
+    private static final double GK_AMOEBA_SULFIDE_S = 5.3267;
+    /**
+     * Methyl Sulfide HS, Ethyl Sulfide HS
+     *
+     * AMOEBA 2009 Class 68
+     */
+    private static final double GK_AMOEBA_SULFIDE_HS = 3.6841;
+    /**
+     * Methyl Sulfide H3C, Dimethyl Sulfide H3C, Dimethyl Disulfide H3C
+     * Ethyl Sulfide H2C, MeEt Sulfide H3C-S, MeEt Sulfide CH2-S
+     *
+     * AMOEBA 2009 Class 69
+     */
+    private static final double GK_AMOEBA_SULFIDE_H3C = 3.8171;
+    /**
+     * Ethyl Sulfide CH3, MeEt Sulfide CH3-C
+     *
+     * AMOEBA 2009 Class 70
+     */
+    private static final double GK_AMOEBA_SULFIDE_CH3 = 5.0806;
+    /**
+     * Ethyl Sulfide H3C, MeEt Sulfide H3C-C
+     *
+     * AMOEBA 2009 Class 71
+     */
+    private static final double GK_AMOEBA_ETHYL_SULFIDE_H3C = 3.9634;
+    /**
+     * Hydrogen Cyanide CN, Acetonitrile CN
+     *
+     * AMOEBA 2009 Classes 79 and 82
+     *
+     * TODO: Cobime with Alkane Carbon?
+     */
+    private static final double GK_AMOEBA_ETHYL_NITRILE_C = 4.584;
+    /**
+     * Hydrogen Cyanide CN, Acetonitrile CN
+     *
+     * AMOEBA 2009 Class 80
+     */
+    private static final double GK_AMOEBA_ETHYL_NITRILE_N = 3.6516;
+    /**
+     * Acetonitrile H3C
+     *
+     * AMOEBA 2009 Class 83
+     */
+    private static final double GK_AMOEBA_ETHYL_NITRILE_H3C = 3.4920;
+    /**
+     * Benzene C, Pyridinium C2, Pyridinium C3, Pyridinium C4
+     *
+     * AMOEBA 2009 Class 87
+     */
+    private static final double GK_AMOEBA_BENZENE_C = 5.0540;
+    /**
+     * Benzene HC, Indole HC2 to Indole HC7, 3-Ethylindole HC2, 3-Ethylindole HC3 to 3-Ethylindole HC7
+     * 3-Formylindole HC2, 3-Formylindole HC4 to 3-Formylindole HC7
+     * Pyridinium H2 to Pyridinium H4
+     *
+     * AMOEBA 2009 Class 88
+     */
+    private static final double GK_AMOEBA_BENZENE_H = 3.9634;
+    /**
+     * Ethylbenzene C2, Ethylbenzene C3, Ethylbenzene C4, Ethylbenzene C1-CH2
+     * Phenol C1-OH, Phenol C2 to Phenol C4,
+     * Toluene C1-CH3, Toluene C2 to Toluene C4
+     * p-Cresol C1-CH3, p-Cresol C2, p-Cresol C3, p-Cresol C4-OH
+     * Benzamidine C1-CN2, Benzamidine C2 to Benzamidine C4
+     *
+     * AMOEBA 2009 Class 89
+     */
+    private static final double GK_AMOEBA_AROMATIC_C = 3.800;
+    /**
+     * Ethylbenzene H2 to Ethylbenzene H4
+     * Phenol H2 to Phenol H4
+     * Toluene H2 to Toluene H4
+     * p-Cresol H2, p-Cresol H3
+     * Benzamidine H2 to Benzamidine H4
+     *
+     * AMOEBA 2009 Class 90
+     */
+    private static final double GK_AMOEBA_AROMATIC_H = 2.980;
+    /**
+     * Imidazole NH, Imidazole N=C-
+     * 4-Ethylimidazole ND, 4-Ethylimidazole NE
+     * Indole N
+     * 3-Ethylindole N
+     * 3-Formylindole N
+     *
+     * AMOEBA 2009 Class 91
+     */
+    private static final double GK_AMOEBA_IMIAZOLE_NH = 3.339;
+    /**
+     * Imidazole N-C-N, Imidazole C-N=C, Imidazole C-NH-
+     * 4-Ethylimidazole CE, 4-Ethylimidazole CD, 4-Ethylimidazole CG
+     *
+     * AMOEBA 2009 Class 92
+     */
+    private static final double GK_AMOEBA_IMIDAZOLE_C = 3.591;
+    /**
+     * Imidazole HC
+     * 4-Ethylimidazole HCE, 4-Ethylimidazole HCD
+     *
+     * AMOEBA 2009 Class 93
+     */
+    private static final double GK_AMOEBA_IMIDAZOLE_HC = 3.000;
 
     static {
-        // GLY
-        amoebapro13ByBiotype.put(2, 1.15);
-        amoebapro13ByBiotype.put(6, 1.15);
-        // ALA
-//        biotypeToBondi.put( 8, 1.60 );    // DO MANUALLY
-//        biotypeToBondi.put( 12, 1.60 );   // DO MANUALLY
-        amoebapro13ByBiotype.put(13, 1.60);
-        amoebapro13ByBiotype.put(14, 1.60);
-        //VAL
-        amoebapro13ByBiotype.put(21, 1.40);
-        amoebapro13ByBiotype.put(22, 1.40);
-        amoebapro13ByBiotype.put(23, 1.40);
-        amoebapro13ByBiotype.put(25, 1.40);//^
-        amoebapro13ByBiotype.put(24, 1.40);
-        amoebapro13ByBiotype.put(26, 1.40);//^
-        //LEU
-        amoebapro13ByBiotype.put(33, 1.40);
-        amoebapro13ByBiotype.put(34, 1.40);
-        amoebapro13ByBiotype.put(35, 1.40);
-        amoebapro13ByBiotype.put(36, 1.40);
-        amoebapro13ByBiotype.put(37, 1.40);
-        amoebapro13ByBiotype.put(39, 1.40);//^
-        amoebapro13ByBiotype.put(38, 1.40);
-        amoebapro13ByBiotype.put(40, 1.40);//^
-        //ILE
-        amoebapro13ByBiotype.put(47, 1.40);
-        amoebapro13ByBiotype.put(48, 1.40);
-        amoebapro13ByBiotype.put(49, 1.40);
-        amoebapro13ByBiotype.put(50, 1.40);
-        amoebapro13ByBiotype.put(51, 1.40);
-        amoebapro13ByBiotype.put(52, 1.40);
-        amoebapro13ByBiotype.put(53, 1.40);
-        amoebapro13ByBiotype.put(54, 1.40);
-        //SER
-        amoebapro13ByBiotype.put(63, 1.0235);
-        amoebapro13ByBiotype.put(64, 1.0235);
-        //THR
-        amoebapro13ByBiotype.put(73, 1.25);
-        amoebapro13ByBiotype.put(74, 1.25);
-        //CYD
-//        biotypeToBondi.put( 83, 1.02 );   // DO MANUALLY
-//        biotypeToBondi.put( 84, 1.02 );   // DO MANUALLY
-        amoebapro13ByBiotype.put(95, 1.02);
-        amoebapro13ByBiotype.put(104, 1.02);
-        //CYS
-        amoebapro13ByBiotype.put(85, 1.80);
-        amoebapro13ByBiotype.put(86, 1.80);
-        //PRO
-        amoebapro13ByBiotype.put(105, 1.05);
-        amoebapro13ByBiotype.put(644, 1.05);//^
-        amoebapro13ByBiotype.put(106, 1.05);
-        amoebapro13ByBiotype.put(645, 1.05);//^
-        amoebapro13ByBiotype.put(107, 1.05);
-        amoebapro13ByBiotype.put(108, 1.05);
-        amoebapro13ByBiotype.put(109, 1.05);
-        amoebapro13ByBiotype.put(110, 1.05);
-        amoebapro13ByBiotype.put(648, 1.05);//^
-        amoebapro13ByBiotype.put(111, 1.05);
-        amoebapro13ByBiotype.put(112, 1.05);
-        amoebapro13ByBiotype.put(113, 1.05);
-        amoebapro13ByBiotype.put(114, 1.05);
-        amoebapro13ByBiotype.put(115, 1.05);
-        //PHE
-        amoebapro13ByBiotype.put(122, 1.325);
-        amoebapro13ByBiotype.put(123, 1.325);
-        amoebapro13ByBiotype.put(124, 1.325);
-        amoebapro13ByBiotype.put(125, 1.325);
-        amoebapro13ByBiotype.put(126, 1.325);
-        amoebapro13ByBiotype.put(127, 1.325);
-        amoebapro13ByBiotype.put(128, 1.325);
-        amoebapro13ByBiotype.put(129, 1.325);
-        amoebapro13ByBiotype.put(130, 1.325);
-        //TYR
-        amoebapro13ByBiotype.put(145, 1.15);
-        amoebapro13ByBiotype.put(146, 1.15);
-        //TYD
-        amoebapro13ByBiotype.put(161, 0.938563);
-        //TRP
-        amoebapro13ByBiotype.put(168, 1.32475);
-        amoebapro13ByBiotype.put(169, 1.32475);
-        amoebapro13ByBiotype.put(170, 1.32475);
-        amoebapro13ByBiotype.put(171, 1.32475);
-        amoebapro13ByBiotype.put(172, 1.32475);
-        amoebapro13ByBiotype.put(173, 1.32475);
-        amoebapro13ByBiotype.put(174, 1.32475);
-        amoebapro13ByBiotype.put(175, 1.32475);
-        amoebapro13ByBiotype.put(176, 1.32475);
-        amoebapro13ByBiotype.put(177, 1.32475);
-        amoebapro13ByBiotype.put(178, 1.32475);
-        amoebapro13ByBiotype.put(179, 1.32475);
-        amoebapro13ByBiotype.put(180, 1.32475);
-        amoebapro13ByBiotype.put(181, 1.32475);
-        amoebapro13ByBiotype.put(182, 1.32475);
-        amoebapro13ByBiotype.put(183, 1.32475);
-        amoebapro13ByBiotype.put(184, 1.32475);
-        //HIS
-        amoebapro13ByBiotype.put(194, 1.60);
-        amoebapro13ByBiotype.put(195, 1.60);
-        amoebapro13ByBiotype.put(198, 1.60);
-        amoebapro13ByBiotype.put(199, 1.60);
-        amoebapro13ByBiotype.put(200, 1.60);
-        amoebapro13ByBiotype.put(201, 1.60);
-        //HID
-        amoebapro13ByBiotype.put(211, 1.1375);
-        amoebapro13ByBiotype.put(212, 1.1375);
-        amoebapro13ByBiotype.put(215, 1.1375);
-        amoebapro13ByBiotype.put(216, 1.1375);
-        amoebapro13ByBiotype.put(217, 1.1375);
-        //HIE
-        amoebapro13ByBiotype.put(227, 1.06175);
-        amoebapro13ByBiotype.put(230, 1.06175);
-        amoebapro13ByBiotype.put(231, 1.06175);
-        amoebapro13ByBiotype.put(232, 1.06175);
-        amoebapro13ByBiotype.put(233, 1.06175);
-        //ASP
-        amoebapro13ByBiotype.put(242, 1.0555);
-        amoebapro13ByBiotype.put(243, 1.0555);
-        //ASH
-        amoebapro13ByBiotype.put(252, 1.1125);
-        amoebapro13ByBiotype.put(253, 1.1125);
-        amoebapro13ByBiotype.put(254, 1.1125);
-        amoebapro13ByBiotype.put(255, 1.1125);
-        //ASN
-        amoebapro13ByBiotype.put(265, 1.118125);
-        amoebapro13ByBiotype.put(266, 1.118125);
-        amoebapro13ByBiotype.put(267, 1.118125);
-        //GLU
-        amoebapro13ByBiotype.put(278, 1.16);
-        amoebapro13ByBiotype.put(279, 1.16);
-        //GLH
-        amoebapro13ByBiotype.put(290, 1.06);
-        amoebapro13ByBiotype.put(291, 1.06);
-        amoebapro13ByBiotype.put(292, 1.06);
-        amoebapro13ByBiotype.put(293, 1.06);
-        //GLN
-        amoebapro13ByBiotype.put(305, 1.085);
-        amoebapro13ByBiotype.put(306, 1.085);
-        amoebapro13ByBiotype.put(307, 1.085);
-        //MET
-        amoebapro13ByBiotype.put(318, 1.30);
-        //LYS
-        amoebapro13ByBiotype.put(335, 1.64);
-        amoebapro13ByBiotype.put(336, 1.64);
-        //LYD
-        amoebapro13ByBiotype.put(351, 1.562);
-        amoebapro13ByBiotype.put(352, 1.562);
-        //ARG
-        amoebapro13ByBiotype.put(365, 1.525);
-        amoebapro13ByBiotype.put(366, 1.525);
-        amoebapro13ByBiotype.put(367, 1.525);
-        amoebapro13ByBiotype.put(368, 1.525);
-        amoebapro13ByBiotype.put(369, 1.525);
+        DEFAULT_RADII.put(0, 0.0);
+        DEFAULT_RADII.put(1, 1.2);
+        DEFAULT_RADII.put(2, 1.4);
+        DEFAULT_RADII.put(5, 1.8);
+        DEFAULT_RADII.put(6, 1.7);
+        DEFAULT_RADII.put(7, 1.55);
+        DEFAULT_RADII.put(8, 1.52);
+        DEFAULT_RADII.put(9, 1.47);
+        DEFAULT_RADII.put(10, 1.54);
+        DEFAULT_RADII.put(14, 2.1);
+        DEFAULT_RADII.put(15, 1.8);
+        DEFAULT_RADII.put(16, 1.8);
+        DEFAULT_RADII.put(17, 1.75);
+        DEFAULT_RADII.put(18, 1.88);
+        DEFAULT_RADII.put(34, 1.9);
+        DEFAULT_RADII.put(35, 1.85);
+        DEFAULT_RADII.put(36, 2.02);
+        DEFAULT_RADII.put(53, 1.98);
+        DEFAULT_RADII.put(54, 2.16);
+        for (int i = 0; i <= 118; i++) {
+            if (!DEFAULT_RADII.containsKey(i)) {
+                DEFAULT_RADII.put(i, 2.0);
+            }
+        }
+
+        // *************************************************
+        // Initialize AMOEBA 2009 GK Radii.
+//        atom          1    1    He    "Helium Atom He"               2     4.003    0
+//        atom          2    2    Ne    "Neon Atom Ne"                10    20.179    0
+//        atom          3    3    Ar    "Argon Atom Ar"               18    39.948    0
+//        atom          4    4    Kr    "Krypton Atom Kr"             36    83.800    0
+//        atom          5    5    Xe    "Xenon Atom Xe"               54   131.290    0
+        AMOEBA_2009_GK_RADII.put(6, GK_AMOEBA_LITHIUM / 2.0);
+        AMOEBA_2009_GK_RADII.put(7, GK_AMOEBA_SODIUM / 2.0);
+        AMOEBA_2009_GK_RADII.put(8, GK_AMOEBA_POTASSIUM / 2.0);
+        AMOEBA_2009_GK_RADII.put(9, GK_AMOEBA_RUBIDIUM / 2.0);
+        AMOEBA_2009_GK_RADII.put(10, GK_AMOEBA_CESIUM / 2.0);
+        AMOEBA_2009_GK_RADII.put(11, GK_AMOEBA_MAGNESIUM / 2.0);
+        AMOEBA_2009_GK_RADII.put(12, GK_AMOEBA_CALCIUM / 2.0);
+        AMOEBA_2009_GK_RADII.put(13, GK_AMOEBA_ZINC / 2.0);
+        AMOEBA_2009_GK_RADII.put(14, GK_AMOEBA_FLUORIDE / 2.0);
+        AMOEBA_2009_GK_RADII.put(15, GK_AMOEBA_CHLORIDE / 2.0);
+        AMOEBA_2009_GK_RADII.put(16, GK_AMOEBA_BROMIDE / 2.0);
+        AMOEBA_2009_GK_RADII.put(17, GK_AMOEBA_IODIDE / 2.0);
+//        atom         18   18    C     "Cyanide Ion C"                6    12.011    1
+//        atom         19   19    N     "Cyanide Ion N"                7    14.007    1
+//        atom         20   20    B     "Tetrafluoroborate B"          5    10.810    4
+//        atom         21   21    F     "Tetrafluoroborate F"          9    18.998    1
+//        atom         22   22    P     "Hexafluorophosphate P"       15    30.974    6
+//        atom         23   23    F     "Hexafluorophosphate F"        9    18.998    1
+//        atom         24   24    N     "Dinitrogen N2"                7    14.007    1
+        AMOEBA_2009_GK_RADII.put(25, GK_AMOEBA_METHANE_CH4 / 2.0);
+        AMOEBA_2009_GK_RADII.put(26, GK_AMOEBA_METHANE_H4C / 2.0);
+        AMOEBA_2009_GK_RADII.put(27, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(28, GK_AMOEBA_ALKANE_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(29, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(30, GK_AMOEBA_ALKANE_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(31, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(32, GK_AMOEBA_ALKANE_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(33, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(34, GK_AMOEBA_WATER_O / 2.0);
+        AMOEBA_2009_GK_RADII.put(35, GK_AMOEBA_WATER_H / 2.0);
+
+        AMOEBA_2009_GK_RADII.put(36, GK_AMOEBA_METHANOL_O / 2.0);
+        AMOEBA_2009_GK_RADII.put(37, GK_AMOEBA_METHANOL_HO / 2.0);
+        AMOEBA_2009_GK_RADII.put(38, GK_AMOEBA_METHANOL_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(39, GK_AMOEBA_METHANOL_HC / 2.0);
+        AMOEBA_2009_GK_RADII.put(40, GK_AMOEBA_ETHANOL_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(41, GK_AMOEBA_ETHANOL_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(42, GK_AMOEBA_PROPANOL_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(43, GK_AMOEBA_ISOPROPANOL_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(44, GK_AMOEBA_METHYLETHER_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(45, GK_AMOEBA_AMMONIA_N / 2.0);
+        AMOEBA_2009_GK_RADII.put(46, GK_AMOEBA_AMMONIA_H / 2.0);
+//        atom         63   47    N     "Ammonium Ion N+"              7    14.007    4
+//        atom         64   48    H     "Ammonium Ion H4N+"            1     1.008    1
+        AMOEBA_2009_GK_RADII.put(49, GK_AMOEBA_METHYLAMINE_N / 2.0);
+        AMOEBA_2009_GK_RADII.put(50, GK_AMOEBA_METHYLAMINE_HN / 2.0);
+        AMOEBA_2009_GK_RADII.put(51, GK_AMOEBA_METHYLAMINE_HC / 2.0);
+        AMOEBA_2009_GK_RADII.put(52, GK_AMOEBA_PYRROLIDINE_HC / 2.0);
+        AMOEBA_2009_GK_RADII.put(53, GK_AMOEBA_AMIDE_CO / 2.0);
+        AMOEBA_2009_GK_RADII.put(54, GK_AMOEBA_AMIDE_HCO / 2.0);
+        AMOEBA_2009_GK_RADII.put(55, GK_AMOEBA_CARBONYL_O / 2.0);
+        AMOEBA_2009_GK_RADII.put(56, GK_AMOEBA_AMIDE_N / 2.0);
+        AMOEBA_2009_GK_RADII.put(57, GK_AMOEBA_AMIDE_HN / 2.0);
+        AMOEBA_2009_GK_RADII.put(58, GK_AMOEBA_AMIDE_H3C / 2.0);
+        AMOEBA_2009_GK_RADII.put(59, GK_AMOEBA_AMIDE_H3C / 2.0);
+        AMOEBA_2009_GK_RADII.put(60, GK_AMOEBA_CARBOXCYLIC_ACID_O / 2.0);
+        AMOEBA_2009_GK_RADII.put(61, GK_AMOEBA_CARBOXCYLIC_ACID_HO / 2.0);
+        AMOEBA_2009_GK_RADII.put(62, GK_AMOEBA_CARBONYL_CO / 2.0);
+        AMOEBA_2009_GK_RADII.put(63, GK_AMOEBA_FORMYL_HCO / 2.0);
+        AMOEBA_2009_GK_RADII.put(64, GK_AMOEBA_ACETYL_HCO / 2.0);
+        AMOEBA_2009_GK_RADII.put(65, GK_AMOEBA_HSULFIDE_S / 2.0);
+        AMOEBA_2009_GK_RADII.put(66, GK_AMOEBA_HSULFIDE_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(67, GK_AMOEBA_SULFIDE_S / 2.0);
+        AMOEBA_2009_GK_RADII.put(68, GK_AMOEBA_SULFIDE_HS / 2.0);
+        AMOEBA_2009_GK_RADII.put(69, GK_AMOEBA_SULFIDE_H3C / 2.0);
+        AMOEBA_2009_GK_RADII.put(70, GK_AMOEBA_SULFIDE_CH3 / 2.0);
+        AMOEBA_2009_GK_RADII.put(71, GK_AMOEBA_ETHYL_SULFIDE_H3C / 2.0);
+//        atom        189   72    S     "Dimethyl Sulfoxide S=O"      16    32.066    3
+//        atom        190   73    O     "Dimethyl Sulfoxide S=O"       8    15.999    1
+//        atom        191   74    C     "Dimethyl Sulfoxide CH3"       6    12.011    4
+//        atom        192   75    H     "Dimethyl Sulfoxide H3C"       1     1.008    1
+//        atom        193   76    S     "Methyl Sulfonate SO3-"       16    32.066    4
+//        atom        194   77    O     "Methyl Sulfonate SO3-"        8    15.999    1
+//        atom        200   78    H     "Ethyl Sulfonate H2C"          1     1.008    1
+        AMOEBA_2009_GK_RADII.put(79, GK_AMOEBA_ETHYL_NITRILE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(80, GK_AMOEBA_ETHYL_NITRILE_N / 2.0);
+//        atom        209   81    H     "Hydrogen Cyanide HCN"         1     1.008    1
+        AMOEBA_2009_GK_RADII.put(82, GK_AMOEBA_ETHYL_NITRILE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(83, GK_AMOEBA_ETHYL_NITRILE_H3C / 2.0);
+//        atom        214   84    C     "Tricyanomethide CN"           6    12.011    2
+//        atom        215   85    N     "Tricyanomethide CN"           7    14.007    1
+//        atom        216   86    C     "Tricyanomethide >C-"          6    12.011    3
+        AMOEBA_2009_GK_RADII.put(87, GK_AMOEBA_BENZENE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(88, GK_AMOEBA_BENZENE_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(89, GK_AMOEBA_AROMATIC_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(90, GK_AMOEBA_AROMATIC_H / 2.0);
+        AMOEBA_2009_GK_RADII.put(91, GK_AMOEBA_IMIAZOLE_NH / 2.0);
+        AMOEBA_2009_GK_RADII.put(92, GK_AMOEBA_IMIDAZOLE_C / 2.0);
+        AMOEBA_2009_GK_RADII.put(93, GK_AMOEBA_IMIDAZOLE_HC / 2.0);
+//        atom        282   94    C     "Indole C2"                    6    12.011    3
+//        atom        311   95    C     "3-Ethylindole CH2"            6    12.011    4
+//        atom        331   96    O     "3-Formylindole O=C"           8    15.999    1
+//        atom        333   97    N     "Benzamidine N"                7    14.007    3
+//        atom        334   98    H     "Benzamidine HN"               1     1.008    1
+//        atom        335   99    C     "Benzamidine N-C-N"            6    12.011    3
+//        atom        343  100    N     "Pyridinium N"                 7    14.007    3
+//        atom        347  101    H     "Pyridinium HN"                1     1.008    1
+
+        // *************************************************
+        // Initialize AMOEBA 2014 GK Radii.
+        AMOEBA_2014_GK_RADII.put(6, GK_AMOEBA_LITHIUM / 2.0);
+        AMOEBA_2014_GK_RADII.put(7, GK_AMOEBA_SODIUM / 2.0);
+        AMOEBA_2014_GK_RADII.put(8, GK_AMOEBA_POTASSIUM / 2.0);
+        AMOEBA_2014_GK_RADII.put(9, GK_AMOEBA_RUBIDIUM / 2.0);
+        AMOEBA_2014_GK_RADII.put(10, GK_AMOEBA_CESIUM / 2.0);
+        AMOEBA_2014_GK_RADII.put(11, GK_AMOEBA_MAGNESIUM / 2.0);
+        AMOEBA_2014_GK_RADII.put(12, GK_AMOEBA_CALCIUM / 2.0);
+        AMOEBA_2014_GK_RADII.put(13, GK_AMOEBA_ZINC / 2.0);
+        AMOEBA_2014_GK_RADII.put(14, GK_AMOEBA_FLUORIDE / 2.0);
+        AMOEBA_2014_GK_RADII.put(15, GK_AMOEBA_CHLORIDE / 2.0);
+        AMOEBA_2014_GK_RADII.put(16, GK_AMOEBA_BROMIDE / 2.0);
+        AMOEBA_2014_GK_RADII.put(17, GK_AMOEBA_IODIDE / 2.0);
+
+        AMOEBA_2014_GK_RADII.put(25, GK_AMOEBA_METHANE_CH4 / 2.0);
+        AMOEBA_2014_GK_RADII.put(26, GK_AMOEBA_METHANE_H4C / 2.0);
+        AMOEBA_2014_GK_RADII.put(27, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(28, GK_AMOEBA_ALKANE_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(29, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(30, GK_AMOEBA_ALKANE_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(31, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(32, GK_AMOEBA_ALKANE_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(33, GK_AMOEBA_ALKANE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(34, GK_AMOEBA_WATER_O / 2.0);
+        AMOEBA_2014_GK_RADII.put(35, GK_AMOEBA_WATER_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(36, GK_AMOEBA_METHANOL_O / 2.0);
+        AMOEBA_2014_GK_RADII.put(37, GK_AMOEBA_METHANOL_HO / 2.0);
+        AMOEBA_2014_GK_RADII.put(38, GK_AMOEBA_METHANOL_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(39, GK_AMOEBA_METHANOL_HC / 2.0);
+        AMOEBA_2014_GK_RADII.put(40, GK_AMOEBA_ETHANOL_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(41, GK_AMOEBA_ETHANOL_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(42, GK_AMOEBA_PROPANOL_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(43, GK_AMOEBA_ISOPROPANOL_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(44, GK_AMOEBA_METHYLETHER_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(45, GK_AMOEBA_AMMONIA_N / 2.0);
+        AMOEBA_2014_GK_RADII.put(46, GK_AMOEBA_AMMONIA_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(49, GK_AMOEBA_METHYLAMINE_N / 2.0);
+        AMOEBA_2014_GK_RADII.put(50, GK_AMOEBA_METHYLAMINE_HN / 2.0);
+        AMOEBA_2014_GK_RADII.put(51, GK_AMOEBA_METHYLAMINE_HC / 2.0);
+        AMOEBA_2014_GK_RADII.put(52, GK_AMOEBA_PYRROLIDINE_HC / 2.0);
+        AMOEBA_2014_GK_RADII.put(53, GK_AMOEBA_AMIDE_CO / 2.0);
+        AMOEBA_2014_GK_RADII.put(54, GK_AMOEBA_AMIDE_HCO / 2.0);
+        AMOEBA_2014_GK_RADII.put(55, GK_AMOEBA_CARBONYL_O / 2.0);
+        AMOEBA_2014_GK_RADII.put(56, GK_AMOEBA_AMIDE_N / 2.0);
+        AMOEBA_2014_GK_RADII.put(57, GK_AMOEBA_AMIDE_HN / 2.0);
+        AMOEBA_2014_GK_RADII.put(58, GK_AMOEBA_AMIDE_H3C / 2.0);
+        AMOEBA_2014_GK_RADII.put(59, GK_AMOEBA_AMIDE_H3C / 2.0);
+        AMOEBA_2014_GK_RADII.put(60, GK_AMOEBA_CARBOXCYLIC_ACID_O / 2.0);
+        AMOEBA_2014_GK_RADII.put(61, GK_AMOEBA_CARBOXCYLIC_ACID_HO / 2.0);
+        AMOEBA_2014_GK_RADII.put(62, GK_AMOEBA_CARBONYL_CO / 2.0);
+        AMOEBA_2014_GK_RADII.put(63, GK_AMOEBA_FORMYL_HCO / 2.0);
+        AMOEBA_2014_GK_RADII.put(64, GK_AMOEBA_ACETYL_HCO / 2.0);
+        AMOEBA_2014_GK_RADII.put(65, GK_AMOEBA_HSULFIDE_S / 2.0);
+        AMOEBA_2014_GK_RADII.put(66, GK_AMOEBA_HSULFIDE_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(67, GK_AMOEBA_SULFIDE_S / 2.0);
+        AMOEBA_2014_GK_RADII.put(68, GK_AMOEBA_SULFIDE_HS / 2.0);
+        AMOEBA_2014_GK_RADII.put(69, GK_AMOEBA_SULFIDE_H3C / 2.0);
+        AMOEBA_2014_GK_RADII.put(70, GK_AMOEBA_SULFIDE_CH3 / 2.0);
+        AMOEBA_2014_GK_RADII.put(71, GK_AMOEBA_ETHYL_SULFIDE_H3C / 2.0);
+
+        AMOEBA_2014_GK_RADII.put(79, GK_AMOEBA_ETHYL_NITRILE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(80, GK_AMOEBA_ETHYL_NITRILE_N / 2.0);
+        AMOEBA_2014_GK_RADII.put(82, GK_AMOEBA_ETHYL_NITRILE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(83, GK_AMOEBA_ETHYL_NITRILE_H3C / 2.0);
+
+        AMOEBA_2014_GK_RADII.put(87, GK_AMOEBA_BENZENE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(88, GK_AMOEBA_BENZENE_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(89, GK_AMOEBA_AROMATIC_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(90, GK_AMOEBA_AROMATIC_H / 2.0);
+        AMOEBA_2014_GK_RADII.put(91, GK_AMOEBA_IMIAZOLE_NH / 2.0);
+        AMOEBA_2014_GK_RADII.put(92, GK_AMOEBA_IMIDAZOLE_C / 2.0);
+        AMOEBA_2014_GK_RADII.put(93, GK_AMOEBA_IMIDAZOLE_HC / 2.0);
+
+        AMOEBA_2014_GK_RADII.put(403, 5.3200 / 2.0); // 403    C     "Ethene"
+        AMOEBA_2014_GK_RADII.put(404, 4.1720 / 2.0); // 404    H     "Ethene"
+        AMOEBA_2014_GK_RADII.put(422, 3.4132 / 2.0); // 422   N     "Pyridine"
+        AMOEBA_2014_GK_RADII.put(423, 3.4776 / 2.0); // 423   C     "Pyridine C-N"
+        AMOEBA_2014_GK_RADII.put(424, 2.7600 / 2.0); // 424   H     "Pyridine HCN"
+        AMOEBA_2014_GK_RADII.put(425, 3.4960 / 2.0); // 425   C     "Pyridine CCN"
+        AMOEBA_2014_GK_RADII.put(426, 2.7416 / 2.0); // 426   H     "Pyridine HCCN"
+        AMOEBA_2014_GK_RADII.put(427, 3.4960 / 2.0); // 427   C     "Pyridine C"
+        AMOEBA_2014_GK_RADII.put(428, 2.7416 / 2.0); // 428   H     "Pyridine HC"
+        AMOEBA_2014_GK_RADII.put(443, 4.5360 / 2.0); // 443    C     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(444, 4.6058 / 2.0); // 444    S     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(445, 3.4440 / 2.0); // 445    H     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(446, 3.3240 / 2.0); // 446    H     "CH3SH"
+        AMOEBA_2014_GK_RADII.put(447, 4.3470 / 2.0); // 447    C     "DMSO"
+        AMOEBA_2014_GK_RADII.put(448, 4.8060 / 2.0); // 448    S     "DMSO"
+        AMOEBA_2014_GK_RADII.put(449, 3.5520 / 2.0); // 449    H     "DMSO"
+        AMOEBA_2014_GK_RADII.put(450, 4.2120 / 2.0); // 450    O     "DMSO"
+        AMOEBA_2014_GK_RADII.put(463, 4.5840 / 2.0); // 463    C     "MeF"
+        AMOEBA_2014_GK_RADII.put(464, 3.3810 / 2.0); // 464    F     "MeF"
+        AMOEBA_2014_GK_RADII.put(465, 3.5520 / 2.0); // 465    H     "MeF"
+        AMOEBA_2014_GK_RADII.put(466, 4.2020 / 2.0); // 466    C     "MeCl"
+        AMOEBA_2014_GK_RADII.put(467, 4.2895 / 2.0); // 467    Cl    "MeCl"
+        AMOEBA_2014_GK_RADII.put(468, 3.2560 / 2.0); // 468    H     "MeCl"
+        AMOEBA_2014_GK_RADII.put(469, 4.5840 / 2.0); // 469    C     "MeBr"
+        AMOEBA_2014_GK_RADII.put(470, 4.3780 / 2.0); // 470    Br    "MeBr"
+        AMOEBA_2014_GK_RADII.put(471, 3.5520 / 2.0); // 471    H     "MeBr"
+        AMOEBA_2014_GK_RADII.put(472, 4.5600 / 2.0); // 472    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(473, 4.5600 / 2.0); // 473    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(474, 4.5600 / 2.0); // 474    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(475, 4.5600 / 2.0); // 475    C     "BenF"
+        AMOEBA_2014_GK_RADII.put(476, 3.381 / 2.0); // 476    F     "BenF"
+        AMOEBA_2014_GK_RADII.put(477, 3.5760 / 2.0); // 477    H     "BenF"
+        AMOEBA_2014_GK_RADII.put(478, 3.5760 / 2.0); // 478    H     "BenF"
+        AMOEBA_2014_GK_RADII.put(479, 3.5760 / 2.0); // 479    H     "BenF"
+        AMOEBA_2014_GK_RADII.put(480, 4.5600 / 2.0); // 480    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(481, 4.5600 / 2.0); // 481    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(482, 4.5600 / 2.0); // 482    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(483, 4.5600 / 2.0); // 483    C     "BenCl"
+        AMOEBA_2014_GK_RADII.put(484, 4.4760 / 2.0); // 484    Cl    "BenCl"
+        AMOEBA_2014_GK_RADII.put(485, 3.5760 / 2.0); // 485    H     "BenCl"
+        AMOEBA_2014_GK_RADII.put(486, 3.5760 / 2.0); // 486    H     "BenCl"
+        AMOEBA_2014_GK_RADII.put(487, 3.5760 / 2.0); // 487    H     "BenCl"
+        AMOEBA_2014_GK_RADII.put(488, 4.5600 / 2.0); // 488    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(489, 4.5600 / 2.0); // 489    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(490, 4.5600 / 2.0); // 490    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(491, 4.5600 / 2.0); // 491    C     "BenBr"
+        AMOEBA_2014_GK_RADII.put(492, 4.3780 / 2.0); // 492    Br    "BenBr"
+        AMOEBA_2014_GK_RADII.put(493, 3.5760 / 2.0); // 493    H     "BenBr"
+        AMOEBA_2014_GK_RADII.put(494, 3.5760 / 2.0); // 494    H     "BenBr"
+        AMOEBA_2014_GK_RADII.put(495, 3.5760 / 2.0); // 495    H     "BenBr"
+        AMOEBA_2014_GK_RADII.put(499, 4.5840 / 2.0); // 499    C     "MeCl2"
+        AMOEBA_2014_GK_RADII.put(500, 4.6625 / 2.0); // 500    Cl    "MeCl2"
+        AMOEBA_2014_GK_RADII.put(501, 3.5760 / 2.0); // 501    H     "MeCl2"
+        AMOEBA_2014_GK_RADII.put(502, 4.5840 / 2.0); // 502    C     "MeBr2"
+        AMOEBA_2014_GK_RADII.put(503, 4.7760 / 2.0); // 503    Br    "MeBr2"
+        AMOEBA_2014_GK_RADII.put(504, 3.5760 / 2.0); // 504    H     "MeBr2"
     }
-
-    static {
-        //ALA
-        amber99sbByBiotype.put(8, 1.55);
-        amber99sbByBiotype.put(12, 1.55);
-        amber99sbByBiotype.put(13, 1.55);
-        amber99sbByBiotype.put(14, 1.55);
-        //ARG
-        amber99sbByBiotype.put(365, 1.50);
-        amber99sbByBiotype.put(366, 1.50);
-        amber99sbByBiotype.put(367, 1.50);
-        amber99sbByBiotype.put(368, 1.50);
-        amber99sbByBiotype.put(369, 1.50);
-        //ASN
-        amber99sbByBiotype.put(265, 1.160);
-        amber99sbByBiotype.put(266, 1.160);
-        amber99sbByBiotype.put(267, 1.160);
-        //ASP
-        amber99sbByBiotype.put(242, .934);
-        amber99sbByBiotype.put(243, .934);
-        //CYS
-        amber99sbByBiotype.put(85, 1.125);
-        amber99sbByBiotype.put(86, 1.125);
-        //GLN
-        amber99sbByBiotype.put(305, 1.1625);
-        amber99sbByBiotype.put(306, 1.1625);
-        amber99sbByBiotype.put(307, 1.1625);
-        //GLU
-        amber99sbByBiotype.put(278, 0.92721875);
-        amber99sbByBiotype.put(279, 0.92721875);
-        //GLY
-        amber99sbByBiotype.put(2, 1.50);
-        amber99sbByBiotype.put(6, 1.50);
-        //HIS
-        amber99sbByBiotype.put(194, 1.912);
-        amber99sbByBiotype.put(195, 1.912);
-        amber99sbByBiotype.put(198, 1.912);
-        amber99sbByBiotype.put(199, 1.912);
-        amber99sbByBiotype.put(200, 1.912);
-        amber99sbByBiotype.put(201, 1.912);
-        //ILE
-        amber99sbByBiotype.put(47, 1.50);
-        amber99sbByBiotype.put(48, 1.50);
-        amber99sbByBiotype.put(49, 1.50);
-        amber99sbByBiotype.put(50, 1.50);
-        amber99sbByBiotype.put(51, 1.50);
-        amber99sbByBiotype.put(52, 1.50);
-        amber99sbByBiotype.put(53, 1.50);
-        amber99sbByBiotype.put(54, 1.50);
-        //LEU
-        amber99sbByBiotype.put(33, 1.50);
-        amber99sbByBiotype.put(34, 1.50);
-        amber99sbByBiotype.put(35, 1.50);
-        amber99sbByBiotype.put(36, 1.50);
-        amber99sbByBiotype.put(37, 1.50);
-        amber99sbByBiotype.put(38, 1.50);
-        //LYS
-        amber99sbByBiotype.put(335, 1.50);
-        amber99sbByBiotype.put(336, 1.50);
-        //MET
-        amber99sbByBiotype.put(318, 2.05);
-        //PHE
-        amber99sbByBiotype.put(122, 1.1875);
-        amber99sbByBiotype.put(123, 1.1875);
-        amber99sbByBiotype.put(124, 1.1875);
-        amber99sbByBiotype.put(125, 1.1875);
-        amber99sbByBiotype.put(126, 1.1875);
-        amber99sbByBiotype.put(127, 1.1875);
-        amber99sbByBiotype.put(128, 1.1875);
-        amber99sbByBiotype.put(129, 1.1875);
-        amber99sbByBiotype.put(130, 1.1875);
-        //PRO
-        amber99sbByBiotype.put(105, 1.50);
-        amber99sbByBiotype.put(106, 1.50);
-        amber99sbByBiotype.put(107, 1.50);
-        amber99sbByBiotype.put(108, 1.50);
-        amber99sbByBiotype.put(109, 1.50);
-        amber99sbByBiotype.put(110, 1.50);
-        amber99sbByBiotype.put(111, 1.50);
-        amber99sbByBiotype.put(112, 1.50);
-        amber99sbByBiotype.put(113, 1.50);
-        amber99sbByBiotype.put(114, 1.50);
-        amber99sbByBiotype.put(115, 1.50);
-        //SER
-        amber99sbByBiotype.put(63, 1.174);
-        amber99sbByBiotype.put(64, 1.174);
-        //THR
-        amber99sbByBiotype.put(73, 1.11175);
-        amber99sbByBiotype.put(74, 1.11175);
-        //tmp
-        //TRP
-        amber99sbByBiotype.put(168, 1.14375);
-        amber99sbByBiotype.put(169, 1.14375);
-        amber99sbByBiotype.put(170, 1.14375);
-        amber99sbByBiotype.put(171, 1.14375);
-        amber99sbByBiotype.put(172, 1.14375);
-        amber99sbByBiotype.put(173, 1.14375);
-        amber99sbByBiotype.put(174, 1.14375);
-        amber99sbByBiotype.put(175, 1.14375);
-        amber99sbByBiotype.put(176, 1.14375);
-        amber99sbByBiotype.put(177, 1.14375);
-        amber99sbByBiotype.put(178, 1.14375);
-        amber99sbByBiotype.put(179, 1.14375);
-        amber99sbByBiotype.put(180, 1.14375);
-        amber99sbByBiotype.put(181, 1.14375);
-        amber99sbByBiotype.put(182, 1.14375);
-        amber99sbByBiotype.put(183, 1.14375);
-        amber99sbByBiotype.put(184, 1.14375);
-        //TYR
-        amber99sbByBiotype.put(145, 1.12425);
-        amber99sbByBiotype.put(146, 1.12425);
-        //VAL
-        amber99sbByBiotype.put(21, 1.15);
-        amber99sbByBiotype.put(22, 1.15);
-        amber99sbByBiotype.put(23, 1.15);
-        amber99sbByBiotype.put(24, 1.15);
-        amber99sbByBiotype.put(25, 1.15);
-        amber99sbByBiotype.put(26, 1.15);
-    }
-
-    static {
-        // GLY
-//        typeToBondi.put(2,1.15);      // unnecessary and may suffer from the 
-//        typeToBondi.put(6,1.15);      // problem of atomTypes 8,12
-        // ALA
-//        typeToBondi.put(8,1.60);    // lots of AAs use this!
-//        typeToBondi.put(12,1.60);   // lots of AAs use this!
-        amoebapro13ByAtomtype.put(13, 1.60);
-        amoebapro13ByAtomtype.put(14, 1.60);
-        // VAL
-        amoebapro13ByAtomtype.put(15, 1.40);
-        amoebapro13ByAtomtype.put(16, 1.40);
-        amoebapro13ByAtomtype.put(17, 1.40);
-        amoebapro13ByAtomtype.put(18, 1.40);
-        // LEU
-        amoebapro13ByAtomtype.put(19, 1.40);
-        amoebapro13ByAtomtype.put(20, 1.40);
-        amoebapro13ByAtomtype.put(21, 1.40);
-        amoebapro13ByAtomtype.put(22, 1.40);
-        amoebapro13ByAtomtype.put(23, 1.40);
-        amoebapro13ByAtomtype.put(24, 1.40);
-        // ILE
-        amoebapro13ByAtomtype.put(25, 1.40);
-        amoebapro13ByAtomtype.put(26, 1.40);
-        amoebapro13ByAtomtype.put(27, 1.40);
-        amoebapro13ByAtomtype.put(28, 1.40);
-        amoebapro13ByAtomtype.put(29, 1.40);
-        amoebapro13ByAtomtype.put(30, 1.40);
-        amoebapro13ByAtomtype.put(31, 1.40);
-        amoebapro13ByAtomtype.put(32, 1.40);
-        // SER
-        amoebapro13ByAtomtype.put(35, 1.0235);
-        amoebapro13ByAtomtype.put(36, 1.0235);
-        // THR
-        amoebapro13ByAtomtype.put(39, 1.25);
-        amoebapro13ByAtomtype.put(40, 1.25);
-        // CYD
-//        typeToBondi.put(43,1.02);     // shared with CYS!
-//        typeToBondi.put(44,1.02);     // shared with CYS!
-        amoebapro13ByAtomtype.put(48, 1.02);
-        amoebapro13ByAtomtype.put(49, 1.02);
-        // CYS
-        amoebapro13ByAtomtype.put(45, 1.80);
-        amoebapro13ByAtomtype.put(46, 1.80);
-        // PRO
-        amoebapro13ByAtomtype.put(50, 1.05);
-        amoebapro13ByAtomtype.put(51, 1.05);
-        amoebapro13ByAtomtype.put(52, 1.05);
-        amoebapro13ByAtomtype.put(53, 1.05);
-        amoebapro13ByAtomtype.put(54, 1.05);
-        amoebapro13ByAtomtype.put(55, 1.05);
-        amoebapro13ByAtomtype.put(56, 1.05);
-        amoebapro13ByAtomtype.put(57, 1.05);
-        amoebapro13ByAtomtype.put(58, 1.05);
-        amoebapro13ByAtomtype.put(59, 1.05);
-        amoebapro13ByAtomtype.put(60, 1.05);
-        // PHE
-        amoebapro13ByAtomtype.put(61, 1.325);
-        amoebapro13ByAtomtype.put(62, 1.325);
-        amoebapro13ByAtomtype.put(63, 1.325);
-        amoebapro13ByAtomtype.put(64, 1.325);
-        amoebapro13ByAtomtype.put(65, 1.325);
-        amoebapro13ByAtomtype.put(66, 1.325);
-        amoebapro13ByAtomtype.put(67, 1.325);
-        amoebapro13ByAtomtype.put(68, 1.325);
-        amoebapro13ByAtomtype.put(69, 1.325);
-        // TYR
-        amoebapro13ByAtomtype.put(78, 1.15);
-        amoebapro13ByAtomtype.put(79, 1.15);
-        // TYD
-        amoebapro13ByAtomtype.put(88, 0.938563);
-        // TRP
-        amoebapro13ByAtomtype.put(89, 1.32475);
-        amoebapro13ByAtomtype.put(90, 1.32475);
-        amoebapro13ByAtomtype.put(91, 1.32475);
-        amoebapro13ByAtomtype.put(92, 1.32475);
-        amoebapro13ByAtomtype.put(93, 1.32475);
-        amoebapro13ByAtomtype.put(94, 1.32475);
-        amoebapro13ByAtomtype.put(95, 1.32475);
-        amoebapro13ByAtomtype.put(96, 1.32475);
-        amoebapro13ByAtomtype.put(97, 1.32475);
-        amoebapro13ByAtomtype.put(98, 1.32475);
-        amoebapro13ByAtomtype.put(99, 1.32475);
-        amoebapro13ByAtomtype.put(100, 1.32475);
-        amoebapro13ByAtomtype.put(101, 1.32475);
-        amoebapro13ByAtomtype.put(102, 1.32475);
-        amoebapro13ByAtomtype.put(103, 1.32475);
-        amoebapro13ByAtomtype.put(104, 1.32475);
-        amoebapro13ByAtomtype.put(105, 1.32475);
-        // HIS
-        amoebapro13ByAtomtype.put(109, 1.60);
-        amoebapro13ByAtomtype.put(110, 1.60);
-        amoebapro13ByAtomtype.put(113, 1.60);
-        amoebapro13ByAtomtype.put(114, 1.60);
-        amoebapro13ByAtomtype.put(115, 1.60);
-        amoebapro13ByAtomtype.put(116, 1.60);
-        // HID
-        amoebapro13ByAtomtype.put(120, 1.1375);
-        amoebapro13ByAtomtype.put(121, 1.1375);
-        amoebapro13ByAtomtype.put(124, 1.1375);
-        amoebapro13ByAtomtype.put(125, 1.1375);
-        amoebapro13ByAtomtype.put(126, 1.1375);
-        // HIE
-        amoebapro13ByAtomtype.put(130, 1.06175);
-        amoebapro13ByAtomtype.put(133, 1.06175);
-        amoebapro13ByAtomtype.put(134, 1.06175);
-        amoebapro13ByAtomtype.put(135, 1.06175);
-        amoebapro13ByAtomtype.put(136, 1.06175);
-        // ASP
-        amoebapro13ByAtomtype.put(139, 1.0555);
-        amoebapro13ByAtomtype.put(140, 1.0555);
-        // ASH
-        amoebapro13ByAtomtype.put(143, 1.1125);
-        amoebapro13ByAtomtype.put(144, 1.1125);
-        amoebapro13ByAtomtype.put(145, 1.1125);
-        amoebapro13ByAtomtype.put(146, 1.1125);
-        // ASN
-        amoebapro13ByAtomtype.put(150, 1.118125);
-        amoebapro13ByAtomtype.put(151, 1.118125);
-        amoebapro13ByAtomtype.put(152, 1.118125);
-        // GLU
-        amoebapro13ByAtomtype.put(157, 1.16);
-        amoebapro13ByAtomtype.put(158, 1.16);
-        // GLH
-        amoebapro13ByAtomtype.put(163, 1.06);
-        amoebapro13ByAtomtype.put(164, 1.06);
-        amoebapro13ByAtomtype.put(165, 1.06);
-        amoebapro13ByAtomtype.put(166, 1.06);
-        // GLN
-        amoebapro13ByAtomtype.put(172, 1.085);
-        amoebapro13ByAtomtype.put(173, 1.085);
-        amoebapro13ByAtomtype.put(174, 1.085);
-        // MET
-        amoebapro13ByAtomtype.put(179, 1.30);
-        // LYS
-        amoebapro13ByAtomtype.put(190, 1.64);
-        amoebapro13ByAtomtype.put(191, 1.64);
-        // LYD
-        amoebapro13ByAtomtype.put(200, 1.562);
-        amoebapro13ByAtomtype.put(201, 1.562);
-        // ARG
-        amoebapro13ByAtomtype.put(208, 1.525);
-        amoebapro13ByAtomtype.put(209, 1.525);
-        amoebapro13ByAtomtype.put(210, 1.525);
-        amoebapro13ByAtomtype.put(211, 1.525);
-        amoebapro13ByAtomtype.put(212, 1.525);
-
-        // Magnesium
-        amoebapro13ByAtomtype.put(255, 0.7566);
-        // Calcium
-        amoebapro13ByAtomtype.put(256, 0.9242);
-    }
-
-    static {
-        // ALA
-//        amber99sbByAtomtype.put(8, 1.55);     // lots of AAs use these
-//        amber99sbByAtomtype.put(12, 1.55);
-        amber99sbByAtomtype.put(13, 1.55);
-        amber99sbByAtomtype.put(14, 1.55);
-        // ARG
-        amber99sbByAtomtype.put(299, 1.50);
-        amber99sbByAtomtype.put(300, 1.50);
-        amber99sbByAtomtype.put(301, 1.50);
-        amber99sbByAtomtype.put(302, 1.50);
-        amber99sbByAtomtype.put(303, 1.50);
-        // ASN
-        amber99sbByAtomtype.put(229, 1.160);
-        amber99sbByAtomtype.put(230, 1.160);
-        amber99sbByAtomtype.put(231, 1.160);
-        // ASP
-        amber99sbByAtomtype.put(218, 0.934);
-        amber99sbByAtomtype.put(219, 0.934);
-        // CYS
-        amber99sbByAtomtype.put(85, 1.125);
-        amber99sbByAtomtype.put(86, 1.125);
-        // GLN
-        amber99sbByAtomtype.put(255, 1.1625);
-        amber99sbByAtomtype.put(256, 1.1625);
-        amber99sbByAtomtype.put(257, 1.1625);
-        // GLU
-        amber99sbByAtomtype.put(242, 0.92721875);
-        amber99sbByAtomtype.put(243, 0.92721875);
-        // GLY
-//        amber99sbByAtomtype.put(2, 1.50);     // lots of AAs use these
-//        amber99sbByAtomtype.put(6, 1.50);
-        // HIS
-        amber99sbByAtomtype.put(170, 1.912);
-        amber99sbByAtomtype.put(171, 1.912);
-        amber99sbByAtomtype.put(174, 1.912);
-        amber99sbByAtomtype.put(175, 1.912);
-        amber99sbByAtomtype.put(176, 1.912);
-        amber99sbByAtomtype.put(177, 1.912);
-        // ILE
-        amber99sbByAtomtype.put(47, 1.50);
-        amber99sbByAtomtype.put(48, 1.50);
-        amber99sbByAtomtype.put(49, 1.50);
-        amber99sbByAtomtype.put(50, 1.50);
-        amber99sbByAtomtype.put(51, 1.50);
-        amber99sbByAtomtype.put(52, 1.50);
-        amber99sbByAtomtype.put(53, 1.50);
-        amber99sbByAtomtype.put(54, 1.50);
-        // LEU
-        amber99sbByAtomtype.put(33, 1.50);
-        amber99sbByAtomtype.put(34, 1.50);
-        amber99sbByAtomtype.put(35, 1.50);
-        amber99sbByAtomtype.put(36, 1.50);
-        amber99sbByAtomtype.put(37, 1.50);
-        amber99sbByAtomtype.put(38, 1.50);
-        // LYS
-        amber99sbByAtomtype.put(285, 1.50);
-        amber99sbByAtomtype.put(286, 1.50);
-        // MET
-        amber99sbByAtomtype.put(268, 2.05);
-        // PHE
-        amber99sbByAtomtype.put(113, 1.1875);
-        amber99sbByAtomtype.put(114, 1.1875);
-        amber99sbByAtomtype.put(115, 1.1875);
-        amber99sbByAtomtype.put(116, 1.1875);
-        amber99sbByAtomtype.put(117, 1.1875);
-        amber99sbByAtomtype.put(118, 1.1875);
-        amber99sbByAtomtype.put(119, 1.1875);
-        amber99sbByAtomtype.put(120, 1.1875);
-        amber99sbByAtomtype.put(121, 1.1875);
-        // PRO
-        amber99sbByAtomtype.put(96, 1.50);
-        amber99sbByAtomtype.put(97, 1.50);
-        amber99sbByAtomtype.put(98, 1.50);
-        amber99sbByAtomtype.put(99, 1.50);
-        amber99sbByAtomtype.put(100, 1.50);
-        amber99sbByAtomtype.put(101, 1.50);
-        amber99sbByAtomtype.put(102, 1.50);
-        amber99sbByAtomtype.put(103, 1.50);
-        amber99sbByAtomtype.put(104, 1.50);
-        amber99sbByAtomtype.put(105, 1.50);
-        amber99sbByAtomtype.put(106, 1.50);
-        // SER
-        amber99sbByAtomtype.put(63, 1.174);
-        amber99sbByAtomtype.put(64, 1.174);
-        // THR
-        amber99sbByAtomtype.put(73, 1.11175);
-        amber99sbByAtomtype.put(74, 1.11175);
-        // TRP
-        amber99sbByAtomtype.put(144, 1.14375);
-        amber99sbByAtomtype.put(145, 1.14375);
-        amber99sbByAtomtype.put(146, 1.14375);
-        amber99sbByAtomtype.put(147, 1.14375);
-        amber99sbByAtomtype.put(148, 1.14375);
-        amber99sbByAtomtype.put(149, 1.14375);
-        amber99sbByAtomtype.put(150, 1.14375);
-        amber99sbByAtomtype.put(151, 1.14375);
-        amber99sbByAtomtype.put(152, 1.14375);
-        amber99sbByAtomtype.put(153, 1.14375);
-        amber99sbByAtomtype.put(154, 1.14375);
-        amber99sbByAtomtype.put(155, 1.14375);
-        amber99sbByAtomtype.put(156, 1.14375);
-        amber99sbByAtomtype.put(157, 1.14375);
-        amber99sbByAtomtype.put(158, 1.14375);
-        amber99sbByAtomtype.put(159, 1.14375);
-        amber99sbByAtomtype.put(160, 1.14375);
-        // TYR
-        amber99sbByAtomtype.put(136, 1.12425);
-        amber99sbByAtomtype.put(137, 1.12425);
-        // VAL
-        amber99sbByAtomtype.put(21, 1.15);
-        amber99sbByAtomtype.put(22, 1.15);
-        amber99sbByAtomtype.put(23, 1.15);
-        amber99sbByAtomtype.put(24, 1.15);
-        amber99sbByAtomtype.put(25, 1.15);
-        amber99sbByAtomtype.put(26, 1.15);
-
-        // Magnesium
-        amber99sbByAtomtype.put(2008, 0.7566);
-        // Calcium
-        amber99sbByAtomtype.put(2009, 0.9242);
-    }
-
 }
