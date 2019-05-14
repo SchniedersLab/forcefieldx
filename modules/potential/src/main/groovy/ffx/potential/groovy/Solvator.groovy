@@ -42,11 +42,8 @@ import ffx.crystal.ReplicatesCrystal
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
-import ffx.potential.bonded.Bond
 import ffx.potential.bonded.MSNode
-import ffx.potential.bonded.Molecule
 import ffx.potential.bonded.Polymer
-import ffx.potential.bonded.Residue
 
 import java.util.stream.Collectors
 
@@ -172,6 +169,44 @@ class Solvator extends PotentialScript {
             soluteBoundingBox[i] = maxSoluteXYZ[i] - minSoluteXYZ[i];
         }
 
+        double soluteMass = Arrays.stream(soluteAtoms).mapToDouble({it.getMass()}).sum();
+        double invSolMass = 1.0 / soluteMass;
+        double[] origCoM = new double[3];
+        for (int i = 0; i < nSolute; i++) {
+            Atom ati = soluteAtoms[i];
+            double massi = ati.getMass();
+            massi *= invSolMass;
+            double[] xyzi = new double[3];
+            xyzi = ati.getXYZ(xyzi);
+            for (int j = 0; j < 3; j++) {
+                origCoM[j] += (xyzi[j] * massi);
+            }
+        }
+
+        logger.fine(format(" Original CoM: %s", Arrays.toString(origCoM)));
+
+        double[] newBox = new double[3];
+        if (rectangular) {
+            newBox = Arrays.stream(soluteBoundingBox).map({it + (2.0 * padding)}).toArray();
+        } else {
+            double diagonal = Math.sqrt(Arrays.stream(soluteBoundingBox).map({it * it}).sum());
+            diagonal += (2.0 * padding);
+            Arrays.fill(newBox, diagonal);
+        }
+
+        double[] soluteTranslate = new double[3];
+        for (int i = 0; i < 3; i++) {
+            soluteTranslate[i] = 0.5 * newBox[i];
+            soluteTranslate[i] -= origCoM[i];
+        }
+        for (Atom atom : soluteAtoms) {
+            atom.move(soluteTranslate);
+        }
+
+        logger.fine(format(" Solute translated by %s", Arrays.toString(soluteTranslate)));
+
+        solvent.moveAllIntoUnitCell();
+
         int nSolvent = baseSolventAtoms.length;
         double[][] baseSolventCoordinates = new double[nSolvent][3];
         for (int i = 0; i < nSolvent; i++) {
@@ -183,30 +218,6 @@ class Solvator extends PotentialScript {
 
         logger.info(format(" Solute size: %12.4g, %12.4g, %12.4g", soluteBoundingBox[0], soluteBoundingBox[1], soluteBoundingBox[2]));
 
-        double[] minFinalXYZ;
-        double[] maxFinalXYZ;
-        if (rectangular) {
-            minFinalXYZ = Arrays.stream(minSoluteXYZ).map(it - padding).toArray();
-            maxFinalXYZ = Arrays.stream(maxSoluteXYZ).map(it + padding).toArray();
-        } else {
-            minFinalXYZ = new double[3];
-            maxFinalXYZ = new double[3];
-            double soluteLen = 0;
-            for (int i = 0; i < 3; i++) {
-                double dx = maxSoluteXYZ[i] - minSoluteXYZ[i];
-                dx *= dx;
-                soluteLen += dx;
-            }
-            soluteLen = Math.sqrt(soluteLen);
-            double halfBoxLen = padding + (0.5 * soluteLen);
-            for (int i = 0; i < 3; i++) {
-                minFinalXYZ[i] = 0.5 * (maxSoluteXYZ[i] - minSoluteXYZ[i]);
-                maxFinalXYZ[i] = minFinalXYZ[i] + halfBoxLen;
-                minFinalXYZ[i] -= halfBoxLen;
-            }
-        }
-
-        double[] finalABC = new double[3];
         int[] solventReplicas = new int[3];
         double[] solventBoxVectors = new double[3];
         solventBoxVectors[0] = solventCrystal.a;
@@ -214,14 +225,15 @@ class Solvator extends PotentialScript {
         solventBoxVectors[2] = solventCrystal.c;
 
         for (int i = 0; i < 3; i++) {
-            finalABC[i] = maxFinalXYZ[i] - minFinalXYZ[i];
-            solventReplicas[i] = (int) Math.ceil((finalABC[i] / solventBoxVectors[i]));
+            solventReplicas[i] = (int) Math.ceil((newBox[i] / solventBoxVectors[i]));
         }
 
-        Crystal newCrystal = new Crystal(finalABC[0], finalABC[1], finalABC[2], 90, 90, 90, "P1");
+        Crystal newCrystal = new Crystal(newBox[0], newBox[1], newBox[2], 90, 90, 90, "P1");
         soluteEnergy.setCrystal(newCrystal);
 
-        MSNode[] solventEntities = solvent.getAllBondedEntities().stream().toArray();
+        List<MSNode> bondedNodes = solvent.getAllBondedEntities();
+        MSNode[] solventEntities = bondedNodes.toArray(new MSNode[bondedNodes.size()]);
+
         int nSolventMols = solventEntities.length;
         double[][] solventCOMs = new double[nSolventMols][];
         for (int i = 0; i < nSolventMols; i++) {
@@ -234,14 +246,12 @@ class Solvator extends PotentialScript {
             for (Atom atom : moleculeAtoms) {
                 double[] xyz = new double[3];
                 xyz = atom.getXYZ(xyz);
-                //solventCrystal.toPrimaryCell(xyz, xyz);
                 double mass = atom.getAtomType().atomicWeight;
                 for (int j = 0; j < 3; j++) {
                     com[j] += (mass * xyz[j] * invMass);
                 }
             }
             solventCrystal.toPrimaryCell(com, com);
-
             solventCOMs[i] = com;
         }
 
@@ -268,16 +278,15 @@ class Solvator extends PotentialScript {
         logger.info(" New solvent molecules will be placed in chain ${solventChain}");
 
         for (int ai = 0; ai < solventReplicas[0]; ai++) {
-            xyzOffset[0] = minFinalXYZ[0] + (ai * solventBoxVectors[0]);
+            xyzOffset[0] = ai * solventBoxVectors[0];
 
             for (int bi = 0; bi < solventReplicas[1]; bi++) {
-                xyzOffset[1] = minFinalXYZ[1] + (bi * solventBoxVectors[1]);
+                xyzOffset[1] = bi * solventBoxVectors[1];
 
                 for (int ci = 0; ci < solventReplicas[2]; ci++) {
-                    xyzOffset[2] = minFinalXYZ[2] + (ci * solventBoxVectors[2]);
+                    xyzOffset[2] = ci * solventBoxVectors[2];
 
                     logger.info(format(" Tiling solvent replica %d,%d,%d", ai+1, bi+1, ci+1));
-                    //logger.info(format(" Offsets: %12.4g, %12.4g, %12.4g", xyzOffset[0], xyzOffset[1], xyzOffset[2]));
 
                     MoleculePlace: for (int i = 0; i < nSolventMols; i++) {
                         MSNode moli = solventEntities[i];
@@ -285,11 +294,11 @@ class Solvator extends PotentialScript {
                         for (int j = 0; j < 3; j++) {
                             comi[j] = xyzOffset[j] + solventCOMs[i][j];
 
-                            if (comi[j] < minFinalXYZ[j]) {
-                                logger.fine(format(" Skipping a copy of solvent molecule %d for violating minimum boundary %12.4g,%12.4g,%12.4g", i, minFinalXYZ[0], minFinalXYZ[1], minFinalXYZ[2]))
+                            if (comi[j] < 0) {
+                                logger.warning(format(" Skipping a copy of solvent molecule %d for violating minimum boundary 0,0,0. This should not occur!", i));
                                 continue MoleculePlace;
-                            } else if (comi[j] > maxFinalXYZ[j]) {
-                                logger.fine(format(" Skipping a copy of solvent molecule %d for violating maximum boundary %12.4g,%12.4g,%12.4g", i, maxFinalXYZ[0], maxFinalXYZ[1], maxFinalXYZ[2]))
+                            } else if (comi[j] > newBox[j]) {
+                                logger.fine(format(" Skipping a copy of solvent molecule %d for violating maximum boundary %12.4g,%12.4g,%12.4g", i, newBox[0], newBox[1], newBox[2]));
                                 continue MoleculePlace;
                             }
                         }
@@ -309,8 +318,6 @@ class Solvator extends PotentialScript {
                             Atom newAtom = new Atom(++currXYZIndex, parentAtom, newXYZ, currResSeq, solventChain, Character.toString(solventChain));
                             logger.fine(format(" New atom %s at chain %c on residue %s-%d", newAtom, newAtom.getChainID(), newAtom.getResidueName(), newAtom.getResidueNumber()));
 
-                            // TODO: Replace this with actual, semi-robust logic.
-                            // TODO: Right now, mostly just assume it's water.
                             newAtom.setHetero(!moli instanceof Polymer);
                             newAtom.setResName(moli.getName());
                             if (newAtom.getAltLoc() == null) {
