@@ -47,8 +47,8 @@ import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.rsq;
@@ -65,8 +65,6 @@ import static ffx.numerics.math.VectorMath.sum;
  * @since 1.0
  */
 public class GaussVol {
-
-    private static final Logger logger = Logger.getLogger(GaussVol.class.getName());
 
     /* -------------------------------------------------------------------------- *
      *                                 GaussVol                                   *
@@ -94,24 +92,21 @@ public class GaussVol {
      *                                                                            *
      * -------------------------------------------------------------------------- */
 
-    // Conversion factors from spheres to Gaussians
+    private static final Logger logger = Logger.getLogger(GaussVol.class.getName());
+
+    /**
+     * Conversion factors from spheres to Gaussians.
+     */
     private static double KFC = 2.2269859253;
     private static double PFC = 2.5;
-
-    // Have switching function
+    /**
+     * Minimum volume.
+     */
     private static double MIN_GVOL = Double.MIN_VALUE;
-
-    // Maximum overlap level
+    /**
+     * Maximum overlap level.
+     */
     private static int MAX_ORDER = 8;
-
-    /**
-     * Solvent pressure in kcal/mol/Ang^3.
-     */
-    private static final double solventPressure = 0.0327;
-    /**
-     * Surface tension in kcal/mol/Ang^2.
-     */
-    private static final double surfaceTension = 0.08;
     /**
      * Finite-Difference step size to compute surface area.
      */
@@ -121,33 +116,111 @@ public class GaussVol {
     // private static double ANG3 = 0.001;
     // private static double VOLMINA = 0.01 * ANG3;
     // private static double VOLMINB = 0.1 * ANG3;
-
-    // Volume cutoffs for switching function in Angstroms.
+    /**
+     * Volume cutoffs for switching function in Angstroms.
+     */
     private static double ANG3 = 1.0;
     private static double VOLMINA = 0.01 * ANG3;
     private static double VOLMINB = 0.1 * ANG3;
 
-    private GaussianOverlapTree tree;
+    /**
+     * Number of atoms.
+     */
     private int nAtoms;
+    /**
+     * Atomic radii for all atoms. To approximate solvent excluded volume, or solvent accessible surface area,
+     * a probe radius can be added to each radius.
+     */
     private double[] radii;
+    /**
+     * All atomic radii with a small offset added, which are used to compute surface area using a
+     * finite-difference approach.
+     */
     private double[] radiiOffset;
+    /**
+     * Atomic "self" volumes for all atoms, which are computed from atomic radii.
+     */
     private double[] volumes;
+    /**
+     * Atomic "self" volumes for all atoms, which are computed from the radii plus offset array.
+     */
     private double[] volumeOffset;
+    /**
+     * Surface tension -- in our implementation these values are kept at 1.0.
+     */
     private double[] gammas;
+    /**
+     * Flag to denote if an atom is a hydrogen, which results in it not contributing to the volume or S.A.
+     */
     private boolean[] ishydrogen;
-
+    /**
+     * The Gaussian Overlap Tree.
+     */
+    private GaussianOverlapTree tree;
+    /**
+     * Surface area (Ang^2).
+     */
     private double surfaceArea;
+    /**
+     * Surface area energy (kcal/mol).
+     */
     private double surfaceAreaEnergy;
+    /**
+     * Volume (Ang^3).
+     */
     private double volume;
+    /**
+     * Volume energy (kcal/mol).
+     */
     private double volumeEnergy;
+    /**
+     * Cavitation energy, which is a function of volume and/or surface area.
+     */
     private double cavitationEnergy;
-
-    // Variables used in computing a combined volume + surface area cavitation energy.
-    private double c0, c1, c2, c3, c4, c5;
-    private double off, off2;
-    private double cut, cut2;
-    private double spcut, spoff;
-    private double stcut, stoff;
+    /**
+     * The volume gradient, which does not include the solvent pressure constant (i.e. this is in Ang^2).
+     */
+    private double[] volumeGradient;
+    /**
+     * The surface area gradient, which does not include the surface tension constant (i.e. this is in Ang).
+     */
+    private double[] surfaceAreaGradient;
+    /**
+     * Solvent pressure in kcal/mol/Ang^3.
+     */
+    private static final double solventPressure = 0.0327;
+    /**
+     * Surface tension in kcal/mol/Ang^2.
+     */
+    private static final double surfaceTension = 0.08;
+    /**
+     * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
+     */
+    private double crossOver = 3.0 * surfaceTension / solventPressure;
+    /**
+     * Begin turning off the Volume term.
+     */
+    private double volumeOff = crossOver - 3.5;
+    /**
+     * Volume term is zero at the cut-off.
+     */
+    private double volumeCut = crossOver + 3.5;
+    /**
+     * Begin turning off the SA term.
+     */
+    private double surfaceAreaOff = crossOver + 3.9;
+    /**
+     * SA term is zero at the cut-off.
+     */
+    private double surfaceAreaCut = crossOver - 3.5;
+    /**
+     * Volume multiplicative switch.
+     */
+    private MultiplicativeSwitch volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
+    /**
+     * Surface area multiplicative switch.
+     */
+    private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
 
     /**
      * Creates/Initializes a GaussVol instance.
@@ -199,7 +272,6 @@ public class GaussVol {
             radiiOffset[i] = radii[i] + offset;
             volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
         }
-
     }
 
     /**
@@ -207,7 +279,9 @@ public class GaussVol {
      *
      * @return
      */
-    public double getEnergy() { return cavitationEnergy; }
+    public double getEnergy() {
+        return cavitationEnergy;
+    }
 
     public double getVolumeEnergy() {
         return volumeEnergy;
@@ -232,7 +306,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    public int setIsHydrogen(boolean[] isHydrogen) throws Exception {
+    int setIsHydrogen(boolean[] isHydrogen) throws Exception {
         if (nAtoms == isHydrogen.length) {
             this.ishydrogen = isHydrogen;
             return nAtoms;
@@ -248,7 +322,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    public int setRadii(double[] radii) throws Exception {
+    int setRadii(double[] radii) throws Exception {
         if (nAtoms == radii.length) {
             this.radii = radii;
             radiiOffset = new double[nAtoms];
@@ -271,7 +345,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    public int setVolumes(double[] volumes) throws Exception {
+    int setVolumes(double[] volumes) throws Exception {
         if (nAtoms == volumes.length) {
             this.volumes = volumes;
             return nAtoms;
@@ -287,7 +361,7 @@ public class GaussVol {
      * @return
      * @throws Exception
      */
-    public int setGammas(double[] gammas) throws Exception {
+    int setGammas(double[] gammas) throws Exception {
         if (nAtoms == gammas.length) {
             this.gammas = gammas;
             return nAtoms;
@@ -301,47 +375,126 @@ public class GaussVol {
      *
      * @param positions Atomic positions to use.
      */
-    public void computeVolumeAndSA(double[][] positions) {
+    public double computeVolumeAndSA(double[][] positions) {
+        return energyAndGradient(positions, new double[3][positions.length]);
+    }
+
+    /**
+     * Compute molecular volume and surface area.
+     *
+     * @param positions Atomic positions to use.
+     */
+    public double energyAndGradient(double[][] positions, double[][] gradient) {
 
         // Output
-        double[][] force = new double[nAtoms][3];
+        double[][] grad = new double[nAtoms][3];
         double[] totalVolume = new double[1];
         double[] energy = new double[1];
         double[] gradV = new double[nAtoms];
         double[] freeVolume = new double[nAtoms];
         double[] selfVolume = new double[nAtoms];
 
+        if (volumeGradient == null || volumeGradient.length != nAtoms * 3) {
+            volumeGradient = new double[nAtoms * 3];
+            surfaceAreaGradient = new double[nAtoms * 3];
+        }
+
         computeTree(positions);
-        computeVolume(positions, totalVolume, energy, force, gradV, freeVolume, selfVolume);
+        computeVolume(positions, totalVolume, energy, grad, gradV, freeVolume, selfVolume);
 
         double selfVolumeSum = 0;
         for (int i = 0; i < nAtoms; i++) {
             selfVolumeSum += selfVolume[i];
+
+            // Volume based gradient
+            int index = i * 3;
+            volumeGradient[index++] = grad[i][0];
+            volumeGradient[index++] = grad[i][1];
+            volumeGradient[index] = grad[i][2];
+
+            // Surface Area based gradient
+            index = i * 3;
+            surfaceAreaGradient[index++] = grad[i][0];
+            surfaceAreaGradient[index++] = grad[i][1];
+            surfaceAreaGradient[index] = grad[i][2];
         }
 
+        // Save the total molecular volume.
         volume = totalVolume[0];
+
+        // Calculate a purely volume based cavitation energy.
         volumeEnergy = volume * solventPressure;
 
         // Save a reference to non-offset radii and volumes.
         double[] radiiBak = this.radii;
         double[] volumeBak = this.volumes;
 
+        // Load the offset radii and volumes.
         this.radii = radiiOffset;
         this.volumes = volumeOffset;
 
         // Run Volume calculation on radii that are slightly offset in order to do finite difference to get back surface area
         rescanTreeVolumes(positions);
-        computeVolume(positions, totalVolume, energy, force, gradV, freeVolume, selfVolume);
+        computeVolume(positions, totalVolume, energy, grad, gradV, freeVolume, selfVolume);
+
+        // Set the radii and volumes to their non-offset values.
+        this.radii = radiiBak;
+        this.volumes = volumeBak;
 
         double selfVolumeOffsetSum = 0;
         for (int i = 0; i < nAtoms; i++) {
             selfVolumeOffsetSum += selfVolume[i];
+
+            // Surface Area based gradient
+            int index = i * 3;
+            surfaceAreaGradient[index] = (grad[i][0] - surfaceAreaGradient[index++]) / offset;
+            surfaceAreaGradient[index] = (grad[i][1] - surfaceAreaGradient[index++]) / offset;
+            surfaceAreaGradient[index] = (grad[i][2] - surfaceAreaGradient[index]) / offset;
         }
 
+        // Calculate the surface area.
         surfaceArea = (selfVolumeOffsetSum - selfVolumeSum) / offset;
+
+        // Calculate a purely surface area based cavitation energy.
         surfaceAreaEnergy = surfaceArea * surfaceTension;
 
-        cavitationEnergy = nonPolarEnergy();
+        // Use SA to find an effective cavity radius.
+        double reff = 0.5 * sqrt(surfaceArea / PI);
+        double reff2 = reff * reff;
+        double reff3 = reff2 * reff;
+        double reff4 = reff3 * reff;
+        double reff5 = reff4 * reff;
+        double dreff = reff / (2.0 * surfaceArea);
+
+        // Find the cavitation energy using a combination of volume and surface area dependence.
+        if (reff < volumeOff) {
+            // Volume only.
+            // logger.info(format(" Volume Only: %8.6f < %8.6f", reff, volumeOff));
+            // Find cavity energy from only the molecular volume.
+            cavitationEnergy = volumeEnergy;
+            addVolumeGradient(1.0, 0.0, gradient);
+        } else if (reff <= volumeCut) {
+            // Include a tapered molecular volume.
+            double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
+            double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dreff;
+            // logger.info(format(" Tapered Volume: %8.6f <= %8.6f <= %8.6f -> %8.6f", volumeOff, reff, volumeCut, taper));
+            cavitationEnergy = taper * volumeEnergy;
+            addVolumeGradient(taper, dtaper, gradient);
+        }
+
+        if (reff > surfaceAreaOff) {
+            // Find cavity energy from only SA.
+            cavitationEnergy = surfaceAreaEnergy;
+            // logger.info(format(" SA Only: %8.6f > %8.6f", surfaceAreaCut, reff));
+            addSurfaceAreaGradient(1.0, 0.0, gradient);
+        } else if (reff >= surfaceAreaCut) {
+            // Include a tapered surface area term.
+            double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
+            double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dreff;
+            // logger.info(format(" Tapered SA: %8.6f <= %8.6f <= %8.6f -> %8.6f", surfaceAreaCut, reff, surfaceAreaOff, taperSA));
+            cavitationEnergy += taperSA * surfaceAreaEnergy;
+            addSurfaceAreaGradient(taperSA, dtaperSA, gradient);
+        }
 
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format("\n Volume:              %8.3f (Ang^3)", totalVolume[0]));
@@ -351,18 +504,50 @@ public class GaussVol {
             logger.fine(format(" Volume + SA Energy:  %8.3f (kcal/mol)", cavitationEnergy));
         }
 
-        // Set the radii and volumes to their non-offset values.
-        this.radii = radiiBak;
-        this.volumes = volumeBak;
+        return cavitationEnergy;
     }
 
+    /**
+     * Collect the volume base cavitation energy and gradient contributions.
+     *
+     * @param taperVolume
+     * @param dTaperVolumedR
+     * @param gradient
+     */
+    private void addVolumeGradient(double taperVolume, double dTaperVolumedR, double[][] gradient) {
+        taperVolume *= solventPressure;
+        dTaperVolumedR *= volumeEnergy;
+        for (int i = 0; i < nAtoms; i++) {
+            int index = i * 3;
+            gradient[0][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+            gradient[1][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+            gradient[2][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index];
+        }
+    }
+
+    /**
+     * Collect the surface area based cavitation energy and gradient contributions.
+     *
+     * @param taperSA
+     * @param dTaperSAdR
+     * @param gradient
+     */
+    private void addSurfaceAreaGradient(double taperSA, double dTaperSAdR, double[][] gradient) {
+        double factor = surfaceTension * taperSA + surfaceAreaEnergy * dTaperSAdR;
+        for (int i = 0; i < nAtoms; i++) {
+            int index = i * 3;
+            gradient[0][i] += factor * surfaceAreaGradient[index++];
+            gradient[1][i] += factor * surfaceAreaGradient[index++];
+            gradient[2][i] += factor * surfaceAreaGradient[index];
+        }
+    }
 
     /**
      * Constructs the tree.
      *
      * @param positions Current atomic positions.
      */
-    public void computeTree(double[][] positions) {
+    private void computeTree(double[][] positions) {
         tree.computeOverlapTreeR(positions, radii, volumes, gammas, ishydrogen);
     }
 
@@ -373,23 +558,16 @@ public class GaussVol {
      * @param positions
      * @param totalVolume
      * @param totalEnergy
-     * @param force
+     * @param grad
      * @param gradV
      * @param free_volume
      * @param self_volume
      */
-    public void computeVolume(double[][] positions,
-                              double[] totalVolume, double[] totalEnergy,
-                              double[][] force, double[] gradV,
-                              double[] free_volume, double[] self_volume) {
-
-        tree.computeVolume2R(positions, totalVolume, totalEnergy, force, gradV, free_volume, self_volume);
-        for (int i = 0; i < nAtoms; ++i) {
-            //transform gradient to force
-            force[i][0] = -force[i][0];
-            force[i][1] = -force[i][1];
-            force[i][2] = -force[i][2];
-        }
+    private void computeVolume(double[][] positions,
+                               double[] totalVolume, double[] totalEnergy,
+                               double[][] grad, double[] gradV,
+                               double[] free_volume, double[] self_volume) {
+        tree.computeVolume2R(positions, totalVolume, totalEnergy, grad, gradV, free_volume, self_volume);
         for (int i = 0; i < nAtoms; ++i) {
             if (volumes[i] > 0) {
                 gradV[i] = gradV[i] / volumes[i];
@@ -403,14 +581,14 @@ public class GaussVol {
      *
      * @param positions
      */
-    public void rescanTreeVolumes(double[][] positions) {
+    private void rescanTreeVolumes(double[][] positions) {
         tree.rescanTreeV(positions, radii, volumes, gammas, ishydrogen);
     }
 
     /**
      * Rescan the tree resetting gammas only with current values.
      */
-    void rescanTreeGammas() {
+    private void rescanTreeGammas() {
         tree.rescanTreeG(gammas);
     }
 
@@ -419,7 +597,7 @@ public class GaussVol {
      *
      * @param nov Number of overlaps.
      */
-    void getStats(int[] nov) {
+    private void getStats(int[] nov) {
         if (nov.length != nAtoms) return;
 
         for (int i = 0; i < nAtoms; i++) nov[i] = 0;
@@ -433,14 +611,14 @@ public class GaussVol {
     /**
      * Print the tree.
      */
-    public void printTree() {
+    private void printTree() {
         tree.printTree();
     }
 
     /**
      * 3D Gaussian, V,c,a representation.
      */
-    public class GaussianVca {
+    private class GaussianVca {
         // Gaussian volume
         public double v;
         // Gaussian exponent
@@ -463,7 +641,7 @@ public class GaussVol {
      * d2Vdalphadr is (1/r)*d^2V12/dalpha dr
      * d2VdVdr is (1/r) d^2V12/dV1 dr
      */
-    public class GaussianOverlap implements Comparable<GaussianOverlap> {
+    private class GaussianOverlap implements Comparable<GaussianOverlap> {
         /**
          * level (0=root, 1=atoms, 2=2-body, 3=3-body, etc.)
          */
@@ -519,12 +697,6 @@ public class GaussVol {
          * Print overlaps.
          */
         public void printOverlap() {
-            //  cout << std::setprecision(4) << std::setw(7) << level << " " << std::setw(7)  << atom << " " << std::setw(7)
-            // << parent_index << " " <<  std::setw(7) << children_startindex << " " << std::setw(7) << children_count
-            // << " " << std::setw(10) << self_volume << " " << std::setw(10) << volume << " " << std::setw(10)
-            // << gamma1i << " " << std::setw(10) << g.a << " " << std::setw(10) << g.c[0] << " " <<  std::setw(10)
-            // << g.c[1] << " " <<  std::setw(10) << g.c[2] << " " <<  std::setw(10) << dv1[0] << " " << std::setw(10)
-            // << dv1[1] << " " << std::setw(10) << dv1[2] << " " << std::setw(10) << sfp << endl;
             logger.info(format(" Gaussian Overlap %d: Atom: %d, Parent: %d, ChildrenStartIndex: %d, ChildrenCount: %d," +
                             "Volume: %6.3f, Gamma: %6.3f, Gauss.a: %6.3f, Gauss.v: %6.3f, Gauss.center (%6.3f,%6.3f,%6.3f)," +
                             "dedx: %6.3f, dedy: %6.3f, dedz: %6.3f, sfp: %6.3f",
@@ -544,11 +716,10 @@ public class GaussVol {
         }
     }
 
-
     /**
      * Gaussian Overlap Tree.
      */
-    public class GaussianOverlapTree {
+    private class GaussianOverlapTree {
 
         /**
          * Number of atoms.
@@ -724,7 +895,7 @@ public class GaussVol {
                 GaussianVca g1 = root.g;
                 // Atoms are stored in the tree at indexes 1...N
                 GaussianVca g2 = overlaps.get(atom2 + 1).g;
-                gvol = ogaussAlpha(g1, g2, g12, dVdr, dVdV, sfp);
+                gvol = overlapGaussianAlpha(g1, g2, g12, dVdr, dVdV, sfp);
 
                 /* create child if overlap volume is not zero */
                 if (gvol > MIN_GVOL) {
@@ -878,9 +1049,11 @@ public class GaussVol {
                 // dr[atom] += (-ov.dv1) * fenergy1i + penergy1i * c2;
                 double[] work1 = new double[3];
                 double[] work2 = new double[3];
+                double[] work3 = new double[3];
                 scalar(penergy1i, c2, work1);
                 scalar(ov.dv1, -fenergy1i[0], work2);
-                sum(work1, work2, dr[atom]);
+                sum(work1, work2, work3);
+                sum(dr[atom], work3, dr[atom]);
 
                 // ov.g.v is the unswitched volume
                 // dv[atom] += ov.g.v * fenergy1i; //will be divided by Vatom later
@@ -989,7 +1162,7 @@ public class GaussVol {
 
                 // Atoms are stored in the tree at indexes 1...N
                 GaussianVca g2 = overlaps.get(atom + 1).g;
-                double gvol = ogaussAlpha(g1, g2, g12, dVdr, dVdV, sfp);
+                double gvol = overlapGaussianAlpha(g1, g2, g12, dVdr, dVdV, sfp);
                 ov.g = g12;
                 ov.volume = gvol;
 
@@ -1216,8 +1389,8 @@ public class GaussVol {
      * @param sfp
      * @return
      */
-    private double ogaussAlpha(GaussianVca g1, GaussianVca g2, GaussianVca g12,
-                               double[] dVdr, double[] dVdV, double[] sfp) {
+    private double overlapGaussianAlpha(GaussianVca g1, GaussianVca g2, GaussianVca g12,
+                                        double[] dVdr, double[] dVdV, double[] sfp) {
 
         double d2, deltai, gvol, a12;
         double s, df, dgvol, dgvolv, ef;
@@ -1264,88 +1437,5 @@ public class GaussVol {
         dVdV[0] = dgvolv;
 
         return s * gvol;
-    }
-
-
-    private void setSwitch(String mode) {
-
-        // Get the switching window for the current potential type.
-        switch (mode) {
-            case "GKV":
-                off = spoff;
-                cut = spcut;
-                break;
-            case "GKSA":
-                off = stcut;
-                cut = stoff;
-                break;
-        }
-
-        // Set switching coefficients to zero for truncation cutoffs.
-        c0 = 0.0;
-        c1 = 0.0;
-        c2 = 0.0;
-        c3 = 0.0;
-        c4 = 0.0;
-        c5 = 0.0;
-        // Store the powers of the switching window cutoffs.
-        off2 = off * off;
-        cut2 = cut * cut;
-        // Get 5th degree multiplicative switching function coefficients.
-        if (cut < off) {
-            double denom = (off - cut) * (off - cut) * (off - cut) * (off - cut) * (off - cut);
-            c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
-            c1 = -30.0 * off2 * cut2 / denom;
-            c2 = 30.0 * (off2 * cut + off * cut2) / denom;
-            c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
-            c4 = 15.0 * (off + cut) / denom;
-            c5 = -6.0 / denom;
-        }
-    }
-
-    private double nonPolarEnergy() {
-
-        double cross = 3.0 * surfaceTension / solventPressure;
-        spcut = cross - 3.5;
-        spoff = cross + 3.5;
-        stcut = cross + 3.9;
-        stoff = cross - 3.5;
-
-        // Compute SASA and effective radius needed for cavity term.
-        double reff = 0.5 * Math.sqrt(surfaceArea / PI);
-        double reff2 = reff * reff;
-        double reff3 = reff2 * reff;
-        double reff4 = reff3 * reff;
-        double reff5 = reff4 * reff;
-
-        if (reff <= spcut) {
-            // Find cavity energy from only the solvent excluded volume.
-            cavitationEnergy = volumeEnergy;
-        } else if (reff > spcut && reff <= stoff) {
-            // Find cavity energy from only a tapered volume term.
-            setSwitch("GKV");
-            double taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-            cavitationEnergy = taper * volumeEnergy;
-        } else if (reff > stoff && reff <= spoff) {
-            // Find cavity energy using both volume and SASA terms.
-            setSwitch("GKV");
-            double taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-            cavitationEnergy = taper * volumeEnergy;
-            setSwitch("GKSA");
-            taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-            taper = 1.0 - taper;
-            cavitationEnergy += taper * surfaceAreaEnergy;
-        } else if (reff > spoff && reff <= stcut) {
-            // Find cavity energy from only a tapered SASA term.
-            setSwitch("GKSA");
-            double taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-            taper = 1.0 - taper;
-            cavitationEnergy = taper * surfaceAreaEnergy;
-        } else {
-            // Find cavity energy from only a SASA-based term.
-            cavitationEnergy = surfaceAreaEnergy;
-        }
-
-        return cavitationEnergy;
     }
 }

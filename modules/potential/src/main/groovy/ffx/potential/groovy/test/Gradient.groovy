@@ -108,9 +108,7 @@ class Gradient extends PotentialScript {
         // First atom to test.
         int lastAtomID = gradientOptions.lastAtomID - 1
 
-        if (lastAtomID < atomID) {
-            lastAtomID = atomID
-        } else if (lastAtomID >= n) {
+        if (lastAtomID < atomID || lastAtomID >= n) {
             lastAtomID = n - 1
         }
 
