@@ -68,6 +68,11 @@ public class SolventRadii {
      */
     private static final Map<Integer, Double> AMOEBA_2014_GK_RADII = new HashMap<>();
 
+    /**
+     * This map connects AMOEBA Nucleic Acid '17 atom classes to GK base radii.
+     */
+    private static final Map<Integer, Double> AMOEBA_NUC_2017_GK_RADII = new HashMap<>();
+
     public static double applyGKRadii(ForceField forceField, double bondiScale,
                               Atom[] atoms, double[] baseRadius) {
         Map<Integer, Double> radiiMap = null;
@@ -820,5 +825,39 @@ public class SolventRadii {
         AMOEBA_2014_GK_RADII.put(502, 4.5840 / 2.0); // 502    C     "MeBr2"
         AMOEBA_2014_GK_RADII.put(503, 4.7760 / 2.0); // 503    Br    "MeBr2"
         AMOEBA_2014_GK_RADII.put(504, 3.5760 / 2.0); // 504    H     "MeBr2"
+
+//        atom      1      1  C     "Adenine C4"                 6   12.0110  3
+//        atom      2      2  C     "Adenine C8"                 6   12.0110  3
+//        atom      3      3  C     "Adenine C6"                 6   12.0110  3
+//        atom      4      1  C     "Adenine C5"                 6   12.0110  3
+//        atom      5      4  N     "Adenine N9 RNA"             7   14.0070  3
+//        atom      6      4  N     "Adenine N9 DNA"             7   14.0070  3
+//        atom      7      5  N     "Adenine N6"                 7   14.0070  3
+//        atom      8      6  C     "Adenine C2"                 6   12.0110  3
+//        atom      9      7  N     "Adenine N7"                 7   14.0070  2
+//        atom     10      8  N     "Adenine N3"                 7   14.0070  2
+//        atom     11      8  N     "Adenine N1"                 7   14.0070  2
+//        atom     12      9  H     "Adenine H8"                 1    1.0080  1
+//        atom     13     10  H     "Adenine H2"                 1    1.0080  1
+//        atom     14     11  H     "Adenine H61"                1    1.0080  1
+        AMOEBA_NUC_2017_GK_RADII.put(1, GK_AMOEBA_AROMATIC_C / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(2, GK_AMOEBA_AROMATIC_C / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(3, GK_AMOEBA_AROMATIC_C / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(4, GK_AMOEBA_IMIAZOLE_NH / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(5, GK_AMOEBA_METHYLAMINE_N / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(6, GK_AMOEBA_AROMATIC_C / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(7, GK_AMOEBA_IMIAZOLE_NH / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(8, GK_AMOEBA_IMIAZOLE_NH / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(9, GK_AMOEBA_AROMATIC_H / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(10, GK_AMOEBA_AROMATIC_H / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(11, GK_AMOEBA_METHYLAMINE_HN / 2.0);
+
+        AMOEBA_NUC_2017_GK_RADII.put(48, GK_AMOEBA_WATER_O / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(49, GK_AMOEBA_WATER_H / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(50, GK_AMOEBA_SODIUM / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(51, GK_AMOEBA_POTASSIUM / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(52, GK_AMOEBA_MAGNESIUM / 2.0);
+        AMOEBA_NUC_2017_GK_RADII.put(53, GK_AMOEBA_CHLORIDE / 2.0);
+
     }
 }
