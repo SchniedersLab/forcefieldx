@@ -220,6 +220,7 @@ public class OPLSEnergyTest extends BaseFFXTest {
         double stepSize = 1.0e-5;
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-a", Integer.toString(atomID),
+                "--la", Integer.toString(atomID),
                 "--dx", Double.toString(stepSize),
                 "src/main/java/" + filename};
         binding.setVariable("args", args);
@@ -240,6 +241,7 @@ public class OPLSEnergyTest extends BaseFFXTest {
         double stepSize = 1.0e-5;
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-a", Integer.toString(atomID),
+                "--la", Integer.toString(atomID),
                 "--dx", Double.toString(stepSize),
                 "--tol", Double.toString(tolerance),
                 "--s1", "1",

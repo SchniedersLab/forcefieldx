@@ -355,28 +355,22 @@ class LambdaGradient extends PotentialScript {
             double avGrad = 0.0
 
             double step = gradientOptions.dx
-            int firstAtom = gradientOptions.atomID - 1
 
             // First atom to test.
             int atomID = gradientOptions.atomID - 1
-            if (atomID >= n) {
+            if (atomID < 0 || atomID >= nAtoms) {
                 atomID = 0
             }
             logger.info("\n First atom to test:\t\t" + (atomID + 1))
 
-            // First atom to test.
+            // Last atom to test.
             int lastAtomID = gradientOptions.lastAtomID - 1
-
-            if (lastAtomID < atomID) {
-                lastAtomID = atomID
-            } else if (lastAtomID >= n) {
-                lastAtomID = n - 1
+            if (lastAtomID < atomID || lastAtomID >= nAtoms) {
+                lastAtomID = nAtoms - 1
             }
-
             logger.info("\n Last atom to test:\t\t" + (lastAtomID + 1))
 
-
-            for (int i = firstAtom; i <= lastAtomID; i++) {
+            for (int i = atomID; i <= lastAtomID; i++) {
                 int i3 = i * 3
                 int i0 = i3 + 0
                 int i1 = i3 + 1

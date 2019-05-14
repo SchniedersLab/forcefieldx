@@ -96,22 +96,20 @@ class Gradient extends PotentialScript {
 
         energy = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
-        int n = atoms.length
+        int nAtoms = atoms.length
 
         // First atom to test.
         int atomID = gradientOptions.atomID - 1
-        if (atomID >= n) {
+        if (atomID >= nAtoms) {
             atomID = 0
         }
         logger.info("\n First atom to test:\t\t" + (atomID + 1))
 
-        // First atom to test.
+        // Last atom to test.
         int lastAtomID = gradientOptions.lastAtomID - 1
-
-        if (lastAtomID < atomID || lastAtomID >= n) {
-            lastAtomID = n - 1
+        if (lastAtomID < atomID || lastAtomID >= nAtoms) {
+            lastAtomID = nAtoms - 1
         }
-
         logger.info("\n Last atom to test:\t\t" + (lastAtomID + 1))
 
         // Finite-difference step size in Angstroms.
@@ -126,7 +124,7 @@ class Gradient extends PotentialScript {
         double expGrad = 1000.0
         double gradientTolerance = gradientOptions.tolerance
         double width = 2.0 * step
-        double[] x = new double[n * 3]
+        double[] x = new double[nAtoms * 3]
         double[] analytic = new double[3]
         double[] numeric = new double[3]
 
@@ -204,7 +202,7 @@ class Gradient extends PotentialScript {
             logger.info("\n")
         }
 
-        avLen = avLen / n
+        avLen = avLen / nAtoms
         avLen = Math.sqrt(avLen)
         if (avLen > gradientTolerance) {
             logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, gradientTolerance))
@@ -213,7 +211,7 @@ class Gradient extends PotentialScript {
         }
         logger.info(String.format(" Number of atoms failing analytic test: %d", nFailures))
 
-        avGrad = avGrad / n
+        avGrad = avGrad / nAtoms
         avGrad = Math.sqrt(avGrad)
         if (avGrad > expGrad) {
             logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
