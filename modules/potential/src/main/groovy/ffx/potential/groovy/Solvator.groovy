@@ -46,6 +46,7 @@ import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Polymer
 
 import java.util.stream.Collectors
+import java.util.stream.IntStream
 
 import static java.lang.String.format
 
@@ -189,9 +190,26 @@ class Solvator extends PotentialScript {
         if (rectangular) {
             newBox = Arrays.stream(soluteBoundingBox).map({it + (2.0 * padding)}).toArray();
         } else {
-            double diagonal = Math.sqrt(Arrays.stream(soluteBoundingBox).map({it * it}).sum());
+            double soluteLinearSize = IntStream.range(0, nSolute - 1).parallel().mapToDouble({int i ->
+                double[] xyzi = soluteCoordinates[i];
+                return IntStream.range(i + 1, nSolute).mapToDouble({int j ->
+                    double[] xyzj = soluteCoordinates[j];
+                    double dist2 = 0;
+                    for (int k = 0; k < 3; k++) {
+                        double dx = xyzi[k] - xyzj[k];
+                        dx *= dx;
+                        dist2 += dx;
+                    }
+                    return dist2;
+                }).max().getAsDouble();
+            }).max().getAsDouble();
+            soluteLinearSize = Math.sqrt(soluteLinearSize);
+            soluteLinearSize += (2.0 * padding);
+            Arrays.fill(newBox, soluteLinearSize);
+
+            /*double diagonal = Math.sqrt(Arrays.stream(soluteBoundingBox).map({it * it}).sum());
             diagonal += (2.0 * padding);
-            Arrays.fill(newBox, diagonal);
+            Arrays.fill(newBox, diagonal);*/
         }
 
         double[] soluteTranslate = new double[3];
