@@ -847,8 +847,8 @@ public class SolventRadii {
         AMOEBA_NUC_2017_GK_RADII.put(20, GK_AMOEBA_ETHANOL_C / 2.0);      // 20   C   Thymine C7 (C5-attached methyl group C)
         AMOEBA_NUC_2017_GK_RADII.put(21, GK_AMOEBA_IMIDAZOLE_NH / 2.0);   // 21   N   Thymine N1, Uracil N1
         AMOEBA_NUC_2017_GK_RADII.put(22, GK_AMOEBA_ETHANOL_H / 2.0);      // 22   H   Thymine H7
-        //AMOEBA_NUC_2017_GK_RADII.put(23, ) // 23   O   Ribose O4
-        AMOEBA_NUC_2017_GK_RADII.put(23, GK_AMOEBA_IMIDAZOLE_C / 2.0);    // 24   C   Ribose C4
+        //AMOEBA_NUC_2017_GK_RADII.put(23, GK_AMOEBA_CARBONYL_O / 2.0);     // 23   O   Ribose O4 (Unsure on this one)
+        //AMOEBA_NUC_2017_GK_RADII.put(23, GK_AMOEBA_IMIDAZOLE_C / 2.0);    // 24   C   Ribose C4
 
 //        atom     65     23  O     "Ribose O4'"                 8   15.9990  2
 //        atom     66     24  C     "Ribose C4'"                 6   12.0110  4
