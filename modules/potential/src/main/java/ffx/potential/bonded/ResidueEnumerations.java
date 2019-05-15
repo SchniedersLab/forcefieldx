@@ -90,10 +90,26 @@ public class ResidueEnumerations {
 
     public enum AminoAcid3 {
 
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, CYD,
-        PRO, PHE, TYR, TYD, TRP, HIS, HID, HIE, ASP, ASH,
-        ASN, GLU, GLH, GLN, MET, LYS, LYD, ARG, ORN, AIB,
-        PCA, H2N, FOR, ACE, COH, NH2, NME, UNK
+        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS(true, false), CYX, CYD(true, true),
+        PRO, PHE, TYR(true, false), TYD(true, true), TRP, HIS(true, false), HID(true, true), HIE(true, true), ASP(true, false), ASH(true, true),
+        ASN, GLU(true, false), GLH(true, true), GLN, MET, LYS(true, false), LYD(true, true), ARG, ORN, AIB,
+        PCA, H2N, FOR, ACE, COH, NH2, NME, UNK;
+
+        public final boolean isTitratable;
+        public final boolean nonstandardProtonation;
+
+        AminoAcid3() {
+            isTitratable = false;
+            nonstandardProtonation = false;
+        }
+
+        AminoAcid3(boolean titr, boolean nonstd) {
+            isTitratable = titr;
+            nonstandardProtonation = nonstd;
+            if (nonstandardProtonation && !isTitratable) {
+                throw new IllegalArgumentException(String.format(" Amino acid class %s cannot be both nonstandard and non-titratable!", this));
+            }
+        }
     }
 
     public enum NucleicAcid1 {
