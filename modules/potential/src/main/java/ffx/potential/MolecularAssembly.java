@@ -64,8 +64,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1359,6 +1361,24 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
+     * Gets all bonded entities in this MolecularAssembly, where an entity can be a polymer,
+     * molecule, monoatomic ion, or monoatomic gas (i.e. noble gas atoms).
+     *
+     * @return All bonded groups of atoms and all singleton atoms.
+     */
+    public List<MSNode> getAllBondedEntities() {
+        // Initial construction via HashSet to eliminate duplicates.
+        Set<MSNode> allBondedNodes = new HashSet<>(getIons());
+        allBondedNodes.addAll(getMolecules());
+        allBondedNodes.addAll(getWaters());
+        Polymer[] polys = getChains();
+        if (polys != null && polys.length > 0) {
+            allBondedNodes.addAll(Arrays.asList(polys));
+        }
+        return new ArrayList<>(allBondedNodes);
+    }
+
+    /**
      * <p>
      * getChains</p>
      *
@@ -1636,7 +1656,10 @@ public class MolecularAssembly extends MSGroup {
         if (create) {
             Molecule m = new Molecule(resName, resNum, chainID, segID);
             m.addMSNode(atom);
-            if (resName.equalsIgnoreCase("DOD")
+            if (resName == null) {
+                logger.warning(format(" Attempting to create a molecule %s with a null name on atom %s! Defaulting to creating a generic Molecule.", m, atom));
+                molecules.add(m);
+            } else if (resName.equalsIgnoreCase("DOD")
                     || resName.equalsIgnoreCase("HOH")
                     || resName.equalsIgnoreCase("WAT")) {
                 water.add(m);
