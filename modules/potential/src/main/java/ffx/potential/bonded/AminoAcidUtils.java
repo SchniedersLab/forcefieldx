@@ -1795,19 +1795,19 @@ public class AminoAcidUtils {
                 Atom N = (Atom) residue.getAtomNode("N");
                 if (N == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("N", null, null);
-                    logger.warning("MissingHeavyAtomException incoming from 1702.");
+                    logger.warning(format(" Residue %s is missing its N-terminal amide nitrogen", residue));
                     throw e;
                 }
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 if (CA == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("CA", null, null);
-                    logger.warning("MissingHeavyAtomException incoming from 1708.");
+                    logger.warning(format(" Residue %s is missing its alpha carbon", residue));
                     throw e;
                 }
                 Atom C = (Atom) residue.getAtomNode("C");
                 if (C == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("C", null, null);
-                    logger.warning("MissingHeavyAtomException incoming from 1714.");
+                    logger.warning(format(" Residue %s is missing its C-terminal carboxyl carbon", residue));
                     throw e;
                 }
                 Atom O = (Atom) residue.getAtomNode("O");
@@ -1816,7 +1816,7 @@ public class AminoAcidUtils {
                 }
                 if (O == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("O", null, null);
-                    logger.warning("MissingHeavyAtomException incoming from 1723.");
+                    logger.warning(format(" Residue %s is missing its C-terminal carboxyl oxygen", residue));
                     throw e;
                 }
             }
