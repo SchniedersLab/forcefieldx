@@ -183,7 +183,6 @@ public class AminoAcidUtils {
                 checkForMissingHeavyAtoms(aminoAcidNumber, aminoAcid, position, residue);
             } catch (BondedUtils.MissingHeavyAtomException e) {
                 logger.log(Level.INFO, " {0} could not be parsed.", residue.toString());
-                logger.warning("MissingHeavyAtomException incoming from 194.");
                 throw e;
             }
         }
@@ -223,7 +222,6 @@ public class AminoAcidUtils {
                 if (O == null) {
                     MissingHeavyAtomException missingHeavyAtom
                             = new MissingHeavyAtomException("O", atomType, C);
-                    logger.warning(" MissingHeavyAtomException incoming from 234.");
                     throw missingHeavyAtom;
                 }
                 O.setAtomType(atomType);
@@ -1795,19 +1793,19 @@ public class AminoAcidUtils {
                 Atom N = (Atom) residue.getAtomNode("N");
                 if (N == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("N", null, null);
-                    logger.warning(format(" Residue %s is missing its N-terminal amide nitrogen", residue));
+                    logger.warning(format(" Residue %c-%s is missing its N-terminal amide nitrogen", residue.getChainID(), residue));
                     throw e;
                 }
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 if (CA == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("CA", null, null);
-                    logger.warning(format(" Residue %s is missing its alpha carbon", residue));
+                    logger.warning(format(" Residue %c-%s is missing its alpha carbon", residue.getChainID(), residue));
                     throw e;
                 }
                 Atom C = (Atom) residue.getAtomNode("C");
                 if (C == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("C", null, null);
-                    logger.warning(format(" Residue %s is missing its C-terminal carboxyl carbon", residue));
+                    logger.warning(format(" Residue %c-%s is missing its C-terminal carboxyl carbon", residue.getChainID(), residue));
                     throw e;
                 }
                 Atom O = (Atom) residue.getAtomNode("O");
@@ -1816,7 +1814,7 @@ public class AminoAcidUtils {
                 }
                 if (O == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("O", null, null);
-                    logger.warning(format(" Residue %s is missing its C-terminal carboxyl oxygen", residue));
+                    logger.warning(format(" Residue %c-%s is missing its C-terminal carboxyl oxygen", residue.getChainID(), residue));
                     throw e;
                 }
             }
