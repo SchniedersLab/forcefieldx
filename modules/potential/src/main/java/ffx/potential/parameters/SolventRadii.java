@@ -39,9 +39,9 @@ package ffx.potential.parameters;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.GeneralizedKirkwood;
 
 /**
  * Apply Generalized Kirkwood atomic radii.
@@ -81,7 +81,7 @@ public class SolventRadii {
     private static final Map<Integer, Double> AMOEBA_BIO_2018_GK_RADII = new HashMap<>();
 
     public static double applyGKRadii(ForceField forceField, double bondiScale,
-                              Atom[] atoms, double[] baseRadius) {
+                                      Atom[] atoms, double[] baseRadius) {
         Map<Integer, Double> radiiMap = null;
 
         String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
@@ -127,7 +127,7 @@ public class SolventRadii {
     /**
      * Lithium Ion Li+
      * Wang Thesis: -116.91 kca/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 6
      */
     private static final double GK_AMOEBA_LITHIUM = 2.748;
@@ -135,7 +135,7 @@ public class SolventRadii {
      * Sodium Ion Na+
      * Wang Thesis:  -91.62 kcal/mol
      * Grossfield et al: -91.8 kcal/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 7
      */
     private static final double GK_AMOEBA_SODIUM = 3.481;
@@ -143,29 +143,29 @@ public class SolventRadii {
      * Potassium Ion K+
      * Wang Thesis:  -74.32 kca/mol
      * Grossfield et al: -74.5 kca/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 8
      */
     private static final double GK_AMOEBA_POTASSIUM = 4.230;
     /**
      * Rubidium Ion Rb+
      * Wang Thesis:  -69.05 kcal/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 9
      */
     private static final double GK_AMOEBA_RUBIDIUM = 4.540;
     /**
-     *  Cesium Ion Cs+
-     *  Wang Thesis:  -63.66 kcal/mol
-     *
-     *  AMOEBA 2009 Class 10
+     * Cesium Ion Cs+
+     * Wang Thesis:  -63.66 kcal/mol
+     * <p>
+     * AMOEBA 2009 Class 10
      */
     private static final double GK_AMOEBA_CESIUM = 4.908;
     /**
      * Magnesium Ion Mg+2
      * Ren et al. 2006: -431.1 kcal/mol
      * Expt: −435.4 kcal/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 11
      */
     private static final double GK_AMOEBA_MAGNESIUM = 3.020;
@@ -173,7 +173,7 @@ public class SolventRadii {
      * Calcium Ion Ca+2
      * Ren et al. 2006: -354.9 kcal/mol
      * Expt: −357.2 kcal/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 12
      */
     private static final double GK_AMOEBA_CALCIUM = 3.664;
@@ -181,14 +181,14 @@ public class SolventRadii {
      * Zinc Ion Zn+2
      * Ren et al. 2011: −458.9
      * Expt: −467.7 kcal/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 13
      */
     private static final double GK_AMOEBA_ZINC = 2.844;
     /**
      * Fluoride Ion F-
      * Wang Thesis: -116.71 kcal/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 14
      */
     private static final double GK_AMOEBA_FLUORIDE = 2.734;
@@ -196,33 +196,33 @@ public class SolventRadii {
      * Chloride Ion Cl-
      * Wang Thesis:  -86.12 kca/mol
      * Grossfield et al: -86.5 kca/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 15
      */
     private static final double GK_AMOEBA_CHLORIDE = 3.661;
     /**
      * Bromide Ion Br-
      * Wang Thesis:  -79.66 kca/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 16
      */
     private static final double GK_AMOEBA_BROMIDE = 3.959;
     /**
      * Iodide Ion I-
      * Wang Thesis:  -71.25 kca/mol
-     *
+     * <p>
      * AMOEBA 2009 Class 17
      */
     private static final double GK_AMOEBA_IODIDE = 4.427;
     /**
      * Methane CH4 Carbon
-     *
+     * <p>
      * AMOEBA 2009 Class 25
      */
     private static final double GK_AMOEBA_METHANE_CH4 = 4.914;
     /**
      * Methane H4C Hydrogen
-     *
+     * <p>
      * AMOEBA 2009 Class 26
      */
     private static final double GK_AMOEBA_METHANE_H4C = 3.770;
@@ -231,7 +231,7 @@ public class SolventRadii {
      * Alkane -CH2-
      * Alkane >CH-
      * Alkane >C<
-     *
+     * <p>
      * AMOEBA 2009 Classes 27, 29, 31 and 33
      */
     private static final double GK_AMOEBA_ALKANE_C = 4.584;
@@ -239,51 +239,51 @@ public class SolventRadii {
      * Ethane H3C Hydrogen
      * Alkane -H2C-
      * Alkane -HC<
-     *
+     * <p>
      * AMOEBA 2009 Class 28, 30 and 32
      */
     private static final double GK_AMOEBA_ALKANE_H = 3.576;
     /**
      * Water Oxygen
-     *
+     * <p>
      * AMOEBA 2009 Class 34
-     *
+     * <p>
      * TODO: Combine with Alcohol Oxygen?
      */
     private static final double GK_AMOEBA_WATER_O = 2.9964;
     /**
      * Water Hydrogen
-     *
+     * <p>
      * AMOEBA 2009 Class 35
      */
     private static final double GK_AMOEBA_WATER_H = 2.3895;
     /**
      * Methanol O, Ethanol O, isoPropanol O, Methyl Ether O
      * Phenol OH, p-Cresol OH
-     *
+     * <p>
      * AMOEBA 2009 Class 36
      */
     private static final double GK_AMOEBA_METHANOL_O = 2.9964;
     /**
      * Methanol HO, Ethanol HO, isoPropanol HO,
      * Phenol HO, p-Cresol HO
-     *
+     * <p>
      * AMOEBA 2009 Class 37
      */
     private static final double GK_AMOEBA_METHANOL_HO = 2.3364;
     /**
      * Methanol CH3
-     *
+     * <p>
      * AMOEBA 2009 Class 38
-     *
+     * <p>
      * TODO: Combine with Ethanol C?
      */
     private static final double GK_AMOEBA_METHANOL_C = 3.384;
     /**
      * Methanol H3C, Ethanol H2C, isoPropanol >CH-
-     *
+     * <p>
      * AMOEBA 2009 Class 39
-     *
+     * <p>
      * TODO: Combine with Ethanol HC?
      */
     private static final double GK_AMOEBA_METHANOL_HC = 2.583;
@@ -296,7 +296,7 @@ public class SolventRadii {
      * NMePyrrolidine CH2-N, NMePyrrolidine CH2<, NMePyrrolidine CH3-N
      * Acetamide CH3, Propamide Me-CH2, Propamide CH3
      * NMeFormamide CH3, NEtFormamide CH2-N
-     *
+     * <p>
      * AMOEBA 2009 Class 40
      */
     private static final double GK_AMOEBA_ETHANOL_C = 3.438;
@@ -308,7 +308,7 @@ public class SolventRadii {
      * Ethylbenzene H2C, Ethylbenzene H3C, Toluene H3C
      * 4-Ethylimidazole H2C, 4-Ethylimidazole H3C
      * 3-Ethylindole H2C, 3-Ethylindole H3C
-     *
+     * <p>
      * AMOEBA 2009 Class 41
      */
     private static final double GK_AMOEBA_ETHANOL_H = 2.664;
@@ -318,29 +318,29 @@ public class SolventRadii {
      * NMePyrrolidine H3C-N
      * Propamide Me-CH2
      * Propyl Sulfonate Me-CH2
-     *
+     * <p>
      * AMOEBA 2009 Class 42
-     *
+     * <p>
      * TODO: Combine with Ethanol HC?
      */
     private static final double GK_AMOEBA_PROPANOL_H = 2.682;
     /**
      * Isopropanol >CH-
-     *
+     * <p>
      * AMOEBA 2009 Class 43
      */
     private static final double GK_AMOEBA_ISOPROPANOL_C = 3.650;
     /**
      * Methyl Ether H3C
-     *
+     * <p>
      * AMOEBA 2009 Class 44
-     *
+     * <p>
      * TODO: Is 3.179 too big?
      */
     private static final double GK_AMOEBA_METHYLETHER_H = 3.179;
     /**
      * Ammonia N
-     *
+     * <p>
      * AMOEBA 2009 Class 45
      */
     private static final double GK_AMOEBA_AMMONIA_N = 3.710;
@@ -348,19 +348,19 @@ public class SolventRadii {
      * Ammonia H
      * Imidazole HN, 4-Ethylimidazole HND, 4-Ethylimidazole HNE
      * Indole HN, 3-Ethylindole HN, 3-Formylindole HN
-     *
+     * <p>
      * AMOEBA 2009 Class 46
      */
     private static final double GK_AMOEBA_AMMONIA_H = 2.700;
     /**
      * Methyl Amine N, Ethyl Amine N, Dimethyl Amine N, Trimethyl Amine N
-     *
+     * <p>
      * AMOEBA 2009 Class 49
      */
     private static final double GK_AMOEBA_METHYLAMINE_N = 3.1535;
     /**
      * Methyl Amine H2N, Ethyl Amine H2N, Dimethyl Amine HN
-     *
+     * <p>
      * AMOEBA 2009 Class 50
      */
     private static final double GK_AMOEBA_METHYLAMINE_HN = 2.430;
@@ -368,16 +368,16 @@ public class SolventRadii {
      * Methyl Amine H3C, Ethyl Amine H2C
      * Dimethyl Amine H3C, Trimethyl Amine H3C
      * p-Cresol H3C
-     *
+     * <p>
      * AMOEBA 2009 Class 51
      */
     private static final double GK_AMOEBA_METHYLAMINE_HC = 2.592;
     /**
      * Pyrrolidine C-CH2-C, Pyrrolidine H2C-N
      * NMePyrrolidine H2C-N, NMePyrrolidine H2C<
-     *
+     * <p>
      * AMOEBA 2009 Class 52
-     *
+     * <p>
      * TODO: Combine with Ethanol HC?
      */
     private static final double GK_AMOEBA_PYRROLIDINE_HC = 2.664;
@@ -385,13 +385,13 @@ public class SolventRadii {
      * Formamide C=O, Acetamide C=O
      * NMeFormamide C=O, NMeAcetamide C=O
      * DiMeFormamide C=O, DiMeAcetamide C=O
-     *
+     * <p>
      * AMOEBA 2009 Class 53
      */
     private static final double GK_AMOEBA_AMIDE_CO = 3.438;
     /**
      * Formamide HCO, NMeFormamide HCO, DiMeFormamide HCO
-     *
+     * <p>
      * AMOEBA 2009 Class 54
      */
     private static final double GK_AMOEBA_AMIDE_HCO = 2.520;
@@ -399,132 +399,132 @@ public class SolventRadii {
      * Formamide O, Acetamide O, NMeFormamide O
      * NMeAcetamide O, DiMeFormamide O, DiMeAcetamide O
      * Formic Acid O=C, Acetic Acid O=C, Formaldehyde O=C, Acetaldehyde O=C
-     *
+     * <p>
      * AMOEBA 2009 Class 55
      */
     private static final double GK_AMOEBA_CARBONYL_O = 3.069;
     /**
      * Formamide N, Acetamide N, NMeFormamide N, NMeAcetamide N,
      * DiMeFormamide N, DiMeAcetamide N
-     *
+     * <p>
      * AMOEBA 2009 Class 56
      */
     private static final double GK_AMOEBA_AMIDE_N = 3.710;
     /**
      * Formamide H2N, Acetamide H2N, NMeFormamide HN, NMeAcetamide HN
-     *
+     * <p>
      * AMOEBA 2009 Class 57
      */
     private static final double GK_AMOEBA_AMIDE_HN = 2.331;
     /**
      * Acetamide H3C, NMeAcetamide H3C-C, DiMeAcetamide H3C-C
      * NMeFormamide H3C, NMeAcetamide H3C-N, DiMeFormamide H3C, DiMeAcetamide H3C-N
-     *
+     * <p>
      * AMOEBA 2009 Classes 58 and 59
-     *
+     * <p>
      * TODO: Combine with Ethanol HC?
      */
     private static final double GK_AMOEBA_AMIDE_H3C = 2.650;
     /**
      * Formic Acid OH, Acetic Acid OH
-     *
+     * <p>
      * AMOEBA 2009 Class 60
      */
     private static final double GK_AMOEBA_CARBOXCYLIC_ACID_O = 3.30285;
     /**
      * Formic Acid HO, Acetic Acid HO
-     *
+     * <p>
      * AMOEBA 2009 Class 61
      */
     private static final double GK_AMOEBA_CARBOXCYLIC_ACID_HO = 2.3895;
     /**
-     *  Formic Acid C=O, Acetic Acid C=O, Formaldehyde C=O, Acetaldehyde C=O
-     *  Methyl Sulfide CH3, Dimethyl Sulfide CH3, Dimethyl Disulfide CH3,
-     *  Ethyl Sulfide CH2, MeEt Sulfide CH3-S, MeEt Sulfide CH2-S
-     *
-     *  AMOEBA 2009 Class 62
+     * Formic Acid C=O, Acetic Acid C=O, Formaldehyde C=O, Acetaldehyde C=O
+     * Methyl Sulfide CH3, Dimethyl Sulfide CH3, Dimethyl Disulfide CH3,
+     * Ethyl Sulfide CH2, MeEt Sulfide CH3-S, MeEt Sulfide CH2-S
+     * <p>
+     * AMOEBA 2009 Class 62
      */
     private static final double GK_AMOEBA_CARBONYL_CO = 3.402;
     /**
      * Formic Acid HC=O, Formaldehyde HC=O, Acetaldehyde HC=O
      * 3-Formylindole HC=O
-     *
+     * <p>
      * AMOEBA 2009 Class 63
      */
     private static final double GK_AMOEBA_FORMYL_HCO = 2.628;
     /**
      * Acetaldehyde H3C, Acetaldehyde H3C
-     *
+     * <p>
      * AMOEBA 2009 Class 64
      */
     private static final double GK_AMOEBA_ACETYL_HCO = 2.682;
     /**
      * Hydrogen Sulfide S
-     *
+     * <p>
      * AMOEBA 2009 Class 65
      */
     private static final double GK_AMOEBA_HSULFIDE_S = 4.4055;
     /**
      * Hydrogen Sulfide H
-     *
+     * <p>
      * AMOEBA 2009 Class 66
      */
     private static final double GK_AMOEBA_HSULFIDE_H = 3.3240;
     /**
      * Methyl Sulfide S, Dimethyl Sulfide S, Dimethyl Disulfide S
      * Ethyl Sulfide S, MeEt Sulfide S
-     *
+     * <p>
      * AMOEBA 2009 Class 67
      */
     private static final double GK_AMOEBA_SULFIDE_S = 5.3267;
     /**
      * Methyl Sulfide HS, Ethyl Sulfide HS
-     *
+     * <p>
      * AMOEBA 2009 Class 68
      */
     private static final double GK_AMOEBA_SULFIDE_HS = 3.6841;
     /**
      * Methyl Sulfide H3C, Dimethyl Sulfide H3C, Dimethyl Disulfide H3C
      * Ethyl Sulfide H2C, MeEt Sulfide H3C-S, MeEt Sulfide CH2-S
-     *
+     * <p>
      * AMOEBA 2009 Class 69
      */
     private static final double GK_AMOEBA_SULFIDE_H3C = 3.8171;
     /**
      * Ethyl Sulfide CH3, MeEt Sulfide CH3-C
-     *
+     * <p>
      * AMOEBA 2009 Class 70
      */
     private static final double GK_AMOEBA_SULFIDE_CH3 = 5.0806;
     /**
      * Ethyl Sulfide H3C, MeEt Sulfide H3C-C
-     *
+     * <p>
      * AMOEBA 2009 Class 71
      */
     private static final double GK_AMOEBA_ETHYL_SULFIDE_H3C = 3.9634;
     /**
      * Hydrogen Cyanide CN, Acetonitrile CN
-     *
+     * <p>
      * AMOEBA 2009 Classes 79 and 82
-     *
+     * <p>
      * TODO: Cobime with Alkane Carbon?
      */
     private static final double GK_AMOEBA_ETHYL_NITRILE_C = 4.584;
     /**
      * Hydrogen Cyanide CN, Acetonitrile CN
-     *
+     * <p>
      * AMOEBA 2009 Class 80
      */
     private static final double GK_AMOEBA_ETHYL_NITRILE_N = 3.6516;
     /**
      * Acetonitrile H3C
-     *
+     * <p>
      * AMOEBA 2009 Class 83
      */
     private static final double GK_AMOEBA_ETHYL_NITRILE_H3C = 3.4920;
     /**
      * Benzene C, Pyridinium C2, Pyridinium C3, Pyridinium C4
-     *
+     * <p>
      * AMOEBA 2009 Class 87
      */
     private static final double GK_AMOEBA_BENZENE_C = 5.0540;
@@ -532,7 +532,7 @@ public class SolventRadii {
      * Benzene HC, Indole HC2 to Indole HC7, 3-Ethylindole HC2, 3-Ethylindole HC3 to 3-Ethylindole HC7
      * 3-Formylindole HC2, 3-Formylindole HC4 to 3-Formylindole HC7
      * Pyridinium H2 to Pyridinium H4
-     *
+     * <p>
      * AMOEBA 2009 Class 88
      */
     private static final double GK_AMOEBA_BENZENE_H = 3.9634;
@@ -542,7 +542,7 @@ public class SolventRadii {
      * Toluene C1-CH3, Toluene C2 to Toluene C4
      * p-Cresol C1-CH3, p-Cresol C2, p-Cresol C3, p-Cresol C4-OH
      * Benzamidine C1-CN2, Benzamidine C2 to Benzamidine C4
-     *
+     * <p>
      * AMOEBA 2009 Class 89
      */
     private static final double GK_AMOEBA_AROMATIC_C = 3.800;
@@ -552,7 +552,7 @@ public class SolventRadii {
      * Toluene H2 to Toluene H4
      * p-Cresol H2, p-Cresol H3
      * Benzamidine H2 to Benzamidine H4
-     *
+     * <p>
      * AMOEBA 2009 Class 90
      */
     private static final double GK_AMOEBA_AROMATIC_H = 2.980;
@@ -562,21 +562,21 @@ public class SolventRadii {
      * Indole N
      * 3-Ethylindole N
      * 3-Formylindole N
-     *
+     * <p>
      * AMOEBA 2009 Class 91
      */
     private static final double GK_AMOEBA_IMIDAZOLE_NH = 3.339;
     /**
      * Imidazole N-C-N, Imidazole C-N=C, Imidazole C-NH-
      * 4-Ethylimidazole CE, 4-Ethylimidazole CD, 4-Ethylimidazole CG
-     *
+     * <p>
      * AMOEBA 2009 Class 92
      */
     private static final double GK_AMOEBA_IMIDAZOLE_C = 3.591;
     /**
      * Imidazole HC
      * 4-Ethylimidazole HCE, 4-Ethylimidazole HCD
-     *
+     * <p>
      * AMOEBA 2009 Class 93
      */
     private static final double GK_AMOEBA_IMIDAZOLE_HC = 3.000;
@@ -892,6 +892,30 @@ public class SolventRadii {
         AMOEBA_NUC_2017_GK_RADII.put(51, GK_AMOEBA_POTASSIUM / 2.0);
         AMOEBA_NUC_2017_GK_RADII.put(52, GK_AMOEBA_MAGNESIUM / 2.0);
         AMOEBA_NUC_2017_GK_RADII.put(53, GK_AMOEBA_CHLORIDE / 2.0);
+
+        // Begin filling up AMOEBA BIO 2018
+        AMOEBA_BIO_2018_GK_RADII.put(43, AMOEBA_NUC_2017_GK_RADII.get(1));
+        AMOEBA_BIO_2018_GK_RADII.put(44, AMOEBA_NUC_2017_GK_RADII.get(2));
+        AMOEBA_BIO_2018_GK_RADII.put(45, AMOEBA_NUC_2017_GK_RADII.get(3));
+        AMOEBA_BIO_2018_GK_RADII.put(46, AMOEBA_NUC_2017_GK_RADII.get(4));
+        AMOEBA_BIO_2018_GK_RADII.put(47, AMOEBA_NUC_2017_GK_RADII.get(5));
+        AMOEBA_BIO_2018_GK_RADII.put(48, AMOEBA_NUC_2017_GK_RADII.get(6));
+        AMOEBA_BIO_2018_GK_RADII.put(49, AMOEBA_NUC_2017_GK_RADII.get(7));
+        AMOEBA_BIO_2018_GK_RADII.put(50, AMOEBA_NUC_2017_GK_RADII.get(8));
+        AMOEBA_BIO_2018_GK_RADII.put(51, AMOEBA_NUC_2017_GK_RADII.get(9));
+        AMOEBA_BIO_2018_GK_RADII.put(52, AMOEBA_NUC_2017_GK_RADII.get(10));
+        AMOEBA_BIO_2018_GK_RADII.put(53, AMOEBA_NUC_2017_GK_RADII.get(11));
+        AMOEBA_BIO_2018_GK_RADII.put(54, AMOEBA_NUC_2017_GK_RADII.get(12));
+        AMOEBA_BIO_2018_GK_RADII.put(55, AMOEBA_NUC_2017_GK_RADII.get(13));
+        AMOEBA_BIO_2018_GK_RADII.put(56, AMOEBA_NUC_2017_GK_RADII.get(14));
+        AMOEBA_BIO_2018_GK_RADII.put(57, AMOEBA_NUC_2017_GK_RADII.get(15));
+        AMOEBA_BIO_2018_GK_RADII.put(58, AMOEBA_NUC_2017_GK_RADII.get(16));
+        AMOEBA_BIO_2018_GK_RADII.put(59, AMOEBA_NUC_2017_GK_RADII.get(17));
+        AMOEBA_BIO_2018_GK_RADII.put(60, AMOEBA_NUC_2017_GK_RADII.get(18));
+        AMOEBA_BIO_2018_GK_RADII.put(61, AMOEBA_NUC_2017_GK_RADII.get(19));
+        AMOEBA_BIO_2018_GK_RADII.put(62, AMOEBA_NUC_2017_GK_RADII.get(20));
+        AMOEBA_BIO_2018_GK_RADII.put(63, AMOEBA_NUC_2017_GK_RADII.get(21));
+        AMOEBA_BIO_2018_GK_RADII.put(64, AMOEBA_NUC_2017_GK_RADII.get(22));
 
     }
 }
