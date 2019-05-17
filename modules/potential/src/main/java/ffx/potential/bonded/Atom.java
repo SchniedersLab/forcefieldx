@@ -503,6 +503,30 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
+     * Creates a new Atom similar to an existing Atom (e.g. for tiling a solvent box over a solute).
+     * Will not include some properties such as velocity, acceleration, etc.
+     *
+     * @param xyzIndex Index of the new Atom.
+     * @param copyFrom Atom to copy attributes from.
+     * @param xyz      Cartesian coordinates to place this new Atom at.
+     * @param resSeq   Residue sequence number.
+     * @param chainID  Chain identifier.
+     * @param segID    Segment identifier.
+     */
+    public Atom(int xyzIndex, Atom copyFrom, double[] xyz, int resSeq, char chainID, String segID) {
+        this(xyzIndex, copyFrom.getName(), copyFrom.getAltLoc(), xyz, copyFrom.getResidueName(), resSeq, chainID, copyFrom.getOccupancy(), copyFrom.getTempFactor(), segID);
+        setAtomType(copyFrom.getAtomType());
+        double[] aniso = new double[3];
+        aniso = copyFrom.getAnisou(aniso);
+        setAnisou(aniso);
+        setApplyLambda(copyFrom.applyLambda());
+        setElectrostatics(copyFrom.getElectrostatics());
+        setHetero(copyFrom.isHetero());
+        setMass(copyFrom.getMass());
+        setModRes(copyFrom.modres);
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Implementation of the Comparable interface.
@@ -571,20 +595,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public boolean isHetero() {
         return hetatm;
-    }
-
-    /**
-     * <p>copy.</p>
-     *
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    public Atom copy() {
-        double[] coords = {xyz[0], xyz[1], xyz[2]};
-        Atom atom = new Atom(getIndex(), getName(), getAltLoc(), coords,
-                getResidueName(), getResidueNumber(), getChainID(),
-                getOccupancy(), getTempFactor(), getSegID());
-        atom.setAtomType(getAtomType());
-        return atom;
     }
 
     /**
