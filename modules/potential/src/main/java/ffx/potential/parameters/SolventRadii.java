@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
 
 /**
  * Apply Generalized Kirkwood atomic radii.
@@ -49,6 +50,8 @@ import ffx.potential.bonded.Atom;
  * @author Michael J. Schnieders
  */
 public class SolventRadii {
+
+    private static final Logger logger = Logger.getLogger(SolventRadii.class.getName());
 
     private SolventRadii() {
     }
@@ -73,6 +76,11 @@ public class SolventRadii {
      */
     private static final Map<Integer, Double> AMOEBA_NUC_2017_GK_RADII = new HashMap<>();
 
+    /**
+     * This map connects AMOEBA Bio '18 atom classes to GK base radii.
+     */
+    private static final Map<Integer, Double> AMOEBA_BIO_2018_GK_RADII = new HashMap<>();
+
     public static double applyGKRadii(ForceField forceField, double bondiScale,
                               Atom[] atoms, double[] baseRadius) {
         Map<Integer, Double> radiiMap = null;
@@ -85,9 +93,19 @@ public class SolventRadii {
             if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
                 radiiMap = AMOEBA_2009_GK_RADII;
                 bondiScale = 1.0;
+                logger.info(" Using GK Radii for the AMOEBA 2009 force field.");
             } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
                 radiiMap = AMOEBA_2014_GK_RADII;
                 bondiScale = 1.0;
+                logger.info(" Using GK Radii for the AMOEBA 2014 force field.");
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-NUC-2017")) {
+                radiiMap = AMOEBA_NUC_2017_GK_RADII;
+                bondiScale = 1.0;
+                logger.info(" Using GK Radii for the AMOEBA Nucleic Acid 2017 force field.");
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-BIO-2018")) {
+                radiiMap = AMOEBA_BIO_2018_GK_RADII;
+                bondiScale = 1.0;
+                logger.info(" Using GK Radii for the AMOEBA Bio 2018 force field.");
             }
         }
 
