@@ -37,21 +37,21 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.J3DGraphics2D;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
-import javax.vecmath.Color3f;
-import javax.vecmath.Point2d;
-import javax.vecmath.Point3d;
-import javax.vecmath.Vector3d;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
+
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.J3DGraphics2D;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Node;
+import org.jogamp.vecmath.Color3f;
+import org.jogamp.vecmath.Point2d;
+import org.jogamp.vecmath.Point3d;
+import org.jogamp.vecmath.Vector3d;
 
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;

@@ -39,9 +39,6 @@ package ffx.ui;
 
 import javax.help.HelpSet;
 import javax.help.JHelp;
-import javax.media.j3d.GraphicsConfigTemplate3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
@@ -63,7 +60,6 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileSystemView;
-import javax.vecmath.Vector3d;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -103,6 +99,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.biojava.nbio.structure.Structure;
+import org.jogamp.java3d.GraphicsConfigTemplate3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.vecmath.Vector3d;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;

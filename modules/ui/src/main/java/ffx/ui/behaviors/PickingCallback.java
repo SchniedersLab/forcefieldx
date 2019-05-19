@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.TransformGroup;
+import org.jogamp.java3d.TransformGroup;
 
 /**
  * The PickingCallback interface is implemented by classes wishing to recieve
@@ -86,7 +86,7 @@ public interface PickingCallback {
      * transformChanged</p>
      *
      * @param type a int.
-     * @param tg   a {@link javax.media.j3d.TransformGroup} object.
+     * @param tg   a {@link org.jogamp.java3d.TransformGroup} object.
      */
     void transformChanged(int type, TransformGroup tg);
 
@@ -95,7 +95,7 @@ public interface PickingCallback {
      * transformClicked</p>
      *
      * @param type a int.
-     * @param tg   a {@link javax.media.j3d.TransformGroup} object.
+     * @param tg   a {@link org.jogamp.java3d.TransformGroup} object.
      */
     void transformClicked(int type, TransformGroup tg);
 
@@ -104,7 +104,7 @@ public interface PickingCallback {
      * transformDoubleClicked</p>
      *
      * @param type a int.
-     * @param tg   a {@link javax.media.j3d.TransformGroup} object.
+     * @param tg   a {@link org.jogamp.java3d.TransformGroup} object.
      */
     void transformDoubleClicked(int type, TransformGroup tg);
 }

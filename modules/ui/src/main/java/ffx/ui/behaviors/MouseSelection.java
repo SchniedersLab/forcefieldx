@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnAWTEvent;
 
 /**
  * The MouseSelection class implements a mouse selection behavior.
@@ -63,7 +63,7 @@ public class MouseSelection extends MouseBehavior {
      * Constructor for MouseSelection.</p>
      *
      * @param flags a int.
-     * @param VPTG  a {@link javax.media.j3d.TransformGroup} object.
+     * @param VPTG  a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public MouseSelection(int flags, TransformGroup VPTG) {
         super(flags, VPTG);
@@ -189,7 +189,7 @@ public class MouseSelection extends MouseBehavior {
      * <p>
      * transformChanged</p>
      *
-     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
      */
     public void transformChanged(Transform3D transform) {
     }

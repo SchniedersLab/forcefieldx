@@ -37,15 +37,15 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Material;
-import javax.vecmath.Color3f;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
+
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Material;
+import org.jogamp.vecmath.Color3f;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;

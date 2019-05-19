@@ -37,11 +37,12 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.BranchGroup;
 import javax.swing.tree.TreeNode;
 
 import java.util.Enumeration;
 import java.util.List;
+
+import org.jogamp.java3d.BranchGroup;
 
 /**
  * The Joint class contains the geometry produced by the FGroup Joiner method.

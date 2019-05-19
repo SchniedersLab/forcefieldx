@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Transform3D;
+import org.jogamp.java3d.Transform3D;
 
 /**
  * The MouseBehaviorCallback interface is implemented by classes that want to
@@ -81,7 +81,7 @@ public interface MouseBehaviorCallback {
      * transformChanged</p>
      *
      * @param type      a int.
-     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
      */
     void transformChanged(int type, Transform3D transform);
 
@@ -90,7 +90,7 @@ public interface MouseBehaviorCallback {
      * transformClicked</p>
      *
      * @param type      a int.
-     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
      */
     void transformClicked(int type, Transform3D transform);
 
@@ -99,7 +99,7 @@ public interface MouseBehaviorCallback {
      * transformDoubleClicked</p>
      *
      * @param type      a int.
-     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
      */
     void transformDoubleClicked(int type, Transform3D transform);
 }

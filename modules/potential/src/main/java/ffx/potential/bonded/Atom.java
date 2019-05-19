@@ -37,21 +37,6 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.Appearance;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Geometry;
-import javax.media.j3d.J3DGraphics2D;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.vecmath.Color3f;
-import javax.vecmath.Point2d;
-import javax.vecmath.Point3d;
-import javax.vecmath.Vector3d;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,6 +48,20 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.jogamp.java3d.Appearance;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.Geometry;
+import org.jogamp.java3d.J3DGraphics2D;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Node;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.vecmath.Color3f;
+import org.jogamp.vecmath.Point2d;
+import org.jogamp.vecmath.Point3d;
+import org.jogamp.vecmath.Vector3d;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
@@ -88,7 +87,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private static final Logger logger = Logger.getLogger(Atom.class.getName());
 
     public enum Descriptions {
-        Default, Trim, XyzIndex_Name, ArrayIndex_Name, Resnum_Name;
+        Default, Trim, XyzIndex_Name, ArrayIndex_Name, Resnum_Name
     }
 
     /**
@@ -110,7 +109,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public enum Resolution {
-        FIXEDCHARGE, AMOEBA;
+        FIXEDCHARGE, AMOEBA
     }
 
     /**
@@ -546,7 +545,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * <p>
      * addTrajectoryCoords</p>
      *
-     * @param coords   a {@link javax.vecmath.Vector3d} object.
+     * @param coords   a {@link org.jogamp.vecmath.Vector3d} object.
      * @param position a int.
      */
     void addTrajectoryCoords(Vector3d coords, int position) {
@@ -783,7 +782,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * <p>
      * getAtomAppearance</p>
      *
-     * @return a {@link javax.media.j3d.Appearance} object.
+     * @return a {@link org.jogamp.java3d.Appearance} object.
      */
     Appearance getAtomAppearance() {
         if (appearance == null) {
@@ -797,7 +796,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * <p>
      * getAtomColor</p>
      *
-     * @return a {@link javax.vecmath.Color3f} object.
+     * @return a {@link org.jogamp.vecmath.Color3f} object.
      */
     Color3f getAtomColor() {
         return currentCol;
@@ -1219,7 +1218,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * getTrajectoryCoords</p>
      *
      * @param position a int.
-     * @return a {@link javax.vecmath.Vector3d} object.
+     * @return a {@link org.jogamp.vecmath.Vector3d} object.
      */
     public Vector3d getTrajectoryCoords(int position) {
         return trajectory.get(position);
@@ -1248,7 +1247,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Gets the Atom's Cartesian Coordinates return The Cartesian Coordinates
      *
-     * @param temp a {@link javax.vecmath.Vector3d} object.
+     * @param temp a {@link org.jogamp.vecmath.Vector3d} object.
      */
     public void getV3D(Vector3d temp) {
         temp.set(xyz);
@@ -1645,7 +1644,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * <p>
      * moveTo</p>
      *
-     * @param v a {@link javax.vecmath.Vector3d} object.
+     * @param v a {@link org.jogamp.vecmath.Vector3d} object.
      */
     public void moveTo(Vector3d v) {
         if (active) {

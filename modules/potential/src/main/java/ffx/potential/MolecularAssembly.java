@@ -37,28 +37,6 @@
 //******************************************************************************
 package ffx.potential;
 
-import javax.media.j3d.Appearance;
-import javax.media.j3d.BoundingSphere;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.ColoringAttributes;
-import javax.media.j3d.GeometryArray;
-import javax.media.j3d.Group;
-import javax.media.j3d.LineArray;
-import javax.media.j3d.LineAttributes;
-import javax.media.j3d.Link;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
-import javax.media.j3d.RenderingAttributes;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.SharedGroup;
-import javax.media.j3d.Switch;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.vecmath.Color3f;
-import javax.vecmath.Matrix3d;
-import javax.vecmath.Point3d;
-import javax.vecmath.Vector3d;
-
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -73,11 +51,29 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import com.sun.j3d.utils.picking.PickTool;
-
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
-import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
+import org.jogamp.java3d.Appearance;
+import org.jogamp.java3d.BoundingSphere;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.ColoringAttributes;
+import org.jogamp.java3d.GeometryArray;
+import org.jogamp.java3d.Group;
+import org.jogamp.java3d.LineArray;
+import org.jogamp.java3d.LineAttributes;
+import org.jogamp.java3d.Link;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Node;
+import org.jogamp.java3d.RenderingAttributes;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.SharedGroup;
+import org.jogamp.java3d.Switch;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.utils.picking.PickTool;
+import org.jogamp.vecmath.Color3f;
+import org.jogamp.vecmath.Matrix3d;
+import org.jogamp.vecmath.Point3d;
+import org.jogamp.vecmath.Vector3d;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -1305,7 +1301,7 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * Getter for the field <code>branchGroup</code>.</p>
      *
-     * @return a {@link javax.media.j3d.BranchGroup} object.
+     * @return a {@link org.jogamp.java3d.BranchGroup} object.
      */
     public BranchGroup getBranchGroup() {
         return branchGroup;
@@ -1465,7 +1461,7 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * Getter for the field <code>offset</code>.</p>
      *
-     * @return a {@link javax.vecmath.Vector3d} object.
+     * @return a {@link org.jogamp.vecmath.Vector3d} object.
      */
     public Vector3d getOffset() {
         if (offset == null) {
@@ -1479,7 +1475,7 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * Getter for the field <code>originToRot</code>.</p>
      *
-     * @return a {@link javax.media.j3d.TransformGroup} object.
+     * @return a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public TransformGroup getOriginToRot() {
         return originToRot;
@@ -1780,7 +1776,7 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * getTransformGroup</p>
      *
-     * @return a {@link javax.media.j3d.TransformGroup} object.
+     * @return a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public TransformGroup getTransformGroup() {
         return originToRot;
@@ -1790,7 +1786,7 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * getWireFrame</p>
      *
-     * @return a {@link javax.media.j3d.Node} object.
+     * @return a {@link org.jogamp.java3d.Node} object.
      */
     public Node getWireFrame() {
         return wire;
@@ -1810,32 +1806,32 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * loadVRML</p>
      *
-     * @return a {@link javax.media.j3d.BranchGroup} object.
+     * @return a {@link org.jogamp.java3d.BranchGroup} object.
      */
     public BranchGroup loadVRML() {
-        try {
-            VrmlLoader loader = new VrmlLoader();
-            VrmlScene scene = null;
-            if (vrmlFile != null && vrmlFile.exists()) {
-                scene = (VrmlScene) loader.load(vrmlFile.getAbsolutePath());
-            } else if (vrmlURL != null) {
-                scene = (VrmlScene) loader.load(vrmlURL);
-            } else {
-                return null;
-            }
-            BranchGroup bg = scene.getSceneGroup();
-            recurseVRML(bg);
-            bg.setCapability(BranchGroup.ALLOW_DETACH);
-            bg.setCapability(BranchGroup.ALLOW_BOUNDS_READ);
-            bg.compile();
-            return bg;
-        } catch (Exception e) {
-            String message = "Fatal exception loading VRML.\n";
-            logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
-            return null;
-        }
-
+//        try {
+//            VrmlLoader loader = new VrmlLoader();
+//            VrmlScene scene = null;
+//            if (vrmlFile != null && vrmlFile.exists()) {
+//                scene = (VrmlScene) loader.load(vrmlFile.getAbsolutePath());
+//            } else if (vrmlURL != null) {
+//                scene = (VrmlScene) loader.load(vrmlURL);
+//            } else {
+//                return null;
+//            }
+//            BranchGroup bg = scene.getSceneGroup();
+//            recurseVRML(bg);
+//            bg.setCapability(BranchGroup.ALLOW_DETACH);
+//            bg.setCapability(BranchGroup.ALLOW_BOUNDS_READ);
+//            bg.compile();
+//            return bg;
+//        } catch (Exception e) {
+//            String message = "Fatal exception loading VRML.\n";
+//            logger.log(Level.SEVERE, message, e);
+//            System.exit(-1);
+//            return null;
+//        }
+        return null;
     }
 
     /**
@@ -2182,7 +2178,7 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * Setter for the field <code>offset</code>.</p>
      *
-     * @param o a {@link javax.vecmath.Vector3d} object.
+     * @param o a {@link org.jogamp.vecmath.Vector3d} object.
      */
     public void setOffset(Vector3d o) {
         offset = o;
@@ -2243,7 +2239,7 @@ public class MolecularAssembly extends MSGroup {
      * <p>
      * setVRML</p>
      *
-     * @param v a {@link javax.media.j3d.BranchGroup} object.
+     * @param v a {@link org.jogamp.java3d.BranchGroup} object.
      */
     public void setVRML(BranchGroup v) {
         vrmlURL = null;

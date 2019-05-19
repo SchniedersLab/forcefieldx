@@ -37,15 +37,14 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-
 import java.awt.event.MouseEvent;
 
-import com.sun.j3d.utils.picking.PickResult;
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.utils.picking.PickResult;
 
 /**
  * The PickSelectionBehavior class implements a mouse based selections behavior.
@@ -63,10 +62,10 @@ public class PickSelectionBehavior extends PickMouseBehavior implements
      * <p>
      * Constructor for PickSelectionBehavior.</p>
      *
-     * @param root     a {@link javax.media.j3d.BranchGroup} object.
-     * @param canvas   a {@link javax.media.j3d.Canvas3D} object.
-     * @param bounds   a {@link javax.media.j3d.Bounds} object.
-     * @param VPTG     a {@link javax.media.j3d.TransformGroup} object.
+     * @param root     a {@link org.jogamp.java3d.BranchGroup} object.
+     * @param canvas   a {@link org.jogamp.java3d.Canvas3D} object.
+     * @param bounds   a {@link org.jogamp.java3d.Bounds} object.
+     * @param VPTG     a {@link org.jogamp.java3d.TransformGroup} object.
      * @param pickMode a int.
      */
     public PickSelectionBehavior(BranchGroup root, Canvas3D canvas,
