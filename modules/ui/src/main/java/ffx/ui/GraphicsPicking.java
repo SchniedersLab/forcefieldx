@@ -37,14 +37,7 @@
 //******************************************************************************
 package ffx.ui;
 
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Node;
-import javax.media.j3d.SceneGraphPath;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Transform3D;
 import javax.swing.tree.TreePath;
-import javax.vecmath.Vector3d;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -52,10 +45,16 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.picking.PickIntersection;
-import com.sun.j3d.utils.picking.PickResult;
-
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Node;
+import org.jogamp.java3d.SceneGraphPath;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.utils.picking.PickCanvas;
+import org.jogamp.java3d.utils.picking.PickIntersection;
+import org.jogamp.java3d.utils.picking.PickResult;
+import org.jogamp.vecmath.Vector3d;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.potential.MolecularAssembly;

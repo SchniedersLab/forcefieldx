@@ -37,15 +37,15 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+
+import org.jogamp.java3d.Behavior;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnAWTEvent;
 
 /**
  * The MouseZoom class implements a Mouse Zoom behavior.
@@ -64,7 +64,7 @@ public class MouseZoom extends MouseBehavior {
      * Constructor for MouseZoom.</p>
      *
      * @param flags a int.
-     * @param VPTG  a {@link javax.media.j3d.TransformGroup} object.
+     * @param VPTG  a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public MouseZoom(int flags, TransformGroup VPTG) {
         super(flags, VPTG);
@@ -75,8 +75,8 @@ public class MouseZoom extends MouseBehavior {
      * Constructor for MouseZoom.</p>
      *
      * @param flags    a int.
-     * @param VPTG     a {@link javax.media.j3d.TransformGroup} object.
-     * @param behavior a {@link javax.media.j3d.Behavior} object.
+     * @param VPTG     a {@link org.jogamp.java3d.TransformGroup} object.
+     * @param behavior a {@link org.jogamp.java3d.Behavior} object.
      * @param postID   a int.
      * @param dID      a int.
      */
@@ -208,7 +208,7 @@ public class MouseZoom extends MouseBehavior {
      * <p>
      * transformChanged</p>
      *
-     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
      */
     public void transformChanged(Transform3D transform) {
     }

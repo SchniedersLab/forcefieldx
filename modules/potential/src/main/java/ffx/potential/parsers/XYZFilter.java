@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.potential.parsers;
 
-import javax.vecmath.Vector3d;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -55,6 +53,7 @@ import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.jogamp.vecmath.Vector3d;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
@@ -303,28 +302,27 @@ public class XYZFilter extends SystemFilter {
     }
 
     @Override
-    public int countNumModels(){
+    public int countNumModels() {
         File xyzFile = activeMolecularAssembly.getFile();
         BufferedReader bufferedReaderCount = null;
-        try{
+        try {
             FileReader fr = new FileReader(xyzFile);
             bufferedReaderCount = new BufferedReader(fr);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.severe(e.toString());
         }
-        int numModels=0;
-        try{
+        int numModels = 0;
+        try {
             String data = bufferedReaderCount.readLine();
             Atom[] atoms = activeMolecularAssembly.getAtomArray();
             int nSystem = atoms.length;
             int numLines = 1;
-            while(data != null){
+            while (data != null) {
                 data = bufferedReaderCount.readLine();
                 numLines++;
             }
-            numModels = (int) Math.floor(numLines/nSystem);
-        }catch(Exception e){
+            numModels = (int) Math.floor(numLines / nSystem);
+        } catch (Exception e) {
             String message = format("Exception.", xyzFile);
             logger.log(Level.WARNING, message, e);
         }

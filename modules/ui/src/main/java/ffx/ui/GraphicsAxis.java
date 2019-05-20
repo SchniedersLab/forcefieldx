@@ -37,33 +37,31 @@
 //******************************************************************************
 package ffx.ui;
 
-import javax.media.j3d.Appearance;
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Font3D;
-import javax.media.j3d.FontExtrusion;
-import javax.media.j3d.Geometry;
-import javax.media.j3d.Group;
-import javax.media.j3d.Material;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Text3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.vecmath.AxisAngle4f;
-import javax.vecmath.Color3f;
-import javax.vecmath.Matrix3d;
-import javax.vecmath.Vector3d;
-
 import java.awt.Color;
 import java.awt.Font;
 import java.util.Enumeration;
 
-import com.sun.j3d.utils.geometry.Cone;
-import com.sun.j3d.utils.geometry.Cylinder;
-import com.sun.j3d.utils.geometry.Sphere;
-import com.sun.j3d.utils.picking.PickTool;
-import com.sun.j3d.utils.universe.ViewingPlatform;
-
+import org.jogamp.java3d.Appearance;
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Font3D;
+import org.jogamp.java3d.FontExtrusion;
+import org.jogamp.java3d.Geometry;
+import org.jogamp.java3d.Group;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.Text3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.utils.geometry.Cone;
+import org.jogamp.java3d.utils.geometry.Cylinder;
+import org.jogamp.java3d.utils.geometry.Sphere;
+import org.jogamp.java3d.utils.picking.PickTool;
+import org.jogamp.java3d.utils.universe.ViewingPlatform;
+import org.jogamp.vecmath.AxisAngle4f;
+import org.jogamp.vecmath.Color3f;
+import org.jogamp.vecmath.Matrix3d;
+import org.jogamp.vecmath.Vector3d;
 import static org.apache.commons.math3.util.FastMath.PI;
 
 import ffx.ui.behaviors.MouseBehaviorCallback;
@@ -87,8 +85,8 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
      * <p>
      * Constructor for GraphicsAxis.</p>
      *
-     * @param viewingPlatform a {@link com.sun.j3d.utils.universe.ViewingPlatform} object.
-     * @param bounds          a {@link javax.media.j3d.Bounds} object.
+     * @param viewingPlatform a {@link org.jogamp.java3d.utils.universe.ViewingPlatform} object.
+     * @param bounds          a {@link org.jogamp.java3d.Bounds} object.
      */
     GraphicsAxis(ViewingPlatform viewingPlatform, Bounds bounds) {
         this.viewingPlatform = viewingPlatform;

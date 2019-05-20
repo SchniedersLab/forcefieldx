@@ -37,27 +37,26 @@
 //******************************************************************************
 package ffx.ui;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Node;
-import javax.media.j3d.SceneGraphPath;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-import javax.media.j3d.WakeupOnBehaviorPost;
-import javax.media.j3d.WakeupOr;
-import javax.vecmath.Point3d;
-
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
-import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.picking.PickIntersection;
-import com.sun.j3d.utils.picking.PickResult;
-import com.sun.j3d.utils.universe.SimpleUniverse;
+import org.jogamp.java3d.Behavior;
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Node;
+import org.jogamp.java3d.SceneGraphPath;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnAWTEvent;
+import org.jogamp.java3d.WakeupOnBehaviorPost;
+import org.jogamp.java3d.WakeupOr;
+import org.jogamp.java3d.utils.picking.PickCanvas;
+import org.jogamp.java3d.utils.picking.PickIntersection;
+import org.jogamp.java3d.utils.picking.PickResult;
+import org.jogamp.java3d.utils.universe.SimpleUniverse;
+import org.jogamp.vecmath.Point3d;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -122,10 +121,10 @@ public class GraphicsEvents extends Behavior {
      * @param mainPanel      a {@link ffx.ui.MainPanel} object.
      * @param graphicsCanvas a {@link ffx.ui.GraphicsCanvas} object.
      * @param graphicsAxis   a {@link ffx.ui.GraphicsAxis} object.
-     * @param simpleUniverse a {@link com.sun.j3d.utils.universe.SimpleUniverse} object.
-     * @param bounds         a {@link javax.media.j3d.Bounds} object.
-     * @param root           a {@link javax.media.j3d.BranchGroup} object.
-     * @param transformGroup a {@link javax.media.j3d.TransformGroup} object.
+     * @param simpleUniverse a {@link org.jogamp.java3d.utils.universe.SimpleUniverse} object.
+     * @param bounds         a {@link org.jogamp.java3d.Bounds} object.
+     * @param root           a {@link org.jogamp.java3d.BranchGroup} object.
+     * @param transformGroup a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public GraphicsEvents(MainPanel mainPanel, GraphicsCanvas graphicsCanvas, GraphicsAxis graphicsAxis,
                           SimpleUniverse simpleUniverse, Bounds bounds, BranchGroup root, TransformGroup transformGroup) {

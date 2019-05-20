@@ -37,19 +37,18 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Geometry;
-import javax.media.j3d.LineArray;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.vecmath.AxisAngle4d;
-import javax.vecmath.Vector3d;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Geometry;
+import org.jogamp.java3d.LineArray;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.vecmath.AxisAngle4d;
+import org.jogamp.vecmath.Vector3d;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 
@@ -227,7 +226,7 @@ public class Bond extends BondedTerm {
      * <p>
      * setWire</p>
      *
-     * @param l a {@link javax.media.j3d.LineArray} object.
+     * @param l a {@link org.jogamp.java3d.LineArray} object.
      * @param i a int.
      */
     public void setWire(LineArray l, int i) {
@@ -659,7 +658,7 @@ public class Bond extends BondedTerm {
      * <p>
      * setBondTransform3d</p>
      *
-     * @param t3d    a {@link javax.media.j3d.Transform3D} object.
+     * @param t3d    a {@link org.jogamp.java3d.Transform3D} object.
      * @param pos    an array of double.
      * @param orient an array of double.
      * @param len    a double.

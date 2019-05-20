@@ -37,16 +37,16 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-import javax.media.j3d.WakeupOnBehaviorPost;
-import javax.media.j3d.WakeupOr;
-
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+
+import org.jogamp.java3d.Behavior;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnAWTEvent;
+import org.jogamp.java3d.WakeupOnBehaviorPost;
+import org.jogamp.java3d.WakeupOr;
 
 /**
  * The MouseBehavior class is the Base class for all mouse manipulators.
@@ -100,7 +100,7 @@ public abstract class MouseBehavior extends Behavior {
      * Constructor for MouseBehavior.</p>
      *
      * @param format a int.
-     * @param VPTG   a {@link javax.media.j3d.TransformGroup} object.
+     * @param VPTG   a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public MouseBehavior(int format, TransformGroup VPTG) {
         super();
@@ -117,8 +117,8 @@ public abstract class MouseBehavior extends Behavior {
      * Constructor for MouseBehavior.</p>
      *
      * @param format a int.
-     * @param VPTG   a {@link javax.media.j3d.TransformGroup} object.
-     * @param b      a {@link javax.media.j3d.Behavior} object.
+     * @param VPTG   a {@link org.jogamp.java3d.TransformGroup} object.
+     * @param b      a {@link org.jogamp.java3d.Behavior} object.
      * @param i      a int.
      */
     public MouseBehavior(int format, TransformGroup VPTG, Behavior b, int i) {
@@ -181,7 +181,7 @@ public abstract class MouseBehavior extends Behavior {
      * <p>
      * Setter for the field <code>transformGroup</code>.</p>
      *
-     * @param t a {@link javax.media.j3d.TransformGroup} object.
+     * @param t a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public void setTransformGroup(TransformGroup t) {
         transformGroup = t;

@@ -37,17 +37,17 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-import javax.vecmath.Matrix4d;
-import javax.vecmath.Vector3d;
-import javax.vecmath.Vector3f;
-
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnAWTEvent;
+import org.jogamp.vecmath.Matrix4d;
+import org.jogamp.vecmath.Vector3d;
+import org.jogamp.vecmath.Vector3f;
 
 /**
  * The MouseOrbit class implements a mouse orbit behavior.
@@ -68,7 +68,7 @@ public class MouseOrbit extends MouseBehavior {
      * Constructor for MouseOrbit.</p>
      *
      * @param flags a int.
-     * @param VPTG  a {@link javax.media.j3d.TransformGroup} object.
+     * @param VPTG  a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public MouseOrbit(int flags, TransformGroup VPTG) {
         super(flags, VPTG);
@@ -266,8 +266,8 @@ public class MouseOrbit extends MouseBehavior {
      * <p>
      * setTransformGroups</p>
      *
-     * @param tg   a {@link javax.media.j3d.TransformGroup} object.
-     * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+     * @param tg   a {@link org.jogamp.java3d.TransformGroup} object.
+     * @param VPTG a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public void setTransformGroups(TransformGroup tg, TransformGroup VPTG) {
         super.ViewerTG = VPTG;
@@ -297,7 +297,7 @@ public class MouseOrbit extends MouseBehavior {
      * <p>
      * transformChanged</p>
      *
-     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
      */
     public void transformChanged(Transform3D transform) {
     }

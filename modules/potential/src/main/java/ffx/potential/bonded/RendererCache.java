@@ -37,38 +37,37 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.Appearance;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.ColoringAttributes;
-import javax.media.j3d.Geometry;
-import javax.media.j3d.GeometryArray;
-import javax.media.j3d.LineAttributes;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
-import javax.media.j3d.PointAttributes;
-import javax.media.j3d.PolygonAttributes;
-import javax.media.j3d.RenderingAttributes;
-import javax.media.j3d.ShaderAppearance;
-import javax.media.j3d.ShaderProgram;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.TransparencyAttributes;
-import javax.vecmath.Color3f;
-import javax.vecmath.Point2d;
-import javax.vecmath.Point3d;
-import javax.vecmath.Vector3d;
-
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
-import com.sun.j3d.utils.geometry.Cone;
-import com.sun.j3d.utils.geometry.Cylinder;
-import com.sun.j3d.utils.geometry.Sphere;
+import org.jogamp.java3d.Appearance;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.ColoringAttributes;
+import org.jogamp.java3d.Geometry;
+import org.jogamp.java3d.GeometryArray;
+import org.jogamp.java3d.LineAttributes;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Node;
+import org.jogamp.java3d.PointAttributes;
+import org.jogamp.java3d.PolygonAttributes;
+import org.jogamp.java3d.RenderingAttributes;
+import org.jogamp.java3d.ShaderAppearance;
+import org.jogamp.java3d.ShaderProgram;
+import org.jogamp.java3d.Shape3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.TransparencyAttributes;
+import org.jogamp.java3d.utils.geometry.Cone;
+import org.jogamp.java3d.utils.geometry.Cylinder;
+import org.jogamp.java3d.utils.geometry.Sphere;
+import org.jogamp.vecmath.Color3f;
+import org.jogamp.vecmath.Point2d;
+import org.jogamp.vecmath.Point3d;
+import org.jogamp.vecmath.Vector3d;
 
 /**
  * The RendererCache class defines constants related to rendering modes and
@@ -193,10 +192,10 @@ public class RendererCache {
      * <p>
      * appearanceFactory</p>
      *
-     * @param col         a {@link javax.vecmath.Color3f} object.
+     * @param col         a {@link org.jogamp.vecmath.Color3f} object.
      * @param polygonType a {@link ffx.potential.bonded.RendererCache.ViewModel}
      *                    object.
-     * @return a {@link javax.media.j3d.Appearance} object.
+     * @return a {@link org.jogamp.java3d.Appearance} object.
      */
     static Appearance appearanceFactory(Color3f col, ViewModel polygonType) {
         if (col == null) {
@@ -220,9 +219,9 @@ public class RendererCache {
      * <p>
      * coneFactory</p>
      *
-     * @param ap  a {@link javax.media.j3d.Appearance} object.
+     * @param ap  a {@link org.jogamp.java3d.Appearance} object.
      * @param res a int.
-     * @return a {@link javax.media.j3d.Shape3D} object.
+     * @return a {@link org.jogamp.java3d.Shape3D} object.
      */
     protected static Shape3D coneFactory(Appearance ap, int res) {
         if (res > 3) {
@@ -244,7 +243,7 @@ public class RendererCache {
      * getPolarGeom</p>
      *
      * @param res a int.
-     * @return a {@link javax.media.j3d.Geometry} object.
+     * @return a {@link org.jogamp.java3d.Geometry} object.
      */
     protected static Geometry getPolarGeom(int res) {
         return getSphereGeom(res);
@@ -257,7 +256,7 @@ public class RendererCache {
      * @param a1  a {@link ffx.potential.bonded.Atom} object.
      * @param a2  a {@link ffx.potential.bonded.Atom} object.
      * @param div a int.
-     * @return a {@link javax.media.j3d.BranchGroup} object.
+     * @return a {@link org.jogamp.java3d.BranchGroup} object.
      */
     static BranchGroup doubleCylinderFactory(Atom a1, Atom a2, int div) {
         BranchGroup branchGroup;
@@ -300,7 +299,7 @@ public class RendererCache {
      * @param a    a {@link ffx.potential.bonded.Atom} object.
      * @param mode a {@link ffx.potential.bonded.RendererCache.ColorModel}
      *             object.
-     * @return a {@link javax.vecmath.Color3f} object.
+     * @return a {@link org.jogamp.vecmath.Color3f} object.
      */
     static Color3f getColor(Atom a, ColorModel mode) {
         switch (mode) {
@@ -351,7 +350,7 @@ public class RendererCache {
      *
      * @param num a int.
      * @param res a int.
-     * @return a {@link javax.media.j3d.Geometry} object.
+     * @return a {@link org.jogamp.java3d.Geometry} object.
      */
     static Geometry getCylinderGeom(int num, int res) {
         if (res < 0) {
@@ -370,10 +369,10 @@ public class RendererCache {
      * <p>
      * getScreenCoordinate</p>
      *
-     * @param canvas  a {@link javax.media.j3d.Canvas3D} object.
-     * @param node    a {@link javax.media.j3d.Node} object.
-     * @param point3d a {@link javax.vecmath.Point3d} object.
-     * @param point   a {@link javax.vecmath.Point2d} object.
+     * @param canvas  a {@link org.jogamp.java3d.Canvas3D} object.
+     * @param node    a {@link org.jogamp.java3d.Node} object.
+     * @param point3d a {@link org.jogamp.vecmath.Point3d} object.
+     * @param point   a {@link org.jogamp.vecmath.Point2d} object.
      */
     static void getScreenCoordinate(Canvas3D canvas, Node node, Point3d point3d, final Point2d point) {
         if (point == null) {
@@ -402,7 +401,7 @@ public class RendererCache {
      * Getter for the field <code>sphereGeom</code>.</p>
      *
      * @param res a int.
-     * @return a {@link javax.media.j3d.Geometry} object.
+     * @return a {@link org.jogamp.java3d.Geometry} object.
      */
     static Geometry getSphereGeom(int res) {
         if (res < 0) {
@@ -421,8 +420,8 @@ public class RendererCache {
      * <p>
      * materialFactory</p>
      *
-     * @param col a {@link javax.vecmath.Color3f} object.
-     * @return a {@link javax.media.j3d.Material} object.
+     * @param col a {@link org.jogamp.vecmath.Color3f} object.
+     * @return a {@link org.jogamp.java3d.Material} object.
      */
     static Material materialFactory(Color3f col) {
         if (col == null) {
@@ -441,7 +440,7 @@ public class RendererCache {
      * <p>
      * poolDoubleCylinder</p>
      *
-     * @param branchGroup a {@link javax.media.j3d.BranchGroup} object.
+     * @param branchGroup a {@link org.jogamp.java3d.BranchGroup} object.
      */
     static void poolDoubleCylinder(BranchGroup branchGroup) {
         if (branchGroup != null) {
@@ -453,7 +452,7 @@ public class RendererCache {
      * <p>
      * poolSphere</p>
      *
-     * @param tg a {@link javax.media.j3d.BranchGroup} object.
+     * @param tg a {@link org.jogamp.java3d.BranchGroup} object.
      */
     static void poolSphere(BranchGroup tg) {
         if (tg != null) {
@@ -465,7 +464,7 @@ public class RendererCache {
      * <p>
      * poolTransform3D</p>
      *
-     * @param transform3D a {@link javax.media.j3d.Transform3D} object.
+     * @param transform3D a {@link org.jogamp.java3d.Transform3D} object.
      */
     static void poolTransform3D(Transform3D transform3D) {
         if (transform3D != null) {
@@ -477,10 +476,10 @@ public class RendererCache {
      * <p>
      * sphereFactory</p>
      *
-     * @param ap          a {@link javax.media.j3d.Appearance} object.
+     * @param ap          a {@link org.jogamp.java3d.Appearance} object.
      * @param div         a int.
-     * @param transform3D a {@link javax.media.j3d.Transform3D} object.
-     * @return a {@link javax.media.j3d.BranchGroup} object.
+     * @param transform3D a {@link org.jogamp.java3d.Transform3D} object.
+     * @return a {@link org.jogamp.java3d.BranchGroup} object.
      */
     static BranchGroup sphereFactory(Appearance ap, int div, Transform3D transform3D) {
         BranchGroup branchGroup;
@@ -511,7 +510,7 @@ public class RendererCache {
      * toAtomColor</p>
      *
      * @param s a {@link java.lang.String} object.
-     * @return a {@link javax.vecmath.Color3f} object.
+     * @return a {@link org.jogamp.vecmath.Color3f} object.
      */
     static Color3f toAtomColor(String s) {
         String c = s.toLowerCase();
@@ -540,7 +539,7 @@ public class RendererCache {
      * <p>
      * transform3DFactory</p>
      *
-     * @return a {@link javax.media.j3d.Transform3D} object.
+     * @return a {@link org.jogamp.java3d.Transform3D} object.
      */
     static Transform3D transform3DFactory() {
         Transform3D transform3D;
@@ -558,9 +557,9 @@ public class RendererCache {
      * <p>
      * transform3DFactory</p>
      *
-     * @param position a {@link javax.vecmath.Vector3d} object.
+     * @param position a {@link org.jogamp.vecmath.Vector3d} object.
      * @param scale    a double.
-     * @return a {@link javax.media.j3d.Transform3D} object.
+     * @return a {@link org.jogamp.java3d.Transform3D} object.
      */
     static Transform3D transform3DFactory(Vector3d position, double scale) {
         Transform3D transform3D;
@@ -584,7 +583,7 @@ public class RendererCache {
      *
      * @param num a int.
      * @param res a int.
-     * @return a {@link javax.media.j3d.Geometry} object.
+     * @return a {@link org.jogamp.java3d.Geometry} object.
      */
     private static Geometry getConeGeom(int num, int res) {
         if (res > 3) {
@@ -648,9 +647,9 @@ public class RendererCache {
     /**
      * This method creates a Cylinder
      *
-     * @param ap  a {@link javax.media.j3d.Appearance} object.
+     * @param ap  a {@link org.jogamp.java3d.Appearance} object.
      * @param res a int.
-     * @return a {@link javax.media.j3d.Shape3D} object.
+     * @return a {@link org.jogamp.java3d.Shape3D} object.
      */
     private static Shape3D createCylinder(Appearance ap, int res) {
         if (res < 0) {
