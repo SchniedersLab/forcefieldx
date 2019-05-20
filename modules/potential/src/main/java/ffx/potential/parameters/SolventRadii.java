@@ -128,8 +128,12 @@ public class SolventRadii {
      * Lithium Ion Li+
      * Wang Thesis: -116.91 kca/mol
      * <p>
-     *     
      * AMOEBA 2009 Class 6
+     * <p>
+     * Generalized Kirkwood   -119.29504846
+     * Cavitation                3.34060579
+     * Dispersion               -0.93488991
+     * Solvation              -116.88933258
      */
     private static final double GK_AMOEBA_LITHIUM = 2.748;
     /**
@@ -138,6 +142,11 @@ public class SolventRadii {
      * Grossfield et al: -91.8 kcal/mol
      * <p>
      * AMOEBA 2009 Class 7
+     * <p>
+     * Generalized Kirkwood    -94.17489031
+     * Cavitation                4.64284122
+     * Dispersion               -2.05069286
+     * Solvation               -91.58274195
      */
     private static final double GK_AMOEBA_SODIUM = 3.481;
     /**
@@ -146,6 +155,11 @@ public class SolventRadii {
      * Grossfield et al: -74.5 kca/mol
      * <p>
      * AMOEBA 2009 Class 8
+     * <p>
+     * Generalized Kirkwood    -77.49947829
+     * Cavitation                6.17608374
+     * Dispersion               -3.06353750
+     * Solvation               -74.38693205
      */
     private static final double GK_AMOEBA_POTASSIUM = 4.230;
     /**
@@ -153,6 +167,11 @@ public class SolventRadii {
      * Wang Thesis:  -69.05 kcal/mol
      * <p>
      * AMOEBA 2009 Class 9
+     * <p>
+     * Generalized Kirkwood    -72.20766370
+     * Cavitation                6.70040723
+     * Dispersion               -3.53557505
+     * Solvation               -69.04283152
      */
     private static final double GK_AMOEBA_RUBIDIUM = 4.540;
     /**
@@ -160,6 +179,11 @@ public class SolventRadii {
      * Wang Thesis:  -63.66 kcal/mol
      * <p>
      * AMOEBA 2009 Class 10
+     * <p>
+     * Generalized Kirkwood    -66.79356014
+     * Cavitation                7.30534462
+     * Dispersion               -4.16432764
+     * Solvation               -63.65254316
      */
     private static final double GK_AMOEBA_CESIUM = 4.908;
     /**
@@ -168,6 +192,11 @@ public class SolventRadii {
      * Expt: −435.4 kcal/mol
      * <p>
      * AMOEBA 2009 Class 11
+     * <p>
+     * Generalized Kirkwood   -434.20237507
+     * Cavitation                4.61414342
+     * Dispersion               -2.08752589
+     * Solvation              -431.67575754
      */
     private static final double GK_AMOEBA_MAGNESIUM = 3.020;
     /**
@@ -176,21 +205,36 @@ public class SolventRadii {
      * Expt: −357.2 kcal/mol
      * <p>
      * AMOEBA 2009 Class 12
+     * <p>
+     * Generalized Kirkwood   -357.98284813
+     * Cavitation                6.06086494
+     * Dispersion               -2.98489939
+     * Solvation              -354.90688258
      */
-    private static final double GK_AMOEBA_CALCIUM = 3.664;
+    private static final double GK_AMOEBA_CALCIUM = 3.663;
     /**
      * Zinc Ion Zn+2
      * Ren et al. 2011: −458.9
      * Expt: −467.7 kcal/mol
      * <p>
      * AMOEBA 2009 Class 13
+     * <p>
+     * Generalized Kirkwood   -461.55972288
+     * Cavitation                4.13533119
+     * Dispersion               -1.73074989
+     * Solvation              -459.15514158
      */
-    private static final double GK_AMOEBA_ZINC = 2.844;
+    private static final double GK_AMOEBA_ZINC = 2.841;
     /**
      * Fluoride Ion F-
      * Wang Thesis: -116.71 kcal/mol
      * <p>
      * AMOEBA 2009 Class 14
+     * <p>
+     * Generalized Kirkwood   -119.90592289
+     * Cavitation                5.61431867
+     * Dispersion               -2.41793122
+     * Solvation              -116.70953544
      */
     private static final double GK_AMOEBA_FLUORIDE = 2.734;
     /**
@@ -199,6 +243,11 @@ public class SolventRadii {
      * Grossfield et al: -86.5 kca/mol
      * <p>
      * AMOEBA 2009 Class 15
+     * <p>
+     * Generalized Kirkwood    -89.54460344
+     * Cavitation                7.25359658
+     * Dispersion               -3.86494289
+     * Solvation               -86.15594975
      */
     private static final double GK_AMOEBA_CHLORIDE = 3.661;
     /**
@@ -206,6 +255,11 @@ public class SolventRadii {
      * Wang Thesis:  -79.66 kca/mol
      * <p>
      * AMOEBA 2009 Class 16
+     * <p>
+     * Generalized Kirkwood    -82.80444384
+     * Cavitation                7.78219576
+     * Dispersion               -4.64697404
+     * Solvation               -79.66922212
      */
     private static final double GK_AMOEBA_BROMIDE = 3.959;
     /**
@@ -213,6 +267,11 @@ public class SolventRadii {
      * Wang Thesis:  -71.25 kca/mol
      * <p>
      * AMOEBA 2009 Class 17
+     * <p>
+     * Generalized Kirkwood    -74.05077777
+     * Cavitation                8.59369359
+     * Dispersion               -5.79174929
+     * Solvation               -71.24883347
      */
     private static final double GK_AMOEBA_IODIDE = 4.427;
     /**

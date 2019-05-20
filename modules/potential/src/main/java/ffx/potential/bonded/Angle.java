@@ -47,7 +47,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
-import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.math.VectorMath.cross;
@@ -351,12 +351,7 @@ public class Angle extends BondedTerm {
      */
     @Override
     public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray gradX,
-                         AtomicDoubleArray gradY,
-                         AtomicDoubleArray gradZ,
-                         AtomicDoubleArray lambdaGradX,
-                         AtomicDoubleArray lambdaGradY,
-                         AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
 
         // Vector from Atom 1 to Atom 0.
         double[] v10 = new double[3];
@@ -418,18 +413,9 @@ public class Angle extends BondedTerm {
                                 scalar(g2, termc, g2);
                                 sum(g0, g2, g1);
                                 scalar(g1, -1.0, g1);
-                                int i0 = atoms[0].getIndex() - 1;
-                                gradX.add(threadID, i0, g0[0]);
-                                gradY.add(threadID, i0, g0[1]);
-                                gradZ.add(threadID, i0, g0[2]);
-                                int i1 = atoms[1].getIndex() - 1;
-                                gradX.add(threadID, i1, g1[0]);
-                                gradY.add(threadID, i1, g1[1]);
-                                gradZ.add(threadID, i1, g1[2]);
-                                int i2 = atoms[2].getIndex() - 1;
-                                gradX.add(threadID, i2, g2[0]);
-                                gradY.add(threadID, i2, g2[1]);
-                                gradZ.add(threadID, i2, g2[2]);
+                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
+                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
                             }
                             value = dv;
                         }
@@ -520,22 +506,10 @@ public class Angle extends BondedTerm {
                                 sum(g0, g1, g3);
                                 sum(g2, g3, g3);
                                 scalar(g3, -1.0, g3);
-                                int i0 = atoms[0].getIndex() - 1;
-                                gradX.add(threadID, i0, g0[0]);
-                                gradY.add(threadID, i0, g0[1]);
-                                gradZ.add(threadID, i0, g0[2]);
-                                int i1 = atoms[1].getIndex() - 1;
-                                gradX.add(threadID, i1, g1[0]);
-                                gradY.add(threadID, i1, g1[1]);
-                                gradZ.add(threadID, i1, g1[2]);
-                                int i2 = atoms[2].getIndex() - 1;
-                                gradX.add(threadID, i2, g2[0]);
-                                gradY.add(threadID, i2, g2[1]);
-                                gradZ.add(threadID, i2, g2[2]);
-                                int i3 = atom4.getIndex() - 1;
-                                gradX.add(threadID, i3, g3[0]);
-                                gradY.add(threadID, i3, g3[1]);
-                                gradZ.add(threadID, i3, g3[2]);
+                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
+                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
+                                grad.add(threadID, atom4.getIndex() - 1, g3[0], g3[1], g3[2]);
                             }
                             value = dv;
                         }
@@ -576,18 +550,9 @@ public class Angle extends BondedTerm {
                                 scalar(g2, termc, g2);
                                 sum(g0, g2, g1);
                                 scalar(g1, -1.0, g1);
-                                int i0 = atoms[0].getIndex() - 1;
-                                gradX.add(threadID, i0, g0[0]);
-                                gradY.add(threadID, i0, g0[1]);
-                                gradZ.add(threadID, i0, g0[2]);
-                                int i1 = atoms[1].getIndex() - 1;
-                                gradX.add(threadID, i1, g1[0]);
-                                gradY.add(threadID, i1, g1[1]);
-                                gradZ.add(threadID, i1, g1[2]);
-                                int i2 = atoms[2].getIndex() - 1;
-                                gradX.add(threadID, i2, g2[0]);
-                                gradY.add(threadID, i2, g2[1]);
-                                gradZ.add(threadID, i2, g2[2]);
+                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
+                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
                             }
                             value = dv;
                         }
@@ -676,22 +641,10 @@ public class Angle extends BondedTerm {
                                 sum(g0, g1, g3);
                                 sum(g2, g3, g3);
                                 scalar(g3, -1.0, g3);
-                                int i0 = atoms[0].getIndex() - 1;
-                                gradX.add(threadID, i0, g0[0]);
-                                gradY.add(threadID, i0, g0[1]);
-                                gradZ.add(threadID, i0, g0[2]);
-                                int i1 = atoms[1].getIndex() - 1;
-                                gradX.add(threadID, i1, g1[0]);
-                                gradY.add(threadID, i1, g1[1]);
-                                gradZ.add(threadID, i1, g1[2]);
-                                int i2 = atoms[2].getIndex() - 1;
-                                gradX.add(threadID, i2, g2[0]);
-                                gradY.add(threadID, i2, g2[1]);
-                                gradZ.add(threadID, i2, g2[2]);
-                                int i3 = atom4.getIndex() - 1;
-                                gradX.add(threadID, i3, g3[0]);
-                                gradY.add(threadID, i3, g3[1]);
-                                gradZ.add(threadID, i3, g3[2]);
+                                grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+                                grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
+                                grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
+                                grad.add(threadID, atom4.getIndex() - 1, g3[0], g3[1], g3[2]);
                             }
                             value = dv;
                         }

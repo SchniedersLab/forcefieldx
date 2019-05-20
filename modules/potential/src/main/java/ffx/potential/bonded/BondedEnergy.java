@@ -37,7 +37,7 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 
 /**
  * The BondedEnergy interface.
@@ -61,7 +61,7 @@ public interface BondedEnergy {
      * @return a double.
      */
     default double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
+        return energy(gradient, 0, null);
     }
 
     /**
@@ -69,37 +69,22 @@ public interface BondedEnergy {
      *
      * @param gradient a boolean.
      * @param threadID a int.
-     * @param gradX    a {@link AtomicDoubleArray} object.
-     * @param gradY    a {@link AtomicDoubleArray} object.
-     * @param gradZ    a {@link AtomicDoubleArray} object.
+     * @param grad     a {@link AtomicDoubleArray3D} object.
      * @return a double.
      */
-    default double energy(boolean gradient, int threadID,
-                          AtomicDoubleArray gradX,
-                          AtomicDoubleArray gradY,
-                          AtomicDoubleArray gradZ) {
-        return energy(gradient, threadID, gradX, gradY, gradZ, null, null, null);
+    default double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad) {
+        return energy(gradient, threadID, grad, null);
     }
 
     /**
      * <p>energy.</p>
      *
-     * @param gradient    a boolean.
-     * @param threadID    a int.
-     * @param gradX       a {@link AtomicDoubleArray} object.
-     * @param gradY       a {@link AtomicDoubleArray} object.
-     * @param gradZ       a {@link AtomicDoubleArray} object.
-     * @param lambdaGradX a {@link AtomicDoubleArray} object.
-     * @param lambdaGradY a {@link AtomicDoubleArray} object.
-     * @param lambdaGradZ a {@link AtomicDoubleArray} object.
+     * @param gradient   a boolean.
+     * @param threadID   a int.
+     * @param grad       a {@link AtomicDoubleArray3D} object.
+     * @param lambdaGrad a {@link AtomicDoubleArray3D} object.
      * @return a double.
      */
-    double energy(boolean gradient, int threadID,
-                  AtomicDoubleArray gradX,
-                  AtomicDoubleArray gradY,
-                  AtomicDoubleArray gradZ,
-                  AtomicDoubleArray lambdaGradX,
-                  AtomicDoubleArray lambdaGradY,
-                  AtomicDoubleArray lambdaGradZ);
+    double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad);
 
 }

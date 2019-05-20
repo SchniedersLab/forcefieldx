@@ -45,7 +45,7 @@ import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
-import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ImproperTorsionType;
 import static ffx.numerics.math.VectorMath.cross;
@@ -251,12 +251,7 @@ public class ImproperTorsion extends BondedTerm {
      */
     @Override
     public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray gradX,
-                         AtomicDoubleArray gradY,
-                         AtomicDoubleArray gradZ,
-                         AtomicDoubleArray lambdaGradX,
-                         AtomicDoubleArray lambdaGradY,
-                         AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
         energy = 0.0;
         value = 0.0;
         double[] a0 = new double[3];
@@ -346,23 +341,16 @@ public class ImproperTorsion extends BondedTerm {
                 scalar(g2, -1.0, g2);
                 sum(g2a, g2, g2);
                 cross(dedu, v21, g3);
-                // Accumulate derivatives.
+                // Atom indices
                 int i0 = atoms[0].getIndex() - 1;
-                gradX.add(threadID, i0, g0[0]);
-                gradY.add(threadID, i0, g0[1]);
-                gradZ.add(threadID, i0, g0[2]);
                 int i1 = atoms[1].getIndex() - 1;
-                gradX.add(threadID, i1, g1[0]);
-                gradY.add(threadID, i1, g1[1]);
-                gradZ.add(threadID, i1, g1[2]);
                 int i2 = atoms[2].getIndex() - 1;
-                gradX.add(threadID, i2, g2[0]);
-                gradY.add(threadID, i2, g2[1]);
-                gradZ.add(threadID, i2, g2[2]);
                 int i3 = atoms[3].getIndex() - 1;
-                gradX.add(threadID, i3, g3[0]);
-                gradY.add(threadID, i3, g3[1]);
-                gradZ.add(threadID, i3, g3[2]);
+                // Accumulate derivatives.
+                grad.add(threadID, i0, g0[0], g0[1], g0[2]);
+                grad.add(threadID, i1, g1[0], g1[1], g1[2]);
+                grad.add(threadID, i2, g2[0], g2[1], g2[2]);
+                grad.add(threadID, i3, g3[0], g3[1], g3[2]);
             }
         }
 
