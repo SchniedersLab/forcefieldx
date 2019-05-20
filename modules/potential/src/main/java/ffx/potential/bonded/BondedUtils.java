@@ -512,7 +512,7 @@ public class BondedUtils {
             StringBuilder sb = new StringBuilder();
             sb.append(format(" Atom %s", atom.toString()));
             if (residue != null) {
-                sb.append(format("\n of residue %s", residue.toString()));
+                sb.append(format("\n of residue %c-%s", residue.getChainID(), residue.toString()));
             }
             sb.append("\n could not be assigned an atom type.\n");
             return sb.toString();
