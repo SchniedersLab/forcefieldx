@@ -128,6 +128,7 @@ public class SolventRadii {
      * Lithium Ion Li+
      * Wang Thesis: -116.91 kca/mol
      * <p>
+     *     
      * AMOEBA 2009 Class 6
      */
     private static final double GK_AMOEBA_LITHIUM = 2.748;

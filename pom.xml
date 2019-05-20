@@ -966,10 +966,19 @@
             <plugin>
                 <artifactId>maven-jxr-plugin</artifactId>
                 <version>${jxr.version}</version>
-                <configuration>
+                <reportSets>
+                    <reportSet>
+                        <id>aggregate</id>
+                        <reports>
+                            <report>aggregate</report>
+                            <report>test-aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+                <!-- configuration>
                     <goal>aggregate</goal>
                     <goal>test-aggregate</goal>
-                </configuration>
+                </configuration -->
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-report-plugin</artifactId>
@@ -1128,9 +1137,9 @@
         <site.version>3.7.1</site.version>
         <surefire.version>3.0.0-M3</surefire.version>
         <!-- Maven Packaging Tools Plugin Versions -->
-        <jar.version>3.1.1</jar.version>
+        <jar.version>3.1.2</jar.version>
         <shade.version>3.2.1</shade.version>
-        <source.version>3.0.1</source.version>
+        <source.version>3.1.0</source.version>
         <!-- Maven Reporting Plugin Versions -->
         <changes.version>2.12.1</changes.version>
         <checkstyle.version>3.0.0</checkstyle.version>

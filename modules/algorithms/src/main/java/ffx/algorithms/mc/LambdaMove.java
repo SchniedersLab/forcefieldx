@@ -75,7 +75,7 @@ public class LambdaMove implements MCMove {
     /**
      * Starting lambda value.
      */
-    private double lambdaStart = 0.0;
+    // private double lambdaStart = 0.0;
 
     /**
      * <p>Constructor for LambdaMove.</p>
@@ -108,16 +108,6 @@ public class LambdaMove implements MCMove {
     }
 
     /**
-     *
-     * @param lambdaStart
-     */
-    public void setLambdaStart(double lambdaStart) {
-        if (lambdaStart > 0.0 && lambdaStart < 1.0) {
-            this.lambdaStart = lambdaStart;
-        }
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -131,8 +121,8 @@ public class LambdaMove implements MCMove {
         // Map values into the range 0.0 .. 1.0 using mirror boundary conditions.
         if (newLambda > 1.0) {
             newLambda = (2.0 - newLambda);
-        } else if (newLambda < lambdaStart) {
-            newLambda = lambdaStart + abs(lambdaStart - newLambda);
+        } else if (newLambda < 0.0) {
+            newLambda = abs(newLambda);
         }
 
         // Update the OSRW instance.
