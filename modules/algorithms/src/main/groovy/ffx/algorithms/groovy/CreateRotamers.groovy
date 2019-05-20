@@ -37,26 +37,21 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import java.util.stream.Collectors
-
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.algorithms.optimize.Minimize
 import ffx.algorithms.optimize.Minimize.MinimizationEngine
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
-import ffx.potential.bonded.Polymer
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.Rotamer
-import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.bonded.*
 import ffx.potential.bonded.RotamerLibrary.ProteinLibrary
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The CreateRotamers script creates a set of conformation dependent rotamers.
@@ -86,6 +81,9 @@ class CreateRotamers extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
+
+    public ForceFieldEnergy forceFieldEnergy = null
+    public ForceFieldEnergy secondForceFieldEnergy = null
 
     @Override
     CreateRotamers run() {
@@ -131,7 +129,7 @@ class CreateRotamers extends AlgorithmsScript {
 
         logger.info(String.format(" Number of residues: %d\n", residues.size()))
 
-        // Loop over Residues and set sidechain atoms to not be used.
+        // Loop over Residues and set side chain atoms to not be used.
         for (Residue residue : residues) {
             for (Atom atom : residue.getVariableAtoms()) {
                 atom.setUse(false)
@@ -165,12 +163,16 @@ class CreateRotamers extends AlgorithmsScript {
                 assert rotamers != null && rotamers.length > 1
 
                 // Configure "active" and "use" flags.
+                // .getVariableAtoms returns backbone atoms for
+                // nucleic acids, which is what we want
                 List<Atom> sideChainAtoms = residue.getVariableAtoms()
                 for (Atom atom : sideChainAtoms) {
                     atom.setActive(true)
                     atom.setUse(true)
                 }
 
+                // Define "all previously saved rotamers" arrayList to be used for RMSD comparison
+                ArrayList<MolecularAssembly> keptRotamers = new ArrayList<>()
                 // Loop over rotamers for this Residue.
                 for (int i = 0; i < rotamers.length; i++) {
                     Rotamer rotamer = rotamers[i]
@@ -191,20 +193,112 @@ class CreateRotamers extends AlgorithmsScript {
                         logger.info(" Skipping minimization of original-coordinates rotamer.")
                     }
 
-                    // Save out coordinates to a rotamer file.
-                    for (Atom atom : sideChainAtoms) {
-                        double x = atom.getX()
-                        double y = atom.getY()
-                        double z = atom.getZ()
-                        logger.info(String.format(" %s %16.8f %16.8f %16.8f", atom.toString(), x, y, z))
-                        StringBuilder atomLine = new StringBuilder("   ATOM:")
-                        atomLine.append(atom.getName()).append(":")
-                        atomLine.append(x).append(":")
-                        atomLine.append(y).append(":")
-                        atomLine.append(z).append("\n")
-                        bw.write(atomLine.toString())
+                    // Only save if the "new" rotamer isn't within 0.1 kcal/mol of any other rotamer
+                    // Update "all previously saved rotamers" arrayList
+                    if(i == 0){
+                        // Add 0th rotamer to the assemblies arrayList
+                        keptRotamers.add(activeAssembly)
+
+                        // Save out coordinates to a rotamer file.
+                        for (Atom atom : sideChainAtoms) {
+                            double x = atom.getX()
+                            double y = atom.getY()
+                            double z = atom.getZ()
+                            logger.info(String.format(" %s %16.8f %16.8f %16.8f", atom.toString(), x, y, z))
+                            StringBuilder atomLine = new StringBuilder("   ATOM:")
+                            atomLine.append(atom.getName()).append(":")
+                            atomLine.append(x).append(":")
+                            atomLine.append(y).append(":")
+                            atomLine.append(z).append("\n")
+                            bw.write(atomLine.toString())
+                        }
+                        bw.write("  ENDROT\n")
+                    } else{
+                        // For all but the 0th rotamer, do RMSD calculations to determine if the "new" rotamer
+                        // is within 0.1 kcal/mol of any other rotamer. Only save it if it's not.
+                        //MolecularAssembly newRotamer = activeAssembly
+                        println("Rotamer number: "+i)
+
+                        println("Number of rotamers in keptRotamers: "+keptRotamers.size())
+
+                        forceFieldEnergy = activeAssembly.getPotentialEnergy()
+                        Atom[] rotamerAtoms = activeAssembly.getAtomArray()
+                        println("rotamerAtoms: "+rotamerAtoms.length)
+                        //for (int atmcount = 0; atmcount < rotamerAtoms.length; atmcount++){
+                        //    print(rotamerAtoms[atmcount].name+":")
+                        //}
+                        println()
+                        int nVars = forceFieldEnergy.getNumberOfVariables()
+                        println("nVars is: "+nVars)
+                        double[] x1 = new double[nVars]
+                        forceFieldEnergy.getCoordinates(x1)
+
+                        double[] x2 = new double[nVars]
+                        double[] mass = new double[rotamerAtoms.length]
+                        //println("Mass array: "+mass.length)
+
+                        int nRotamerAtoms = rotamerAtoms.length
+                        for (int j = 0; j < nRotamerAtoms; j++) {
+                            mass[j] = rotamerAtoms[j].getMass()
+                        }
+
+                        // Indices of atoms used in alignment and RMSD calculations.
+//                        int[] usedIndices = atomIndexStream.toArray()
+//                        int nUsed = usedIndices.length
+//                        int nUsedVars = nUsed * 3
+//                        double[] massUsed = Arrays.stream(usedIndices).
+//                                mapToDouble({ int j -> rotamerAtoms[j].getAtomType().atomicWeight }).toArray()
+//                        double[] xUsed = new double[nUsedVars]
+//                        double[] x2Used = new double[nUsedVars]
+
+                        // Superpose.rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
+                        // Define empty array to store RMSDs and RMSD threshold value boolean
+                        boolean withinRange = false
+                        for (int k = 0; k < keptRotamers.size(); k++){
+                            secondForceFieldEnergy = keptRotamers[k].getPotentialEnergy()
+                            secondForceFieldEnergy.getCoordinates(x2)
+                            for(int xc1 = 0; xc1< x1.length;xc1++){
+                                print(x1[xc1]+":")
+                            }
+                            println()
+                            println()
+                            for(int xc = 0; xc < x2.length; xc++){
+                                print(x2[xc]+":")
+                            }
+                            println()
+                            double origRMSD = ffx.potential.utils.Superpose.rmsd(x1, x2, mass)
+                            println("RMSD: "+origRMSD)
+                            if(origRMSD <= 0.01){withinRange = true}
+                        }
+
+                        // If the new rotamer is within 0.1 kcal/mol of any previously kept rotamer
+                        // (i.e.: if any of the values in "rmsdValues" are 0.1 or less),
+                        // don't keep that rotamer.  Keep it otherwise
+                        if(withinRange){
+                            // Rotamer not written because it's too energetically similar to another rotamer in the set
+                            logger.info("Rotamer not kept")
+                        } else{
+                            // Save out coordinates to a rotamer file.
+                            for (Atom atom : sideChainAtoms) {
+                                double x = atom.getX()
+                                double y = atom.getY()
+                                double z = atom.getZ()
+                                logger.info(String.format(" %s %16.8f %16.8f %16.8f", atom.toString(), x, y, z))
+                                StringBuilder atomLine = new StringBuilder("   ATOM:")
+                                atomLine.append(atom.getName()).append(":")
+                                atomLine.append(x).append(":")
+                                atomLine.append(y).append(":")
+                                atomLine.append(z).append("\n")
+                                bw.write(atomLine.toString())
+                            }
+                            bw.write("  ENDROT\n")
+
+                            // Add it to keptRotamers list
+                            keptRotamers.add(activeAssembly)
+                        }
+
                     }
-                    bw.write("  ENDROT\n")
+                    // Original location of "Save out coordinates to a rotamer file" logic
                 }
 
                 // Set the Residue conformation back to rotamer 0.
