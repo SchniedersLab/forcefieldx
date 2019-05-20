@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Material;
-import javax.vecmath.Color3f;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
+
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Material;
+import org.jogamp.vecmath.Color3f;
 
 import ffx.numerics.math.VectorMath;
 import ffx.potential.parameters.ForceField;

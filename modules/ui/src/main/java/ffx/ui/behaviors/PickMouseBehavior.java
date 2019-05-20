@@ -37,20 +37,19 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-import javax.media.j3d.WakeupOr;
-
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
-import com.sun.j3d.utils.picking.PickCanvas;
+import org.jogamp.java3d.Behavior;
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnAWTEvent;
+import org.jogamp.java3d.WakeupOr;
+import org.jogamp.java3d.utils.picking.PickCanvas;
 
 /**
  * The PickMouseBehavior class is the base class for mouse picking behaviors.
@@ -78,9 +77,9 @@ public abstract class PickMouseBehavior extends Behavior {
      * <p>
      * Constructor for PickMouseBehavior.</p>
      *
-     * @param canvas a {@link javax.media.j3d.Canvas3D} object.
-     * @param root   a {@link javax.media.j3d.BranchGroup} object.
-     * @param bounds a {@link javax.media.j3d.Bounds} object.
+     * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
+     * @param root   a {@link org.jogamp.java3d.BranchGroup} object.
+     * @param bounds a {@link org.jogamp.java3d.Bounds} object.
      */
     public PickMouseBehavior(Canvas3D canvas, BranchGroup root, Bounds bounds) {
         super();

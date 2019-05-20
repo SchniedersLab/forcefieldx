@@ -37,9 +37,8 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import javax.vecmath.Point3d
-
 import org.apache.commons.io.FilenameUtils
+import org.jogamp.vecmath.Point3d
 
 import groovy.cli.picocli.CliBuilder
 

@@ -37,13 +37,12 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-
-import com.sun.j3d.utils.picking.PickResult;
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.utils.picking.PickResult;
 
 /**
  * The PickOrbitBehavior class implements a mouse orbit behavior.
@@ -61,10 +60,10 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * <p>
      * Constructor for PickOrbitBehavior.</p>
      *
-     * @param root     a {@link javax.media.j3d.BranchGroup} object.
-     * @param canvas   a {@link javax.media.j3d.Canvas3D} object.
-     * @param bounds   a {@link javax.media.j3d.Bounds} object.
-     * @param VPTG     a {@link javax.media.j3d.TransformGroup} object.
+     * @param root     a {@link org.jogamp.java3d.BranchGroup} object.
+     * @param canvas   a {@link org.jogamp.java3d.Canvas3D} object.
+     * @param bounds   a {@link org.jogamp.java3d.Bounds} object.
+     * @param VPTG     a {@link org.jogamp.java3d.TransformGroup} object.
      * @param pickMode a int.
      */
     public PickOrbitBehavior(BranchGroup root, Canvas3D canvas, Bounds bounds,
@@ -111,8 +110,8 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * <p>
      * setTransformGroups</p>
      *
-     * @param StarTG a {@link javax.media.j3d.TransformGroup} object.
-     * @param VPTG   a {@link javax.media.j3d.TransformGroup} object.
+     * @param StarTG a {@link org.jogamp.java3d.TransformGroup} object.
+     * @param VPTG   a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public void setTransformGroups(TransformGroup StarTG, TransformGroup VPTG) {
         orbit.setTransformGroups(StarTG, VPTG);

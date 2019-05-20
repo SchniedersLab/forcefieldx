@@ -37,15 +37,15 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.J3DGraphics2D;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
-import javax.vecmath.Color3f;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.J3DGraphics2D;
+import org.jogamp.java3d.Material;
+import org.jogamp.java3d.Node;
+import org.jogamp.vecmath.Color3f;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
@@ -67,9 +67,9 @@ public interface ROLS {
      * <p>
      * drawLabel</p>
      *
-     * @param graphics a {@link javax.media.j3d.Canvas3D} object.
-     * @param g2d      a {@link javax.media.j3d.J3DGraphics2D} object.
-     * @param node     a {@link javax.media.j3d.Node} object.
+     * @param graphics a {@link org.jogamp.java3d.Canvas3D} object.
+     * @param g2d      a {@link org.jogamp.java3d.J3DGraphics2D} object.
+     * @param node     a {@link org.jogamp.java3d.Node} object.
      */
     void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node);
 
@@ -127,8 +127,8 @@ public interface ROLS {
      * setColor</p>
      *
      * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
-     * @param color      a {@link javax.vecmath.Color3f} object.
-     * @param mat        a {@link javax.media.j3d.Material} object.
+     * @param color      a {@link org.jogamp.vecmath.Color3f} object.
+     * @param mat        a {@link org.jogamp.java3d.Material} object.
      */
     void setColor(ColorModel colorModel, Color3f color, Material mat);
 

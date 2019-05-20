@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.potential.nonbonded;
 
-import javax.vecmath.Point3d;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -47,6 +45,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+
+import org.jogamp.vecmath.Point3d;
 
 import ffx.potential.bonded.Atom;
 
@@ -74,7 +74,7 @@ public class Octree {
      * <p>Constructor for Octree.</p>
      *
      * @param depth      a int.
-     * @param corner     a {@link javax.vecmath.Point3d} object.
+     * @param corner     a {@link org.jogamp.vecmath.Point3d} object.
      * @param edgeLength a double.
      */
     public Octree(int depth, Point3d corner, double edgeLength) {
@@ -376,7 +376,7 @@ public class Octree {
     /**
      * <p>Getter for the field <code>corner</code>.</p>
      *
-     * @return a {@link javax.vecmath.Point3d} object.
+     * @return a {@link org.jogamp.vecmath.Point3d} object.
      */
     public Point3d getCorner() {
         return corner;

@@ -37,14 +37,14 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.TransformGroup;
+import org.jogamp.java3d.WakeupCriterion;
+import org.jogamp.java3d.WakeupOnAWTEvent;
 
 /**
  * The MouseProperties class is simple extension of MouseBehavior.
@@ -64,7 +64,7 @@ public class MouseProperties extends MouseBehavior {
      * Constructor for MouseProperties.</p>
      *
      * @param flags a int.
-     * @param VPTG  a {@link javax.media.j3d.TransformGroup} object.
+     * @param VPTG  a {@link org.jogamp.java3d.TransformGroup} object.
      */
     public MouseProperties(int flags, TransformGroup VPTG) {
         super(flags, VPTG);
@@ -193,7 +193,7 @@ public class MouseProperties extends MouseBehavior {
      * <p>
      * transformChanged</p>
      *
-     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     * @param transform a {@link org.jogamp.java3d.Transform3D} object.
      */
     public void transformChanged(Transform3D transform) {
     }

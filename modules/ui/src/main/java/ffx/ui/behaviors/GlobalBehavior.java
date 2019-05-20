@@ -37,12 +37,11 @@
 //******************************************************************************
 package ffx.ui.behaviors;
 
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Transform3D;
-import javax.vecmath.Matrix3d;
-import javax.vecmath.Vector3d;
-
-import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
+import org.jogamp.java3d.Canvas3D;
+import org.jogamp.java3d.Transform3D;
+import org.jogamp.java3d.utils.behaviors.vp.OrbitBehavior;
+import org.jogamp.vecmath.Matrix3d;
+import org.jogamp.vecmath.Vector3d;
 
 /**
  * The GlobalBehavior class allows mouse control over camera position, adding a
@@ -71,7 +70,7 @@ public class GlobalBehavior extends OrbitBehavior {
      * <p>
      * Constructor for GlobalBehavior.</p>
      *
-     * @param canvas a {@link javax.media.j3d.Canvas3D} object.
+     * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
      */
     public GlobalBehavior(Canvas3D canvas) {
         super(canvas, OrbitBehavior.MOUSE_MOTION_LISTENER);

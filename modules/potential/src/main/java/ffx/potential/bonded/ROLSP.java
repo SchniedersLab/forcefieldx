@@ -37,11 +37,11 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import javax.media.j3d.BranchGroup;
-
 import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
+
+import org.jogamp.java3d.BranchGroup;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;

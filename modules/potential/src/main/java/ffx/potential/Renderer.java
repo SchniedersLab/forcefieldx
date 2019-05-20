@@ -37,15 +37,16 @@
 //******************************************************************************
 package ffx.potential;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.WakeupOnBehaviorPost;
 import javax.swing.JLabel;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.logging.Logger;
+
+import org.jogamp.java3d.Behavior;
+import org.jogamp.java3d.Bounds;
+import org.jogamp.java3d.BranchGroup;
+import org.jogamp.java3d.WakeupOnBehaviorPost;
 
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
