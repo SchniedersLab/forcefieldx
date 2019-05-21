@@ -52,7 +52,7 @@ import org.jogamp.vecmath.Vector3d;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 
-import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
@@ -460,12 +460,7 @@ public class Bond extends BondedTerm {
      */
     @Override
     public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray gradX,
-                         AtomicDoubleArray gradY,
-                         AtomicDoubleArray gradZ,
-                         AtomicDoubleArray lambdaGradX,
-                         AtomicDoubleArray lambdaGradY,
-                         AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
 
         // The vector from Atom 1 to Atom 0.
         double[] a0 = new double[3];
@@ -503,14 +498,8 @@ public class Bond extends BondedTerm {
                     double[] g0 = new double[3];
                     // Give the gradient a vector.
                     scalar(v10, de, g0);
-                    int i0 = atom0.getIndex() - 1;
-                    gradX.add(threadID, i0, g0[0]);
-                    gradY.add(threadID, i0, g0[1]);
-                    gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atom1.getIndex() - 1;
-                    gradX.sub(threadID, i1, g0[0]);
-                    gradY.sub(threadID, i1, g0[1]);
-                    gradZ.sub(threadID, i1, g0[2]);
+                    grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+                    grad.sub(threadID, atoms[1].getIndex() - 1, g0[0], g0[1], g0[2]);
                 }
                 break;
             }
@@ -529,14 +518,8 @@ public class Bond extends BondedTerm {
                     double[] g0 = new double[3];
                     // Give the gradient a vector.
                     scalar(v10, de, g0);
-                    int i0 = atom0.getIndex() - 1;
-                    gradX.add(threadID, i0, g0[0]);
-                    gradY.add(threadID, i0, g0[1]);
-                    gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atom1.getIndex() - 1;
-                    gradX.sub(threadID, i1, g0[0]);
-                    gradY.sub(threadID, i1, g0[1]);
-                    gradZ.sub(threadID, i1, g0[2]);
+                    grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+                    grad.sub(threadID, atoms[1].getIndex() - 1, g0[0], g0[1], g0[2]);
                 }
                 break;
             }

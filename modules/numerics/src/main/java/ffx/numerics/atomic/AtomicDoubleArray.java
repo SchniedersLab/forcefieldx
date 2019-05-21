@@ -47,7 +47,7 @@ package ffx.numerics.atomic;
 public interface AtomicDoubleArray {
 
     /**
-     * AtomicDoubleArray is implementations (ADDER, MULTI, PJ).
+     * AtomicDoubleArray implementations (ADDER, MULTI, PJ).
      */
     enum AtomicDoubleArrayImpl {
         ADDER, MULTI, PJ

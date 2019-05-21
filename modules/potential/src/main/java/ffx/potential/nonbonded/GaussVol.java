@@ -277,24 +277,44 @@ public class GaussVol {
     /**
      * Return the cavitation energy.
      *
-     * @return
+     * @return The cavitation energy.
      */
     public double getEnergy() {
         return cavitationEnergy;
     }
 
+    /**
+     * Return Volume based cavitation energy.
+     *
+     * @return Volume based cavitation energy.
+     */
     public double getVolumeEnergy() {
         return volumeEnergy;
     }
 
+    /**
+     * Return Surface Area based cavitation energy.
+     *
+     * @return Surface Area based cavitation energy.
+     */
     public double getSurfaceAreaEnergy() {
         return surfaceAreaEnergy;
     }
 
+    /**
+     * Return Volume (A^3).
+     *
+     * @return Volume (A^3).
+     */
     public double getVolume() {
         return volume;
     }
 
+    /**
+     * Return Surface Area (A^2).
+     *
+     * @return Surface Area (A^2).
+     */
     public double getSurfaceArea() {
         return surfaceArea;
     }
@@ -309,7 +329,7 @@ public class GaussVol {
      * Set the isHydrogen flag.
      *
      * @param isHydrogen
-     * @return
+     * @return The number of atoms.
      * @throws Exception
      */
     int setIsHydrogen(boolean[] isHydrogen) throws Exception {
@@ -325,7 +345,7 @@ public class GaussVol {
      * Set radii.
      *
      * @param radii Atomic radii (Angstroms).
-     * @return
+     * @return The number of atoms.
      * @throws Exception
      */
     int setRadii(double[] radii) throws Exception {
@@ -348,7 +368,7 @@ public class GaussVol {
      * Set volumes.
      *
      * @param volumes Atomic volumes (Angstroms^3).
-     * @return
+     * @return The number of atoms.
      * @throws Exception
      */
     int setVolumes(double[] volumes) throws Exception {
@@ -364,7 +384,7 @@ public class GaussVol {
      * Set gamma values.
      *
      * @param gammas Gamma values (kcal/mol/A^2).
-     * @return
+     * @return The number of atoms.
      * @throws Exception
      */
     int setGammas(double[] gammas) throws Exception {
@@ -380,6 +400,7 @@ public class GaussVol {
      * Compute molecular volume and surface area.
      *
      * @param positions Atomic positions to use.
+     * @return The cavitation energy.
      */
     public double computeVolumeAndSA(double[][] positions) {
         return energyAndGradient(positions, new double[3][positions.length]);
@@ -389,6 +410,8 @@ public class GaussVol {
      * Compute molecular volume and surface area.
      *
      * @param positions Atomic positions to use.
+     * @param gradient  Atomic coordinate gradient.
+     * @return The cavitation energy.
      */
     public double energyAndGradient(double[][] positions, double[][] gradient) {
 

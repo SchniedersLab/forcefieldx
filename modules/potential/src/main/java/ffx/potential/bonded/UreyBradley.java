@@ -39,7 +39,7 @@ package ffx.potential.bonded;
 
 import java.util.logging.Logger;
 
-import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.UreyBradleyType;
 import static ffx.numerics.math.VectorMath.diff;
@@ -143,12 +143,7 @@ public class UreyBradley extends BondedTerm {
      */
     @Override
     public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray gradX,
-                         AtomicDoubleArray gradY,
-                         AtomicDoubleArray gradZ,
-                         AtomicDoubleArray lambdaGradX,
-                         AtomicDoubleArray lambdaGradY,
-                         AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
 
         double[] a0 = new double[3];
         double[] a2 = new double[3];
@@ -174,15 +169,8 @@ public class UreyBradley extends BondedTerm {
             double[] g2 = new double[3];
             scalar(v20, de, g0);
             scalar(v20, -de, g2);
-
-            int i0 = atoms[0].getIndex() - 1;
-            gradX.add(threadID, i0, g0[0]);
-            gradY.add(threadID, i0, g0[1]);
-            gradZ.add(threadID, i0, g0[2]);
-            int i2 = atoms[2].getIndex() - 1;
-            gradX.add(threadID, i2, g2[0]);
-            gradY.add(threadID, i2, g2[1]);
-            gradZ.add(threadID, i2, g2[2]);
+            grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+            grad.add(threadID, atoms[2].getIndex() - 1, g2[0], g2[1], g2[2]);
         }
         if (esvTerm) {
             final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;

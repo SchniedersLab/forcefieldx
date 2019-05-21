@@ -60,11 +60,8 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
-import ffx.numerics.atomic.AdderDoubleArray;
-import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
-import ffx.numerics.atomic.MultiDoubleArray;
-import ffx.numerics.atomic.PJDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -253,32 +250,13 @@ public class VanDerWaals implements MaskingInterface,
 
     private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
     /**
-     * X-component of the Cartesian coordinate gradient.
+     * Cartesian coordinate gradient.
      */
-    private AtomicDoubleArray gradX;
+    private AtomicDoubleArray3D grad;
     /**
-     * Y-component of the Cartesian coordinate gradient.
+     * Lambda derivative of the Cartesian coordinate gradient.
      */
-    private AtomicDoubleArray gradY;
-    /**
-     * Z-component of the Cartesian coordinate gradient.
-     */
-    private AtomicDoubleArray gradZ;
-    /**
-     * X-component of the lambda derivative of the Cartesian coordinate
-     * gradient.
-     */
-    private AtomicDoubleArray lambdaGradX;
-    /**
-     * Y-component of the lambda derivative of the Cartesian coordinate
-     * gradient.
-     */
-    private AtomicDoubleArray lambdaGradY;
-    /**
-     * Z-component of the lambda derivative of the Cartesian coordinate
-     * gradient.
-     */
-    private AtomicDoubleArray lambdaGradZ;
+    private AtomicDoubleArray3D lambdaGrad;
 
     /**
      * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out
@@ -486,42 +464,11 @@ public class VanDerWaals implements MaskingInterface,
             use = new boolean[nAtoms];
             isSoft = new boolean[nAtoms];
             softCore = new boolean[2][nAtoms];
-            lambdaGradX = null;
-            lambdaGradY = null;
-            lambdaGradZ = null;
-
-            switch (atomicDoubleArrayImpl) {
-                case MULTI:
-                    gradX = new MultiDoubleArray(threadCount, nAtoms);
-                    gradY = new MultiDoubleArray(threadCount, nAtoms);
-                    gradZ = new MultiDoubleArray(threadCount, nAtoms);
-                    if (lambdaTerm) {
-                        lambdaGradX = new MultiDoubleArray(threadCount, nAtoms);
-                        lambdaGradY = new MultiDoubleArray(threadCount, nAtoms);
-                        lambdaGradZ = new MultiDoubleArray(threadCount, nAtoms);
-                    }
-                    break;
-                case PJ:
-                    gradX = new PJDoubleArray(nAtoms);
-                    gradY = new PJDoubleArray(nAtoms);
-                    gradZ = new PJDoubleArray(nAtoms);
-                    if (lambdaTerm) {
-                        lambdaGradX = new PJDoubleArray(nAtoms);
-                        lambdaGradY = new PJDoubleArray(nAtoms);
-                        lambdaGradZ = new PJDoubleArray(nAtoms);
-                    }
-                    break;
-                case ADDER:
-                default:
-                    gradX = new AdderDoubleArray(nAtoms);
-                    gradY = new AdderDoubleArray(nAtoms);
-                    gradZ = new AdderDoubleArray(nAtoms);
-                    if (lambdaTerm) {
-                        lambdaGradX = new AdderDoubleArray(nAtoms);
-                        lambdaGradY = new AdderDoubleArray(nAtoms);
-                        lambdaGradZ = new AdderDoubleArray(nAtoms);
-                    }
-                    break;
+            grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
+            if (lambdaTerm) {
+                lambdaGrad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
+            } else {
+                lambdaGrad = null;
             }
         }
 
@@ -1275,15 +1222,15 @@ public class VanDerWaals implements MaskingInterface,
      */
     @Override
     public void getdEdXdL(double[] lambdaGradient) {
-        if (lambdaGradX == null || !lambdaTerm) {
+        if (lambdaGrad == null || !lambdaTerm) {
             return;
         }
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             if (atoms[i].isActive()) {
-                lambdaGradient[index++] += lambdaGradX.get(i);
-                lambdaGradient[index++] += lambdaGradY.get(i);
-                lambdaGradient[index++] += lambdaGradZ.get(i);
+                lambdaGradient[index++] += lambdaGrad.getX(i);
+                lambdaGradient[index++] += lambdaGrad.getY(i);
+                lambdaGradient[index++] += lambdaGrad.getZ(i);
             }
         }
     }
@@ -1396,13 +1343,9 @@ public class VanDerWaals implements MaskingInterface,
                 }
             }
 
-            gradX.alloc(nAtoms);
-            gradY.alloc(nAtoms);
-            gradZ.alloc(nAtoms);
+            grad.alloc(nAtoms);
             if (lambdaTerm) {
-                lambdaGradX.alloc(nAtoms);
-                lambdaGradY.alloc(nAtoms);
-                lambdaGradZ.alloc(nAtoms);
+                lambdaGrad.alloc(nAtoms);
             }
         }
 
@@ -1562,14 +1505,10 @@ public class VanDerWaals implements MaskingInterface,
                     use[i] = atom.getUse();
                 }
                 if (gradient) {
-                    gradX.reset(threadID, lb, ub);
-                    gradY.reset(threadID, lb, ub);
-                    gradZ.reset(threadID, lb, ub);
+                    grad.reset(threadID, lb, ub);
                 }
                 if (lambdaTerm) {
-                    lambdaGradX.reset(threadID, lb, ub);
-                    lambdaGradY.reset(threadID, lb, ub);
-                    lambdaGradZ.reset(threadID, lb, ub);
+                    lambdaGrad.reset(threadID, lb, ub);
                 }
             }
         }
@@ -1912,12 +1851,8 @@ public class VanDerWaals implements MaskingInterface,
                                 gxredi += dedx * rediv;
                                 gyredi += dedy * rediv;
                                 gzredi += dedz * rediv;
-                                gradX.sub(threadID, k, red * dedx);
-                                gradY.sub(threadID, k, red * dedy);
-                                gradZ.sub(threadID, k, red * dedz);
-                                gradX.sub(threadID, redk, redkv * dedx);
-                                gradY.sub(threadID, redk, redkv * dedy);
-                                gradZ.sub(threadID, redk, redkv * dedz);
+                                grad.sub(threadID, k, red * dedx, red * dedy, red * dedz);
+                                grad.sub(threadID, redk, redkv * dedx, redkv * dedy, redkv * dedz);
                             }
                             if (gradient && soft) {
                                 final double dt1 = -t1 * t1d * dsc1dL;
@@ -1954,12 +1889,8 @@ public class VanDerWaals implements MaskingInterface,
                                 lyredi += dedldy * rediv;
                                 lzredi += dedldz * rediv;
                                 if (lambdaTerm) {
-                                    lambdaGradX.sub(threadID, k, red * dedldx);
-                                    lambdaGradY.sub(threadID, k, red * dedldy);
-                                    lambdaGradZ.sub(threadID, k, red * dedldz);
-                                    lambdaGradX.sub(threadID, redk, redkv * dedldx);
-                                    lambdaGradY.sub(threadID, redk, redkv * dedldy);
-                                    lambdaGradZ.sub(threadID, redk, redkv * dedldz);
+                                    lambdaGrad.sub(threadID, k, red * dedldx, red * dedldy, red * dedldz);
+                                    lambdaGrad.sub(threadID, redk, redkv * dedldx, redkv * dedldy, redkv * dedldz);
                                 }
                                 if (esvi || esvk) {
                                     // Assign this gradient to attached ESVs.
@@ -1987,19 +1918,11 @@ public class VanDerWaals implements MaskingInterface,
                         }
                     }
                     if (gradient) {
-                        gradX.add(threadID, i, gxi);
-                        gradY.add(threadID, i, gyi);
-                        gradZ.add(threadID, i, gzi);
-                        gradX.add(threadID, redi, gxredi);
-                        gradY.add(threadID, redi, gyredi);
-                        gradZ.add(threadID, redi, gzredi);
+                        grad.add(threadID, i, gxi, gyi, gzi);
+                        grad.add(threadID, redi, gxredi, gyredi, gzredi);
                         if (lambdaTerm) {
-                            lambdaGradX.add(threadID, i, lxi);
-                            lambdaGradY.add(threadID, i, lyi);
-                            lambdaGradZ.add(threadID, i, lzi);
-                            lambdaGradX.add(threadID, redi, lxredi);
-                            lambdaGradY.add(threadID, redi, lyredi);
-                            lambdaGradZ.add(threadID, redi, lzredi);
+                            lambdaGrad.add(threadID, i, lxi, lyi, lzi);
+                            lambdaGrad.add(threadID, redi, lxredi, lyredi, lzredi);
                         }
                         if (esvi) {
                             esvDeriv[idxi].addAndGet(localEsvDerivI);
@@ -2164,12 +2087,8 @@ public class VanDerWaals implements MaskingInterface,
                                     final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
                                     final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
                                     final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
-                                    gradX.sub(threadID, k, red * dedxk);
-                                    gradY.sub(threadID, k, red * dedyk);
-                                    gradZ.sub(threadID, k, red * dedzk);
-                                    gradX.sub(threadID, redk, redkv * dedxk);
-                                    gradY.sub(threadID, redk, redkv * dedyk);
-                                    gradZ.sub(threadID, redk, redkv * dedzk);
+                                    grad.sub(threadID, k, red * dedxk, red * dedyk, red * dedzk);
+                                    grad.sub(threadID, redk, redkv * dedxk, redkv * dedyk, redkv * dedzk);
                                 }
                                 if (gradient && lambdaTerm && soft) {
                                     double dt1 = -t1 * t1d * dsc1dL;
@@ -2210,12 +2129,8 @@ public class VanDerWaals implements MaskingInterface,
                                     final double dedldxk = dedldx * transOp[0][0] + dedldy * transOp[1][0] + dedldz * transOp[2][0];
                                     final double dedldyk = dedldx * transOp[0][1] + dedldy * transOp[1][1] + dedldz * transOp[2][1];
                                     final double dedldzk = dedldx * transOp[0][2] + dedldy * transOp[1][2] + dedldz * transOp[2][2];
-                                    lambdaGradX.sub(threadID, k, red * dedldxk);
-                                    lambdaGradY.sub(threadID, k, red * dedldyk);
-                                    lambdaGradZ.sub(threadID, k, red * dedldzk);
-                                    lambdaGradX.sub(threadID, redk, redkv * dedldxk);
-                                    lambdaGradY.sub(threadID, redk, redkv * dedldyk);
-                                    lambdaGradZ.sub(threadID, redk, redkv * dedldzk);
+                                    lambdaGrad.sub(threadID, k, red * dedldxk, red * dedldyk, red * dedldzk);
+                                    lambdaGrad.sub(threadID, redk, redkv * dedldxk, redkv * dedldyk, redkv * dedldzk);
                                 }
 
                                 if (gradient && (esvi || esvk)) {
@@ -2249,19 +2164,11 @@ public class VanDerWaals implements MaskingInterface,
                             }
                         }
                         if (gradient) {
-                            gradX.add(threadID, i, gxi);
-                            gradY.add(threadID, i, gyi);
-                            gradZ.add(threadID, i, gzi);
-                            gradX.add(threadID, redi, gxredi);
-                            gradY.add(threadID, redi, gyredi);
-                            gradZ.add(threadID, redi, gzredi);
+                            grad.add(threadID, i, gxi, gyi, gzi);
+                            grad.add(threadID, redi, gxredi, gyredi, gzredi);
                             if (lambdaTerm) {
-                                lambdaGradX.add(threadID, i, lxi);
-                                lambdaGradY.add(threadID, i, lyi);
-                                lambdaGradZ.add(threadID, i, lzi);
-                                lambdaGradX.add(threadID, redi, lxredi);
-                                lambdaGradY.add(threadID, redi, lyredi);
-                                lambdaGradZ.add(threadID, redi, lzredi);
+                                lambdaGrad.add(threadID, i, lxi, lyi, lzi);
+                                lambdaGrad.add(threadID, redi, lxredi, lyredi, lzredi);
                             }
                             if (esvi) {
                                 esvDeriv[idxi].addAndGet(localEsvDerivI);
@@ -2294,21 +2201,16 @@ public class VanDerWaals implements MaskingInterface,
             @Override
             public void run(int lb, int ub) {
                 if (gradient) {
-                    gradX.reduce(lb, ub);
-                    gradY.reduce(lb, ub);
-                    gradZ.reduce(lb, ub);
+                    grad.reduce(lb, ub);
                     for (int i = lb; i <= ub; i++) {
                         Atom ai = atoms[i];
-                        ai.addToXYZGradient(gradX.get(i), gradY.get(i), gradZ.get(i));
+                        ai.addToXYZGradient(grad.getX(i), grad.getY(i), grad.getZ(i));
                     }
                 }
                 if (lambdaTerm) {
-                    lambdaGradX.reduce(lb, ub);
-                    lambdaGradY.reduce(lb, ub);
-                    lambdaGradZ.reduce(lb, ub);
+                    lambdaGrad.reduce(lb, ub);
                 }
             }
         }
     }
-
 }

@@ -68,11 +68,8 @@ import ffx.crystal.NCSCrystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
-import ffx.numerics.atomic.AdderDoubleArray;
-import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
-import ffx.numerics.atomic.MultiDoubleArray;
-import ffx.numerics.atomic.PJDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
@@ -3781,30 +3778,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         private boolean gradient = false;
 
         private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
-        /**
-         * X-component of the Cartesian coordinate gradient.
-         */
-        private final AtomicDoubleArray gradX;
-        /**
-         * Y-component of the Cartesian coordinate gradient.
-         */
-        private final AtomicDoubleArray gradY;
-        /**
-         * Z-component of the Cartesian coordinate gradient.
-         */
-        private final AtomicDoubleArray gradZ;
-        /**
-         * X-component of the dU/dX/dL coordinate gradient.
-         */
-        private final AtomicDoubleArray lambdaGradX;
-        /**
-         * Y-component of the dU/dX/dL coordinate gradient.
-         */
-        private final AtomicDoubleArray lambdaGradY;
-        /**
-         * Z-component of the dU/dX/dL coordinate gradient.
-         */
-        private final AtomicDoubleArray lambdaGradZ;
+        private AtomicDoubleArray3D grad;
+        private AtomicDoubleArray3D lambdaGrad;
 
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;
@@ -3901,50 +3876,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             } catch (Exception e) {
                 logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
             }
-            switch (atomicDoubleArrayImpl) {
-                case MULTI:
-                default:
-                    gradX = new MultiDoubleArray(nThreads, nAtoms);
-                    gradY = new MultiDoubleArray(nThreads, nAtoms);
-                    gradZ = new MultiDoubleArray(nThreads, nAtoms);
-                    if (lambdaTerm) {
-                        lambdaGradX = new MultiDoubleArray(nThreads, nAtoms);
-                        lambdaGradY = new MultiDoubleArray(nThreads, nAtoms);
-                        lambdaGradZ = new MultiDoubleArray(nThreads, nAtoms);
-                    } else {
-                        lambdaGradX = null;
-                        lambdaGradY = null;
-                        lambdaGradZ = null;
-                    }
-                    break;
-                case PJ:
-                    gradX = new PJDoubleArray(nAtoms);
-                    gradY = new PJDoubleArray(nAtoms);
-                    gradZ = new PJDoubleArray(nAtoms);
-                    if (lambdaTerm) {
-                        lambdaGradX = new PJDoubleArray(nAtoms);
-                        lambdaGradY = new PJDoubleArray(nAtoms);
-                        lambdaGradZ = new PJDoubleArray(nAtoms);
-                    } else {
-                        lambdaGradX = null;
-                        lambdaGradY = null;
-                        lambdaGradZ = null;
-                    }
-                    break;
-                case ADDER:
-                    gradX = new AdderDoubleArray(nAtoms);
-                    gradY = new AdderDoubleArray(nAtoms);
-                    gradZ = new AdderDoubleArray(nAtoms);
-                    if (lambdaTerm) {
-                        lambdaGradX = new AdderDoubleArray(nAtoms);
-                        lambdaGradY = new AdderDoubleArray(nAtoms);
-                        lambdaGradZ = new AdderDoubleArray(nAtoms);
-                    } else {
-                        lambdaGradX = null;
-                        lambdaGradY = null;
-                        lambdaGradZ = null;
-                    }
-                    break;
+
+            grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, nThreads);
+            if (lambdaTerm) {
+                lambdaGrad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, nThreads);
             }
         }
 
@@ -3976,14 +3911,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
             // Assure capacity of the gradient arrays.
             if (gradient) {
-                gradX.alloc(nAtoms);
-                gradY.alloc(nAtoms);
-                gradZ.alloc(nAtoms);
+                grad.alloc(nAtoms);
             }
             if (lambdaTerm) {
-                lambdaGradX.alloc(nAtoms);
-                lambdaGradY.alloc(nAtoms);
-                lambdaGradZ.alloc(nAtoms);
+                lambdaGrad.alloc(nAtoms);
             }
         }
 
@@ -4268,14 +4199,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             public void run(int first, int last) throws Exception {
                 int threadID = getThreadIndex();
                 if (gradient) {
-                    gradX.reset(threadID, first, last);
-                    gradY.reset(threadID, first, last);
-                    gradZ.reset(threadID, first, last);
+                    grad.reset(threadID, first, last);
                 }
                 if (lambdaTerm) {
-                    lambdaGradX.reset(threadID, first, last);
-                    lambdaGradY.reset(threadID, first, last);
-                    lambdaGradZ.reset(threadID, first, last);
+                    lambdaGrad.reset(threadID, first, last);
                 }
             }
         }
@@ -4290,22 +4217,17 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             @Override
             public void run(int first, int last) throws Exception {
                 if (gradient) {
-                    gradX.reduce(first, last);
-                    gradY.reduce(first, last);
-                    gradZ.reduce(first, last);
+                    grad.reduce(first, last);
                     for (int i = first; i <= last; i++) {
                         Atom a = atoms[i];
-                        a.setXYZGradient(gradX.get(i), gradY.get(i), gradZ.get(i));
+                        a.setXYZGradient(grad.getX(i), grad.getY(i), grad.getZ(i));
                     }
                 }
                 if (lambdaTerm) {
-                    lambdaGradX.reduce(first, last);
-                    lambdaGradY.reduce(first, last);
-                    lambdaGradZ.reduce(first, last);
+                    lambdaGrad.reduce(first, last);
                     for (int i = first; i <= last; i++) {
                         Atom a = atoms[i];
-                        a.setLambdaXYZGradient(lambdaGradX.get(i),
-                                lambdaGradY.get(i), lambdaGradZ.get(i));
+                        a.setLambdaXYZGradient(lambdaGrad.getX(i), lambdaGrad.getY(i), lambdaGrad.getZ(i));
                     }
                 }
             }
@@ -4352,9 +4274,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 for (int i = first; i <= last; i++) {
                     BondedTerm term = terms[i];
                     if (!lambdaBondedTerms || term.applyLambda()) {
-                        localEnergy += term.energy(gradient, threadID,
-                                gradX, gradY, gradZ,
-                                lambdaGradX, lambdaGradY, lambdaGradZ);
+                        localEnergy += term.energy(gradient, threadID, grad, lambdaGrad);
                         if (computeRMSD) {
                             double value = term.getValue();
                             localRMSD += value * value;
