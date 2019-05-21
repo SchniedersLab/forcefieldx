@@ -52,6 +52,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
+import java.util.stream.IntStream
 
 /**
  * The CreateRotamers script creates a set of conformation dependent rotamers.
@@ -172,7 +173,7 @@ class CreateRotamers extends AlgorithmsScript {
                 }
 
                 // Define "all previously saved rotamers" arrayList to be used for RMSD comparison
-                ArrayList<MolecularAssembly> keptRotamers = new ArrayList<>()
+                ArrayList<ResidueState> keptRotamers = new ArrayList<>()
                 // Loop over rotamers for this Residue.
                 for (int i = 0; i < rotamers.length; i++) {
                     Rotamer rotamer = rotamers[i]
@@ -193,11 +194,15 @@ class CreateRotamers extends AlgorithmsScript {
                         logger.info(" Skipping minimization of original-coordinates rotamer.")
                     }
 
+                    // Stores a copy of minimized residue coordinates
+                    ResidueState newResState = new ResidueState(residue)
+                    // put ResidueState in keptRotamers
+
                     // Only save if the "new" rotamer isn't within 0.1 kcal/mol of any other rotamer
                     // Update "all previously saved rotamers" arrayList
                     if(i == 0){
                         // Add 0th rotamer to the assemblies arrayList
-                        keptRotamers.add(activeAssembly)
+                        keptRotamers.add(newResState)
 
                         // Save out coordinates to a rotamer file.
                         for (Atom atom : sideChainAtoms) {
@@ -216,59 +221,38 @@ class CreateRotamers extends AlgorithmsScript {
                     } else{
                         // For all but the 0th rotamer, do RMSD calculations to determine if the "new" rotamer
                         // is within 0.1 kcal/mol of any other rotamer. Only save it if it's not.
-                        //MolecularAssembly newRotamer = activeAssembly
-                        println("Rotamer number: "+i)
-
                         println("Number of rotamers in keptRotamers: "+keptRotamers.size())
 
-                        forceFieldEnergy = activeAssembly.getPotentialEnergy()
-                        Atom[] rotamerAtoms = activeAssembly.getAtomArray()
-                        println("rotamerAtoms: "+rotamerAtoms.length)
+                        //forceFieldEnergy = activeAssembly.getPotentialEnergy()
+                        //Atom[] rotamerAtoms = activeAssembly.getAtomArray()
+                        //println("rotamerAtoms: "+rotamerAtoms.length)
                         //for (int atmcount = 0; atmcount < rotamerAtoms.length; atmcount++){
                         //    print(rotamerAtoms[atmcount].name+":")
                         //}
-                        println()
-                        int nVars = forceFieldEnergy.getNumberOfVariables()
-                        println("nVars is: "+nVars)
-                        double[] x1 = new double[nVars]
-                        forceFieldEnergy.getCoordinates(x1)
+                        //println()
+                        //int nVars = forceFieldEnergy.getNumberOfVariables()
+                        //println("nVars is: "+nVars)
+                        //double[] x1 = new double[nVars]
+                        //forceFieldEnergy.getCoordinates(x1)
 
-                        double[] x2 = new double[nVars]
-                        double[] mass = new double[rotamerAtoms.length]
+                        //double[] x2 = new double[nVars]
+                        //double[] mass = new double[rotamerAtoms.length]
+                        //double[] mass = new double[nVars/3]
                         //println("Mass array: "+mass.length)
 
-                        int nRotamerAtoms = rotamerAtoms.length
-                        for (int j = 0; j < nRotamerAtoms; j++) {
-                            mass[j] = rotamerAtoms[j].getMass()
-                        }
-
-                        // Indices of atoms used in alignment and RMSD calculations.
-//                        int[] usedIndices = atomIndexStream.toArray()
-//                        int nUsed = usedIndices.length
-//                        int nUsedVars = nUsed * 3
-//                        double[] massUsed = Arrays.stream(usedIndices).
-//                                mapToDouble({ int j -> rotamerAtoms[j].getAtomType().atomicWeight }).toArray()
-//                        double[] xUsed = new double[nUsedVars]
-//                        double[] x2Used = new double[nUsedVars]
+                        //int nRotamerAtoms = rotamerAtoms.length
+                        //for (int j = 0; j < nVars/3; j++) {
+                        //    mass[j] = rotamerAtoms[j].getMass()
+                        //}
 
                         // Superpose.rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
                         // Define empty array to store RMSDs and RMSD threshold value boolean
                         boolean withinRange = false
                         for (int k = 0; k < keptRotamers.size(); k++){
-                            secondForceFieldEnergy = keptRotamers[k].getPotentialEnergy()
-                            secondForceFieldEnergy.getCoordinates(x2)
-                            for(int xc1 = 0; xc1< x1.length;xc1++){
-                                print(x1[xc1]+":")
-                            }
-                            println()
-                            println()
-                            for(int xc = 0; xc < x2.length; xc++){
-                                print(x2[xc]+":")
-                            }
-                            println()
-                            double origRMSD = ffx.potential.utils.Superpose.rmsd(x1, x2, mass)
-                            println("RMSD: "+origRMSD)
-                            if(origRMSD <= 0.01){withinRange = true}
+                            double RMSD = newResState.compareTo(keptRotamers[k])
+                            //double origRMSD = ffx.potential.utils.Superpose.rmsd(x1, x2, mass)
+                            println("RMSD: "+RMSD)
+                            if(RMSD <= 0.01){withinRange = true}
                         }
 
                         // If the new rotamer is within 0.1 kcal/mol of any previously kept rotamer

@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -357,5 +358,28 @@ public class ResidueState {
     public String toString() {
         return String.format(" ResidueState with parent residue %s, state residue "
                 + "%s, number of atoms %d", parent, res, atoms.length);
+    }
+
+    public double compareTo(ResidueState residueState){
+        double[] tempx1;
+        double[] tempx2;
+        double[] x1 = null;
+        double[] x2 = null;
+        for(int i = 0; i < this.atomMap.size(); i++){
+            tempx1 = this.atomMap.get(i);
+            for(int j = 0; j < tempx1.length; j++){
+                x1[i+j] = tempx1[j];
+            }
+            tempx2 = residueState.atomMap.get(i);
+            for(int k = 0; k < tempx2.length; k++){
+                x2[i+k] = tempx2[k];
+            }
+        }
+
+        double[] mass = new double[x1.length];
+        Arrays.fill(mass,1);
+        double rmsd = ffx.potential.utils.Superpose.rmsd(x1,x2,mass);
+
+        return rmsd;
     }
 }
