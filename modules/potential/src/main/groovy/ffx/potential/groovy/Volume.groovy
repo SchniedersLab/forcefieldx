@@ -64,8 +64,7 @@ class Volume extends PotentialScript {
     private static final double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0)
 
     /**
-     * -v or --verbose enables printing out all energy components for multi-snapshot files (
-     * the first snapshot is always printed verbosely).
+     * -y or --includeHydrogen leaves in hydrogen when calculating the overlap tree.
      */
     @CommandLine.Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
             description = "Include Hydrogen in calculation of overlaps and volumes")
@@ -156,6 +155,8 @@ class Volume extends PotentialScript {
         // Run Volume calculation to get vdw volume of molecule
         GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen)
         gaussVol.computeVolumeAndSA(positions)
+        logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
+        //gaussVol.printTree()
 
         logger.info(format("\n Volume:              %8.3f (Ang^3)", gaussVol.getVolume()))
         logger.info(format(" Volume Energy:       %8.3f (kcal/mol)", gaussVol.getVolumeEnergy()))

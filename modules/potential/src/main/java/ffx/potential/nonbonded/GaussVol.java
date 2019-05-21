@@ -45,15 +45,11 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.rsq;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
+import static org.apache.commons.math3.util.FastMath.*;
 
 /**
  * A class that implements the Gaussian description of an object (molecule) made of a overlapping spheres.
@@ -106,7 +102,7 @@ public class GaussVol {
     /**
      * Maximum overlap level.
      */
-    private static int MAX_ORDER = 8;
+    private static int MAX_ORDER = 16;
     /**
      * Finite-Difference step size to compute surface area.
      */
@@ -157,6 +153,10 @@ public class GaussVol {
      * The Gaussian Overlap Tree.
      */
     private GaussianOverlapTree tree;
+    /**
+     * Maximum depth that the tree reaches
+     */
+    private int maximumDepth=0;
     /**
      * Surface area (Ang^2).
      */
@@ -298,6 +298,12 @@ public class GaussVol {
     public double getSurfaceArea() {
         return surfaceArea;
     }
+
+    /**
+     * Returns the maximum depth of the overlap tree
+     * @return maximumDepth
+     */
+    public int getMaximumDepth(){return maximumDepth;}
 
     /**
      * Set the isHydrogen flag.
@@ -984,6 +990,13 @@ public class GaussVol {
                 double[][] dr, double[] dv, double[] free_volume, double[] self_volume) {
 
             GaussianOverlap ov = overlaps.get(slot);
+            //Keep track of overlap depth for each overlap. If a new depth is greater than previous greatest, save depth
+            // in maximumDepth
+            if(ov.level >= maximumDepth){
+                //logger.info(format("Current depth: %d", ov.level));
+                maximumDepth=ov.level;
+                //logger.info(format("Current max depth: %d", maximumDepth));
+            }
             double cf = ov.level % 2 == 0 ? -1.0 : 1.0;
             double volcoeff = ov.level > 0 ? cf : 0;
             double volcoeffp = ov.level > 0 ? volcoeff / (double) ov.level : 0;
