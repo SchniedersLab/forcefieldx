@@ -52,7 +52,7 @@ import org.jogamp.vecmath.Vector3d;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
 import static ffx.numerics.math.VectorMath.angle;
@@ -633,24 +633,15 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
      */
     @Override
     public double energy(boolean gradient, int threadID,
-                         AtomicDoubleArray gradX,
-                         AtomicDoubleArray gradY,
-                         AtomicDoubleArray gradZ,
-                         AtomicDoubleArray lambdaGradX,
-                         AtomicDoubleArray lambdaGradY,
-                         AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
 
-        double a0[] = new double[3];
-        double a1[] = new double[3];
-        /**
-         * The vector from Atom 1 to Atom 0.
-         */
-        double v10[] = new double[3];
-        /**
-         * Gradient on Atoms 0 & 1.
-         */
-        double g0[] = new double[3];
-        double g1[] = new double[3];
+        double[] a0 = new double[3];
+        double[] a1 = new double[3];
+        // The vector from Atom 1 to Atom 0.
+        double[] v10 = new double[3];
+        // Gradient on Atoms 0 & 1.
+        double[] g0 = new double[3];
+        double[] g1 = new double[3];
 
         atoms[0].getXYZ(a0);
         atoms[1].getXYZ(a1);
@@ -686,21 +677,11 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         scalar(v10, rL3 * de, g0);
         scalar(v10, -rL3 * de, g1);
         if (gradient) {
-            //atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
-            //atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-            int i0 = atoms[0].getIndex() - 1;
-            gradX.add(threadID, i0, g0[0]);
-            gradY.add(threadID, i0, g0[1]);
-            gradZ.add(threadID, i0, g0[2]);
-            int i1 = atoms[1].getIndex() - 1;
-            gradX.add(threadID, i1, g1[0]);
-            gradY.add(threadID, i1, g1[1]);
-            gradZ.add(threadID, i1, g1[2]);
+            grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
+            grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
         }
 
-        /**
-         * Remove the factor of rL3
-         */
+        // Remove the factor of rL3
         scalar(v10, rL2 * de, g0);
         scalar(v10, -rL2 * de, g1);
         dEdXdL[0][0] = g0[0];

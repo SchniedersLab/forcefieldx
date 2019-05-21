@@ -370,7 +370,8 @@ public final class PDBFilter extends SystemFilter {
     /**
      * <p>setModelNumbering.</p>
      *
-     * @param set a boolean.
+     * @param set           a boolean.
+     * @param modelsWritten the number of models written.
      */
     public void setModelNumbering(boolean set, int modelsWritten) {
         this.modelsWritten = modelsWritten;
@@ -3313,7 +3314,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     @Override
-    public int countNumModels(){
+    public int countNumModels() {
         Pattern model = Pattern.compile("MODEL");
         int numModels = 0;
         boolean eof = true;

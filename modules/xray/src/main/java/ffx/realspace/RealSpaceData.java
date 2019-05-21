@@ -52,8 +52,8 @@ import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.atomic.AtomicDoubleArray;
-import ffx.numerics.atomic.MultiDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.spline.TriCubicSpline;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
@@ -546,12 +546,8 @@ public class RealSpaceData implements DataContainer {
 
         private int nAtoms;
         private int nData;
-        private final AtomicDoubleArray gradX;
-        private final AtomicDoubleArray gradY;
-        private final AtomicDoubleArray gradZ;
-        private final AtomicDoubleArray lambdaGradX;
-        private final AtomicDoubleArray lambdaGradY;
-        private final AtomicDoubleArray lambdaGradZ;
+        private final AtomicDoubleArray3D gradient;
+        private final AtomicDoubleArray3D lambdaGrad;
         private final InitializationLoop[] initializationLoops;
         private final RealSpaceLoop[] realSpaceLoops;
         private final SharedDouble[] sharedTarget;
@@ -567,12 +563,8 @@ public class RealSpaceData implements DataContainer {
                 sharedTarget[i] = new SharedDouble();
             }
             shareddUdL = new SharedDouble();
-            gradX = new MultiDoubleArray(nThreads, nAtoms);
-            gradY = new MultiDoubleArray(nThreads, nAtoms);
-            gradZ = new MultiDoubleArray(nThreads, nAtoms);
-            lambdaGradX = new MultiDoubleArray(nThreads, nAtoms);
-            lambdaGradY = new MultiDoubleArray(nThreads, nAtoms);
-            lambdaGradZ = new MultiDoubleArray(nThreads, nAtoms);
+            gradient = new AtomicDoubleArray3D(AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
+            lambdaGrad = new AtomicDoubleArray3D(AtomicDoubleArrayImpl.MULTI, nThreads, nAtoms);
         }
 
         @Override
@@ -581,12 +573,8 @@ public class RealSpaceData implements DataContainer {
                 sharedTarget[i].set(0.0);
             }
             shareddUdL.set(0.0);
-            gradX.alloc(nAtoms);
-            gradY.alloc(nAtoms);
-            gradZ.alloc(nAtoms);
-            lambdaGradX.alloc(nAtoms);
-            lambdaGradY.alloc(nAtoms);
-            lambdaGradZ.alloc(nAtoms);
+            gradient.alloc(nAtoms);
+            lambdaGrad.alloc(nAtoms);
         }
 
         @Override
@@ -603,16 +591,16 @@ public class RealSpaceData implements DataContainer {
                 Atom atom = refinementModel.getTotalAtomArray()[i];
                 if (atom.isActive()) {
                     int ii = index * 3;
-                    double gx = gradX.get(i);
-                    double gy = gradY.get(i);
-                    double gz = gradZ.get(i);
+                    double gx = gradient.getX(i);
+                    double gy = gradient.getY(i);
+                    double gz = gradient.getZ(i);
                     realSpaceGradient[ii] = gx;
                     realSpaceGradient[ii + 1] = gy;
                     realSpaceGradient[ii + 2] = gz;
                     atom.setXYZGradient(gx, gy, gz);
-                    gx = lambdaGradX.get(i);
-                    gy = lambdaGradY.get(i);
-                    gz = lambdaGradZ.get(i);
+                    gx = lambdaGrad.getX(i);
+                    gy = lambdaGrad.getY(i);
+                    gz = lambdaGrad.getZ(i);
                     realSpacedUdXdL[ii] = gx;
                     realSpacedUdXdL[ii + 1] = gy;
                     realSpacedUdXdL[ii + 2] = gz;
@@ -646,13 +634,8 @@ public class RealSpaceData implements DataContainer {
             @Override
             public void run(int lb, int ub) {
                 int threadID = getThreadIndex();
-                gradX.reset(threadID, lb, ub);
-                gradY.reset(threadID, lb, ub);
-                gradZ.reset(threadID, lb, ub);
-                lambdaGradX.reset(threadID, lb, ub);
-                lambdaGradY.reset(threadID, lb, ub);
-                lambdaGradZ.reset(threadID, lb, ub);
-
+                gradient.reset(threadID, lb, ub);
+                lambdaGrad.reset(threadID, lb, ub);
                 for (int i = lb; i <= ub; i++) {
                     Atom a = refinementModel.getTotalAtomArray()[i];
                     a.setXYZGradient(0.0, 0.0, 0.0);
@@ -795,21 +778,13 @@ public class RealSpaceData implements DataContainer {
                             xyz[0] = grad[0] * getCrystal()[i].A00 + grad[1] * getCrystal()[i].A01 + grad[2] * getCrystal()[i].A02;
                             xyz[1] = grad[0] * getCrystal()[i].A10 + grad[1] * getCrystal()[i].A11 + grad[2] * getCrystal()[i].A12;
                             xyz[2] = grad[0] * getCrystal()[i].A20 + grad[1] * getCrystal()[i].A21 + grad[2] * getCrystal()[i].A22;
-                            gradX.add(threadID, ia, scale * xyz[0]);
-                            gradY.add(threadID, ia, scale * xyz[1]);
-                            gradZ.add(threadID, ia, scale * xyz[2]);
-                            lambdaGradX.add(threadID, ia, scaledUdL * xyz[0]);
-                            lambdaGradY.add(threadID, ia, scaledUdL * xyz[1]);
-                            lambdaGradZ.add(threadID, ia, scaledUdL * xyz[2]);
+                            gradient.add(threadID, ia, scale * xyz[0], scale * xyz[1], scale * xyz[2]);
+                            lambdaGrad.add(threadID, ia, scaledUdL * xyz[0], scaledUdL * xyz[1], scaledUdL * xyz[2]);
                         }
                     }
                 }
-                gradX.reduce(first, last);
-                gradY.reduce(first, last);
-                gradZ.reduce(first, last);
-                lambdaGradX.reduce(first, last);
-                lambdaGradY.reduce(first, last);
-                lambdaGradZ.reduce(first, last);
+                gradient.reduce(first, last);
+                lambdaGrad.reduce(first, last);
             }
 
         }

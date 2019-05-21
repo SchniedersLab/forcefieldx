@@ -45,7 +45,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
-import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.PiTorsionType;
 import static ffx.numerics.math.VectorMath.cross;
@@ -148,14 +148,8 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
      * Evaluate the Pi-Orbital Torsion energy.
      */
     @Override
-    public double energy(boolean gradient,
-                         int threadID,
-                         AtomicDoubleArray gradX,
-                         AtomicDoubleArray gradY,
-                         AtomicDoubleArray gradZ,
-                         AtomicDoubleArray lambdaGradX,
-                         AtomicDoubleArray lambdaGradY,
-                         AtomicDoubleArray lambdaGradZ) {
+    public double energy(boolean gradient, int threadID,
+                         AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
         energy = 0.0;
         value = 0.0;
         dEdL = 0.0;
@@ -282,7 +276,6 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
                 sum(dedd, dedq, g3);
                 sum(g0, g1, temp);
                 diff(g3, temp, g3);
-
                 // Atom indices
                 int i0 = atoms[0].getIndex() - 1;
                 int i1 = atoms[1].getIndex() - 1;
@@ -290,31 +283,13 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
                 int i3 = atoms[3].getIndex() - 1;
                 int i4 = atoms[4].getIndex() - 1;
                 int i5 = atoms[5].getIndex() - 1;
-
                 if (lambdaTerm) {
-                    lambdaGradX.add(threadID, i0, g0[0]);
-                    lambdaGradY.add(threadID, i0, g0[1]);
-                    lambdaGradZ.add(threadID, i0, g0[2]);
-
-                    lambdaGradX.add(threadID, i1, g1[0]);
-                    lambdaGradY.add(threadID, i1, g1[1]);
-                    lambdaGradZ.add(threadID, i1, g1[2]);
-
-                    lambdaGradX.add(threadID, i2, g2[0]);
-                    lambdaGradY.add(threadID, i2, g2[1]);
-                    lambdaGradZ.add(threadID, i2, g2[2]);
-
-                    lambdaGradX.add(threadID, i3, g3[0]);
-                    lambdaGradY.add(threadID, i3, g3[1]);
-                    lambdaGradZ.add(threadID, i3, g3[2]);
-
-                    lambdaGradX.add(threadID, i4, g4[0]);
-                    lambdaGradY.add(threadID, i4, g4[1]);
-                    lambdaGradZ.add(threadID, i4, g4[2]);
-
-                    lambdaGradX.add(threadID, i5, g5[0]);
-                    lambdaGradY.add(threadID, i5, g5[1]);
-                    lambdaGradZ.add(threadID, i5, g5[2]);
+                    lambdaGrad.add(threadID, i0, g0[0], g0[1], g0[2]);
+                    lambdaGrad.add(threadID, i1, g1[0], g1[1], g1[2]);
+                    lambdaGrad.add(threadID, i2, g2[0], g2[1], g2[2]);
+                    lambdaGrad.add(threadID, i3, g3[0], g3[1], g3[2]);
+                    lambdaGrad.add(threadID, i4, g4[0], g4[1], g4[2]);
+                    lambdaGrad.add(threadID, i5, g5[0], g5[1], g5[2]);
                 }
                 if (gradient) {
                     scalar(g0, lambda, g0);
@@ -323,30 +298,12 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
                     scalar(g3, lambda, g3);
                     scalar(g4, lambda, g4);
                     scalar(g5, lambda, g5);
-
-                    gradX.add(threadID, i0, g0[0]);
-                    gradY.add(threadID, i0, g0[1]);
-                    gradZ.add(threadID, i0, g0[2]);
-
-                    gradX.add(threadID, i1, g1[0]);
-                    gradY.add(threadID, i1, g1[1]);
-                    gradZ.add(threadID, i1, g1[2]);
-
-                    gradX.add(threadID, i2, g2[0]);
-                    gradY.add(threadID, i2, g2[1]);
-                    gradZ.add(threadID, i2, g2[2]);
-
-                    gradX.add(threadID, i3, g3[0]);
-                    gradY.add(threadID, i3, g3[1]);
-                    gradZ.add(threadID, i3, g3[2]);
-
-                    gradX.add(threadID, i4, g4[0]);
-                    gradY.add(threadID, i4, g4[1]);
-                    gradZ.add(threadID, i4, g4[2]);
-
-                    gradX.add(threadID, i5, g5[0]);
-                    gradY.add(threadID, i5, g5[1]);
-                    gradZ.add(threadID, i5, g5[2]);
+                    grad.add(threadID, i0, g0[0], g0[1], g0[2]);
+                    grad.add(threadID, i1, g1[0], g1[1], g1[2]);
+                    grad.add(threadID, i2, g2[0], g2[1], g2[2]);
+                    grad.add(threadID, i3, g3[0], g3[1], g3[2]);
+                    grad.add(threadID, i4, g4[0], g4[1], g4[2]);
+                    grad.add(threadID, i5, g5[0], g5[1], g5[2]);
                 }
             }
         }

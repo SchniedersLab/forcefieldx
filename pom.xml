@@ -966,10 +966,19 @@
             <plugin>
                 <artifactId>maven-jxr-plugin</artifactId>
                 <version>${jxr.version}</version>
-                <configuration>
+                <reportSets>
+                    <reportSet>
+                        <id>aggregate</id>
+                        <reports>
+                            <report>aggregate</report>
+                            <report>test-aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+                <!-- configuration>
                     <goal>aggregate</goal>
                     <goal>test-aggregate</goal>
-                </configuration>
+                </configuration -->
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-report-plugin</artifactId>
@@ -1097,10 +1106,10 @@
         <!-- Specify versions of Dependencies to Use -->
         <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
-        <commons-collections4.version>4.2</commons-collections4.version>
-        <commons-configuration2.version>2.3</commons-configuration2.version>
+        <commons-collections4.version>4.3</commons-collections4.version>
+        <commons-configuration2.version>2.4</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
-        <commons-lang3.version>3.7</commons-lang3.version>
+        <commons-lang3.version>3.9</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <guava.version>27.1-jre</guava.version>
         <groovy-all.version>2.5.6.1</groovy-all.version>
@@ -1128,9 +1137,9 @@
         <site.version>3.7.1</site.version>
         <surefire.version>3.0.0-M3</surefire.version>
         <!-- Maven Packaging Tools Plugin Versions -->
-        <jar.version>3.1.1</jar.version>
+        <jar.version>3.1.2</jar.version>
         <shade.version>3.2.1</shade.version>
-        <source.version>3.0.1</source.version>
+        <source.version>3.1.0</source.version>
         <!-- Maven Reporting Plugin Versions -->
         <changes.version>2.12.1</changes.version>
         <checkstyle.version>3.0.0</checkstyle.version>

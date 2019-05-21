@@ -99,6 +99,18 @@ public class ResidueState {
     }
 
     /**
+     * <p>Constructor for ResidueState.</p>
+     *
+     * @param residue a {@link ffx.potential.bonded.Residue} object.
+     */
+    public ResidueState(Residue residue) {
+        this(residue, residue);
+        if (residue instanceof MultiResidue) {
+            throw new IllegalArgumentException(String.format(" Residue %s is a MultiResidue: this ResidueState has been incorrectly constructed!", residue));
+        }
+    }
+
+    /**
      * <p>Getter for the field <code>parent</code>.</p>
      *
      * @return a {@link ffx.potential.bonded.Residue} object.
