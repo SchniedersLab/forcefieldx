@@ -52,7 +52,6 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
-import java.util.stream.IntStream
 
 /**
  * The CreateRotamers script creates a set of conformation dependent rotamers.
