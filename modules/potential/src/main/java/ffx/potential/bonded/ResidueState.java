@@ -378,22 +378,20 @@ public class ResidueState {
         double[][] tempx2 = new double[residueState.atoms.length][3];
         double[] x1 = new double[this.atoms.length * 3];
         double[] x2 = new double[residueState.atoms.length * 3];
-        //for(int i = 0; i < this.atomMap.size(); i++){
-        // Need atom key
+        // Create arrays of atoms for keptRotamer[k] ResidueState and newResState
+        // Here, each residue state is the same residue with a different rotamer applied.
         Atom[] x1atoms = this.atoms;
         Atom[] x2atoms = residueState.atoms;
-        logger.info("Total number of atoms: " + x1atoms.length);
-        for (Atom exAtom : x1atoms) {
-            //System.out.println("Coord: "+this.atomMap.get(exAtom)[0]+","+this.atomMap.get(exAtom)[1]+","+this.atomMap.get(exAtom)[2]);
-            //System.out.println();
-        }
+        logger.info("Total number of atoms for current residue state: " + x1atoms.length);
+        logger.info("Total number of atoms for previously kept residue state to be tested against: "+ x2atoms.length);
+
+        // Get the coordinate arrays for each atom in the current residue state using the atomMap
         for (int atomCount = 0; atomCount < x1atoms.length; atomCount++) {
             Atom exampleAtom = x1atoms[atomCount];
             tempx1[atomCount] = this.atomMap.get(exampleAtom);
         }
-        //System.out.println("Created tempx1: " + tempx1.length);
 
-        // Add coordinates from tempx1[][] to x1[]
+        // Add coordinates from tempx1[][] to x1[] for RMSD calculations
         int x1count = 0;
         for (double[] coordSet : tempx1) {
             for (int coordCount = 0; coordCount < 3; coordCount++) {
@@ -401,13 +399,15 @@ public class ResidueState {
                 x1count++;
             }
         }
-        //System.out.println("Finished x1");
 
+        // Get the coorinate arrays for each atom in the previously kept residue state to be
+        // tested against using the atomMap for that residue state
         for (int atomCount = 0; atomCount < x2atoms.length; atomCount++) {
             Atom exampleAtom = x2atoms[atomCount];
             tempx2[atomCount] = residueState.atomMap.get(exampleAtom);
         }
 
+        // Add coordinate from tempx2[][] to x2[] for RMSD calculations
         int x2count = 0;
         for (double[] coordSet : tempx2) {
             for (int coordCount = 0; coordCount < 3; coordCount++) {
@@ -415,13 +415,12 @@ public class ResidueState {
                 x2count++;
             }
         }
-        //System.out.println("Finished x2");
-        //}
-        //System.out.println("Created x1 and x2 arrays from");
+
+        // Create a mass array of ones so the RMSD isn't mass weighted
         double[] mass = new double[x1.length];
         Arrays.fill(mass, 1);
 
-        logger.info("\nStarting RMSD comparison between rotamers\n\n");
+        logger.info("\nStarting RMSD comparison between rotamers\n");
         double rmsd = ffx.potential.utils.Superpose.rmsd(x1, x2, mass);
 
         return rmsd;

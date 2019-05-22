@@ -77,13 +77,21 @@ class CreateRotamers extends AlgorithmsScript {
     int library = 2
 
     /**
+     * -D or --rmsd Set the RMSD cut off for rotamer exclusion
+     * Any rotamer with an RMSD from any previous rotamer that is
+     * less than or equal to the cut off will be thrown out.
+     */
+    @Option(names = ["-d","--rmsd"], paramLabel = "0.1",
+            description = "RMSD cut off for rotamer exclusion: only rotamers with an RMSD greater than this cut off value to all previously saved rotamers will be kept")
+    double rmsdCutoff = 0.1
+
+    /**
      * The final argument should be a filename.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
     public ForceFieldEnergy forceFieldEnergy = null
-    public ForceFieldEnergy secondForceFieldEnergy = null
 
     @Override
     CreateRotamers run() {
@@ -173,6 +181,8 @@ class CreateRotamers extends AlgorithmsScript {
 
                 // Define "all previously saved rotamers" arrayList to be used for RMSD comparison
                 ArrayList<ResidueState> keptRotamers = new ArrayList<>()
+                int keptRotamersCount = 0;
+                
                 // Loop over rotamers for this Residue.
                 for (int i = 0; i < rotamers.length; i++) {
                     Rotamer rotamer = rotamers[i]
@@ -180,7 +190,7 @@ class CreateRotamers extends AlgorithmsScript {
                     // Apply the rotamer (i.e. amino acid side-chain or nucleic acid suite).
                     RotamerLibrary.applyRotamer(residue, rotamer)
 
-                    bw.write(String.format("  ROT:%d\n", i))
+                    //bw.write(String.format("  ROT:%d\n", keptRotamersCount))
 
                     if (i > 0 || !useOriginalRotamers) {
                         // -Dplatform=omm
@@ -194,16 +204,17 @@ class CreateRotamers extends AlgorithmsScript {
                     }
 
                     // Stores a copy of minimized residue coordinates
+                    // newResidueState will be added to keptRotamers if its RMSD
+                    // to all previously kept rotamers is above cut off (user defined or
+                    // default of 0.1 kcal/mol)
                     ResidueState newResState = new ResidueState(residue)
-                    // put ResidueState in keptRotamers
 
-                    // Only save if the "new" rotamer isn't within 0.1 kcal/mol of any other rotamer
-                    // Update "all previously saved rotamers" arrayList
                     if(i == 0){
-                        // Add 0th rotamer to the assemblies arrayList
+                        // Add 0th rotamer to the keptRotamers ArrayList
                         keptRotamers.add(newResState)
 
-                        // Save out coordinates to a rotamer file.
+                        // Save out coordinates to a rotamer file (inputFileName.rot)
+                        bw.write(String.format("  ROT:%d\n", keptRotamersCount))
                         for (Atom atom : sideChainAtoms) {
                             double x = atom.getX()
                             double y = atom.getY()
@@ -217,51 +228,33 @@ class CreateRotamers extends AlgorithmsScript {
                             bw.write(atomLine.toString())
                         }
                         bw.write("  ENDROT\n")
+                        keptRotamersCount++;
                     } else{
                         // For all but the 0th rotamer, do RMSD calculations to determine if the "new" rotamer
-                        // is within 0.1 kcal/mol of any other rotamer. Only save it if it's not.
-                        println("Number of rotamers in keptRotamers: "+keptRotamers.size())
+                        // is within a cut off (default: 0.1 kcal/mol) of any other previously saved rotamer.
+                        println("Number of rotamers kept for this residue: "+keptRotamers.size())
 
-                        //forceFieldEnergy = activeAssembly.getPotentialEnergy()
-                        //Atom[] rotamerAtoms = activeAssembly.getAtomArray()
-                        //println("rotamerAtoms: "+rotamerAtoms.length)
-                        //for (int atmcount = 0; atmcount < rotamerAtoms.length; atmcount++){
-                        //    print(rotamerAtoms[atmcount].name+":")
-                        //}
-                        //println()
-                        //int nVars = forceFieldEnergy.getNumberOfVariables()
-                        //println("nVars is: "+nVars)
-                        //double[] x1 = new double[nVars]
-                        //forceFieldEnergy.getCoordinates(x1)
-
-                        //double[] x2 = new double[nVars]
-                        //double[] mass = new double[rotamerAtoms.length]
-                        //double[] mass = new double[nVars/3]
-                        //println("Mass array: "+mass.length)
-
-                        //int nRotamerAtoms = rotamerAtoms.length
-                        //for (int j = 0; j < nVars/3; j++) {
-                        //    mass[j] = rotamerAtoms[j].getMass()
-                        //}
-
-                        // Superpose.rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
-                        // Define empty array to store RMSDs and RMSD threshold value boolean
+                        // Define RMSD threshold value boolean
                         boolean withinRange = false
+
+                        // Compare newResState (i.e.: residue with newly applied rotamer) to all
+                        // previously saved rotamers in keptRotamers
                         for (int k = 0; k < keptRotamers.size(); k++){
                             double RMSD = newResState.compareTo(keptRotamers[k])
-                            //double origRMSD = ffx.potential.utils.Superpose.rmsd(x1, x2, mass)
-                            println("RMSD: "+RMSD)
-                            if(RMSD <= 0.1){withinRange = true}
+                            println("RMSD: "+RMSD+"\n")
+                            if(RMSD <= rmsdCutoff){withinRange = true}
                         }
 
-                        // If the new rotamer is within 0.1 kcal/mol of any previously kept rotamer
-                        // (i.e.: if any of the values in "rmsdValues" are 0.1 or less),
-                        // don't keep that rotamer.  Keep it otherwise
+                        // Keep new rotamer if and only if it is different from all previously
+                        // kept rotamers by an RMSD of greater than the user-defined cut off
+                        // (or default cut off of 0.1 kcal/mol)
                         if(withinRange){
                             // Rotamer not written because it's too energetically similar to another rotamer in the set
+                            // Keeping too many similar rotamers causes problems with Dead End Elimination
                             logger.info("Rotamer not kept")
                         } else{
                             // Save out coordinates to a rotamer file.
+                            bw.write(String.format("  ROT:%d\n", keptRotamersCount))
                             for (Atom atom : sideChainAtoms) {
                                 double x = atom.getX()
                                 double y = atom.getY()
@@ -276,12 +269,12 @@ class CreateRotamers extends AlgorithmsScript {
                             }
                             bw.write("  ENDROT\n")
 
-                            // Add it to keptRotamers list
+                            // Add the new rotamer to keptRotamers list
                             keptRotamers.add(newResState)
+                            keptRotamersCount++;
                         }
 
                     }
-                    // Original location of "Save out coordinates to a rotamer file" logic
                 }
 
                 // Set the Residue conformation back to rotamer 0.
