@@ -372,42 +372,57 @@ public class ResidueState {
                 + "%s, number of atoms %d", parent, res, atoms.length);
     }
 
-    public double compareTo(ResidueState residueState){
+    public double compareTo(ResidueState residueState) {
         logger.info("Comparing rotamers using the compareTo method in ResidueState");
-        double[][] tempx1 = null;
-        double[] tempx2;
-        double[] x1 = null;
-        double[] x2 = null;
-        System.out.println("Finished variable initialization");
-        for(int i = 0; i < this.atomMap.size(); i++){
-            System.out.println("In atom map for loop");
-            // Need atom key
-            Atom[] x2atoms = this.atoms;
-            System.out.println("Atoms length: "+x2atoms.length);
-            for(int atomCount = 0; atomCount<x2atoms.length; atomCount++){
-                tempx1[atomCount] = this.atomMap.get(x2atoms[atomCount]);
-            }
-            System.out.println("Created tempx1: "/*+tempx1.length*/);
-            for(int count=0;count<tempx1.length;count++){
-                System.out.println(tempx1[count]);
-            }
-            System.out.println(tempx1.length);
-            for(int j = 0; j < tempx1.length; j++){
-                //x1[x1.length+1] = tempx1[j];
-            }
-            System.out.println("Finished x1");
-            tempx2 = residueState.atomMap.get(i);
-            for(int k = 0; k < tempx2.length; k++){
-                x2[x2.length+1] = tempx2[k];
-            }
-            System.out.println("Finished x2");
+        double[][] tempx1 = new double[this.atoms.length][3];
+        double[][] tempx2 = new double[residueState.atoms.length][3];
+        double[] x1 = new double[this.atoms.length * 3];
+        double[] x2 = new double[residueState.atoms.length * 3];
+        //for(int i = 0; i < this.atomMap.size(); i++){
+        // Need atom key
+        Atom[] x1atoms = this.atoms;
+        Atom[] x2atoms = residueState.atoms;
+        logger.info("Total number of atoms: " + x1atoms.length);
+        for (Atom exAtom : x1atoms) {
+            //System.out.println("Coord: "+this.atomMap.get(exAtom)[0]+","+this.atomMap.get(exAtom)[1]+","+this.atomMap.get(exAtom)[2]);
+            //System.out.println();
         }
-        System.out.println("Created x1 and x2 arrays from");
-        double[] mass = new double[x1.length];
-        Arrays.fill(mass,1);
+        for (int atomCount = 0; atomCount < x1atoms.length; atomCount++) {
+            Atom exampleAtom = x1atoms[atomCount];
+            tempx1[atomCount] = this.atomMap.get(exampleAtom);
+        }
+        //System.out.println("Created tempx1: " + tempx1.length);
 
-        logger.info("Starting RMSD comparison between rotamers");
-        double rmsd = ffx.potential.utils.Superpose.rmsd(x1,x2,mass);
+        // Add coordinates from tempx1[][] to x1[]
+        int x1count = 0;
+        for (double[] coordSet : tempx1) {
+            for (int coordCount = 0; coordCount < 3; coordCount++) {
+                x1[x1count] = coordSet[coordCount];
+                x1count++;
+            }
+        }
+        //System.out.println("Finished x1");
+
+        for (int atomCount = 0; atomCount < x2atoms.length; atomCount++) {
+            Atom exampleAtom = x2atoms[atomCount];
+            tempx2[atomCount] = residueState.atomMap.get(exampleAtom);
+        }
+
+        int x2count = 0;
+        for (double[] coordSet : tempx2) {
+            for (int coordCount = 0; coordCount < 3; coordCount++) {
+                x2[x2count] = coordSet[coordCount];
+                x2count++;
+            }
+        }
+        //System.out.println("Finished x2");
+        //}
+        //System.out.println("Created x1 and x2 arrays from");
+        double[] mass = new double[x1.length];
+        Arrays.fill(mass, 1);
+
+        logger.info("\nStarting RMSD comparison between rotamers\n\n");
+        double rmsd = ffx.potential.utils.Superpose.rmsd(x1, x2, mass);
 
         return rmsd;
     }

@@ -251,7 +251,7 @@ class CreateRotamers extends AlgorithmsScript {
                             double RMSD = newResState.compareTo(keptRotamers[k])
                             //double origRMSD = ffx.potential.utils.Superpose.rmsd(x1, x2, mass)
                             println("RMSD: "+RMSD)
-                            if(RMSD <= 0.01){withinRange = true}
+                            if(RMSD <= 0.1){withinRange = true}
                         }
 
                         // If the new rotamer is within 0.1 kcal/mol of any previously kept rotamer
@@ -277,7 +277,7 @@ class CreateRotamers extends AlgorithmsScript {
                             bw.write("  ENDROT\n")
 
                             // Add it to keptRotamers list
-                            keptRotamers.add(activeAssembly)
+                            keptRotamers.add(newResState)
                         }
 
                     }
