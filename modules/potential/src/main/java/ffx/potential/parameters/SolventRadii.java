@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import ffx.potential.bonded.Atom;
 
@@ -80,6 +81,24 @@ public class SolventRadii {
      */
     private static final Map<Integer, Double> AMOEBA_BIO_2018_GK_RADII = new HashMap<>();
 
+
+    public static void logRadiiSource(ForceField forceField) {
+        String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
+                ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
+        forcefieldName = forcefieldName.replaceAll("_", "-");
+        if (forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true)) {
+            if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-NUC-2017")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-BIO-2018")) {
+                logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
+            }
+        }
+    }
+
     public static double applyGKRadii(ForceField forceField, double bondiScale,
                                       Atom[] atoms, double[] baseRadius) {
         Map<Integer, Double> radiiMap = null;
@@ -92,19 +111,15 @@ public class SolventRadii {
             if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
                 radiiMap = AMOEBA_2009_GK_RADII;
                 bondiScale = 1.0;
-                logger.info(" Using GK Radii for the AMOEBA 2009 force field.");
             } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
                 radiiMap = AMOEBA_2014_GK_RADII;
                 bondiScale = 1.0;
-                logger.info(" Using GK Radii for the AMOEBA 2014 force field.");
             } else if (forcefieldName.equalsIgnoreCase("AMOEBA-NUC-2017")) {
                 radiiMap = AMOEBA_NUC_2017_GK_RADII;
                 bondiScale = 1.0;
-                logger.info(" Using GK Radii for the AMOEBA Nucleic Acid 2017 force field.");
             } else if (forcefieldName.equalsIgnoreCase("AMOEBA-BIO-2018")) {
                 radiiMap = AMOEBA_BIO_2018_GK_RADII;
                 bondiScale = 1.0;
-                logger.info(" Using GK Radii for the AMOEBA Bio 2018 force field.");
             }
         }
 
@@ -876,7 +891,7 @@ public class SolventRadii {
         AMOEBA_2014_GK_RADII.put(473, 4.5600 / 2.0); // 473    C     "BenF"
         AMOEBA_2014_GK_RADII.put(474, 4.5600 / 2.0); // 474    C     "BenF"
         AMOEBA_2014_GK_RADII.put(475, 4.5600 / 2.0); // 475    C     "BenF"
-        AMOEBA_2014_GK_RADII.put(476, 3.381 / 2.0); // 476    F     "BenF"
+        AMOEBA_2014_GK_RADII.put(476, 3.3810 / 2.0); // 476    F     "BenF"
         AMOEBA_2014_GK_RADII.put(477, 3.5760 / 2.0); // 477    H     "BenF"
         AMOEBA_2014_GK_RADII.put(478, 3.5760 / 2.0); // 478    H     "BenF"
         AMOEBA_2014_GK_RADII.put(479, 3.5760 / 2.0); // 479    H     "BenF"
@@ -912,19 +927,19 @@ public class SolventRadii {
         AMOEBA_NUC_2017_GK_RADII.put(7, GK_AMOEBA_IMIDAZOLE_NH / 2.0);     // 7   N   Adenine N7, Guanine N7
         AMOEBA_NUC_2017_GK_RADII.put(8, GK_AMOEBA_IMIDAZOLE_NH / 2.0);     // 8   N   Adenine N1/N3, Cytosine N3, Guanine N3
         AMOEBA_NUC_2017_GK_RADII.put(9, GK_AMOEBA_AROMATIC_H / 2.0);       // 9   H   Adenine H8, Cytosine H6, Guanine H8, Thymine H6, Uracil H6
-        AMOEBA_NUC_2017_GK_RADII.put(10, GK_AMOEBA_AROMATIC_H / 2.0);     // 10   H   Adenine H2, Uracil H5
-        AMOEBA_NUC_2017_GK_RADII.put(11, GK_AMOEBA_METHYLAMINE_HN / 2.0); // 11   H   Adenine H61, Cytosine H41, Guanine H21
-        AMOEBA_NUC_2017_GK_RADII.put(12, GK_AMOEBA_IMIDAZOLE_NH / 2.0);   // 12   N   Cytosine N1 RNA/DNA, Guanine N1, Thymine N3, Uracil N3
-        AMOEBA_NUC_2017_GK_RADII.put(13, GK_AMOEBA_BENZENE_C / 2.0);      // 13   C   Cytosine C5
-        AMOEBA_NUC_2017_GK_RADII.put(14, GK_AMOEBA_AMIDE_CO / 2.0);       // 14   C   Cytosine C2, Guanine C6, Thymine C2/C4, Uracil C2/C4
-        AMOEBA_NUC_2017_GK_RADII.put(15, GK_AMOEBA_BENZENE_H / 2.0);      // 15   H   Cytosine H5
-        AMOEBA_NUC_2017_GK_RADII.put(16, GK_AMOEBA_CARBONYL_O / 2.0);     // 16   O   Cytosine O2, Guanine O6, Thymine O2/O4, Uracil O2/O4
-        AMOEBA_NUC_2017_GK_RADII.put(17, GK_AMOEBA_IMIDAZOLE_C / 2.0);    // 17   C   Guanine C2 (this one is tricky...)
-        AMOEBA_NUC_2017_GK_RADII.put(18, GK_AMOEBA_IMIDAZOLE_NH / 2.0);   // 18   N   Guanine N9 RNA/DNA
-        AMOEBA_NUC_2017_GK_RADII.put(19, GK_AMOEBA_AMIDE_HN / 2.0);       // 19   H   Guanine H1, Thymine H3, Uracil H3
-        AMOEBA_NUC_2017_GK_RADII.put(20, GK_AMOEBA_ETHANOL_C / 2.0);      // 20   C   Thymine C7 (C5-attached methyl group C)
-        AMOEBA_NUC_2017_GK_RADII.put(21, GK_AMOEBA_IMIDAZOLE_NH / 2.0);   // 21   N   Thymine N1, Uracil N1
-        AMOEBA_NUC_2017_GK_RADII.put(22, GK_AMOEBA_ETHANOL_H / 2.0);      // 22   H   Thymine H7
+        AMOEBA_NUC_2017_GK_RADII.put(10, GK_AMOEBA_AROMATIC_H / 2.0);      // 10   H   Adenine H2, Uracil H5
+        AMOEBA_NUC_2017_GK_RADII.put(11, GK_AMOEBA_METHYLAMINE_HN / 2.0);  // 11   H   Adenine H61, Cytosine H41, Guanine H21
+        AMOEBA_NUC_2017_GK_RADII.put(12, GK_AMOEBA_IMIDAZOLE_NH / 2.0);    // 12   N   Cytosine N1 RNA/DNA, Guanine N1, Thymine N3, Uracil N3
+        AMOEBA_NUC_2017_GK_RADII.put(13, GK_AMOEBA_BENZENE_C / 2.0);       // 13   C   Cytosine C5
+        AMOEBA_NUC_2017_GK_RADII.put(14, GK_AMOEBA_AMIDE_CO / 2.0);        // 14   C   Cytosine C2, Guanine C6, Thymine C2/C4, Uracil C2/C4
+        AMOEBA_NUC_2017_GK_RADII.put(15, GK_AMOEBA_BENZENE_H / 2.0);       // 15   H   Cytosine H5
+        AMOEBA_NUC_2017_GK_RADII.put(16, GK_AMOEBA_CARBONYL_O / 2.0);      // 16   O   Cytosine O2, Guanine O6, Thymine O2/O4, Uracil O2/O4
+        AMOEBA_NUC_2017_GK_RADII.put(17, GK_AMOEBA_IMIDAZOLE_C / 2.0);     // 17   C   Guanine C2 (this one is tricky...)
+        AMOEBA_NUC_2017_GK_RADII.put(18, GK_AMOEBA_IMIDAZOLE_NH / 2.0);    // 18   N   Guanine N9 RNA/DNA
+        AMOEBA_NUC_2017_GK_RADII.put(19, GK_AMOEBA_AMIDE_HN / 2.0);        // 19   H   Guanine H1, Thymine H3, Uracil H3
+        AMOEBA_NUC_2017_GK_RADII.put(20, GK_AMOEBA_ETHANOL_C / 2.0);       // 20   C   Thymine C7 (C5-attached methyl group C)
+        AMOEBA_NUC_2017_GK_RADII.put(21, GK_AMOEBA_IMIDAZOLE_NH / 2.0);    // 21   N   Thymine N1, Uracil N1
+        AMOEBA_NUC_2017_GK_RADII.put(22, GK_AMOEBA_ETHANOL_H / 2.0);       // 22   H   Thymine H7
         //AMOEBA_NUC_2017_GK_RADII.put(23, GK_AMOEBA_CARBONYL_O / 2.0);     // 23   O   Ribose O4 (Unsure on this one)
         //AMOEBA_NUC_2017_GK_RADII.put(23, GK_AMOEBA_IMIDAZOLE_C / 2.0);    // 24   C   Ribose C4
 
