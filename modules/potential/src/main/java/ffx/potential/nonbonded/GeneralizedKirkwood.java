@@ -154,6 +154,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private final double surfaceTension;
     /**
+     * Cavitation solvent pressure coefficient (kcal/mol/A^3).
+     */
+    private final double solventPressue;
+    /**
      * The requested permittivity.
      */
     private double epsilon;
@@ -535,9 +539,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = null;
                 volumeRegion = null;
-
                 gaussVol = new GaussVol(nAtoms, null);
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
+
                 boolean[] isHydrogen = new boolean[nAtoms];
                 double[] radii = new double[nAtoms];
                 double[] volume = new double[nAtoms];
@@ -565,6 +569,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } catch (Exception e) {
                     logger.severe(" Exception creating GaussVol: " + e.toString());
                 }
+
                 break;
             case BORN_CAV_DISP:
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
@@ -586,6 +591,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         surfaceTension = forceField.getDouble(ForceField.ForceFieldDouble.SURFACE_TENSION, tensionDefault);
+        solventPressue = forceField.getDouble(ForceField.ForceFieldDouble.SOLVENT_PRESSURE, DEFAULT_SOLVENT_PRESSURE);
+
+        if (gaussVol != null) {
+            gaussVol.setSurfaceTension(surfaceTension);
+            gaussVol.setSolventPressure(solventPressue);
+        }
 
         logger.info("  Continuum Solvation ");
         logger.info(format("   Generalized Kirkwood Cut-Off:       %8.3f (A)", cutoff));
@@ -599,10 +610,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         } else if (gaussVol != null) {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
-            logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", gaussVol.getSolventPressure()));
-            logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", gaussVol.getSurfaceTension()));
+            logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", solventPressue));
+            logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         }
-
 
         // Print out all Base Radii
         if (logger.isLoggable(Level.FINE)) {

@@ -192,11 +192,11 @@ public class GaussVol {
     /**
      * Solvent pressure in kcal/mol/Ang^3.
      */
-    private static final double solventPressure = 0.0327;
+    private double solventPressure = 0.0327;
     /**
      * Surface tension in kcal/mol/Ang^2.
      */
-    private static final double surfaceTension = 0.08;
+    private double surfaceTension = 0.08;
     /**
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
      */
@@ -293,6 +293,14 @@ public class GaussVol {
 
     public double getSurfaceTension() {
         return surfaceTension;
+    }
+
+    public void setSolventPressure(double solventPressure) {
+        this.solventPressure = solventPressure;
+    }
+
+    public void setSurfaceTension(double surfaceTension) {
+        this.surfaceTension = surfaceTension;
     }
 
     /**
