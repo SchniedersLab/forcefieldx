@@ -656,6 +656,18 @@ public class SolventRadii {
      */
     private static final double GK_AMOEBA_IMIDAZOLE_HC = 3.000;
 
+    /**
+     * TODO: Fit this so GK matches GXG trimer charging.
+     */
+    private static final double GK_AMOEBA_PROTEIN_CARBOXYLIC_ACID_CO = GK_AMOEBA_CARBONYL_CO;
+    private static final double GK_AMOEBA_PROTEIN_CARBOXYLIC_ACID_O = GK_AMOEBA_CARBONYL_O;
+    private static final double GK_AMOEBA_PROTEIN_LYSINE_NH = GK_AMOEBA_IMIDAZOLE_NH;
+    private static final double GK_AMOEBA_PROTEIN_LYSINE_HN = GK_AMOEBA_NITROGEN_H;
+    private static final double GK_AMOEBA_PROTEIN_TERMINAL_NH3 = GK_AMOEBA_IMIDAZOLE_NH;
+    private static final double GK_AMOEBA_PROTEIN_TERMINAL_H3N = GK_AMOEBA_NITROGEN_H;
+    private static final double GK_AMOEBA_PROTEIN_HISTIDINE_NH = GK_AMOEBA_IMIDAZOLE_NH;
+
+
     static {
         DEFAULT_RADII.put(0, 0.0);
         DEFAULT_RADII.put(1, 1.2);
@@ -992,25 +1004,25 @@ public class SolventRadii {
         AMOEBA_BIO_2018_GK_RADII.put(21, GK_AMOEBA_ALCOHOL_O / 2.0);    // TODO: Tyrosine O-
         AMOEBA_BIO_2018_GK_RADII.put(22, GK_AMOEBA_IMIDAZOLE_C / 2.0);  // Tryptophan CG, CD1, CD2, CE2, CE3, CZ2, CZ3, CH2
         AMOEBA_BIO_2018_GK_RADII.put(23, GK_AMOEBA_IMIDAZOLE_HC / 2.0); // Tryptophan HD1, HE3, HZ2, HZ3, HH2
-        AMOEBA_BIO_2018_GK_RADII.put(24, GK_AMOEBA_IMIDAZOLE_NH / 2.0); // Tryptophan NE1, TODO: Histidine (+) ND1, NE2
+        AMOEBA_BIO_2018_GK_RADII.put(24, GK_AMOEBA_PROTEIN_HISTIDINE_NH / 2.0); // Tryptophan NE1, Histidine (+) ND1, NE2
         AMOEBA_BIO_2018_GK_RADII.put(25, GK_AMOEBA_NITROGEN_H / 2.0);   // Tryptophan HE1
         AMOEBA_BIO_2018_GK_RADII.put(26, GK_AMOEBA_IMIDAZOLE_C / 2.0);  // Histidine CG, CD2
         AMOEBA_BIO_2018_GK_RADII.put(27, GK_AMOEBA_IMIDAZOLE_HC / 2.0); // Histidine HD2, HE1
         AMOEBA_BIO_2018_GK_RADII.put(28, GK_AMOEBA_IMIDAZOLE_C / 2.0);  // Histidine CE1
         AMOEBA_BIO_2018_GK_RADII.put(29, GK_AMOEBA_IMIDAZOLE_NH / 2.0); // Histidine (HE) ND1, (HD) NE2
-        AMOEBA_BIO_2018_GK_RADII.put(30, GK_AMOEBA_CARBONYL_CO / 2.0);  // TODO: Aspartate CG, Glutamate CD
-        AMOEBA_BIO_2018_GK_RADII.put(31, GK_AMOEBA_CARBONYL_O / 2.0);   // TODO: Aspartate OD, Glutamate OE
+        AMOEBA_BIO_2018_GK_RADII.put(30, GK_AMOEBA_PROTEIN_CARBOXYLIC_ACID_CO / 2.0);  // Aspartate CG
+        AMOEBA_BIO_2018_GK_RADII.put(31, GK_AMOEBA_PROTEIN_CARBOXYLIC_ACID_O / 2.0);   // Aspartate OD
         AMOEBA_BIO_2018_GK_RADII.put(32, GK_AMOEBA_CARBONYL_CO / 2.0);  // Aspartic Acid CG, Glutamic Acid CD
         AMOEBA_BIO_2018_GK_RADII.put(33, GK_AMOEBA_CARBONYL_O / 2.0);   // Aspartic Acid OD1, Glutamic Acid OE1
         AMOEBA_BIO_2018_GK_RADII.put(34, GK_AMOEBA_CARBOXCYLIC_ACID_O / 2.0);   // Aspartic Acid OD2, Glutamic Acid OE2
         AMOEBA_BIO_2018_GK_RADII.put(35, GK_AMOEBA_CARBOXCYLIC_ACID_HO / 2.0);  // Aspartic Acid HD2, Glutamic Acid HE2
         AMOEBA_BIO_2018_GK_RADII.put(36, GK_AMOEBA_POLARGROUP_C / 2.0); // Lysine CG
-        AMOEBA_BIO_2018_GK_RADII.put(37, GK_AMOEBA_IMIDAZOLE_NH / 2.0); // TODO: Lysine NZ
-        AMOEBA_BIO_2018_GK_RADII.put(38, GK_AMOEBA_NITROGEN_H / 2.0);   // TODO: Lysine HN
+        AMOEBA_BIO_2018_GK_RADII.put(37, GK_AMOEBA_PROTEIN_LYSINE_NH / 2.0); // Lysine NZ
+        AMOEBA_BIO_2018_GK_RADII.put(38, GK_AMOEBA_PROTEIN_LYSINE_HN / 2.0); // Lysine HN
         AMOEBA_BIO_2018_GK_RADII.put(39, GK_AMOEBA_POLARGROUP_C / 2.0); // Arginine CZ
         AMOEBA_BIO_2018_GK_RADII.put(40, GK_AMOEBA_POLARGROUP_C / 2.0); // Acetyl Cap CH3
-        AMOEBA_BIO_2018_GK_RADII.put(41, GK_AMOEBA_IMIDAZOLE_NH / 2.0); // TODO: N-Terminal NH3+
-        AMOEBA_BIO_2018_GK_RADII.put(42, GK_AMOEBA_NITROGEN_H / 2.0);   // TODO: N-Terminal H3N+
+        AMOEBA_BIO_2018_GK_RADII.put(41, GK_AMOEBA_PROTEIN_TERMINAL_NH3 / 2.0); // N-Terminal NH3+
+        AMOEBA_BIO_2018_GK_RADII.put(42, GK_AMOEBA_PROTEIN_TERMINAL_H3N / 2.0); // N-Terminal H3N+
 
         // AMOEBA BIO 2018 Nucleic Acid Force Field
         AMOEBA_BIO_2018_GK_RADII.put(43, AMOEBA_NUC_2017_GK_RADII.get(1));
