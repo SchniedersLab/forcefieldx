@@ -846,6 +846,18 @@ public class ManyBodyOptions {
         return algorithm;
     }
 
+    public boolean getUsingOriginalCoordinates() {
+        return !noOriginal;
+    }
+
+    public void setOriginalCoordinates(boolean useOrig) {
+        noOriginal = !useOrig;
+    }
+
+    public RotamerLibrary getRotamerLibrary() {
+        return rLib;
+    }
+
 //    /**
 //     * Saves all eliminated rotamers to an ouput file called "eliminated.csv"
 //     * when the many body command is run with the following syntax and flags:

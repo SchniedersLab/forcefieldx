@@ -58,6 +58,8 @@ import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AngleType;
+import org.apache.commons.math3.util.FastMath;
+
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 
@@ -446,15 +448,17 @@ public class RotamerLibrary {
      * @param residue To be measured
      * @param chi     Array to be filled with torsion values
      * @param print   Verbosity flag
+     * @return        The number of rotamers this Residue has.
      */
-    public static void measureRotamer(Residue residue, double[] chi, boolean print) {
+    public static int measureRotamer(Residue residue, double[] chi, boolean print) {
         if (residue == null) {
-            return;
+            return -1;
         }
+        int nRot = -1;
         switch (residue.getResidueType()) {
             case AA:
                 try {
-                    measureAARotamer(residue, chi, print);
+                    nRot = measureAARotamer(residue, chi, print);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     String message = " Array passed to measureRotamer was not of sufficient size.";
                     logger.log(Level.WARNING, message, e);
@@ -463,7 +467,7 @@ public class RotamerLibrary {
 
             case NA:
                 try {
-                    measureNARotamer(residue, chi, print);
+                    nRot = measureNARotamer(residue, chi, print);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     String message = "Array passed to measureRotamer was not of sufficient size.";
                     logger.log(Level.WARNING, message, e);
@@ -471,6 +475,7 @@ public class RotamerLibrary {
                 break;
             default:
                 try {
+                    nRot = -1;
                     measureUNKRotamer(residue, chi, print);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     String message = "Array passed to measureRotamer was not of sufficient size.";
@@ -478,6 +483,90 @@ public class RotamerLibrary {
                 }
                 break;
         }
+        return nRot;
+    }
+
+    public static class RotamerGuess {
+        private final Residue residue;
+        private final Rotamer rotamer;
+        private final int rotIndex;
+        private final double rmsd;
+
+        RotamerGuess(Residue res, Rotamer rot, int index, double rmsDev) {
+            residue = res;
+            rotamer = rot;
+            rotIndex = index;
+            rmsd = rmsDev;
+        }
+
+        public Residue getResidue() {
+            return residue;
+        }
+
+        public Rotamer getRotamer() {
+            return rotamer;
+        }
+
+        public int getRotamerIndex() {
+            return rotIndex;
+        }
+
+        public double getRMSD() {
+            return rmsd;
+        }
+
+        public String toString() {
+            return format(" Residue %7s is most likely in rotamer %2d (%s), with an RMSD of %9.5f degrees.", residue, rotIndex, rotamer, rmsd);
+        }
+    }
+
+    /**
+     * Guess at what rotamer a residue is currently in.
+     *
+     * @param residue Residue to check.
+     * @return Index of the rotamer it is in.
+     */
+    public RotamerGuess guessRotamer(Residue residue) {
+        assert useOrigCoordsRotamer == false;
+        if (residue == null) {
+            throw new IllegalArgumentException(" Residue cannot be null!");
+        }
+        Rotamer[] rotamers = residue.getRotamers(this);
+        if (rotamers == null || rotamers.length == 0) {
+            throw new IllegalArgumentException(format(" Residue %s does not have rotamers!", residue));
+        }
+        int nRot = rotamers.length;
+
+        double[] currChi = residue.getResidueType().equals(ResidueType.AA) ? new double[4] : new double[7];
+        int numChis = measureRotamer(residue, currChi, false);
+        double[] chiRMSD = new double[nRot];
+        double lowestRMSD = Double.MAX_VALUE;
+        int indexLowest = -1;
+
+        for (int i = 0; i < nRot; i++) {
+            double rmsd = 0;
+            Rotamer roti = rotamers[i];
+            double[] rotChi = roti.angles;
+
+            for (int j = 0; j < numChis; j++) {
+                double dChi = Math.abs(currChi[j] - rotChi[j]);
+                if (dChi > 180) {
+                    dChi = 360.0 - dChi;
+                }
+                dChi *= dChi;
+                rmsd += dChi;
+            }
+
+            rmsd /= numChis;
+            rmsd = FastMath.sqrt(rmsd);
+            chiRMSD[i] = rmsd;
+            if (rmsd < lowestRMSD) {
+                lowestRMSD = rmsd;
+                indexLowest = i;
+            }
+        }
+
+        return new RotamerGuess(residue, rotamers[indexLowest], indexLowest, lowestRMSD);
     }
 
     /**
@@ -501,8 +590,9 @@ public class RotamerLibrary {
      * @param residue To be measured.
      * @param chi     Array to be filled with torsion values.
      * @param print   Verbosity flag.
+     * @return        The number of rotamers this Residue has.
      */
-    public static void measureAARotamer(Residue residue, double[] chi, boolean print) {
+    public static int measureAARotamer(Residue residue, double[] chi, boolean print) {
         if (residue instanceof MultiResidue) {
             residue = ((MultiResidue) residue).getActive();
         }
@@ -528,7 +618,7 @@ public class RotamerLibrary {
                         break;
                     }
                 }
-                break;
+                return 1;
             }
             case LEU: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -550,7 +640,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case ILE: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -572,7 +662,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case SER: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -594,7 +684,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case THR: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -616,7 +706,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case CYS:
             case CYX:
@@ -634,7 +724,7 @@ public class RotamerLibrary {
                         break;
                     }
                 }
-                break;
+                return 1;
             }
             case PHE: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -651,7 +741,7 @@ public class RotamerLibrary {
                         break;
                     }
                 }
-                break;
+                return 1;
             }
             case PRO: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -673,7 +763,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case TYR: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -705,7 +795,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 3;
             }
             case TYD:
             case TRP: {
@@ -728,7 +818,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case HIS:
             case HIE:
@@ -752,7 +842,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case ASP: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -768,7 +858,7 @@ public class RotamerLibrary {
                         break;
                     }
                 }
-                break;
+                return 1;
             }
             case ASH:
             case ASN: {
@@ -791,7 +881,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 2;
             }
             case GLU:
             case GLN:
@@ -822,7 +912,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 3;
             }
             case MET: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -851,7 +941,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 3;
             }
             case LYS:
             case LYD: {
@@ -888,7 +978,7 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 4;
             }
             case ARG: {
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -924,19 +1014,19 @@ public class RotamerLibrary {
                         }
                     }
                 }
-                break;
+                return 4;
             }
             case UNK:
                 chi = new double[7];
                 String resName = residue.getName().toUpperCase();
                 if (nonstdRotCache.containsKey(resName)) {
-                    nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
+                    return nonstdRotCache.get(resName).measureNonstdRot(residue, chi, print);
                     //nonstdRotCache.get(resName).applyNonstdRotamer(residue, rotamer);
                 } else {
                     throw new IllegalArgumentException(format("(IAE) valueOf(%s)", residue.getName()));
                 }
-                break;
             default: {
+                return 0;
             }
 
         }
@@ -1154,8 +1244,9 @@ public class RotamerLibrary {
      * @param residue Residue to be measured.
      * @param chi     Array to be filled with torsion values.
      * @param print   Verbosity flag.
+     * @return        The number of rotamers this Residue has.
      */
-    private static void measureNARotamer(Residue residue, double[] chi, boolean print) {
+    private static int measureNARotamer(Residue residue, double[] chi, boolean print) {
         NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
         Residue prevResidue = residue.getPreviousResidue();
         Torsion torsion;
@@ -1167,6 +1258,7 @@ public class RotamerLibrary {
         Atom O5s = (Atom) residue.getAtomNode("O5\'");
         Atom P = (Atom) residue.getAtomNode("P");
 
+        int nRot = 7;
 
         /*
          * Start by measuring delta (i-1) if available, working up to delta.  If
@@ -1194,14 +1286,17 @@ public class RotamerLibrary {
                         if (print) {
                             logger.info(torsion.toString());
                         }
+                        nRot = 3;
                     } else {
                         Atom OP3 = (Atom) residue.getAtomNode("OP3");
+                        nRot = 3;
                         if (OP3 != null) {
                             torsion = OP3.getTorsion(P, O5s, C5s);
                             chi[3] = torsion.getValue();
                             if (print) {
                                 logger.info(torsion.toString());
                             }
+                            nRot = 4;
                         }
 
                         torsion = P.getTorsion(O5s, C5s, C4s);
@@ -1279,6 +1374,7 @@ public class RotamerLibrary {
         if (print) {
             logger.info(torsion.toString());
         }
+        return nRot;
     }
 
     /**
@@ -4080,7 +4176,14 @@ public class RotamerLibrary {
             stdRotamers.addAll(Arrays.asList(newRots));
         }
 
-        void measureNonstdRot(Residue residue, double[] chi, boolean print) {
+        /**
+         * Checks the angles for a nonstandard residue.
+         * @param residue Residue to measure.
+         * @param chi     Array to be filled up with chi values.
+         * @param print   Verbosity flag.
+         * @return        Number of dihedral angles.
+         */
+        int measureNonstdRot(Residue residue, double[] chi, boolean print) {
             for (String placeRec : placeRecords) {
                 String[] toks = placeRec.split("\\s+");
                 if (toks[0].equalsIgnoreCase("PLACECHI")) {
@@ -4096,6 +4199,7 @@ public class RotamerLibrary {
                     }
                 }
             }
+            return placeRecords.length;
         }
 
         /**
