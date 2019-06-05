@@ -618,6 +618,7 @@ public class RotamerLibrary {
                 }
                 break;
             }
+            case CYS:
             case CYX:
             case CYD: {
                 Atom N = (Atom) residue.getAtomNode("N");
