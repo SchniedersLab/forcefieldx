@@ -320,27 +320,27 @@
                     <tbody>
                         <tr>
                             <td>P21/c</td>
-                            <td><a item="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a item="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a item="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_p21_c.xyz">CBZ_p21_c.xyz</a></td>
+                            <td><a href="parameters/CBZ_p21_c.properties">CBZ_p21_c.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                         <tr>
                             <td>Pbca</td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_pbca.xyz">CBZ_pbca.xyz</a></td>
+                            <td><a href="parameters/CBZ_pbca.properties">CBZ_pbca.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                         <tr>
                             <td>C2/c</td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_c2_c.xyz">CBZ_c2_c.xyz</a></td>
+                            <td><a href="parameters/CBZ_c2_c.properties">CBZ_c2_c.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                         <tr>
                             <td>H-3</td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_h-3.xyz">CBZ_h-3.xyz</a></td>
+                            <td><a href="parameters/CBZ_h-3.properties">CBZ_h-3.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                     </tbody>
                 </table>
