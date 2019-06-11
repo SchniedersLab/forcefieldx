@@ -566,6 +566,13 @@ public class RotamerLibrary {
             }
         }
 
+        if (indexLowest < 0) {
+            logger.warning(format(" Residue %s could not be IDd!", residue));
+            logger.info(Arrays.toString(currChi));
+            logger.info(format("%12.5g", lowestRMSD));
+            logger.info(format("%d", nRot));
+        }
+
         return new RotamerGuess(residue, rotamers[indexLowest], indexLowest, lowestRMSD);
     }
 
@@ -679,6 +686,9 @@ public class RotamerLibrary {
                     }
                     if (torsion.compare(CA, CB, OG, HG)) {
                         chi[1] = torsion.getValue();
+                        if (Double.isNaN(chi[1])) {
+                            chi[1] = 180.0; // Possible numeric instability?
+                        }
                         if (print) {
                             logger.info(torsion.toString());
                         }
@@ -701,6 +711,9 @@ public class RotamerLibrary {
                     }
                     if (torsion.compare(CA, CB, OG1, HG1)) {
                         chi[1] = torsion.getValue();
+                        if (Double.isNaN(chi[1])) {
+                            chi[1] = 180.0; // Possible numeric instability?
+                        }
                         if (print) {
                             logger.info(torsion.toString());
                         }
@@ -790,6 +803,9 @@ public class RotamerLibrary {
                     }
                     if (torsion.compare(CE2, CZ, OH, HH)) {
                         chi[2] = torsion.getValue();
+                        if (Double.isNaN(chi[2])) {
+                            chi[2] = 180.0; // Possible numeric instability?
+                        }
                         if (print) {
                             logger.info(torsion.toString());
                         }
