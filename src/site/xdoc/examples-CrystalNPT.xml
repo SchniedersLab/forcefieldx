@@ -8,15 +8,19 @@
         <author email="aaron-nessler@uiowa.edu">Aaron Nessler</author>
     </properties>
     <body>
-        <section name="Organic Crystal Thermodynamic Polymorph Search">
+        <section name="Thermodynamic Organic Crystal Polymorph Search">
+            <p>The majority of polymorph search algorithms are based on searching a potential energy surface over
+            space groups, unit cell parameters and molecular coordinates. Here we present a novel thermodynamic search
+            procedure that samples the phase space of polymorphs at a prescribed temperature and pressure (i.e. NPT).</p>
             <p>The general procedure for the thermodynamic polymorph search is as follows:
             </p>
             <ol>
                 <li>Prepare space groups with random starting coordinates.</li>
-                <li>Setup and run Thermodynamics command </li>
+                <li>Setup and run a <i>Thermodynamics</i> command.</li>
             </ol>
-            <subsection name="Preparation of Space Groups">
-                <p>To perform a polymorph search, we need an input coordinate file in TINKER XYZ (or PDB) format.
+            <subsection name="Preparation of Space Group Simulation Directories">
+                <p>To perform the polymorph search in each target space group,
+                    a input coordinate file in XYZ (or PDB) format is needed.
                     In this example, we are using carbamazepine (CBZ).</p>
                 <source>
                     30  CBZ.xyz
@@ -51,17 +55,14 @@
                     29  H     -1.190268    3.504894   -1.820183   411     3
                     30  H     -2.085532    2.148253   -1.167517   411     3
                 </source>
-                <p>The property file (like a TINKER keyword file) specifies the crystal information. Note
-                    that for most of the small organic molecules, AMOEBA parameters are not published thus
-                    need to be parameterized for each molecule (PolType Program developed by Pengyu Ren Research
-                    Group can be used for this purpose). The parameters and patch specifications point to carbamazepine
-                    AMOEBA parameters (CBZ.patch).
-                    It is important to specify a starting space group and unit cell parameters so that Force Field X (FFX)
-                    knows to write these values to the property files created by the PrepareSpaceGroups command,
-                    however the specific values included here are unimportant as they will be overwritten by the above command.
+                <p>The property file (analogous to a TINKER keyword file) specifies the space group, (starting) unit cell information, and
+                    AMOEBA parameters for the molecule. The latter can be generated using the PolType program
+                    developed in the lab of Pengyu Ren (in this case carbamazepine AMOEBA parameters are contained in CBZ.patch).
+                    It is important to specify a space group (e.g. P1) and unit cell parameters so that the FFX
+                    PrepareSpaceGroups command recognizes the system as respecting periodic boundary conditions.
                 </p>
                 <source>
-                    parameters CBZ.patch
+                    parameters /Absolute/path/to/CBZ.patch
                     spacegroup P1
                     a-axis  10.0
                     b-axis  10.0
@@ -69,32 +70,36 @@
                     alpha   90.0
                     beta    90.0
                     gamma   90.0
-                    heavy-hydrogen True
+                    heavy-hydrogen true
                 </source>
-                <p>FFX handles the creation of space groups through the PrepareSpaceGroups command seen below. For the purpose of this example,
-                    we will try to indentify a known structure from the Cambridge Crystallography Data Centre <a href="https://www.ccdc.cam.ac.uk">(CCDC)</a> ab initio.
-                    For carbamazepine, we will attempt to identify the structure for the space group P21/c
+                <p>FFX handles the creation of space groups through the PrepareSpaceGroups command seen below.
+                    For the purpose of this example, we will search for known carbamazepine polymorphs archived at the
+                    Cambridge Crystallography Data Centre <a href="https://www.ccdc.cam.ac.uk">(CCDC)</a>.
+                    First, we will search in the space group P21/c
                     <a href="https://www.ccdc.cam.ac.uk/structures/Search?Compound=carbamazepine&amp;DatabaseToSearch=Published">(CBMZPN01)</a>.
                     Other helpful flags can be identified for the creation of space groups by using the following command: ffxc PrepareSpaceGroups -h.
                 </p>
                 <source>ffxc PrepareSpaceGroups --sg=P21/c CBZ.xyz</source>
-                <p>Each of the space groups identified by the PrepareSpaceGroups command should now have their own subdirectories. Each subdirectory should
-                    contain a randomized space group specific property file and coordinate file. The parameter file will still need to be copied into the
-                    subdirectories.
+                <p>Each of the space groups identified by the PrepareSpaceGroups command should now have their own subdirectories. Each subdirectory
+                    contains a space group specific property file and coordinate file. As long as an absolute path the CBZ.patch file was given,
+                    no further files are needed in each space group subdirectory.
                 </p>
             </subsection>
-            <subsection name="Thermodynamcis Command">
-                <p>The Thermodynamics command is used to perform the polymorph search. This is done by modulating the
-                    inter-molecular interactions using a lambda term to simulate multiple transitions between the vacuum
-                    and crystalline phases for the specified molecule.
+            <subsection name="Thermodynamic Polymorph Search for a Space Group">
+                <p>The Thermodynamics command is used to perform a polymorph search in each space group.
+                    The algorithm operates in the NPT ensemble, and alchemically modulates intermolecular
+                    interactions using a lambda (L) state variable. At L=0, all intermolecular interactions are zero (i.e. vacuum), while at
+                    L=1, all intermolecular interactions (including between space group symmetry mates) are full strength (i.e. crystalline).
+                    The Orthogonal Space Random Walk algorithm is used to sample the thermodynamic path between vacuum and crystalline end
+                    states, including fully flexible sampling of atomic coordinates and unit cell parameters fluctuations under control of
+                    a Monte Carlo barostat. Hundreds to thousands of transitions between the vacuum and crystalline phases
+                    for the specified molecule are simualted.
                     <img src="images/lambdaPath.png" height="1126" width="1500" alt="lambda" />
-                    The above image is a depiction of the lambda path that is traversed during simulation. Both ends of
-                    the lambda path are real states, 0.00 being the molecule in vacuum and 1.00 being in the crystalline
-                    state. All other lambda values are alchemical states that are used as a heuristic to compute the
-                    free energy between the two states.
+                    The above image depicts the alchemical thermodynamic path traversed during a simulation. Both ends of
+                    the lambda path are physical states, with 0 defining a molecule in vacuum and 1 defining the crystalline
+                    state, while intermediate lambda values are alchemical.
                 </p>
-
-                <source>ffxc Thermodynamics -d 2 -r 0.01 -l 0.0 -n 3125000 -Q 0 -i stochastic --rsym 2.0 --ruc 1.0 -t 298 --s1 1 --f1 30 -p 1.0 --bM=0.002 -o CBZ.xyz</source>
+                <source>ffxc Thermodynamics -d 2 -r 0.01 -l 0.0 -n 50000000 -Q 0 -i stochastic --rsym 2.0 --ruc 1.0 -t 298 --s1 1 --f1 30 -p 1.0 --bM=0.002 -o CBZ.xyz</source>
                 <table>
                     <thead>
                         <tr>
@@ -105,19 +110,19 @@
                     <tbody>
                         <tr>
                             <td>-d 2</td>
-                            <td>Time discretization step in femtoseconds.</td>
+                            <td>Time step in femtoseconds (2 assumes use of the heavy-hydrogen property).</td>
                         </tr>
                         <tr>
                             <td>-r 0.01</td>
-                            <td>Interval to report thermodynamics (psec)</td>
+                            <td>Interval to report thermodynamics (psec).</td>
                         </tr>
                         <tr>
                             <td>-l 0.0</td>
-                            <td>Initial lambda value of 0.0 (vacuum)</td>
+                            <td>Initial lambda value (L=0 specifies vacuum).</td>
                         </tr>
                         <tr>
-                            <td>-n 3125000</td>
-                            <td>Number of MD steps</td>
+                            <td>-n 50000000</td>
+                            <td>Number of MD steps.</td>
                         </tr>
                         <tr>
                             <td>-Q 0</td>
@@ -125,7 +130,7 @@
                         </tr>
                         <tr>
                             <td>-i stochastic</td>
-                            <td>Stochastic integrator specifying stochastic dynamics</td>
+                            <td>Specify the stochastic dynamics integrator.</td>
                         </tr>
                         <tr>
                             <td>--rsym 2.0</td>
@@ -137,22 +142,23 @@
                         </tr>
                         <tr>
                             <td>-t 298</td>
-                            <td>Temperature</td>
+                            <td>Temperature (kelvin).</td>
                         </tr>
                         <tr>
                             <td>--s1 1</td>
-                            <td>Softcore start atom</td>
+                            <td>First softcore atom.</td>
                         </tr>
                         <tr>
                             <td>--f1 30</td>
-                            <td>Softcore final atom</td>
+                            <td>Final softcore atom. Note that all atoms must be specified for polymoprh searches.</td>
                         </tr>
                         <tr>
                             <td>-p 1.0</td>
-                            <td>Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).</td>
+                            <td>Specify use of a MC Barostat at the given pressure (atm); the default 0 disables NPT and will not
+                                search unit cell parameters (only atomic coordinates).</td>
                         </tr>
                         <tr>
-                            <td>--bM =0.002</td>
+                            <td>--bM 0.002</td>
                             <td>OSRW Gaussian bias magnitude (kcal/mol).</td>
                         </tr>
                         <tr>
@@ -161,29 +167,32 @@
                         </tr>
                     </tbody>
                 </table>
-                <p>The successful use of this setup for the Thermodynamics command will produce multiple optimized coordinate files with unit cell parameters
-                    contained in the second line (i.e. CBZ_opt.xyz_#). These files should also be concatenated together into an archive file (i.e. CBZ.arc).
-                    Each optimized file will be a viable polymorph for the specified molecule. By minimizing these structures, the polymorphs in the same
-                    energy well of the potential energy surface should achieve similar potential energies. A minimization over the coordinates and the
+                <p>The successful use of this setup for the Thermodynamics command will produce multiple optimized coordinate files with
+                    unit cell parameters contained in the second line (i.e. CBZ_opt.xyz_#). These files can be concatenated together into an archive file (i.e. CBZ.arc).
+                    Although each optimized file is a proposed polymorph for the specified molecule, those with the
+                    lowest potential energies and favorable densities are strongest candidates.
+                    Redundant structures can be found via tight minimization; those in the same
+                    energy well will optimize to similar potential energies. A minimization over coordinates and
                     unit cell parameters can be performed using the following command:
                 </p>
                 <source>ffxc CrystalMin -e 0.001 CBZ.arc</source>
                 <p>
-                    At this point we have successfully generated feasible ab initio polymorphs of a desired molecule. Further analysis may be needed to determine
-                    the most favorable structures of those identified by the FFX package.
+                    At this point, a series of ab initio polymorphs for a desired molecule have been produced, limited by the quality
+                    of the AMOEBA force field parameters and/or convergence of the sampling.
                 </p>
             </subsection>
             <subsection name="Example Output and Analysis">
                 <p>
-                    Utilizing the input files and setup for the Thermodynamics command seen above should produce logging that alternates between the following:
+                    Utilizing the input files and setup for the Thermodynamics command seen above
+                    should produce logging that alternates between the following:
                 </p>
                 <source>
                     L=0.0000 (  0) F_LU=    0.0000 F_LB=    0.0000 F_L=    0.0000 V_L=    0.0000
 
                         Time      Kinetic    Potential        Total     Temp      CPU
                         psec     kcal/mol     kcal/mol     kcal/mol        K      sec
+                                   26.6484       0.1138      26.7623   298.00
 
-                    26.6484       0.1138      26.7623   298.00
                     L=0.0000 (  0) F_LU=    0.0000 F_LB=   -0.0000 F_L=   -0.0000 V_L=    0.0120
                     1.000e-02      16.3641      13.3190      29.6832   182.99    0.639
                     Density: 0.954 UC:   4.25  15.68  24.68  90.00  90.00  90.00 MCS: 100.0
@@ -215,18 +224,23 @@
                     L=0.0912 ( 18) F_LU=    2.1970 F_LB=   -2.6434 F_L=   -0.4465 V_L=    0.0986
                 </source>
                 <p>
-                    The above section monitors the advancement of the molecular dynamic simulation with respect to time.
-                    &quot;L&quot; indicates the current lambda value in the simulation with the bin that contains it in parentheses. The lambda
-                    value will from approximately zero, denoting the inter-molecular interactions are those of vacuum, and approximately one,
-                    signalling the molecule is subjected to full crystalline effects.
-                    The &quot;F_LU&quot; term displays the force field energy gradient, while &quot;F_LB&quot; shows the potential energy gradient produced by the bias
-                    (both of these gradients are with respect to the lambda term). The total potential energy gradient (&quot;F_L&quot;) is the sum of the two
-                    previous gradient components. The lambda parameter is mapped to a periodic variable theta where &quot;V_L&quot; displays
-                    half of the theta velocity. The column labels at the top of this section correlate to the numeric rows that do not have
-                    alternative labels. The first row does not have Time nor CPU values causing the labels to be off set. The Density, unit cell
-                    parameters (UC: a b c alpha beta gamma), percentage of side moves accepted (MCS), and the percentage of angle movements accepted
-                    (MCA) are also listed in this section.
-
+                    The above section monitors the advancement of the stochastic dynamics simulation with respect to time.
+                    &quot;L&quot; indicates the current lambda value and its discrete bin in parentheses.
+                    The lambda value evolve between zero (i.e. denoting no intermolecular interactions in vacuum) and one
+                    (i.e. the molecule is subject to full crystalline periodic boundary conditions in the defined space group).
+                </p>
+                    <ul>
+                        <li><i>F_LU</i> is the partial derivative of the force field with respect to lambda.</li>
+                        <li><i>F_LB</i> is the partial derivative of the orthogonal space bias with respect to lambda.</li>
+                        <li><i>F_L</i> is the sum of F_LU and F_LB.</li>
+                        <li><i>V_L</i> is the velocity of the lambda particle.</li>
+                    </ul>
+                <p>
+                    The column labels at the top of this section correlate to the numeric rows that do not have
+                    alternative labels.
+                    The Density, unit cell parameters (UC: a b c alpha beta gamma),
+                    percentage of unit cell length moves accepted (MCS), and the percentage of unit cell angle moves
+                    accepted (MCA) are also listed in this section.
                 </p>
                 <source>
                     Weight   Lambda      dU/dL Bins  &lt;dU/dL&gt;    g(L)  f(L,&lt;dU/dL&gt;) Bias    dG(L) Bias+dG(L)
@@ -260,20 +274,27 @@
                     0.00e+00 0.99875     0.0     0.0     0.00   -20.22     0.00   -20.22    20.22      -0.00
                 </source>
                 <p>
-                    This section displays a meaningful summary associated with the lambda path trajectory at a given time step. The &quot;Weight&quot; column denotes
-                    the amount of bias at a given lambda value (lambda counts specified by the recursion kernel). The &quot;Lambda&quot; column displays the lambda value
-                    bisecting the upper and lower lambda bounds at each step. &quot;dU/dL Bins&quot; indicates the boundaries of the lambda path that have been sampled.
-                    The &quot;&lt;dU/dL&gt;&quot; term displays the thermodynamic average for the potential energy gradient with respect to lambda.
-                    &quot;g(L)&quot; represents the 1-D bias that is typical for standard meta-dynamics. &quot;f(L,&lt;dU/dL&gt;)&quot; represents a marginalized version of the 2-D bias
-                    at the most favorable state (&lt;dU/dL&gt;).
-                    The &quot;Bias&quot; term is simply the summation of the bias terms that are used to ensure sampling throughout the lambda path. &quot;dG(L)&quot; is the change in
-                    free energy for each step. The final column denoted as &quot;Bias+dG(L)&quot;shows the bias terms added to the free energy.
-                    Ideally this term will be uniform for all of the simulation indicating that smooth sampling occurred throughout the entire lambda path.
+                    This section displays a summary of the orthogonal space histogram, which contains all information necessary
+                    to compute free energy differences.
+                </p>
+                    <ul>
+                        <li><i>Weight</i> is the integral of the bias added over all dU/dL bins at a fixed lambda.</li>
+                        <li><i>Lambda</i> displays the mean lambda value for each lambda bin.</li>
+                        <li><i>dU/dL Bins</i> display the min/max of the instantaneous dU/dL sampled for each lambda bin.</li>
+                        <li><i>&lt;dU/dL&gt;</i> gives the thermodynamic average of dU/dL (i.e. the force used during thermodynamic integration).</li>
+                        <li><i>g(L)</i> is the 1D bias orthogonal space bias for a given lambda.</li>
+                        <li><i>f(L,&lt;dU/dL&gt;)</i> is the 2D bias evaluated at (lambda, &lt;dU/dL&gt;).</li>
+                        <li><i>Bias</i> is the sum of the 1D and 2D bias columns.</li>
+                        <li><i>dG(L)</i> is the free energy difference from L=0 to the current lambda bin.</li>
+                        <li><i>Bias+dG(L)</i> is the sum of the Bias and dG(L) for the current lambda bin.</li>
+                    </ul>
+                <p>
+                    As a simulation converges, the sum <i>Bias+dG(L)</i> approaches a constant and a random walk along lambda results.
                 </p>
                 <table>
                     <thead>
                         <tr>
-                            <th>Molecules Compared</th>
+                            <th>Number of Molecules Compared</th>
                             <th>P21/c</th>
                             <th>Pbca</th>
                             <th>C2/c</th>
@@ -305,8 +326,10 @@
                     </tbody>
                 </table>
                 <p>
-                    The above table shows the RMSD deviations of FFX produced crystals as compared to those experimentally identified in the CCDC. These comparisons
-                    are done with increasing number of molecules. The starting files for each of the space groups can be found below.
+                    The above table shows the RMSD deviations of FFX produced polymorphs,
+                    compared to those experimentally observed in the CCDC.
+                    These comparisons are done with increasing number of molecules.
+                    The starting files for each of the space groups can be found below.
                 </p>
                 <table>
                     <thead>
@@ -320,27 +343,27 @@
                     <tbody>
                         <tr>
                             <td>P21/c</td>
-                            <td><a item="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a item="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a item="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_p21_c.xyz">CBZ_p21_c.xyz</a></td>
+                            <td><a href="parameters/CBZ_p21_c.properties">CBZ_p21_c.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                         <tr>
                             <td>Pbca</td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_pbca.xyz">CBZ_pbca.xyz</a></td>
+                            <td><a href="parameters/CBZ_pbca.properties">CBZ_pbca.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                         <tr>
                             <td>C2/c</td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_c2_c.xyz">CBZ_c2_c.xyz</a></td>
+                            <td><a href="parameters/CBZ_c2_c.properties">CBZ_c2_c.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                         <tr>
                             <td>H-3</td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
-                            <td><a src="parameters/ACANIL.patch">ACANIL.patch</a></td>
+                            <td><a href="parameters/CBZ_h-3.xyz">CBZ_h-3.xyz</a></td>
+                            <td><a href="parameters/CBZ_h-3.properties">CBZ_h-3.properties</a></td>
+                            <td><a href="parameters/CBZ.patch">CBZ.patch</a></td>
                         </tr>
                     </tbody>
                 </table>
