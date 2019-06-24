@@ -77,7 +77,7 @@ class CreateRotamers extends AlgorithmsScript {
     int library = 2
 
     /**
-     * -D or --rmsd Set the RMSD cut off for rotamer exclusion
+     * -d or --rmsd Set the RMSD cut off for rotamer exclusion
      * Any rotamer with an RMSD from any previous rotamer that is
      * less than or equal to the cut off will be thrown out.
      */
@@ -182,15 +182,13 @@ class CreateRotamers extends AlgorithmsScript {
                 // Define "all previously saved rotamers" arrayList to be used for RMSD comparison
                 ArrayList<ResidueState> keptRotamers = new ArrayList<>()
                 int keptRotamersCount = 0;
-                
+
                 // Loop over rotamers for this Residue.
                 for (int i = 0; i < rotamers.length; i++) {
                     Rotamer rotamer = rotamers[i]
 
                     // Apply the rotamer (i.e. amino acid side-chain or nucleic acid suite).
                     RotamerLibrary.applyRotamer(residue, rotamer)
-
-                    //bw.write(String.format("  ROT:%d\n", keptRotamersCount))
 
                     if (i > 0 || !useOriginalRotamers) {
                         // -Dplatform=omm
@@ -232,7 +230,7 @@ class CreateRotamers extends AlgorithmsScript {
                     } else{
                         // For all but the 0th rotamer, do RMSD calculations to determine if the "new" rotamer
                         // is within a cut off (default: 0.1 kcal/mol) of any other previously saved rotamer.
-                        println("Number of rotamers kept for this residue: "+keptRotamers.size())
+                        logger.info("Number of rotamers kept for this residue: "+keptRotamers.size())
 
                         // Define RMSD threshold value boolean
                         boolean withinRange = false
@@ -241,7 +239,7 @@ class CreateRotamers extends AlgorithmsScript {
                         // previously saved rotamers in keptRotamers
                         for (int k = 0; k < keptRotamers.size(); k++){
                             double RMSD = newResState.compareTo(keptRotamers[k])
-                            println("RMSD: "+RMSD+"\n")
+                            logger.info("RMSD: "+RMSD+"\n")
                             if(RMSD <= rmsdCutoff){withinRange = true}
                         }
 
