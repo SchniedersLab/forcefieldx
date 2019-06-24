@@ -115,9 +115,9 @@ public class OSRWOptions {
     /**
      * --lw or --lambdaWritOut Only write out snapshots if lambda is greater than the value specified.
      */
-    @CommandLine.Option(names = {"--lw", "--lambdaWritOut"}, paramLabel = "1.0",
+    @CommandLine.Option(names = {"--lw", "--lambdaWritOut"}, paramLabel = "0.0",
             description = "Only write out snapshots if lambda is greater than the value specified.")
-    private double lambdaWriteOut = 1.0;
+    private double lambdaWriteOut = 0.0;
 
     /**
      * <p>

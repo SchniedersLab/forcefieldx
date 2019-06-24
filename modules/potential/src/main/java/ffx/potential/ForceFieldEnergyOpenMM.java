@@ -1752,7 +1752,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         private double nonSoftcoreAMOEBAvdWStart = 0.5;
         /**
-         * The lambda value that defines when softcore AMOEBA vdW will finish om and begin turning off for alchemical atoms.
+         * The lambda value that defines when softcore AMOEBA vdW will finish on and begin turning off for alchemical atoms.
          * These must be turned off because they do not include hydrogen reduction factors.
          * <p>
          * If this value is set to 1.0, softcored AMOEBA vdw will not be turned off.

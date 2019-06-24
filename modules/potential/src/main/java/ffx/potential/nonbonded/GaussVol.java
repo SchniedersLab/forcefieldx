@@ -45,11 +45,15 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.rsq;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
-import static org.apache.commons.math3.util.FastMath.*;
 
 /**
  * A class that implements the Gaussian description of an object (molecule) made of a overlapping spheres.
@@ -156,7 +160,7 @@ public class GaussVol {
     /**
      * Maximum depth that the tree reaches
      */
-    private int maximumDepth=0;
+    private int maximumDepth = 0;
     /**
      * Surface area (Ang^2).
      */
@@ -188,11 +192,11 @@ public class GaussVol {
     /**
      * Solvent pressure in kcal/mol/Ang^3.
      */
-    private static final double solventPressure = 0.0327;
+    private double solventPressure = 0.0327;
     /**
      * Surface tension in kcal/mol/Ang^2.
      */
-    private static final double surfaceTension = 0.08;
+    private double surfaceTension = 0.08;
     /**
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
      */
@@ -283,6 +287,22 @@ public class GaussVol {
         return cavitationEnergy;
     }
 
+    public double getSolventPressure() {
+        return solventPressure;
+    }
+
+    public double getSurfaceTension() {
+        return surfaceTension;
+    }
+
+    public void setSolventPressure(double solventPressure) {
+        this.solventPressure = solventPressure;
+    }
+
+    public void setSurfaceTension(double surfaceTension) {
+        this.surfaceTension = surfaceTension;
+    }
+
     /**
      * Return Volume based cavitation energy.
      *
@@ -321,9 +341,12 @@ public class GaussVol {
 
     /**
      * Returns the maximum depth of the overlap tree
+     *
      * @return maximumDepth
      */
-    public int getMaximumDepth(){return maximumDepth;}
+    public int getMaximumDepth() {
+        return maximumDepth;
+    }
 
     /**
      * Set the isHydrogen flag.
@@ -1015,9 +1038,9 @@ public class GaussVol {
             GaussianOverlap ov = overlaps.get(slot);
             //Keep track of overlap depth for each overlap. If a new depth is greater than previous greatest, save depth
             // in maximumDepth
-            if(ov.level >= maximumDepth){
+            if (ov.level >= maximumDepth) {
                 //logger.info(format("Current depth: %d", ov.level));
-                maximumDepth=ov.level;
+                maximumDepth = ov.level;
                 //logger.info(format("Current max depth: %d", maximumDepth));
             }
             double cf = ov.level % 2 == 0 ? -1.0 : 1.0;

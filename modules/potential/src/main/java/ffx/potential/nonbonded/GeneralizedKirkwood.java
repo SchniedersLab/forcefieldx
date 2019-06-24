@@ -154,6 +154,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private final double surfaceTension;
     /**
+     * Cavitation solvent pressure coefficient (kcal/mol/A^3).
+     */
+    private final double solventPressue;
+    /**
      * The requested permittivity.
      */
     private double epsilon;
@@ -314,8 +318,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Gaussian Based Volume and Surface Area
      */
-    private GaussVol gaussVol;
-
+    private final GaussVol gaussVol;
     /**
      * Shared array for computation of Born radii gradient.
      */
@@ -536,9 +539,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 dispersionRegion = new DispersionRegion(threadCount);
                 cavitationRegion = null;
                 volumeRegion = null;
-
                 gaussVol = new GaussVol(nAtoms, null);
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
+
                 boolean[] isHydrogen = new boolean[nAtoms];
                 double[] radii = new double[nAtoms];
                 double[] volume = new double[nAtoms];
@@ -547,7 +550,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double fourThirdsPI = 4.0 / 3.0 * PI;
                 double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0);
 
-                probe = DEFAULT_GAUSSVOL_PROBE;
+                probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, DEFAULT_GAUSSVOL_PROBE);
                 int index = 0;
                 for (Atom atom : atoms) {
                     isHydrogen[index] = atom.isHydrogen();
@@ -564,9 +567,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     gaussVol.setVolumes(volume);
                     gaussVol.setIsHydrogen(isHydrogen);
                 } catch (Exception e) {
-                    gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen);
+                    logger.severe(" Exception creating GaussVol: " + e.toString());
                 }
-
 
                 break;
             case BORN_CAV_DISP:
@@ -589,15 +591,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         surfaceTension = forceField.getDouble(ForceField.ForceFieldDouble.SURFACE_TENSION, tensionDefault);
+        solventPressue = forceField.getDouble(ForceField.ForceFieldDouble.SOLVENT_PRESSURE, DEFAULT_SOLVENT_PRESSURE);
+
+        if (gaussVol != null) {
+            gaussVol.setSurfaceTension(surfaceTension);
+            gaussVol.setSolventPressure(solventPressue);
+        }
 
         logger.info("  Continuum Solvation ");
         logger.info(format("   Generalized Kirkwood Cut-Off:       %8.3f (A)", cutoff));
         logger.info(format("   Solvent Dielectric:                 %8.3f", epsilon));
-        logger.info(format("   Non-Polar Model:                    %8s",
+        SolventRadii.logRadiiSource(forceField);
+        logger.info(format("   Non-Polar Model:                  %10s",
                 nonPolar.toString().replace('_', '-')));
 
         if (cavitationRegion != null) {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
+            logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
+        } else if (gaussVol != null) {
+            logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
+            logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", solventPressue));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         }
 
@@ -856,7 +869,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             double fourThirdsPI = 4.0 / 3.0 * PI;
             double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0);
 
-            probe = DEFAULT_GAUSSVOL_PROBE;
+            probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, DEFAULT_GAUSSVOL_PROBE);
+
             int index = 0;
             for (Atom atom : atoms) {
                 isHydrogen[index] = atom.isHydrogen();
@@ -873,7 +887,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gaussVol.setVolumes(volume);
                 gaussVol.setIsHydrogen(isHydrogen);
             } catch (Exception e) {
-                gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen);
+                logger.severe(" Exception creating GaussVol: " + e.toString());
             }
 
         }

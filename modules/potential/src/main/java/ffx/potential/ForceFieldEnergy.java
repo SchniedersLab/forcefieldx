@@ -2505,7 +2505,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         assert (g != null);
         double[] grad = new double[3];
         int n = getNumberOfVariables();
-        if (g.length < n) {
+        if (g==null || g.length < n) {
             g = new double[n];
         }
         int index = 0;

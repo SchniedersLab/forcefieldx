@@ -49,7 +49,7 @@
                     that for most of the small organic molecules, AMOEBA parameters are not published thus
                     need to be parameterized for each molecule (PolType Program developed by Pengyu Ren Research
                     Group can be used for this purpose). Van der Waals cutoff is specified here, and the
-                    parameters and patch specifications point to acetanilide AMOEBA parameters <a href="https://ffx.kenai.com/parameters/ACANIL.patch">ACANIL.patch</a>.
+                    parameters and patch specifications point to acetanilide AMOEBA parameters <a href="parameters/ACANIL.patch">ACANIL.patch</a>.
                 </p>
                 <source>
                     spacegroup Pbca

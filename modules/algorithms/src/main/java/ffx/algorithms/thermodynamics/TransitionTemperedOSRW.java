@@ -1208,6 +1208,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         totalFreeEnergy = updateFLambda(printFLambda, false);
 
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
+            if(gradient==null){
+                gradient = new double[x.length];
+            }
             optimization(forceFieldEnergy, x, gradient);
         }
 

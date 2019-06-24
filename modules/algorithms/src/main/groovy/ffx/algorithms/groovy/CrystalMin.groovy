@@ -37,6 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import static org.apache.commons.math3.util.FastMath.abs
 
@@ -122,6 +125,8 @@ class CrystalMin extends AlgorithmsScript {
         xtalEnergy = new XtalEnergy(forceFieldEnergy, activeAssembly)
         xtalEnergy.setFractionalCoordinateMode(FractionalMode.MOLECULE)
 
+        SystemFilter systemFilter = algorithmFunctions.getFilter()
+
         // Apply fractional coordinate mode.
         if (fractional) {
             try {
@@ -173,13 +178,52 @@ class CrystalMin extends AlgorithmsScript {
             crystalMinimize.printTensor()
         }
 
-        String ext = FilenameUtils.getExtension(modelfilename);
+        // Handle Single Topology Cases.
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
 
-        File modelFile = saveDirFile(activeAssembly.getFile());
+        String dirName = saveDir.toString() + File.separator
+        String fileName = FilenameUtils.getName(modelFilename)
+        String ext = FilenameUtils.getExtension(fileName)
+        fileName = FilenameUtils.removeExtension(fileName)
+        File saveFile
+        SystemFilter writeFilter
         if (ext.toUpperCase().contains("XYZ")) {
-            algorithmFunctions.saveAsXYZ(activeAssembly, modelFile);
+            saveFile = new File(dirName + fileName + ".xyz")
+            writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+            algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
+        } else if (ext.toUpperCase().contains("ARC")) {
+            saveFile = new File(dirName + fileName + ".arc")
+            saveFile = algorithmFunctions.versionFile(saveFile)
+            writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+            algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
         } else {
-            algorithmFunctions.saveAsPDB(activeAssembly, modelFile);
+            saveFile = new File(dirName + fileName + ".pdb")
+            saveFile = algorithmFunctions.versionFile(saveFile)
+            writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+            int numModels = systemFilter.countNumModels()
+            if(numModels>1){
+                writeFilter.setModelNumbering(true, 0)
+            }
+            writeFilter.writeFile(saveFile, true, false, false)
+        }
+
+        if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
+            while (systemFilter.readNext()) {
+                if (systemFilter instanceof PDBFilter) {
+                    saveFile.append("ENDMDL\n")
+                    crystalMinimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                    writeFilter.writeFile(saveFile, true, false, false)
+                } else if(systemFilter instanceof XYZFilter){
+                    crystalMinimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                    writeFilter.writeFile(saveFile, true)
+                }
+            }
+            if(systemFilter instanceof PDBFilter) {
+                saveFile.append("END\n")
+            }
         }
 
         return this
