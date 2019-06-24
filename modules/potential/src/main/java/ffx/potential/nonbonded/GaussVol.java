@@ -38,6 +38,7 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -225,6 +226,11 @@ public class GaussVol {
      * Surface area multiplicative switch.
      */
     private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
+
+    /**
+     * Maximum number of overlaps encountered; helps make
+     */
+    private int maxOverlapsEncountered = -1;
 
     /**
      * Creates/Initializes a GaussVol instance.
@@ -716,7 +722,7 @@ public class GaussVol {
         double[] dv1 = new double[3];
         ;
         /**
-         * Sum gammai for this overlap
+         * Sum gammai for this overlap (surface tension parameter)
          */
         double gamma1i;
         /**
@@ -780,10 +786,11 @@ public class GaussVol {
         /**
          * The root is at index 0, atoms are at 1..natoms+1
          */
-        List<GaussianOverlap> overlaps;
+        ArrayList<GaussianOverlap> overlaps;
 
         GaussianOverlapTree(int nAtoms) {
             this.nAtoms = nAtoms;
+            overlaps = new ArrayList<>(nAtoms + 1);
         }
 
 
@@ -800,7 +807,8 @@ public class GaussVol {
 
 
             // Reset tree
-            overlaps = new ArrayList<>();
+            overlaps = new ArrayList<>(nAtoms + 1);
+            // TODO: Determine if overlaps.clear() is more efficient.
 
             // Slot 0 contains the master tree information, children = all of the atoms.
             GaussianOverlap overlap = new GaussianOverlap();
@@ -823,7 +831,7 @@ public class GaussVol {
             for (int iat = 0; iat < nAtoms; iat++) {
                 overlap = new GaussianOverlap();
                 double a = KFC / (radii[iat] * radii[iat]);
-                double vol = ishydrogen[iat] ? 0. : volumes[iat];
+                double vol = ishydrogen[iat] ? 0 : volumes[iat];
                 overlap.level = 1;
                 overlap.g.v = vol;
                 overlap.g.a = a;
@@ -833,9 +841,9 @@ public class GaussVol {
                 //overlap.g.c[0],overlap.g.c[1],overlap.g.c[2]));
 
                 //overlap.dv1 = new double[3];
-                overlap.dvv1 = 1.; //dVi/dVi
-                overlap.selfVolume = 0.;
-                overlap.sfp = 1.;
+                overlap.dvv1 = 1; //dVi/dVi
+                overlap.selfVolume = 0;
+                overlap.sfp = 1;
                 overlap.gamma1i = gammas[iat];// gamma[iat]/SA_DR;
                 overlap.parentIndex = 0;
                 overlap.atom = iat;
@@ -850,7 +858,7 @@ public class GaussVol {
         /**
          * @param parent_index      Parent index.
          * @param children_overlaps Children overlaps.
-         * @return
+         * @return Index of the first added child.
          */
         int addChildren(int parent_index, ArrayList<GaussianOverlap> children_overlaps) {
             int i, slot;
@@ -859,6 +867,9 @@ public class GaussVol {
             int start_index = overlaps.size();
 
             int noverlaps = children_overlaps.size();
+
+            // Possible optimization.
+            //overlaps.ensureCapacity(start_index + noverlaps);
 
             /* retrieves address of root overlap */
             GaussianOverlap root = overlaps.get(parent_index);
@@ -871,10 +882,11 @@ public class GaussVol {
             Collections.sort(children_overlaps);
 
             int root_level = root.level;
+            int nextLevel = root_level + 1;
 
             // Now copies the children overlaps from temp buffer.
             for (GaussianOverlap child : children_overlaps) {
-                child.level = root_level + 1;
+                child.level = nextLevel;
 
                 // Connect overlap to parent
                 child.parentIndex = parent_index;
@@ -897,14 +909,13 @@ public class GaussVol {
          *
          * @param root_index        Root index.
          * @param children_overlaps Children overlaps.
-         * @return
          */
-        int computeChildren(int root_index, ArrayList<GaussianOverlap> children_overlaps) {
+        void computeChildren(int root_index, ArrayList<GaussianOverlap> children_overlaps) {
             int parent_index;
             int sibling_start, sibling_count;
-            int j;
 
             // Reset output buffer
+            // TODO: Test whether this is more or less efficient than declaring a new list.
             children_overlaps.clear();
 
             // Retrieves overlap.
@@ -914,23 +925,32 @@ public class GaussVol {
             parent_index = root.parentIndex;
 
             //master root? can't do computeChildren() on master root
-            if (parent_index < 0) return 1;
+            if (parent_index < 0) {
+                throw new IllegalArgumentException(" Cannot compute children of master node!");
+            }
 
-            if (root.level >= MAX_ORDER) return 1;
+            if (root.level >= MAX_ORDER) {
+                return; // Ignore overlaps above a certain order to cap computational cost.
+            }
 
             GaussianOverlap parent = overlaps.get(parent_index);
 
-            /* Retrieves start index and count of siblings */
+            /* Retrieves start index and count of siblings. Includes both younger and older siblings */
             sibling_start = parent.childrenStartindex;
             sibling_count = parent.childrenCount;
 
             // Parent is not initialized?
-            if (sibling_start < 0 || sibling_count < 0) return -1;
+            if (sibling_start < 0 || sibling_count < 0) {
+                throw new IllegalArgumentException(String.format(" Parent %s of overlap %s has no sibilings.", parent, root));
+            }
 
             // This overlap somehow is not the child of registered parent.
-            if (root_index < sibling_start && root_index > sibling_start + sibling_count - 1) return -1;
+            if (root_index < sibling_start && root_index > sibling_start + sibling_count - 1) {
+                throw new IllegalArgumentException(String.format(" Node %s is somehow not the child of its parent %s", root, parent));
+            }
 
             // Now loops over "younger" siblings (i<j loop) to compute new overlaps.
+            // Loop starts at the first younger sibling, and runs to the end of all siblings.
             for (int slotj = root_index + 1; slotj < sibling_start + sibling_count; slotj++) {
 
                 GaussianVca g12 = new GaussianVca();
@@ -949,9 +969,11 @@ public class GaussVol {
                 GaussianVca g2 = overlaps.get(atom2 + 1).g;
                 gvol = overlapGaussianAlpha(g1, g2, g12, dVdr, dVdV, sfp);
 
-                /* create child if overlap volume is not zero */
+                /* create child if overlap volume is above a threshold.
+                Due to Gaussians having infinite support, volume is never zero. */
                 if (gvol > MIN_GVOL) {
                     GaussianOverlap ov = new GaussianOverlap();
+                    // TODO: Put this logic into a GaussianOverlap constructor.
                     ov.g = g12;
                     ov.volume = gvol;
                     ov.selfVolume = 0;
@@ -969,16 +991,14 @@ public class GaussVol {
                     children_overlaps.add(ov);
                 }
             }
-            return 1;
         }
 
         /**
          * Grow the tree with more children starting at the given root slot (recursive).
          *
          * @param root The root index.
-         * @return
          */
-        int computeAndAddChildrenR(int root) {
+        private void computeAndAddChildrenR(int root) {
             ArrayList<GaussianOverlap> children_overlaps = new ArrayList<>();
             computeChildren(root, children_overlaps);
             int noverlaps = children_overlaps.size();
@@ -988,7 +1008,6 @@ public class GaussVol {
                     computeAndAddChildrenR(ichild);
                 }
             }
-            return 1;
         }
 
         /**
@@ -997,15 +1016,13 @@ public class GaussVol {
          * @param volumes    Atomic volumes.
          * @param gammas     Atomic surface tensions.
          * @param ishydrogen True if the atom is a hydrogen.
-         * @return
          */
-        int computeOverlapTreeR(double[][] pos, double[] radii,
+         void computeOverlapTreeR(double[][] pos, double[] radii,
                                 double[] volumes, double[] gammas, boolean[] ishydrogen) {
             initOverlapTree(pos, radii, volumes, gammas, ishydrogen);
             for (int slot = 1; slot <= nAtoms; slot++) {
                 computeAndAddChildrenR(slot);
             }
-            return 1;
         }
 
         /**
@@ -1028,7 +1045,7 @@ public class GaussVol {
          * @param self_volume Atomic self volumes.
          * @return
          */
-        int computeVolumeUnderSlot2R(
+        void computeVolumeUnderSlot2R(
                 int slot,
                 double[] psi1i, double[] f1i, double[] p1i,
                 double[] psip1i, double[] fp1i, double[] pp1i,
@@ -1043,8 +1060,11 @@ public class GaussVol {
                 maximumDepth = ov.level;
                 //logger.info(format("Current max depth: %d", maximumDepth));
             }
+            // Whether to add volumes (e.g. selfs, 3-body overlaps) or subtract them (e.g. 2-body overlaps, 4-body overlaps)
             double cf = ov.level % 2 == 0 ? -1.0 : 1.0;
+            // Overall volume is increased/decreased by the full volume.
             double volcoeff = ov.level > 0 ? cf : 0;
+            // Atomic contributions to overlap volume are evenly distributed.
             double volcoeffp = ov.level > 0 ? volcoeff / (double) ov.level : 0;
 
             int atom = ov.atom;
@@ -1141,9 +1161,6 @@ public class GaussVol {
                 fp1i[0] = ov.dvv1 * fp1i[0];
                 fenergy1i[0] = ov.dvv1 * fenergy1i[0];
             }
-            return 1;
-
-
         }
 
         /**
@@ -1156,9 +1173,8 @@ public class GaussVol {
          * @param dv
          * @param free_volume
          * @param self_volume
-         * @return
          */
-        int computeVolume2R(double[][] pos, double[] volume, double[] energy,
+        void computeVolume2R(double[][] pos, double[] volume, double[] energy,
                             double[][] dr, double[] dv,
                             double[] free_volume, double[] self_volume) {
 
@@ -1174,9 +1190,7 @@ public class GaussVol {
 
             // Reset volumes, gradient
             for (int i = 0; i < dr.length; ++i) {
-                dr[i][0] = 0.0;
-                dr[i][1] = 0.0;
-                dr[i][2] = 0.0;
+                Arrays.fill(dr[i], 0);
             }
             fill(dv, 0.0);
             fill(free_volume, 0.0);
@@ -1190,9 +1204,6 @@ public class GaussVol {
 
             volume[0] = psi1i[0];
             energy[0] = energy1i[0];
-
-            return 1;
-
         }
 
         /**
