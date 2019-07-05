@@ -40,6 +40,8 @@ package ffx.algorithms.dynamics.integrators;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.numerics.Potential;
 
+import java.util.Arrays;
+
 /**
  * Integrate Newton's equations of motion using a Velocity Verlet multistep
  * recursion formula.
@@ -48,6 +50,8 @@ import ffx.numerics.Potential;
  * @since 1.0
  */
 public class VelocityVerlet extends Integrator {
+
+    private double[] xPrior;
 
     /**
      * Constructor for VelocityVerlet.
@@ -70,6 +74,13 @@ public class VelocityVerlet extends Integrator {
      */
     @Override
     public void preForce(Potential potential) {
+        if (useConstraints) {
+            if (xPrior == null) {
+                xPrior = Arrays.copyOf(x, nVariables);
+            } else {
+                System.arraycopy(x, 0, xPrior, 0, nVariables);
+            }
+        }
         for (int i = 0; i < nVariables; i++) {
             v[i] = v[i] + a[i] * dt_2;
             x[i] = x[i] + v[i] * dt;

@@ -42,6 +42,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,6 +52,8 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 
+import ffx.potential.constraint.Constraint;
+import ffx.potential.constraint.SettleConstraint;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -128,6 +131,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * Convert from nanoseconds to seconds.
      */
     private static final double toSeconds = 1.0e-9;
+    /**
+     * Default tolerance for numerical methods of solving constraints.
+     */
+    static final double DEFAULT_CONSTRAINT_TOLERANCE = 1E-4;
     /**
      * The MolecularAssembly associated with this force field energy.
      */
@@ -685,6 +692,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean relativeSolvationTerm;
     private double relativeSolvationEnergy;
     private Platform platform = Platform.FFX;
+
+    private final List<Constraint> constraints;
 
 
     /**
@@ -1267,6 +1276,47 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             } catch (Exception ex) {
                 logger.info(format(" Exception in parsing restrain-distance: %s", ex.toString()));
             }
+        }
+
+        String constraintStrings = forceField.getString(ForceFieldString.CONSTRAIN, forceField.getString(ForceFieldString.RATTLE, null));
+        if (constraintStrings != null) {
+            constraints = new ArrayList<>();
+
+            logger.info(format(" Experimental: parsing constraints option %s", constraintStrings));
+            if (constraintStrings.isEmpty() || constraintStrings.matches("^\\s*$")) {
+                // Assume constraining only X-H bonds (i.e. RIGID-HYDROGEN).
+                logger.info(" Constraining X-H bonds.");
+                logger.severe(" TODO: Implement this.");
+            } else {
+                String[] constraintToks = constraintStrings.split("\\s+");
+                for (String tok : constraintToks) {
+                    if (tok.equalsIgnoreCase("WATER")) {
+                        logger.info(" Constraining waters to be rigid based on angle & bonds.");
+                        List<MSNode> waters = molecularAssembly.getWaters();
+                        for (MSNode water : waters) {
+                            List<Atom> atoms = water.getAtomList();
+                            List<Atom> hydrogens = new ArrayList<>();
+                            Atom oxygen = null;
+                            for (Atom atom : atoms) {
+                                if (atom.getAtomType().atomicNumber == 1) {
+                                    hydrogens.add(atom);
+                                } else {
+                                    oxygen = atom;
+                                }
+                            }
+                            Angle theAng = hydrogens.get(0).getAngle(oxygen, hydrogens.get(1));
+                            SettleConstraint settleConstraint = new SettleConstraint(theAng);
+                            constraints.add(settleConstraint);
+                        }
+                    } else {
+                        logger.severe(" Implement constraints that aren't SETTLE constraints.");
+                    }
+                }
+            }
+
+            logger.info(format(" Added %d constraints.", constraints.size()));
+        } else {
+            constraints = Collections.emptyList();
         }
 
         if (lambdaTerm) {
@@ -2375,6 +2425,33 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
         }
         return type;
+    }
+
+    /**
+     * Returns a copy of the list of constraints this ForceFieldEnergy has.
+     *
+     * @return Copied list of constraints.
+     */
+    public List<Constraint> getConstraints() {
+        return constraints.isEmpty() ? Collections.emptyList() : new ArrayList<>(constraints);
+    }
+
+    /**
+     * Applies constraints to positions
+     * @param xPrior
+     * @param xNew
+     */
+    public void applyAllConstraintPositions(double[] xPrior, double[] xNew) {
+        applyAllConstraintPositions(xPrior, xNew, DEFAULT_CONSTRAINT_TOLERANCE);
+    }
+
+    public void applyAllConstraintPositions(double[] xPrior, double[] xNew, double tol) {
+        if (xPrior == null) {
+            xPrior = Arrays.copyOf(xNew, xNew.length);
+        }
+        for (Constraint constraint : constraints) {
+            constraint.applyConstraintToStep(xPrior, xNew, getMass(), tol);
+        }
     }
 
     /**

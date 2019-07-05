@@ -1118,7 +1118,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         /**
          * Constraint tolerance as a fraction of the constrained bond length.
          */
-        private double constraintTolerance = 1e-4;
+        private double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
 
         OpenMMContext(ForceField forceField, Platform requestedPlatform) {
             loadPlatform(requestedPlatform);

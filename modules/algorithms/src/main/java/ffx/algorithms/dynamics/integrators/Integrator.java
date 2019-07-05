@@ -37,10 +37,17 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
 import static java.lang.System.arraycopy;
 
 import ffx.numerics.Potential;
+import ffx.potential.constraint.Constraint;
 
 /**
  * The Integrator class is responsible for propagation of degrees of freedom
@@ -78,15 +85,15 @@ public abstract class Integrator {
      */
     protected double[] mass;
     /**
-     * Coordinates for each degree of freedom.
+     * Coordinates for each degree of freedom in Angstroms.
      */
     protected double[] x;
     /**
-     * Velocity of each degree of freedom.
+     * Velocity of each degree of freedom in Angstroms per picosecond.
      */
     protected double[] v;
     /**
-     * Acceleration of each degree of freedom.
+     * Acceleration of each degree of freedom in Angstroms per square picosecond.
      */
     protected double[] a;
     /**
@@ -102,6 +109,15 @@ public abstract class Integrator {
      * Half the time step (psec).
      */
     double dt_2;
+
+    /**
+     * Any geometric constraints to apply during integration.
+     */
+    protected List<Constraint> constraints = new ArrayList<>();
+    /**
+     * If there are constraints present.
+     */
+    protected boolean useConstraints = false;
 
     /**
      * Constructor for Integrator.
@@ -199,6 +215,37 @@ public abstract class Integrator {
      */
     public double getTimeStep() {
         return dt;
+    }
+
+    /**
+     * Adds a set of Constraints that this Integrator must respect.
+     *
+     * @param addedConstraints Constraints to add.
+     */
+    public void addConstraints(List<Constraint> addedConstraints) {
+        constraints.addAll(addedConstraints);
+        useConstraints = true;
+    }
+
+    /**
+     * Returns a copy of the list of Constraints.
+     *
+     * @return All Constraints this Integrator respects.
+     */
+    public List<Constraint> getConstraints() {
+        return new ArrayList<>(constraints);
+    }
+
+    public void removeConstraint(Constraint constraint) {
+        constraints.remove(constraint);
+        useConstraints = !constraints.isEmpty();
+    }
+
+    public void removeConstraints(Collection<Constraint> toRemove) {
+        constraints = constraints.stream().
+                filter((Constraint c) -> !toRemove.contains(c)).
+                collect(Collectors.toList());
+        useConstraints = !constraints.isEmpty();
     }
 
     /**

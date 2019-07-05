@@ -245,7 +245,7 @@ public class Angle extends BondedTerm {
      *
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
-    Atom getCentralAtom() {
+    public Atom getCentralAtom() {
         return atoms[1];
     }
 
