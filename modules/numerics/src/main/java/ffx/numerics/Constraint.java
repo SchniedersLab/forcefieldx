@@ -1,6 +1,4 @@
-package ffx.potential.constraint;
-
-import ffx.potential.bonded.Bond;
+package ffx.numerics;
 
 import java.util.List;
 
@@ -14,6 +12,7 @@ import java.util.List;
 public interface Constraint {
     /**
      * Returns the atomic XYZ indices of all Atoms constrained. Guaranteed to be unique.
+     * The primary assumption will be that variables are in sets of 3x Cartesian coordinates.
      * @return All indices of constrained Atoms.
      */
     int[] constrainedAtomIndices();
@@ -35,9 +34,6 @@ public interface Constraint {
      */
     void applyConstraintToStep(final double[] xPrior, double[] xNew, final double[] masses, double tol);
 
-    // OpenMM also has an applyToVelocities method, useful for methods which calculate both a half-step and full-step
-    // velocity (e.g. Velocity Verlet), so as to ensure velocities are constrained at both half-step and full-step.
-
     /**
      * Applies this Constraint to velocities, ensuring relative velocities are perpendicular to constrained
      * bonds, etc, without affecting positions. All arrays are globally indexed (i.e. includes all system
@@ -51,4 +47,34 @@ public interface Constraint {
      * @param tol    Acceptable constraint tolerance for numerical methods; likely in Angstroms/ps
      */
     void applyConstraintToVelocities(final double[] x, double[] v, final double[] masses, double tol);
+
+    /**
+     * Returns the number of degrees of freedom this Constraint constrains.
+     *
+     * @return Number of frozen DoF.
+     */
+    int getNumDegreesFrozen();
+
+    /**
+     * Checks if this Constraint is satisfied.
+     *
+     * @param x   Input coordinates to check.
+     * @param tol Numerical tolerance as a fraction of bond stretch.
+     * @return    Whether this Constraint is satisfied.
+     */
+    boolean constraintSatisfied(final double[] x, double tol);
+
+    /**
+     * Checks if this Constraint is satisfied. Also checks velocities; bond
+     * constraints, for example, require that relative velocity be orthogonal
+     * to the bond. If the velocities vector is null or the tolerance is zero,
+     * velocity checks are skipped.
+     *
+     * @param x   Input coordinates to check.
+     * @param v   Input velocities to check. If null, velocity check disabled.
+     * @param xTol Numerical tolerance for bond lengths.
+     * @param vTol Numerical tolerance for velocity checks (typically in degrees). If zero, velocity check disabled.
+     * @return     Whether this Constraint is satisfied.
+     */
+    boolean constraintSatisfied(final double[] x, final double[] v, double xTol, double vTol);
 }

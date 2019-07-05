@@ -37,7 +37,11 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
+import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The Adiabatic thermostat is for NVE simulations and does not alter particle
@@ -59,7 +63,11 @@ public class Adiabatic extends Thermostat {
      * @param type the VARIABLE_TYPE of each variable.
      */
     public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type) {
-        super(n, x, v, mass, type, 1.0);
+        this(n, x, v, mass, type, Collections.emptyList());
+    }
+
+    public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type, List<Constraint> constraints) {
+        super(n, x, v, mass, type, 1.0, constraints);
         this.name = ThermostatEnum.ADIABATIC;
     }
 

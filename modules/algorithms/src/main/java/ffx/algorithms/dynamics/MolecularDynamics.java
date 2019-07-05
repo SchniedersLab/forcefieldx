@@ -50,6 +50,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import ffx.numerics.Constraint;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -410,6 +411,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
             oMMLogging = true;
         }
+
+        List<Constraint> constraints = potentialEnergy.getConstraints();
+
         switch (requestedIntegrator) {
             case RESPA:
                 Respa respa = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
@@ -446,6 +450,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 integrator = new VelocityVerlet(numberOfVariables, x, v, a, mass);
         }
 
+        integrator.addConstraints(constraints);
+
         // If a Thermostat wasn't passed to the MD constructor, check for one specified as a property.
         if (requestedThermostat == null) {
             String thermo = properties.getString("thermostat", "Berendsen").trim();
@@ -459,18 +465,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
         switch (requestedThermostat) {
             case BERENDSEN:
                 double tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau);
+                thermostat = new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau, constraints);
                 break;
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau);
+                thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau, constraints);
                 if (properties.containsKey("randomseed")) {
                     thermostat.setRandomSeed(properties.getInt("randomseed", 0));
                 }
                 break;
             case ADIABATIC:
             default:
-                thermostat = new Adiabatic(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes());
+                thermostat = new Adiabatic(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), constraints);
         }
 
         if (properties.containsKey("randomseed")) {
@@ -1010,6 +1016,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // unless early termination is requested.
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
+            if (step > 1) {
+                List<Constraint> constraints = potential.getConstraints();
+                // TODO: Replace magic numbers with named constants.
+                long constraintFails = constraints.stream().
+                        filter((Constraint c) -> ! c.constraintSatisfied(x, v, 1E-7, 1E-7)).
+                        count();
+                if (constraintFails > 0) {
+                    logger.info(format(" %d constraint failures in step %d", constraintFails, step));
+                }
+            }
             /* Notify MonteCarlo handlers such as PhMD or rotamer drivers. */
             if (monteCarloListener != null && mcNotification == MonteCarloNotification.EACH_STEP) {
                 monteCarloListener.mcUpdate(thermostat.getCurrentTemperature());

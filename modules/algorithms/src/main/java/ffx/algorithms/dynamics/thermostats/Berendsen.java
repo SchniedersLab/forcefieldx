@@ -41,7 +41,11 @@ import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Thermostat a molecular dynamics trajectory to an external bath using the
@@ -75,7 +79,12 @@ public class Berendsen extends Thermostat {
      */
     public Berendsen(int n, double[] x, double[] v, double[] mass,
                      VARIABLE_TYPE[] type, double targetTemperature, double tau) {
-        super(n, x, v, mass, type, targetTemperature);
+        this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
+    }
+
+    public Berendsen(int n, double[] x, double[] v, double[] mass,
+                     VARIABLE_TYPE[] type, double targetTemperature, double tau, List<Constraint> constraints) {
+        super(n, x, v, mass, type, targetTemperature, constraints);
         this.name = ThermostatEnum.BERENDSEN;
         this.tau = tau;
     }

@@ -71,13 +71,13 @@
 
 package ffx.potential.constraint;
 
+import ffx.numerics.Constraint;
 import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import org.apache.commons.math3.util.FastMath;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -402,5 +402,112 @@ public class SettleConstraint implements Constraint {
         /* velocities[atom1[index]] = v0;
         velocities[atom2[index]] = v1;
         velocities[atom3[index]] = v2; */
+    }
+
+    @Override
+    public int getNumDegreesFrozen() {
+        return 3; // 2 bonds and an angle are frozen; for water, this leaves just 3x rotation 3x translation DoF.
+    }
+
+    @Override
+    public boolean constraintSatisfied(double[] x, double tol) {
+        return constraintSatisfied(x, null, tol, 0.0);
+    }
+
+    @Override
+    public boolean constraintSatisfied(double[] x, double[] v, double xTol, double vTol) {
+        int xi0 = 3 * index0;
+        int xi1 = 3 * index1;
+        int xi2 = 3 * index2;
+
+        // O-H bonds.
+        double dist01 = 0;
+        double dist02 = 0;
+        // H-H pseudo-bond.
+        double dist12 = 0;
+
+        double[] x0 = new double[3];
+        double[] x1 = new double[3];
+        double[] x2 = new double[3];
+        System.arraycopy(x, xi0, x0, 0, 3);
+        System.arraycopy(x, xi1, x1, 0, 3);
+        System.arraycopy(x, xi2, x2, 0, 3);
+
+        for (int i = 0; i < 3; i++) {
+            // 0-1 bond.
+            double dx = x0[i] - x1[i];
+            dx *= dx;
+            dist01 += dx;
+
+            // 0-2 bond.
+            dx = x0[i] - x2[i];
+            dx *= dx;
+            dist02 += dx;
+
+            // 1-2 bond.
+            dx = x1[i] - x2[i];
+            dx *= dx;
+            dist12 += dx;
+        }
+        dist01 = sqrt(dist01);
+        dist02 = sqrt(dist02);
+        dist12 = sqrt(dist12);
+
+        // Check that positions are satisfied.
+        double deltaIdeal = Math.abs((dist01 - distance1) / distance1);
+        if (deltaIdeal > xTol) {
+            logger.finer(" delId 01: " + deltaIdeal);
+            return false;
+        }
+        deltaIdeal = Math.abs((dist02 - distance1) / distance1);
+        if (deltaIdeal > xTol) {
+            logger.finer(" delId 02: " + deltaIdeal);
+            return false;
+        }
+        deltaIdeal = Math.abs((dist12 - distance2) / distance2);
+        if (deltaIdeal > xTol) {
+            logger.finer(" delId 12: " + deltaIdeal);
+            return false;
+        }
+
+        if (v != null && vTol > 0) {
+            double[] v0 = new double[3];
+            double[] v1 = new double[3];
+            double[] v2 = new double[3];
+            System.arraycopy(v, xi0, v0, 0, 3);
+            System.arraycopy(v, xi1, v1, 0, 3);
+            System.arraycopy(v, xi2, v2, 0, 3);
+
+            // Obtain relative velocities.
+            double[] v01 = new double[3];
+            double[] v02 = new double[3];
+            double[] v12 = new double[3];
+            VectorMath.diff(v1, v0, v01);
+            VectorMath.diff(v2, v0, v02);
+            VectorMath.diff(v2, v1, v12);
+
+            // Obtain bond vectors.
+            double[] x01 = new double[3];
+            double[] x02 = new double[3];
+            double[] x12 = new double[3];
+            VectorMath.diff(x1, x0, x01);
+            VectorMath.diff(x2, x0, x02);
+            VectorMath.diff(x2, x1, x12);
+
+            double xv01 = VectorMath.dot(v01, x01);
+            double xv02 = VectorMath.dot(v02, x02);
+            double xv12 = VectorMath.dot(v12, x12);
+
+            if (Math.abs(xv01) > vTol) {
+                return false;
+            }
+            if (Math.abs(xv02) > vTol) {
+                return false;
+            }
+            if (Math.abs(xv12) > vTol) {
+                return false;
+            }
+        }
+        return true;
     }
 }

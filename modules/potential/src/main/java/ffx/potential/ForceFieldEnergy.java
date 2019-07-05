@@ -52,7 +52,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 
-import ffx.potential.constraint.Constraint;
+import ffx.numerics.Constraint;
 import ffx.potential.constraint.SettleConstraint;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -134,7 +134,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Default tolerance for numerical methods of solving constraints.
      */
-    static final double DEFAULT_CONSTRAINT_TOLERANCE = 1E-4;
+    public static final double DEFAULT_CONSTRAINT_TOLERANCE = 1E-4;
     /**
      * The MolecularAssembly associated with this force field energy.
      */
@@ -2432,6 +2432,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return Copied list of constraints.
      */
+    @Override
     public List<Constraint> getConstraints() {
         return constraints.isEmpty() ? Collections.emptyList() : new ArrayList<>(constraints);
     }

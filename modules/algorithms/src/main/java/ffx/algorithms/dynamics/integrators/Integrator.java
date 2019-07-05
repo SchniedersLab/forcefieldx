@@ -39,7 +39,6 @@ package ffx.algorithms.dynamics.integrators;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -47,7 +46,8 @@ import java.util.stream.Collectors;
 import static java.lang.System.arraycopy;
 
 import ffx.numerics.Potential;
-import ffx.potential.constraint.Constraint;
+import ffx.potential.ForceFieldEnergy;
+import ffx.numerics.Constraint;
 
 /**
  * The Integrator class is responsible for propagation of degrees of freedom
@@ -109,7 +109,6 @@ public abstract class Integrator {
      * Half the time step (psec).
      */
     double dt_2;
-
     /**
      * Any geometric constraints to apply during integration.
      */
@@ -118,6 +117,10 @@ public abstract class Integrator {
      * If there are constraints present.
      */
     protected boolean useConstraints = false;
+    /**
+     * Numerical tolerance (as a fraction of bond length) permitted for numerical solutions to constraints.
+     */
+    protected final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
 
     /**
      * Constructor for Integrator.

@@ -39,6 +39,7 @@ package ffx.algorithms.dynamics.integrators;
 
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.numerics.Potential;
+import ffx.numerics.Constraint;
 
 import java.util.Arrays;
 
@@ -85,6 +86,7 @@ public class VelocityVerlet extends Integrator {
             v[i] = v[i] + a[i] * dt_2;
             x[i] = x[i] + v[i] * dt;
         }
+        constraints.forEach((Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
     }
 
     /**
@@ -100,6 +102,7 @@ public class VelocityVerlet extends Integrator {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] = v[i] + a[i] * dt_2;
         }
+        constraints.forEach((Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
     }
 
     /**
