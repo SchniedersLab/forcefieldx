@@ -46,6 +46,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -1292,22 +1295,32 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 for (String tok : constraintToks) {
                     if (tok.equalsIgnoreCase("WATER")) {
                         logger.info(" Constraining waters to be rigid based on angle & bonds.");
-                        List<MSNode> waters = molecularAssembly.getWaters();
-                        for (MSNode water : waters) {
-                            List<Atom> atoms = water.getAtomList();
-                            List<Atom> hydrogens = new ArrayList<>();
-                            Atom oxygen = null;
-                            for (Atom atom : atoms) {
-                                if (atom.getAtomType().atomicNumber == 1) {
-                                    hydrogens.add(atom);
-                                } else {
-                                    oxygen = atom;
-                                }
-                            }
-                            Angle theAng = hydrogens.get(0).getAngle(oxygen, hydrogens.get(1));
-                            SettleConstraint settleConstraint = new SettleConstraint(theAng);
-                            constraints.add(settleConstraint);
-                        }
+                        // XYZ files, in particular, have waters mislabeled as generic Molecules.
+                        // First, find any such mislabeled water.
+                        Stream<MSNode> settleStream = molecularAssembly.getMolecules().stream().
+                                filter((MSNode m) -> m.getAtomList().size() == 3).
+                                filter((MSNode m) -> {
+                                    List<Atom> atoms = m.getAtomList();
+                                    Atom O = null;
+                                    List<Atom> H = new ArrayList<>(2);
+                                    for (Atom at : atoms) {
+                                        int atN = at.getAtomicNumber();
+                                        if (atN == 8) {
+                                            O = at;
+                                        } else if (atN == 1) {
+                                            H.add(at);
+                                        }
+                                    }
+                                    return O != null && H.size() == 2;
+                                });
+                        // Now concatenate the stream with the properly labeled waters.
+                        settleStream = Stream.concat(settleStream, molecularAssembly.getWaters().stream());
+                        // Map them into new Settle constraints and collect.
+                        List<SettleConstraint> settleConstraints = settleStream.map((MSNode m) -> m.getAngleList().get(0)).
+                                map(SettleConstraint::new).
+                                collect(Collectors.toList());
+                        constraints.addAll(settleConstraints);
+
                     } else {
                         logger.severe(" Implement constraints that aren't SETTLE constraints.");
                     }
