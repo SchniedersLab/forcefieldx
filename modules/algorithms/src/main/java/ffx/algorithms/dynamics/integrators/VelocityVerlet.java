@@ -86,7 +86,13 @@ public class VelocityVerlet extends Integrator {
             v[i] = v[i] + a[i] * dt_2;
             x[i] = x[i] + v[i] * dt;
         }
-        constraints.forEach((Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
+        if (useConstraints) {
+            constraints.forEach((Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
+            double velScale = 1.0 / dt;
+            for (int i = 0; i < nVariables; i++) {
+                v[i] = velScale * (x[i] - xPrior[i]);
+            }
+        }
     }
 
     /**
