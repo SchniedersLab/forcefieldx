@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.groovy
 
+import ffx.potential.cli.SaveOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
@@ -49,6 +50,7 @@ import ffx.potential.parameters.ForceField
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import picocli.CommandLine.Mixin
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -59,6 +61,9 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = " Save the system as an XYZ file.", name = "ffxc SaveAsXYZ")
 class SaveAsXYZ extends PotentialScript {
+
+    @Mixin
+    SaveOptions saveOptions
 
     /**
      * -p or --pos-offset to set the positive atom type offset
@@ -159,6 +164,7 @@ class SaveAsXYZ extends PotentialScript {
         fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
         File modelFile = new File(dirName + File.separator + fileName)
 
+        saveOptions.preSaveOperations(activeAssembly)
         potentialFunctions.save(activeAssembly, modelFile)
 
         return this

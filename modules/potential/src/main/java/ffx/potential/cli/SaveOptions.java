@@ -35,76 +35,50 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy
+package ffx.potential.cli;
 
-import ffx.potential.cli.SaveOptions
-import org.apache.commons.io.FilenameUtils
-
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.PotentialScript
-import picocli.CommandLine
-import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import picocli.CommandLine.Option;
 
 /**
- * The SaveAsP1 script expands a specified file to P1
- * <br>
- * Usage:
- * <br>
- * ffxc SaveAsP1 [options] &lt;filename&gt;
+ * Represents command line options for scripts that save a structure to disc.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
-@Command(description = " Expand the system to P1 and then save it.", name = "ffxc SaveAsP1")
-class SaveAsP1 extends PotentialScript {
+public class SaveOptions {
+    /**
+     * -c or --constrain is a flag to print out energy at each step.
+     */
+    @Option(names = {"-c", "--constrain"}, paramLabel = "false", description = "Apply geometric constraints before saving.")
+    private boolean constrain = false;
 
-    @CommandLine.Mixin
-    SaveOptions saveOptions
+    private double[] x;
 
     /**
-     * The final argument(s) should be one or more filenames.
+     * Performs key operations prior to saving to disc, such as application of geometric constraints.
+     *
+     * @param mola A MolecularAssembly.
      */
-    @Parameters(arity = "1", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
-
-    private File baseDir = null
-
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+    public void preSaveOperations(MolecularAssembly mola) {
+        preSaveOperations(mola.getPotentialEnergy());
     }
 
     /**
-     * Execute the script.
+     * Performs key operations prior to saving to disc, such as application of geometric constraints.
+     *
+     * @param ffe A ForceFieldEnergy.
      */
-    @Override
-    SaveAsP1 run() {
-        if (!init()) {
-            return
+    public void preSaveOperations(ForceFieldEnergy ffe) {
+        if (constrain) {
+            if (x == null) {
+                x = new double[ffe.getNumberOfVariables()];
+            }
+            x = ffe.getCoordinates(x);
+            ffe.applyAllConstraintPositions(x, x);
+            ffe.setCoordinates(x);
         }
-
-        MolecularAssembly[] assemblies
-        if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.openAll(filenames.get(0))
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        }
-
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Expanding to P1 for " + modelFilename)
-
-        File saveDir = baseDir
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
-        String fileName = FilenameUtils.getName(modelFilename)
-        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
-        File saveLocation = new File(dirName + fileName)
-
-        saveOptions.preSaveOperations(activeAssembly);
-        potentialFunctions.saveAsP1(activeAssembly, saveLocation)
-
-        return this
     }
 }

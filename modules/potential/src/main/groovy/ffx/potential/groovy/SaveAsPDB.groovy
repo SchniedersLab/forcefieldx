@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.groovy
 
+import ffx.potential.cli.SaveOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.potential.MolecularAssembly
@@ -44,7 +45,7 @@ import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-
+import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -57,6 +58,9 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
 class SaveAsPDB extends PotentialScript {
+
+    @CommandLine.Mixin
+    SaveOptions saveOptions
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -114,10 +118,12 @@ class SaveAsPDB extends PotentialScript {
             BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile))
             bw.write("MODEL        1\n")
             bw.flush()
+            saveOptions.preSaveOperations(activeAssembly);
             potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
             bw.close()
         }
         else {
+            saveOptions.preSaveOperations(activeAssembly);
             potentialFunctions.saveAsPDB(activeAssembly, saveFile)
         }
         try {
@@ -133,6 +139,7 @@ class SaveAsPDB extends PotentialScript {
             try {
                 while (openFilter.readNext(false)) {
                     saveFile.append("ENDMDL\n")
+                    saveOptions.preSaveOperations(activeAssembly);
                     saveFilter.writeFile(saveFile, true, true, false)
                 }
             } catch (Exception e) {
