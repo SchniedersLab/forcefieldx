@@ -52,7 +52,7 @@ import ffx.utilities.BaseScript;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class PotentialScript extends BaseScript {
+public abstract class PotentialScript extends BaseScript {
 
     /**
      * An instance of PotentialFunctions passed into the current context.
