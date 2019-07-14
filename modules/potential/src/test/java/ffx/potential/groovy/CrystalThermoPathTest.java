@@ -49,6 +49,7 @@ import groovy.lang.Binding;
 
 /**
  * Tests test.LambdaGradient command to determine that the end state potentials and derivatives are correct.
+ *
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
@@ -96,13 +97,13 @@ public class CrystalThermoPathTest extends PotentialScript {
 
         System.clearProperty("lambdaterm");
 
-        double expectedPotentialEnergyVac = -7.70794641;
-        double expectedPotentialEnergyXtal = -36.22162927;
+        double expectedPotentialEnergyVac = -7.70864934;
+        double expectedPotentialEnergyXtal = -36.22233220;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;
 
-        assertEquals(actualPotentialEnergyVac, expectedPotentialEnergyVac, 1E-6);
-        assertEquals(actualPotentialEnergyXtal, expectedPotentialEnergyXtal, 1E-6);
+        assertEquals(expectedPotentialEnergyVac, actualPotentialEnergyVac, 1E-6);
+        assertEquals(expectedPotentialEnergyXtal, actualPotentialEnergyXtal, 1E-6);
         assertEquals(0, lambdaGradient.ndEdLFailures);
         assertEquals(0, lambdaGradient.nd2EdL2Failures);
         assertEquals(0, lambdaGradient.ndEdXdLFailures);
@@ -125,13 +126,13 @@ public class CrystalThermoPathTest extends PotentialScript {
 
         System.clearProperty("lambdaterm");
 
-        double expectedPotentialEnergyVac = -6.68785818; // Same w/ cutoff 12 / 15
-        double expectedPotentialEnergyXtal = -57.41989502;
+        double expectedPotentialEnergyVac = -6.67890842;
+        double expectedPotentialEnergyXtal = -57.41094525;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;
 
-        assertEquals(actualPotentialEnergyVac, expectedPotentialEnergyVac, 1E-6);
-        assertEquals(actualPotentialEnergyXtal, expectedPotentialEnergyXtal, 1E-6);
+        assertEquals(expectedPotentialEnergyVac, actualPotentialEnergyVac, 1E-6);
+        assertEquals(expectedPotentialEnergyXtal, actualPotentialEnergyXtal, 1E-6);
         assertEquals(0, lambdaGradient.ndEdLFailures);
         assertEquals(0, lambdaGradient.nd2EdL2Failures);
         assertEquals(0, lambdaGradient.ndEdXdLFailures);

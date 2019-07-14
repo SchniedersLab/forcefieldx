@@ -107,9 +107,10 @@ public final class TorsionType extends BaseType implements Comparator<String> {
             this.phase = new double[max];
             this.periodicity = new int[max];
             for (int i = 0; i < periodicity.length; i++) {
-                this.amplitude[periodicity[i] - 1] = amplitude[i];
-                this.phase[periodicity[i] - 1] = phase[i];
-                this.periodicity[periodicity[i] - 1] = periodicity[i];
+                int j = periodicity[i] - 1;
+                this.amplitude[j] = amplitude[i];
+                this.phase[j] = phase[i];
+                this.periodicity[j] = periodicity[i];
             }
         } else {
             this.amplitude = amplitude;

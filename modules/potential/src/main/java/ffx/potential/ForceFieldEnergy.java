@@ -1161,7 +1161,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         if (multipoleTerm) {
             ELEC_FORM form;
-            if (name.contains("OPLS") || name.contains("AMBER")) {
+            if (name.contains("OPLS") || name.contains("AMBER") || name.contains("CHARMM")) {
                 form = ELEC_FORM.FIXED_CHARGE;
             } else {
                 form = ELEC_FORM.PAM;

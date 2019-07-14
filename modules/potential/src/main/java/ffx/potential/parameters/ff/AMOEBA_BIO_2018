@@ -1,16 +1,51 @@
+
 forcefield              AMOEBA-BIO-2018
 
-angle      2      1      3   50.00  122.00
-angle      2      1      4   32.00  117.00
-angle      3      1      4   36.00  121.00
-angle      3      1      7   50.00  122.00
-angle      3      1     40   50.00  121.00
-angle      4      1      4   29.50  123.00
-angle      4      1      7   32.00  117.00
-angle      4      1      8   13.70  122.40
-angle      4      1     39   41.70  120.50
-angle      4      1     40   32.00  117.00
-angle      8      1     39   52.50  120.40
+bond-cubic              -2.55
+bond-quartic            3.793125
+angle-cubic             -0.014
+angle-quartic           0.000056
+angle-pentic            -0.0000007
+angle-sextic            0.000000022
+opbendtype              ALLINGER
+opbend-cubic            -0.014
+opbend-quartic          0.000056
+opbend-pentic           -0.0000007
+opbend-sextic           0.000000022
+torsionunit             0.5
+vdwtype                 BUFFERED-14-7
+radiusrule              CUBIC-MEAN
+radiustype              R-MIN
+radiussize              DIAMETER
+epsilonrule             HHG
+dielectric              1.0
+polarization            MUTUAL
+vdw-12-scale            0.0
+vdw-13-scale            0.0
+vdw-14-scale            1.0
+vdw-15-scale            1.0
+mpole-12-scale          0.0
+mpole-13-scale          0.0
+mpole-14-scale          0.4
+mpole-15-scale          0.8
+polar-12-scale          0.0
+polar-13-scale          0.0
+polar-14-scale          1.0
+polar-15-scale          1.0
+polar-12-intra          0.0
+polar-13-intra          0.0
+polar-14-intra          0.5
+polar-15-intra          1.0
+direct-11-scale         0.0
+direct-12-scale         1.0
+direct-13-scale         1.0
+direct-14-scale         1.0
+mutual-11-scale         1.0
+mutual-12-scale         1.0
+mutual-13-scale         1.0
+mutual-14-scale         1.0
+
+
 angle      1      2      3   55.00  109.80
 angle      1      2      6   55.00  111.00
 angle      1      2     30   61.00  109.60
@@ -21,19 +56,6 @@ angle      6      2      6   40.00  107.60
 angle      6      2     30   39.00  109.50
 angle      6      2     32   39.00  109.50
 angle      6      2     41   59.00  109.30
-angle      1      3      2   70.00  113.40
-angle      1      3      5   77.00  124.20
-angle      1      3      7   70.00  113.40
-angle      1      3      8   70.00  113.40
-angle      1      3     40   41.00  113.40
-angle      2      3      5   80.00  122.40
-angle      2      3     15   70.00  113.40
-angle      5      3      7   80.00  122.40
-angle      5      3      8   80.00  122.40
-angle      5      3     15   77.00  124.20
-angle      5      3     40   80.00  122.40
-angle      7      3     15   70.00  113.40
-angle     15      3     40   41.00  113.40
 angle      1      7      3   61.00  109.60
 angle      1      7      6   55.00  111.00
 angle      1      7      7   54.00  111.30
@@ -108,9 +130,6 @@ angle      8     10     11   54.00  106.80
 angle      8     12      8   60.40   95.90
 angle      8     12     12   71.90  101.80
 angle      8     12     13   46.80   96.00
-angle      3     15      7   50.00  122.00
-angle      3     15     16   50.00  122.00
-angle      7     15     16   54.70  112.50
 angle      6     16      6   40.00  107.80
 angle      6     16     15   55.00  111.00
 angle      6     16     16   42.00  110.70
@@ -122,49 +141,8 @@ angle      9     16     16   42.00  110.70
 angle     15     16     16   54.00  104.00
 angle     16     16     16   48.20  104.00
 angle     16     16     41   54.00  104.00
-angle      8     17     17   33.80  122.30
-angle     17     17     17   54.70  121.70
-angle     17     17     18   35.30  120.00  120.50    0.00
-angle     17     17     19   43.20  120.00
-angle     17     17     21   60.00  123.57
 angle     17     19     20   25.90  109.00
-angle      8     22     22   61.90  127.00
-angle     22     22     22   63.30  120.00
-angle     22     22     23   35.30  128.00
-angle     22     22     24   47.50  109.00
-angle     23     22     24   86.30  122.50
-angle     22     24     22   86.30  109.00
-angle     22     24     25   35.30  125.50
-angle     25     24     26   35.30  125.50
-angle     25     24     28   35.30  125.50
-angle     26     24     28   86.30  110.80
-angle      8     26     24   36.00  122.00
-angle      8     26     26   36.00  131.00
-angle      8     26     29   36.00  122.00
-angle     24     26     26   47.50  104.70
-angle     24     26     27   38.10  122.50
-angle     24     26     29   28.80  111.50
-angle     26     26     27   35.30  128.00
-angle     26     26     29   47.50  110.50
-angle     27     26     29   38.10  122.50
-angle     24     28     24   28.80  110.30
-angle     24     28     27   38.10  122.50
-angle     24     28     29   28.80  112.20
-angle     27     28     29   38.10  122.50
 angle     26     29     28   86.30  104.30
-angle      2     30     31   80.00  122.40
-angle      7     30     31   80.00  122.40
-angle      8     30     31   80.00  122.40
-angle      8     30     33   80.00  122.40
-angle      8     30     34  111.50  110.30
-angle     31     30     31   57.60  134.00
-angle      2     32     33   80.00  122.40
-angle      2     32     34   80.00  122.40
-angle      7     32     33   80.00  122.40
-angle      7     32     34   80.00  122.40
-angle      8     32     33   80.00  122.40
-angle      8     32     34  111.50  110.30
-angle     33     32     34  122.30  121.50
 angle     30     34     35   49.60  108.70
 angle     32     34     35   49.60  108.70
 angle      8     36      8   48.20  109.50  110.20  111.00
@@ -172,7 +150,6 @@ angle      8     36      9   42.00  110.70
 angle      9     36      9   40.00  107.80
 angle      8     37     38   43.20  110.90
 angle     38     37     38   43.50  107.00
-angle      1     39      1   28.80  120.00
 angle      1     40      6   55.00  111.00
 angle      3     40      6   39.00  109.50
 angle      6     40      6   40.00  107.80
@@ -181,104 +158,17 @@ angle      7     41     16   54.70  112.50
 angle      7     41     42   43.20  108.50
 angle     16     41     42   43.20  110.90
 angle     42     41     42   43.20  105.40
-angle     43     43     45   42.00  115.90
-angle     43     43     46   60.00  105.88
-angle     43     43     49   60.00  111.38
-angle     43     43     50   60.00  128.40
-angle     43     43     56   42.00  118.49
-angle     43     43     60   60.00  105.88
-angle     45     43     49   90.00  132.47
-angle     46     43     50   90.00  126.37
-angle     49     43     56   90.00  130.37
-angle     50     43     60   90.00  126.37
-angle     46     44     49  130.00  113.18
-angle     46     44     51   41.00  121.27
-angle     49     44     51   40.00  124.53
-angle     49     44     60  130.00  113.18
-angle     51     44     60   41.00  121.27
-angle     43     45     47   32.00  122.40
-angle     43     45     50   60.00  119.30
-angle     47     45     50  135.00  118.00
-angle     47     45     55   32.00  119.50
-angle     50     45     55   60.00  122.50
-angle     43     46     44   42.00  107.20
-angle     43     46     68   48.00  126.48
-angle     43     46     76   48.00  126.48
-angle     44     46     68   58.00  125.40
-angle     44     46     76   58.00  125.40
 angle     45     47     53   41.50  120.00
 angle     53     47     53   19.50  120.00
 angle     53     47     59   41.50  120.00
-angle     48     48     51   32.50  121.46
-angle     48     48     52   32.50  121.46
-angle     48     48     54  130.00  123.56
-angle     48     48     56  130.00  118.99
-angle     48     48     62   28.00  123.52
-angle     48     48     63  130.00  123.56
-angle     50     48     50  135.00  127.90
-angle     50     48     52   41.20  116.07
-angle     50     48     55   60.00  123.28
-angle     51     48     54   40.00  115.75
-angle     51     48     55   32.50  121.49
-angle     51     48     63   40.00  115.75
-angle     52     48     56   32.50  116.87
-angle     54     48     55  130.00  120.74
-angle     55     48     63  130.00  120.74
-angle     56     48     62   28.00  118.28
 angle     43     49     44  128.00  103.47
 angle     43     50     48  128.00  110.86
 angle     43     50     59  128.00  111.66
 angle     45     50     48  128.00  118.67
 angle     45     50     56  128.00  120.30
 angle     48     50     48  128.00  117.03
-angle     48     54     56   80.00  123.84
-angle     48     54     61   32.80  120.00
-angle     48     54     68   52.00  116.20
-angle     48     54     76   52.00  116.20
-angle     56     54     56  125.00  128.52
-angle     56     54     59   80.00  127.19
-angle     56     54     61   43.50  114.97
-angle     56     54     68   48.00  119.00
-angle     56     54     76   48.00  119.00
-angle     59     54     61   32.80  119.77
-angle     45     55     48  112.00  116.50
-angle     45     55     55  112.00  118.66
-angle     45     55     57   37.60  121.50
-angle     47     55     55   32.00  120.63
-angle     48     55     48  112.00  116.90
-angle     48     55     57   37.60  120.47
-angle     43     56     54   45.00  109.14
-angle     43     56     58   85.00  131.17
-angle     43     56     63   45.00  109.14
-angle     48     56     54   45.00  113.34
-angle     48     56     58   85.00  126.37
-angle     48     56     63   45.00  113.34
-angle     50     56     54   60.00  117.24
-angle     50     56     58  135.00  124.73
-angle     54     56     54   60.00  113.94
-angle     54     56     58   60.00  120.00
-angle     54     56     63   60.00  113.94
-angle     58     56     63   60.00  120.00
-angle     63     56     63   60.00  113.94
-angle     47     59     50  135.00  119.25
-angle     47     59     54   32.00  117.10
-angle     47     59     63   32.00  117.10
-angle     50     59     54   60.00  123.65
-angle     43     60     44   42.00  107.20
-angle     43     60     68   48.00  126.48
-angle     43     60     76   48.00  126.48
-angle     44     60     68   58.00  125.40
-angle     44     60     76   58.00  125.40
 angle     48     62     64   61.40  110.61
 angle     64     62     64   34.50  109.06
-angle     48     63     56   80.00  123.84
-angle     48     63     61   32.80  120.00
-angle     48     63     68   52.00  116.20
-angle     48     63     76   52.00  116.20
-angle     56     63     56  125.00  128.52
-angle     56     63     61   43.50  114.97
-angle     56     63     68   48.00  119.00
-angle     56     63     76   48.00  119.00
 angle     66     65     68   88.25  109.90
 angle     65     66     67   54.50  108.50
 angle     65     66     68   87.95  105.30
@@ -377,6 +267,164 @@ angle     68     87     70   64.50  107.65
 angle     76     88     81   64.50  107.65
 angle     79     89     81   64.50  107.65
 angle     91     90     91   48.70  108.50
+
+
+anglep      2      1      3   50.00  122.00
+anglep      2      1      4   32.00  117.00
+anglep      3      1      4   36.00  121.00
+anglep      3      1      7   50.00  122.00
+anglep      3      1     40   50.00  121.00
+anglep      4      1      4   29.50  123.00
+anglep      4      1      7   32.00  117.00
+anglep      4      1      8   13.70  122.40
+anglep      4      1     39   41.70  120.50
+anglep      4      1     40   32.00  117.00
+anglep      8      1     39   52.50  120.40
+anglep      1      3      2   70.00  113.40
+anglep      1      3      5   77.00  124.20
+anglep      1      3      7   70.00  113.40
+anglep      1      3      8   70.00  113.40
+anglep      1      3     40   41.00  113.40
+anglep      2      3      5   80.00  122.40
+anglep      2      3     15   70.00  113.40
+anglep      5      3      7   80.00  122.40
+anglep      5      3      8   80.00  122.40
+anglep      5      3     15   77.00  124.20
+anglep      5      3     40   80.00  122.40
+anglep      7      3     15   70.00  113.40
+anglep     15      3     40   41.00  113.40
+anglep      3     15      7   50.00  122.00
+anglep      3     15     16   50.00  122.00
+anglep      7     15     16   54.70  112.50
+anglep      8     17     17   33.80  122.30
+anglep     17     17     17   54.70  121.70
+anglep     17     17     18   35.30  120.00  120.50    0.00
+anglep     17     17     19   43.20  120.00
+anglep     17     17     21   60.00  123.57
+anglep      8     22     22   61.90  127.00
+anglep     22     22     22   63.30  120.00
+anglep     22     22     23   35.30  128.00
+anglep     22     22     24   47.50  109.00
+anglep     23     22     24   86.30  122.50
+anglep     22     24     22   86.30  109.00
+anglep     22     24     25   35.30  125.50
+anglep     25     24     26   35.30  125.50
+anglep     25     24     28   35.30  125.50
+anglep     26     24     28   86.30  110.80
+anglep      8     26     24   36.00  122.00
+anglep      8     26     26   36.00  131.00
+anglep      8     26     29   36.00  122.00
+anglep     24     26     26   47.50  104.70
+anglep     24     26     27   38.10  122.50
+anglep     24     26     29   28.80  111.50
+anglep     26     26     27   35.30  128.00
+anglep     26     26     29   47.50  110.50
+anglep     27     26     29   38.10  122.50
+anglep     24     28     24   28.80  110.30
+anglep     24     28     27   38.10  122.50
+anglep     24     28     29   28.80  112.20
+anglep     27     28     29   38.10  122.50
+anglep      2     30     31   80.00  122.40
+anglep      7     30     31   80.00  122.40
+anglep      8     30     31   80.00  122.40
+anglep      8     30     33   80.00  122.40
+anglep      8     30     34  111.50  110.30
+anglep     31     30     31   57.60  134.00
+anglep      2     32     33   80.00  122.40
+anglep      2     32     34   80.00  122.40
+anglep      7     32     33   80.00  122.40
+anglep      7     32     34   80.00  122.40
+anglep      8     32     33   80.00  122.40
+anglep      8     32     34  111.50  110.30
+anglep     33     32     34  122.30  121.50
+anglep      1     39      1   28.80  120.00
+anglep     43     43     45   42.00  115.90
+anglep     43     43     46   60.00  105.88
+anglep     43     43     49   60.00  111.38
+anglep     43     43     50   60.00  128.40
+anglep     43     43     56   42.00  118.49
+anglep     43     43     60   60.00  105.88
+anglep     45     43     49   90.00  132.47
+anglep     46     43     50   90.00  126.37
+anglep     49     43     56   90.00  130.37
+anglep     50     43     60   90.00  126.37
+anglep     46     44     49  130.00  113.18
+anglep     46     44     51   41.00  121.27
+anglep     49     44     51   40.00  124.53
+anglep     49     44     60  130.00  113.18
+anglep     51     44     60   41.00  121.27
+anglep     43     45     47   32.00  122.40
+anglep     43     45     50   60.00  119.30
+anglep     47     45     50  135.00  118.00
+anglep     47     45     55   32.00  119.50
+anglep     50     45     55   60.00  122.50
+anglep     43     46     44   42.00  107.20
+anglep     43     46     68   48.00  126.48
+anglep     43     46     76   48.00  126.48
+anglep     44     46     68   58.00  125.40
+anglep     44     46     76   58.00  125.40
+anglep     48     48     51   32.50  121.46
+anglep     48     48     52   32.50  121.46
+anglep     48     48     54  130.00  123.56
+anglep     48     48     56  130.00  118.99
+anglep     48     48     62   28.00  123.52
+anglep     48     48     63  130.00  123.56
+anglep     50     48     50  135.00  127.90
+anglep     50     48     52   41.20  116.07
+anglep     50     48     55   60.00  123.28
+anglep     51     48     54   40.00  115.75
+anglep     51     48     55   32.50  121.49
+anglep     51     48     63   40.00  115.75
+anglep     52     48     56   32.50  116.87
+anglep     54     48     55  130.00  120.74
+anglep     55     48     63  130.00  120.74
+anglep     56     48     62   28.00  118.28
+anglep     48     54     56   80.00  123.84
+anglep     48     54     61   32.80  120.00
+anglep     48     54     68   52.00  116.20
+anglep     48     54     76   52.00  116.20
+anglep     56     54     56  125.00  128.52
+anglep     56     54     59   80.00  127.19
+anglep     56     54     61   43.50  114.97
+anglep     56     54     68   48.00  119.00
+anglep     56     54     76   48.00  119.00
+anglep     59     54     61   32.80  119.77
+anglep     45     55     48  112.00  116.50
+anglep     45     55     55  112.00  118.66
+anglep     45     55     57   37.60  121.50
+anglep     47     55     55   32.00  120.63
+anglep     48     55     48  112.00  116.90
+anglep     48     55     57   37.60  120.47
+anglep     43     56     54   45.00  109.14
+anglep     43     56     58   85.00  131.17
+anglep     43     56     63   45.00  109.14
+anglep     48     56     54   45.00  113.34
+anglep     48     56     58   85.00  126.37
+anglep     48     56     63   45.00  113.34
+anglep     50     56     54   60.00  117.24
+anglep     50     56     58  135.00  124.73
+anglep     54     56     54   60.00  113.94
+anglep     54     56     58   60.00  120.00
+anglep     54     56     63   60.00  113.94
+anglep     58     56     63   60.00  120.00
+anglep     63     56     63   60.00  113.94
+anglep     47     59     50  135.00  119.25
+anglep     47     59     54   32.00  117.10
+anglep     47     59     63   32.00  117.10
+anglep     50     59     54   60.00  123.65
+anglep     43     60     44   42.00  107.20
+anglep     43     60     68   48.00  126.48
+anglep     43     60     76   48.00  126.48
+anglep     44     60     68   58.00  125.40
+anglep     44     60     76   58.00  125.40
+anglep     48     63     56   80.00  123.84
+anglep     48     63     61   32.80  120.00
+anglep     48     63     68   52.00  116.20
+anglep     48     63     76   52.00  116.20
+anglep     56     63     56  125.00  128.52
+anglep     56     63     61   43.50  114.97
+anglep     56     63     68   48.00  119.00
+anglep     56     63     76   48.00  119.00
 
 
 angtors     44     46     68     65   0.014   0.000  -0.058   0.000   0.000  -0.011
@@ -703,44 +751,44 @@ atom    307     52  H     "Uracil H5"                  1    1.0080  1
 atom    308     58  O     "Uracil O2"                  8   15.9990  1
 atom    309     58  O     "Uracil O4"                  8   15.9990  1
 atom    310     51  H     "Uracil H6"                  1    1.0080  1
-atom    311     65  O     "Ribose O4'"                 8   15.9990  2
-atom    312     66  C     "Ribose C4'"                 6   12.0110  4
-atom    313     67  H     "Ribose H4'"                 1    1.0080  1
-atom    314     68  C     "Ribose C1'"                 6   12.0110  4
-atom    315     67  H     "Ribose H1'"                 1    1.0080  1
-atom    316     68  C     "Ribose C2'"                 6   12.0110  4
-atom    317     67  H     "Ribose H2'1"                1    1.0080  1
-atom    318     68  C     "Ribose C3'"                 6   12.0110  4
-atom    319     67  H     "Ribose H3'"                 1    1.0080  1
-atom    320     69  O     "Ribose O2'"                 8   15.9990  2
-atom    321     70  H     "Ribose HO'2"                1    1.0080  1
-atom    322     71  O     "Ribose O3'"                 8   15.9990  2
-atom    323     70  H     "Ribose HO'3"                1    1.0080  1
-atom    324     72  C     "Ribose C5'"                 6   12.0110  4
-atom    325     73  H     "Ribose H5'"                 1    1.0080  1
-atom    326     74  O     "Ribose O5'"                 8   15.9990  2
-atom    327     70  H     "Ribose HO'5"                1    1.0080  1
-atom    328     75  C     "Deoxyribose C4'"            6   12.0110  4
-atom    329     76  C     "Deoxyribose C3'"            6   12.0110  4
-atom    330     76  C     "Deoxyribose C2'"            6   12.0110  4
-atom    331     76  C     "Deoxyribose C1'"            6   12.0110  4
-atom    332     77  O     "Deoxyribose O4'"            8   15.9990  2
-atom    333     78  H     "Deoxyribose H2'1"           1    1.0080  1
-atom    334     78  H     "Deoxyribose H1'"            1    1.0080  1
-atom    335     78  H     "Deoxyribose H3'"            1    1.0080  1
-atom    336     78  H     "Deoxyribose H4'"            1    1.0080  1
-atom    337     79  C     "Deoxyribose C5'"            6   12.0110  4
-atom    338     80  O     "Deoxyribose O3'"            8   15.9990  2
-atom    339     81  H     "Deoxyribose HO'3"           1    1.0080  1
-atom    340     82  H     "Deoxyribose H5'1"           1    1.0080  1
-atom    341     83  O     "Deoxyribose O5'"            8   15.9990  2
-atom    342     81  H     "Deoxyribose HO'5"           1    1.0080  1
+atom    311     65  O     "Ribose O4"                 8   15.9990  2
+atom    312     66  C     "Ribose C4"                 6   12.0110  4
+atom    313     67  H     "Ribose H4"                 1    1.0080  1
+atom    314     68  C     "Ribose C1"                 6   12.0110  4
+atom    315     67  H     "Ribose H1"                 1    1.0080  1
+atom    316     68  C     "Ribose C2"                 6   12.0110  4
+atom    317     67  H     "Ribose H21"                1    1.0080  1
+atom    318     68  C     "Ribose C3"                 6   12.0110  4
+atom    319     67  H     "Ribose H3"                 1    1.0080  1
+atom    320     69  O     "Ribose O2"                 8   15.9990  2
+atom    321     70  H     "Ribose HO2"                1    1.0080  1
+atom    322     71  O     "Ribose O3"                 8   15.9990  2
+atom    323     70  H     "Ribose HO3"                1    1.0080  1
+atom    324     72  C     "Ribose C5"                 6   12.0110  4
+atom    325     73  H     "Ribose H5"                 1    1.0080  1
+atom    326     74  O     "Ribose O5"                 8   15.9990  2
+atom    327     70  H     "Ribose HO5"                1    1.0080  1
+atom    328     75  C     "Deoxyribose C4"            6   12.0110  4
+atom    329     76  C     "Deoxyribose C3"            6   12.0110  4
+atom    330     76  C     "Deoxyribose C2"            6   12.0110  4
+atom    331     76  C     "Deoxyribose C1"            6   12.0110  4
+atom    332     77  O     "Deoxyribose O4"            8   15.9990  2
+atom    333     78  H     "Deoxyribose H21"           1    1.0080  1
+atom    334     78  H     "Deoxyribose H1"            1    1.0080  1
+atom    335     78  H     "Deoxyribose H3"            1    1.0080  1
+atom    336     78  H     "Deoxyribose H4"            1    1.0080  1
+atom    337     79  C     "Deoxyribose C5"            6   12.0110  4
+atom    338     80  O     "Deoxyribose O3"            8   15.9990  2
+atom    339     81  H     "Deoxyribose HO3"           1    1.0080  1
+atom    340     82  H     "Deoxyribose H51"           1    1.0080  1
+atom    341     83  O     "Deoxyribose O5"            8   15.9990  2
+atom    342     81  H     "Deoxyribose HO5"           1    1.0080  1
 atom    343     84  P     "Phosphodiester P"          15   30.9740  4
 atom    344     85  O     "Phosphodiester OP"          8   15.9990  1
-atom    345     86  O     "R-5'-Hydroxyl O5'T"         8   15.9990  2
-atom    346     87  O     "R-3'-Hydroxyl O3'T"         8   15.9990  2
-atom    347     88  O     "D-3'-Hydroxyl O3'T"         8   15.9990  2
-atom    348     89  O     "D-5'-Hydroxyl O5'T"         8   15.9990  2
+atom    345     86  O     "R-5-Hydroxyl O5T"         8   15.9990  2
+atom    346     87  O     "R-3-Hydroxyl O3T"         8   15.9990  2
+atom    347     88  O     "D-3-Hydroxyl O3T"         8   15.9990  2
+atom    348     89  O     "D-5-Hydroxyl O5T"         8   15.9990  2
 atom    349     90  O     "AMOEBA Water O"             8   15.9990  2
 atom    350     91  H     "AMOEBA Water H"             1    1.0080  1
 atom    351     92  Li+   "Lithium Ion Li+"            3    6.9410  0
@@ -751,21 +799,11 @@ atom    355     96  Cs+   "Cesium Ion Cs+"            55  132.9050  0
 atom    356     97  Be+   "Beryllium Ion Be+2"         4    9.0120  0
 atom    357     98  Mg+   "Magnesium Ion Mg+2"        12   24.3050  0
 atom    358     99  Ca+   "Calcium Ion Ca+2"          20   40.0780  0
-atom    359    100  Zn+   "Zinc Ion Zn+2"             30   65.3900  0
-atom    360    101  Cl-   "Chloride Ion Cl-"          17   35.4530  0
-
-atom    361     74  OS    "R-5'-Phosphate O5'"         8   15.9990  2
-atom    362     84  P     "R-5'-Phosphate P"          15   30.9740  4
-atom    363     85  O2    "R-5'-Phosphate OP"          8   15.9990  1
-atom    364     71  OS    "R-3'-Phosphate O3'"         8   15.9990  2
-atom    365     84  P     "R-3'-Phosphate P"          15   30.9740  4
-atom    366     85  O2    "R-3'-Phosphate OP"          8   15.9990  1
-atom    367     83  OS    "D-5'-Phosphate O5'"         8   15.9990  2
-atom    368     84  P     "D-5'-Phosphate P"          15   30.9740  4
-atom    369     85  O2    "D-5'-Phosphate OP"          8   15.9990  1
-atom    370     80  OS    "D-3'-Phosphate O3'"         8   15.9990  2
-atom    371     84  P     "D-3'-Phosphate P"          15   30.9740  4
-atom    372     85  O2    "D-3'-Phosphate OP"          8   15.9990  1
+atom    359    100  Zn+   "Zinc Ion Zn+2"             30   65.3800  0
+atom    360    101  F-    "Fluoride Ion F-"            9   18.9980  0
+atom    361    102  Cl-   "Chloride Ion Cl-"          17   35.4530  0
+atom    362    103  Br-   "Bromide Ion Br-"           35   79.9040  0
+atom    363    104  I-    "Iodide Ion I-"             53  126.9040  0
 
 
 biotype      1  N     "Glycine                "      1
@@ -1779,36 +1817,41 @@ biotype   1228  H7    "Deoxythymidine         "    295
 biotype   1229  H6    "Deoxythymidine         "    297
 biotype   1230  P     "Phosphodiester RNA     "    343
 biotype   1231  OP    "Phosphodiester RNA     "    344
-biotype   1232  O5*   "5'-Hydroxyl RNA        "    345
-biotype   1233  H5T   "5'-Hydroxyl RNA        "    327
-biotype   1234  O5*   "5'-Monophosphate OS RNA"    361
-biotype   1235  P     "5'-Monophosphate P RNA "    362
-biotype   1236  OP    "5'-Monophosphate OP RNA"    363
-biotype   1237  O3*   "3'-Hydroxyl RNA        "    346
-biotype   1238  H3T   "3'-Hydroxyl RNA        "    323
-biotype   1239  O3*   "3'-Monophosphate OS RNA"    364
-biotype   1240  P     "3'-Monophosphate P RNA "    365
-biotype   1241  OP    "3'-Monophosphate OP RNA"    366
+biotype   1232  O5*   "5-Hydroxyl RNA        "    345
+biotype   1233  H5T   "5-Hydroxyl RNA        "    327
+biotype   1234  O5*   "5-Monophosphate OS RNA"     -1
+biotype   1235  P     "5-Monophosphate P RNA "     -1
+biotype   1236  OP    "5-Monophosphate OP RNA"     -1
+biotype   1237  O3*   "3-Hydroxyl RNA        "    346
+biotype   1238  H3T   "3-Hydroxyl RNA        "    323
+biotype   1239  O3*   "3-Monophosphate OS RNA"     -1
+biotype   1240  P     "3-Monophosphate P RNA "     -1
+biotype   1241  OP    "3-Monophosphate OP RNA"     -1
 biotype   1242  P     "Phosphodiester DNA     "    343
 biotype   1243  OP    "Phosphodiester DNA     "    344
-biotype   1244  O5*   "5'-Hydroxyl DNA        "    348
-biotype   1245  H5T   "5'-Hydroxyl DNA        "    342
-biotype   1246  O5*   "5'-Monophosphate OS DNA"    367
-biotype   1247  P     "5'-Monophosphate P DNA "    368
-biotype   1248  OP    "5'-Monophosphate OP DNA"    369
-biotype   1249  O3*   "3'-Hydroxyl DNA        "    347
-biotype   1250  H3T   "3'-Hydroxyl DNA        "    339
-biotype   1251  O3*   "3'-Monophosphate OS DNA"    370
-biotype   1252  P     "3'-Monophosphate P DNA "    371
-biotype   1253  OP    "3'-Monophosphate OP DNA"    372
+biotype   1244  O5*   "5-Hydroxyl DNA        "    348
+biotype   1245  H5T   "5-Hydroxyl DNA        "    342
+biotype   1246  O5*   "5-Monophosphate OS DNA"     -1
+biotype   1247  P     "5-Monophosphate P DNA "     -1
+biotype   1248  OP    "5-Monophosphate OP DNA"     -1
+biotype   1249  O3*   "3-Hydroxyl DNA        "    347
+biotype   1250  H3T   "3-Hydroxyl DNA        "    339
+biotype   1251  O3*   "3-Monophosphate OS DNA"     -1
+biotype   1252  P     "3-Monophosphate P DNA "     -1
+biotype   1253  OP    "3-Monophosphate OP DNA"     -1
 biotype   2001  O     "Water                  "    349
 biotype   2002  H     "Water                  "    350
-biotype   2003  NA    "Sodium Ion             "    352
-biotype   2004  K     "Potassium Ion          "    353
-biotype   2005  MG    "Magnesium Ion          "    357
-biotype   2006  CA    "Calcium Ion            "    358
-biotype   2007  CL    "Chloride Ion           "    360
-biotype   2008  ZN    "Zinc Ion               "    359
+biotype   2003  LI    "Lithium Ion            "    351
+biotype   2004  NA    "Sodium Ion             "    352
+biotype   2005  K     "Potassium Ion          "    353
+biotype   2006  RB    "Rubidium Ion           "    354
+biotype   2007  CS    "Cesium Ion             "    355
+biotype   2008  MG    "Magnesium Ion          "    357
+biotype   2009  CA    "Calcium Ion            "    358
+biotype   2012  F     "Fluoride Ion           "    360
+biotype   2013  CL    "Chloride Ion           "    361
+biotype   2014  BR    "Bromide Ion            "    362
+biotype   2015  I     "Iodide Ion             "    363
 
 
 bond      1      2   375.0   1.4370
@@ -3874,32 +3917,12 @@ multipole    318    346    312          0.20366 \
                                        -0.11723 \
                                         0.00000 -0.31762 \
                                        -0.43984  0.00000  0.43485
-multipole    318    364    312          0.20366 \
-                                        0.20594  0.00000  0.09319 \
-                                       -0.11723 \
-                                        0.00000 -0.31762 \
-                                       -0.43984  0.00000  0.43485
-multipole    318    370    312          0.20366 \
-                                        0.20594  0.00000  0.09319 \
-                                       -0.11723 \
-                                        0.00000 -0.31762 \
-                                       -0.43984  0.00000  0.43485
 multipole    319    318    322          0.05807 \
                                         0.02182  0.00000 -0.04741 \
                                        -0.01189 \
                                         0.00000  0.01995 \
                                         0.00147  0.00000 -0.00806
 multipole    319    318    346          0.05807 \
-                                        0.02182  0.00000 -0.04741 \
-                                       -0.01189 \
-                                        0.00000  0.01995 \
-                                        0.00147  0.00000 -0.00806
-multipole    319    364    322          0.05807 \
-                                        0.02182  0.00000 -0.04741 \
-                                       -0.01189 \
-                                        0.00000  0.01995 \
-                                        0.00147  0.00000 -0.00806
-multipole    319    370    322          0.05807 \
                                         0.02182  0.00000 -0.04741 \
                                        -0.01189 \
                                         0.00000  0.01995 \
@@ -3934,33 +3957,12 @@ multipole    324    345    312          0.21472 \
                                         0.07978 \
                                         0.00000 -0.45645 \
                                        -0.03790  0.00000  0.37667
-multipole    324    361    312          0.21472 \
-                                        0.26025  0.00000  0.34835 \
-                                        0.07978 \
-                                        0.00000 -0.45645 \
-                                       -0.03790  0.00000  0.37667
-                                       -0.03790  0.00000  0.37667
-multipole    324    367    312          0.21472 \
-                                        0.26025  0.00000  0.34835 \
-                                        0.07978 \
-                                        0.00000 -0.45645 \
-                                       -0.03790  0.00000  0.37667
 multipole    325    324    326          0.01769 \
                                        -0.00317  0.00000 -0.11654 \
                                         0.10449 \
                                         0.00000 -0.04493 \
                                        -0.02925  0.00000 -0.05956
 multipole    325    324    345          0.01769 \
-                                       -0.00317  0.00000 -0.11654 \
-                                        0.10449 \
-                                        0.00000 -0.04493 \
-                                       -0.02925  0.00000 -0.05956
-multipole    325    324    361          0.01769 \
-                                       -0.00317  0.00000 -0.11654 \
-                                        0.10449 \
-                                        0.00000 -0.04493 \
-                                       -0.02925  0.00000 -0.05956
-multipole    325    324    367          0.01769 \
                                        -0.00317  0.00000 -0.11654 \
                                         0.10449 \
                                         0.00000 -0.04493 \
@@ -4165,67 +4167,22 @@ multipole    360      0      0         -1.00000 \
                                         0.00000 \
                                         0.00000  0.00000 \
                                         0.00000  0.00000  0.00000
+multipole    361      0      0         -1.00000 \
+                                        0.00000  0.00000  0.00000 \
+                                        0.00000 \
+                                        0.00000  0.00000 \
+                                        0.00000  0.00000  0.00000
+multipole    362      0      0         -1.00000 \
+                                        0.00000  0.00000  0.00000 \
+                                        0.00000 \
+                                        0.00000  0.00000 \
+                                        0.00000  0.00000  0.00000
+multipole    363      0      0         -1.00000 \
+                                        0.00000  0.00000  0.00000 \
+                                        0.00000 \
+                                        0.00000  0.00000 \
+                                        0.00000  0.00000  0.00000
 
-multipole    361    362    324         -0.58166 \
-                                        0.26215  0.00000  0.04328 \
-                                        0.24279 \
-                                        0.00000 -0.44387 \
-                                       -0.22260  0.00000  0.20108
-multipole    362    361    363          1.02369 \
-                                        0.00000  0.00000 -0.21311 \
-                                       -0.08100 \
-                                        0.00000 -0.08100 \
-                                        0.00000  0.00000  0.16200
-multipole    363    362    361         -0.87686 \
-                                       -0.08747  0.00000  0.03991 \
-                                       -0.45917 \
-                                        0.00000 -0.64191 \
-                                        0.17008  0.00000  1.10108
-multipole    364    365    318         -0.60712 \
-                                        0.26215  0.00000  0.04328 \
-                                        0.24279 \
-                                        0.00000 -0.44387 \
-                                       -0.22260  0.00000  0.20108
-multipole    365    364    366          1.02369 \
-                                        0.00000  0.00000 -0.21311 \
-                                       -0.08100 \
-                                        0.00000 -0.08100 \
-                                        0.00000  0.00000  0.16200
-multipole    366    365    364         -0.87686 \
-                                       -0.08747  0.00000  0.03991 \
-                                       -0.45917 \
-                                        0.00000 -0.64191 \
-                                        0.17008  0.00000  1.10108
-multipole    367    368    337         -0.58166 \
-                                        0.26215  0.00000  0.04328 \
-                                        0.24279 \
-                                        0.00000 -0.44387 \
-                                       -0.22260  0.00000  0.20108
-multipole    368    367    369          1.02369 \
-                                        0.00000  0.00000 -0.21311 \
-                                       -0.08100 \
-                                        0.00000 -0.08100 \
-                                        0.00000  0.00000  0.16200
-multipole    369    368    367         -0.87686 \
-                                       -0.08747  0.00000  0.03991 \
-                                       -0.45917 \
-                                        0.00000 -0.64191 \
-                                        0.17008  0.00000  1.10108
-multipole    370    371    329         -0.60712 \
-                                        0.26215  0.00000  0.04328 \
-                                        0.24279 \
-                                        0.00000 -0.44387 \
-                                       -0.22260  0.00000  0.20108
-multipole    371    370    372          1.02369 \
-                                        0.00000  0.00000 -0.21311 \
-                                       -0.08100 \
-                                        0.00000 -0.08100 \
-                                        0.00000  0.00000  0.16200
-multipole    372    371    379         -0.87686 \
-                                       -0.08747  0.00000  0.03991 \
-                                       -0.45917 \
-                                        0.00000 -0.64191 \
-                                        0.17008  0.00000  1.10108
 
 opbend      1      3      0      0  107.90
 opbend      1     39      0      0   14.40
@@ -4742,11 +4699,11 @@ polarize    318   1.334  0.390    319    322    346
 polarize    319   0.496  0.390    318
 polarize    320   0.837  0.390    316    321
 polarize    321   0.496  0.390    320
-polarize    322   0.837  0.390    318    343 362 365 368 371
+polarize    322   0.837  0.390    318    343
 polarize    323   0.496  0.390    346
 polarize    324   1.334  0.390    325    326    345
 polarize    325   0.496  0.390    324
-polarize    326   0.837  0.390    324    343 362 365 368 371
+polarize    326   0.837  0.390    324    343
 polarize    327   0.496  0.390    345
 polarize    328   1.334  0.390    332    336
 polarize    329   1.334  0.390    335    338    347
@@ -4780,20 +4737,11 @@ polarize    356   0.010  0.065
 polarize    357   0.080  0.115
 polarize    358   0.550  0.180
 polarize    359   0.260  0.210
-polarize    360   4.000  0.390
+polarize    360   1.350  0.390
+polarize    361   4.000  0.390
+polarize    362   5.650  0.390
+polarize    363   7.250  0.390
 
-polarize    361   0.837  0.390
-polarize    362   1.828  0.390    363    362
-polarize    363   0.837  0.390    362    363
-polarize    364   0.837  0.390
-polarize    365   1.828  0.390    366    365
-polarize    366   0.837  0.390    365    366
-polarize    367   0.837  0.390
-polarize    368   1.828  0.390    369    368
-polarize    369   0.837  0.390    368    369
-polarize    370   0.837  0.390
-polarize    371   1.828  0.390    372    371
-polarize    372   0.837  0.390    371    372
 
 strbnd      2      1      3    7.20    7.20
 strbnd      2      1      4    4.30    4.30
@@ -5268,7 +5216,6 @@ torsion     6     7     7    41   0.000   0.000 1   0.000 180.000 2   0.000   0.
 torsion     8     7     7    30   0.650   0.000 1   1.025 180.000 2   0.120   0.000 3
 torsion     8     7     7    41   0.800   0.000 1   1.000 180.000 2   0.500   0.000 3
 torsion    10     7     7    29  -3.490   0.000 1   2.340 180.000 2   0.000   0.000 3
-torsion    10     7     7    30  -3.490   0.000 1   2.340 180.000 2   0.000   0.000 3
 torsion    10     7     7    41  -1.500   0.000 1   0.720 180.000 2   1.260   0.000 3
 torsion     1     7     8     3  -0.933   0.000 1  -0.929 180.000 2   0.153   0.000 3
 torsion     1     7     8     7   0.902   0.000 1   0.520 180.000 2   1.000   0.000 3
@@ -7721,7 +7668,7 @@ tortors      3      1      2     32     34  25  25 \
    180.0   180.0  -0.41030
 
 
-ureybrad     91     90     91   -7.60   1.5326
+ureybrad     91     90     91   -7.60   1.5537
 
 
 vdw      1  3.710000000  0.110000000
@@ -7815,15 +7762,18 @@ vdw     88  3.405000000  0.112000000
 vdw     89  3.405000000  0.112000000
 vdw     90  3.405000000  0.110000000
 vdw     91  2.655000000  0.013500000  0.910
-vdw     92  2.380000000  0.080000000
-vdw     93  3.020000000  0.260000000
-vdw     94  3.710000000  0.350000000
-vdw     95  4.140000000  0.440000000
-vdw     96  4.370000000  0.530000000
+vdw     92  2.200000000  0.066000000
+vdw     93  2.955000000  0.280000000
+vdw     94  3.680000000  0.350000000
+vdw     95  3.900000000  0.380000000
+vdw     96  4.140000000  0.420000000
 vdw     97  1.880000000  0.091000000
 vdw     98  2.900000000  0.280000000
 vdw     99  3.590000000  0.350000000
 vdw    100  2.680000000  0.222000000
-vdw    101  4.130000000  0.340000000
+vdw    101  3.430000000  0.250000000
+vdw    102  4.120000000  0.340000000
+vdw    103  4.320000000  0.430000000
+vdw    104  4.610000000  0.520000000
 
 

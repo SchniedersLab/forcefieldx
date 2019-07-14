@@ -232,6 +232,16 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     public static final double APERIODIC_DEFAULT_EWALD_CUTOFF = 1000.0;
 
     /**
+     * Conversion from electron**2/Ang to kcal/mole.
+     *
+     * Note -- this value varies slightly between force field definitions and can be set using the
+     * ELECTRIC property.
+     *
+     */
+    public double electric = 332.063709;
+
+
+    /**
      * <p>Setter for the field <code>polarization</code>.</p>
      *
      * @param set a {@link ffx.potential.nonbonded.ParticleMeshEwald.Polarization} object.

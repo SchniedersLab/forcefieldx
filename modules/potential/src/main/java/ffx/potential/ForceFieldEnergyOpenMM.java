@@ -2211,7 +2211,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             List<Angle> normalAngles = new ArrayList<>();
             // Sort all normal angles from in-plane angles
             for (int i = 0; i < nAngles; i++) {
-                if (angles[i].getAngleMode() == Angle.AngleMode.NORMAL) {
+                if (angles[i].getAngleMode() == AngleType.AngleMode.NORMAL) {
                     normalAngles.add(angles[i]);
                 }
             }
@@ -2263,7 +2263,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             List<Angle> inPlaneAngles = new ArrayList<>();
             //Sort all in-plane angles from normal angles
             for (int i = 0; i < nAngles; i++) {
-                if (angles[i].getAngleMode() == Angle.AngleMode.IN_PLANE) {
+                if (angles[i].getAngleMode() == AngleType.AngleMode.IN_PLANE) {
                     inPlaneAngles.add(angles[i]);
                 }
             }

@@ -1,3 +1,4 @@
+
 forcefield              AMOEBA-BIO-2009
 
 bond-cubic              -2.55
@@ -31,7 +32,10 @@ polar-12-scale          0.0
 polar-13-scale          0.0
 polar-14-scale          1.0
 polar-15-scale          1.0
+polar-12-intra          0.0
+polar-13-intra          0.0
 polar-14-intra          0.5
+polar-15-intra          1.0
 direct-11-scale         0.0
 direct-12-scale         1.0
 direct-13-scale         1.0
@@ -42,20 +46,6 @@ mutual-13-scale         1.0
 mutual-14-scale         1.0
 
 
-angle      2      1      3   50.00  122.00
-angle      2      1      4   32.00  117.00
-angle      3      1      4   36.00  121.00
-angle      3      1      7   50.00  122.00
-angle      3      1     40   50.00  121.00
-angle      4      1      4   29.50  123.00
-angle      4      1      7   32.00  117.00
-angle      4      1      8   13.70  122.40
-angle      4      1     39   41.70  120.50
-angle      4      1     40   32.00  117.00
-angle      8      1     38   13.70  122.40
-angle      8      1     39   52.50  120.40
-angle     38      1     38   29.50  120.00
-angle     38      1     39   41.70  120.50
 angle      1      2      3   55.00  109.80
 angle      1      2      6   55.00  111.00
 angle      1      2     30   61.00  109.60
@@ -66,19 +56,6 @@ angle      6      2      6   40.00  107.60
 angle      6      2     30   39.00  109.50
 angle      6      2     35   59.00  107.78
 angle      6      2     41   59.00  109.30
-angle      1      3      2   70.00  113.40
-angle      1      3      5   77.00  124.20
-angle      1      3      7   70.00  113.40
-angle      1      3      8   70.00  113.40
-angle      1      3     40   41.00  113.40
-angle      2      3      5   80.00  122.40
-angle      2      3     15   70.00  113.40
-angle      5      3      7   80.00  122.40
-angle      5      3      8   80.00  122.40
-angle      5      3     15   77.00  124.20
-angle      5      3     40   80.00  122.40
-angle      7      3     15   70.00  113.40
-angle     15      3     40   41.00  113.40
 angle      1      7      3   61.00  109.60
 angle      1      7      6   55.00  111.00
 angle      1      7      7   54.00  111.30
@@ -147,9 +124,6 @@ angle      8     10     11   54.00  106.80
 angle      8     12      8   60.40   95.90
 angle      8     12     12   71.90  101.80
 angle      8     12     13   46.80   96.00
-angle      3     15      7   50.00  122.00
-angle      3     15     16   50.00  122.00
-angle      7     15     16   54.70  112.50
 angle      6     16      6   40.00  107.80
 angle      6     16     15   55.00  111.00
 angle      6     16     16   42.00  110.70
@@ -161,47 +135,9 @@ angle      9     16     16   42.00  110.70
 angle     15     16     16   54.00  104.00
 angle     16     16     16   48.20  104.00
 angle     16     16     41   54.00  104.00
-angle      8     17     17   33.80  122.30
-angle     17     17     17   54.70  121.70
-angle     17     17     18   35.30  120.00  120.50    0.00
-angle     17     17     19   43.20  120.00
-angle     17     17     21   60.00  123.57
 angle     17     19     20   25.90  109.00
-angle      8     22     22   61.90  127.00
-angle     22     22     22   63.30  120.00
-angle     22     22     23   35.30  128.00
-angle     22     22     24   47.50  109.00
-angle     23     22     24   86.30  122.50
-angle     22     24     22   86.30  109.00
-angle     22     24     25   35.30  125.50
-angle     25     24     26   35.30  125.50
-angle     25     24     28   35.30  125.50
-angle     26     24     28   86.30  110.80
-angle      8     26     24   36.00  122.00
-angle      8     26     26   36.00  131.00
-angle      8     26     29   36.00  122.00
-angle     24     26     26   47.50  104.70
-angle     24     26     27   38.10  122.50
-angle     24     26     29   28.80  111.50
-angle     26     26     27   35.30  128.00
-angle     26     26     29   47.50  110.50
-angle     27     26     29   38.10  122.50
-angle     24     28     24   28.80  110.30
-angle     24     28     27   38.10  122.50
-angle     24     28     29   28.80  112.20
-angle     27     28     29   38.10  122.50
 angle     26     29     28   86.30  104.30
-angle      2     30     31   80.00  122.40
-angle      2     30     32   80.00  122.40
-angle      2     30     33  111.50  110.30
-angle      7     30     31   80.00  122.40
-angle      7     30     32   80.00  122.40
-angle      7     30     33  111.50  110.30
-angle      8     30     31   80.00  122.40
-angle      8     30     32   80.00  122.40
 angle      8     30     33  111.50  110.30
-angle     31     30     31   57.60  134.00
-angle     32     30     33  122.30  121.50
 angle     30     33     34   49.60  108.70
 angle      2     35     37   43.20  107.50
 angle      7     35     37   43.20  107.50
@@ -209,7 +145,6 @@ angle      8     35     36   43.20  110.90
 angle      8     35     37   43.16  108.10  110.90
 angle     36     35     36   43.50  107.00
 angle     37     35     37   34.50  106.40  107.10
-angle      1     39      1   28.80  120.00
 angle      1     40      6   55.00  111.00
 angle      3     40      6   39.00  109.50
 angle      6     40      6   40.00  107.80
@@ -218,75 +153,11 @@ angle      7     41     16   54.70  112.50
 angle      7     41     42   43.20  108.50
 angle     16     41     42   43.20  110.90
 angle     42     41     42   43.20  105.40
-angle     44     43     46   89.50  109.95
-angle     44     43     49   82.10  123.90
-angle     44     43     63   82.10  122.40
-angle     44     43     69   82.10  122.40
-angle     46     43     49   73.30  125.50
-angle     46     43     63   73.30  127.30
-angle     46     43     69   73.30  127.30
-angle     53     43     54   88.10  121.00
-angle     53     43     63   86.10  117.00
-angle     53     43     69   86.10  117.00
-angle     54     43     63   84.00  122.00
-angle     54     43     69   84.00  122.00
-angle     63     43     72   45.90  105.10
-angle     69     43     72   45.90  105.10
-angle     72     43     72   45.40  102.20
-angle     43     44     44   84.00  107.00
-angle     43     44     47   79.20  119.20
-angle     44     44     45   87.20  112.10
-angle     44     44     47   78.80  133.70
-angle     44     44     49   76.90  121.00
-angle     44     44     53   88.70  120.40
-angle     45     44     49   87.70  126.90
-angle     45     44     53   89.40  127.50
 angle     44     45     46  109.80  100.70
-angle     43     46     45   83.73  110.60
-angle     43     46     50   39.24  122.40
-angle     45     46     50   35.30  127.00
 angle     44     47     48   95.91  115.00
 angle     44     47     49   89.47  111.50
 angle     48     47     49  125.64  114.80
 angle     49     47     53   66.62  115.00
-angle     47     48     47   88.19  132.60
-angle     47     48     50   39.32  113.65
-angle     43     49     50   63.30  108.00
-angle     44     49     47   69.11  118.50
-angle     44     49     51   56.60  121.80
-angle     47     49     51   68.40  118.20
-angle     47     49     54   88.76  125.00
-angle     47     49     58   55.82  125.80
-angle     50     49     50   40.81  111.10
-angle     51     49     54   80.82  117.50
-angle     51     49     58   89.11  114.10
-angle     49     51     52   50.23  118.00
-angle     49     51     59   50.23  118.00
-angle     52     51     52   27.64  121.00
-angle     59     51     59   27.64  121.00
-angle     43     53     47   88.10  116.55
-angle     43     53     55   85.90  115.00
-angle     43     53     58   81.10  119.10
-angle     44     53     55   88.40  128.50
-angle     44     53     58   88.70  115.50
-angle     47     53     55   80.70  128.50
-angle     54     53     55   49.60  127.00
-angle     54     53     58   68.80  112.00
-angle     55     53     58   80.70  120.00
-angle     43     54     54   89.30  117.80
-angle     43     54     57   35.70  115.70
-angle     49     54     54   81.80  113.70
-angle     49     54     56   38.80  123.10
-angle     53     54     54   69.20  114.00
-angle     53     54     56   39.50  121.30
-angle     53     54     60   35.60  121.08
-angle     54     54     56   31.90  124.70
-angle     54     54     57   31.90  126.50
-angle     54     54     60   30.00  126.21
-angle     49     58     53   80.70  127.00
-angle     49     58     59   30.60  117.00
-angle     53     58     53   36.60  126.00
-angle     53     58     59   47.80  117.00
 angle     54     60     61   68.10  108.85
 angle     61     60     61   34.50  109.00
 angle     61     60     62   51.50  110.00
@@ -349,7 +220,143 @@ angle     69     69     69   60.00  109.35
 angle     62     70     62   65.58   97.00
 angle     62     70     71   75.86  110.00
 angle     71     70     71   89.88  121.20
-angle     74     73     74   34.05  108.50
+angle     74     73     74   48.70  108.50
+
+
+anglep      2      1      3   50.00  122.00
+anglep      2      1      4   32.00  117.00
+anglep      3      1      4   36.00  121.00
+anglep      3      1      7   50.00  122.00
+anglep      3      1     40   50.00  121.00
+anglep      4      1      4   29.50  123.00
+anglep      4      1      7   32.00  117.00
+anglep      4      1      8   13.70  122.40
+anglep      4      1     39   41.70  120.50
+anglep      4      1     40   32.00  117.00
+anglep      8      1     38   13.70  122.40
+anglep      8      1     39   52.50  120.40
+anglep     38      1     38   29.50  120.00
+anglep     38      1     39   41.70  120.50
+anglep      1      3      2   70.00  113.40
+anglep      1      3      5   77.00  124.20
+anglep      1      3      7   70.00  113.40
+anglep      1      3      8   70.00  113.40
+anglep      1      3     40   41.00  113.40
+anglep      2      3      5   80.00  122.40
+anglep      2      3     15   70.00  113.40
+anglep      5      3      7   80.00  122.40
+anglep      5      3      8   80.00  122.40
+anglep      5      3     15   77.00  124.20
+anglep      5      3     40   80.00  122.40
+anglep      7      3     15   70.00  113.40
+anglep     15      3     40   41.00  113.40
+anglep      3     15      7   50.00  122.00
+anglep      3     15     16   50.00  122.00
+anglep      7     15     16   54.70  112.50
+anglep      8     17     17   33.80  122.30
+anglep     17     17     17   54.70  121.70
+anglep     17     17     18   35.30  120.00  120.50    0.00
+anglep     17     17     19   43.20  120.00
+anglep     17     17     21   60.00  123.57
+anglep      8     22     22   61.90  127.00
+anglep     22     22     22   63.30  120.00
+anglep     22     22     23   35.30  128.00
+anglep     22     22     24   47.50  109.00
+anglep     23     22     24   86.30  122.50
+anglep     22     24     22   86.30  109.00
+anglep     22     24     25   35.30  125.50
+anglep     25     24     26   35.30  125.50
+anglep     25     24     28   35.30  125.50
+anglep     26     24     28   86.30  110.80
+anglep      8     26     24   36.00  122.00
+anglep      8     26     26   36.00  131.00
+anglep      8     26     29   36.00  122.00
+anglep     24     26     26   47.50  104.70
+anglep     24     26     27   38.10  122.50
+anglep     24     26     29   28.80  111.50
+anglep     26     26     27   35.30  128.00
+anglep     26     26     29   47.50  110.50
+anglep     27     26     29   38.10  122.50
+anglep     24     28     24   28.80  110.30
+anglep     24     28     27   38.10  122.50
+anglep     24     28     29   28.80  112.20
+anglep     27     28     29   38.10  122.50
+anglep      2     30     31   80.00  122.40
+anglep      2     30     32   80.00  122.40
+anglep      2     30     33  111.50  110.30
+anglep      7     30     31   80.00  122.40
+anglep      7     30     32   80.00  122.40
+anglep      7     30     33  111.50  110.30
+anglep      8     30     31   80.00  122.40
+anglep      8     30     32   80.00  122.40
+anglep     31     30     31   57.60  134.00
+anglep     32     30     33  122.30  121.50
+anglep      1     39      1   28.80  120.00
+anglep     44     43     46   89.50  109.95
+anglep     44     43     49   82.10  123.90
+anglep     44     43     63   82.10  122.40
+anglep     44     43     69   82.10  122.40
+anglep     46     43     49   73.30  125.50
+anglep     46     43     63   73.30  127.30
+anglep     46     43     69   73.30  127.30
+anglep     53     43     54   88.10  121.00
+anglep     53     43     63   86.10  117.00
+anglep     53     43     69   86.10  117.00
+anglep     54     43     63   84.00  122.00
+anglep     54     43     69   84.00  122.00
+anglep     63     43     72   45.90  105.10
+anglep     69     43     72   45.90  105.10
+anglep     72     43     72   45.40  102.20
+anglep     43     44     44   84.00  107.00
+anglep     43     44     47   79.20  119.20
+anglep     44     44     45   87.20  112.10
+anglep     44     44     47   78.80  133.70
+anglep     44     44     49   76.90  121.00
+anglep     44     44     53   88.70  120.40
+anglep     45     44     49   87.70  126.90
+anglep     45     44     53   89.40  127.50
+anglep     43     46     45   83.73  110.60
+anglep     43     46     50   39.24  122.40
+anglep     45     46     50   35.30  127.00
+anglep     47     48     47   88.19  132.60
+anglep     47     48     50   39.32  113.65
+anglep     43     49     50   63.30  108.00
+anglep     44     49     47   69.11  118.50
+anglep     44     49     51   56.60  121.80
+anglep     47     49     51   68.40  118.20
+anglep     47     49     54   88.76  125.00
+anglep     47     49     58   55.82  125.80
+anglep     50     49     50   40.81  111.10
+anglep     51     49     54   80.82  117.50
+anglep     51     49     58   89.11  114.10
+anglep     49     51     52   50.23  118.00
+anglep     49     51     59   50.23  118.00
+anglep     52     51     52   27.64  121.00
+anglep     59     51     59   27.64  121.00
+anglep     43     53     47   88.10  116.55
+anglep     43     53     55   85.90  115.00
+anglep     43     53     58   81.10  119.10
+anglep     44     53     55   88.40  128.50
+anglep     44     53     58   88.70  115.50
+anglep     47     53     55   80.70  128.50
+anglep     54     53     55   49.60  127.00
+anglep     54     53     58   68.80  112.00
+anglep     55     53     58   80.70  120.00
+anglep     43     54     54   89.30  117.80
+anglep     43     54     57   35.70  115.70
+anglep     49     54     54   81.80  113.70
+anglep     49     54     56   38.80  123.10
+anglep     53     54     54   69.20  114.00
+anglep     53     54     56   39.50  121.30
+anglep     53     54     60   35.60  121.08
+anglep     54     54     56   31.90  124.70
+anglep     54     54     57   31.90  126.50
+anglep     54     54     60   30.00  126.21
+anglep     49     58     53   80.70  127.00
+anglep     49     58     59   30.60  117.00
+anglep     53     58     53   36.60  126.00
+anglep     53     58     59   47.80  117.00
+
 
 
 atom      1      1  N     "Glycine N"                  7   14.0030  3
@@ -667,92 +674,92 @@ atom    312     59  H     "Uracil H3"                  1    1.0080  1
 atom    313     55  O     "Uracil O4"                  8   15.9990  1
 atom    314     56  HA    "Uracil H5"                  1    1.0080  1
 atom    315     57  H4    "Uracil H6"                  1    1.0080  1
-atom    316     62  OS    "Ribose O5' (CU)"            8   15.9990  2
-atom    317     60  CT    "Ribose C5' (CU)"            6   12.0110  4
-atom    318     61  H1    "Ribose H5'1 (CU)"           1    1.0080  1
-atom    319     61  H1    "Ribose H5'2 (CU)"           1    1.0080  1
-atom    320     63  CT    "Ribose C4' (CU)"            6   12.0110  4
-atom    321     64  H1    "Ribose H4' (CU)"            1    1.0080  1
-atom    322     62  OS    "Ribose O4' (CU)"            8   15.9990  2
-atom    323     63  CT    "Ribose C1' (CU)"            6   12.0110  4
-atom    324     65  H2    "Ribose H1' (CU)"            1    1.0080  1
-atom    325     63  CT    "Ribose C3' (CU)"            6   12.0110  4
-atom    326     64  H1    "Ribose H3' (CU)"            1    1.0080  1
-atom    327     63  CT    "Ribose C2' (CU)"            6   12.0110  4
-atom    328     64  H1    "Ribose H2'1 (CU)"           1    1.0080  1
-atom    329     66  OH    "Ribose O2' (CU)"            8   15.9990  2
-atom    330     67  HO    "Ribose HO'2 (CU)"           1    1.0080  1
-atom    331     62  OS    "Ribose O3' (CU)"            8   15.9990  2
-atom    332     62  OS    "Ribose O5' (AG)"            8   15.9990  2
-atom    333     60  CT    "Ribose C5' (AG)"            6   12.0110  4
-atom    334     61  H1    "Ribose H5'1 (AG)"           1    1.0080  1
-atom    335     61  H1    "Ribose H5'2 (AG)"           1    1.0080  1
-atom    336     63  CT    "Ribose C4' (AG)"            6   12.0110  4
-atom    337     64  H1    "Ribose H4' (AG)"            1    1.0080  1
-atom    338     68  OS    "Ribose O4' (AG)"            8   15.9990  2
-atom    339     63  CT    "Ribose C1' (AG)"            6   12.0110  4
-atom    340     65  H2    "Ribose H1' (AG)"            1    1.0080  1
-atom    341     63  CT    "Ribose C3' (AG)"            6   12.0110  4
-atom    342     64  H1    "Ribose H3' (AG)"            1    1.0080  1
-atom    343     63  CT    "Ribose C2' (AG)"            6   12.0110  4
-atom    344     64  H1    "Ribose H2'1 (AG)"           1    1.0080  1
-atom    345     66  OH    "Ribose O2' (AG)"            8   15.9990  2
-atom    346     67  HO    "Ribose HO'2 (AG)"           1    1.0080  1
-atom    347     62  OS    "Ribose O3' (AG)"            8   15.9990  2
-atom    348     62  OS    "Deoxyribose O5' (CT)"       8   15.9990  2
-atom    349     60  CT    "Deoxyribose C5' (CT)"       6   12.0110  4
-atom    350     61  H1    "Deoxyribose H5'1 (CT)"      1    1.0080  1
-atom    351     61  H1    "Deoxyribose H5'2 (CT)"      1    1.0080  1
-atom    352     69  CT    "Deoxyribose C4' (CT)"       6   12.0110  4
-atom    353     64  H1    "Deoxyribose H4' (CT)"       1    1.0080  1
-atom    354     62  OS    "Deoxyribose O4' (CT)"       8   15.9990  2
-atom    355     69  CT    "Deoxyribose C1' (CT)"       6   12.0110  4
-atom    356     65  H2    "Deoxyribose H1' (CT)"       1    1.0080  1
-atom    357     69  CT    "Deoxyribose C3' (CT)"       6   12.0110  4
-atom    358     64  H1    "Deoxyribose H3' (CT)"       1    1.0080  1
-atom    359     69  CT    "Deoxyribose C2' (CT)"       6   12.0110  4
-atom    360     64  H1    "Deoxyribose H2'1 (CT)"      1    1.0080  1
-atom    361     64  H1    "Deoxyribose H2'2 (CT)"      1    1.0080  1
-atom    362     62  OS    "Deoxyribose O3' (CT)"       8   15.9990  2
-atom    363     62  OS    "Deoxyribose O5' (AG)"       8   15.9990  2
-atom    364     60  CT    "Deoxyribose C5' (AG)"       6   12.0110  4
-atom    365     61  H1    "Deoxyribose H5'1 (AG)"      1    1.0080  1
-atom    366     61  H1    "Deoxyribose H5'2 (AG)"      1    1.0080  1
-atom    367     69  CT    "Deoxyribose C4' (AG)"       6   12.0110  4
-atom    368     64  H1    "Deoxyribose H4' (AG)"       1    1.0080  1
-atom    369     68  OS    "Deoxyribose O4' (AG)"       8   15.9990  2
-atom    370     69  CT    "Deoxyribose C1' (AG)"       6   12.0110  4
-atom    371     65  H2    "Deoxyribose H1' (AG)"       1    1.0080  1
-atom    372     69  CT    "Deoxyribose C3' (AG)"       6   12.0110  4
-atom    373     64  H1    "Deoxyribose H3' (AG)"       1    1.0080  1
-atom    374     69  CT    "Deoxyribose C2' (AG)"       6   12.0110  4
-atom    375     64  H1    "Deoxyribose H2'1 (AG)"      1    1.0080  1
-atom    376     64  H1    "Deoxyribose H2'2 (AG)"      1    1.0080  1
-atom    377     62  OS    "Deoxyribose O3' (AG)"       8   15.9990  2
+atom    316     62  OS    "Ribose O5 (CU)"            8   15.9990  2
+atom    317     60  CT    "Ribose C5 (CU)"            6   12.0110  4
+atom    318     61  H1    "Ribose H51 (CU)"           1    1.0080  1
+atom    319     61  H1    "Ribose H52 (CU)"           1    1.0080  1
+atom    320     63  CT    "Ribose C4 (CU)"            6   12.0110  4
+atom    321     64  H1    "Ribose H4 (CU)"            1    1.0080  1
+atom    322     62  OS    "Ribose O4 (CU)"            8   15.9990  2
+atom    323     63  CT    "Ribose C1 (CU)"            6   12.0110  4
+atom    324     65  H2    "Ribose H1 (CU)"            1    1.0080  1
+atom    325     63  CT    "Ribose C3 (CU)"            6   12.0110  4
+atom    326     64  H1    "Ribose H3 (CU)"            1    1.0080  1
+atom    327     63  CT    "Ribose C2 (CU)"            6   12.0110  4
+atom    328     64  H1    "Ribose H21 (CU)"           1    1.0080  1
+atom    329     66  OH    "Ribose O2 (CU)"            8   15.9990  2
+atom    330     67  HO    "Ribose HO2 (CU)"           1    1.0080  1
+atom    331     62  OS    "Ribose O3 (CU)"            8   15.9990  2
+atom    332     62  OS    "Ribose O5 (AG)"            8   15.9990  2
+atom    333     60  CT    "Ribose C5 (AG)"            6   12.0110  4
+atom    334     61  H1    "Ribose H51 (AG)"           1    1.0080  1
+atom    335     61  H1    "Ribose H52 (AG)"           1    1.0080  1
+atom    336     63  CT    "Ribose C4 (AG)"            6   12.0110  4
+atom    337     64  H1    "Ribose H4 (AG)"            1    1.0080  1
+atom    338     68  OS    "Ribose O4 (AG)"            8   15.9990  2
+atom    339     63  CT    "Ribose C1 (AG)"            6   12.0110  4
+atom    340     65  H2    "Ribose H1 (AG)"            1    1.0080  1
+atom    341     63  CT    "Ribose C3 (AG)"            6   12.0110  4
+atom    342     64  H1    "Ribose H3 (AG)"            1    1.0080  1
+atom    343     63  CT    "Ribose C2 (AG)"            6   12.0110  4
+atom    344     64  H1    "Ribose H21 (AG)"           1    1.0080  1
+atom    345     66  OH    "Ribose O2 (AG)"            8   15.9990  2
+atom    346     67  HO    "Ribose HO2 (AG)"           1    1.0080  1
+atom    347     62  OS    "Ribose O3 (AG)"            8   15.9990  2
+atom    348     62  OS    "Deoxyribose O5 (CT)"       8   15.9990  2
+atom    349     60  CT    "Deoxyribose C5 (CT)"       6   12.0110  4
+atom    350     61  H1    "Deoxyribose H51 (CT)"      1    1.0080  1
+atom    351     61  H1    "Deoxyribose H52 (CT)"      1    1.0080  1
+atom    352     69  CT    "Deoxyribose C4 (CT)"       6   12.0110  4
+atom    353     64  H1    "Deoxyribose H4 (CT)"       1    1.0080  1
+atom    354     62  OS    "Deoxyribose O4 (CT)"       8   15.9990  2
+atom    355     69  CT    "Deoxyribose C1 (CT)"       6   12.0110  4
+atom    356     65  H2    "Deoxyribose H1 (CT)"       1    1.0080  1
+atom    357     69  CT    "Deoxyribose C3 (CT)"       6   12.0110  4
+atom    358     64  H1    "Deoxyribose H3 (CT)"       1    1.0080  1
+atom    359     69  CT    "Deoxyribose C2 (CT)"       6   12.0110  4
+atom    360     64  H1    "Deoxyribose H21 (CT)"      1    1.0080  1
+atom    361     64  H1    "Deoxyribose H22 (CT)"      1    1.0080  1
+atom    362     62  OS    "Deoxyribose O3 (CT)"       8   15.9990  2
+atom    363     62  OS    "Deoxyribose O5 (AG)"       8   15.9990  2
+atom    364     60  CT    "Deoxyribose C5 (AG)"       6   12.0110  4
+atom    365     61  H1    "Deoxyribose H51 (AG)"      1    1.0080  1
+atom    366     61  H1    "Deoxyribose H52 (AG)"      1    1.0080  1
+atom    367     69  CT    "Deoxyribose C4 (AG)"       6   12.0110  4
+atom    368     64  H1    "Deoxyribose H4 (AG)"       1    1.0080  1
+atom    369     68  OS    "Deoxyribose O4 (AG)"       8   15.9990  2
+atom    370     69  CT    "Deoxyribose C1 (AG)"       6   12.0110  4
+atom    371     65  H2    "Deoxyribose H1 (AG)"       1    1.0080  1
+atom    372     69  CT    "Deoxyribose C3 (AG)"       6   12.0110  4
+atom    373     64  H1    "Deoxyribose H3 (AG)"       1    1.0080  1
+atom    374     69  CT    "Deoxyribose C2 (AG)"       6   12.0110  4
+atom    375     64  H1    "Deoxyribose H21 (AG)"      1    1.0080  1
+atom    376     64  H1    "Deoxyribose H22 (AG)"      1    1.0080  1
+atom    377     62  OS    "Deoxyribose O3 (AG)"       8   15.9990  2
 atom    378     70  P     "R-Phosphodiester P"        15   30.9740  4
 atom    379     71  O2    "R-Phosphodiester OP"        8   15.9990  1
-atom    380     62  OH    "R-5'-Hydroxyl O5'T"         8   15.9990  2
-atom    381     72  HO    "R-5'-Hydroxyl H5T"          1    1.0080  1
-atom    382     62  OS    "R-5'-Phosphate O5'"         8   15.9990  2
-atom    383     70  P     "R-5'-Phosphate P"          15   30.9740  4
-atom    384     71  O2    "R-5'-Phosphate OP"          8   15.9990  1
-atom    385     62  OH    "R-3'-Hydroxyl O3'T"         8   15.9990  2
-atom    386     72  HO    "R-3'-Hydroxyl H3T"          1    1.0080  1
-atom    387     62  OS    "R-3'-Phosphate O3'"         8   15.9990  2
-atom    388     70  P     "R-3'-Phosphate P"          15   30.9740  4
-atom    389     71  O2    "R-3'-Phosphate OP"          8   15.9990  1
+atom    380     62  OH    "R-5-Hydroxyl O5T"         8   15.9990  2
+atom    381     72  HO    "R-5-Hydroxyl H5T"          1    1.0080  1
+atom    382     62  OS    "R-5-Phosphate O5"         8   15.9990  2
+atom    383     70  P     "R-5-Phosphate P"          15   30.9740  4
+atom    384     71  O2    "R-5-Phosphate OP"          8   15.9990  1
+atom    385     62  OH    "R-3-Hydroxyl O3T"         8   15.9990  2
+atom    386     72  HO    "R-3-Hydroxyl H3T"          1    1.0080  1
+atom    387     62  OS    "R-3-Phosphate O3"         8   15.9990  2
+atom    388     70  P     "R-3-Phosphate P"          15   30.9740  4
+atom    389     71  O2    "R-3-Phosphate OP"          8   15.9990  1
 atom    390     70  P     "D-Phosphodiester P"        15   30.9740  4
 atom    391     71  O2    "D-Phosphodiester OP"        8   15.9990  1
-atom    392     62  OH    "D-5'-Hydroxyl O5'T"         8   15.9990  2
-atom    393     72  HO    "D-5'-Hydroxyl H5T"          1    1.0080  1
-atom    394     62  OS    "D-5'-Phosphate O5'"         8   15.9990  2
-atom    395     70  P     "D-5'-Phosphate P"          15   30.9740  4
-atom    396     71  O2    "D-5'-Phosphate OP"          8   15.9990  1
-atom    397     62  OH    "D-3'-Hydroxyl O3'T"         8   15.9990  2
-atom    398     72  HO    "D-3'-Hydroxyl H3T"          1    1.0080  1
-atom    399     62  OS    "D-3'-Phosphate O3'"         8   15.9990  2
-atom    400     70  P     "D-3'-Phosphate P"          15   30.9740  4
-atom    401     71  O2    "D-3'-Phosphate OP"          8   15.9990  1
+atom    392     62  OH    "D-5-Hydroxyl O5T"         8   15.9990  2
+atom    393     72  HO    "D-5-Hydroxyl H5T"          1    1.0080  1
+atom    394     62  OS    "D-5-Phosphate O5"         8   15.9990  2
+atom    395     70  P     "D-5-Phosphate P"          15   30.9740  4
+atom    396     71  O2    "D-5-Phosphate OP"          8   15.9990  1
+atom    397     62  OH    "D-3-Hydroxyl O3T"         8   15.9990  2
+atom    398     72  HO    "D-3-Hydroxyl H3T"          1    1.0080  1
+atom    399     62  OS    "D-3-Phosphate O3"         8   15.9990  2
+atom    400     70  P     "D-3-Phosphate P"          15   30.9740  4
+atom    401     71  O2    "D-3-Phosphate OP"          8   15.9990  1
 atom    402     73  O     "AMOEBA Water O"             8   15.9990  2
 atom    403     74  H     "AMOEBA Water H"             1    1.0080  1
 atom    404     75  Li+   "Lithium Ion Li+"            3    6.9410  0
@@ -764,17 +771,11 @@ atom    409     80  Be+   "Beryllium Ion Be+2"         4    9.0120  0
 atom    410     81  Mg+   "Magnesium Ion Mg+2"        12   24.3050  0
 atom    411     82  Ca+   "Calcium Ion Ca+2"          20   40.0780  0
 atom    412     83  Zn+   "Zinc Ion Zn+2"             30   65.3800  0
-atom    413     84  Cl-   "Chloride Ion Cl-"          17   35.4530  0
+atom    413     84  F-    "Fluoride Ion F-"            9   18.9980  0
+atom    414     85  Cl-   "Chloride Ion Cl-"          17   35.4530  0
+atom    415     86  Br-   "Bromide Ion Br-"           35   79.9040  0
+atom    416     87  I-    "Iodide Ion I-"             53  126.9040  0
 
-atom    414     85  Br-   "Bromide Ion Br-"          35   79.904  0
-vdw             85  4.3800     0.4300
-multipole  414      0      0       -1.00000 \
-                                    0.00000  0.00000  0.00000 \
-                                    0.00000 \
-                                    0.00000  0.00000 \
-                                    0.00000  0.00000  0.00000
-polarize   414      5.6500     0.3900
-biotype   2009  BR    "Bromide Ion            "    414
 
 biotype      1  N     "Glycine                "      1
 biotype      2  CA    "Glycine                "      2
@@ -1558,8 +1559,8 @@ biotype    779  CH3   "N-MeAmide C-Terminus   "    232
 biotype    780  H     "N-MeAmide C-Terminus   "    233
 biotype   1001  O5*   "Adenosine              "    332
 biotype   1002  C5*   "Adenosine              "    333
-biotype   1003  H5*   "Adenosine              "    334
-biotype   1004  H5*   "Adenosine              "    335
+biotype   1003  H5*1  "Adenosine              "    334
+biotype   1004  H5*2  "Adenosine              "    335
 biotype   1005  C4*   "Adenosine              "    336
 biotype   1006  H4*   "Adenosine              "    337
 biotype   1007  O4*   "Adenosine              "    338
@@ -1588,8 +1589,8 @@ biotype   1029  H62   "Adenosine              "    264
 biotype   1030  H8    "Adenosine              "    265
 biotype   1031  O5*   "Guanosine              "    332
 biotype   1032  C5*   "Guanosine              "    333
-biotype   1033  H5*   "Guanosine              "    334
-biotype   1034  H5*   "Guanosine              "    335
+biotype   1033  H5*1  "Guanosine              "    334
+biotype   1034  H5*2  "Guanosine              "    335
 biotype   1035  C4*   "Guanosine              "    336
 biotype   1036  H4*   "Guanosine              "    337
 biotype   1037  O4*   "Guanosine              "    338
@@ -1619,8 +1620,8 @@ biotype   1060  O6    "Guanosine              "    291
 biotype   1061  H8    "Guanosine              "    292
 biotype   1062  O5*   "Cytidine               "    316
 biotype   1063  C5*   "Cytidine               "    317
-biotype   1064  H5*   "Cytidine               "    318
-biotype   1065  H5*   "Cytidine               "    319
+biotype   1064  H5*1  "Cytidine               "    318
+biotype   1065  H5*2  "Cytidine               "    319
 biotype   1066  C4*   "Cytidine               "    320
 biotype   1067  H4*   "Cytidine               "    321
 biotype   1068  O4*   "Cytidine               "    322
@@ -1647,8 +1648,8 @@ biotype   1088  H5    "Cytidine               "    276
 biotype   1089  H6    "Cytidine               "    277
 biotype   1090  O5*   "Uridine                "    316
 biotype   1091  C5*   "Uridine                "    317
-biotype   1092  H5*   "Uridine                "    318
-biotype   1093  H5*   "Uridine                "    319
+biotype   1092  H5*1  "Uridine                "    318
+biotype   1093  H5*2  "Uridine                "    319
 biotype   1094  C4*   "Uridine                "    320
 biotype   1095  H4*   "Uridine                "    321
 biotype   1096  O4*   "Uridine                "    322
@@ -1674,8 +1675,8 @@ biotype   1115  H5    "Uridine                "    314
 biotype   1116  H6    "Uridine                "    315
 biotype   1117  O5*   "Deoxyadenosine         "    363
 biotype   1118  C5*   "Deoxyadenosine         "    364
-biotype   1119  H5*   "Deoxyadenosine         "    365
-biotype   1120  H5*   "Deoxyadenosine         "    366
+biotype   1119  H5*1  "Deoxyadenosine         "    365
+biotype   1120  H5*2  "Deoxyadenosine         "    366
 biotype   1121  C4*   "Deoxyadenosine         "    367
 biotype   1122  H4*   "Deoxyadenosine         "    368
 biotype   1123  O4*   "Deoxyadenosine         "    369
@@ -1684,8 +1685,8 @@ biotype   1125  H1*   "Deoxyadenosine         "    371
 biotype   1126  C3*   "Deoxyadenosine         "    372
 biotype   1127  H3*   "Deoxyadenosine         "    373
 biotype   1128  C2*   "Deoxyadenosine         "    374
-biotype   1129  H2*   "Deoxyadenosine         "    375
-biotype   1130  H2*   "Deoxyadenosine         "    376
+biotype   1129  H2*1  "Deoxyadenosine         "    375
+biotype   1130  H2*2  "Deoxyadenosine         "    376
 biotype   1131  O3*   "Deoxyadenosine         "    377
 biotype   1132  N9    "Deoxyadenosine         "    252
 biotype   1133  C4    "Deoxyadenosine         "    253
@@ -1703,8 +1704,8 @@ biotype   1144  H62   "Deoxyadenosine         "    264
 biotype   1145  H8    "Deoxyadenosine         "    265
 biotype   1146  O5*   "Deoxyguanosine         "    363
 biotype   1147  C5*   "Deoxyguanosine         "    364
-biotype   1148  H5*   "Deoxyguanosine         "    365
-biotype   1149  H5*   "Deoxyguanosine         "    366
+biotype   1148  H5*1  "Deoxyguanosine         "    365
+biotype   1149  H5*2  "Deoxyguanosine         "    366
 biotype   1150  C4*   "Deoxyguanosine         "    367
 biotype   1151  H4*   "Deoxyguanosine         "    368
 biotype   1152  O4*   "Deoxyguanosine         "    369
@@ -1713,8 +1714,8 @@ biotype   1154  H1*   "Deoxyguanosine         "    371
 biotype   1155  C3*   "Deoxyguanosine         "    372
 biotype   1156  H3*   "Deoxyguanosine         "    373
 biotype   1157  C2*   "Deoxyguanosine         "    374
-biotype   1158  H2*   "Deoxyguanosine         "    375
-biotype   1159  H2*   "Deoxyguanosine         "    376
+biotype   1158  H2*1  "Deoxyguanosine         "    375
+biotype   1159  H2*2  "Deoxyguanosine         "    376
 biotype   1160  O3*   "Deoxyguanosine         "    377
 biotype   1161  N9    "Deoxyguanosine         "    278
 biotype   1162  C4    "Deoxyguanosine         "    279
@@ -1733,8 +1734,8 @@ biotype   1174  O6    "Deoxyguanosine         "    291
 biotype   1175  H8    "Deoxyguanosine         "    292
 biotype   1176  O5*   "Deoxycytidine          "    348
 biotype   1177  C5*   "Deoxycytidine          "    349
-biotype   1178  H5*   "Deoxycytidine          "    350
-biotype   1179  H5*   "Deoxycytidine          "    351
+biotype   1178  H5*1  "Deoxycytidine          "    350
+biotype   1179  H5*2  "Deoxycytidine          "    351
 biotype   1180  C4*   "Deoxycytidine          "    352
 biotype   1181  H4*   "Deoxycytidine          "    353
 biotype   1182  O4*   "Deoxycytidine          "    354
@@ -1743,8 +1744,8 @@ biotype   1184  H1*   "Deoxycytidine          "    356
 biotype   1185  C3*   "Deoxycytidine          "    357
 biotype   1186  H3*   "Deoxycytidine          "    358
 biotype   1187  C2*   "Deoxycytidine          "    359
-biotype   1188  H2*   "Deoxycytidine          "    360
-biotype   1189  H2*   "Deoxycytidine          "    361
+biotype   1188  H2*1  "Deoxycytidine          "    360
+biotype   1189  H2*2  "Deoxycytidine          "    361
 biotype   1190  O3*   "Deoxycytidine          "    362
 biotype   1191  N1    "Deoxycytidine          "    266
 biotype   1192  C2    "Deoxycytidine          "    267
@@ -1760,8 +1761,8 @@ biotype   1201  H5    "Deoxycytidine          "    276
 biotype   1202  H6    "Deoxycytidine          "    277
 biotype   1203  O5*   "Deoxythymidine         "    348
 biotype   1204  C5*   "Deoxythymidine         "    349
-biotype   1205  H5*   "Deoxythymidine         "    350
-biotype   1206  H5*   "Deoxythymidine         "    351
+biotype   1205  H5*1  "Deoxythymidine         "    350
+biotype   1206  H5*2  "Deoxythymidine         "    351
 biotype   1207  C4*   "Deoxythymidine         "    352
 biotype   1208  H4*   "Deoxythymidine         "    353
 biotype   1209  O4*   "Deoxythymidine         "    354
@@ -1770,8 +1771,8 @@ biotype   1211  H1*   "Deoxythymidine         "    356
 biotype   1212  C3*   "Deoxythymidine         "    357
 biotype   1213  H3*   "Deoxythymidine         "    358
 biotype   1214  C2*   "Deoxythymidine         "    359
-biotype   1215  H2*   "Deoxythymidine         "    360
-biotype   1216  H2*   "Deoxythymidine         "    361
+biotype   1215  H2*1  "Deoxythymidine         "    360
+biotype   1216  H2*2  "Deoxythymidine         "    361
 biotype   1217  O3*   "Deoxythymidine         "    362
 biotype   1218  N1    "Deoxythymidine         "    293
 biotype   1219  C2    "Deoxythymidine         "    294
@@ -1787,36 +1788,41 @@ biotype   1228  H7    "Deoxythymidine         "    303
 biotype   1229  H6    "Deoxythymidine         "    304
 biotype   1230  P     "Phosphodiester RNA     "    378
 biotype   1231  OP    "Phosphodiester RNA     "    379
-biotype   1232  O5*   "5'-Hydroxyl RNA        "    380
-biotype   1233  H5T   "5'-Hydroxyl RNA        "    381
-biotype   1234  O5*   "5'-Phosphate OS RNA    "    382
-biotype   1235  P     "5'-Phosphate P RNA     "    383
-biotype   1236  OP    "5'-Phosphate OP RNA    "    384
-biotype   1237  O3*   "3'-Hydroxyl RNA        "    385
-biotype   1238  H3T   "3'-Hydroxyl RNA        "    386
-biotype   1239  O3*   "3'-Phosphate OS RNA    "    387
-biotype   1240  P     "3'-Phosphate P RNA     "    388
-biotype   1241  OP    "3'-Phosphate OP RNA    "    389
+biotype   1232  O5*   "5-Hydroxyl RNA        "    380
+biotype   1233  H5T   "5-Hydroxyl RNA        "    381
+biotype   1234  O5*   "5-Monophosphate OS RNA"    382
+biotype   1235  P     "5-Monophosphate P RNA "    383
+biotype   1236  OP    "5-Monophosphate OP RNA"    384
+biotype   1237  O3*   "3-Hydroxyl RNA        "    385
+biotype   1238  H3T   "3-Hydroxyl RNA        "    386
+biotype   1239  O3*   "3-Monophosphate OS RNA"    387
+biotype   1240  P     "3-Monophosphate P RNA "    388
+biotype   1241  OP    "3-Monophosphate OP RNA"    389
 biotype   1242  P     "Phosphodiester DNA     "    390
 biotype   1243  OP    "Phosphodiester DNA     "    391
-biotype   1244  O5*   "5'-Hydroxyl DNA        "    392
-biotype   1245  H5T   "5'-Hydroxyl DNA        "    393
-biotype   1246  O5*   "5'-Phosphate OS DNA    "    394
-biotype   1247  P     "5'-Phosphate P DNA     "    395
-biotype   1248  OP    "5'-Phosphate OP DNA    "    396
-biotype   1249  O3*   "3'-Hydroxyl DNA        "    397
-biotype   1250  H3T   "3'-Hydroxyl DNA        "    398
-biotype   1251  O3*   "3'-Phosphate OS DNA    "    399
-biotype   1252  P     "3'-Phosphate P DNA     "    400
-biotype   1253  OP    "3'-Phosphate OP DNA    "    401
+biotype   1244  O5*   "5-Hydroxyl DNA        "    392
+biotype   1245  H5T   "5-Hydroxyl DNA        "    393
+biotype   1246  O5*   "5-Monophosphate OS DNA"    394
+biotype   1247  P     "5-Monophosphate P DNA "    395
+biotype   1248  OP    "5-Monophosphate OP DNA"    396
+biotype   1249  O3*   "3-Hydroxyl DNA        "    397
+biotype   1250  H3T   "3-Hydroxyl DNA        "    398
+biotype   1251  O3*   "3-Monophosphate OS DNA"    399
+biotype   1252  P     "3-Monophosphate P DNA "    400
+biotype   1253  OP    "3-Monophosphate OP DNA"    401
 biotype   2001  O     "Water                  "    402
 biotype   2002  H     "Water                  "    403
-biotype   2003  NA    "Sodium Ion             "    405
-biotype   2004  K     "Potassium Ion          "    406
-biotype   2005  MG    "Magnesium Ion          "    410
-biotype   2006  CA    "Calcium Ion            "    411
-biotype   2007  CL    "Chloride Ion           "    413
-biotype   2008  ZN    "Zinc Ion               "    412
+biotype   2003  LI    "Lithium Ion            "    404
+biotype   2004  NA    "Sodium Ion             "    405
+biotype   2005  K     "Potassium Ion          "    406
+biotype   2006  RB    "Rubidium Ion           "    407
+biotype   2007  CS    "Cesium Ion             "    408
+biotype   2008  MG    "Magnesium Ion          "    410
+biotype   2009  CA    "Calcium Ion            "    411
+biotype   2012  F     "Fluoride Ion           "    413
+biotype   2013  CL    "Chloride Ion           "    414
+biotype   2014  BR    "Bromide Ion            "    415
+biotype   2015  I     "Iodide Ion             "    416
 
 
 bond      1      2   375.0   1.4370
@@ -1940,7 +1946,8 @@ bond     66     67   530.5   0.9620
 bond     68     69   384.0   1.4180
 bond     69     69   320.1   1.5130
 bond     70     71   776.9   1.4800
-bond     73     74   529.6   0.9572
+bond     73     74   556.9   0.9572
+
 
 
 
@@ -4410,6 +4417,21 @@ multipole    413      0      0         -1.00000 \
                                         0.00000 \
                                         0.00000  0.00000 \
                                         0.00000  0.00000  0.00000
+multipole    414      0      0         -1.00000 \
+                                        0.00000  0.00000  0.00000 \
+                                        0.00000 \
+                                        0.00000  0.00000 \
+                                        0.00000  0.00000  0.00000
+multipole    415      0      0         -1.00000 \
+                                        0.00000  0.00000  0.00000 \
+                                        0.00000 \
+                                        0.00000  0.00000 \
+                                        0.00000  0.00000  0.00000
+multipole    416      0      0         -1.00000 \
+                                        0.00000  0.00000  0.00000 \
+                                        0.00000 \
+                                        0.00000  0.00000 \
+                                        0.00000  0.00000  0.00000
 
 
 opbend      1      3      0      0  107.90
@@ -4532,409 +4554,409 @@ pitors     53     58  5.85
 pitors     54     54  7.85
 
 
-polarize      1   1.073  0.390      3      4      9     55    226    247      1      5      7     53    228    230     11     56    227    248
-polarize      2   1.334  0.390      6      2
-polarize      3   1.334  0.390      1      5      7     53    228    230      3      4      9     55    226    247     10     62    229    231
-polarize      4   0.496  0.390      1      3      4      9     55    226    247
-polarize      5   0.837  0.390      3      1      5      7     53    228    230
-polarize      6   0.496  0.390      2      6
-polarize      7   1.073  0.390      3      9     10     55    226    247      1      5      7     53    228    230     11     56    227    248
-polarize      8   1.334  0.390     12      8     33     44
-polarize      9   1.334  0.390      1      7     11     53    228    230      3      4      9     55    226    247     10     62    229    231
-polarize     10   0.496  0.390      7      3      9     10     55    226    247      1      5
-polarize     11   0.837  0.390      9      1      7     11     53    228    230      3      4
-polarize     12   0.496  0.390      8     33     44     12
-polarize     13   1.334  0.390     14     13
-polarize     14   0.496  0.390     13     14
-polarize     15   1.334  0.390     16     15
-polarize     16   0.496  0.390     15     16
-polarize     17   1.334  0.390     18     17
-polarize     18   0.496  0.390     17     18
-polarize     19   1.334  0.390     20     19
-polarize     20   0.496  0.390     19     20
-polarize     21   1.334  0.390     22     21
-polarize     22   0.496  0.390     21     22
-polarize     23   1.334  0.390     24     23
-polarize     24   0.496  0.390     23     24
-polarize     25   1.334  0.390     26     25
-polarize     26   0.496  0.390     25     26
-polarize     27   1.334  0.390     28     27
-polarize     28   0.496  0.390     27     28
-polarize     29   1.334  0.390     30     29
-polarize     30   0.496  0.390     29     30
-polarize     31   1.334  0.390     32     31
-polarize     32   0.496  0.390     31     32
-polarize     33   1.334  0.390     12      8     33     44
-polarize     34   1.334  0.390     35     36     34     37
-polarize     35   0.496  0.390     34     35     36
-polarize     36   0.834  0.390     34     37     35     36
-polarize     37   0.496  0.390     36     34     37     35
-polarize     38   1.334  0.390     39     42     38     43
-polarize     39   0.496  0.390     38     39     42
-polarize     40   1.334  0.390     41     40
-polarize     41   0.496  0.390     40     41
-polarize     42   0.834  0.390     38     43     39     42
-polarize     43   0.496  0.390     42     38     43     39
-polarize     44   1.334  0.390     12      8     33     44
-polarize     45   1.334  0.390     46     47     49     45     48
-polarize     46   0.496  0.390     45     46     47     49
-polarize     47   3.300  0.390     45     48     46     47     49
-polarize     48   0.496  0.390     47     45     48     46
-polarize     49   3.300  0.390     45     49     46     47
-polarize     50   1.334  0.390     51     52     50
-polarize     51   0.496  0.390     50     51     52
-polarize     52   3.300  0.390     50     51     52
-polarize     53   1.073  0.390      3      9     55     62    226    247      1      5      7     53    228    230     11     56     63    227    248
-polarize     54   1.334  0.390     57     54
-polarize     55   1.334  0.390      1      7     53     56    228    230      3      4      9     55    226    247     10     62    229    231
-polarize     56   0.837  0.390     55      1      7     53     56    228    230      3      4      9
-polarize     57   0.496  0.390     54     57
-polarize     58   1.334  0.390     59     58
-polarize     59   0.496  0.390     58     59
-polarize     60   1.334  0.390     61     60
-polarize     61   0.496  0.390     60     61
-polarize     62   1.334  0.390     53     63      3      9     55     62    226    247      1      5      7
-polarize     63   0.496  0.390     62     53     63      3      9     55      1      5      7     11
-polarize     64   1.334  0.390     65     64
-polarize     65   0.496  0.390     64     65
-polarize     66   1.750  0.390     67     66     68     69
-polarize     67   1.750  0.390     66     68     69     67     70     71
-polarize     68   0.696  0.390     67     66     68     69
-polarize     69   1.750  0.390     67     70     71     66     68     69     72
-polarize     70   0.696  0.390     69     67     70     71     66     68
-polarize     71   1.750  0.390     69     72     67     70     71     66     68
-polarize     72   0.696  0.390     71     69     72     67     70     66     68
-polarize     73   1.334  0.390     74     73
-polarize     74   0.496  0.390     73     74
-polarize     75   1.750  0.390     76     75     77     78
-polarize     76   1.750  0.390     75     77     78     76     79     80
-polarize     77   0.696  0.390     76     75     77     78
-polarize     78   1.750  0.390     76     79     80     75     77     78     81
-polarize     79   0.696  0.390     78     76     79     80     75     77
-polarize     80   1.750  0.390     78     81     76     79     80     75     77     82
-polarize     81   0.873  0.390     80     82     78     81     76     79     75     77
-polarize     82   0.496  0.390     81     80     82     78     76     79     75     77
-polarize     83   1.334  0.390     84     83
-polarize     84   0.496  0.390     83     84
-polarize     85   1.750  0.390     86     85     87     88
-polarize     86   1.750  0.390     85     87     88     86     89     90
-polarize     87   0.696  0.390     86     85     87     88
-polarize     88   1.750  0.390     86     89     90     85     87     88     91
-polarize     89   0.696  0.390     88     86     89     90     85     87
-polarize     90   1.750  0.390     88     91     86     89     90     85     87
-polarize     91   0.837  0.390     90     88     91     86     89     85     87
-polarize     92   1.334  0.390     93     92
-polarize     93   0.496  0.390     92     93
-polarize     94   1.750  0.390     95     97     94     96     98    100    101
-polarize     95   1.750  0.390     94     96     98     95     97     99    100
-polarize     96   0.696  0.390     95     94     96     98
-polarize     97   1.750  0.390     94    100    101     95     97     98    103    102    105
-polarize     98   1.073  0.390     95     99    100     94     96     98     97    103
-polarize     99   0.496  0.390     98     95     99    100     94     96     97
-polarize    100   1.750  0.390     97     98    103     94    100    101     95     99     96    104    107
-polarize    101   1.750  0.390     97    102    105     94    100    101     95    106    107    103
-polarize    102   0.696  0.390    101     97    102    105     94    100     95
-polarize    103   1.750  0.390    100    104    107     97     98    103     94    105    108     95     99    101    106
-polarize    104   0.696  0.390    103    100    104    107     97     98     94     95     99
-polarize    105   1.750  0.390    101    106    107     97    102    105     94    100    103    108     95
-polarize    106   0.696  0.390    105    101    106    107     97    102    103     94    100     95
-polarize    107   1.750  0.390    103    105    108    100    104    107     97     98    101    106    102     94     95     99
-polarize    108   0.696  0.390    107    103    105    108    100    104    101    106     97     98     94     95     99
-polarize    109   1.334  0.390    110    109
-polarize    110   0.496  0.390    109    110
-polarize    111   1.750  0.390    112    114    111    113    116    115    118
-polarize    112   1.073  0.390    111    113    116    112    114    117    118
-polarize    113   0.496  0.390    112    111    113    116
-polarize    114   1.750  0.390    111    115    118    112    114    116    119
-polarize    115   0.696  0.390    114    111    115    118    112
-polarize    116   1.750  0.390    112    117    118    111    113    116    114    119
-polarize    117   0.696  0.390    116    112    117    118    111    113    114
-polarize    118   1.073  0.390    114    116    119    111    115    118    112    117    113
-polarize    119   0.496  0.390    118    114    116    119    111    115    112    117
-polarize    120   1.334  0.390    121    120
-polarize    121   0.496  0.390    120    121
-polarize    122   1.750  0.390    123    125    122    124    127    126    129
-polarize    123   1.073  0.390    122    124    127    123    125    128    129
-polarize    124   0.496  0.390    123    122    124    127
-polarize    125   1.750  0.390    122    126    129    123    125    127
-polarize    126   0.696  0.390    125    122    126    129    123
-polarize    127   1.750  0.390    123    128    129    122    124    127    125
-polarize    128   0.696  0.390    127    123    128    129    122    124    125
-polarize    129   1.073  0.390    125    127    122    126    129    123    128    124
-polarize    130   1.334  0.390    131    130
-polarize    131   0.496  0.390    130    131
-polarize    132   1.750  0.390    133    134    132    136    135    138
-polarize    133   1.073  0.390    132    136    133    134    137    138
-polarize    134   1.750  0.390    132    135    138    133    134    136    139
-polarize    135   0.696  0.390    134    132    135    138    133
-polarize    136   1.750  0.390    133    137    138    132    136    134    139
-polarize    137   0.696  0.390    136    133    137    138    132    134
-polarize    138   1.073  0.390    134    136    139    132    135    138    133    137
-polarize    139   0.496  0.390    138    134    136    139    132    135    133    137
-polarize    140   1.334  0.390    141    140
-polarize    141   0.496  0.390    140    141
-polarize    142   1.334  0.390    143    142
-polarize    143   0.837  0.390    142    143
-polarize    144   1.334  0.390    145    144
-polarize    145   0.496  0.390    144    145
-polarize    146   1.334  0.390    147    148    146    149
-polarize    147   0.837  0.390    146    147    148
-polarize    148   0.837  0.390    146    149    147    148
-polarize    149   0.496  0.390    148    146    149    147
-polarize    150   1.334  0.390    151    150
-polarize    151   0.496  0.390    150    151
-polarize    152   1.334  0.390    153    154    152    155
-polarize    153   0.834  0.390    152    153    154
-polarize    154   1.073  0.390    152    155    153    154
-polarize    155   0.496  0.390    154    152    155    153
-polarize    156   1.334  0.390    157    156
-polarize    157   0.496  0.390    156    157
-polarize    158   1.334  0.390    159    158
-polarize    159   0.496  0.390    158    159
-polarize    160   1.334  0.390    161    160
-polarize    161   0.837  0.390    160    161
-polarize    162   1.334  0.390    163    162
-polarize    163   0.496  0.390    162    163
-polarize    164   1.334  0.390    165    164
-polarize    165   0.496  0.390    164    165
-polarize    166   1.334  0.390    167    168    166    169
-polarize    167   0.837  0.390    166    167    168
-polarize    168   0.837  0.390    166    169    167    168
-polarize    169   0.496  0.390    168    166    169    167
-polarize    170   1.334  0.390    171    170
-polarize    171   0.496  0.390    170    171
-polarize    172   1.334  0.390    173    172
-polarize    173   0.496  0.390    172    173
-polarize    174   1.334  0.390    175    176    174    173    177    172
-polarize    175   0.834  0.390    174    175    176    173    177    172
-polarize    176   1.073  0.390    173    177    172    176
-polarize    177   0.496  0.390    176    173    177    172
-polarize    178   1.334  0.390    179    178
-polarize    179   0.496  0.390    178    179
-polarize    180   1.334  0.390    181    182    180    183
-polarize    181   0.496  0.390    180    181    182
-polarize    182   3.300  0.390    180    183    181    182    184
-polarize    183   1.334  0.390    182    184    180    183    181
-polarize    184   0.496  0.390    183    182    184    180    181
-polarize    185   1.334  0.390    186    185
-polarize    186   0.496  0.390    185    186
-polarize    187   1.334  0.390    188    187
-polarize    188   0.496  0.390    187    188
-polarize    189   1.334  0.390    190    189
-polarize    190   0.496  0.390    189    190
-polarize    191   1.334  0.390    192    191
-polarize    192   0.496  0.390    191    192
-polarize    193   1.073  0.390    194    193
-polarize    194   0.496  0.390    193    194
-polarize    195   1.334  0.390    196    195
-polarize    196   0.496  0.390    195    196
-polarize    197   1.334  0.390    198    197
-polarize    198   0.496  0.390    197    198
-polarize    199   1.334  0.390    200    199
-polarize    200   0.496  0.390    199    200
-polarize    201   1.334  0.390    202    203    201    204
-polarize    202   0.496  0.390    201    202    203
-polarize    203   1.073  0.390    201    204    202    203
-polarize    204   0.496  0.390    203    201    204    202
-polarize    205   1.334  0.390    206    205
-polarize    206   0.496  0.390    205    206
-polarize    207   1.334  0.390    208    207
-polarize    208   0.496  0.390    207    208
-polarize    209   1.334  0.390    210    211    209    212    213
-polarize    210   0.496  0.390    209    210    211
-polarize    211   1.073  0.390    209    212    213    210    211    214
-polarize    212   0.496  0.390    211    209    212    213    210
-polarize    213   1.334  0.390    211    214    209    212    213    210    215
-polarize    214   1.073  0.390    213    215    211    214    209    212    210
-polarize    215   0.496  0.390    214    213    215    211    209    212    210
-polarize    216   1.334  0.390    217    216
-polarize    217   0.496  0.390    216    217
-polarize    218   1.334  0.390    219    218
-polarize    219   0.496  0.390    218    219
-polarize    220   1.334  0.390    221    220
-polarize    221   0.496  0.390    220    221
-polarize    222   1.073  0.390    223    222
-polarize    223   0.496  0.390    222    223
-polarize    224   1.334  0.390    225    224
-polarize    225   0.496  0.390    224    225
-polarize    226   1.334  0.390      1      7     53    227      3      4      9     55    226    247     10     62
-polarize    227   0.837  0.390    226      1      7     53    227      3      4      9     55
-polarize    228   1.073  0.390      3      9     55    229    247      1      5      7     53    228    230     11     56    248
-polarize    229   0.496  0.390    228      3      9     55    229    247      1      5      7     53
-polarize    230   1.073  0.390      3      9     55    231    247      1      5      7     53    228    230     11     56    248
-polarize    231   0.496  0.390    230      3      9     55    231    247      1      5      7     53    228
-polarize    232   1.334  0.390    233    232
-polarize    233   0.496  0.390    232    233
-polarize    234   1.073  0.390    235    234
-polarize    235   0.496  0.390    234    235
-polarize    236   1.073  0.390    237    236
-polarize    237   0.496  0.390    236    237
-polarize    238   1.334  0.390    239    238
-polarize    239   0.837  0.390    238    239
-polarize    240   1.334  0.390    241    242    240    243
-polarize    241   0.837  0.390    240    241    242
-polarize    242   0.837  0.390    240    243    241    242
-polarize    243   0.496  0.390    242    240    243    241
-polarize    244   1.073  0.390    245    244
-polarize    245   0.496  0.390    244    245
-polarize    246   1.334  0.390    249    246
-polarize    247   1.334  0.390      1      7     53    228    230    248      3      4      9     55    226    247     10     62    229    231
-polarize    248   0.837  0.390    247      1      7     53    228    230    248      3      4      9     55    226
-polarize    249   0.496  0.390    246    249
-polarize    250   1.334  0.390    251    250
-polarize    251   0.496  0.390    250    251
-polarize    252   1.073  0.390    253    256    252    254    257    255    265
-polarize    253   1.750  0.390    252    254    257    253    256    255    260    258
-polarize    254   1.750  0.390    253    255    260    252    254    257    256    259    258
-polarize    255   1.073  0.390    254    256    253    255    260    252    265
-polarize    256   1.750  0.390    252    255    265    253    256    254
-polarize    257   1.073  0.390    253    258    252    254    257    259    261
-polarize    258   1.750  0.390    257    259    261    253    258    252    254    260
-polarize    259   1.073  0.390    258    260    257    259    261    253    254    252
-polarize    260   1.750  0.390    254    259    253    255    260    252    258    257
-polarize    261   0.696  0.390    258    257    259    261    253    252    254
-polarize    262   1.073  0.390    263    264    262
-polarize    263   0.496  0.390    262    263    264
-polarize    264   0.496  0.390    262    263    264
-polarize    265   0.696  0.390    256    252    255    265    253    254
-polarize    266   1.073  0.390    267    271    266    268    272    270    277    269
-polarize    267   1.750  0.390    266    268    272    267    271    269
-polarize    268   1.073  0.390    267    269    266    268    272    270
-polarize    269   1.750  0.390    268    270    267    269    266    271    276
-polarize    270   1.750  0.390    269    271    276    268    270    267    266    277
-polarize    271   1.750  0.390    266    270    277    267    271    269    276    268
-polarize    272   0.837  0.390    267    266    268    272
-polarize    273   1.073  0.390    274    275    273
-polarize    274   0.496  0.390    273    274    275
-polarize    275   0.496  0.390    273    274    275
-polarize    276   0.696  0.390    270    269    271    276    268    266    267
-polarize    277   0.696  0.390    271    266    270    277    267    269    268
-polarize    278   1.073  0.390    279    282    278    280    283    281    292
-polarize    279   1.750  0.390    278    280    283    279    282    281    286    284
-polarize    280   1.750  0.390    279    281    286    278    280    283    282    285    291    284
-polarize    281   1.073  0.390    280    282    279    281    286    278    292
-polarize    282   1.750  0.390    278    281    292    279    282    280
-polarize    283   1.073  0.390    279    284    278    280    283    285
-polarize    284   1.750  0.390    283    285    279    284    278    280    286    287
-polarize    285   1.073  0.390    284    286    287    283    285    279    280    291    278
-polarize    286   1.750  0.390    280    285    291    279    281    286    278    284    287    283
-polarize    287   0.696  0.390    285    284    286    287    283    280    279    278
-polarize    288   1.073  0.390    289    290    288
-polarize    289   0.496  0.390    288    289    290
-polarize    290   0.496  0.390    288    289    290
-polarize    291   0.837  0.390    286    280    285    291    279    281    284    278    283
-polarize    292   0.696  0.390    282    278    281    292    279    280
-polarize    293   1.073  0.390    294    298    293    295    299    297    304    296
-polarize    294   1.750  0.390    293    295    299    294    298    296    300
-polarize    295   1.073  0.390    294    296    300    293    295    299    297    301
-polarize    296   1.750  0.390    295    297    301    294    296    300    293    298
-polarize    297   1.750  0.390    296    298    295    297    301    294    293    304
-polarize    298   1.750  0.390    293    297    304    294    298    296    295
-polarize    299   0.837  0.390    294    293    295    299
-polarize    300   0.696  0.390    295    294    296    300    293
-polarize    301   0.837  0.390    296    295    297    301    294    293
-polarize    302   1.334  0.390    303    302
-polarize    303   0.496  0.390    302    303
-polarize    304   0.696  0.390    298    293    297    304    294    296    295
-polarize    305   1.073  0.390    306    310    305    307    311    309    315    308
-polarize    306   1.750  0.390    305    307    311    306    310    308    312
-polarize    307   1.073  0.390    306    308    312    305    307    311    309    313
-polarize    308   1.750  0.390    307    309    313    306    308    312    305    310    314
-polarize    309   1.750  0.390    308    310    314    307    309    313    306    305    315
-polarize    310   1.750  0.390    305    309    315    306    310    308    314    307
-polarize    311   0.837  0.390    306    305    307    311
-polarize    312   0.496  0.390    307    306    308    312    305
-polarize    313   0.837  0.390    308    307    309    313    306    305
-polarize    314   0.696  0.390    309    308    310    314    307    305    306
-polarize    315   0.696  0.390    310    305    309    315    306    308    307
-polarize    316   0.837  0.390    378    316    331    332    347    379
-polarize    317   1.334  0.390    318    319    317
-polarize    318   0.496  0.390    317    318    319
-polarize    319   0.496  0.390    317    318    319
-polarize    320   1.334  0.390    321    320
-polarize    321   0.496  0.390    320    321
+polarize      1   1.073  0.390      3      4      9     55    226    247
+polarize      2   1.334  0.390      6
+polarize      3   1.334  0.390      1      5      7     53    228    230
+polarize      4   0.496  0.390      1
+polarize      5   0.837  0.390      3
+polarize      6   0.496  0.390      2
+polarize      7   1.073  0.390      3      9     10     55    226    247
+polarize      8   1.334  0.390     12
+polarize      9   1.334  0.390      1      7     11     53    228    230
+polarize     10   0.496  0.390      7
+polarize     11   0.837  0.390      9
+polarize     12   0.496  0.390      8     33     44
+polarize     13   1.334  0.390     14
+polarize     14   0.496  0.390     13
+polarize     15   1.334  0.390     16
+polarize     16   0.496  0.390     15
+polarize     17   1.334  0.390     18
+polarize     18   0.496  0.390     17
+polarize     19   1.334  0.390     20
+polarize     20   0.496  0.390     19
+polarize     21   1.334  0.390     22
+polarize     22   0.496  0.390     21
+polarize     23   1.334  0.390     24
+polarize     24   0.496  0.390     23
+polarize     25   1.334  0.390     26
+polarize     26   0.496  0.390     25
+polarize     27   1.334  0.390     28
+polarize     28   0.496  0.390     27
+polarize     29   1.334  0.390     30
+polarize     30   0.496  0.390     29
+polarize     31   1.334  0.390     32
+polarize     32   0.496  0.390     31
+polarize     33   1.334  0.390     12
+polarize     34   1.334  0.390     35     36
+polarize     35   0.496  0.390     34
+polarize     36   0.834  0.390     34     37
+polarize     37   0.496  0.390     36
+polarize     38   1.334  0.390     39     42
+polarize     39   0.496  0.390     38
+polarize     40   1.334  0.390     41
+polarize     41   0.496  0.390     40
+polarize     42   0.834  0.390     38     43
+polarize     43   0.496  0.390     42
+polarize     44   1.334  0.390     12
+polarize     45   1.334  0.390     46     47     49
+polarize     46   0.496  0.390     45
+polarize     47   3.300  0.390     45     48
+polarize     48   0.496  0.390     47
+polarize     49   3.300  0.390     45     49
+polarize     50   1.334  0.390     51     52
+polarize     51   0.496  0.390     50
+polarize     52   3.300  0.390     50
+polarize     53   1.073  0.390      3      9     55     62    226    247
+polarize     54   1.334  0.390     57
+polarize     55   1.334  0.390      1      7     53     56    228    230
+polarize     56   0.837  0.390     55
+polarize     57   0.496  0.390     54
+polarize     58   1.334  0.390     59
+polarize     59   0.496  0.390     58
+polarize     60   1.334  0.390     61
+polarize     61   0.496  0.390     60
+polarize     62   1.334  0.390     53     63
+polarize     63   0.496  0.390     62
+polarize     64   1.334  0.390     65
+polarize     65   0.496  0.390     64
+polarize     66   1.750  0.390     67
+polarize     67   1.750  0.390     66     68     69
+polarize     68   0.696  0.390     67
+polarize     69   1.750  0.390     67     70     71
+polarize     70   0.696  0.390     69
+polarize     71   1.750  0.390     69     72
+polarize     72   0.696  0.390     71
+polarize     73   1.334  0.390     74
+polarize     74   0.496  0.390     73
+polarize     75   1.750  0.390     76
+polarize     76   1.750  0.390     75     77     78
+polarize     77   0.696  0.390     76
+polarize     78   1.750  0.390     76     79     80
+polarize     79   0.696  0.390     78
+polarize     80   1.750  0.390     78     81
+polarize     81   0.873  0.390     80     82
+polarize     82   0.496  0.390     81
+polarize     83   1.334  0.390     84
+polarize     84   0.496  0.390     83
+polarize     85   1.750  0.390     86
+polarize     86   1.750  0.390     85     87     88
+polarize     87   0.696  0.390     86
+polarize     88   1.750  0.390     86     89     90
+polarize     89   0.696  0.390     88
+polarize     90   1.750  0.390     88     91
+polarize     91   0.837  0.390     90
+polarize     92   1.334  0.390     93
+polarize     93   0.496  0.390     92
+polarize     94   1.750  0.390     95     97
+polarize     95   1.750  0.390     94     96     98
+polarize     96   0.696  0.390     95
+polarize     97   1.750  0.390     94    100    101
+polarize     98   1.073  0.390     95     99    100
+polarize     99   0.496  0.390     98
+polarize    100   1.750  0.390     97     98    103
+polarize    101   1.750  0.390     97    102    105
+polarize    102   0.696  0.390    101
+polarize    103   1.750  0.390    100    104    107
+polarize    104   0.696  0.390    103
+polarize    105   1.750  0.390    101    106    107
+polarize    106   0.696  0.390    105
+polarize    107   1.750  0.390    103    105    108
+polarize    108   0.696  0.390    107
+polarize    109   1.334  0.390    110
+polarize    110   0.496  0.390    109
+polarize    111   1.750  0.390    112    114
+polarize    112   1.073  0.390    111    113    116
+polarize    113   0.496  0.390    112
+polarize    114   1.750  0.390    111    115    118
+polarize    115   0.696  0.390    114
+polarize    116   1.750  0.390    112    117    118
+polarize    117   0.696  0.390    116
+polarize    118   1.073  0.390    114    116    119
+polarize    119   0.496  0.390    118
+polarize    120   1.334  0.390    121
+polarize    121   0.496  0.390    120
+polarize    122   1.750  0.390    123    125
+polarize    123   1.073  0.390    122    124    127
+polarize    124   0.496  0.390    123
+polarize    125   1.750  0.390    122    126    129
+polarize    126   0.696  0.390    125
+polarize    127   1.750  0.390    123    128    129
+polarize    128   0.696  0.390    127
+polarize    129   1.073  0.390    125    127
+polarize    130   1.334  0.390    131
+polarize    131   0.496  0.390    130
+polarize    132   1.750  0.390    133    134
+polarize    133   1.073  0.390    132    136
+polarize    134   1.750  0.390    132    135    138
+polarize    135   0.696  0.390    134
+polarize    136   1.750  0.390    133    137    138
+polarize    137   0.696  0.390    136
+polarize    138   1.073  0.390    134    136    139
+polarize    139   0.496  0.390    138
+polarize    140   1.334  0.390    141
+polarize    141   0.496  0.390    140
+polarize    142   1.334  0.390    143
+polarize    143   0.837  0.390    142
+polarize    144   1.334  0.390    145
+polarize    145   0.496  0.390    144
+polarize    146   1.334  0.390    147    148
+polarize    147   0.837  0.390    146
+polarize    148   0.837  0.390    146    149
+polarize    149   0.496  0.390    148
+polarize    150   1.334  0.390    151
+polarize    151   0.496  0.390    150
+polarize    152   1.334  0.390    153    154
+polarize    153   0.834  0.390    152
+polarize    154   1.073  0.390    152    155
+polarize    155   0.496  0.390    154
+polarize    156   1.334  0.390    157
+polarize    157   0.496  0.390    156
+polarize    158   1.334  0.390    159
+polarize    159   0.496  0.390    158
+polarize    160   1.334  0.390    161
+polarize    161   0.837  0.390    160
+polarize    162   1.334  0.390    163
+polarize    163   0.496  0.390    162
+polarize    164   1.334  0.390    165
+polarize    165   0.496  0.390    164
+polarize    166   1.334  0.390    167    168
+polarize    167   0.837  0.390    166
+polarize    168   0.837  0.390    166    169
+polarize    169   0.496  0.390    168
+polarize    170   1.334  0.390    171
+polarize    171   0.496  0.390    170
+polarize    172   1.334  0.390    173
+polarize    173   0.496  0.390    172
+polarize    174   1.334  0.390    175    176
+polarize    175   0.834  0.390    174
+polarize    176   1.073  0.390    174    177
+polarize    177   0.496  0.390    176
+polarize    178   1.334  0.390    179
+polarize    179   0.496  0.390    178
+polarize    180   1.334  0.390    181    182
+polarize    181   0.496  0.390    180
+polarize    182   3.300  0.390    180    183
+polarize    183   1.334  0.390    182    184
+polarize    184   0.496  0.390    183
+polarize    185   1.334  0.390    186
+polarize    186   0.496  0.390    185
+polarize    187   1.334  0.390    188
+polarize    188   0.496  0.390    187
+polarize    189   1.334  0.390    190
+polarize    190   0.496  0.390    189
+polarize    191   1.334  0.390    192
+polarize    192   0.496  0.390    191
+polarize    193   1.073  0.390    194
+polarize    194   0.496  0.390    193
+polarize    195   1.334  0.390    196
+polarize    196   0.496  0.390    195
+polarize    197   1.334  0.390    198
+polarize    198   0.496  0.390    197
+polarize    199   1.334  0.390    200
+polarize    200   0.496  0.390    199
+polarize    201   1.334  0.390    202    203
+polarize    202   0.496  0.390    201
+polarize    203   1.073  0.390    201    204
+polarize    204   0.496  0.390    203
+polarize    205   1.334  0.390    206
+polarize    206   0.496  0.390    205
+polarize    207   1.334  0.390    208
+polarize    208   0.496  0.390    207
+polarize    209   1.334  0.390    210    211
+polarize    210   0.496  0.390    209
+polarize    211   1.073  0.390    209    212    213
+polarize    212   0.496  0.390    211
+polarize    213   1.334  0.390    211    214
+polarize    214   1.073  0.390    213    215
+polarize    215   0.496  0.390    214
+polarize    216   1.334  0.390    217
+polarize    217   0.496  0.390    216
+polarize    218   1.334  0.390    219
+polarize    219   0.496  0.390    218
+polarize    220   1.334  0.390    221
+polarize    221   0.496  0.390    220
+polarize    222   1.073  0.390    223
+polarize    223   0.496  0.390    222
+polarize    224   1.334  0.390    225
+polarize    225   0.496  0.390    224
+polarize    226   1.334  0.390      1      7     53    227
+polarize    227   0.837  0.390    226
+polarize    228   1.073  0.390      3      9     55    229    247
+polarize    229   0.496  0.390    228
+polarize    230   1.073  0.390      3      9     55    231    247
+polarize    231   0.496  0.390    230
+polarize    232   1.334  0.390    233
+polarize    233   0.496  0.390    232
+polarize    234   1.073  0.390    235
+polarize    235   0.496  0.390    234
+polarize    236   1.073  0.390    237
+polarize    237   0.496  0.390    236
+polarize    238   1.334  0.390    239
+polarize    239   0.837  0.390    238
+polarize    240   1.334  0.390    241    242
+polarize    241   0.837  0.390    240
+polarize    242   0.837  0.390    240    243
+polarize    243   0.496  0.390    242
+polarize    244   1.073  0.390    245
+polarize    245   0.496  0.390    244
+polarize    246   1.334  0.390    249
+polarize    247   1.334  0.390      1      7     53    228    230    248
+polarize    248   0.837  0.390    247
+polarize    249   0.496  0.390    246
+polarize    250   1.334  0.390    251
+polarize    251   0.496  0.390    250
+polarize    252   1.073  0.390    253    256
+polarize    253   1.750  0.390    252    254    257
+polarize    254   1.750  0.390    253    255    260
+polarize    255   1.073  0.390    254    256
+polarize    256   1.750  0.390    252    255    265
+polarize    257   1.073  0.390    253    258
+polarize    258   1.750  0.390    257    259    261
+polarize    259   1.073  0.390    258    260
+polarize    260   1.750  0.390    254    259
+polarize    261   0.696  0.390    258
+polarize    262   1.073  0.390    263    264
+polarize    263   0.496  0.390    262
+polarize    264   0.496  0.390    262
+polarize    265   0.696  0.390    256
+polarize    266   1.073  0.390    267    271
+polarize    267   1.750  0.390    266    268    272
+polarize    268   1.073  0.390    267    269
+polarize    269   1.750  0.390    268    270
+polarize    270   1.750  0.390    269    271    276
+polarize    271   1.750  0.390    266    270    277
+polarize    272   0.837  0.390    267
+polarize    273   1.073  0.390    274    275
+polarize    274   0.496  0.390    273
+polarize    275   0.496  0.390    273
+polarize    276   0.696  0.390    270
+polarize    277   0.696  0.390    271
+polarize    278   1.073  0.390    279    282
+polarize    279   1.750  0.390    278    280    283
+polarize    280   1.750  0.390    279    281    286
+polarize    281   1.073  0.390    280    282
+polarize    282   1.750  0.390    278    281    292
+polarize    283   1.073  0.390    279    284
+polarize    284   1.750  0.390    283    285
+polarize    285   1.073  0.390    284    286    287
+polarize    286   1.750  0.390    280    285    291
+polarize    287   0.696  0.390    285
+polarize    288   1.073  0.390    289    290
+polarize    289   0.496  0.390    288
+polarize    290   0.496  0.390    288
+polarize    291   0.837  0.390    286
+polarize    292   0.696  0.390    282
+polarize    293   1.073  0.390    294    298
+polarize    294   1.750  0.390    293    295    299
+polarize    295   1.073  0.390    294    296    300
+polarize    296   1.750  0.390    295    297    301
+polarize    297   1.750  0.390    296    298
+polarize    298   1.750  0.390    293    297    304
+polarize    299   0.837  0.390    294
+polarize    300   0.696  0.390    295
+polarize    301   0.837  0.390    296
+polarize    302   1.334  0.390    303
+polarize    303   0.496  0.390    302
+polarize    304   0.696  0.390    298
+polarize    305   1.073  0.390    306    310
+polarize    306   1.750  0.390    305    307    311
+polarize    307   1.073  0.390    306    308    312
+polarize    308   1.750  0.390    307    309    313
+polarize    309   1.750  0.390    308    310    314
+polarize    310   1.750  0.390    305    309    315
+polarize    311   0.837  0.390    306
+polarize    312   0.496  0.390    307
+polarize    313   0.837  0.390    308
+polarize    314   0.696  0.390    309
+polarize    315   0.696  0.390    310
+polarize    316   0.837  0.390    378
+polarize    317   1.334  0.390    318    319
+polarize    318   0.496  0.390    317
+polarize    319   0.496  0.390    317
+polarize    320   1.334  0.390    321
+polarize    321   0.496  0.390    320
 polarize    322   0.837  0.390
-polarize    323   1.334  0.390    324    323
-polarize    324   0.496  0.390    323    324
-polarize    325   1.334  0.390    326    325
-polarize    326   0.496  0.390    325    326
-polarize    327   1.334  0.390    328    329    330    327
-polarize    328   0.496  0.390    327    328    329    330
-polarize    329   1.334  0.390    327    330    328    329
-polarize    330   0.496  0.390    329    327    330    328
-polarize    331   0.837  0.390    378    316    331    332    347    379
-polarize    332   0.837  0.390    378    316    331    332    347    379
-polarize    333   1.334  0.390    334    335    333
-polarize    334   0.496  0.390    333    334    335
-polarize    335   0.496  0.390    333    334    335
-polarize    336   1.334  0.390    337    336
-polarize    337   0.496  0.390    336    337
+polarize    323   1.334  0.390    324
+polarize    324   0.496  0.390    323
+polarize    325   1.334  0.390    326
+polarize    326   0.496  0.390    325
+polarize    327   1.334  0.390    328    329    330
+polarize    328   0.496  0.390    327
+polarize    329   1.334  0.390    327    330
+polarize    330   0.496  0.390    329
+polarize    331   0.837  0.390    378
+polarize    332   0.837  0.390    378
+polarize    333   1.334  0.390    334    335
+polarize    334   0.496  0.390    333
+polarize    335   0.496  0.390    333
+polarize    336   1.334  0.390    337
+polarize    337   0.496  0.390    336
 polarize    338   0.837  0.390
-polarize    339   1.334  0.390    340    339
-polarize    340   0.496  0.390    339    340
-polarize    341   1.334  0.390    342    341
-polarize    342   0.496  0.390    341    342
-polarize    343   1.334  0.390    344    345    346    343
-polarize    344   0.496  0.390    343    344    345    346
-polarize    345   1.334  0.390    343    346    344    345
-polarize    346   0.496  0.390    345    343    346    344
-polarize    347   0.837  0.390    378    316    331    332    347    379
-polarize    348   0.837  0.390    390    348    362    363    377    391
-polarize    349   1.334  0.390    350    351    349
-polarize    350   0.496  0.390    349    350    351
-polarize    351   0.496  0.390    349    350    351
-polarize    352   1.334  0.390    353    352
-polarize    353   0.496  0.390    352    353
+polarize    339   1.334  0.390    340
+polarize    340   0.496  0.390    339
+polarize    341   1.334  0.390    342
+polarize    342   0.496  0.390    341
+polarize    343   1.334  0.390    344    345    346
+polarize    344   0.496  0.390    343
+polarize    345   1.334  0.390    343    346
+polarize    346   0.496  0.390    345
+polarize    347   0.837  0.390    378
+polarize    348   0.837  0.390    390
+polarize    349   1.334  0.390    350    351
+polarize    350   0.496  0.390    349
+polarize    351   0.496  0.390    349
+polarize    352   1.334  0.390    353
+polarize    353   0.496  0.390    352
 polarize    354   0.837  0.390
-polarize    355   1.334  0.390    356    355
-polarize    356   0.496  0.390    355    356
-polarize    357   1.334  0.390    358    357
-polarize    358   0.496  0.390    357    358
-polarize    359   1.334  0.390    360    361    359
-polarize    360   0.496  0.390    359    360    361
-polarize    361   0.496  0.390    359    360    361
-polarize    362   0.837  0.390    390    348    362    363    377    391
-polarize    363   0.837  0.390    390    348    362    363    377    391
-polarize    364   1.334  0.390    365    366    364
-polarize    365   0.496  0.390    364    365    366
-polarize    366   0.496  0.390    364    365    366
-polarize    367   1.334  0.390    368    367
-polarize    368   0.496  0.390    367    368
+polarize    355   1.334  0.390    356
+polarize    356   0.496  0.390    355
+polarize    357   1.334  0.390    358
+polarize    358   0.496  0.390    357
+polarize    359   1.334  0.390    360    361
+polarize    360   0.496  0.390    359
+polarize    361   0.496  0.390    359
+polarize    362   0.837  0.390    390
+polarize    363   0.837  0.390    390
+polarize    364   1.334  0.390    365    366
+polarize    365   0.496  0.390    364
+polarize    366   0.496  0.390    364
+polarize    367   1.334  0.390    368
+polarize    368   0.496  0.390    367
 polarize    369   0.837  0.390
-polarize    370   1.334  0.390    371    370
-polarize    371   0.496  0.390    370    371
-polarize    372   1.334  0.390    373    372
-polarize    373   0.496  0.390    372    373
-polarize    374   1.334  0.390    375    376    374
-polarize    375   0.496  0.390    374    375    376
-polarize    376   0.496  0.390    374    375    376
-polarize    377   0.837  0.390    390    348    362    363    377    391
-polarize    378   1.828  0.390    316    331    332    347    379    378
-polarize    379   0.837  0.390    378    316    331    332    347    379
-polarize    380   0.837  0.390    381    380
-polarize    381   0.496  0.390    380    381
+polarize    370   1.334  0.390    371
+polarize    371   0.496  0.390    370
+polarize    372   1.334  0.390    373
+polarize    373   0.496  0.390    372
+polarize    374   1.334  0.390    375    376
+polarize    375   0.496  0.390    374
+polarize    376   0.496  0.390    374
+polarize    377   0.837  0.390    390
+polarize    378   1.828  0.390    316    331    332    347    379
+polarize    379   0.837  0.390    378
+polarize    380   0.837  0.390    381
+polarize    381   0.496  0.390    380
 polarize    382   0.837  0.390
-polarize    383   1.828  0.390    384    383
-polarize    384   0.837  0.390    383    384
-polarize    385   0.837  0.390    386    385
-polarize    386   0.496  0.390    385    386
+polarize    383   1.828  0.390    384
+polarize    384   0.837  0.390    383
+polarize    385   0.837  0.390    386
+polarize    386   0.496  0.390    385
 polarize    387   0.837  0.390
-polarize    388   1.828  0.390    389    388
-polarize    389   0.837  0.390    388    389
-polarize    390   1.828  0.390    348    362    363    377    391    390
-polarize    391   0.837  0.390    390    348    362    363    377    391
-polarize    392   0.837  0.390    393    392
-polarize    393   0.496  0.390    392    393
+polarize    388   1.828  0.390    389
+polarize    389   0.837  0.390    388
+polarize    390   1.828  0.390    348    362    363    377    391
+polarize    391   0.837  0.390    390
+polarize    392   0.837  0.390    393
+polarize    393   0.496  0.390    392
 polarize    394   0.837  0.390
-polarize    395   1.828  0.390    396    395
-polarize    396   0.837  0.390    395    396
-polarize    397   0.837  0.390    398    397
-polarize    398   0.496  0.390    397    398
+polarize    395   1.828  0.390    396
+polarize    396   0.837  0.390    395
+polarize    397   0.837  0.390    398
+polarize    398   0.496  0.390    397
 polarize    399   0.837  0.390
-polarize    400   1.828  0.390    401    400
-polarize    401   0.837  0.390    400    401
-polarize    402   0.837  0.390    403    402
-polarize    403   0.496  0.390    402    403
+polarize    400   1.828  0.390    401
+polarize    401   0.837  0.390    400
+polarize    402   0.837  0.390    403
+polarize    403   0.496  0.390    402
 polarize    404   0.028  0.390
 polarize    405   0.120  0.390
 polarize    406   0.780  0.390
@@ -4944,7 +4966,10 @@ polarize    409   0.010  0.065
 polarize    410   0.080  0.095
 polarize    411   0.550  0.159
 polarize    412   0.260  0.210
-polarize    413   4.000  0.390
+polarize    413   1.350  0.390
+polarize    414   4.000  0.390
+polarize    415   5.650  0.390
+polarize    416   7.250  0.390
 
 
 strbnd      2      1      3    7.20    7.20
@@ -5228,6 +5253,7 @@ strbnd     69     69     69   18.70   18.70
 strbnd     62     70     62   14.40   14.40
 strbnd     62     70     71   14.40   14.40
 strbnd     71     70     71   14.40   14.40
+
 
 
 torsion     3     1     2     3   0.000   0.000 1   0.000 180.000 2   0.000   0.000 3
@@ -5599,7 +5625,6 @@ torsion    63    43    46    50   0.000   0.000 1   8.536 180.000 2   0.000   0.
 torsion    69    43    46    45   0.000   0.000 1   9.911 180.000 2   0.000   0.000 3
 torsion    69    43    46    50   0.000   0.000 1   8.536 180.000 2   0.000   0.000 3
 torsion    44    43    49    50   0.000   0.000 1   2.100 180.000 2   0.000   0.000 3
-torsion    46    43    49    50   0.000   0.000 1   3.000 180.000 2   0.000   0.000 3
 torsion    54    43    53    47   0.000   0.000 1   3.000 180.000 2   0.600   0.000 3
 torsion    54    43    53    55   0.000   0.000 1  -9.900 180.000 2  -0.027   0.000 3
 torsion    54    43    53    58   0.000   0.000 1   9.900 180.000 2   0.000   0.000 3
@@ -11265,7 +11290,7 @@ tortors     69     69     68     69     69  29  29 \
     70.0    70.0   0.00000
 
 
-ureybrad     74     73     74   38.25   1.5537
+ureybrad     74     73     74   -7.60   1.5537
 
 
 vdw      1  3.710000000  0.110000000
@@ -11342,15 +11367,19 @@ vdw     71  3.360000000  0.112000000
 vdw     72  2.655000000  0.013500000  0.910
 vdw     73  3.405000000  0.110000000
 vdw     74  2.655000000  0.013500000  0.910
-vdw     75  2.380000000  0.080000000
-vdw     76  3.020000000  0.260000000
-vdw     77  3.710000000  0.350000000
-vdw     78  4.140000000  0.440000000
-vdw     79  4.370000000  0.530000000
+vdw     75  2.200000000  0.066000000
+vdw     76  2.955000000  0.280000000
+vdw     77  3.680000000  0.350000000
+vdw     78  3.900000000  0.380000000
+vdw     79  4.140000000  0.420000000
 vdw     80  1.880000000  0.091000000
 vdw     81  2.940000000  0.300000000
 vdw     82  3.630000000  0.350000000
 vdw     83  2.680000000  0.222000000
-vdw     84  4.130000000  0.340000000
+vdw     84  3.430000000  0.250000000
+vdw     85  4.120000000  0.340000000
+vdw     86  4.320000000  0.430000000
+vdw     87  4.610000000  0.520000000
+
 
 

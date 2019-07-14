@@ -182,7 +182,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/4icb_mg_a.xyz", "ffx/algorithms/structures/4icb_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-8422.54811, 0}, new double[]{-0.0234728644, 0}, new double[]{-187.693010, Double.NaN},
+                        new double[]{-8422.43552052, 0}, new double[]{-0.0234728644, 0}, new double[]{-187.693010, Double.NaN},
                         new double[][][]{
                                 {{1.51602997670091, -0.16798107175016064, 1.1909011229485826},
                                         {-1.2287108493416157, 0.3317143880292477, -1.168707082997385},
@@ -222,7 +222,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/4icb_mg_a.xyz", "ffx/algorithms/structures/4icb_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-8441.56777, 0}, new double[]{-59.7520122, 0}, new double[]{0.170957221, Double.NaN},
+                        new double[]{-8441.45436853, 0}, new double[]{-59.7520122, 0}, new double[]{0.170957221, Double.NaN},
                         new double[][][]{
                                 {{1.516028943632357, -0.16798187601812842, 1.1909000012817135},
                                         {-1.2287100421217505, 0.33171692634032457, -1.1687028725533608},
@@ -262,7 +262,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/4icb_mg_a.xyz", "ffx/algorithms/structures/4icb_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-8452.74724, 0}, new double[]{-48.3265963, 0}, new double[]{110.479770, Double.NaN},
+                        new double[]{-8452.63336690, 0}, new double[]{-48.3265963, 0}, new double[]{110.479770, Double.NaN},
                         new double[][][]{
                                 {{1.5160283364099056, -0.1679823487549772, 1.1908993419824703},
                                         {-1.2287095676498276, 0.3317184183221489, -1.1687003977164605},
@@ -302,7 +302,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/4icb_mg_a.xyz", "ffx/algorithms/structures/4icb_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-8460.58743, 0}, new double[]{0.0234728644, 0}, new double[]{187.739955, Double.NaN},
+                        new double[]{-8460.47321653, 0}, new double[]{0.0234728644, 0}, new double[]{187.739955, Double.NaN},
                         new double[][][]{
                                 {{1.5160279105638157, -0.16798268028609797, 1.1908988796148456},
                                         {-1.2287092349018947, 0.3317194646514121, -1.1686986621093438},
@@ -342,7 +342,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/5cpv_mg_a.xyz", "ffx/algorithms/structures/5cpv_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-10378.244952473045, 0}, new double[]{-0.0337450891, 0}, new double[]{-197.374818, Double.NaN},
+                        new double[]{-10378.104156403408, 0}, new double[]{-0.0337450891, 0}, new double[]{-197.374818, Double.NaN},
                         new double[][][]{
                                 {{-1.1610229302444828,0.8877842196621852,-0.38190472079527416},
                                         {0.17141739386080523,-0.6936874602017804,-0.2646850671524603},
@@ -381,7 +381,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/5cpv_mg_a.xyz", "ffx/algorithms/structures/5cpv_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-10386.4899355, 0}, new double[]{-50.8561144217, 0}, new double[]{-115.8285638201487, Double.NaN},
+                        new double[]{-10386.34880931949, 0}, new double[]{-50.8561144217, 0}, new double[]{-115.8285638201487, Double.NaN},
                         new double[][][]{
                                 {{-1.1610225687254705,0.8877835144098896,-0.38190508866537165},
                                         {0.1714170946625826,-0.6936872059978034,-0.264685238283762},
@@ -420,7 +420,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/5cpv_mg_a.xyz", "ffx/algorithms/structures/5cpv_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-10398.2466217, 0}, new double[]{-62.8370972544, 0}, new double[]{0.245771737152, Double.NaN},
+                        new double[]{-10398.105024790417, 0}, new double[]{-62.8370972544, 0}, new double[]{0.245771737152, Double.NaN},
                         new double[][][]{
                                 {{-1.1610220532282816,0.8877825087765396,-0.38190561321870153},
                                         {0.17141666802985345,-0.6936868435232721,-0.26468548230330735},
@@ -459,7 +459,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "ffx/algorithms/structures/5cpv_mg_a.xyz", "ffx/algorithms/structures/5cpv_mg_b.xyz"},
                         ThermoTestMode.GRAD, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-10418.2482910, 0}, new double[]{0.0337450891052, 0}, new double[]{197.442308197, Double.NaN},
+                        new double[]{-10418.105893177431, 0}, new double[]{0.0337450891052, 0}, new double[]{197.442308197, Double.NaN},
                         new double[][][]{
                                 {{-1.1610211762120812,0.887780797890894,-0.3819065056421289},
                                         {0.17141594219890166,-0.6936862268447639,-0.2646858974541544},
@@ -621,12 +621,12 @@ public class ThermodynamicsTest extends PJDependentTest {
     private final double[][][] dudx;
     private final double[][][] d2udxdl;
 
-    // Currently, everything is just 1.0E-5 kcal/mol per unit.
-    private static final double DEFAULT_PE_TOL = 1.0E-5;      // Units: none.
-    private static final double DEFAULT_DUDL_TOL = 1.0E-5;    // Units: per lambda (quasi-unitless).
-    private static final double DEFAULT_D2UDL2_TOL = 1.0E-5;  // Units: per lambda^2 (quasi-unitless).
-    private static final double DEFAULT_DUDX_TOL = 1.0E-5;    // Units: per Angstrom.
-    private static final double DEFAULT_D2UDXDL_TOL = 1.0E-5; // Units: per Angstrom per lambda.
+    // Currently, everything is just 1.0E-2 kcal/mol per unit.
+    private static final double DEFAULT_PE_TOL = 1.0E-2;      // kcal/mol.
+    private static final double DEFAULT_DUDL_TOL = 1.0E-2;    // per lambda (unit-less).
+    private static final double DEFAULT_D2UDL2_TOL = 1.0E-2;  // per lambda^2 (unit-less).
+    private static final double DEFAULT_DUDX_TOL = 1.0E-2;    // kcal/mol/A.
+    private static final double DEFAULT_D2UDXDL_TOL = 1.0E-2; // kcal/mol/A.
 
     // TODO: Make these settable if needed.
     private final double peTol = DEFAULT_PE_TOL;

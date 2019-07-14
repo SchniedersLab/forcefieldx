@@ -83,7 +83,7 @@ public class XRayMinimizeTest {
                             "ffx/xray/structures/1NSF.mtz",
                             null,
                             25.178605682089,
-                            25.448314839595,
+                            25.551161130487,
                             0.8939361241370969,
                             0.14949033848514287},
                     {true,

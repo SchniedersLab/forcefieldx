@@ -1,12 +1,17 @@
 
+forcefield              OPLS-AA/L
+
 vdwtype                 LENNARD-JONES
 radiusrule              GEOMETRIC
 radiustype              SIGMA
 radiussize              DIAMETER
 epsilonrule             GEOMETRIC
+torsionunit             0.5
+imptorunit              0.5
 vdw-14-scale            2.0
+chg-14-scale            2.0
+dielectric              1.0
 
-polarizeterm            FALSE
 
 angle      1      1      1   58.35  112.70
 angle      1      1      2   37.50  110.70
@@ -241,6 +246,8 @@ angle      2     76     40   35.00  109.50
 angle      1     77      1   58.35  112.70
 angle      1     77      2   37.50  110.70
 angle      2     77      2   33.00  107.80
+
+
 
 
 atom      1      1  CT    "RCH3 Alkane"                6   12.0000  4
@@ -1229,11 +1236,11 @@ biotype    779  CH3   "N-MeAmide C-Terminus   "     89
 biotype    780  H     "N-MeAmide C-Terminus   "      6
 biotype   2001  O     "Water                  "    164
 biotype   2002  H     "Water                  "    165
-biotype   2003  NA    "Sodium Ion             "    173
-biotype   2004  K     "Potassium Ion          "    174
-biotype   2005  MG    "Magnesium Ion          "    177
-biotype   2006  CA    "Calcium Ion            "    178
-biotype   2007  CL    "Chloride Ion           "    182
+biotype   2004  NA    "Sodium Ion             "    173
+biotype   2005  K     "Potassium Ion          "    174
+biotype   2008  MG    "Magnesium Ion          "    177
+biotype   2009  CA    "Calcium Ion            "    178
+biotype   2013  CL    "Chloride Ion           "    182
 
 
 bond      1      1   268.0   1.5290
@@ -1319,6 +1326,7 @@ bond     40     40   518.0   1.3710
 bond     40     76   317.0   1.5040
 bond     43     44   529.6   0.9572
 bond     44     45   527.2   1.0000
+
 
 
 
@@ -2368,6 +2376,7 @@ multipole    202      0      0         -0.12000 \
 
 
 
+
 torsion     1     1     1     1   1.740   0.000 1  -0.157 180.000 2   0.279   0.000 3
 torsion     1     1     1     2   0.000   0.000 0   0.000   0.000 0   0.366   0.000 3
 torsion     1     1     1    17   2.619   0.000 1  -0.620 180.000 2   0.258   0.000 3
@@ -2828,6 +2837,7 @@ torsion    40    40    76     1   0.000   0.000 0
 torsion    40    40    76     2   0.000   0.000 0
 
 
+
 ureybrad     44     43     44   38.25   1.5139
 ureybrad     44     45     44   39.90   1.6330
 
@@ -2909,4 +2919,5 @@ vdw     74  3.500000000  0.066000000
 vdw     75  3.500000000  0.066000000
 vdw     76  3.500000000  0.066000000
 vdw     77  3.500000000  0.066000000
+
 

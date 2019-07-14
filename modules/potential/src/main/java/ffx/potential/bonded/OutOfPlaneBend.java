@@ -47,6 +47,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import static ffx.numerics.math.VectorMath.cross;
@@ -111,9 +112,10 @@ public class OutOfPlaneBend extends BondedTerm {
                     + " 0 0";
             OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(key);
             if (outOfPlaneBendType != null) {
-                angle.setAngleMode(Angle.AngleMode.IN_PLANE, atom4);
-                OutOfPlaneBend newOutOfPlaneBend = new OutOfPlaneBend(
-                        angle, atom4);
+                if (angle.getAngleMode() == AngleType.AngleMode.IN_PLANE) {
+                    angle.setInPlaneAtom(atom4);
+                }
+                OutOfPlaneBend newOutOfPlaneBend = new OutOfPlaneBend(angle, atom4);
                 newOutOfPlaneBend.outOfPlaneBendType = outOfPlaneBendType;
                 return newOutOfPlaneBend;
             }

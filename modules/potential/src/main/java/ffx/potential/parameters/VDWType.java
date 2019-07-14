@@ -38,6 +38,8 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
+import static java.lang.Integer.*;
+import static java.lang.StrictMath.abs;
 import static java.lang.String.format;
 
 /**
@@ -47,16 +49,6 @@ import static java.lang.String.format;
  * @since 1.0
  */
 public final class VDWType extends BaseType implements Comparator<String> {
-
-    public enum RadiusSize {
-
-        RADIUS, DIAMETER
-    }
-
-    public enum RadiusType {
-
-        RMIN, SIGMA
-    }
 
     /**
      * The atom class that uses this van der Waals parameter.
@@ -91,7 +83,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
         super(ForceField.ForceFieldType.VDW, Integer.toString(atomClass));
         this.atomClass = atomClass;
         this.radius = radius;
-        this.wellDepth = wellDepth;
+        this.wellDepth = abs(wellDepth);
         this.reductionFactor = reductionFactor;
     }
 
@@ -151,8 +143,8 @@ public final class VDWType extends BaseType implements Comparator<String> {
     @Override
     public int compare(String s1, String s2) {
 
-        int t1 = Integer.parseInt(s1);
-        int t2 = Integer.parseInt(s2);
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
 
         return Integer.compare(t1, t2);
     }

@@ -95,10 +95,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     private static final double BOHR2 = BOHR * BOHR;
     /**
-     * Conversion from electron**2/Ang to kcal/mole.
-     */
-    public static final double ELECTRIC = 332.063709;
-    /**
      * Constant <code>zeroM</code>
      */
     public static final double[] zeroM = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};

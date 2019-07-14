@@ -72,7 +72,6 @@ import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.potential.parameters.MultipoleType.ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -161,6 +160,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * The requested permittivity.
      */
     private double epsilon;
+    /**
+     * Conversion from electron**2/Ang to kcal/mole.
+     */
+    public double electric = 332.063709;
     /**
      * Water probe radius.
      */
@@ -438,6 +441,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         } else {
             GK_WARN_LEVEL = Level.WARNING;
         }
+
+        // Set the conversion from electron**2/Ang to kcal/mole
+        electric = forceField.getDouble(ForceField.ForceFieldDouble.ELECTRIC, 332.063709);
 
         // Set the Kirkwood multipolar reaction field constants.
         epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON, dWater);
@@ -2460,30 +2466,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             + expc * (b[3][1] + dexpcr * a[3][0] + dexpc * b[3][0]));
 
                     // Multiply the Born radii auxiliary terms by their dielectric functions.
-                    b[0][0] = ELECTRIC * fc * b[0][0];
-                    b[0][1] = ELECTRIC * fc * b[0][1];
-                    b[0][2] = ELECTRIC * fc * b[0][2];
-                    b[1][0] = ELECTRIC * fd * b[1][0];
-                    b[1][1] = ELECTRIC * fd * b[1][1];
-                    b[1][2] = ELECTRIC * fd * b[1][2];
-                    b[2][0] = ELECTRIC * fq * b[2][0];
-                    b[2][1] = ELECTRIC * fq * b[2][1];
-                    b[2][2] = ELECTRIC * fq * b[2][2];
+                    b[0][0] = electric * fc * b[0][0];
+                    b[0][1] = electric * fc * b[0][1];
+                    b[0][2] = electric * fc * b[0][2];
+                    b[1][0] = electric * fd * b[1][0];
+                    b[1][1] = electric * fd * b[1][1];
+                    b[1][2] = electric * fd * b[1][2];
+                    b[2][0] = electric * fq * b[2][0];
+                    b[2][1] = electric * fq * b[2][1];
+                    b[2][2] = electric * fq * b[2][2];
                 }
 
                 // Multiply the potential auxiliary terms by their dielectric functions.
-                a[0][0] = ELECTRIC * fc * a[0][0];
-                a[0][1] = ELECTRIC * fc * a[0][1];
-                a[0][2] = ELECTRIC * fc * a[0][2];
-                a[0][3] = ELECTRIC * fc * a[0][3];
-                a[1][0] = ELECTRIC * fd * a[1][0];
-                a[1][1] = ELECTRIC * fd * a[1][1];
-                a[1][2] = ELECTRIC * fd * a[1][2];
-                a[1][3] = ELECTRIC * fd * a[1][3];
-                a[2][0] = ELECTRIC * fq * a[2][0];
-                a[2][1] = ELECTRIC * fq * a[2][1];
-                a[2][2] = ELECTRIC * fq * a[2][2];
-                a[2][3] = ELECTRIC * fq * a[2][3];
+                a[0][0] = electric * fc * a[0][0];
+                a[0][1] = electric * fc * a[0][1];
+                a[0][2] = electric * fc * a[0][2];
+                a[0][3] = electric * fc * a[0][3];
+                a[1][0] = electric * fd * a[1][0];
+                a[1][1] = electric * fd * a[1][1];
+                a[1][2] = electric * fd * a[1][2];
+                a[1][3] = electric * fd * a[1][3];
+                a[2][0] = electric * fq * a[2][0];
+                a[2][1] = electric * fq * a[2][1];
+                a[2][2] = electric * fq * a[2][2];
+                a[2][3] = electric * fq * a[2][3];
 
                 // Compute the GK tensors required to compute the energy.
                 energyTensors();
