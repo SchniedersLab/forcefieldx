@@ -35,74 +35,50 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.dynamics.thermostats;
+package ffx.potential.cli;
 
-import ffx.numerics.Constraint;
-import ffx.numerics.Potential.VARIABLE_TYPE;
-
-import java.util.Collections;
-import java.util.List;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import picocli.CommandLine.Option;
 
 /**
- * The Adiabatic thermostat is for NVE simulations and does not alter particle
- * velocities.
+ * Represents command line options for scripts that save a structure to disc.
  *
  * @author Michael J. Schnieders
+ * @author Jacob M. Litman
  * @since 1.0
  */
-public class Adiabatic extends Thermostat {
+public class SaveOptions {
+    /**
+     * -c or --constrain is a flag to print out energy at each step.
+     */
+    @Option(names = {"-c", "--constrain"}, paramLabel = "false", description = "Apply geometric constraints before saving.")
+    private boolean constrain = false;
+
+    private double[] x;
 
     /**
-     * <p>
-     * Constructor for Adiabatic.</p>
+     * Performs key operations prior to saving to disc, such as application of geometric constraints.
      *
-     * @param n    Number of degrees of freedom.
-     * @param x    Atomic coordinates.
-     * @param v    Velocities.
-     * @param mass Mass of each degrees of freedom.
-     * @param type the VARIABLE_TYPE of each variable.
+     * @param mola A MolecularAssembly.
      */
-    public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type) {
-        this(n, x, v, mass, type, Collections.emptyList());
-    }
-
-    public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type, List<Constraint> constraints) {
-        super(n, x, v, mass, type, 1.0, constraints);
-        this.name = ThermostatEnum.ADIABATIC;
+    public void preSaveOperations(MolecularAssembly mola) {
+        preSaveOperations(mola.getPotentialEnergy());
     }
 
     /**
-     * {@inheritDoc}
+     * Performs key operations prior to saving to disc, such as application of geometric constraints.
+     *
+     * @param ffe A ForceFieldEnergy.
      */
-    @Override
-    public String toString() {
-        return " Adiabatic thermostat";
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No half-step velocity modifications are made.
-     */
-    @Override
-    public void halfStep(double dt) {
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * No full-step velocity modifications are made.
-     */
-    @Override
-    public void fullStep(double dt) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setTargetTemperature(double t) {
-        targetTemperature = t;
-        kT = t * kB;
+    public void preSaveOperations(ForceFieldEnergy ffe) {
+        if (constrain) {
+            if (x == null) {
+                x = new double[ffe.getNumberOfVariables()];
+            }
+            x = ffe.getCoordinates(x);
+            ffe.applyAllConstraintPositions(x, x);
+            ffe.setCoordinates(x);
+        }
     }
 }

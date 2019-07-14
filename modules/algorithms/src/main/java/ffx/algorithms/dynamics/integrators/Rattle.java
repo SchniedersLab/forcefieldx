@@ -52,6 +52,13 @@ import ffx.potential.bonded.Atom;
  */
 public class Rattle {
 
+    /**
+     * Literature reference (from Tinker):
+     *
+     * H. C. Andersen, "RATTLE: A Velocity Version of the SHAKE
+     * Algorithm for Molecular Dynamics Calculations", Journal of
+     * Computational Physics, 52, 24-34 (1983)
+     */
     private static final Logger logger = Logger.getLogger(Rattle.class.getName());
     private MolecularAssembly molAss;
     private double[] xold;

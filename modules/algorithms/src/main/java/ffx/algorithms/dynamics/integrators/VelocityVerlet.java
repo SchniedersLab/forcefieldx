@@ -39,6 +39,9 @@ package ffx.algorithms.dynamics.integrators;
 
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.numerics.Potential;
+import ffx.numerics.Constraint;
+
+import java.util.Arrays;
 
 /**
  * Integrate Newton's equations of motion using a Velocity Verlet multistep
@@ -48,6 +51,8 @@ import ffx.numerics.Potential;
  * @since 1.0
  */
 public class VelocityVerlet extends Integrator {
+
+    private double[] xPrior;
 
     /**
      * Constructor for VelocityVerlet.
@@ -70,9 +75,23 @@ public class VelocityVerlet extends Integrator {
      */
     @Override
     public void preForce(Potential potential) {
+        if (useConstraints) {
+            if (xPrior == null) {
+                xPrior = Arrays.copyOf(x, nVariables);
+            } else {
+                System.arraycopy(x, 0, xPrior, 0, nVariables);
+            }
+        }
         for (int i = 0; i < nVariables; i++) {
             v[i] = v[i] + a[i] * dt_2;
             x[i] = x[i] + v[i] * dt;
+        }
+        if (useConstraints) {
+            constraints.forEach((Constraint c) -> c.applyConstraintToStep(xPrior, x, mass, constraintTolerance));
+            double velScale = 1.0 / dt;
+            for (int i = 0; i < nVariables; i++) {
+                v[i] = velScale * (x[i] - xPrior[i]);
+            }
         }
     }
 
@@ -89,6 +108,7 @@ public class VelocityVerlet extends Integrator {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] = v[i] + a[i] * dt_2;
         }
+        constraints.forEach((Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));
     }
 
     /**

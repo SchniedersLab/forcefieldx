@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<root>
+    <document
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+        <properties>
+            <title>GPU Accelerated MC-OSRW Solvation Free Energy</title>
+            <author email="hernan-bernabe@uiowa.edu">Hernan V. Bernabe</author>
+        </properties>
+        <body>
+            <section name="GPU Accelerated MC-OSRW Solvation Free Energy">
+                <p>
+                    Monte Carlo Orthogonal Space Random Walk (MC-OSRW) based sampling algorithm used to sample the thermodynamic landscape between two well defined molecular end states with
+                    the end goal of calculating the free energy difference between those two states. The defined end states are connected via a thermodynamic path that is a function
+                    of lambda that spans 0 to 1 (where 0 represents one well defined end state, 1 represents the other well defined end state and everywhere in between is an "alchemical"
+                    state that is comprised of aspects of both end states). This algorithm combines the sophisticated nature of MCOSRW sampling algorithms (implemented mainly using the FFX
+                    software package on a CPU) with the raw computational power of the GPU specialized OpenMM code to accurately and efficiently sample coordinate space and explore 
+                    thermodynamic landscapes. 
+                </p>
+                <subsection name="Calculating Solvation Free Energy for a Single Water Molecular: Preparation">
+                    <p>
+                        This section outlines how to perform a simple solvation free energy calculation for a single water molecule in a box of water using the AMOEBA Water 2014 force
+                        field. The path to scale both nonbonded forces and calculate their free energies has been impelmented such that the solvation free energy can be calculated
+                        in a single simulation. The example XYZ structure file can be found in <a href="src/site/resources/structures/waterbox.xyz">waterbox.xyz</a>
+                    </p>
+                    <p>
+                        The .key or .parameters file can be used to specify different parameters for the system such as which force field to use, the system size (for this system we are
+                        using a cube of water with dimension 28.0 Angstrom as notified by the a-axis line), the non bonded method calculations as well as their cutoffs and many more 
+                        options. Below is the initial key file used for the water system shown above.
+                    </p>
+                    <source>
+                        forcefield amoeba-water-2003
+
+                        a-axis     28.0
+                        spacegroup P1
+                    
+                        ewald
+                        ewald-cutoff 7.0
+                        vdw-cutoff 12.0
+                    </source>
+                    <p>
+                        Opmitizing a structure to elminate bad contacts between atoms may be necessary before using the MC-OSRW algorithm to explore a thermodynamic landscape. The FFX command
+                        Minimize can be used to accomplish the optimization. Once the optimization is complete, make sure to rename the output to easiliy distinguish the optimized structure
+                        from the original (example change the name to waterbox_min.xyz) and copy a key file with the same naming convention for the next step in the preparation phase. An example
+                        Minimize command is shown below.
+                    </p>
+                    <source>ffxc Minimize -e 0.1 waterbox.xyz</source>
+                    <p>
+                        It is important to equilibrate the newly optimized system to ensure that it relaxes into a state suitable for sampling using MC-OSRW. To accomplish this, a quick
+                        molecular dynamics run should be run. The Dynamics (or DynamicsOpenMM) command simulates the behavior of the molecular system over time under a defined state of conditions.
+                        This dynamics run subjects the system to constant conditions that overtime relax the system into a confirmation that is useful for thermodynamic sampling under the given
+                        conditions. For this example, we will equilibrate the system under constant temperature, constant volume and constant number of particles (known as the canonical ensemble) to
+                        prepare the system for thermodynamic sampling. An example DynamicsOpenMM command as well as a table describing the flag set used is shown below.
+                    </p>
+                    <source>ffxc DynamicsOpenMM -n 1000000 -d 1.0 -z 100 -i STOCHASTIC -t 298.15 -k 10.0 -w 10.0 -F XYZ waterbox_min.xyz</source>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>-n 1000000</td>
+                                <td>Specifies the number of time steps to run for the simulation</td>
+                            </tr>
+                            <tr>
+                                <td>-d 1.0</td>
+                                <td>Specifies the time step (in femto seconds) used in the simulation</td>
+                            </tr>
+                            <tr>
+                                <td>-z 100</td>
+                                <td>Specifies the number of steps done on the GPU before reporting the energy back to the CPU</td>
+                            </tr>
+                            <tr>
+                                <td>-i STOCHASTIC</td>
+                                <td>Specifies the integrator used for the simulation</td>
+                            </tr>
+                            <tr>
+                                <td>-t 298.15</td>
+                                <td>Specifies the target temperature for the system</td>
+                            </tr>
+                            <tr>
+                                <td>-k 10.0</td>
+                                <td>Specifies the amount of time (in picoseconds) between restart file write out</td>
+                            </tr>
+                            <tr>
+                                <td>-w 10.0</td>
+                                <td>Specifies the amount of time (in picoseconds) between coordinate file write out</td>
+                            </tr>
+                            <tr>
+                                <td>-F XYZ</td>
+                                <td>Specifies the style of coordinate file write out (Either PDB or XYZ)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </subsection>
+                <subsection name="Calculating Solvation Free Energy for a Single Water Molecular: Production">
+                    <p>
+                        The final coordinate file written to the .arc should be the file used for the thermodynamic sampling production run. It is a good idea to name this final "snapshot" so
+                        that it is easily identified (i.e. rename to waterbox_pro.xyz). A copy of the key file used for the dynamics run should be created and named similar to the structure file.
+                        The final preparation step is to add in the keywords necessary to do the solvation free energy calculation to the key file. An example of the edited key file can be seen
+                        below.
+                    </p>
+                    <source>
+                        forcefield amoeba-water-2003
+                        a-axis     28.0
+                        spacegroup P1
+
+                        vdw-cutoff 12.0
+
+                        vdw-lambdaterm true
+                        elec-lambdaterm true
+                    </source>
+                    <p>
+                        Here, the only differences are the addition of the lambdaterm keywords that specify which forces will be scaled throughout the simulation. For this solvation example
+                        both the van der Waals (vdw-lambdaterm) and the electrostatics (ele-lambdaterm) will be scaled by our state variable lambda. Now we can run the thermodynamic sampling
+                        algorithm to calculate the solvation free energy for our specified set of atoms. An example Thermodynamics command as well as a table describing the flag set used is 
+                        shown below. 
+                    </p>
+                    <source>ffxc Thermodynamics -Dplatform=OMM --mc --mcMD 50 -i RESPA -n 10000000 -Q 0 --bM 0.001 --tp 4.0 --s1 1 --f1 3 -d 1.0 -w 10.0 -k 10.0</source>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>-Dplatform=OMM</td>
+                                <td>Specifies that we will be using the OpenMM software to calculate our molecular dynamics trajectories on the GPU</td>
+                            </tr>
+                            <tr>
+                                <td>--mc</td>
+                                <td>Specifies that we will be using the Monte Carlo style sampling along with OSRW</td>
+                            </tr>
+                            <tr>
+                                <td>--mcMD 50</td>
+                                <td>Specifies the number of molecular dynamics steps that will be taken for each Monte Carlo move</td>
+                            </tr>
+                            <tr>
+                                <td>-i RESPA</td>
+                                <td>Specifies that we will be using the RESPA integrator for our simulation</td>
+                            </tr>
+                            <tr>
+                                <td>-n 10000000</td>
+                                <td>Specifies the number of time steps to run for the simulation</td>
+                            </tr>
+                            <tr>
+                                <td>-Q 0</td>
+                                <td>Specifies the number of equilibration steps to be taken prior to MC-OSRW sampling</td>
+                            </tr>
+                            <tr>
+                                <td>--bM 0.001</td>
+                                <td>Specifies the OSWR Gaussian bias magnitude (in kcal/mol) that the simulation will start out with</td>
+                            </tr>
+                            <tr>
+                                <td>--tp 4.0</td>
+                                <td>Specifies the rate of decay or "tempering" of the OSRW Gaussian bias in multiples of kBT</td>
+                            </tr>
+                            <tr>
+                                <td>--s1 1</td>
+                                <td>Specifies the start of our range of atoms to be softcored</td>
+                            </tr>
+                            <tr>
+                                <td>--f1 3</td>
+                                <td>Specifies the end of our range of atoms to be softcored</td>
+                            </tr>
+                            <tr>
+                                <td>-d 1.0</td>
+                                <td>Specifies the time step (in femto seconds) used in the simulation</td>
+                            </tr>
+                            <tr>
+                                <td>-k 10.0</td>
+                                <td>Specifies the amount of time (in picoseconds) between restart file write out</td>
+                            </tr>
+                            <tr>
+                                <td>-w 10.0</td>
+                                <td>Specifies the amount of time (in picoseconds) between coordinate file write out</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        Typically, these simulations take between 10 and 20 nanoseconds of simulation time to converge. The parameters above are specified to run for 10 nanoseconds. The 
+                        output for these simulations is a series of steps that are tried using the Metropolis Monte Carlo Criterion to accept or reject the moves. A typical sample of output
+                        is shown below.
+                    </p>
+                    <source>
+                        MC Orthogonal Space Sampling Round 199988
+ 
+                        Running MD at proposed lambda=0.311.
+ 
+                        Time      Kinetic    Potential        Total     Temp      CPU
+                        psec     kcal/mol     kcal/mol     kcal/mol        K      sec
+                        1961.4238   -6620.3482   -4658.9245   298.15
+                        2.500e-02    1978.8679   -6638.0550   -4659.1871   300.80     0.08
+ 
+                        Kinetic    Potential         Bias        Total
+                        Current     1961.4238   -6620.0355      -2.4714   -4661.0832
+                        Proposed    1978.8679   -6638.0549      -2.3617   -4661.5487
+                        Delta         17.4442     -18.0194       0.1097      -0.4655
+ 
+                        Accept [ L=0.317, FL=  53.082, E=  -6622.5069]
+                        -> [ L=0.311, FL=  51.027, E=  -6640.4166] ( 68.7%)
+                        Round complete in  0.198 sec.
+                    </source>
+                    <p>
+                        The output reports the sampling round that is being processed, the proposed lambda value for this move, the energy and temperature of the system post lambda move but 
+                        prior to the dynamics trajectory, the energy and temperature of the system post dynamics trajectory as well as the time required to process the trajectory, the inital
+                        energy of the system (before any lambda or dyanmics moves) broken down into its components, the proposed energy of the system (after botht the lambda and the dynamics
+                        moves) broken down into its components, the outcome of the Metropolis Monte Carlo Criterion (either Accept or Reject) along with the acceptance percentage of the move
+                        and finally the time it took to process the entire round of the MC-OSRW sampling. The output also reports a detailed breakdown of the sampling that has occured over the
+                        lambda path throughout the simulation and records it in the .his (histogram file). An example output of the histogram file can be seen below.
+                    </p>
+                    <source>
+                        Weight   Lambda      dU/dL Bins &lt;dU/dL&gt;    g(L)  f(L,&lt;dU/dL&gt;) Bias    dG(L) Bias+dG(L)
+                        3.02e+02 0.00125    -1.0     1.0     0.00    -0.00     6.17     6.17     0.00       6.17
+                        6.27e+02 0.00500    -1.0     1.0     0.00    -0.00     6.17     6.17     0.00       6.17
+                        6.31e+02 0.01000    -1.0     1.0     0.00    -0.00     6.17     6.17     0.00       6.17
+                        5.95e+02 0.01500    -1.0     1.0     0.00    -0.00     6.16     6.16     0.00       6.16
+                        6.32e+02 0.02000    -1.0     1.0     0.00    -0.00     6.16     6.16     0.00       6.16
+                        6.25e+02 0.02500    -1.0     1.0     0.00    -0.00     6.17     6.17     0.00       6.17
+                        5.78e+02 0.03000    -1.0     1.0     0.00    -0.00     6.19     6.19     0.00       6.19
+                        6.65e+02 0.03500    -1.0     1.0     0.00    -0.00     6.21     6.21     0.00       6.21
+                        6.28e+02 0.04000    -1.0     1.0     0.00    -0.00     6.22     6.22     0.00       6.22
+                        6.06e+02 0.04500    -1.0     1.0     0.00    -0.00     6.21     6.21     0.00       6.21
+                        6.32e+02 0.05000    -1.0     3.0     0.59    -0.00     6.18     6.18     0.00       6.18
+                        6.33e+02 0.05500    -1.0     3.0     0.73    -0.00     6.18     6.18     0.01       6.19
+                        .        .           .       .       .        .        .        .        .          .
+                        .        .           .       .       .        .        .        .        .          .
+                        .        .           .       .       .        .        .        .        .          .
+                        3.33e+03 0.97000   -99.0     1.0   -47.24     4.13     5.55     9.68    -4.25       5.43
+                        3.33e+03 0.97500   -93.0    -1.0   -48.57     4.37     5.57     9.94    -4.49       5.45
+                        3.40e+03 0.98000   -93.0     1.0   -49.94     4.62     5.58    10.20    -4.74       5.46
+                        3.34e+03 0.98500   -97.0    -3.0   -51.34     4.87     5.59    10.45    -5.00       5.46
+                        3.26e+03 0.99000  -101.0    -1.0   -52.77     5.13     5.60    10.73    -5.26       5.47
+                        3.46e+03 0.99500   -99.0    -5.0   -53.95     5.40     5.63    11.03    -5.53       5.50
+                        1.71e+03 0.99875   -97.0    -5.0   -54.40     5.60     5.64    11.24    -5.67       5.57
+                        The free energy is      -5.6658 kcal/mol (Total Weight: 4.16e+05, Tempering: 0.1099, Counts:       397925).
+                    </source>
+                    <p>
+                        This section displays a summary of the orthogonal space histogram, which contains all information necessary
+                        to compute free energy differences.
+                    </p>
+                    <ul>
+                        <li>
+                            <i>Weight</i> is the integral of the bias added over all dU/dL bins at a fixed lambda.</li>
+                        <li>
+                            <i>Lambda</i> displays the mean lambda value for each lambda bin.</li>
+                        <li>
+                            <i>dU/dL Bins</i> display the min/max of the instantaneous dU/dL sampled for each lambda bin.</li>
+                        <li>
+                            <i>&lt;dU/dL&gt;</i> gives the thermodynamic average of dU/dL (i.e. the force used during thermodynamic integration).</li>
+                        <li>
+                            <i>g(L)</i> is the 1D bias orthogonal space bias for a given lambda.</li>
+                        <li>
+                            <i>f(L,&lt;dU/dL&gt;)</i> is the 2D bias evaluated at (lambda, &lt;dU/dL&gt;).</li>
+                        <li>
+                            <i>Bias</i> is the sum of the 1D and 2D bias columns.</li>
+                        <li>
+                            <i>dG(L)</i> is the free energy difference from L=0 to the current lambda bin.</li>
+                        <li>
+                            <i>Bias+dG(L)</i> is the sum of the Bias and dG(L) for the current lambda bin.</li>
+                    </ul>
+                    <p>
+                        As a simulation converges, the sum <i>Bias+dG(L)</i> approaches a constant and a random walk along lambda results. The final line of the output from above
+                        reports the calculated free energy change for the simulation, the total weight (number of samples) recorded at that point in the simulation, the fraction 
+                        of the OSRW Guassian bias that remains at that point of the simulation and the number of counts (rounds) that have elapsed. Typically, the solvation free
+                        energy for a single water molecule in a water box ranges from 5.6 to 5.8 kcal/mol for well converged simulations.
+                    </p>
+                </subsection>
+            </section>
+        </body>
+    </document> 
+</root>

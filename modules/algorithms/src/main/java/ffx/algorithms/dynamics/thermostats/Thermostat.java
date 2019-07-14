@@ -37,6 +37,8 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +47,7 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
+import ffx.numerics.Constraint;
 
 /**
  * The abstract Thermostat class implements methods common to all thermostats
@@ -158,6 +161,14 @@ public abstract class Thermostat {
      * Reduce logging.
      */
     private boolean quiet = false;
+    /**
+     * Any geometric constraints to apply during integration.
+     */
+    protected List<Constraint> constraints;
+    /**
+     * Number of degrees of freedom removed by constraints.
+     */
+    private int constrainedDoF;
 
     /**
      * <p>
@@ -172,6 +183,11 @@ public abstract class Thermostat {
      */
     public Thermostat(int n, double[] x, double[] v, double[] mass,
                       VARIABLE_TYPE[] type, double targetTemperature) {
+        this(n, x, v, mass, type, targetTemperature, new ArrayList<>());
+    }
+
+    public Thermostat(int n, double[] x, double[] v, double[] mass,
+                      VARIABLE_TYPE[] type, double targetTemperature, List<Constraint> constraints) {
         assert (n > 3);
 
         this.nVariables = n;
@@ -186,9 +202,16 @@ public abstract class Thermostat {
         random = new Random();
         setTargetTemperature(targetTemperature);
 
+        this.constraints = new ArrayList<>(constraints);
+        // Not every type of constraint constrains just one DoF.
+        // SETTLE constraints, for example, constrain three.
+        constrainedDoF = constraints.stream().
+                mapToInt(Constraint::getNumDegreesFrozen).
+                sum();
+
         // Set the degrees of freedom to nVariables - 3 because we will remove center of mass motion.
         removeCenterOfMassMotion = true;
-        dof = nVariables - 3;
+        dof = nVariables - 3 - constrainedDoF;
 
         // Update the kinetic energy.
         kineticEnergy();
@@ -229,9 +252,9 @@ public abstract class Thermostat {
     public void setRemoveCenterOfMassMotion(boolean remove) {
         removeCenterOfMassMotion = remove;
         if (removeCenterOfMassMotion) {
-            dof = nVariables - 3;
+            dof = nVariables - 3 - constrainedDoF;
         } else {
-            dof = nVariables;
+            dof = nVariables - constrainedDoF;
         }
     }
 

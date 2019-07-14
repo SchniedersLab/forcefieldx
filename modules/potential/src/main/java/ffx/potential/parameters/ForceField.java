@@ -117,6 +117,8 @@ public class ForceField {
         VDW_SCHEDULE,
         GK_RADIIOVERRIDE,
         PLATFORM,
+        CONSTRAIN,
+        RATTLE, // Synonymous with CONSTRAIN, except we likely won't use RATTLE.
         /* Only meaningful for OpenMM; Java is always double-precision */
         PRECISION
     }
@@ -287,6 +289,15 @@ public class ForceField {
         UREYBRAD,
         VDW,
         RELATIVESOLV
+    }
+
+    /**
+     * Enumerates the types of constraints that can be applied.
+     */
+    public enum ConstraintTypes {
+        BOND, // Constrain a Bond.
+        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
+        // TODO: Support dihedral constraints, lone angle constraints, etc.
     }
 
     /**
