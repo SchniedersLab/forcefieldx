@@ -1,6 +1,19 @@
 
 forcefield opls-aa
 
+vdwindex                TYPE
+vdwtype                 LENNARD-JONES
+radiusrule              GEOMETRIC
+radiustype              SIGMA
+radiussize              DIAMETER
+epsilonrule             GEOMETRIC
+torsionunit             0.5
+imptorunit              0.5
+vdw-14-scale            2.0
+chg-14-scale            2.0
+electric                332.06
+dielectric              1.0
+
 atom  500  500  O  "ACT"  8  15.999  1
 atom  501  501  N  "ACT"  7  14.007  3
 atom  502  502  C  "ACT"  6  12.011  3

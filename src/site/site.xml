@@ -131,6 +131,8 @@
                <item name="Side-Chain Optimization and Mutation via Many-Body DEE" href="/examples-dee.html"/>
                <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html" />
                <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html" />
+               <item name="Thermodynamic Polymorph Search" href="/examples-CrystalNPT.html" />
+               <item name="GPU Accelerated MC-OSRW Solvation Free Energy" href="/examples-mcOSRWSolvationFreeEnergy.html" />
             </item>
             <item name="Parallelization" href="/parallel.html"/>
             <item name="License" href="/licenses.html"/>

@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import static java.lang.Integer.parseInt;
 
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -105,16 +106,19 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * @param inputClasses The atom classes will be re-ordered if its member
      *                     atoms match this ImproperTorsionType. The trigonal atom will not change
      *                     position.
+     * @param allowInitialWildCards Allow wildcard match to first two classes.
+     * @param allowFinalWildCard Allow wildcard match for final class.
+     *
      * @return True if this torsionType is assignable to the atom array.
      */
-    public boolean assigned(int[] inputClasses) {
+    public boolean assigned(int[] inputClasses, boolean allowInitialWildCards, boolean allowFinalWildCard) {
         // Assign the trigonal atom.
         if (inputClasses[2] != atomClasses[2]) {
             return false;
         }
 
         // Assign the final atom.
-        if (inputClasses[3] == atomClasses[3] || atomClasses[3] == 0) {
+        if (inputClasses[3] == atomClasses[3] || (atomClasses[3] == 0 && allowFinalWildCard)) {
             // do nothing.
         } else if (inputClasses[1] == atomClasses[3]) {
             int temp = inputClasses[3];
@@ -129,7 +133,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         }
 
         // Assign the second atom.
-        if (inputClasses[1] == atomClasses[1] || atomClasses[1] == 0) {
+        if (inputClasses[1] == atomClasses[1] || (atomClasses[1] == 0 && allowInitialWildCards)) {
             // Do nothing.
         } else if (inputClasses[0] == atomClasses[1]) {
             int temp = inputClasses[1];
@@ -140,7 +144,20 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         }
 
         // Assign the first atom.
-        return (inputClasses[0] == atomClasses[0] || atomClasses[0] == 0);
+        return (inputClasses[0] == atomClasses[0] || (atomClasses[0] == 0 && allowInitialWildCards));
+    }
+
+    /**
+     * Check if this Improper Torsion Type is defined by 1 or more atom classes equal to zero.
+     *
+     * @return True if there are no zero "wildcard" atom classes for this type.
+     */
+    public boolean noZeroClasses() {
+        if (atomClasses[0] != 0 && atomClasses[1] != 0 && atomClasses[3] != 0) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -261,8 +278,8 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         int[] c2 = new int[4];
 
         for (int i = 0; i < 4; i++) {
-            c1[i] = Integer.parseInt(keys1[i]);
-            c2[i] = Integer.parseInt(keys2[i]);
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
         }
 
         if (c1[2] < c2[2]) {

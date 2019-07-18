@@ -37,11 +37,12 @@
 //******************************************************************************
 package ffx.potential.groovy
 
+import ffx.potential.cli.SaveOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
-
+import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -54,6 +55,9 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = " Expand the system to P1 and then save it.", name = "ffxc SaveAsP1")
 class SaveAsP1 extends PotentialScript {
+
+    @CommandLine.Mixin
+    SaveOptions saveOptions
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -98,6 +102,7 @@ class SaveAsP1 extends PotentialScript {
         String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
         File saveLocation = new File(dirName + fileName)
 
+        saveOptions.preSaveOperations(activeAssembly);
         potentialFunctions.saveAsP1(activeAssembly, saveLocation)
 
         return this

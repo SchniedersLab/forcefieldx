@@ -74,21 +74,10 @@ public class Angle extends BondedTerm {
     private static final Logger logger = Logger.getLogger(Angle.class.getName());
 
     /**
-     * Angle modes include Normal or IN-Plane
-     */
-    public enum AngleMode {
-
-        NORMAL, IN_PLANE
-    }
-
-    /**
      * Force field parameters to compute the angle bending energy.
      */
     public AngleType angleType;
-    /**
-     * AngleMode for this angle.
-     */
-    private AngleMode angleMode = AngleMode.NORMAL;
+
     /**
      * Number of hydrogens on the central atom that are not part of this Angle.
      */
@@ -149,6 +138,9 @@ public class Angle extends BondedTerm {
         String key = AngleType.sortKey(c);
         AngleType angleType = forceField.getAngleType(key);
         if (angleType == null) {
+
+
+
             logger.severe("No AngleType for key: " + key);
             return null;
         }
@@ -158,13 +150,14 @@ public class Angle extends BondedTerm {
 
     /**
      * <p>
-     * Setter for the field <code>angleMode</code>.</p>
+     * Setter for the field <code>InPlaneAtom</code>.</p>
      *
-     * @param mode a {@link ffx.potential.bonded.Angle.AngleMode} object.
-     * @param a4   a {@link ffx.potential.bonded.Atom} object.
+     * @param a4 a {@link ffx.potential.bonded.Atom} object.
      */
-    void setAngleMode(AngleMode mode, Atom a4) {
-        angleMode = mode;
+    void setInPlaneAtom(Atom a4) {
+        if (angleType.angleMode != AngleType.AngleMode.IN_PLANE) {
+            logger.severe(" Attempted to set fourth atom for a normal angle.");
+        }
         atom4 = a4;
     }
 
@@ -245,17 +238,17 @@ public class Angle extends BondedTerm {
      *
      * @return a {@link ffx.potential.bonded.Atom} object.
      */
-    Atom getCentralAtom() {
+    public Atom getCentralAtom() {
         return atoms[1];
     }
 
     /**
      * <p>Getter for the field <code>angleMode</code>.</p>
      *
-     * @return a {@link ffx.potential.bonded.Angle.AngleMode} object.
+     * @return a {@link ffx.potential.parameters.AngleType.AngleMode} object.
      */
-    public AngleMode getAngleMode() {
-        return angleMode;
+    public AngleType.AngleMode getAngleMode() {
+        return angleType.angleMode;
     }
 
     /**
@@ -324,7 +317,7 @@ public class Angle extends BondedTerm {
      * Log details for this Angle energy term.
      */
     public void log() {
-        switch (angleMode) {
+        switch (angleType.angleMode) {
             case NORMAL:
                 logger.info(format(
                         " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
@@ -375,7 +368,7 @@ public class Angle extends BondedTerm {
 
         switch (angleType.angleFunction) {
             case SEXTIC:
-                switch (angleMode) {
+                switch (angleType.angleMode) {
                     case NORMAL:
                         diff(a0, a1, v10);
                         diff(a2, a1, v12);
@@ -518,7 +511,7 @@ public class Angle extends BondedTerm {
                 break;
             case HARMONIC:
             default:
-                switch (angleMode) {
+                switch (angleType.angleMode) {
                     case NORMAL:
                         diff(a0, a1, v10);
                         diff(a2, a1, v12);

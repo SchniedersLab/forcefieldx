@@ -70,16 +70,14 @@ public class DynamicsNVTTest extends PJDependentTest {
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsNVTTest.class.getName());
-
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {
                         "Water Box NVT", // info
                         "ffx/algorithms/structures/waterbox_eq.xyz", // filename
-                        299.77,             // Starting temperature.
-                        -25260.0499         // Final total energy.
+                        296.19,             // Starting temperature.
+                        -24951.7426         // Final total energy.
                 }
         });
     }

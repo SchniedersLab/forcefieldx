@@ -40,7 +40,6 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -62,6 +61,14 @@ public final class AngleType extends BaseType implements Comparator<String> {
     public enum AngleFunction {
 
         HARMONIC, SEXTIC
+    }
+
+    /**
+     * Angle modes include Normal or In-Plane
+     */
+    public enum AngleMode {
+
+        NORMAL, IN_PLANE
     }
 
     /**
@@ -101,10 +108,14 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * The angle function in use.
      */
     public final AngleFunction angleFunction;
+    /**
+     * The angle mode in use.
+     */
+    public AngleMode angleMode;
 
     /**
      * <p>
-     * Constructor for AngleType.</p>
+     * Constructor for normal AngleType.</p>
      *
      * @param atomClasses   an array of int.
      * @param forceConstant a double.
@@ -117,7 +128,28 @@ public final class AngleType extends BaseType implements Comparator<String> {
         this.forceConstant = forceConstant;
         this.angle = angle;
         this.angleFunction = angleFunction;
+        this.angleMode = AngleMode.NORMAL;
     }
+
+    /**
+     * <p>
+     * Constructor for In-Plane AngleType.</p>
+     *
+     * @param atomClasses   an array of int.
+     * @param forceConstant a double.
+     * @param angle         an array of double.
+     * @param angleFunction the AngleFunction to apply.
+     */
+    public AngleType(int[] atomClasses, double forceConstant, double[] angle,
+                     AngleFunction angleFunction, AngleMode angleMode) {
+        super(ForceFieldType.ANGLEP, sortKey(atomClasses));
+        this.atomClasses = atomClasses;
+        this.forceConstant = forceConstant;
+        this.angle = angle;
+        this.angleFunction = angleFunction;
+        this.angleMode = angleMode;
+    }
+
 
     /**
      * <p>
@@ -223,9 +255,16 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        StringBuilder angleString = new StringBuilder(format(
-                "angle  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1],
-                atomClasses[2], forceConstant));
+        StringBuilder angleString;
+        if (angleMode == AngleMode.NORMAL) {
+            angleString = new StringBuilder(format(
+                    "angle  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1],
+                    atomClasses[2], forceConstant));
+        } else {
+            angleString = new StringBuilder(format(
+                    "anglep  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1],
+                    atomClasses[2], forceConstant));
+        }
         for (double eq : angle) {
             angleString.append(format("  %6.2f", eq));
         }

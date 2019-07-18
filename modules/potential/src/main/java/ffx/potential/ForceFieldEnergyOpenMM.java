@@ -1118,7 +1118,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         /**
          * Constraint tolerance as a fraction of the constrained bond length.
          */
-        private double constraintTolerance = 1e-4;
+        private double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
 
         OpenMMContext(ForceField forceField, Platform requestedPlatform) {
             loadPlatform(requestedPlatform);
@@ -1752,7 +1752,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         private double nonSoftcoreAMOEBAvdWStart = 0.5;
         /**
-         * The lambda value that defines when softcore AMOEBA vdW will finish om and begin turning off for alchemical atoms.
+         * The lambda value that defines when softcore AMOEBA vdW will finish on and begin turning off for alchemical atoms.
          * These must be turned off because they do not include hydrogen reduction factors.
          * <p>
          * If this value is set to 1.0, softcored AMOEBA vdw will not be turned off.
@@ -2211,7 +2211,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             List<Angle> normalAngles = new ArrayList<>();
             // Sort all normal angles from in-plane angles
             for (int i = 0; i < nAngles; i++) {
-                if (angles[i].getAngleMode() == Angle.AngleMode.NORMAL) {
+                if (angles[i].getAngleMode() == AngleType.AngleMode.NORMAL) {
                     normalAngles.add(angles[i]);
                 }
             }
@@ -2263,7 +2263,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             List<Angle> inPlaneAngles = new ArrayList<>();
             //Sort all in-plane angles from normal angles
             for (int i = 0; i < nAngles; i++) {
-                if (angles[i].getAngleMode() == Angle.AngleMode.IN_PLANE) {
+                if (angles[i].getAngleMode() == AngleType.AngleMode.IN_PLANE) {
                     inPlaneAngles.add(angles[i]);
                 }
             }

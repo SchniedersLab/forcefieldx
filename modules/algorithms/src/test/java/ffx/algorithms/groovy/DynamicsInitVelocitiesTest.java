@@ -71,8 +71,6 @@ public class DynamicsInitVelocitiesTest extends PJDependentTest {
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsInitVelocitiesTest.class.getName());
-
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{

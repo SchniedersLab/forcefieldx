@@ -37,12 +37,15 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.thermostats;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
 
 /**
@@ -84,7 +87,13 @@ public class Bussi extends Thermostat {
     public Bussi(int n, double[] x, double[] v, double[] mass,
                  VARIABLE_TYPE[] type, double targetTemperature,
                  double tau) {
-        super(n, x, v, mass, type, targetTemperature);
+        this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
+    }
+
+    public Bussi(int n, double[] x, double[] v, double[] mass,
+                 VARIABLE_TYPE[] type, double targetTemperature,
+                 double tau, List<Constraint> constraints) {
+        super(n, x, v, mass, type, targetTemperature, constraints);
         this.name = ThermostatEnum.BUSSI;
         this.tau = tau;
         this.bussiRandom = new Random();

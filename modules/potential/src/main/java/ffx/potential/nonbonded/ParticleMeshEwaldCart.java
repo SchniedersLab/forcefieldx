@@ -45,6 +45,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 
+import org.forester.io.writers.PhylogenyWriter;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -93,7 +94,6 @@ import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
 import static ffx.numerics.special.Erf.erfc;
-import static ffx.potential.parameters.MultipoleType.ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -627,7 +627,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
     public ParticleMeshEwaldCart(Atom[] atoms, int[] molecule, ForceField forceField,
-                                 Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
+                                 Crystal crystal, NeighborList neighborList,
+                                 ELEC_FORM elecForm, ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.molecule = molecule;
         this.forceField = forceField;
@@ -641,6 +642,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         maxThreads = parallelTeam.getThreadCount();
 
+        electric = forceField.getDouble(ForceFieldDouble.ELECTRIC, 332.063709);
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-5);
         if (elecForm == ELEC_FORM.PAM) {
@@ -649,11 +651,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
             m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 0.8);
         } else {
-            double mpole14 = 0.5;
-            String name = forceField.toString().toUpperCase();
-            if (name.contains("AMBER")) {
-                mpole14 = 1.0 / 1.2;
-            }
+            double mpole14 = forceField.getDouble(ForceFieldDouble.CHG_14_SCALE,  2.0);
+            mpole14 = 1.0 / mpole14;
             m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
             m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
             m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, mpole14);
@@ -669,7 +668,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         useDipoles = forceField.getBoolean(ForceFieldBoolean.USE_DIPOLES, true);
         useQuadrupoles = forceField.getBoolean(ForceFieldBoolean.USE_QUADRUPOLES, true);
         rotateMultipoles = forceField.getBoolean(ForceFieldBoolean.ROTATE_MULTIPOLES, true);
-        //lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
         // If PME-specific lambda term not set, default to force field-wide lambda term.
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
 
@@ -678,10 +676,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         } else {
             off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, APERIODIC_DEFAULT_EWALD_CUTOFF);
         }
-
-        // double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
-        //aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
-
         aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, 0.545);
         setEwaldParameters(off, aewald);
 
@@ -3546,8 +3540,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
                 polarizationEnergy += ei;
             }
-            permanentEnergy *= ELECTRIC;
-            polarizationEnergy *= ELECTRIC;
+            permanentEnergy *= electric;
+            polarizationEnergy *= electric;
         }
 
         /**
@@ -3733,8 +3727,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             public void finish() {
                 sharedInteractions.addAndGet(count);
                 if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(dUdL * ELECTRIC);
-                    sharedd2EdLambda2.addAndGet(d2UdL2 * ELECTRIC);
+                    shareddEdLambda.addAndGet(dUdL * electric);
+                    sharedd2EdLambda2.addAndGet(d2UdL2 * electric);
                 }
                 realSpaceEnergyTime[getThreadIndex()] += System.nanoTime();
             }
@@ -4204,7 +4198,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         ttm3y -= scale1 * ttm3ry;
                         ttm3z -= scale1 * ttm3rz;
                     }
-                    double prefactor = ELECTRIC * selfScale * l2;
+                    double prefactor = electric * selfScale * l2;
                     gX[i] += prefactor * ftm2x;
                     gY[i] += prefactor * ftm2y;
                     gZ[i] += prefactor * ftm2z;
@@ -4220,7 +4214,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
                     // This is dU/dL/dX for the first term of dU/dL: d[dlPow * ereal]/dx
                     if (lambdaTerm && soft) {
-                        prefactor = ELECTRIC * selfScale * dEdLSign * dlPowPerm;
+                        prefactor = electric * selfScale * dEdLSign * dlPowPerm;
                         lgX[i] += prefactor * ftm2x;
                         lgY[i] += prefactor * ftm2y;
                         lgZ[i] += prefactor * ftm2z;
@@ -4333,7 +4327,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     }
 
                     // Add in dU/dL/dX for the second term of dU/dL: d[lPow*dlAlpha*dRealdL]/dX
-                    double prefactor = ELECTRIC * selfScale * l2 * dlAlpha;
+                    double prefactor = electric * selfScale * l2 * dlAlpha;
                     lgX[i] += prefactor * ftm2x;
                     lgY[i] += prefactor * ftm2y;
                     lgZ[i] += prefactor * ftm2z;
@@ -4577,7 +4571,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 ttm3ix = ttm3ix - ttm3rix;
                 ttm3iy = ttm3iy - ttm3riy;
                 ttm3iz = ttm3iz - ttm3riz;
-                double scalar = ELECTRIC * polarizationScale * selfScale;
+                double scalar = electric * polarizationScale * selfScale;
                 gX[i] += scalar * ftm2ix;
                 gY[i] += scalar * ftm2iy;
                 gZ[i] += scalar * ftm2iz;
@@ -4593,7 +4587,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 if (lambdaTerm) {
                     dUdL += dEdLSign * dlPowPol * e;
                     d2UdL2 += dEdLSign * d2lPowPol * e;
-                    scalar = ELECTRIC * dEdLSign * dlPowPol * selfScale;
+                    scalar = electric * dEdLSign * dlPowPol * selfScale;
                     lgX[i] += scalar * ftm2ix;
                     lgY[i] += scalar * ftm2iy;
                     lgZ[i] += scalar * ftm2iz;
@@ -4614,9 +4608,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     private class ReciprocalEnergyRegion extends ParallelRegion {
 
-        private final double aewald1 = -ELECTRIC * aewald / SQRT_PI;
+        private final double aewald1 = -electric * aewald / SQRT_PI;
         private final double aewald2 = 2.0 * aewald * aewald;
-        private final double aewald3 = -2.0 / 3.0 * ELECTRIC * aewald * aewald * aewald / SQRT_PI;
+        private final double aewald3 = -2.0 / 3.0 * electric * aewald * aewald * aewald / SQRT_PI;
         private final double aewald4 = -2.0 * aewald3;
         private final double twoThirds = 2.0 / 3.0;
         private double nfftX, nfftY, nfftZ;
@@ -4815,22 +4809,22 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             tqz -= twoThirds * (mpole[t200] * phi[t110] + mpole[t110] * phi[t020] + mpole[t101] * phi[t011]
                                     - mpole[t110] * phi[t200] - mpole[t020] * phi[t110] - mpole[t011] * phi[t101]);
                             if (gradient) {
-                                gX[i] += permanentScale * ELECTRIC * dfx;
-                                gY[i] += permanentScale * ELECTRIC * dfy;
-                                gZ[i] += permanentScale * ELECTRIC * dfz;
-                                tX[i] += permanentScale * ELECTRIC * tqx;
-                                tY[i] += permanentScale * ELECTRIC * tqy;
-                                tZ[i] += permanentScale * ELECTRIC * tqz;
+                                gX[i] += permanentScale * electric * dfx;
+                                gY[i] += permanentScale * electric * dfy;
+                                gZ[i] += permanentScale * electric * dfz;
+                                tX[i] += permanentScale * electric * tqx;
+                                tY[i] += permanentScale * electric * tqy;
+                                tZ[i] += permanentScale * electric * tqz;
                             }
                             if (lambdaTerm) {
                                 dUdL += dEdLSign * dlPowPerm * e;
                                 d2UdL2 += dEdLSign * d2lPowPerm * e;
-                                lgX[i] += dEdLSign * dlPowPerm * ELECTRIC * dfx;
-                                lgY[i] += dEdLSign * dlPowPerm * ELECTRIC * dfy;
-                                lgZ[i] += dEdLSign * dlPowPerm * ELECTRIC * dfz;
-                                ltX[i] += dEdLSign * dlPowPerm * ELECTRIC * tqx;
-                                ltY[i] += dEdLSign * dlPowPerm * ELECTRIC * tqy;
-                                ltZ[i] += dEdLSign * dlPowPerm * ELECTRIC * tqz;
+                                lgX[i] += dEdLSign * dlPowPerm * electric * dfx;
+                                lgY[i] += dEdLSign * dlPowPerm * electric * dfy;
+                                lgZ[i] += dEdLSign * dlPowPerm * electric * dfz;
+                                ltX[i] += dEdLSign * dlPowPerm * electric * tqx;
+                                ltY[i] += dEdLSign * dlPowPerm * electric * tqy;
+                                ltZ[i] += dEdLSign * dlPowPerm * electric * tqz;
                             }
                         }
 
@@ -4838,15 +4832,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
 
                 if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(0.5 * dUdL * ELECTRIC);
-                    sharedd2EdLambda2.addAndGet(0.5 * d2UdL2 * ELECTRIC);
+                    shareddEdLambda.addAndGet(0.5 * dUdL * electric);
+                    sharedd2EdLambda2.addAndGet(0.5 * d2UdL2 * electric);
                 }
             }
 
             @Override
             public void finish() {
                 eSelf *= permanentScale;
-                eRecip *= permanentScale * 0.5 * ELECTRIC;
+                eRecip *= permanentScale * 0.5 * electric;
             }
         }
 
@@ -4975,9 +4969,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             double dfx = recip[0][0] * gx + recip[0][1] * gy + recip[0][2] * gz;
                             double dfy = recip[1][0] * gx + recip[1][1] * gy + recip[1][2] * gz;
                             double dfz = recip[2][0] * gx + recip[2][1] * gy + recip[2][2] * gz;
-                            dfx *= 0.5 * ELECTRIC;
-                            dfy *= 0.5 * ELECTRIC;
-                            dfz *= 0.5 * ELECTRIC;
+                            dfx *= 0.5 * electric;
+                            dfy *= 0.5 * electric;
+                            dfz *= 0.5 * electric;
                             // Compute dipole torques
                             double tqx = -mpolei[t010] * sPhi[t001] + mpolei[t001] * sPhi[t010];
                             double tqy = -mpolei[t001] * sPhi[t100] + mpolei[t100] * sPhi[t001];
@@ -4986,9 +4980,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             tqx -= twoThirds * (mpolei[t110] * sPhi[t101] + mpolei[t020] * sPhi[t011] + mpolei[t011] * sPhi[t002] - mpolei[t101] * sPhi[t110] - mpolei[t011] * sPhi[t020] - mpolei[t002] * sPhi[t011]);
                             tqy -= twoThirds * (mpolei[t101] * sPhi[t200] + mpolei[t011] * sPhi[t110] + mpolei[t002] * sPhi[t101] - mpolei[t200] * sPhi[t101] - mpolei[t110] * sPhi[t011] - mpolei[t101] * sPhi[t002]);
                             tqz -= twoThirds * (mpolei[t200] * sPhi[t110] + mpolei[t110] * sPhi[t020] + mpolei[t101] * sPhi[t011] - mpolei[t110] * sPhi[t200] - mpolei[t020] * sPhi[t110] - mpolei[t011] * sPhi[t101]);
-                            tqx *= ELECTRIC;
-                            tqy *= ELECTRIC;
-                            tqz *= ELECTRIC;
+                            tqx *= electric;
+                            tqy *= electric;
+                            tqz *= electric;
                             gX[i] += polarizationScale * dfx;
                             gY[i] += polarizationScale * dfy;
                             gZ[i] += polarizationScale * dfz;
@@ -5006,7 +5000,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         }
                     }
                 }
-                eRecip *= 0.5 * ELECTRIC;
+                eRecip *= 0.5 * electric;
                 if (lambdaTerm) {
                     shareddEdLambda.addAndGet(dEdLSign * dlPowPol * eRecip);
                     sharedd2EdLambda2.addAndGet(dEdLSign * d2lPowPol * eRecip);

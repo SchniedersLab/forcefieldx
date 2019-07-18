@@ -37,6 +37,9 @@
 //******************************************************************************
 package ffx.numerics;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * The Potential interface defines methods required by an optimizer or molecular
  * dynamics.
@@ -282,4 +285,13 @@ public interface Potential {
         return true;
     }
 
+    /**
+     * Returns the list of Constraints associated with this Potential. The default
+     * implementation returns an empty list. TODO: Implement for all Potentials.
+     *
+     * @return All Constraints.
+     */
+    default List<Constraint> getConstraints() {
+        return Collections.emptyList();
+    }
 }

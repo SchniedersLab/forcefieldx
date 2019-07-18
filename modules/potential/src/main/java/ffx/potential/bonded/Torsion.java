@@ -82,7 +82,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      */
     public TorsionType torsionType = null;
     /**
-     * Unit coversion.
+     * Unit conversion.
      */
     public double units = 0.5;
 
@@ -112,46 +112,41 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      * @param forceField the ForceField parameters to apply.
      * @return a new Torsion, or null.
      */
-    public static Torsion torsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {
+    static Torsion torsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {
         Atom atom1 = middleBond.getAtom(0);
         Atom atom2 = middleBond.getAtom(1);
-        int c[] = new int[4];
-        c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-        c[1] = atom1.getAtomType().atomClass;
-        c[2] = atom2.getAtomType().atomClass;
-        c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-        String key = TorsionType.sortKey(c);
-        TorsionType torsionType = forceField.getTorsionType(key);
+
+        int c0 = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
+        int c1 = atom1.getAtomType().atomClass;
+        int c2 = atom2.getAtomType().atomClass;
+        int c3 = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
+
+        TorsionType torsionType = getTorsionType(c0, c1, c2, c3, forceField);
+
+        // Single wild card.
         if (torsionType == null) {
-            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = 0;
-            key = TorsionType.sortKey(c);
-            torsionType = forceField.getTorsionType(key);
+            if (c0 > c3) {
+                torsionType = getTorsionType(c0, c1, c2, 0, forceField);
+                if (torsionType == null) {
+                    torsionType = getTorsionType(0, c1, c2, c3, forceField);
+                }
+            } else {
+                torsionType = getTorsionType(0, c1, c2, c3, forceField);
+                if (torsionType == null) {
+                    torsionType = getTorsionType(c0, c1, c2, 0, forceField);
+                }
+            }
         }
+
+        // Double wild card.
         if (torsionType == null) {
-            c[0] = 0;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-            key = TorsionType.sortKey(c);
-            torsionType = forceField.getTorsionType(key);
+            torsionType = getTorsionType(0, c1, c2, 0, forceField);
         }
+
+        // No torsion type found.
         if (torsionType == null) {
-            c[0] = 0;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = 0;
-            key = TorsionType.sortKey(c);
-            torsionType = forceField.getTorsionType(key);
-        }
-        if (torsionType == null) {
-            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-            key = TorsionType.sortKey(c);
+            int[] c = {c0, c1, c2, c3};
+            String key = TorsionType.sortKey(c);
             logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n",
                     key, bond1.toString(), middleBond.toString(), bond3.toString()));
             return null;
@@ -159,9 +154,25 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
         Torsion torsion = new Torsion(bond1, middleBond, bond3);
         torsion.torsionType = torsionType;
-        torsion.units = forceField.getDouble(ForceField.ForceFieldDouble.TORSIONUNIT, 0.5);
+        torsion.units = forceField.getDouble(ForceField.ForceFieldDouble.TORSIONUNIT, 1.0);
 
         return torsion;
+    }
+
+    /**
+     * Find a torsion based on the specified classes.
+     *
+     * @param c0         Atom class 0.
+     * @param c1         Atom class 1.
+     * @param c2         Atom class 2.
+     * @param c3         Atom class 3.
+     * @param forceField Force Field parameters to use.
+     * @return A torsion type if it exists.
+     */
+    private static TorsionType getTorsionType(int c0, int c1, int c2, int c3, ForceField forceField) {
+        int[] c = {c0, c1, c2, c3};
+        String key = TorsionType.sortKey(c);
+        return forceField.getTorsionType(key);
     }
 
     /**
@@ -443,6 +454,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 }
             }
         }
+
         return energy;
     }
 
@@ -450,7 +462,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      * Log details for this Torsional Angle energy term.
      */
     public void log() {
-        logger.info(String.format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
+        logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
                 "Torsional-Angle", atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(), atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name, energy));
     }
 
@@ -461,7 +473,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      */
     @Override
     public String toString() {
-        return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+        return format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
     /**

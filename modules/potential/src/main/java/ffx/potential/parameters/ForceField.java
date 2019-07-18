@@ -66,26 +66,27 @@ public class ForceField {
      * Available force fields.
      */
     public enum ForceFieldName {
-
-        AMBER99SB,
-        AMBER99SB_TIP3F,
-        AMBER99SB_TIP3AMOEBA,
-        AMOEBA_WATER,
-        AMOEBA_WATER_2003,
-        AMOEBA_WATER_2014,
+        AMBER_1994,
+        AMBER_1996,
+        AMBER_1998,
+        AMBER_1999,
+        AMBER_1999_SB,
+        AMBER_1999_SB_AMOEBA,
+        AMBER_1999_SB_TIP3F,
         AMOEBA_2004,
         AMOEBA_2009,
-        AMOEBA_2014,
-        AMOEBA_PROTEIN_2004,
-        AMOEBA_PROTEIN_2004_U1,
-        AMOEBA_PROTEIN_2013,
-        AMOEBA_DIRECT_2013,
-        AMOEBA_FIXED_2013,
+        // AMOEBA_2014,
         AMOEBA_BIO_2009,
-        AMOEBA_BIO_2009_ORIG,
         AMOEBA_BIO_2018,
         AMOEBA_NUC_2017,
+        AMOEBA_PROTEIN_2004,
+        AMOEBA_PROTEIN_2013,
+        AMOEBA_WATER_2003,
+        AMOEBA_WATER_2014,
+        CHARMM_22,
+        CHARMM_22_CMAP,
         IAMOEBA_WATER,
+        OPLS_AA,
         OPLS_AAL
     }
 
@@ -116,6 +117,8 @@ public class ForceField {
         VDW_SCHEDULE,
         GK_RADIIOVERRIDE,
         PLATFORM,
+        CONSTRAIN,
+        RATTLE, // Synonymous with CONSTRAIN, except we likely won't use RATTLE.
         /* Only meaningful for OpenMM; Java is always double-precision */
         PRECISION
     }
@@ -140,9 +143,9 @@ public class ForceField {
         /* Polarization masking rules */
         POLAR_12_SCALE, POLAR_13_SCALE, POLAR_14_SCALE, POLAR_14_INTRA, POLAR_15_SCALE, DIRECT_11_SCALE,
         /* Electrostatics parameters */
-        EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY,
+        EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY, ELECTRIC,
         /* Electrostatics masking rules */
-        MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE, MPOLE_15_SCALE,
+        MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE, MPOLE_15_SCALE, CHG_14_SCALE,
         /* Permanent electrostatics softcoring  */
         PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA,
         /* Permanent electrostatics lambda window */
@@ -267,6 +270,7 @@ public class ForceField {
 
         KEYWORD,
         ANGLE,
+        ANGLEP,
         ANGTORS,
         ATOM,
         BIOTYPE,
@@ -285,6 +289,15 @@ public class ForceField {
         UREYBRAD,
         VDW,
         RELATIVESOLV
+    }
+
+    /**
+     * Enumerates the types of constraints that can be applied.
+     */
+    public enum ConstraintTypes {
+        BOND, // Constrain a Bond.
+        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
+        // TODO: Support dihedral constraints, lone angle constraints, etc.
     }
 
     /**
@@ -316,6 +329,7 @@ public class ForceField {
      */
     private final CompositeConfiguration properties;
     private final Map<String, AngleType> angleTypes;
+    private final Map<String, AngleType> anglepTypes;
     private final Map<String, AtomType> atomTypes;
     private final Map<String, BioType> bioTypes;
     private final Map<String, BondType> bondTypes;
@@ -349,6 +363,7 @@ public class ForceField {
           constructor will keep the types sorted.
          */
         angleTypes = new TreeMap<>(new AngleType(new int[3], 0, new double[1], null));
+        anglepTypes = new TreeMap<>(new AngleType(new int[3], 0, new double[1], null, null));
         atomTypes = new TreeMap<>(new AtomType(0, 0, null, null, 0, 0, 0));
         bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
         bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
@@ -370,6 +385,7 @@ public class ForceField {
 
         forceFieldTypes = new EnumMap<>(ForceFieldType.class);
         forceFieldTypes.put(ForceFieldType.ANGLE, angleTypes);
+        forceFieldTypes.put(ForceFieldType.ANGLEP, anglepTypes);
         forceFieldTypes.put(ForceFieldType.ATOM, atomTypes);
         forceFieldTypes.put(ForceFieldType.BOND, bondTypes);
         forceFieldTypes.put(ForceFieldType.BIOTYPE, bioTypes);
@@ -970,7 +986,11 @@ public class ForceField {
      * @return a {@link ffx.potential.parameters.AngleType} object.
      */
     public AngleType getAngleType(String key) {
-        return angleTypes.get(key);
+        AngleType angleType = angleTypes.get(key);
+        if (angleType == null) {
+            angleType = anglepTypes.get(key);
+        }
+        return angleType;
     }
 
     /**

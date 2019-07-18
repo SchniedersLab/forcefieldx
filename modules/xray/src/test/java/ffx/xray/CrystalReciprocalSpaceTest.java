@@ -65,15 +65,6 @@ import ffx.utilities.Keyword;
  */
 public class CrystalReciprocalSpaceTest {
 
-    @Test
-    public void testLauncher() {
-        boolean ci = Boolean.valueOf(System.getProperty("ffx.ci", "false"));
-        test1N7SPermanent();
-        if (ci) {
-            test1NSFPermanent();
-        }
-    }
-
     /**
      * Test of permanent method, of class CrystalReciprocalSpace.
      */
@@ -116,9 +107,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 1 4 reflection should be correct",
-                -753.4722104328416, a.re(), 0.0001);
+                -712.4444541709152, a.re(), 0.0001);
         assertEquals("1 1 4 reflection should be correct",
-                -1012.1341308707799, a.im(), 0.0001);
+                -1040.6144214816625, a.im(), 0.0001);
 
         b.re(-70.4582);
         b.im(-486.142);
@@ -129,9 +120,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("2 1 10 reflection should be correct",
-                -69.39660884054359, a.re(), 0.0001);
+                -138.7497092372501, a.re(), 0.0001);
         assertEquals("2 1 10 reflection should be correct",
-                -412.0147625765328, a.im(), 0.0001);
+                -394.8067906226747, a.im(), 0.0001);
     }
 
     @Test
@@ -185,9 +176,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 9 4 reflection should be correct",
-                -493.7799429881329, a.re(), 0.0001);
+                -494.8141910253083, a.re(), 0.0001);
         assertEquals("1 9 4 reflection should be correct",
-                460.7022632345927, a.im(), 0.0001);
+                478.95302009324877, a.im(), 0.0001);
 
         b.re(-129.767);
         b.im(-76.9812);
@@ -198,8 +189,8 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("5 26 8 reflection should be correct",
-                -123.05535567943377, a.re(), 0.0001);
+                -124.17614410062062, a.re(), 0.0001);
         assertEquals("5 26 8 reflection should be correct",
-                -74.59007322382718, a.im(), 0.0001);
+                -74.71740957877782, a.im(), 0.0001);
     }
 }

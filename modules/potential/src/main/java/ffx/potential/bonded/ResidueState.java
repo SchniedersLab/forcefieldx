@@ -382,8 +382,8 @@ public class ResidueState {
         // Here, each residue state is the same residue with a different rotamer applied.
         Atom[] x1atoms = this.atoms;
         Atom[] x2atoms = residueState.atoms;
-        logger.info("Total number of atoms for current residue state: " + x1atoms.length);
-        logger.info("Total number of atoms for previously kept residue state to be tested against: "+ x2atoms.length);
+        //logger.info("Total number of atoms for current residue state: " + x1atoms.length);
+        //logger.info("Total number of atoms for previously kept residue state to be tested against: "+ x2atoms.length);
 
         // Get the coordinate arrays for each atom in the current residue state using the atomMap
         for (int atomCount = 0; atomCount < x1atoms.length; atomCount++) {
@@ -420,7 +420,7 @@ public class ResidueState {
         double[] mass = new double[x1.length];
         Arrays.fill(mass, 1);
 
-        logger.info("\nStarting RMSD comparison between rotamers\n");
+        //logger.info("\nStarting RMSD comparison between rotamers\n");
         double rmsd = ffx.potential.utils.Superpose.rmsd(x1, x2, mass);
 
         return rmsd;

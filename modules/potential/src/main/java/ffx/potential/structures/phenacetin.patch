@@ -1,3 +1,46 @@
+bond-cubic              -2.55
+bond-quartic            3.793125
+angle-cubic             -0.014
+angle-quartic           0.000056
+angle-pentic            -0.0000007
+angle-sextic            0.000000022
+opbendtype              ALLINGER
+opbend-cubic            -0.014
+opbend-quartic          0.000056
+opbend-pentic           -0.0000007
+opbend-sextic           0.000000022
+torsionunit             0.5
+vdwtype                 BUFFERED-14-7
+radiusrule              CUBIC-MEAN
+radiustype              R-MIN
+radiussize              DIAMETER
+epsilonrule             HHG
+dielectric              1.0
+polarization            MUTUAL
+vdw-12-scale            0.0
+vdw-13-scale            0.0
+vdw-14-scale            1.0
+vdw-15-scale            1.0
+mpole-12-scale          0.0
+mpole-13-scale          0.0
+mpole-14-scale          0.4
+mpole-15-scale          0.8
+polar-12-scale          0.0
+polar-13-scale          0.0
+polar-14-scale          1.0
+polar-15-scale          1.0
+polar-12-intra          0.0
+polar-13-intra          0.0
+polar-14-intra          0.5
+polar-15-intra          1.0
+direct-11-scale         0.0
+direct-12-scale         1.0
+direct-13-scale         1.0
+direct-14-scale         1.0
+mutual-11-scale         1.0
+mutual-12-scale         1.0
+mutual-13-scale         1.0
+mutual-14-scale         1.0
 
 atom         403   403    C      "phenacentin            "     6     12.011    4
 atom         404   404    C      "phenacentin            "     6     12.011    3
@@ -138,6 +181,7 @@ vdw       412  2.9800   0.0240 0.940
 vdw       413  2.9800   0.0240 0.940
 vdw       414  3.3000   0.1120
 vdw       415  2.5900   0.0220 0.900
+
 bond      401   402   323.0000    1.5153
 bond      401   410   465.1000    1.4032
 bond      401   412   341.0000    1.0865
@@ -154,6 +198,7 @@ bond      407   417   370.5000    1.0686
 bond      408   409   610.9000    1.3907
 bond      408   410   676.6000    1.3517
 bond      409   416   370.5000    1.0742
+
 angle     402   401   410    88.0000  107.6169
 angle     402   401   412    38.0000  110.5897
 angle     410   401   412    60.9900  110.0325
@@ -179,6 +224,7 @@ angle     407   409   408    64.6700  121.4994
 angle     407   409   416    32.0000  120.1029
 angle     408   409   416    32.0000  118.3977
 angle     401   410   408    88.5000  120.0240
+
 strbnd    402   401   410    18.7000   18.7000
 strbnd    402   401   412    11.5000   18.7000
 strbnd    410   401   412    -4.5000   38.0000
@@ -200,6 +246,7 @@ strbnd    407   409   408    18.7000   18.7000
 strbnd    407   409   416    11.5000   18.7000
 strbnd    408   409   416    11.5000   18.7000
 strbnd    401   410   408    38.0000   38.0000
+
 opbend  403  404  0  0  42.4446
 opbend  404  405  0  0  71.9400
 opbend  405  404  0  0  107.9100
@@ -216,6 +263,7 @@ opbend  414  404  0  0  122.2980
 opbend  415  405  0  0  5.7552
 opbend  416  409  0  0  15.1074
 opbend  417  407  0  0  15.1074
+
 torsion   410   401   402   411     0.0000 0.0 1     0.0000 180.0 2     0.3000 0.0 3
 torsion   412   401   402   411     0.0000 0.0 1     0.0000 180.0 2     0.2990 0.0 3
 torsion   402   401   410   408     -1.177 0.0 1     0.028 180.0 2      0.328 0.0 3

@@ -104,7 +104,7 @@ public class MoveIntoUnitCellTest {
         moveIntoUnitCell.run();
 
         // Pull out the Cart2Frac results to check.
-        double origCoordinates[][] = moveIntoUnitCell.origCoordinates;
+        double[][] origCoordinates = moveIntoUnitCell.origCoordinates;
         org.junit.Assert.assertNotNull(origCoordinates);
         org.junit.Assert.assertEquals(81, origCoordinates.length);
         // 7  O     -0.382446    1.447602   -0.456106     1     8     9
@@ -112,7 +112,7 @@ public class MoveIntoUnitCellTest {
         org.junit.Assert.assertEquals(1.447602, origCoordinates[6][1], 1.0e-6);
         org.junit.Assert.assertEquals(-0.456106, origCoordinates[6][2], 1.0e-6);
 
-        double unitCellCoordinates[][] = moveIntoUnitCell.unitCellCoordinates;
+        double[][] unitCellCoordinates = moveIntoUnitCell.unitCellCoordinates;
         org.junit.Assert.assertNotNull(unitCellCoordinates);
         org.junit.Assert.assertEquals(81, unitCellCoordinates.length);
         //  7   O    8.93905400    1.44760200    8.86539400     1       8       9

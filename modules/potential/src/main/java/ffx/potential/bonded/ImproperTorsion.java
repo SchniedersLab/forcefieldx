@@ -129,18 +129,22 @@ public class ImproperTorsion extends BondedTerm {
         }
 
         ArrayList<ImproperTorsion> improperTorsions = new ArrayList<>();
+
         Collection<ImproperTorsionType> types = forceField.getImproperTypes();
+        double units = forceField.getDouble(ForceField.ForceFieldDouble.IMPTORUNIT, 1.0);
+        boolean done = false;
 
-        double units = forceField.getDouble(ForceField.ForceFieldDouble.IMPTORUNIT, 0.5);
-
+        // No wild card matches.
         for (ImproperTorsionType type : types) {
             int[] classes = new int[4];
             classes[0] = atoms[0].getAtomType().atomClass;
             classes[1] = atoms[1].getAtomType().atomClass;
             classes[2] = atoms[2].getAtomType().atomClass;
             classes[3] = atoms[3].getAtomType().atomClass;
-            boolean assigned = type.assigned(classes);
+            boolean assigned = type.assigned(classes, false, false);
             if (assigned) {
+                done = true;
+
                 // Finalize atom ordering.
                 if (classes[3] == atoms[3].getAtomType().atomClass || type.atomClasses[3] == 0) {
                     // do nothing.
@@ -153,6 +157,7 @@ public class ImproperTorsion extends BondedTerm {
                     atoms[0] = atoms[3];
                     atoms[3] = temp;
                 }
+
                 if (classes[1] == atoms[1].getAtomType().atomClass || type.atomClasses[1] == 0) {
                     // do nothing.
                 } else if (classes[1] == atoms[0].getAtomType().atomClass) {
@@ -160,6 +165,7 @@ public class ImproperTorsion extends BondedTerm {
                     atoms[1] = atoms[0];
                     atoms[0] = temp;
                 }
+
                 ImproperTorsion improperTorsion = new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
                 improperTorsion.setImproperType(type);
                 improperTorsion.units = units;
@@ -217,6 +223,43 @@ public class ImproperTorsion extends BondedTerm {
                     improperTorsions.add(improperTorsion);
                 }
             }
+
+            if (done) {
+                break;
+            }
+        }
+
+        // Wild card matches for the first or second class.
+        if (!done) {
+            for (ImproperTorsionType type : types) {
+                int[] classes = new int[4];
+                classes[0] = atoms[0].getAtomType().atomClass;
+                classes[1] = atoms[1].getAtomType().atomClass;
+                classes[2] = atoms[2].getAtomType().atomClass;
+                classes[3] = atoms[3].getAtomType().atomClass;
+                boolean assigned = type.assigned(classes, true, false);
+                if (assigned) {
+                    done = true;
+                    createWildCardImproperTorsion(atoms, classes, type, units, improperTorsions);
+                    break;
+                }
+            }
+        }
+
+        // Wild card matches for the first, second and third classes.
+        if (!done) {
+            for (ImproperTorsionType type : types) {
+                int[] classes = new int[4];
+                classes[0] = atoms[0].getAtomType().atomClass;
+                classes[1] = atoms[1].getAtomType().atomClass;
+                classes[2] = atoms[2].getAtomType().atomClass;
+                classes[3] = atoms[3].getAtomType().atomClass;
+                boolean assigned = type.assigned(classes, true, true);
+                if (assigned) {
+                    createWildCardImproperTorsion(atoms, classes, type, units, improperTorsions);
+                    break;
+                }
+            }
         }
 
         if (improperTorsions.isEmpty()) {
@@ -224,6 +267,52 @@ public class ImproperTorsion extends BondedTerm {
         }
 
         return improperTorsions;
+    }
+
+    private static void createWildCardImproperTorsion(Atom[] atoms, int[] classes, ImproperTorsionType type,
+                                                      double units, ArrayList<ImproperTorsion> improperTorsions) {
+        // Finalize atom ordering.
+        if (classes[3] == atoms[3].getAtomType().atomClass || type.atomClasses[3] == 0) {
+            // do nothing.
+        } else if (classes[3] == atoms[1].getAtomType().atomClass) {
+            Atom temp = atoms[3];
+            atoms[3] = atoms[1];
+            atoms[1] = temp;
+        } else {
+            Atom temp = atoms[0];
+            atoms[0] = atoms[3];
+            atoms[3] = temp;
+        }
+
+        if (classes[1] == atoms[1].getAtomType().atomClass || type.atomClasses[1] == 0) {
+            // do nothing.
+        } else if (classes[1] == atoms[0].getAtomType().atomClass) {
+            Atom temp = atoms[1];
+            atoms[1] = atoms[0];
+            atoms[0] = temp;
+        }
+
+        // One or more zero classes in the improper torsion type
+        ImproperTorsion improperTorsion = new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
+        improperTorsion.setImproperType(type);
+        improperTorsion.units = units;
+        improperTorsions.add(improperTorsion);
+        improperTorsion.scaleFactor = 1.0 / 3.0;
+        improperTorsions.add(improperTorsion);
+
+        improperTorsion = new ImproperTorsion(atoms[1], atoms[3], atoms[2], atoms[0]);
+        improperTorsion.setImproperType(type);
+        improperTorsion.units = units;
+        improperTorsions.add(improperTorsion);
+        improperTorsion.scaleFactor = 1.0 / 3.0;
+        improperTorsions.add(improperTorsion);
+
+        improperTorsion = new ImproperTorsion(atoms[3], atoms[0], atoms[2], atoms[1]);
+        improperTorsion.setImproperType(type);
+        improperTorsion.units = units;
+        improperTorsions.add(improperTorsion);
+        improperTorsion.scaleFactor = 1.0 / 3.0;
+        improperTorsions.add(improperTorsion);
     }
 
     /**
