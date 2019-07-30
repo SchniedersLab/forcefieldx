@@ -142,14 +142,12 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     public AngleType(int[] atomClasses, double forceConstant, double[] angle,
                      AngleFunction angleFunction, AngleMode angleMode) {
-        super(ForceFieldType.ANGLEP, sortKey(atomClasses));
-        this.atomClasses = atomClasses;
-        this.forceConstant = forceConstant;
-        this.angle = angle;
-        this.angleFunction = angleFunction;
-        this.angleMode = angleMode;
+        this(atomClasses, forceConstant, angle, angleFunction);
+        if (angleMode == AngleMode.IN_PLANE) {
+            this.angleMode = angleMode;
+            this.forceFieldType = ForceFieldType.ANGLEP;
+        }
     }
-
 
     /**
      * <p>

@@ -872,6 +872,7 @@ public class NeighborList extends ParallelRegion {
         private double[] xyz;
         private int[] pairs;
         private double[] mask;
+        private boolean[] vdw14;
         private final IntegerSchedule schedule;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -895,6 +896,8 @@ public class NeighborList extends ParallelRegion {
             if (mask == null || mask.length < nAtoms) {
                 mask = new double[nAtoms];
                 fill(mask, 1.0);
+                vdw14 = new boolean[nAtoms];
+                fill(vdw14, false);
             }
         }
 
@@ -1044,7 +1047,7 @@ public class NeighborList extends ParallelRegion {
 
                 // Interactions between atoms in the asymmetric unit may be masked.
                 if (maskingRules != null) {
-                    maskingRules.applyMask(mask, atomIndex);
+                    maskingRules.applyMask(mask, vdw14, atomIndex);
                 }
 
                 // If the self-volume is being searched for pairs, we must avoid double counting.
@@ -1102,7 +1105,7 @@ public class NeighborList extends ParallelRegion {
 
             // Interactions between atoms in the asymmetric unit may be masked.
             if (iSymm == 0 && maskingRules != null) {
-                maskingRules.removeMask(mask, atomIndex);
+                maskingRules.removeMask(mask, vdw14, atomIndex);
             }
         }
     }

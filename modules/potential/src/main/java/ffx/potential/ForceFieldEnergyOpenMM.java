@@ -3237,16 +3237,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // Create exclusion lists.
             PointerByReference exclusions = OpenMM_IntArray_create(0);
             double[] mask = new double[nAtoms];
+            boolean[] vdw14 = new boolean[nAtoms];
             fill(mask, 1.0);
             for (int i = 0; i < nAtoms; i++) {
                 OpenMM_IntArray_append(exclusions, i);
-                vdW.applyMask(mask, i);
+                vdW.applyMask(mask, vdw14, i);
                 for (int j = 0; j < nAtoms; j++) {
                     if (mask[j] == 0.0) {
                         OpenMM_IntArray_append(exclusions, j);
                     }
                 }
-                vdW.removeMask(mask, i);
+                vdW.removeMask(mask, vdw14, i);
                 OpenMM_AmoebaVdwForce_setParticleExclusions(amoebaVDWForce, i, exclusions);
                 OpenMM_IntArray_resize(exclusions, 0);
             }
@@ -3394,11 +3395,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "epsilon");
 
             double[] mask = new double[nAtoms];
+            boolean[] vdw14 = new boolean[nAtoms];
             fill(mask, 1.0);
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom1 = atoms[i];
                 VDWType vdwType1 = atom1.getVDWType();
-                vdW.applyMask(mask, i);
+                vdW.applyMask(mask, vdw14, i);
                 for (int j = i + 1; j < nAtoms; j++) {
                     if (mask[j] == 0.0) {
                         Atom atom2 = atoms[j];
@@ -3440,7 +3442,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         OpenMM_DoubleArray_destroy(bondParameters);
                     }
                 }
-                vdW.removeMask(mask, i);
+                vdW.removeMask(mask, vdw14, i);
             }
 
         /*

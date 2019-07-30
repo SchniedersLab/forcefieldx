@@ -345,10 +345,13 @@ public class ForceFieldFilter {
                                 parsePiTorsionType(input, tokens);
                                 break;
                             case IMPTORS:
-                                parseImproper(input, tokens);
+                                parseImpTorsType(input, tokens);
                                 break;
                             case TORSION:
                                 parseTorsion(input, tokens);
+                                break;
+                            case IMPROPER:
+                                parseImproperTorsion(input, tokens);
                                 break;
                             case STRTORS:
                                 parseStretchTorsion(input, tokens);
@@ -361,6 +364,9 @@ public class ForceFieldFilter {
                                 break;
                             case VDW:
                                 parseVDWType(input, tokens);
+                                break;
+                            case VDW14:
+                                parseVDW14Type(input, tokens);
                                 break;
                             case POLARIZE:
                                 parsePolarizeType(input, tokens);
@@ -454,13 +460,16 @@ public class ForceFieldFilter {
                     parsePiTorsionType(input, tokens);
                     break;
                 case IMPTORS:
-                    parseImproper(input, tokens);
+                    parseImpTorsType(input, tokens);
                     break;
                 case STRTORS:
                     parseStretchTorsion(input, tokens);
                     break;
                 case TORSION:
                     parseTorsion(input, tokens);
+                    break;
+                case IMPROPER:
+                    parseImproperTorsion(input, tokens);
                     break;
                 case TORTORS:
                     parseTorsionTorsionType(input, tokens, br);
@@ -470,6 +479,9 @@ public class ForceFieldFilter {
                     break;
                 case VDW:
                     parseVDWType(input, tokens);
+                    break;
+                case VDW14:
+                    parseVDW14Type(input, tokens);
                     break;
                 case POLARIZE:
                     parsePolarizeType(input, tokens);
@@ -1042,7 +1054,7 @@ public class ForceFieldFilter {
         return null;
     }
 
-    private ImproperTorsionType parseImproper(String input, String[] tokens) {
+    private ImproperTorsionType parseImpTorsType(String input, String[] tokens) {
         if (tokens.length < 8) {
             logger.log(Level.WARNING, "Invalid IMPTORS type:\n{0}", input);
         } else {
@@ -1099,6 +1111,35 @@ public class ForceFieldFilter {
                 return torsionType;
             } catch (NumberFormatException e) {
                 String message = "Exception parsing TORSION type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    private TorsionType parseImproperTorsion(String input, String[] tokens) {
+        if (tokens.length < 5) {
+            logger.log(Level.WARNING, "Invalid TORSION type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double[] amplitude = new double[1];
+                double[] phase = new double[1];
+                int[] periodicity = new int[1];
+                int index = 5;
+                amplitude[0] = parseDouble(tokens[index++]);
+                phase[0] = parseDouble(tokens[index++]);
+                periodicity[0] = 1;
+                TorsionType torsionType = new TorsionType(atomClasses, amplitude,
+                        phase, periodicity, TorsionType.TorsionMode.IMPROPER);
+                forceField.addForceFieldType(torsionType);
+                return torsionType;
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing IMPROPER type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
         }
@@ -1288,8 +1329,7 @@ public class ForceFieldFilter {
                     double twoSix = 1.122462048309372981;
                     radius = radius * twoSix;
                 }
-                VDWType vdwType = new VDWType(atomType, radius, wellDepth,
-                        reductionFactor);
+                VDWType vdwType = new VDWType(atomType, radius, wellDepth, reductionFactor);
                 forceField.addForceFieldType(vdwType);
                 return vdwType;
             } catch (NumberFormatException e) {
@@ -1297,7 +1337,36 @@ public class ForceFieldFilter {
                 logger.log(Level.SEVERE, message, e);
             }
         }
+        return null;
+    }
 
+    private VDWType parseVDW14Type(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid VDW type:\n{0}", input);
+        } else {
+            try {
+                int atomType = parseInt(tokens[1]);
+                double radius = parseDouble(tokens[2]);
+                double wellDepth = parseDouble(tokens[3]);
+                double reductionFactor = -1.0;
+                if (tokens.length == 5) {
+                    reductionFactor = parseDouble(tokens[4]);
+                }
+                if (convertRadiusToDiameter) {
+                    radius = radius * 2.0;
+                }
+                if (convertSigmaToRMin) {
+                    double twoSix = 1.122462048309372981;
+                    radius = radius * twoSix;
+                }
+                VDWType vdwType = new VDWType(atomType, radius, wellDepth, reductionFactor, VDWType.VDWMode.VDW14);
+                forceField.addForceFieldType(vdwType);
+                return vdwType;
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing VDW14 type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
         return null;
     }
 

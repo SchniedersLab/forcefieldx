@@ -139,6 +139,13 @@ public class VanDerWaalsForm {
      */
     double[][] radEps;
     /**
+     * Store combined radius and epsilon values for 1-4 interactions.
+     * <p>
+     * Currently this is specific to the CHARMM force fields.
+     */
+    double[][] radEps14;
+
+    /**
      * Constant <code>RADMIN=0</code>
      */
     static final byte RADMIN = 0;
@@ -267,6 +274,10 @@ public class VanDerWaalsForm {
             }
         }
         radEps = new double[maxClass + 1][2 * (maxClass + 1)];
+        radEps14 = new double[maxClass + 1][2 * (maxClass + 1)];
+
+        Map<String, VDWType> map14 = forceField.getVDW14Types();
+        TreeMap<String, VDWType> vdw14Types = new TreeMap<>(map14);
 
         // Scale factor to convert to vdW size to Rmin.
         double radScale;
@@ -328,21 +339,85 @@ public class VanDerWaalsForm {
                 }
                 if (radmin > 0) {
                     radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
+                    radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
+
+                    radEps14[i][j * 2 + RADMIN] = 1.0 / radmin;
+                    radEps14[j][i * 2 + RADMIN] = 1.0 / radmin;
+
                 } else {
                     radEps[i][j * 2 + RADMIN] = 0.0;
-                }
-
-                radEps[i][j * 2 + EPS] = eps;
-                if (radmin > 0) {
-                    radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
-                } else {
                     radEps[j][i * 2 + RADMIN] = 0.0;
+
+                    radEps14[i][j * 2 + RADMIN] = 0.0;
+                    radEps14[j][i * 2 + RADMIN] = 0.0;
+
                 }
+                radEps[i][j * 2 + EPS] = eps;
                 radEps[j][i * 2 + EPS] = eps;
+
+                radEps14[i][j * 2 + EPS] = eps;
+                radEps14[j][i * 2 + EPS] = eps;
+
             }
         }
 
+        // Loop over VDW types.
+        for (VDWType vdwi : vdwTypes.values()) {
+            // Replace a normal VDW type with a VDW14 type if available.
+            VDWType vdw14 = forceField.getVDW14Type(vdwi.getKey());
+            if (vdw14 != null) {
+                vdwi = vdw14;
+            }
+            int i = vdwi.atomClass;
+            double ri = radScale * vdwi.radius;
+            double ri2 = ri * ri;
+            double ri3 = ri * ri2;
+            double e1 = vdwi.wellDepth;
+            double se1 = sqrt(e1);
+            // Loop over VDW14 types.
+            for (VDWType vdwj : vdw14Types.values()) {
+                int j = vdwj.atomClass;
+                double rj = radScale * vdwj.radius;
+                double rj2 = rj * rj;
+                double rj3 = rj * rj2;
+                double e2 = vdwj.wellDepth;
+                double se2 = sqrt(e2);
+                double radmin;
+                double eps;
+                switch (radiusRule) {
+                    case ARITHMETIC:
+                        radmin = ri + rj;
+                        break;
+                    case GEOMETRIC:
+                        radmin = 2.0 * sqrt(ri) * sqrt(rj);
+                        break;
+                    default:
+                    case CUBIC_MEAN:
+                        radmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
+                }
+                switch (epsilonRule) {
+                    case GEOMETRIC:
+                        eps = se1 * se2;
+                        break;
+                    default:
+                    case HHG:
+                        eps = 4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
+                        break;
+                }
+                if (radmin > 0) {
+                    radEps14[i][j * 2 + RADMIN] = 1.0 / radmin;
+                    radEps14[j][i * 2 + RADMIN] = 1.0 / radmin;
+                } else {
+                    radEps14[i][j * 2 + RADMIN] = 0.0;
+                    radEps14[j][i * 2 + RADMIN] = 0.0;
+
+                }
+                radEps14[i][j * 2 + EPS] = eps;
+                radEps14[j][i * 2 + EPS] = eps;
+            }
+        }
     }
+    
 
     /**
      * <p>rhoDisp1.</p>
