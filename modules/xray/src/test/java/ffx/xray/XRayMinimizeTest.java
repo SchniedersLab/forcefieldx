@@ -91,10 +91,10 @@ public class XRayMinimizeTest {
                             "ffx/xray/structures/1N7S.pdb",
                             "ffx/xray/structures/1N7S.mtz",
                             null,
-                            19.412671496011,
-                            21.555930987573,
-                            0.9336853524690557,
-                            0.13192537249786418}
+                            21.06415513383504,
+                            22.851582653533896,
+                            0.9223188325383854,
+                            0.15388715220717386}
             });
         } else {
             ret = Arrays.asList(new Object[][]{
@@ -112,10 +112,10 @@ public class XRayMinimizeTest {
                             "ffx/xray/structures/1N7S.pdb",
                             "ffx/xray/structures/1N7S.mtz",
                             null,
-                            19.412671496011,
-                            21.555930987573,
-                            0.9314271250347,
-                            0.1361239311856}
+                            21.06415513383504,
+                            22.851582653533896,
+                            0.9223188325383854,
+                            0.15388715220717386}
             });
         }
         return ret;
