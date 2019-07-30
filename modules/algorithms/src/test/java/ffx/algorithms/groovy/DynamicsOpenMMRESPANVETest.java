@@ -75,7 +75,7 @@ public class DynamicsOpenMMRESPANVETest extends PJDependentTest {
                 {
                         "System OpenMM RESPA NVE", // info
                         "ffx/algorithms/structures/waterbox_eq.xyz", // filename
-                        -25240.5415 // startingTotalEnergy
+                        -24936.9565 // startingTotalEnergy
                 }
 
         });

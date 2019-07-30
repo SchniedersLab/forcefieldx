@@ -77,7 +77,7 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
                 {
                         "System OpenMM Stochastic",
                         "ffx/algorithms/structures/waterbox_eq.xyz",
-                        11794.3675,  -36783.0695,  -24988.7020
+                        11785.5305, -36464.2741, -24678.7436
                 }
         });
     }
