@@ -94,7 +94,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * The torsion mode in use.
      */
-    public TorsionMode torsionMode;
+    private TorsionMode torsionMode;
 
     /**
      * TorsionType Constructor.
