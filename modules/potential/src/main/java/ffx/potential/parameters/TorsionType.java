@@ -114,21 +114,20 @@ public final class TorsionType extends BaseType implements Comparator<String> {
             }
         }
         terms = max;
-        if (periodicity.length != max) {
-            this.amplitude = new double[max];
-            this.phase = new double[max];
-            this.periodicity = new int[max];
-            for (int i = 0; i < periodicity.length; i++) {
-                int j = periodicity[i] - 1;
+        this.amplitude = new double[terms];
+        this.phase = new double[terms];
+        this.periodicity = new int[terms];
+        for (int i = 0; i < terms; i++) {
+            this.periodicity[i] = i + 1;
+        }
+        for (int i = 0; i < amplitude.length; i++) {
+            int j = periodicity[i] - 1;
+            if (j >= 0 && j < terms) {
                 this.amplitude[j] = amplitude[i];
                 this.phase[j] = phase[i];
-                this.periodicity[j] = periodicity[i];
             }
-        } else {
-            this.amplitude = amplitude;
-            this.phase = phase;
-            this.periodicity = periodicity;
         }
+
         cosine = new double[terms];
         sine = new double[terms];
         for (int i = 0; i < terms; i++) {
@@ -305,7 +304,18 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         for (int i : atomClasses) {
             torsionBuffer.append(format(" %5d", i));
         }
+
+        boolean nonZero = false;
+        for (double v : amplitude) {
+            if (v != 0.0) {
+                nonZero = true;
+            }
+        }
+
         for (int i = 0; i < amplitude.length; i++) {
+            if (amplitude[i] == 0.0 && (i > 0 || nonZero)) {
+                continue;
+            }
             if (torsionMode == TorsionMode.NORMAL) {
                 torsionBuffer.append(format(" %7.3f %7.3f %1d", amplitude[i], phase[i], periodicity[i]));
             } else {

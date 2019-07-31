@@ -209,16 +209,21 @@ public class ForceFieldFilter {
      */
     public ForceField parse() {
         try {
+            // Try to parse an external (ie. not in the FFX jar) parameter file.
             if (forceFieldFile != null) {
-                // Parse an external (ie. not in the FFX jar) parameter file.
-                if (!forceFieldFile.exists()) {
-                    logger.log(Level.INFO, " {0} does not exist.", forceFieldFile);
-                    return null;
-                } else if (!forceFieldFile.canRead()) {
-                    logger.log(Level.INFO, " {0} can not be read.", forceFieldFile);
+                File fileToOpen = forceFieldFile;
+                if (!fileToOpen.exists()) {
+                    fileToOpen = new File(forceFieldFile.getAbsolutePath() + ".prm");
+                    if (!fileToOpen.exists()) {
+                        logger.log(Level.INFO, " {0} does not exist.", forceFieldFile);
+                        return null;
+                    }
+                }
+                if (!fileToOpen.canRead()) {
+                    logger.log(Level.INFO, " {0} can not be read.", fileToOpen);
                     return null;
                 }
-                parse(new FileInputStream(forceFieldFile));
+                parse(new FileInputStream(fileToOpen));
             } else {
                 // Parse an internal parameter file and add it to the composite configuration.
                 String defaultFFstring = DEFAULT_FORCE_FIELD.toString().toUpperCase().replaceAll("_", "-");
@@ -1110,6 +1115,9 @@ public class ForceFieldFilter {
                 forceField.addForceFieldType(torsionType);
                 return torsionType;
             } catch (NumberFormatException e) {
+                String message = "NumberFormatException parsing TORSION type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            } catch (Exception e) {
                 String message = "Exception parsing TORSION type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
@@ -1119,7 +1127,7 @@ public class ForceFieldFilter {
 
     private TorsionType parseImproperTorsion(String input, String[] tokens) {
         if (tokens.length < 5) {
-            logger.log(Level.WARNING, "Invalid TORSION type:\n{0}", input);
+            logger.log(Level.WARNING, "Invalid IMPROPER type:\n{0}", input);
         } else {
             try {
                 int[] atomClasses = new int[4];

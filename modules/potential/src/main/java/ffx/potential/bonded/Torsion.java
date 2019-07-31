@@ -462,8 +462,12 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      * Log details for this Torsional Angle energy term.
      */
     public void log() {
-        logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
-                "Torsional-Angle", atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(), atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name, energy));
+        logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f %10.4f",
+                "Torsional-Angle",
+                atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[1].getIndex(), atoms[1].getAtomType().name,
+                atoms[2].getIndex(), atoms[2].getAtomType().name,
+                atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy));
     }
 
     /**

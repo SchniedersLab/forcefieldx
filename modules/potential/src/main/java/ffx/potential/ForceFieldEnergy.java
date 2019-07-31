@@ -872,8 +872,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, ewaldOff);
         if (ewaldOff > vdwOff) {
             vdwOff = ewaldOff;
-            logger.info(" The Van der Waals cutoff must be at least as large as the Ewald cutoff.");
-            logger.info(format(" The Van der Waals cutoff has been set to %-12.4g", ewaldOff));
         }
 
         /*
@@ -887,6 +885,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           Error is indicated for a frozen neighbor list if a specified NL cutoff < PME,vdW.
           Error is indicated for a non-frozen neighbor list if the NL cutoff was specified by the user.
          */
+
         double nlistCutoff = vdwOff;
         // Check for a frozen neighbor list.
         boolean disabledNeighborUpdates = forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
