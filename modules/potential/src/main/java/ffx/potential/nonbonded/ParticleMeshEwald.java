@@ -82,7 +82,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * FFX and/or CUDA implementations.
      */
     public enum SCFAlgorithm {
-        SOR(true, true), CG(true, true), EPT(false, true);
+        SOR(true, true), CG(true, true), EPT(true, true);
 
         private final List<Platform> supportedPlatforms;
 
@@ -201,6 +201,23 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     public double[][][] inducedDipole;
     public double[][][] inducedDipoleCR;
+    /**
+     * Direct induced dipoles.
+     */
+    public double[][] directDipole;
+    public double[][] directDipoleCR;
+
+    /**
+     * Vacuum induced dipoles
+     */
+    public double[][][] vacuumInducedDipole;
+    public double[][][] vacuumInducedDipoleCR;
+    /**
+     * Vacuum induced dipoles
+     */
+    public double[][] vacuumDirectDipole;
+    public double[][] vacuumDirectDipoleCR;
+
 
     /**
      * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py
@@ -238,8 +255,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * ELECTRIC property.
      *
      */
-    public double electric = 332.063709;
-
+    public static final double DEFAULT_ELECTRIC = 332.063709;
+    public double electric = DEFAULT_ELECTRIC;
 
     /**
      * <p>Setter for the field <code>polarization</code>.</p>

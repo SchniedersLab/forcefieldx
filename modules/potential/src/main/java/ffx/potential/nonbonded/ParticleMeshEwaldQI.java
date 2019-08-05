@@ -471,11 +471,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     private double thole[];
     private double polarizability[];
 
-    /**
-     * Direct induced dipoles.
-     */
-    private double directDipole[][];
-    private double directDipoleCR[][];
     private double cartesianDipolePhi[][];
     private double cartesianDipolePhiCR[][];
 

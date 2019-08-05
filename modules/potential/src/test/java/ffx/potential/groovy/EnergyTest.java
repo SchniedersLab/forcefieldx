@@ -148,8 +148,12 @@ public class EnergyTest extends BaseFFXTest {
                         0.0, 0,
                         20.45106694, 2290,
                         -169.03958434, 2485,
+                        // Double Loop polarization energy approach.
                         -11.76558725, 2485,
                         -260.06559295, 2556, true},
+                        // Single loop polarization as -0.5 u.E
+                        // -22.60274971, 2485,
+                        // -249.22843049, 2556, true},
                 {
                         "Amber99sb Peptide",
                         "ffx/potential/structures/peptide-amber99sb.xyz",
@@ -216,7 +220,7 @@ public class EnergyTest extends BaseFFXTest {
                         -31.48011891, 71,
                         12862.34983956, 1482946,
                         -32736.92207773, 623627,
-                        -12934.93527194, 623627,
+                        -12934.93512829, 623627,
                         0.0, 0, true},
                 {
                         "Ubiquitin Amber 1999 Benchmark",

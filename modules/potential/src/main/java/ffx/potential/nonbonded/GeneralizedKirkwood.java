@@ -98,6 +98,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
 
+    public enum NonPolar {
+        CAV, CAV_DISP, GAUSS_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
+    }
+
     /**
      * Empirical constant that controls the GK cross-term.
      */
@@ -329,11 +333,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Shared arrays for computation of the GK field for each symmetry operator.
      */
-    protected SharedDoubleArray[] sharedGKField;
+    public SharedDoubleArray[] sharedGKField;
     /**
      * Shared arrays for computation of the GK field chain-rule term for each symmetry operator.
      */
-    protected SharedDoubleArray[] sharedGKFieldCR;
+    public SharedDoubleArray[] sharedGKFieldCR;
     /**
      * GK cut-off distance.
      */
@@ -2689,10 +2693,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         + 2.0 * (qxyk * gqxy[9] + qxzk * gqxz[9] + qyzk * gqyz[9])));
                 double e = esym + 0.5 * (ewi + ewk);
                 double ei = 0.0;
-                if (polarization != Polarization.NONE) {
 
-                    // Electrostatic solvation energy of the permanent multipoles in the 
-                    // GK reaction potential of the induced dipoles.
+                // Electrostatic solvation energy of the permanent multipoles in the
+                // GK reaction potential of the induced dipoles.
+                if (polarization != Polarization.NONE) {
                     double esymi = -uxi * (dxk * gux[2] + dyk * guy[2] + dzk * guz[2])
                             - uyi * (dxk * gux[3] + dyk * guy[3] + dzk * guz[3])
                             - uzi * (dxk * gux[4] + dyk * guy[4] + dzk * guz[4])
@@ -2729,10 +2733,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             + 2.0 * (qxyi * guz[6] + qxzi * guz[7] + qyzi * guz[9]));
                     ei = 0.5 * (esymi + 0.5 * (ewii + ewki));
                 }
+
                 if (i == k) {
                     e *= 0.5;
                     ei *= 0.5;
                 }
+
                 return e + ei;
             }
 
@@ -4451,10 +4457,5 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Constant factor used with quadrupoles.
      */
     private static final double oneThird = 1.0 / 3.0;
-
-    public enum NonPolar {
-
-        CAV, CAV_DISP, GAUSS_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
-    }
 
 }
