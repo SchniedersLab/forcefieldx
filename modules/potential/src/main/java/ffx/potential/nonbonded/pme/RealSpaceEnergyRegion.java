@@ -63,7 +63,9 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalFactors;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleFactors;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
@@ -273,7 +275,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
     private final SharedInteger sharedInteractions;
     public final RealSpaceEnergyLoop[] realSpaceEnergyLoop;
 
-    private ParticleMeshEwaldCart.ScaleFactors scaleFactors;
+    private ScaleFactors scaleFactors;
 
     /**
      * Specify inter-molecular softcore.
@@ -309,9 +311,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
                      double[][][] grad, double[][][] torque, double[][][] lambdaGrad, double[][][] lambdaTorque,
                      SharedDouble shareddEdLambda, SharedDouble sharedd2EdLambda2, boolean gradient, boolean lambdaTerm,
                      LambdaMode lambdaMode, Polarization polarization,
-                     ParticleMeshEwaldCart.EwaldParameters ewaldParameters,
-                     ParticleMeshEwaldCart.ScaleFactors scaleFactors,
-                     ParticleMeshEwaldCart.AlchemicalFactors alchemicalFactors) {
+                     EwaldParameters ewaldParameters, ScaleFactors scaleFactors, AlchemicalFactors alchemicalFactors) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.coordinates = coordinates;

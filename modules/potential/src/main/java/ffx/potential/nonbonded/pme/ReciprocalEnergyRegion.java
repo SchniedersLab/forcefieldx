@@ -52,7 +52,7 @@ import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalFactors;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_ELECTRIC;
@@ -221,7 +221,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                      double[][][] lambdaGrad, double[][][] lambdaTorque,
                      boolean gradient, boolean lambdaTerm,
                      SharedDouble shareddEdLambda, SharedDouble sharedd2EdLambda2,
-                     ParticleMeshEwaldCart.AlchemicalFactors alchemicalFactors) {
+                     AlchemicalFactors alchemicalFactors) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.use = use;

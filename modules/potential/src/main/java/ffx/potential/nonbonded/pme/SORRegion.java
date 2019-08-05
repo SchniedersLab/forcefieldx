@@ -50,7 +50,7 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t010;
@@ -121,9 +121,8 @@ public class SORRegion extends ParallelRegion {
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      double[][] directDipole, double[][] directDipoleCR,
                      double[][] cartesianDipolePhi, double[][] cartesianDipolePhiCR,
-                     double[][][] field, double[][][] fieldCR,
-                     boolean generalizedKirkwoodTerm, GeneralizedKirkwood generalizedKirkwood,
-                     ParticleMeshEwaldCart.EwaldParameters ewaldParameters) {
+                     double[][][] field, double[][][] fieldCR, boolean generalizedKirkwoodTerm,
+                     GeneralizedKirkwood generalizedKirkwood, EwaldParameters ewaldParameters) {
         this.atoms = atoms;
         this.polarizability = polarizability;
         this.inducedDipole = inducedDipole;

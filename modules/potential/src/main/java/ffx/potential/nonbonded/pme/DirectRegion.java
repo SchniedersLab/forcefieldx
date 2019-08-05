@@ -47,7 +47,7 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t010;
 import static ffx.potential.parameters.MultipoleType.t100;
@@ -105,7 +105,7 @@ public class DirectRegion extends ParallelRegion {
                      double[][] directDipole, double[][] directDipoleCR,
                      double[][][] field, double[][][] fieldCR,
                      boolean generalizedKirkwoodTerm, GeneralizedKirkwood generalizedKirkwood,
-                     ParticleMeshEwaldCart.EwaldParameters ewaldParameters) {
+                     EwaldParameters ewaldParameters) {
         this.atoms = atoms;
         this.polarizability = polarizability;
         this.globalMultipole = globalMultipole;

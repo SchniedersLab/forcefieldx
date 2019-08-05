@@ -57,8 +57,7 @@ import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
-import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.special.Erf.erfc;
@@ -185,7 +184,7 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      IntegerSchedule realSpaceSchedule, ReciprocalSpace reciprocalSpace,
                      LambdaMode lambdaMode, boolean reciprocalSpaceTerm,
-                     ParticleMeshEwaldCart.EwaldParameters ewaldParameters, long realSpaceSCFTotal, long[] realSpaceSCFTime,
+                     EwaldParameters ewaldParameters, long realSpaceSCFTotal, long[] realSpaceSCFTime,
                      double[][][] field, double[][][] fieldCR) {
         this.atoms = atoms;
         this.crystal = crystal;

@@ -63,7 +63,9 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.PCGVariables;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleFactors;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.special.Erf.erfc;
@@ -196,7 +198,7 @@ public class PermanentFieldRegion extends ParallelRegion {
     private long realSpacePermTotal;
     private long[] realSpacePermTime;
 
-    private ParticleMeshEwaldCart.ScaleFactors scaleFactors;
+    private ScaleFactors scaleFactors;
 
     /**
      * Specify inter-molecular softcore.
@@ -230,11 +232,10 @@ public class PermanentFieldRegion extends ParallelRegion {
 
     public void init(Atom[] atoms, Crystal crystal, double[][][] coordinates, double[][][] globalMultipole,
                      double[][][] inducedDipole, double[][][] inducedDipoleCR, int[][][] neighborLists,
-                     int[][][] realSpaceLists, ParticleMeshEwaldCart.ScaleFactors scaleFactors,
+                     int[][][] realSpaceLists, ScaleFactors scaleFactors,
                      boolean[] use, int[] molecule, double[] ipdamp, double[] thole, int[][] ip11,
                      LambdaMode lambdaMode, IntegerSchedule permanentSchedule, boolean reciprocalSpaceTerm,
-                     ParticleMeshEwaldCart.EwaldParameters ewaldParameters, ReciprocalSpace reciprocalSpace,
-                     ParticleMeshEwaldCart.PCGVariables pcgVariables,
+                     EwaldParameters ewaldParameters, ReciprocalSpace reciprocalSpace, PCGVariables pcgVariables,
                      int[][] realSpaceCounts, Range[] realSpaceRanges, double[][][] field, double[][][] fieldCR,
                      long realSpacePermTotal, long[] realSpacePermTime) {
         this.atoms = atoms;
@@ -254,9 +255,11 @@ public class PermanentFieldRegion extends ParallelRegion {
         this.lambdaMode = lambdaMode;
         this.permanentSchedule = permanentSchedule;
         this.reciprocalSpaceTerm = reciprocalSpaceTerm;
-        this.preconditionerCutoff = pcgVariables.preconditionerCutoff;
-        this.preconditionerLists = pcgVariables.preconditionerLists;
-        this.preconditionerCounts = pcgVariables.preconditionerCounts;
+        if (pcgVariables != null) {
+            this.preconditionerCutoff = pcgVariables.preconditionerCutoff;
+            this.preconditionerLists = pcgVariables.preconditionerLists;
+            this.preconditionerCounts = pcgVariables.preconditionerCounts;
+        }
         this.aewald = ewaldParameters.aewald;
         this.an0 = ewaldParameters.an0;
         this.an1 = ewaldParameters.an1;

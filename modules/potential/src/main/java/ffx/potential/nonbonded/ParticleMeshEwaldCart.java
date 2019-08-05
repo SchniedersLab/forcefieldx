@@ -203,8 +203,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private IntegerSchedule realSpaceSchedule;
 
-    // *************************************************************************
-    // Lambda state variables.
     /**
      * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
      */
@@ -222,7 +220,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Molecule number for each atom.
      */
     private int[] molecule;
-
     /**
      * When computing the polarization energy at Lambda there are 3 pieces.
      * <p>
@@ -243,14 +240,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * electrostatic energy of sub-structures.
      */
     private boolean[] use;
+
     private Crystal vaporCrystal;
     private int[][][] vaporLists;
     private IntegerSchedule vaporPermanentSchedule;
     private IntegerSchedule vaporEwaldSchedule;
     private Range[] vacuumRanges;
-
-    // *************************************************************************
-    // Permanent multipole variables.
 
     /**
      * Permanent multipoles in their local frame.
@@ -258,57 +253,24 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double[][] localMultipole;
     private MultipoleFrameDefinition[] frame;
     private int[][] axisAtom;
-
-    private final double poleps;
     private double[] ipdamp;
     private double[] thole;
     private double[] polarizability;
-
-    /**
-     * Specify an SCF predictor algorithm.
-     */
-    private SCFPredictor scfPredictor;
-    /**
-     * Induced dipole predictor order.
-     */
-    private int predictorOrder;
-    /**
-     * Induced dipole predictor index.
-     */
-    private int predictorStartIndex;
-    /**
-     * Induced dipole predictor count.
-     */
-    private int predictorCount;
-    /**
-     * Dimensions of [mode][predictorOrder][nAtoms][3]
-     */
-    private double[][][][] predictorInducedDipole;
-    /**
-     * Dimensions of [mode][predictorOrder][nAtoms][3]
-     */
-    private double[][][][] predictorInducedDipoleCR;
-    private LeastSquaresPredictor leastSquaresPredictor;
-    private LevenbergMarquardtOptimizer leastSquaresOptimizer;
-
+    private final double poleps;
     private double[][] cartMultipolePhi;
     private double[][] cartesianDipolePhi;
     private double[][] cartesianDipolePhiCR;
 
     /**
-     * Induced dipoles for extrapolated perturbation theory.
+     * Specify an SCF predictor algorithm.
      */
-    private int optOrder = 2;
-    private double[][][] optDipole;
-    private double[][][] optDipoleCR;
-
+    private final SCFPredictor scfPredictor;
+    private final SCFPredictorVariables scfPredictorVariables;
     private final EwaldParameters ewaldParameters;
     private final PCGVariables pcgVariables;
     private final ScaleFactors scaleFactors;
     private final AlchemicalFactors alchemicalFactors;
 
-    // *************************************************************************
-    // Parallel variables.
     /**
      * By default, maxThreads is set to the number of available SMP cores.
      */
@@ -447,45 +409,26 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         electric = forceField.getDouble(ForceFieldDouble.ELECTRIC, DEFAULT_ELECTRIC);
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-5);
 
-
         // If PME-specific lambda term not set, default to force field-wide lambda term.
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM,
                 forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
 
-        double off = 0.0;
-        if (!crystal.aperiodic()) {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, PERIODIC_DEFAULT_EWALD_CUTOFF);
-        } else {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, APERIODIC_DEFAULT_EWALD_CUTOFF);
-        }
-        double aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, 0.545);
-        ewaldParameters = new EwaldParameters(off, aewald);
-
+        ewaldParameters = new EwaldParameters();
         scaleFactors = new ScaleFactors(forceField);
-
         reciprocalSpaceTerm = forceField.getBoolean(ForceFieldBoolean.RECIPTERM, true);
 
-        String predictor = forceField.getString(ForceFieldString.SCF_PREDICTOR, "NONE");
+        SCFPredictor scfPredictor;
         try {
+            String predictor = forceField.getString(ForceFieldString.SCF_PREDICTOR, "NONE");
             predictor = predictor.replaceAll("-", "_").toUpperCase();
             scfPredictor = SCFPredictor.valueOf(predictor);
         } catch (Exception e) {
             scfPredictor = SCFPredictor.NONE;
         }
-
+        this.scfPredictor = scfPredictor;
+        scfPredictorVariables = new SCFPredictorVariables();
         if (scfPredictor != SCFPredictor.NONE) {
-            predictorCount = 0;
-            int defaultOrder = 6;
-            predictorOrder = forceField.getInteger(ForceFieldInteger.SCF_PREDICTOR_ORDER, defaultOrder);
-            if (scfPredictor == SCFPredictor.LS) {
-                leastSquaresPredictor = new LeastSquaresPredictor();
-                double eps = 1.0e-4;
-                leastSquaresOptimizer = new org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer(
-                        new org.apache.commons.math3.optimization.SimpleVectorValueChecker(eps, eps));
-            } else if (scfPredictor == SCFPredictor.ASPC) {
-                predictorOrder = 6;
-            }
-            predictorStartIndex = 0;
+            scfPredictorVariables.init();
         }
 
         String algorithm = forceField.getString(ForceFieldString.SCF_ALGORITHM, "CG");
@@ -503,6 +446,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         // The size of the preconditioner neighbor list depends on the size of the preconditioner cutoff.
+        pcgVariables = new PCGVariables(nAtoms);
         if (scfAlgorithm == SCFAlgorithm.CG) {
             inducedDipolePreconditionerRegion = new InducedDipolePreconditionerRegion(maxThreads);
             pcgRegion = new PCGRegion(maxThreads);
@@ -510,7 +454,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             pcgInitRegion2 = new PCGInitRegion2(maxThreads);
             pcgIterRegion1 = new PCGIterRegion1(maxThreads);
             pcgIterRegion2 = new PCGIterRegion2(maxThreads);
-            pcgVariables = new PCGVariables(nAtoms);
             boolean preconditioner = forceField.getBoolean(ForceFieldBoolean.USE_SCF_PRECONDITIONER, true);
             if (preconditioner) {
                 pcgVariables.preconditionerCutoff = forceField.getDouble(
@@ -527,8 +470,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             pcgInitRegion2 = null;
             pcgIterRegion1 = null;
             pcgIterRegion2 = null;
-            pcgVariables = null;
         }
+
 
         alchemicalFactors = new AlchemicalFactors(forceField, lambdaTerm);
 
@@ -571,7 +514,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         directRegion = new DirectRegion(maxThreads);
         sorRegion = new SORRegion(maxThreads, forceField);
-        optRegion = new OPTRegion(maxThreads, optOrder);
+        optRegion = new OPTRegion(maxThreads);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -579,7 +522,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             sb.append(format("   Polarization:                       %8s\n", polarization.toString()));
             if (polarization == Polarization.MUTUAL) {
                 sb.append(format("    SCF Convergence Criteria:         %8.3e\n", poleps));
-                sb.append(format("    SCF Predictor:                     %8s\n", scfPredictor));
+                sb.append(format("    SCF Predictor:                     %8s\n", this.scfPredictor));
                 sb.append(format("    SCF Algorithm:                     %8s\n", scfAlgorithm));
                 if (scfAlgorithm == SCFAlgorithm.SOR) {
                     sb.append(format("    SOR Parameter:                     %8.3f\n", sorRegion.getSOR()));
@@ -700,8 +643,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             directDipoleCR = new double[nAtoms][3];
             vacuumDirectDipole = new double[nAtoms][3];
             vacuumDirectDipoleCR = new double[nAtoms][3];
-            optDipole = new double[optOrder + 1][nAtoms][3];
-            optDipoleCR = new double[optOrder + 1][nAtoms][3];
+            if (optRegion != null) {
+                int optOrder = optRegion.optOrder;
+                optRegion.optDipole = new double[optOrder + 1][nAtoms][3];
+                optRegion.optDipoleCR = new double[optOrder + 1][nAtoms][3];
+            }
             cartesianDipolePhi = new double[nAtoms][tensorCount];
             cartesianDipolePhiCR = new double[nAtoms][tensorCount];
             ip11 = new int[nAtoms][];
@@ -711,17 +657,20 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             ipdamp = new double[nAtoms];
             polarizability = new double[nAtoms];
             realSpaceSchedule = new PairwiseSchedule(maxThreads, nAtoms, realSpaceRanges);
+
             if (scfAlgorithm == SCFAlgorithm.CG) {
                 pcgVariables.allocateVectors(nAtoms);
-                pcgVariables.allocateLists(nSymm, nAtoms);
             }
+            pcgVariables.allocateLists(nSymm, nAtoms);
+
             if (scfPredictor != SCFPredictor.NONE) {
+                int predictorOrder = scfPredictorVariables.predictorOrder;
                 if (lambdaTerm) {
-                    predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
-                    predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
+                    scfPredictorVariables.predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
+                    scfPredictorVariables.predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
                 } else {
-                    predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
-                    predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
+                    scfPredictorVariables.predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
+                    scfPredictorVariables.predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
                 }
             }
 
@@ -1382,7 +1331,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
 
             if (scfPredictor != SCFPredictor.NONE) {
-                saveMutualInducedDipoles();
+                scfPredictorVariables.saveMutualInducedDipoles();
             }
 
             // Compute the polarization energy.
@@ -1700,13 +1649,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (scfPredictor != SCFPredictor.NONE) {
             switch (scfPredictor) {
                 case ASPC:
-                    aspcPredictor();
+                    scfPredictorVariables.aspcPredictor();
                     break;
                 case LS:
-                    leastSquaresPredictor();
+                    scfPredictorVariables.leastSquaresPredictor();
                     break;
                 case POLY:
-                    polynomialPredictor();
+                    scfPredictorVariables.polynomialPredictor();
                     break;
                 case NONE:
                 default:
@@ -2010,11 +1959,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         // Zeroth order OPT dipoles are the direct dipoles.
         for (int i = 0; i < nAtoms; i++) {
             for (int j = 0; j < 3; j++) {
-                optDipole[0][i][j] = directDipole[i][j];
-                optDipoleCR[0][i][j] = directDipoleCR[i][j];
+                optRegion.optDipole[0][i][j] = directDipole[i][j];
+                optRegion.optDipoleCR[0][i][j] = directDipoleCR[i][j];
             }
         }
 
+        int optOrder = optRegion.optOrder;
         // Collect OPT dipole contributions from 1st to Nth.
         for (int currentOptOrder = 1; currentOptOrder <= optOrder; currentOptOrder++) {
             try {
@@ -2043,8 +1993,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
 
                 optRegion.init(currentOptOrder, atoms, polarizability,
-                        inducedDipole, inducedDipoleCR, optDipole, optDipoleCR,
-                        cartesianDipolePhi, cartesianDipolePhiCR, field, fieldCR,
+                        inducedDipole, inducedDipoleCR, cartesianDipolePhi, cartesianDipolePhiCR, field, fieldCR,
                         generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters);
                 parallelTeam.execute(optRegion);
 
@@ -2066,8 +2015,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 double sum = 0.0;
                 double sump = 0.0;
                 for (int k = 0; k <= optOrder; k++) {
-                    sum += optDipole[k][i][j];
-                    sump += optDipoleCR[k][i][j];
+                    sum += optRegion.optDipole[k][i][j];
+                    sump += optRegion.optDipoleCR[k][i][j];
                     inducedDipole[0][i][j] += optRegion.optCoefficients[k] * sum;
                     inducedDipoleCR[0][i][j] += optRegion.optCoefficients[k] * sump;
                 }
@@ -2637,382 +2586,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
-    /**
-     * Save the current converged mutual induced dipoles.
-     */
-    private void saveMutualInducedDipoles() {
-
-        int mode;
-        switch (lambdaMode) {
-            case OFF:
-            case CONDENSED:
-                mode = 0;
-                break;
-            case CONDENSED_NO_LIGAND:
-                mode = 1;
-                break;
-            case VAPOR:
-                mode = 2;
-                break;
-            default:
-                mode = 0;
-        }
-
-        // Current induced dipoles are saved before those from the previous step.
-        predictorStartIndex--;
-        if (predictorStartIndex < 0) {
-            predictorStartIndex = predictorOrder - 1;
-        }
-
-        if (predictorCount < predictorOrder) {
-            predictorCount++;
-        }
-
-        for (int i = 0; i < nAtoms; i++) {
-            for (int j = 0; j < 3; j++) {
-                predictorInducedDipole[mode][predictorStartIndex][i][j]
-                        = inducedDipole[0][i][j] - directDipole[i][j];
-                predictorInducedDipoleCR[mode][predictorStartIndex][i][j]
-                        = inducedDipoleCR[0][i][j] - directDipoleCR[i][j];
-            }
-        }
-    }
-
-    /**
-     * The least-squares predictor with induced dipole information from 8-10
-     * previous steps reduces the number SCF iterations by ~50%.
-     */
-    private void leastSquaresPredictor() {
-        if (predictorCount < 2) {
-            return;
-        }
-        try {
-            /*
-              The Jacobian and target do not change during the LS optimization,
-              so it's most efficient to update them once before the
-              Least-Squares optimizer starts.
-             */
-            leastSquaresPredictor.updateJacobianAndTarget();
-            int maxEvals = 100;
-            fill(leastSquaresPredictor.initialSolution, 0.0);
-            leastSquaresPredictor.initialSolution[0] = 1.0;
-            org.apache.commons.math3.optimization.PointVectorValuePair optimum
-                    = leastSquaresOptimizer.optimize(maxEvals,
-                    leastSquaresPredictor,
-                    leastSquaresPredictor.calculateTarget(),
-                    leastSquaresPredictor.weights,
-                    leastSquaresPredictor.initialSolution);
-            double[] optimalValues = optimum.getPoint();
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest(format("\n LS RMS:            %10.6f", leastSquaresOptimizer.getRMS()));
-                logger.finest(format(" LS Iterations:     %10d", leastSquaresOptimizer.getEvaluations()));
-                logger.finest(format(" Jacobian Evals:    %10d", leastSquaresOptimizer.getJacobianEvaluations()));
-                logger.finest(format(" Chi Square:        %10.6f", leastSquaresOptimizer.getChiSquare()));
-                logger.finest(" LS Coefficients");
-                for (int i = 0; i < predictorOrder - 1; i++) {
-                    logger.finest(format(" %2d  %10.6f", i + 1, optimalValues[i]));
-                }
-            }
-
-            int mode;
-            switch (lambdaMode) {
-                case OFF:
-                case CONDENSED:
-                    mode = 0;
-                    break;
-                case CONDENSED_NO_LIGAND:
-                    mode = 1;
-                    break;
-                case VAPOR:
-                    mode = 2;
-                    break;
-                default:
-                    mode = 0;
-            }
-
-            // Initialize a pointer into predictor induced dipole array.
-            int index = predictorStartIndex;
-
-            // Apply the LS coefficients in order to provide an initial guess at the converged induced dipoles.
-            for (int k = 0; k < predictorOrder - 1; k++) {
-
-                // Set the current coefficient.
-                double c = optimalValues[k];
-                for (int i = 0; i < nAtoms; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
-                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
-                    }
-                }
-                index++;
-                if (index >= predictorOrder) {
-                    index = 0;
-                }
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception computing predictor coefficients", e);
-
-        }
-    }
-
-    private class LeastSquaresPredictor
-            implements org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction {
-
-        double[] weights;
-        double[] target;
-        double[] values;
-        double[][] jacobian;
-        double[] initialSolution;
-
-        LeastSquaresPredictor() {
-            weights = new double[2 * nAtoms * 3];
-            target = new double[2 * nAtoms * 3];
-            values = new double[2 * nAtoms * 3];
-            jacobian = new double[2 * nAtoms * 3][predictorOrder - 1];
-            initialSolution = new double[predictorOrder - 1];
-            fill(weights, 1.0);
-            initialSolution[0] = 1.0;
-        }
-
-        double[] calculateTarget() {
-            return target;
-        }
-
-        void updateJacobianAndTarget() {
-            int mode;
-            switch (lambdaMode) {
-                case OFF:
-                case CONDENSED:
-                    mode = 0;
-                    break;
-                case CONDENSED_NO_LIGAND:
-                    mode = 1;
-                    break;
-                case VAPOR:
-                    mode = 2;
-                    break;
-                default:
-                    mode = 0;
-            }
-
-            // Update the target.
-            int index = 0;
-            for (int i = 0; i < nAtoms; i++) {
-                target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][0];
-                target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][1];
-                target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][2];
-                target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][0];
-                target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][1];
-                target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][2];
-            }
-
-            // Update the Jacobian.
-            index = predictorStartIndex + 1;
-            if (index >= predictorOrder) {
-                index = 0;
-            }
-            for (int j = 0; j < predictorOrder - 1; j++) {
-                int ji = 0;
-                for (int i = 0; i < nAtoms; i++) {
-                    jacobian[ji++][j] = predictorInducedDipole[mode][index][i][0];
-                    jacobian[ji++][j] = predictorInducedDipole[mode][index][i][1];
-                    jacobian[ji++][j] = predictorInducedDipole[mode][index][i][2];
-                    jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][0];
-                    jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][1];
-                    jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][2];
-                }
-                index++;
-                if (index >= predictorOrder) {
-                    index = 0;
-                }
-            }
-        }
-
-        private double[][] jacobian(double[] variables) {
-            return jacobian;
-        }
-
-        @Override
-        public double[] value(double[] variables) {
-            int mode;
-            switch (lambdaMode) {
-                case OFF:
-                case CONDENSED:
-                    mode = 0;
-                    break;
-                case CONDENSED_NO_LIGAND:
-                    mode = 1;
-                    break;
-                case VAPOR:
-                    mode = 2;
-                    break;
-                default:
-                    mode = 0;
-            }
-
-            for (int i = 0; i < nAtoms; i++) {
-                int index = 6 * i;
-                values[index] = 0;
-                values[index + 1] = 0;
-                values[index + 2] = 0;
-                values[index + 3] = 0;
-                values[index + 4] = 0;
-                values[index + 5] = 0;
-                int pi = predictorStartIndex + 1;
-                if (pi >= predictorOrder) {
-                    pi = 0;
-                }
-                for (int j = 0; j < predictorOrder - 1; j++) {
-                    values[index] += variables[j] * predictorInducedDipole[mode][pi][i][0];
-                    values[index + 1] += variables[j] * predictorInducedDipole[mode][pi][i][1];
-                    values[index + 2] += variables[j] * predictorInducedDipole[mode][pi][i][2];
-                    values[index + 3] += variables[j] * predictorInducedDipoleCR[mode][pi][i][0];
-                    values[index + 4] += variables[j] * predictorInducedDipoleCR[mode][pi][i][1];
-                    values[index + 5] += variables[j] * predictorInducedDipoleCR[mode][pi][i][2];
-                    pi++;
-                    if (pi >= predictorOrder) {
-                        pi = 0;
-                    }
-                }
-            }
-            return values;
-        }
-
-        @Override
-        public org.apache.commons.math3.analysis.MultivariateMatrixFunction
-        jacobian() {
-            return multivariateMatrixFunction;
-        }
-
-        private org.apache.commons.math3.analysis.MultivariateMatrixFunction multivariateMatrixFunction
-                = new org.apache.commons.math3.analysis.MultivariateMatrixFunction() {
-            @Override
-            public double[][] value(double[] point) {
-                return jacobian(point);
-            }
-        };
-    }
-
-    /**
-     * Always-stable predictor-corrector for the mutual induced dipoles.
-     */
-    private void aspcPredictor() {
-
-        if (predictorCount < 6) {
-            return;
-        }
-
-        int mode;
-        switch (lambdaMode) {
-            case OFF:
-            case CONDENSED:
-                mode = 0;
-                break;
-            case CONDENSED_NO_LIGAND:
-                mode = 1;
-                break;
-            case VAPOR:
-                mode = 2;
-                break;
-            default:
-                mode = 0;
-        }
-
-        final double[] aspc = {22.0 / 7.0, -55.0 / 14.0, 55.0 / 21.0, -22.0 / 21.0, 5.0 / 21.0, -1.0 / 42.0};
-
-        // Initialize a pointer into predictor induced dipole array.
-        int index = predictorStartIndex;
-
-        // Expansion loop.
-        for (int k = 0; k < 6; k++) {
-
-            // Set the current predictor coefficient.
-            double c = aspc[k];
-            for (int i = 0; i < nAtoms; i++) {
-                for (int j = 0; j < 3; j++) {
-                    inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
-                    inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
-                }
-            }
-            index++;
-            if (index >= predictorOrder) {
-                index = 0;
-
-            }
-        }
-    }
-
-    /**
-     * Polynomial predictor for the mutual induced dipoles.
-     */
-    private void polynomialPredictor() {
-
-        if (predictorCount == 0) {
-            return;
-        }
-
-        int mode;
-        switch (lambdaMode) {
-            case OFF:
-            case CONDENSED:
-                mode = 0;
-                break;
-            case CONDENSED_NO_LIGAND:
-                mode = 1;
-                break;
-            case VAPOR:
-                mode = 2;
-                break;
-            default:
-                mode = 0;
-        }
-
-        // Check the number of previous induced dipole vectors available.
-        int n = predictorOrder;
-        if (predictorCount < predictorOrder) {
-            n = predictorCount;
-        }
-
-        // Initialize a pointer into predictor induced dipole array.
-        int index = predictorStartIndex;
-
-        // Initialize the sign of the polynomial expansion.
-        double sign = -1.0;
-
-        // Expansion loop.
-        for (int k = 0; k < n; k++) {
-
-            // Set the current predictor sign and coefficient.
-            sign *= -1.0;
-            double c = sign * VectorMath.binomial(n, k);
-            for (int i = 0; i < nAtoms; i++) {
-                for (int j = 0; j < 3; j++) {
-                    inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
-                    inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
-                }
-            }
-            index++;
-            if (index >= predictorOrder) {
-                index = 0;
-            }
-        }
-    }
-
-    /**
-     * Log the real space electrostatics interaction.
-     *
-     * @param i   Atom i.
-     * @param k   Atom j.
-     * @param r   The distance rij.
-     * @param eij The interaction energy.
-     * @since 1.0
-     */
-    private void log(int i, int k, double r, double eij) {
-        logger.info(format("%s %6d-%s %6d-%s %10.4f  %10.4f",
-                "ELEC", atoms[i].getIndex(), atoms[i].getAtomType().name,
-                atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
-    }
-
     @Override
     public GeneralizedKirkwood getGK() {
         return generalizedKirkwood;
@@ -3079,6 +2652,21 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     /**
+     * Log the real space electrostatics interaction.
+     *
+     * @param i   Atom i.
+     * @param k   Atom j.
+     * @param r   The distance rij.
+     * @param eij The interaction energy.
+     * @since 1.0
+     */
+    private void log(int i, int k, double r, double eij) {
+        logger.info(format("%s %6d-%s %6d-%s %10.4f  %10.4f",
+                "ELEC", atoms[i].getIndex(), atoms[i].getAtomType().name,
+                atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
+    }
+
+    /**
      * Mutable Particle Mesh Ewald constants.
      */
     public class EwaldParameters {
@@ -3094,7 +2682,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         public double off;
         public double off2;
 
-        public EwaldParameters(double off, double aewald) {
+        public EwaldParameters() {
+            double off = 0.0;
+            if (!crystal.aperiodic()) {
+                off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, PERIODIC_DEFAULT_EWALD_CUTOFF);
+            } else {
+                off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, APERIODIC_DEFAULT_EWALD_CUTOFF);
+            }
+            double aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, 0.545);
             setEwaldParameters(off, aewald);
         }
 
@@ -3553,9 +3148,410 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
+    public class SCFPredictorVariables {
+        /**
+         * Induced dipole predictor order.
+         */
+        public int predictorOrder;
+        /**
+         * Induced dipole predictor index.
+         */
+        public int predictorStartIndex;
+        /**
+         * Induced dipole predictor count.
+         */
+        public int predictorCount;
+        /**
+         * Dimensions of [mode][predictorOrder][nAtoms][3]
+         */
+        public double[][][][] predictorInducedDipole;
+        /**
+         * Dimensions of [mode][predictorOrder][nAtoms][3]
+         */
+        public double[][][][] predictorInducedDipoleCR;
+        public LeastSquaresPredictor leastSquaresPredictor;
+        public LevenbergMarquardtOptimizer leastSquaresOptimizer;
+
+        public void init() {
+            predictorCount = 0;
+            int defaultOrder = 6;
+            predictorOrder =
+                    forceField.getInteger(ForceFieldInteger.SCF_PREDICTOR_ORDER, defaultOrder);
+            if (scfPredictor == SCFPredictor.LS) {
+                leastSquaresPredictor = new LeastSquaresPredictor();
+                double eps = 1.0e-4;
+                leastSquaresOptimizer = new org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer(
+                        new org.apache.commons.math3.optimization.SimpleVectorValueChecker(eps, eps));
+            } else if (scfPredictor == SCFPredictor.ASPC) {
+                predictorOrder = 6;
+            }
+            predictorStartIndex = 0;
+        }
+
+        /**
+         * The least-squares predictor with induced dipole information from 8-10
+         * previous steps reduces the number SCF iterations by ~50%.
+         */
+        public void leastSquaresPredictor() {
+            if (predictorCount < 2) {
+                return;
+            }
+            try {
+            /*
+              The Jacobian and target do not change during the LS optimization,
+              so it's most efficient to update them once before the
+              Least-Squares optimizer starts.
+             */
+                leastSquaresPredictor.updateJacobianAndTarget();
+                int maxEvals = 100;
+                fill(leastSquaresPredictor.initialSolution, 0.0);
+                leastSquaresPredictor.initialSolution[0] = 1.0;
+                org.apache.commons.math3.optimization.PointVectorValuePair optimum
+                        = leastSquaresOptimizer.optimize(maxEvals,
+                        leastSquaresPredictor,
+                        leastSquaresPredictor.calculateTarget(),
+                        leastSquaresPredictor.weights,
+                        leastSquaresPredictor.initialSolution);
+                double[] optimalValues = optimum.getPoint();
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest(format("\n LS RMS:            %10.6f", leastSquaresOptimizer.getRMS()));
+                    logger.finest(format(" LS Iterations:     %10d", leastSquaresOptimizer.getEvaluations()));
+                    logger.finest(format(" Jacobian Evals:    %10d", leastSquaresOptimizer.getJacobianEvaluations()));
+                    logger.finest(format(" Chi Square:        %10.6f", leastSquaresOptimizer.getChiSquare()));
+                    logger.finest(" LS Coefficients");
+                    for (int i = 0; i < predictorOrder - 1; i++) {
+                        logger.finest(format(" %2d  %10.6f", i + 1, optimalValues[i]));
+                    }
+                }
+
+                int mode;
+                switch (lambdaMode) {
+                    case OFF:
+                    case CONDENSED:
+                        mode = 0;
+                        break;
+                    case CONDENSED_NO_LIGAND:
+                        mode = 1;
+                        break;
+                    case VAPOR:
+                        mode = 2;
+                        break;
+                    default:
+                        mode = 0;
+                }
+
+                // Initialize a pointer into predictor induced dipole array.
+                int index = predictorStartIndex;
+
+                // Apply the LS coefficients in order to provide an initial guess at the converged induced dipoles.
+                for (int k = 0; k < predictorOrder - 1; k++) {
+
+                    // Set the current coefficient.
+                    double c = optimalValues[k];
+                    for (int i = 0; i < nAtoms; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
+                            inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
+                        }
+                    }
+                    index++;
+                    if (index >= predictorOrder) {
+                        index = 0;
+                    }
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, " Exception computing predictor coefficients", e);
+
+            }
+        }
+
+        /**
+         * Save the current converged mutual induced dipoles.
+         */
+        public void saveMutualInducedDipoles() {
+
+            int mode;
+            switch (lambdaMode) {
+                case OFF:
+                case CONDENSED:
+                    mode = 0;
+                    break;
+                case CONDENSED_NO_LIGAND:
+                    mode = 1;
+                    break;
+                case VAPOR:
+                    mode = 2;
+                    break;
+                default:
+                    mode = 0;
+            }
+
+            // Current induced dipoles are saved before those from the previous step.
+            predictorStartIndex--;
+            if (predictorStartIndex < 0) {
+                predictorStartIndex = predictorOrder - 1;
+            }
+
+            if (predictorCount < predictorOrder) {
+                predictorCount++;
+            }
+
+            for (int i = 0; i < nAtoms; i++) {
+                for (int j = 0; j < 3; j++) {
+                    predictorInducedDipole[mode][predictorStartIndex][i][j]
+                            = inducedDipole[0][i][j] - directDipole[i][j];
+                    predictorInducedDipoleCR[mode][predictorStartIndex][i][j]
+                            = inducedDipoleCR[0][i][j] - directDipoleCR[i][j];
+                }
+            }
+        }
+
+        private class LeastSquaresPredictor
+                implements org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction {
+
+            double[] weights;
+            double[] target;
+            double[] values;
+            double[][] jacobian;
+            double[] initialSolution;
+
+            LeastSquaresPredictor() {
+                weights = new double[2 * nAtoms * 3];
+                target = new double[2 * nAtoms * 3];
+                values = new double[2 * nAtoms * 3];
+                jacobian = new double[2 * nAtoms * 3][predictorOrder - 1];
+                initialSolution = new double[predictorOrder - 1];
+                fill(weights, 1.0);
+                initialSolution[0] = 1.0;
+            }
+
+            double[] calculateTarget() {
+                return target;
+            }
+
+            void updateJacobianAndTarget() {
+                int mode;
+                switch (lambdaMode) {
+                    case OFF:
+                    case CONDENSED:
+                        mode = 0;
+                        break;
+                    case CONDENSED_NO_LIGAND:
+                        mode = 1;
+                        break;
+                    case VAPOR:
+                        mode = 2;
+                        break;
+                    default:
+                        mode = 0;
+                }
+
+                // Update the target.
+                int index = 0;
+                for (int i = 0; i < nAtoms; i++) {
+                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][0];
+                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][1];
+                    target[index++] = predictorInducedDipole[mode][predictorStartIndex][i][2];
+                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][0];
+                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][1];
+                    target[index++] = predictorInducedDipoleCR[mode][predictorStartIndex][i][2];
+                }
+
+                // Update the Jacobian.
+                index = predictorStartIndex + 1;
+                if (index >= predictorOrder) {
+                    index = 0;
+                }
+                for (int j = 0; j < predictorOrder - 1; j++) {
+                    int ji = 0;
+                    for (int i = 0; i < nAtoms; i++) {
+                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][0];
+                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][1];
+                        jacobian[ji++][j] = predictorInducedDipole[mode][index][i][2];
+                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][0];
+                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][1];
+                        jacobian[ji++][j] = predictorInducedDipoleCR[mode][index][i][2];
+                    }
+                    index++;
+                    if (index >= predictorOrder) {
+                        index = 0;
+                    }
+                }
+            }
+
+            private double[][] jacobian(double[] variables) {
+                return jacobian;
+            }
+
+            @Override
+            public double[] value(double[] variables) {
+                int mode;
+                switch (lambdaMode) {
+                    case OFF:
+                    case CONDENSED:
+                        mode = 0;
+                        break;
+                    case CONDENSED_NO_LIGAND:
+                        mode = 1;
+                        break;
+                    case VAPOR:
+                        mode = 2;
+                        break;
+                    default:
+                        mode = 0;
+                }
+
+                for (int i = 0; i < nAtoms; i++) {
+                    int index = 6 * i;
+                    values[index] = 0;
+                    values[index + 1] = 0;
+                    values[index + 2] = 0;
+                    values[index + 3] = 0;
+                    values[index + 4] = 0;
+                    values[index + 5] = 0;
+                    int pi = predictorStartIndex + 1;
+                    if (pi >= predictorOrder) {
+                        pi = 0;
+                    }
+                    for (int j = 0; j < predictorOrder - 1; j++) {
+                        values[index] += variables[j] * predictorInducedDipole[mode][pi][i][0];
+                        values[index + 1] += variables[j] * predictorInducedDipole[mode][pi][i][1];
+                        values[index + 2] += variables[j] * predictorInducedDipole[mode][pi][i][2];
+                        values[index + 3] += variables[j] * predictorInducedDipoleCR[mode][pi][i][0];
+                        values[index + 4] += variables[j] * predictorInducedDipoleCR[mode][pi][i][1];
+                        values[index + 5] += variables[j] * predictorInducedDipoleCR[mode][pi][i][2];
+                        pi++;
+                        if (pi >= predictorOrder) {
+                            pi = 0;
+                        }
+                    }
+                }
+                return values;
+            }
+
+            @Override
+            public org.apache.commons.math3.analysis.MultivariateMatrixFunction
+            jacobian() {
+                return multivariateMatrixFunction;
+            }
+
+            private org.apache.commons.math3.analysis.MultivariateMatrixFunction multivariateMatrixFunction
+                    = new org.apache.commons.math3.analysis.MultivariateMatrixFunction() {
+                @Override
+                public double[][] value(double[] point) {
+                    return jacobian(point);
+                }
+            };
+        }
+
+        /**
+         * Always-stable predictor-corrector for the mutual induced dipoles.
+         */
+        public void aspcPredictor() {
+
+            if (predictorCount < 6) {
+                return;
+            }
+
+            int mode;
+            switch (lambdaMode) {
+                case OFF:
+                case CONDENSED:
+                    mode = 0;
+                    break;
+                case CONDENSED_NO_LIGAND:
+                    mode = 1;
+                    break;
+                case VAPOR:
+                    mode = 2;
+                    break;
+                default:
+                    mode = 0;
+            }
+
+            final double[] aspc = {22.0 / 7.0, -55.0 / 14.0, 55.0 / 21.0, -22.0 / 21.0, 5.0 / 21.0, -1.0 / 42.0};
+
+            // Initialize a pointer into predictor induced dipole array.
+            int index = predictorStartIndex;
+
+            // Expansion loop.
+            for (int k = 0; k < 6; k++) {
+
+                // Set the current predictor coefficient.
+                double c = aspc[k];
+                for (int i = 0; i < nAtoms; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
+                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
+                    }
+                }
+                index++;
+                if (index >= predictorOrder) {
+                    index = 0;
+
+                }
+            }
+        }
+
+        /**
+         * Polynomial predictor for the mutual induced dipoles.
+         */
+        public void polynomialPredictor() {
+
+            if (predictorCount == 0) {
+                return;
+            }
+
+            int mode;
+            switch (lambdaMode) {
+                case OFF:
+                case CONDENSED:
+                    mode = 0;
+                    break;
+                case CONDENSED_NO_LIGAND:
+                    mode = 1;
+                    break;
+                case VAPOR:
+                    mode = 2;
+                    break;
+                default:
+                    mode = 0;
+            }
+
+            // Check the number of previous induced dipole vectors available.
+            int n = predictorOrder;
+            if (predictorCount < predictorOrder) {
+                n = predictorCount;
+            }
+
+            // Initialize a pointer into predictor induced dipole array.
+            int index = predictorStartIndex;
+
+            // Initialize the sign of the polynomial expansion.
+            double sign = -1.0;
+
+            // Expansion loop.
+            for (int k = 0; k < n; k++) {
+
+                // Set the current predictor sign and coefficient.
+                sign *= -1.0;
+                double c = sign * VectorMath.binomial(n, k);
+                for (int i = 0; i < nAtoms; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];
+                        inducedDipoleCR[0][i][j] += c * predictorInducedDipoleCR[mode][index][i][j];
+                    }
+                }
+                index++;
+                if (index >= predictorOrder) {
+                    index = 0;
+                }
+            }
+        }
+    }
+
     /**
      * Number of unique tensors for given order.
      */
     private static final int tensorCount = MultipoleTensor.tensorCount(3);
-    private static final double oneThird = 1.0 / 3.0;
 }

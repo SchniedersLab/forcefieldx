@@ -45,7 +45,7 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.PCGVariables;
 
 public class PCGInitRegion1 extends ParallelRegion {
 
@@ -92,7 +92,7 @@ public class PCGInitRegion1 extends ParallelRegion {
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      double[][] directDipole, double[][] directDipoleCR,
                      double[][][] field, double[][][] fieldCR,
-                     ParticleMeshEwaldCart.PCGVariables pcgVariables) {
+                     PCGVariables pcgVariables) {
         this.atoms = atoms;
         this.polarizability = polarizability;
         this.inducedDipole = inducedDipole;

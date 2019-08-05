@@ -53,7 +53,8 @@ import edu.rit.pj.ParallelRegion;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.PCGVariables;
 import static ffx.numerics.special.Erf.erfc;
 
 /**
@@ -143,9 +144,9 @@ public class InducedDipolePreconditionerRegion extends ParallelRegion {
     public void init(Atom[] atoms, double[][][] coordinates,
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      Crystal crystal, boolean[] use, double[] ipdamp, double[] thole,
-                     ParticleMeshEwaldCart.PCGVariables pcgVariables, IntegerSchedule realSpaceSchedule,
+                     PCGVariables pcgVariables, IntegerSchedule realSpaceSchedule,
                      double[][][] field, double[][][] fieldCR, long[] realSpaceSCFTime,
-                     ParticleMeshEwaldCart.EwaldParameters ewaldParameters) {
+                     EwaldParameters ewaldParameters) {
         this.atoms = atoms;
         this.coordinates = coordinates;
         this.inducedDipole = inducedDipole;

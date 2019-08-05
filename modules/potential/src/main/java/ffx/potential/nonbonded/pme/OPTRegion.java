@@ -47,7 +47,7 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t010;
 import static ffx.potential.parameters.MultipoleType.t100;
@@ -66,8 +66,6 @@ public class OPTRegion extends ParallelRegion {
      */
     public double[][][] inducedDipole;
     public double[][][] inducedDipoleCR;
-    private double[][][] optDipole;
-    private double[][][] optDipoleCR;
     private double[][] cartesianDipolePhi;
     private double[][] cartesianDipolePhiCR;
 
@@ -94,7 +92,14 @@ public class OPTRegion extends ParallelRegion {
     public final double[] optCoefficients;
     public final double[] optCoefficientsSum;
 
-    public OPTRegion(int nt, int optOrder) {
+    /**
+     * Induced dipoles for extrapolated perturbation theory.
+     */
+    public final int optOrder = 2;
+    public double[][][] optDipole;
+    public double[][][] optDipoleCR;
+
+    public OPTRegion(int nt) {
         maxThreads = nt;
         optLoop = new OPTLoop[nt];
         optCoefficients = new double[optOrder + 1];
@@ -152,18 +157,15 @@ public class OPTRegion extends ParallelRegion {
 
     public void init(int currentOptOrder, Atom[] atoms, double[] polarizability,
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
-                     double[][][] optDipole, double[][][] optDipoleCR,
                      double[][] cartesianDipolePhi, double[][] cartesianDipolePhiCR,
                      double[][][] field, double[][][] fieldCR,
                      boolean generalizedKirkwoodTerm, GeneralizedKirkwood generalizedKirkwood,
-                     ParticleMeshEwaldCart.EwaldParameters ewaldParameters) {
+                     EwaldParameters ewaldParameters) {
         this.currentOptOrder = currentOptOrder;
         this.atoms = atoms;
         this.polarizability = polarizability;
         this.inducedDipole = inducedDipole;
         this.inducedDipoleCR = inducedDipoleCR;
-        this.optDipole = optDipole;
-        this.optDipoleCR = optDipoleCR;
         this.cartesianDipolePhi = cartesianDipolePhi;
         this.cartesianDipolePhiCR = cartesianDipolePhiCR;
         this.field = field;
