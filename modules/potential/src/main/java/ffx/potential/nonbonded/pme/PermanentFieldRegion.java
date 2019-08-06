@@ -64,7 +64,6 @@ import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.PCGVariables;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleFactors;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
@@ -235,7 +234,7 @@ public class PermanentFieldRegion extends ParallelRegion {
                      int[][][] realSpaceLists, ScaleFactors scaleFactors,
                      boolean[] use, int[] molecule, double[] ipdamp, double[] thole, int[][] ip11,
                      LambdaMode lambdaMode, IntegerSchedule permanentSchedule, boolean reciprocalSpaceTerm,
-                     EwaldParameters ewaldParameters, ReciprocalSpace reciprocalSpace, PCGVariables pcgVariables,
+                     EwaldParameters ewaldParameters, ReciprocalSpace reciprocalSpace, PCGSolver pcgSolver,
                      int[][] realSpaceCounts, Range[] realSpaceRanges, double[][][] field, double[][][] fieldCR,
                      long realSpacePermTotal, long[] realSpacePermTime) {
         this.atoms = atoms;
@@ -255,10 +254,10 @@ public class PermanentFieldRegion extends ParallelRegion {
         this.lambdaMode = lambdaMode;
         this.permanentSchedule = permanentSchedule;
         this.reciprocalSpaceTerm = reciprocalSpaceTerm;
-        if (pcgVariables != null) {
-            this.preconditionerCutoff = pcgVariables.preconditionerCutoff;
-            this.preconditionerLists = pcgVariables.preconditionerLists;
-            this.preconditionerCounts = pcgVariables.preconditionerCounts;
+        if (pcgSolver != null) {
+            this.preconditionerCutoff = pcgSolver.preconditionerCutoff;
+            this.preconditionerLists = pcgSolver.preconditionerLists;
+            this.preconditionerCounts = pcgSolver.preconditionerCounts;
         }
         this.aewald = ewaldParameters.aewald;
         this.an0 = ewaldParameters.an0;

@@ -67,15 +67,11 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.pme.DirectRegion;
 import ffx.potential.nonbonded.pme.ExpandInducedDipolesRegion;
+import ffx.potential.nonbonded.pme.InducedDipoleFieldReduceRegion;
 import ffx.potential.nonbonded.pme.InducedDipoleFieldRegion;
-import ffx.potential.nonbonded.pme.InducedDipolePreconditionerRegion;
 import ffx.potential.nonbonded.pme.InitializationRegion;
 import ffx.potential.nonbonded.pme.OPTRegion;
-import ffx.potential.nonbonded.pme.PCGInitRegion1;
-import ffx.potential.nonbonded.pme.PCGInitRegion2;
-import ffx.potential.nonbonded.pme.PCGIterRegion1;
-import ffx.potential.nonbonded.pme.PCGIterRegion2;
-import ffx.potential.nonbonded.pme.PCGRegion;
+import ffx.potential.nonbonded.pme.PCGSolver;
 import ffx.potential.nonbonded.pme.PermanentFieldRegion;
 import ffx.potential.nonbonded.pme.PolarizationEnergyRegion;
 import ffx.potential.nonbonded.pme.RealSpaceEnergyRegion;
@@ -185,6 +181,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Reference to the force field being used.
      */
     private final ForceField forceField;
+
     /**
      * Neighbor lists, without atoms beyond the real space cutoff.
      * [nSymm][nAtoms][nIncludedNeighbors]
@@ -267,7 +264,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final SCFPredictor scfPredictor;
     private final SCFPredictorVariables scfPredictorVariables;
     private final EwaldParameters ewaldParameters;
-    private final PCGVariables pcgVariables;
     private final ScaleFactors scaleFactors;
     private final AlchemicalFactors alchemicalFactors;
 
@@ -346,17 +342,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final InitializationRegion initializationRegion;
     private final PermanentFieldRegion permanentFieldRegion;
     private final InducedDipoleFieldRegion inducedDipoleFieldRegion;
+    private final InducedDipoleFieldReduceRegion inducedDipoleFieldReduceRegion;
     private final ExpandInducedDipolesRegion expandInducedDipolesRegion;
     private final DirectRegion directRegion;
     private final SORRegion sorRegion;
     private final OPTRegion optRegion;
+    private final PCGSolver pcgSolver;
     private final PolarizationEnergyRegion polarizationEnergyRegion;
-    private final InducedDipolePreconditionerRegion inducedDipolePreconditionerRegion;
-    private final PCGRegion pcgRegion;
-    private final PCGInitRegion1 pcgInitRegion1;
-    private final PCGInitRegion2 pcgInitRegion2;
-    private final PCGIterRegion1 pcgIterRegion1;
-    private final PCGIterRegion2 pcgIterRegion2;
 
     private final boolean reciprocalSpaceTerm;
     private final ReciprocalSpace reciprocalSpace;
@@ -445,33 +437,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             scfAlgorithm = SCFAlgorithm.CG;
         }
 
-        // The size of the preconditioner neighbor list depends on the size of the preconditioner cutoff.
-        pcgVariables = new PCGVariables(nAtoms);
-        if (scfAlgorithm == SCFAlgorithm.CG) {
-            inducedDipolePreconditionerRegion = new InducedDipolePreconditionerRegion(maxThreads);
-            pcgRegion = new PCGRegion(maxThreads);
-            pcgInitRegion1 = new PCGInitRegion1(maxThreads);
-            pcgInitRegion2 = new PCGInitRegion2(maxThreads);
-            pcgIterRegion1 = new PCGIterRegion1(maxThreads);
-            pcgIterRegion2 = new PCGIterRegion2(maxThreads);
-            boolean preconditioner = forceField.getBoolean(ForceFieldBoolean.USE_SCF_PRECONDITIONER, true);
-            if (preconditioner) {
-                pcgVariables.preconditionerCutoff = forceField.getDouble(
-                        ForceFieldDouble.CG_PRECONDITIONER_CUTOFF, 4.5);
-                pcgVariables.preconditionerEwald = forceField.getDouble(
-                        ForceFieldDouble.CG_PRECONDITIONER_EWALD, 0.0);
-            } else {
-                pcgVariables.preconditionerCutoff = 0.0;
-            }
-        } else {
-            inducedDipolePreconditionerRegion = null;
-            pcgRegion = null;
-            pcgInitRegion1 = null;
-            pcgInitRegion2 = null;
-            pcgIterRegion1 = null;
-            pcgIterRegion2 = null;
-        }
-
+        pcgSolver = new PCGSolver(maxThreads, poleps, forceField, nAtoms);
 
         alchemicalFactors = new AlchemicalFactors(forceField, lambdaTerm);
 
@@ -528,9 +494,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     sb.append(format("    SOR Parameter:                     %8.3f\n", sorRegion.getSOR()));
                 } else {
                     sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n",
-                            pcgVariables.preconditionerCutoff));
+                            pcgSolver.preconditionerCutoff));
                     sb.append(format("    CG Preconditioner Ewald Coeff.:    %8.3f\n",
-                            pcgVariables.preconditionerEwald));
+                            pcgSolver.preconditionerEwald));
                 }
             }
             if (ewaldParameters.aewald > 0.0) {
@@ -613,6 +579,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
         permanentFieldRegion = new PermanentFieldRegion(realSpaceTeam, forceField, lambdaTerm);
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam, forceField, lambdaTerm);
+        inducedDipoleFieldReduceRegion = new InducedDipoleFieldReduceRegion(maxThreads);
         polarizationEnergyRegion = new PolarizationEnergyRegion(maxThreads, forceField);
         realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads, forceField, elecForm, lambdaTerm);
         reduceRegion = new ReduceRegion(maxThreads, forceField);
@@ -659,9 +626,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             realSpaceSchedule = new PairwiseSchedule(maxThreads, nAtoms, realSpaceRanges);
 
             if (scfAlgorithm == SCFAlgorithm.CG) {
-                pcgVariables.allocateVectors(nAtoms);
+                pcgSolver.allocateVectors(nAtoms);
             }
-            pcgVariables.allocateLists(nSymm, nAtoms);
+            pcgSolver.allocateLists(nSymm, nAtoms);
 
             if (scfPredictor != SCFPredictor.NONE) {
                 int predictorOrder = scfPredictorVariables.predictorOrder;
@@ -874,15 +841,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             coordinates = new double[nSymmNew][3][nAtoms];
             realSpaceLists = new int[nSymmNew][nAtoms][];
             realSpaceCounts = new int[nSymmNew][nAtoms];
-            if (pcgVariables != null) {
-                pcgVariables.allocateLists(nSymmNew, nAtoms);
-            }
             globalMultipole = new double[nSymmNew][nAtoms][10];
             inducedDipole = new double[nSymmNew][nAtoms][3];
             inducedDipoleCR = new double[nSymmNew][nAtoms][3];
             if (generalizedKirkwood != null) {
                 generalizedKirkwood.setAtoms(atoms);
             }
+            pcgSolver.allocateLists(nSymmNew, nAtoms);
         }
         nSymm = nSymmNew;
         neighborLists = neighborList.getNeighborList();
@@ -1458,7 +1423,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     inducedDipole, inducedDipoleCR, neighborLists,
                     realSpaceLists, scaleFactors,
                     use, molecule, ipdamp, thole, ip11, lambdaMode, permanentSchedule,
-                    reciprocalSpaceTerm, ewaldParameters, reciprocalSpace, pcgVariables,
+                    reciprocalSpaceTerm, ewaldParameters, reciprocalSpace, pcgSolver,
                     realSpaceCounts, realSpaceRanges, field, fieldCR, realSpacePermTotal, realSpacePermTime);
             sectionTeam.execute(permanentFieldRegion);
 
@@ -1633,15 +1598,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         // Return unless mutual polarization is selected.
         if (polarization != Polarization.MUTUAL) {
-            if (nSymm > 1) {
-                try {
-                    expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                    parallelTeam.execute(expandInducedDipolesRegion);
-                } catch (Exception e) {
-                    String message = " Exception expanding direct induced dipoles.";
-                    logger.log(Level.SEVERE, message, e);
-                }
-            }
+            expandInducedDipoles();
             return 0;
         }
 
@@ -1664,15 +1621,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         // Expand the initial induced dipoles to P1 symmetry, if necessary.
-        if (nSymm > 1) {
-            try {
-                expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                parallelTeam.execute(expandInducedDipolesRegion);
-            } catch (Exception e) {
-                String message = " Exception expanding initial induced dipoles.";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
+        expandInducedDipoles();
 
         // Converge the self-consistent field.
         int iterations;
@@ -1685,7 +1634,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 break;
             case CG:
             default:
-                iterations = scfByPCG(print, startTime);
+                pcgSolver.init(atoms, coordinates, polarizability, ipdamp, thole, use, crystal,
+                        inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
+                        field, fieldCR, ewaldParameters, parallelTeam, realSpaceSchedule, realSpaceSCFTime);
+                iterations = pcgSolver.scfByPCG(print, startTime, this);
                 break;
         }
 
@@ -1740,10 +1692,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters);
                 parallelTeam.execute(sorRegion);
 
-                if (nSymm > 1) {
-                    expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                    parallelTeam.execute(expandInducedDipolesRegion);
-                }
+                expandInducedDipoles();
             } catch (Exception e) {
                 String message = "Exception computing mutual induced dipoles.";
                 logger.log(Level.SEVERE, message, e);
@@ -1789,165 +1738,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     startTime * TO_SECONDS));
             logger.info(sb.toString());
         }
-        return completedSCFCycles;
-    }
-
-    private int scfByPCG(boolean print, long startTime) {
-        long directTime = System.nanoTime() - startTime;
-        // A request of 0 SCF cycles simplifies mutual polarization to direct polarization.
-        StringBuilder sb = null;
-        if (print) {
-            sb = new StringBuilder("\n Self-Consistent Field\n Iter  RMS Change (Debye)  Time\n");
-        }
-
-        // Find the induced dipole field due to direct dipoles (or predicted induced dipoles from previous steps).
-        computeInduceDipoleField();
-
-        try {
-            // Set initial conjugate gradient residual (a field).
-            // Store the current induced dipoles and load the residual induced dipole.
-            pcgInitRegion1.init(atoms, polarizability, inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
-                    field, fieldCR, pcgVariables);
-            parallelTeam.execute(pcgInitRegion1);
-
-            // Compute preconditioner.
-            if (nSymm > 1) {
-                expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                parallelTeam.execute(expandInducedDipolesRegion);
-            }
-            // Use a special Ewald coefficient for the pre-conditioner.
-            double aewaldTemp = ewaldParameters.aewald;
-            ewaldParameters.setEwaldParameters(ewaldParameters.off, pcgVariables.preconditionerEwald);
-            inducedDipolePreconditionerRegion.init(atoms, coordinates, inducedDipole, inducedDipoleCR, crystal,
-                    use, ipdamp, thole, pcgVariables, realSpaceSchedule, field, fieldCR,
-                    realSpaceSCFTime, ewaldParameters);
-            parallelTeam.execute(inducedDipolePreconditionerRegion);
-            ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
-
-            // Revert to the stored induce dipoles.
-            // Set initial conjugate vector (induced dipoles).
-            pcgInitRegion2.init(atoms, polarizability, inducedDipole, inducedDipoleCR, field, fieldCR, pcgVariables);
-            parallelTeam.execute(pcgInitRegion2);
-        } catch (Exception e) {
-            String message = "Exception initializing preconditioned CG.";
-            logger.log(Level.SEVERE, message, e);
-        }
-
-        // Conjugate gradient iteration of the mutual induced dipoles.
-        int completedSCFCycles = 0;
-        int maxSCFCycles = 1000;
-        double eps = 100.0;
-        double previousEps;
-        boolean done = false;
-        while (!done) {
-            long cycleTime = -System.nanoTime();
-
-            // Store a copy of the current induced dipoles, then set the induced dipoles to the conjugate vector.
-            for (int i = 0; i < nAtoms; i++) {
-                pcgVariables.vec[0][i] = inducedDipole[0][i][0];
-                pcgVariables.vec[1][i] = inducedDipole[0][i][1];
-                pcgVariables.vec[2][i] = inducedDipole[0][i][2];
-                inducedDipole[0][i][0] = pcgVariables.conj[0][i];
-                inducedDipole[0][i][1] = pcgVariables.conj[1][i];
-                inducedDipole[0][i][2] = pcgVariables.conj[2][i];
-                pcgVariables.vecCR[0][i] = inducedDipoleCR[0][i][0];
-                pcgVariables.vecCR[1][i] = inducedDipoleCR[0][i][1];
-                pcgVariables.vecCR[2][i] = inducedDipoleCR[0][i][2];
-                inducedDipoleCR[0][i][0] = pcgVariables.conjCR[0][i];
-                inducedDipoleCR[0][i][1] = pcgVariables.conjCR[1][i];
-                inducedDipoleCR[0][i][2] = pcgVariables.conjCR[2][i];
-            }
-
-            // Find the induced dipole field.
-            computeInduceDipoleField();
-
-            try {
-                /*
-                 * Revert the induced dipoles to the saved values, then save the new residual field.
-                 * Compute dot product of the conjugate vector and new residual.
-                 * Reduce the residual field, add to the induced dipoles based
-                 * on the scaled conjugate vector and finally set the induced
-                 * dipoles to the polarizability times the residual field.
-                 */
-                pcgIterRegion1.init(atoms, polarizability, inducedDipole, inducedDipoleCR,
-                        field, fieldCR, pcgVariables);
-                parallelTeam.execute(pcgIterRegion1);
-
-                // Compute preconditioner.
-                if (nSymm > 1) {
-                    expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                    parallelTeam.execute(expandInducedDipolesRegion);
-                }
-
-                // Use a special Ewald coefficient for the pre-conditioner.
-                double aewaldTemp = ewaldParameters.aewald;
-                ewaldParameters.setEwaldParameters(ewaldParameters.off, pcgVariables.preconditionerEwald);
-                inducedDipolePreconditionerRegion.init(atoms, coordinates, inducedDipole, inducedDipoleCR, crystal,
-                        use, ipdamp, thole, pcgVariables, realSpaceSchedule, field, fieldCR,
-                        realSpaceSCFTime, ewaldParameters);
-                parallelTeam.execute(inducedDipolePreconditionerRegion);
-                ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
-
-                /*
-                 * Revert the induced dipoles to the saved values.
-                 * Compute the dot product of the residual and preconditioner.
-                 * Update the conjugate vector and sum the square of the residual field.
-                 */
-                pcgIterRegion2.sum = pcgIterRegion1.getSum();
-                pcgIterRegion2.sumCR = pcgIterRegion1.getSumCR();
-                pcgIterRegion2.init(atoms, polarizability, inducedDipole, inducedDipoleCR,
-                        field, fieldCR, pcgVariables);
-                parallelTeam.execute(pcgIterRegion2);
-            } catch (Exception e) {
-                String message = "Exception in first CG iteration region.";
-                logger.log(Level.SEVERE, message, e);
-            }
-
-            previousEps = eps;
-            eps = max(pcgIterRegion2.getEps(), pcgIterRegion2.getEpsCR());
-            completedSCFCycles++;
-            eps = MultipoleType.DEBYE * sqrt(eps / (double) nAtoms);
-            cycleTime += System.nanoTime();
-            if (print) {
-                sb.append(format(
-                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * TO_SECONDS));
-            }
-
-            // If the RMS Debye change increases, fail the SCF process.
-            if (eps > previousEps) {
-                if (sb != null) {
-                    logger.warning(sb.toString());
-                }
-                String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-                throw new EnergyException(message, false);
-            }
-
-            // The SCF should converge well before the max iteration check. Otherwise, fail the SCF process.
-            if (completedSCFCycles >= maxSCFCycles) {
-                if (sb != null) {
-                    logger.warning(sb.toString());
-                }
-                String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-                throw new EnergyException(message, false);
-            }
-
-            // Check if the convergence criteria has been achieved.
-            if (eps < poleps) {
-                done = true;
-            }
-        }
-        if (print) {
-            sb.append(format(" Direct:                  %7.4f\n",
-                    TO_SECONDS * directTime));
-            startTime = System.nanoTime() - startTime;
-            sb.append(format(" Total:                   %7.4f",
-                    startTime * TO_SECONDS));
-            logger.info(sb.toString());
-        }
-
-        // Find the final induced dipole field.
-        computeInduceDipoleField();
-
         return completedSCFCycles;
     }
 
@@ -1997,10 +1787,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters);
                 parallelTeam.execute(optRegion);
 
-                if (nSymm > 1) {
-                    expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                    parallelTeam.execute(expandInducedDipolesRegion);
-                }
+                expandInducedDipoles();
             } catch (Exception e) {
                 String message = "Exception computing opt induced dipoles.";
                 logger.log(Level.SEVERE, message, e);
@@ -2024,15 +1811,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         // Expand asymmetric OPT dipoles for crystal symmetry.
-        if (nSymm > 1) {
-            try {
-                expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                parallelTeam.execute(expandInducedDipolesRegion);
-            } catch (Exception e) {
-                String message = "Exception computing opt induced dipoles.";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
+        expandInducedDipoles();
 
         return optOrder;
     }
@@ -2546,46 +2325,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
-    private void computeInduceDipoleField() {
-        try {
-            if (nSymm > 1) {
-                expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
-                parallelTeam.execute(expandInducedDipolesRegion);
-            }
-
-            if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-                reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
-            }
-
-            inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
-                    ipdamp, thole, coordinates, realSpaceLists, realSpaceCounts,
-                    inducedDipole, inducedDipoleCR, realSpaceSchedule, reciprocalSpace,
-                    lambdaMode, reciprocalSpaceTerm, ewaldParameters, realSpaceSCFTotal, realSpaceSCFTime,
-                    field, fieldCR);
-            sectionTeam.execute(inducedDipoleFieldRegion);
-            realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
-
-            if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-                reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
-            }
-            if (generalizedKirkwoodTerm) {
-                // GK field.
-                gkEnergyTotal = -System.nanoTime();
-                generalizedKirkwood.computeInducedGKField();
-                gkEnergyTotal += System.nanoTime();
-                logger.fine(format(" Computed GK induced field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
-            }
-
-            pcgRegion.init(atoms, inducedDipole, inducedDipoleCR, cartesianDipolePhi, cartesianDipolePhiCR,
-                    field, fieldCR, generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters);
-            parallelTeam.execute(pcgRegion);
-
-        } catch (Exception e) {
-            String message = "Exception computing induced dipole field.";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
     @Override
     public GeneralizedKirkwood getGK() {
         return generalizedKirkwood;
@@ -2651,6 +2390,51 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return "Cartesian";
     }
 
+    public void computeInduceDipoleField() {
+        expandInducedDipoles();
+        try {
+            if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
+                reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
+            }
+            inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
+                    ipdamp, thole, coordinates, realSpaceLists, realSpaceCounts,
+                    inducedDipole, inducedDipoleCR, realSpaceSchedule, reciprocalSpace,
+                    lambdaMode, reciprocalSpaceTerm, ewaldParameters, realSpaceSCFTotal, realSpaceSCFTime,
+                    field, fieldCR);
+            sectionTeam.execute(inducedDipoleFieldRegion);
+            realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
+            if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
+                reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+            }
+            if (generalizedKirkwoodTerm) {
+                // GK field.
+                gkEnergyTotal = -System.nanoTime();
+                generalizedKirkwood.computeInducedGKField();
+                gkEnergyTotal += System.nanoTime();
+                logger.fine(format(" Computed GK induced field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
+            }
+            inducedDipoleFieldReduceRegion.init(atoms, inducedDipole, inducedDipoleCR,
+                    cartesianDipolePhi, cartesianDipolePhiCR, field, fieldCR,
+                    generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters);
+            parallelTeam.execute(inducedDipoleFieldReduceRegion);
+        } catch (Exception e) {
+            String message = "Exception computing induced dipole field.";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    public void expandInducedDipoles() {
+        if (nSymm > 1) {
+            try {
+                expandInducedDipolesRegion.init(atoms, crystal, inducedDipole, inducedDipoleCR);
+                parallelTeam.execute(expandInducedDipolesRegion);
+            } catch (Exception e) {
+                String message = "Exception computing mutual induced dipoles.";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+    }
+
     /**
      * Log the real space electrostatics interaction.
      *
@@ -2701,7 +2485,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
          * @param aewald Ewald convergence parameter (0.0 turns off reciprocal
          *               space).
          */
-        private void setEwaldParameters(double off, double aewald) {
+        public void setEwaldParameters(double off, double aewald) {
             this.off = off;
             this.aewald = aewald;
             off2 = off * off;
@@ -2726,61 +2510,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 an4 = 0.0;
                 an5 = 0.0;
             }
-        }
-    }
-
-    /**
-     * Pre-conditioned conjugate gradient vectors.
-     */
-    public class PCGVariables {
-        public double[][] rsd;
-        public double[][] rsdCR;
-        public double[][] rsdPre;
-        public double[][] rsdPreCR;
-        public double[][] conj;
-        public double[][] conjCR;
-        public double[][] vec;
-        public double[][] vecCR;
-
-        /**
-         * Neighbor lists, without atoms beyond the preconditioner cutoff.
-         * [nSymm][nAtoms][nIncludedNeighbors]
-         */
-        public int[][][] preconditionerLists;
-        /**
-         * Number of neighboring atoms within the preconditioner cutoff.
-         * [nSymm][nAtoms]
-         */
-        public int[][] preconditionerCounts;
-        public double preconditionerCutoff;
-        public double preconditionerEwald = 0.0;
-        public final int preconditionerListSize = 50;
-
-        /**
-         * Construct pre-conditioned conjugate gradient vectors
-         *
-         * @param nAtoms Initial length of the PCG vectors.
-         */
-        public PCGVariables(int nAtoms) {
-            allocateVectors(nAtoms);
-        }
-
-        public void allocateVectors(int nAtoms) {
-            if (rsd == null || rsd[0].length != nAtoms) {
-                rsd = new double[3][nAtoms];
-                rsdCR = new double[3][nAtoms];
-                rsdPre = new double[3][nAtoms];
-                rsdPreCR = new double[3][nAtoms];
-                conj = new double[3][nAtoms];
-                conjCR = new double[3][nAtoms];
-                vec = new double[3][nAtoms];
-                vecCR = new double[3][nAtoms];
-            }
-        }
-
-        public void allocateLists(int nSymm, int nAtoms) {
-            preconditionerLists = new int[nSymm][nAtoms][preconditionerListSize];
-            preconditionerCounts = new int[nSymm][nAtoms];
         }
     }
 

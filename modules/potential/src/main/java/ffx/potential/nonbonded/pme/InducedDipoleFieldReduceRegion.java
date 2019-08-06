@@ -52,7 +52,7 @@ import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t010;
 import static ffx.potential.parameters.MultipoleType.t100;
 
-public class PCGRegion extends ParallelRegion {
+public class InducedDipoleFieldReduceRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(DirectRegion.class.getName());
 
@@ -86,7 +86,7 @@ public class PCGRegion extends ParallelRegion {
     private final int maxThreads;
     private final PCGLoop[] pcgLoop;
 
-    public PCGRegion(int nt) {
+    public InducedDipoleFieldReduceRegion(int nt) {
         maxThreads = nt;
         pcgLoop = new PCGLoop[nt];
     }
@@ -119,7 +119,7 @@ public class PCGRegion extends ParallelRegion {
             int nAtoms = atoms.length;
             execute(0, nAtoms - 1, pcgLoop[ti]);
         } catch (Exception e) {
-            String message = "Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex() + "\n";
+            String message = " Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex() + "\n";
             logger.log(Level.SEVERE, message, e);
         }
 
