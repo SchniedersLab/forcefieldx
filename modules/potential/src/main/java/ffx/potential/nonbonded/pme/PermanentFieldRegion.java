@@ -63,8 +63,11 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleFactors;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.PMETimings;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.special.Erf.erfc;
@@ -119,11 +122,6 @@ public class PermanentFieldRegion extends ParallelRegion {
      */
     private int[][][] neighborLists;
     /**
-     * Neighbor lists, without atoms beyond the real space cutoff.
-     * [nSymm][nAtoms][nIncludedNeighbors]
-     */
-    private int[][][] realSpaceLists;
-    /**
      * Neighbor lists, without atoms beyond the preconditioner cutoff.
      * [nSymm][nAtoms][nIncludedNeighbors]
      */
@@ -168,21 +166,28 @@ public class PermanentFieldRegion extends ParallelRegion {
      */
     private LambdaMode lambdaMode = LambdaMode.OFF;
 
-    private IntegerSchedule permanentSchedule;
+    /**
+     * Reciprocal space instance.
+     */
+    private ReciprocalSpace reciprocalSpace;
     private boolean reciprocalSpaceTerm;
     private double off2;
     private double preconditionerCutoff;
     private double an0, an1, an2;
     private double aewald;
+
     /**
-     * Reciprocal space instance.
+     * Neighbor lists, without atoms beyond the real space cutoff.
+     * [nSymm][nAtoms][nIncludedNeighbors]
      */
-    private ReciprocalSpace reciprocalSpace;
+    private int[][][] realSpaceLists;
     /**
      * Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms]
      */
     private int[][] realSpaceCounts;
     private Range[] realSpaceRanges;
+    private IntegerSchedule permanentSchedule;
+
     /**
      * Field array for each thread. [threadID][X/Y/Z][atomID]
      */
@@ -197,7 +202,7 @@ public class PermanentFieldRegion extends ParallelRegion {
     private long realSpacePermTotal;
     private long[] realSpacePermTime;
 
-    private ScaleFactors scaleFactors;
+    private ScaleParameters scaleParameters;
 
     /**
      * Specify inter-molecular softcore.
@@ -231,12 +236,11 @@ public class PermanentFieldRegion extends ParallelRegion {
 
     public void init(Atom[] atoms, Crystal crystal, double[][][] coordinates, double[][][] globalMultipole,
                      double[][][] inducedDipole, double[][][] inducedDipoleCR, int[][][] neighborLists,
-                     int[][][] realSpaceLists, ScaleFactors scaleFactors,
-                     boolean[] use, int[] molecule, double[] ipdamp, double[] thole, int[][] ip11,
-                     LambdaMode lambdaMode, IntegerSchedule permanentSchedule, boolean reciprocalSpaceTerm,
-                     EwaldParameters ewaldParameters, ReciprocalSpace reciprocalSpace, PCGSolver pcgSolver,
-                     int[][] realSpaceCounts, Range[] realSpaceRanges, double[][][] field, double[][][] fieldCR,
-                     long realSpacePermTotal, long[] realSpacePermTime) {
+                     ScaleParameters scaleParameters, boolean[] use, int[] molecule, double[] ipdamp, double[] thole, int[][] ip11,
+                     LambdaMode lambdaMode, boolean reciprocalSpaceTerm, ReciprocalSpace reciprocalSpace,
+                     EwaldParameters ewaldParameters, PCGSolver pcgSolver,
+                     IntegerSchedule permanentSchedule, RealSpaceNeighborParameters realSpaceNeighborParameters,
+                     double[][][] field, double[][][] fieldCR, PMETimings pmeTimings) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.coordinates = coordinates;
@@ -244,16 +248,15 @@ public class PermanentFieldRegion extends ParallelRegion {
         this.inducedDipole = inducedDipole;
         this.inducedDipoleCR = inducedDipoleCR;
         this.neighborLists = neighborLists;
-        this.realSpaceLists = realSpaceLists;
-        this.scaleFactors = scaleFactors;
+        this.scaleParameters = scaleParameters;
         this.use = use;
         this.molecule = molecule;
         this.ipdamp = ipdamp;
         this.thole = thole;
         this.ip11 = ip11;
         this.lambdaMode = lambdaMode;
-        this.permanentSchedule = permanentSchedule;
         this.reciprocalSpaceTerm = reciprocalSpaceTerm;
+        this.reciprocalSpace = reciprocalSpace;
         if (pcgSolver != null) {
             this.preconditionerCutoff = pcgSolver.preconditionerCutoff;
             this.preconditionerLists = pcgSolver.preconditionerLists;
@@ -264,13 +267,14 @@ public class PermanentFieldRegion extends ParallelRegion {
         this.an1 = ewaldParameters.an1;
         this.an2 = ewaldParameters.an2;
         this.off2 = ewaldParameters.off2;
-        this.reciprocalSpace = reciprocalSpace;
-        this.realSpaceCounts = realSpaceCounts;
-        this.realSpaceRanges = realSpaceRanges;
+        this.permanentSchedule = permanentSchedule;
+        this.realSpaceLists = realSpaceNeighborParameters.realSpaceLists;
+        this.realSpaceCounts = realSpaceNeighborParameters.realSpaceCounts;
+        this.realSpaceRanges = realSpaceNeighborParameters.realSpaceRanges;
         this.field = field;
         this.fieldCR = fieldCR;
-        this.realSpacePermTotal = realSpacePermTotal;
-        this.realSpacePermTime = realSpacePermTime;
+        this.realSpacePermTotal = pmeTimings.realSpacePermTotal;
+        this.realSpacePermTime = pmeTimings.realSpacePermTime;
     }
 
     public long getRealSpacePermTotal() {
@@ -578,10 +582,10 @@ public class PermanentFieldRegion extends ParallelRegion {
                         Atom ak = torsion.get1_4(ai);
                         if (ak != null) {
                             int index = ak.getIndex() - 1;
-                            maskp_local[index] = scaleFactors.p14scale;
+                            maskp_local[index] = scaleParameters.p14scale;
                             for (int k : ip11[i]) {
                                 if (k == index) {
-                                    maskp_local[index] = scaleFactors.intra14Scale * scaleFactors.p14scale;
+                                    maskp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
                                 }
                             }
                         }
@@ -590,17 +594,17 @@ public class PermanentFieldRegion extends ParallelRegion {
                         Atom ak = angle.get1_3(ai);
                         if (ak != null) {
                             int index = ak.getIndex() - 1;
-                            maskp_local[index] = scaleFactors.p13scale;
+                            maskp_local[index] = scaleParameters.p13scale;
                         }
                     }
                     for (Bond bond : ai.getBonds()) {
                         int index = bond.get1_2(ai).getIndex() - 1;
-                        maskp_local[index] = scaleFactors.p12scale;
+                        maskp_local[index] = scaleParameters.p12scale;
                     }
 
                     // Apply group based polarization masking rule.
                     for (int index : ip11[i]) {
-                        mask_local[index] = scaleFactors.d11scale;
+                        mask_local[index] = scaleParameters.d11scale;
                     }
 
                     // Loop over the neighbor list.

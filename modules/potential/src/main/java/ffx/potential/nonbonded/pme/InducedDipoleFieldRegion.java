@@ -57,7 +57,10 @@ import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.PMETimings;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.special.Erf.erfc;
@@ -132,24 +135,23 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
      * Reciprocal space instance.
      */
     private ReciprocalSpace reciprocalSpace;
+    private boolean reciprocalSpaceTerm;
     /**
      * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
      */
     private LambdaMode lambdaMode = LambdaMode.OFF;
-    /**
-     * Field array for each thread. [threadID][X/Y/Z][atomID]
-     */
-    private boolean reciprocalSpaceTerm;
     private double aewald;
     private double an0, an1;
     private long realSpaceSCFTotal;
     private long[] realSpaceSCFTime;
+    /**
+     * Field array for each thread. [threadID][X/Y/Z][atomID]
+     */
     private double[][][] field;
     /**
      * Chain rule field array for each thread. [threadID][X/Y/Z][atomID]
      */
     private double[][][] fieldCR;
-
     /**
      * Specify inter-molecular softcore.
      */
@@ -180,12 +182,9 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
 
     public void init(Atom[] atoms, Crystal crystal, boolean[] use, int[] molecule,
                      double[] ipdamp, double[] thole, double[][][] coordinates,
-                     int[][][] realSpaceLists, int[][] realSpaceCounts,
-                     double[][][] inducedDipole, double[][][] inducedDipoleCR,
-                     IntegerSchedule realSpaceSchedule, ReciprocalSpace reciprocalSpace,
-                     LambdaMode lambdaMode, boolean reciprocalSpaceTerm,
-                     EwaldParameters ewaldParameters, long realSpaceSCFTotal, long[] realSpaceSCFTime,
-                     double[][][] field, double[][][] fieldCR) {
+                     RealSpaceNeighborParameters realSpaceNeighborParameters, double[][][] inducedDipole, double[][][] inducedDipoleCR,
+                     boolean reciprocalSpaceTerm, ReciprocalSpace reciprocalSpace, LambdaMode lambdaMode,
+                     EwaldParameters ewaldParameters, double[][][] field, double[][][] fieldCR, PMETimings pmeTimings) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.use = use;
@@ -193,19 +192,19 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
         this.ipdamp = ipdamp;
         this.thole = thole;
         this.coordinates = coordinates;
-        this.realSpaceLists = realSpaceLists;
-        this.realSpaceCounts = realSpaceCounts;
+        this.realSpaceLists = realSpaceNeighborParameters.realSpaceLists;
+        this.realSpaceCounts = realSpaceNeighborParameters.realSpaceCounts;
+        this.realSpaceSchedule = realSpaceNeighborParameters.realSpaceSchedule;
         this.inducedDipole = inducedDipole;
         this.inducedDipoleCR = inducedDipoleCR;
-        this.realSpaceSchedule = realSpaceSchedule;
+        this.reciprocalSpaceTerm = reciprocalSpaceTerm;
         this.reciprocalSpace = reciprocalSpace;
         this.lambdaMode = lambdaMode;
-        this.reciprocalSpaceTerm = reciprocalSpaceTerm;
         this.aewald = ewaldParameters.aewald;
         this.an0 = ewaldParameters.an0;
         this.an1 = ewaldParameters.an1;
-        this.realSpaceSCFTotal = realSpaceSCFTotal;
-        this.realSpaceSCFTime = realSpaceSCFTime;
+        this.realSpaceSCFTotal = pmeTimings.realSpaceSCFTotal;
+        this.realSpaceSCFTime = pmeTimings.realSpaceSCFTime;
         this.field = field;
         this.fieldCR = fieldCR;
     }

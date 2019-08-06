@@ -52,7 +52,7 @@ import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalFactors;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalParameters;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_ELECTRIC;
@@ -221,7 +221,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                      double[][][] lambdaGrad, double[][][] lambdaTorque,
                      boolean gradient, boolean lambdaTerm,
                      SharedDouble shareddEdLambda, SharedDouble sharedd2EdLambda2,
-                     AlchemicalFactors alchemicalFactors) {
+                     AlchemicalParameters alchemicalParameters) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.use = use;
@@ -241,13 +241,13 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         this.lambdaTerm = lambdaTerm;
         this.shareddEdLambda = shareddEdLambda;
         this.sharedd2EdLambda2 = sharedd2EdLambda2;
-        this.permanentScale = alchemicalFactors.permanentScale;
-        this.dlPowPerm = alchemicalFactors.dlPowPerm;
-        this.d2lPowPerm = alchemicalFactors.d2lPowPerm;
-        this.polarizationScale = alchemicalFactors.polarizationScale;
-        this.dlPowPol = alchemicalFactors.dlPowPol;
-        this.d2lPowPol = alchemicalFactors.d2lPowPol;
-        this.dEdLSign = alchemicalFactors.dEdLSign;
+        this.permanentScale = alchemicalParameters.permanentScale;
+        this.dlPowPerm = alchemicalParameters.dlPowPerm;
+        this.d2lPowPerm = alchemicalParameters.d2lPowPerm;
+        this.polarizationScale = alchemicalParameters.polarizationScale;
+        this.dlPowPol = alchemicalParameters.dlPowPol;
+        this.d2lPowPol = alchemicalParameters.d2lPowPol;
+        this.dEdLSign = alchemicalParameters.dEdLSign;
     }
 
     public double getPermanentSelfEnergy() {

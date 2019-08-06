@@ -148,14 +148,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private int nSymm;
     /**
-     * Flag to indicate use of generalized Kirkwood.
-     */
-    private boolean generalizedKirkwoodTerm;
-    /**
      * If lambdaTerm is true, some ligand atom interactions with the environment
      * are being turned on/off.
      */
     private final boolean lambdaTerm;
+    private final boolean reciprocalSpaceTerm;
+    /**
+     * Flag to indicate use of generalized Kirkwood.
+     */
+    private boolean generalizedKirkwoodTerm;
     /**
      * If true, compute coordinate gradient.
      */
@@ -183,24 +184,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final ForceField forceField;
 
     /**
-     * Neighbor lists, without atoms beyond the real space cutoff.
-     * [nSymm][nAtoms][nIncludedNeighbors]
-     */
-    private int[][][] realSpaceLists;
-    /**
-     * Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms]
-     */
-    private int[][] realSpaceCounts;
-    /**
-     * Optimal pairwise ranges.
-     */
-    private Range[] realSpaceRanges;
-    /**
-     * Pairwise schedule for load balancing.
-     */
-    private IntegerSchedule realSpaceSchedule;
-
-    /**
      * The current LambdaMode of this PME instance (or OFF for no lambda dependence).
      */
     private LambdaMode lambdaMode = LambdaMode.OFF;
@@ -209,6 +192,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private double lambda = 1.0;
 
+    /**
+     * Permanent multipoles in their local frame.
+     */
+    private double[][] localMultipole;
+    private MultipoleFrameDefinition[] frame;
+    private int[][] axisAtom;
+    private double[] ipdamp;
+    private double[] thole;
+    private double[] polarizability;
+    private final double poleps;
     /**
      * Flag for ligand atoms.
      */
@@ -238,73 +231,21 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private boolean[] use;
 
-    private Crystal vaporCrystal;
-    private int[][][] vaporLists;
-    private IntegerSchedule vaporPermanentSchedule;
-    private IntegerSchedule vaporEwaldSchedule;
-    private Range[] vacuumRanges;
-
-    /**
-     * Permanent multipoles in their local frame.
-     */
-    private double[][] localMultipole;
-    private MultipoleFrameDefinition[] frame;
-    private int[][] axisAtom;
-    private double[] ipdamp;
-    private double[] thole;
-    private double[] polarizability;
-    private final double poleps;
-    private double[][] cartMultipolePhi;
-    private double[][] cartesianDipolePhi;
-    private double[][] cartesianDipolePhiCR;
-
     /**
      * Specify an SCF predictor algorithm.
      */
     private final SCFPredictor scfPredictor;
-    private final SCFPredictorVariables scfPredictorVariables;
+    private final SCFPredictorParameters scfPredictorParameters;
     private final EwaldParameters ewaldParameters;
-    private final ScaleFactors scaleFactors;
-    private final AlchemicalFactors alchemicalFactors;
+    private final ScaleParameters scaleParameters;
+    private final AlchemicalParameters alchemicalParameters;
+    private final RealSpaceNeighborParameters realSpaceNeighborParameters;
+    private final PMETimings pmeTimings;
 
     /**
      * By default, maxThreads is set to the number of available SMP cores.
      */
     private final int maxThreads;
-    /**
-     * Gradient array for each thread. [threadID][X/Y/Z][atomID]
-     */
-    private double[][][] grad;
-    /**
-     * Torque array for each thread. [threadID][X/Y/Z][atomID]
-     */
-    private double[][][] torque;
-    /**
-     * Field array for each thread. [threadID][X/Y/Z][atomID]
-     */
-    private double[][][] field;
-    /**
-     * Chain rule field array for each thread. [threadID][X/Y/Z][atomID]
-     */
-    private double[][][] fieldCR;
-    /**
-     * Partial derivative of the gradient with respect to Lambda.
-     * [threadID][X/Y/Z][atomID]
-     */
-    private double[][][] lambdaGrad;
-    /**
-     * Partial derivative of the torque with respect to Lambda.
-     * [threadID][X/Y/Z][atomID]
-     */
-    private double[][][] lambdaTorque;
-    /**
-     * Partial derivative with respect to Lambda.
-     */
-    private final SharedDouble shareddEdLambda;
-    /**
-     * Second partial derivative with respect to Lambda.
-     */
-    private final SharedDouble sharedd2EdLambda2;
     /**
      * The default ParallelTeam encapsulates the maximum number of threads used
      * to parallelize the electrostatics calculation.
@@ -337,8 +278,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * parallelTeam.
      */
     private final ParallelTeam fftTeam;
+    private final NeighborList neighborList;
     private IntegerSchedule permanentSchedule;
-    private NeighborList neighborList;
     private final InitializationRegion initializationRegion;
     private final PermanentFieldRegion permanentFieldRegion;
     private final InducedDipoleFieldRegion inducedDipoleFieldRegion;
@@ -349,26 +290,50 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final OPTRegion optRegion;
     private final PCGSolver pcgSolver;
     private final PolarizationEnergyRegion polarizationEnergyRegion;
-
-    private final boolean reciprocalSpaceTerm;
     private final ReciprocalSpace reciprocalSpace;
     private final ReciprocalEnergyRegion reciprocalEnergyRegion;
     private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final ReduceRegion reduceRegion;
     private final GeneralizedKirkwood generalizedKirkwood;
+
     /**
-     * Timing variables.
+     * Field array for each thread. [threadID][X/Y/Z][atomID]
      */
-    private final long[] realSpacePermTime;
-    private final long[] realSpaceEnergyTime;
-    private final long[] realSpaceSCFTime;
-    private long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
-    private long bornRadiiTotal, gkEnergyTotal;
-    private static final double TO_SECONDS = 1.0e-9;
+    private double[][][] field;
     /**
-     * The sqrt of PI.
+     * Chain rule field array for each thread. [threadID][X/Y/Z][atomID]
      */
-    private static final double SQRT_PI = sqrt(Math.PI);
+    private double[][][] fieldCR;
+    private double[][] cartesianMultipolePhi;
+    private double[][] cartesianDipolePhi;
+    private double[][] cartesianDipolePhiCR;
+
+    /**
+     * Gradient array for each thread. [threadID][X/Y/Z][atomID]
+     */
+    private double[][][] grad;
+    /**
+     * Torque array for each thread. [threadID][X/Y/Z][atomID]
+     */
+    private double[][][] torque;
+    /**
+     * Partial derivative of the gradient with respect to Lambda.
+     * [threadID][X/Y/Z][atomID]
+     */
+    private double[][][] lambdaGrad;
+    /**
+     * Partial derivative of the torque with respect to Lambda.
+     * [threadID][X/Y/Z][atomID]
+     */
+    private double[][][] lambdaTorque;
+    /**
+     * Partial derivative with respect to Lambda.
+     */
+    private final SharedDouble shareddEdLambda;
+    /**
+     * Second partial derivative with respect to Lambda.
+     */
+    private final SharedDouble sharedd2EdLambda2;
 
     /**
      * ParticleMeshEwald constructor.
@@ -406,7 +371,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
 
         ewaldParameters = new EwaldParameters();
-        scaleFactors = new ScaleFactors(forceField);
+        scaleParameters = new ScaleParameters(forceField);
         reciprocalSpaceTerm = forceField.getBoolean(ForceFieldBoolean.RECIPTERM, true);
 
         SCFPredictor scfPredictor;
@@ -418,9 +383,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             scfPredictor = SCFPredictor.NONE;
         }
         this.scfPredictor = scfPredictor;
-        scfPredictorVariables = new SCFPredictorVariables();
+        scfPredictorParameters = new SCFPredictorParameters();
         if (scfPredictor != SCFPredictor.NONE) {
-            scfPredictorVariables.init();
+            scfPredictorParameters.init();
         }
 
         String algorithm = forceField.getString(ForceFieldString.SCF_ALGORITHM, "CG");
@@ -439,7 +404,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         pcgSolver = new PCGSolver(maxThreads, poleps, forceField, nAtoms);
 
-        alchemicalFactors = new AlchemicalFactors(forceField, lambdaTerm);
+        alchemicalParameters = new AlchemicalParameters(forceField, lambdaTerm);
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
         if (elecForm == ELEC_FORM.FIXED_CHARGE) {
@@ -471,11 +436,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             sharedd2EdLambda2 = null;
             lambdaGrad = null;
             lambdaTorque = null;
-            vaporCrystal = null;
-            vaporLists = null;
-            vaporPermanentSchedule = null;
-            vaporEwaldSchedule = null;
-            vacuumRanges = null;
+            alchemicalParameters.vaporCrystal = null;
+            alchemicalParameters.vaporLists = null;
+            alchemicalParameters.vaporPermanentSchedule = null;
+            alchemicalParameters.vaporEwaldSchedule = null;
+            alchemicalParameters.vacuumRanges = null;
         }
 
         directRegion = new DirectRegion(maxThreads);
@@ -558,7 +523,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
         }
 
-        realSpaceRanges = new Range[maxThreads];
+        realSpaceNeighborParameters = new RealSpaceNeighborParameters(maxThreads);
         initializationRegion = new InitializationRegion(maxThreads, forceField);
         expandInducedDipolesRegion = new ExpandInducedDipolesRegion(maxThreads);
         initAtomArrays();
@@ -583,17 +548,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         polarizationEnergyRegion = new PolarizationEnergyRegion(maxThreads, forceField);
         realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads, forceField, elecForm, lambdaTerm);
         reduceRegion = new ReduceRegion(maxThreads, forceField);
-        realSpacePermTime = new long[maxThreads];
-        realSpaceEnergyTime = new long[maxThreads];
-        realSpaceSCFTime = new long[maxThreads];
+
+        pmeTimings = new PMETimings(maxThreads);
 
         if (lambdaTerm) {
-            logger.info(alchemicalFactors.toString());
+            logger.info(alchemicalParameters.toString());
         }
 
         // The GK reaction field is added to the intra-molecular field to give the self-consistent reaction field.
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
-        if (generalizedKirkwoodTerm || alchemicalFactors.doLigandGKElec) {
+        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
             generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, crystal, parallelTeam);
         } else {
             generalizedKirkwood = null;
@@ -603,9 +567,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private void initAtomArrays() {
         if (localMultipole == null || localMultipole.length < nAtoms) {
             localMultipole = new double[nAtoms][10];
-            frame = new MultipoleType.MultipoleFrameDefinition[nAtoms];
+            frame = new MultipoleFrameDefinition[nAtoms];
             axisAtom = new int[nAtoms][];
-            cartMultipolePhi = new double[nAtoms][tensorCount];
+            cartesianMultipolePhi = new double[nAtoms][tensorCount];
             directDipole = new double[nAtoms][3];
             directDipoleCR = new double[nAtoms][3];
             vacuumDirectDipole = new double[nAtoms][3];
@@ -623,7 +587,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             thole = new double[nAtoms];
             ipdamp = new double[nAtoms];
             polarizability = new double[nAtoms];
-            realSpaceSchedule = new PairwiseSchedule(maxThreads, nAtoms, realSpaceRanges);
 
             if (scfAlgorithm == SCFAlgorithm.CG) {
                 pcgSolver.allocateVectors(nAtoms);
@@ -631,13 +594,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             pcgSolver.allocateLists(nSymm, nAtoms);
 
             if (scfPredictor != SCFPredictor.NONE) {
-                int predictorOrder = scfPredictorVariables.predictorOrder;
+                int predictorOrder = scfPredictorParameters.predictorOrder;
                 if (lambdaTerm) {
-                    scfPredictorVariables.predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
-                    scfPredictorVariables.predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
+                    scfPredictorParameters.predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
+                    scfPredictorParameters.predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
                 } else {
-                    scfPredictorVariables.predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
-                    scfPredictorVariables.predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
+                    scfPredictorParameters.predictorInducedDipole = new double[1][predictorOrder][nAtoms][3];
+                    scfPredictorParameters.predictorInducedDipoleCR = new double[1][predictorOrder][nAtoms][3];
                 }
             }
 
@@ -661,8 +624,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             vacuumInducedDipoleCR = new double[nSymm][nAtoms][3];
 
             // The size of reduced neighbor list depends on the size of the real space cutoff.
-            realSpaceLists = new int[nSymm][nAtoms][];
-            realSpaceCounts = new int[nSymm][nAtoms];
+            realSpaceNeighborParameters.allocate(nAtoms, nSymm);
         }
 
         // Initialize the soft core lambda mask to false for all atoms.
@@ -744,7 +706,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         // Force rebuild ligand vapor electrostatics are being computed and vaporCrystal is null.
-        if (alchemicalFactors.doLigandVaporElec && vaporCrystal == null) {
+        if (alchemicalParameters.doLigandVaporElec && alchemicalParameters.vaporCrystal == null) {
             rebuild = true;
         }
 
@@ -766,7 +728,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         // Initialize boundary conditions,
         // an n^2 neighbor list and parallel scheduling for ligand vapor electrostatics.
-        if (alchemicalFactors.doLigandVaporElec) {
+        if (alchemicalParameters.doLigandVaporElec) {
             double maxr = 10.0;
             for (int i = 0; i < nAtoms; i++) {
                 Atom ai = atoms[i];
@@ -787,29 +749,30 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
 
             double vacuumOff = 2 * maxr;
-            vaporCrystal = new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
-            vaporCrystal.setAperiodic(true);
-            NeighborList vacuumNeighborList = new NeighborList(null, vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
+            alchemicalParameters.vaporCrystal = new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
+            alchemicalParameters.vaporCrystal.setAperiodic(true);
+            NeighborList vacuumNeighborList = new NeighborList(null,
+                    alchemicalParameters.vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
             vacuumNeighborList.setIntermolecular(false, molecule);
 
-            vaporLists = new int[1][nAtoms][];
+            alchemicalParameters.vaporLists = new int[1][nAtoms][];
             double[][] coords = new double[1][nAtoms * 3];
             for (int i = 0; i < nAtoms; i++) {
                 coords[0][i * 3] = atoms[i].getX();
                 coords[0][i * 3 + 1] = atoms[i].getY();
                 coords[0][i * 3 + 2] = atoms[i].getZ();
             }
-            vacuumNeighborList.buildList(coords, vaporLists, isSoft, true, true);
-            vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
-            vaporEwaldSchedule = vaporPermanentSchedule;
-            vacuumRanges = new Range[maxThreads];
+            vacuumNeighborList.buildList(coords, alchemicalParameters.vaporLists, isSoft, true, true);
+            alchemicalParameters.vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
+            alchemicalParameters.vaporEwaldSchedule = alchemicalParameters.vaporPermanentSchedule;
+            alchemicalParameters.vacuumRanges = new Range[maxThreads];
             vacuumNeighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
         } else {
-            vaporCrystal = null;
-            vaporLists = null;
-            vaporPermanentSchedule = null;
-            vaporEwaldSchedule = null;
-            vacuumRanges = null;
+            alchemicalParameters.vaporCrystal = null;
+            alchemicalParameters.vaporLists = null;
+            alchemicalParameters.vaporPermanentSchedule = null;
+            alchemicalParameters.vaporEwaldSchedule = null;
+            alchemicalParameters.vacuumRanges = null;
         }
 
     }
@@ -839,23 +802,18 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         int nSymmNew = crystal.spaceGroup.getNumberOfSymOps();
         if (nSymm < nSymmNew) {
             coordinates = new double[nSymmNew][3][nAtoms];
-            realSpaceLists = new int[nSymmNew][nAtoms][];
-            realSpaceCounts = new int[nSymmNew][nAtoms];
             globalMultipole = new double[nSymmNew][nAtoms][10];
             inducedDipole = new double[nSymmNew][nAtoms][3];
             inducedDipoleCR = new double[nSymmNew][nAtoms][3];
             if (generalizedKirkwood != null) {
                 generalizedKirkwood.setAtoms(atoms);
             }
+            realSpaceNeighborParameters.allocate(nAtoms, nSymmNew);
             pcgSolver.allocateLists(nSymmNew, nAtoms);
         }
         nSymm = nSymmNew;
         neighborLists = neighborList.getNeighborList();
         this.crystal = crystal;
-        /*
-          Production NPT simulations will include reciprocal space
-          contributions, but just in case there is a check for a NP.
-         */
         if (reciprocalSpace != null) {
             reciprocalSpace.setCrystal(crystal.getUnitCell());
         }
@@ -890,15 +848,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         gkInteractions = 0;
 
         // Initialize timing variables.
-        for (int i = 0; i < maxThreads; i++) {
-            realSpacePermTime[i] = 0;
-            realSpaceEnergyTime[i] = 0;
-            realSpaceSCFTime[i] = 0;
-        }
-        realSpacePermTotal = 0;
-        realSpaceEnergyTotal = 0;
-        realSpaceSCFTotal = 0;
-        gkEnergyTotal = 0;
+        pmeTimings.init();
 
         if (reciprocalSpace != null) {
             reciprocalSpace.initTimings();
@@ -909,10 +859,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             shareddEdLambda.set(0.0);
             sharedd2EdLambda2.set(0.0);
         }
-        alchemicalFactors.doPermanentRealSpace = true;
-        alchemicalFactors.permanentScale = 1.0;
-        alchemicalFactors.doPolarization = true;
-        alchemicalFactors.polarizationScale = 1.0;
+        alchemicalParameters.doPermanentRealSpace = true;
+        alchemicalParameters.permanentScale = 1.0;
+        alchemicalParameters.doPolarization = true;
+        alchemicalParameters.polarizationScale = 1.0;
 
         // Total permanent + polarization energy.
         double energy;
@@ -922,7 +872,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             initializationRegion.init(lambdaTerm, gradient, lambdaScaleMultipoles,
                     atoms, coordinates, crystal, frame, axisAtom,
                     localMultipole, globalMultipole, polarizability,
-                    use, neighborLists, realSpaceLists, vaporLists,
+                    use, neighborLists, realSpaceNeighborParameters.realSpaceLists,
+                    alchemicalParameters.vaporLists,
                     grad, torque, lambdaGrad, lambdaTorque);
             parallelTeam.execute(initializationRegion);
         } catch (RuntimeException e) {
@@ -954,7 +905,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
 
             // Vapor ligand electrostatics.
-            if (alchemicalFactors.doLigandVaporElec) {
+            if (alchemicalParameters.doLigandVaporElec) {
                 lambdaMode = LambdaMode.VAPOR;
                 temp = energy;
                 energy = ligandElec();
@@ -981,7 +932,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         // Log some timings.
         if (logger.isLoggable(Level.FINE)) {
-            printRealSpaceTimings();
+            pmeTimings.printRealSpaceTimings();
             if (ewaldParameters.aewald > 0.0 && reciprocalSpaceTerm) {
                 reciprocalSpace.printTimings();
             }
@@ -990,74 +941,30 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return permanentMultipoleEnergy + polarizationEnergy;
     }
 
-    private void printRealSpaceTimings() {
-
-        double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * TO_SECONDS;
-
-        logger.info(format("\n Real Space: %7.4f (sec)", total));
-        logger.info("           Electric Field");
-        logger.info(" Thread    Direct  SCF     Energy     Counts");
-        long minPerm = Long.MAX_VALUE;
-        long maxPerm = 0;
-        long minSCF = Long.MAX_VALUE;
-        long maxSCF = 0;
-        long minEnergy = Long.MAX_VALUE;
-        long maxEnergy = 0;
-        int minCount = Integer.MAX_VALUE;
-        int maxCount = Integer.MIN_VALUE;
-
-        for (int i = 0; i < maxThreads; i++) {
-            int count = realSpaceEnergyRegion.getCount(i);
-            logger.info(format("    %3d   %7.4f %7.4f %7.4f %10d", i,
-                    realSpacePermTime[i] * TO_SECONDS, realSpaceSCFTime[i] * TO_SECONDS,
-                    realSpaceEnergyTime[i] * TO_SECONDS, count));
-            minPerm = min(realSpacePermTime[i], minPerm);
-            maxPerm = max(realSpacePermTime[i], maxPerm);
-            minSCF = min(realSpaceSCFTime[i], minSCF);
-            maxSCF = max(realSpaceSCFTime[i], maxSCF);
-            minEnergy = min(realSpaceEnergyTime[i], minEnergy);
-            maxEnergy = max(realSpaceEnergyTime[i], maxEnergy);
-            minCount = min(count, minCount);
-            maxCount = max(count, maxCount);
-        }
-        logger.info(format(" Min      %7.4f %7.4f %7.4f %10d",
-                minPerm * TO_SECONDS, minSCF * TO_SECONDS,
-                minEnergy * TO_SECONDS, minCount));
-        logger.info(format(" Max      %7.4f %7.4f %7.4f %10d",
-                maxPerm * TO_SECONDS, maxSCF * TO_SECONDS,
-                maxEnergy * TO_SECONDS, maxCount));
-        logger.info(format(" Delta    %7.4f %7.4f %7.4f %10d",
-                (maxPerm - minPerm) * TO_SECONDS, (maxSCF - minSCF) * TO_SECONDS,
-                (maxEnergy - minEnergy) * TO_SECONDS, (maxCount - minCount)));
-        logger.info(format(" Actual   %7.4f %7.4f %7.4f %10d",
-                realSpacePermTotal * TO_SECONDS, realSpaceSCFTotal * TO_SECONDS,
-                realSpaceEnergyTotal * TO_SECONDS, realSpaceEnergyRegion.getInteractions()));
-    }
-
     /**
      * 1.) Total system under PBC. A.) Softcore real space for Ligand-Protein
      * and Ligand-Ligand. B.) Reciprocal space scaled by lambda. C.)
      * Polarization scaled by lambda.
      */
     private double condensedEnergy() {
-        if (lambda < alchemicalFactors.polLambdaStart) {
+        if (lambda < alchemicalParameters.polLambdaStart) {
             /*
               If the polarization has been completely decoupled, the
               contribution of the complete system is zero.
               We can skip the SCF for part 1 for efficiency.
              */
-            alchemicalFactors.polarizationScale = 0.0;
-            alchemicalFactors.doPolarization = false;
-        } else if (lambda <= alchemicalFactors.polLambdaEnd) {
-            alchemicalFactors.polarizationScale = alchemicalFactors.lPowPol;
-            alchemicalFactors.doPolarization = true;
+            alchemicalParameters.polarizationScale = 0.0;
+            alchemicalParameters.doPolarization = false;
+        } else if (lambda <= alchemicalParameters.polLambdaEnd) {
+            alchemicalParameters.polarizationScale = alchemicalParameters.lPowPol;
+            alchemicalParameters.doPolarization = true;
         } else {
-            alchemicalFactors.polarizationScale = 1.0;
-            alchemicalFactors.doPolarization = true;
+            alchemicalParameters.polarizationScale = 1.0;
+            alchemicalParameters.doPolarization = true;
         }
-        alchemicalFactors.doPermanentRealSpace = true;
-        alchemicalFactors.permanentScale = alchemicalFactors.lPowPerm;
-        alchemicalFactors.dEdLSign = 1.0;
+        alchemicalParameters.doPermanentRealSpace = true;
+        alchemicalParameters.permanentScale = alchemicalParameters.lPowPerm;
+        alchemicalParameters.dEdLSign = 1.0;
 
         return computeEnergy(false);
     }
@@ -1084,17 +991,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         // Permanent real space is done for the condensed phase. Scale the reciprocal space part.
-        alchemicalFactors.doPermanentRealSpace = false;
-        alchemicalFactors.permanentScale = 1.0 - alchemicalFactors.lPowPerm;
-        alchemicalFactors.dEdLSign = -1.0;
+        alchemicalParameters.doPermanentRealSpace = false;
+        alchemicalParameters.permanentScale = 1.0 - alchemicalParameters.lPowPerm;
+        alchemicalParameters.dEdLSign = -1.0;
 
         // If we are past the end of the polarization lambda window, then only the condensed phase is necessary.
-        if (lambda <= alchemicalFactors.polLambdaEnd && alchemicalFactors.doNoLigandCondensedSCF) {
-            alchemicalFactors.doPolarization = true;
-            alchemicalFactors.polarizationScale = 1.0 - alchemicalFactors.lPowPol;
+        if (lambda <= alchemicalParameters.polLambdaEnd && alchemicalParameters.doNoLigandCondensedSCF) {
+            alchemicalParameters.doPolarization = true;
+            alchemicalParameters.polarizationScale = 1.0 - alchemicalParameters.lPowPol;
         } else {
-            alchemicalFactors.doPolarization = false;
-            alchemicalFactors.polarizationScale = 0.0;
+            alchemicalParameters.doPolarization = false;
+            alchemicalParameters.polarizationScale = 0.0;
         }
 
         // Turn off GK.
@@ -1132,24 +1039,24 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         // Scale the permanent vacuum electrostatics. The softcore alpha is not
         // necessary (nothing in vacuum to collide with).
-        alchemicalFactors.doPermanentRealSpace = true;
-        alchemicalFactors.permanentScale = 1.0 - alchemicalFactors.lPowPerm;
-        alchemicalFactors.dEdLSign = -1.0;
-        double lAlphaBack = alchemicalFactors.lAlpha;
-        double dlAlphaBack = alchemicalFactors.dlAlpha;
-        double d2lAlphaBack = alchemicalFactors.d2lAlpha;
-        alchemicalFactors.lAlpha = 0.0;
-        alchemicalFactors.dlAlpha = 0.0;
-        alchemicalFactors.d2lAlpha = 0.0;
+        alchemicalParameters.doPermanentRealSpace = true;
+        alchemicalParameters.permanentScale = 1.0 - alchemicalParameters.lPowPerm;
+        alchemicalParameters.dEdLSign = -1.0;
+        double lAlphaBack = alchemicalParameters.lAlpha;
+        double dlAlphaBack = alchemicalParameters.dlAlpha;
+        double d2lAlphaBack = alchemicalParameters.d2lAlpha;
+        alchemicalParameters.lAlpha = 0.0;
+        alchemicalParameters.dlAlpha = 0.0;
+        alchemicalParameters.d2lAlpha = 0.0;
 
         // If we are past the end of the polarization lambda window, then only
         // the condensed phase is necessary.
-        if (lambda <= alchemicalFactors.polLambdaEnd) {
-            alchemicalFactors.doPolarization = true;
-            alchemicalFactors.polarizationScale = 1.0 - alchemicalFactors.lPowPol;
+        if (lambda <= alchemicalParameters.polLambdaEnd) {
+            alchemicalParameters.doPolarization = true;
+            alchemicalParameters.polarizationScale = 1.0 - alchemicalParameters.lPowPol;
         } else {
-            alchemicalFactors.doPolarization = false;
-            alchemicalFactors.polarizationScale = 0.0;
+            alchemicalParameters.doPolarization = false;
+            alchemicalParameters.polarizationScale = 0.0;
         }
 
         // Save the current real space PME parameters.
@@ -1158,18 +1065,18 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         ewaldParameters.setEwaldParameters(Double.MAX_VALUE, 0.0);
         // Save the current parallelization schedule.
         IntegerSchedule permanentScheduleBack = permanentSchedule;
-        IntegerSchedule ewaldScheduleBack = realSpaceSchedule;
-        Range[] rangesBack = realSpaceRanges;
-        permanentSchedule = vaporPermanentSchedule;
-        realSpaceSchedule = vaporEwaldSchedule;
-        realSpaceRanges = vacuumRanges;
+        IntegerSchedule ewaldScheduleBack = realSpaceNeighborParameters.realSpaceSchedule;
+        Range[] rangesBack = realSpaceNeighborParameters.realSpaceRanges;
+        permanentSchedule = alchemicalParameters.vaporPermanentSchedule;
+        realSpaceNeighborParameters.realSpaceSchedule = alchemicalParameters.vaporEwaldSchedule;
+        realSpaceNeighborParameters.realSpaceRanges = alchemicalParameters.vacuumRanges;
 
         // Use vacuum crystal / vacuum neighborLists.
         Crystal crystalBack = crystal;
         int nSymmBack = nSymm;
         int[][][] listsBack = neighborLists;
-        neighborLists = vaporLists;
-        crystal = vaporCrystal;
+        neighborLists = alchemicalParameters.vaporLists;
+        crystal = alchemicalParameters.vaporCrystal;
         nSymm = 1;
 
         // Turn off GK if in use.
@@ -1179,16 +1086,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         SCFAlgorithm scfBack = scfAlgorithm;
         scfAlgorithm = SCFAlgorithm.SOR;
 
-        if (alchemicalFactors.doLigandGKElec) {
+        if (alchemicalParameters.doLigandGKElec) {
             generalizedKirkwoodTerm = true;
-            generalizedKirkwood.setNeighborList(vaporLists);
+            generalizedKirkwood.setNeighborList(alchemicalParameters.vaporLists);
             generalizedKirkwood.setLambda(lambda);
             generalizedKirkwood.setCutoff(ewaldParameters.off);
-            generalizedKirkwood.setCrystal(vaporCrystal);
+            generalizedKirkwood.setCrystal(alchemicalParameters.vaporCrystal);
             generalizedKirkwood.setLambdaFunction(
-                    alchemicalFactors.polarizationScale,
-                    alchemicalFactors.dEdLSign * alchemicalFactors.dlPowPol,
-                    alchemicalFactors.dEdLSign * alchemicalFactors.d2lPowPol);
+                    alchemicalParameters.polarizationScale,
+                    alchemicalParameters.dEdLSign * alchemicalParameters.dlPowPol,
+                    alchemicalParameters.dEdLSign * alchemicalParameters.d2lPowPol);
         } else {
             generalizedKirkwoodTerm = false;
         }
@@ -1201,11 +1108,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         crystal = crystalBack;
         nSymm = nSymmBack;
         permanentSchedule = permanentScheduleBack;
-        realSpaceSchedule = ewaldScheduleBack;
-        realSpaceRanges = rangesBack;
-        alchemicalFactors.lAlpha = lAlphaBack;
-        alchemicalFactors.dlAlpha = dlAlphaBack;
-        alchemicalFactors.d2lAlpha = d2lAlphaBack;
+        realSpaceNeighborParameters.realSpaceSchedule = ewaldScheduleBack;
+        realSpaceNeighborParameters.realSpaceRanges = rangesBack;
+        alchemicalParameters.lAlpha = lAlphaBack;
+        alchemicalParameters.dlAlpha = dlAlphaBack;
+        alchemicalParameters.d2lAlpha = d2lAlphaBack;
         generalizedKirkwoodTerm = gkBack;
         scfAlgorithm = scfBack;
 
@@ -1235,14 +1142,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         // Compute Born radii if necessary.
         if (generalizedKirkwoodTerm) {
-            bornRadiiTotal -= System.nanoTime();
+            pmeTimings.bornRadiiTotal -= System.nanoTime();
             generalizedKirkwood.setUse(use);
             generalizedKirkwood.computeBornRadii();
-            bornRadiiTotal += System.nanoTime();
+            pmeTimings.bornRadiiTotal += System.nanoTime();
         }
 
         // Do the self-consistent field calculation.
-        if (polarization != Polarization.NONE && alchemicalFactors.doPolarization) {
+        if (polarization != Polarization.NONE && alchemicalParameters.doPolarization) {
 
             // Compute vacuum dipole moments.
             if (generalizedKirkwoodTerm) {
@@ -1274,12 +1181,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
 
                         inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
-                                ipdamp, thole, coordinates, realSpaceLists, realSpaceCounts,
-                                inducedDipole, inducedDipoleCR, realSpaceSchedule, reciprocalSpace,
-                                lambdaMode, reciprocalSpaceTerm, ewaldParameters, realSpaceSCFTotal, realSpaceSCFTime,
-                                field, fieldCR);
+                                ipdamp, thole, coordinates, realSpaceNeighborParameters,
+                                inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace,
+                                lambdaMode, ewaldParameters, field, fieldCR, pmeTimings);
                         sectionTeam.execute(inducedDipoleFieldRegion);
-                        realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
+                        pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
                         reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
                     } catch (RuntimeException e) {
@@ -1296,13 +1202,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
 
             if (scfPredictor != SCFPredictor.NONE) {
-                scfPredictorVariables.saveMutualInducedDipoles();
+                scfPredictorParameters.saveMutualInducedDipoles();
             }
 
             // Compute the polarization energy.
             try {
                 polarizationEnergyRegion.init(atoms, polarizability,
-                        inducedDipole, directDipoleCR, alchemicalFactors.polarizationScale);
+                        inducedDipole, directDipoleCR, alchemicalParameters.polarizationScale);
                 parallelTeam.execute(polarizationEnergyRegion);
             } catch (RuntimeException e) {
                 String message = "Runtime exception computing the polarization energy.\n";
@@ -1334,10 +1240,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         try {
             if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
 
-                reciprocalEnergyRegion.init(atoms, crystal, use, globalMultipole, cartMultipolePhi, inducedDipole, inducedDipoleCR,
+                reciprocalEnergyRegion.init(atoms, crystal, use, globalMultipole, cartesianMultipolePhi, inducedDipole, inducedDipoleCR,
                         cartesianDipolePhi, cartesianDipolePhiCR, reciprocalSpace, polarization,
                         grad, torque, lambdaGrad, lambdaTorque,
-                        gradient, lambdaTerm, shareddEdLambda, sharedd2EdLambda2, alchemicalFactors);
+                        gradient, lambdaTerm, shareddEdLambda, sharedd2EdLambda2, alchemicalParameters);
                 parallelTeam.execute(reciprocalEnergyRegion);
 
                 interactions += nAtoms;
@@ -1346,16 +1252,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 eselfi = reciprocalEnergyRegion.getInducedDipoleSelfEnergy();
                 erecipi = reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
             }
-            realSpaceEnergyTotal -= System.nanoTime();
+            pmeTimings.realSpaceEnergyTotal -= System.nanoTime();
             realSpaceEnergyRegion.init(atoms, crystal, coordinates, frame, axisAtom,
                     globalMultipole, inducedDipole, inducedDipoleCR,
                     use, molecule, ip11, isSoft, ipdamp, thole,
-                    realSpaceLists, realSpaceCounts, realSpaceSchedule, realSpaceEnergyTime,
+                    realSpaceNeighborParameters, pmeTimings.realSpaceEnergyTime,
                     grad, torque, lambdaGrad, lambdaTorque, shareddEdLambda, sharedd2EdLambda2,
                     gradient, lambdaTerm, lambdaMode,
-                    polarization, ewaldParameters, scaleFactors, alchemicalFactors);
+                    polarization, ewaldParameters, scaleParameters, alchemicalParameters);
             parallelTeam.execute(realSpaceEnergyRegion);
-            realSpaceEnergyTotal += System.nanoTime();
+            pmeTimings.realSpaceEnergyTotal += System.nanoTime();
             ereal = realSpaceEnergyRegion.getPermanentEnergy();
             ereali = realSpaceEnergyRegion.getPolarizationEnergy();
             interactions += realSpaceEnergyRegion.getInteractions();
@@ -1366,10 +1272,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         // Compute the generalized Kirkwood solvation free energy.
         if (generalizedKirkwoodTerm) {
-            gkEnergyTotal -= System.nanoTime();
+            pmeTimings.gkEnergyTotal -= System.nanoTime();
             generalizedKirkwoodEnergy += generalizedKirkwood.solvationEnergy(gradient, print);
             gkInteractions += generalizedKirkwood.getInteractions();
-            gkEnergyTotal += System.nanoTime();
+            pmeTimings.gkEnergyTotal += System.nanoTime();
         }
 
         // Collect energy terms.
@@ -1408,8 +1314,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
     }
 
+    /**
+     * Find the permanent multipole potential, field, etc.
+     */
     private void permanentMultipoleField() {
-        // Find the permanent multipole potential, field, etc.
         try {
             // Compute b-Splines and permanent density.
             if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
@@ -1421,17 +1329,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             // the reciprocal space convolution is being done.
             permanentFieldRegion.init(atoms, crystal, coordinates, globalMultipole,
                     inducedDipole, inducedDipoleCR, neighborLists,
-                    realSpaceLists, scaleFactors,
-                    use, molecule, ipdamp, thole, ip11, lambdaMode, permanentSchedule,
-                    reciprocalSpaceTerm, ewaldParameters, reciprocalSpace, pcgSolver,
-                    realSpaceCounts, realSpaceRanges, field, fieldCR, realSpacePermTotal, realSpacePermTime);
+                    scaleParameters, use, molecule, ipdamp, thole, ip11, lambdaMode,
+                    reciprocalSpaceTerm, reciprocalSpace, ewaldParameters, pcgSolver,
+                    permanentSchedule, realSpaceNeighborParameters, field, fieldCR, pmeTimings);
             sectionTeam.execute(permanentFieldRegion);
 
-            realSpacePermTotal = permanentFieldRegion.getRealSpacePermTotal();
+            pmeTimings.realSpacePermTotal = permanentFieldRegion.getRealSpacePermTotal();
 
             // Collect the reciprocal space field.
             if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-                reciprocalSpace.computePermanentPhi(cartMultipolePhi);
+                reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
             }
         } catch (RuntimeException e) {
             String message = "Fatal exception computing the permanent multipole field.\n";
@@ -1581,12 +1488,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         // Compute the direct induced dipoles.
         try {
             if (generalizedKirkwoodTerm) {
-                gkEnergyTotal = -System.nanoTime();
+                pmeTimings.gkEnergyTotal = -System.nanoTime();
                 generalizedKirkwood.computePermanentGKField();
-                gkEnergyTotal += System.nanoTime();
-                logger.fine(format(" Computed GK permanent field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
+                pmeTimings.gkEnergyTotal += System.nanoTime();
+                logger.fine(format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
             }
-            directRegion.init(atoms, polarizability, globalMultipole, cartMultipolePhi,
+            directRegion.init(atoms, polarizability, globalMultipole, cartesianMultipolePhi,
                     inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
                     field, fieldCR, generalizedKirkwoodTerm, generalizedKirkwood,
                     ewaldParameters);
@@ -1606,13 +1513,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (scfPredictor != SCFPredictor.NONE) {
             switch (scfPredictor) {
                 case ASPC:
-                    scfPredictorVariables.aspcPredictor();
+                    scfPredictorParameters.aspcPredictor();
                     break;
                 case LS:
-                    scfPredictorVariables.leastSquaresPredictor();
+                    scfPredictorParameters.leastSquaresPredictor();
                     break;
                 case POLY:
-                    scfPredictorVariables.polynomialPredictor();
+                    scfPredictorParameters.polynomialPredictor();
                     break;
                 case NONE:
                 default:
@@ -1636,7 +1543,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             default:
                 pcgSolver.init(atoms, coordinates, polarizability, ipdamp, thole, use, crystal,
                         inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
-                        field, fieldCR, ewaldParameters, parallelTeam, realSpaceSchedule, realSpaceSCFTime);
+                        field, fieldCR, ewaldParameters, parallelTeam,
+                        realSpaceNeighborParameters.realSpaceSchedule,
+                        pmeTimings.realSpaceSCFTime);
                 iterations = pcgSolver.scfByPCG(print, startTime, this);
                 break;
         }
@@ -1669,22 +1578,22 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
                 }
                 inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
-                        ipdamp, thole, coordinates, realSpaceLists, realSpaceCounts,
-                        inducedDipole, inducedDipoleCR, realSpaceSchedule, reciprocalSpace,
-                        lambdaMode, reciprocalSpaceTerm, ewaldParameters, realSpaceSCFTotal, realSpaceSCFTime,
-                        field, fieldCR);
+                        ipdamp, thole, coordinates, realSpaceNeighborParameters,
+                        inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace,
+                        lambdaMode, ewaldParameters, field, fieldCR, pmeTimings);
                 sectionTeam.execute(inducedDipoleFieldRegion);
-                realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
+                pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
                 if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
                     reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
                 }
 
                 if (generalizedKirkwoodTerm) {
                     // GK field.
-                    gkEnergyTotal = -System.nanoTime();
+                    pmeTimings.gkEnergyTotal = -System.nanoTime();
                     generalizedKirkwood.computeInducedGKField();
-                    gkEnergyTotal += System.nanoTime();
-                    logger.fine(format(" Computed GK induced field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
+                    pmeTimings.gkEnergyTotal += System.nanoTime();
+                    logger.fine(format(" Computed GK induced field %8.3f (sec)",
+                            pmeTimings.gkEnergyTotal * 1.0e-9));
                 }
 
                 sorRegion.init(atoms, polarizability, inducedDipole, inducedDipoleCR, directDipole, directDipoleCR,
@@ -1763,12 +1672,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
 
                 inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
-                        ipdamp, thole, coordinates, realSpaceLists, realSpaceCounts,
-                        inducedDipole, inducedDipoleCR, realSpaceSchedule, reciprocalSpace,
-                        lambdaMode, reciprocalSpaceTerm, ewaldParameters, realSpaceSCFTotal, realSpaceSCFTime,
-                        field, fieldCR);
+                        ipdamp, thole, coordinates, realSpaceNeighborParameters,
+                        inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace,
+                        lambdaMode, ewaldParameters, field, fieldCR, pmeTimings);
                 sectionTeam.execute(inducedDipoleFieldRegion);
-                realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
+                pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
                 if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
                     reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
@@ -1776,10 +1684,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
                 if (generalizedKirkwoodTerm) {
                     // GK field.
-                    gkEnergyTotal = -System.nanoTime();
+                    pmeTimings.gkEnergyTotal = -System.nanoTime();
                     generalizedKirkwood.computeInducedGKField();
-                    gkEnergyTotal += System.nanoTime();
-                    logger.fine(format(" Computed GK induced field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
+                    pmeTimings.gkEnergyTotal += System.nanoTime();
+                    logger.fine(format(" Computed GK induced field %8.3f (sec)",
+                            pmeTimings.gkEnergyTotal * 1.0e-9));
                 }
 
                 optRegion.init(currentOptOrder, atoms, polarizability,
@@ -1788,6 +1697,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 parallelTeam.execute(optRegion);
 
                 expandInducedDipoles();
+
             } catch (Exception e) {
                 String message = "Exception computing opt induced dipoles.";
                 logger.log(Level.SEVERE, message, e);
@@ -2255,14 +2165,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         initSoftCoreInit();
 
-        alchemicalFactors.update(lambda);
+        alchemicalParameters.update(lambda);
 
         if (generalizedKirkwoodTerm) {
-            generalizedKirkwood.setLambda(alchemicalFactors.polLambda);
+            generalizedKirkwood.setLambda(alchemicalParameters.polLambda);
             generalizedKirkwood.setLambdaFunction(
-                    alchemicalFactors.lPowPol,
-                    alchemicalFactors.dlPowPol,
-                    alchemicalFactors.d2lPowPol);
+                    alchemicalParameters.lPowPol,
+                    alchemicalParameters.dlPowPol,
+                    alchemicalParameters.d2lPowPol);
         }
     }
 
@@ -2285,7 +2195,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             return 0.0;
         }
         double dEdL = shareddEdLambda.get();
-        if (generalizedKirkwoodTerm || alchemicalFactors.doLigandGKElec) {
+        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
             dEdL += generalizedKirkwood.getdEdL();
         }
         return dEdL;
@@ -2300,7 +2210,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             return 0.0;
         }
         double d2EdL2 = sharedd2EdLambda2.get();
-        if (generalizedKirkwoodTerm || alchemicalFactors.doLigandGKElec) {
+        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
             d2EdL2 += generalizedKirkwood.getd2EdL2();
         }
         return d2EdL2;
@@ -2367,7 +2277,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     @Override
     public double getScale14() {
-        return scaleFactors.m14scale;
+        return scaleParameters.m14scale;
     }
 
     @Override
@@ -2390,6 +2300,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return "Cartesian";
     }
 
+
     public void computeInduceDipoleField() {
         expandInducedDipoles();
         try {
@@ -2397,22 +2308,24 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
             }
             inducedDipoleFieldRegion.init(atoms, crystal, use, molecule,
-                    ipdamp, thole, coordinates, realSpaceLists, realSpaceCounts,
-                    inducedDipole, inducedDipoleCR, realSpaceSchedule, reciprocalSpace,
-                    lambdaMode, reciprocalSpaceTerm, ewaldParameters, realSpaceSCFTotal, realSpaceSCFTime,
-                    field, fieldCR);
+                    ipdamp, thole, coordinates, realSpaceNeighborParameters,
+                    inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace,
+                    lambdaMode, ewaldParameters, field, fieldCR, pmeTimings);
             sectionTeam.execute(inducedDipoleFieldRegion);
-            realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
+            pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
+
             if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
                 reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
             }
+
             if (generalizedKirkwoodTerm) {
-                // GK field.
-                gkEnergyTotal = -System.nanoTime();
+                pmeTimings.gkEnergyTotal = -System.nanoTime();
                 generalizedKirkwood.computeInducedGKField();
-                gkEnergyTotal += System.nanoTime();
-                logger.fine(format(" Computed GK induced field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
+                pmeTimings.gkEnergyTotal += System.nanoTime();
+                logger.fine(format(" Computed GK induced field %8.3f (sec)",
+                        pmeTimings.gkEnergyTotal * 1.0e-9));
             }
+
             inducedDipoleFieldReduceRegion.init(atoms, inducedDipole, inducedDipoleCR,
                     cartesianDipolePhi, cartesianDipolePhiCR, field, fieldCR,
                     generalizedKirkwoodTerm, generalizedKirkwood, ewaldParameters);
@@ -2467,7 +2380,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         public double off2;
 
         public EwaldParameters() {
-            double off = 0.0;
+            double off;
             if (!crystal.aperiodic()) {
                 off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, PERIODIC_DEFAULT_EWALD_CUTOFF);
             } else {
@@ -2516,7 +2429,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Scale factors for group based polarization rules and energy masking rules.
      */
-    public class ScaleFactors {
+    public class ScaleParameters {
         /**
          * The interaction energy between 1-2 multipoles is scaled by m12scale.
          */
@@ -2553,7 +2466,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         public final double p15scale;
         public final double intra14Scale;
 
-        public ScaleFactors(ForceField forceField) {
+        public ScaleParameters(ForceField forceField) {
             if (elecForm == ELEC_FORM.PAM) {
                 m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
                 m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
@@ -2576,7 +2489,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
-    public class AlchemicalFactors {
+    public class AlchemicalParameters {
 
         /**
          * The polarization Lambda value goes from 0.0 .. 1.0 as the global lambda
@@ -2668,7 +2581,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
          */
         public double polarizationScale = 1.0;
 
-        public AlchemicalFactors(ForceField forceField, boolean lambdaTerm) {
+        /**
+         * Boundary conditions for the vapor end of the alchemical path.
+         */
+        private Crystal vaporCrystal;
+        private int[][][] vaporLists;
+        private Range[] vacuumRanges;
+        private IntegerSchedule vaporPermanentSchedule;
+        private IntegerSchedule vaporEwaldSchedule;
+
+        public AlchemicalParameters(ForceField forceField, boolean lambdaTerm) {
             if (lambdaTerm) {
                 // Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable  trajectories.
                 permLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 2.0);
@@ -2768,7 +2690,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 doNoLigandCondensedSCF = forceField.getBoolean(ForceFieldBoolean.NO_LIGAND_CONDENSED_SCF, true);
             }
         }
-
 
         /*
          * f = sqrt(r^2 + lAlpha)
@@ -2877,7 +2798,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
-    public class SCFPredictorVariables {
+    public class SCFPredictorParameters {
         /**
          * Induced dipole predictor order.
          */
@@ -3279,8 +3200,121 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
+    public class RealSpaceNeighborParameters {
+
+        final int numThreads;
+        /**
+         * Neighbor lists, without atoms beyond the real space cutoff.
+         * [nSymm][nAtoms][nIncludedNeighbors]
+         */
+        public int[][][] realSpaceLists;
+        /**
+         * Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms]
+         */
+        public int[][] realSpaceCounts;
+        /**
+         * Optimal pairwise ranges.
+         */
+        public Range[] realSpaceRanges;
+        /**
+         * Pairwise schedule for load balancing.
+         */
+        public IntegerSchedule realSpaceSchedule;
+
+        public RealSpaceNeighborParameters(int maxThreads) {
+            numThreads = maxThreads;
+            realSpaceRanges = new Range[maxThreads];
+        }
+
+        public void allocate(int nAtoms, int nSymm) {
+            realSpaceSchedule = new PairwiseSchedule(numThreads, nAtoms, realSpaceRanges);
+            realSpaceLists = new int[nSymm][nAtoms][];
+            realSpaceCounts = new int[nSymm][nAtoms];
+        }
+
+    }
+
+    public class PMETimings {
+        /**
+         * Timing variables.
+         */
+        private final int numThreads;
+        public final long[] realSpacePermTime;
+        public final long[] realSpaceEnergyTime;
+        public final long[] realSpaceSCFTime;
+        public long realSpacePermTotal, realSpaceEnergyTotal, realSpaceSCFTotal;
+        public long bornRadiiTotal, gkEnergyTotal;
+
+        public PMETimings(int numThreads) {
+            this.numThreads = numThreads;
+            realSpacePermTime = new long[numThreads];
+            realSpaceEnergyTime = new long[numThreads];
+            realSpaceSCFTime = new long[numThreads];
+        }
+
+        public void init() {
+            for (int i = 0; i < numThreads; i++) {
+                realSpacePermTime[i] = 0;
+                realSpaceEnergyTime[i] = 0;
+                realSpaceSCFTime[i] = 0;
+            }
+            realSpacePermTotal = 0;
+            realSpaceEnergyTotal = 0;
+            realSpaceSCFTotal = 0;
+            bornRadiiTotal = 0;
+            gkEnergyTotal = 0;
+        }
+
+        public void printRealSpaceTimings() {
+            double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * TO_SECONDS;
+            logger.info(format("\n Real Space: %7.4f (sec)", total));
+            logger.info("           Electric Field");
+            logger.info(" Thread    Direct  SCF     Energy     Counts");
+            long minPerm = Long.MAX_VALUE;
+            long maxPerm = 0;
+            long minSCF = Long.MAX_VALUE;
+            long maxSCF = 0;
+            long minEnergy = Long.MAX_VALUE;
+            long maxEnergy = 0;
+            int minCount = Integer.MAX_VALUE;
+            int maxCount = Integer.MIN_VALUE;
+
+            for (int i = 0; i < maxThreads; i++) {
+                int count = realSpaceEnergyRegion.getCount(i);
+                logger.info(format("    %3d   %7.4f %7.4f %7.4f %10d", i,
+                        realSpacePermTime[i] * TO_SECONDS, realSpaceSCFTime[i] * TO_SECONDS,
+                        realSpaceEnergyTime[i] * TO_SECONDS, count));
+                minPerm = min(realSpacePermTime[i], minPerm);
+                maxPerm = max(realSpacePermTime[i], maxPerm);
+                minSCF = min(realSpaceSCFTime[i], minSCF);
+                maxSCF = max(realSpaceSCFTime[i], maxSCF);
+                minEnergy = min(realSpaceEnergyTime[i], minEnergy);
+                maxEnergy = max(realSpaceEnergyTime[i], maxEnergy);
+                minCount = min(count, minCount);
+                maxCount = max(count, maxCount);
+            }
+            logger.info(format(" Min      %7.4f %7.4f %7.4f %10d",
+                    minPerm * TO_SECONDS, minSCF * TO_SECONDS,
+                    minEnergy * TO_SECONDS, minCount));
+            logger.info(format(" Max      %7.4f %7.4f %7.4f %10d",
+                    maxPerm * TO_SECONDS, maxSCF * TO_SECONDS,
+                    maxEnergy * TO_SECONDS, maxCount));
+            logger.info(format(" Delta    %7.4f %7.4f %7.4f %10d",
+                    (maxPerm - minPerm) * TO_SECONDS, (maxSCF - minSCF) * TO_SECONDS,
+                    (maxEnergy - minEnergy) * TO_SECONDS, (maxCount - minCount)));
+            logger.info(format(" Actual   %7.4f %7.4f %7.4f %10d",
+                    realSpacePermTotal * TO_SECONDS, realSpaceSCFTotal * TO_SECONDS,
+                    realSpaceEnergyTotal * TO_SECONDS, realSpaceEnergyRegion.getInteractions()));
+        }
+    }
+
     /**
      * Number of unique tensors for given order.
      */
     private static final int tensorCount = MultipoleTensor.tensorCount(3);
+    /**
+     * The sqrt of PI.
+     */
+    private static final double SQRT_PI = sqrt(Math.PI);
+    private static final double TO_SECONDS = 1.0e-9;
 }

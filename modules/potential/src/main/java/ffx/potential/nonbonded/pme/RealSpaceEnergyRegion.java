@@ -63,9 +63,10 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalFactors;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalParameters;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleFactors;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
@@ -275,7 +276,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
     private final SharedInteger sharedInteractions;
     public final RealSpaceEnergyLoop[] realSpaceEnergyLoop;
 
-    private ScaleFactors scaleFactors;
+    private ScaleParameters scaleParameters;
 
     /**
      * Specify inter-molecular softcore.
@@ -307,11 +308,11 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
     public void init(Atom[] atoms, Crystal crystal, double[][][] coordinates, MultipoleFrameDefinition[] frame,
                      int[][] axisAtom, double[][][] globalMultipole, double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      boolean[] use, int[] molecule, int[][] ip11, boolean[] isSoft, double[] ipdamp, double[] thole,
-                     int[][][] realSpaceLists, int[][] realSpaceCounts, IntegerSchedule realSpaceSchedule, long[] realSpaceEnergyTime,
+                     RealSpaceNeighborParameters realSpaceNeighborParameters, long[] realSpaceEnergyTime,
                      double[][][] grad, double[][][] torque, double[][][] lambdaGrad, double[][][] lambdaTorque,
                      SharedDouble shareddEdLambda, SharedDouble sharedd2EdLambda2, boolean gradient, boolean lambdaTerm,
                      LambdaMode lambdaMode, Polarization polarization,
-                     EwaldParameters ewaldParameters, ScaleFactors scaleFactors, AlchemicalFactors alchemicalFactors) {
+                     EwaldParameters ewaldParameters, ScaleParameters scaleParameters, AlchemicalParameters alchemicalParameters) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.coordinates = coordinates;
@@ -326,9 +327,9 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
         this.isSoft = isSoft;
         this.ipdamp = ipdamp;
         this.thole = thole;
-        this.realSpaceLists = realSpaceLists;
-        this.realSpaceCounts = realSpaceCounts;
-        this.realSpaceSchedule = realSpaceSchedule;
+        this.realSpaceLists = realSpaceNeighborParameters.realSpaceLists;
+        this.realSpaceCounts = realSpaceNeighborParameters.realSpaceCounts;
+        this.realSpaceSchedule = realSpaceNeighborParameters.realSpaceSchedule;
         this.realSpaceEnergyTime = realSpaceEnergyTime;
         this.grad = grad;
         this.torque = torque;
@@ -340,19 +341,19 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
         this.lambdaTerm = lambdaTerm;
         this.lambdaMode = lambdaMode;
         this.polarization = polarization;
-        this.lAlpha = alchemicalFactors.lAlpha;
-        this.dlAlpha = alchemicalFactors.dlAlpha;
-        this.d2lAlpha = alchemicalFactors.d2lAlpha;
-        this.dEdLSign = alchemicalFactors.dEdLSign;
-        this.dlPowPerm = alchemicalFactors.dlPowPerm;
-        this.d2lPowPerm = alchemicalFactors.d2lPowPerm;
-        this.doPermanentRealSpace = alchemicalFactors.doPermanentRealSpace;
-        this.permanentScale = alchemicalFactors.permanentScale;
-        this.lPowPol = alchemicalFactors.lPowPol;
-        this.dlPowPol = alchemicalFactors.dlPowPol;
-        this.d2lPowPol = alchemicalFactors.d2lPowPol;
-        this.doPolarization = alchemicalFactors.doPolarization;
-        this.polarizationScale = alchemicalFactors.polarizationScale;
+        this.lAlpha = alchemicalParameters.lAlpha;
+        this.dlAlpha = alchemicalParameters.dlAlpha;
+        this.d2lAlpha = alchemicalParameters.d2lAlpha;
+        this.dEdLSign = alchemicalParameters.dEdLSign;
+        this.dlPowPerm = alchemicalParameters.dlPowPerm;
+        this.d2lPowPerm = alchemicalParameters.d2lPowPerm;
+        this.doPermanentRealSpace = alchemicalParameters.doPermanentRealSpace;
+        this.permanentScale = alchemicalParameters.permanentScale;
+        this.lPowPol = alchemicalParameters.lPowPol;
+        this.dlPowPol = alchemicalParameters.dlPowPol;
+        this.d2lPowPol = alchemicalParameters.d2lPowPol;
+        this.doPolarization = alchemicalParameters.doPolarization;
+        this.polarizationScale = alchemicalParameters.polarizationScale;
         this.aewald = ewaldParameters.aewald;
         this.an0 = ewaldParameters.an0;
         this.an1 = ewaldParameters.an1;
@@ -360,7 +361,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
         this.an3 = ewaldParameters.an3;
         this.an4 = ewaldParameters.an4;
         this.an5 = ewaldParameters.an5;
-        this.scaleFactors = scaleFactors;
+        this.scaleParameters = scaleParameters;
     }
 
     public double getPermanentEnergy() {
@@ -640,17 +641,17 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
                 final int moleculei = molecule[i];
                 if (iSymm == 0) {
                     for (Atom ak : ai.get1_5s()) {
-                        masking_local[ak.getIndex() - 1] = scaleFactors.m15scale;
+                        masking_local[ak.getIndex() - 1] = scaleParameters.m15scale;
                     }
                     for (Torsion torsion : ai.getTorsions()) {
                         Atom ak = torsion.get1_4(ai);
                         if (ak != null) {
                             int index = ak.getIndex() - 1;
-                            masking_local[index] = scaleFactors.m14scale;
-                            maskingp_local[index] = scaleFactors.p14scale;
+                            masking_local[index] = scaleParameters.m14scale;
+                            maskingp_local[index] = scaleParameters.p14scale;
                             for (int j : ip11[i]) {
                                 if (j == index) {
-                                    maskingp_local[index] = scaleFactors.intra14Scale * scaleFactors.p14scale;
+                                    maskingp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
                                 }
                             }
                         }
@@ -659,17 +660,17 @@ public class RealSpaceEnergyRegion extends ParallelRegion {
                         Atom ak = angle.get1_3(ai);
                         if (ak != null) {
                             int index = ak.getIndex() - 1;
-                            maskingp_local[index] = scaleFactors.p13scale;
-                            masking_local[index] = scaleFactors.m13scale;
+                            maskingp_local[index] = scaleParameters.p13scale;
+                            masking_local[index] = scaleParameters.m13scale;
                         }
                     }
                     for (Bond bond : ai.getBonds()) {
                         int index = bond.get1_2(ai).getIndex() - 1;
-                        maskingp_local[index] = scaleFactors.p12scale;
-                        masking_local[index] = scaleFactors.m12scale;
+                        maskingp_local[index] = scaleParameters.p12scale;
+                        masking_local[index] = scaleParameters.m12scale;
                     }
                     for (int j : ip11[i]) {
-                        maskingd_local[j] = scaleFactors.d11scale;
+                        maskingd_local[j] = scaleParameters.d11scale;
                     }
                 }
                 final double xi = x[i];
