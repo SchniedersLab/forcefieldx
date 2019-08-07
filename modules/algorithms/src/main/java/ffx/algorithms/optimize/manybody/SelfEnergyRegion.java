@@ -117,11 +117,6 @@ public class SelfEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    /**
-     * This needs to be returned to the RotOpt instance.
-     */
-    private double backboneEnergy;
-
     public SelfEnergyRegion(RotamerOptimization rO, EnergyExpansion eE,
                             Residue[] residues, RotamerLibrary library, BufferedWriter energyWriter,
                             Comm world, int numProc, boolean pruneClashes, boolean master,
@@ -142,10 +137,6 @@ public class SelfEnergyRegion extends WorkerRegion {
 
         this.selfEnergyMap = eE.getSelfEnergyMap();
         logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
-    }
-
-    public double getBackboneEnergy() {
-        return backboneEnergy;
     }
 
     @Override
@@ -171,6 +162,7 @@ public class SelfEnergyRegion extends WorkerRegion {
         keySet = selfEnergyMap.keySet();
 
         // Compute backbone energy.
+        double backboneEnergy = 0.0;
         try {
             backboneEnergy = rO.computeBackboneEnergy(residues);
         } catch (ArithmeticException ex) {
@@ -178,6 +170,8 @@ public class SelfEnergyRegion extends WorkerRegion {
         }
         rO.logIfMaster(format(" Backbone energy:  %s\n",
                 rO.formatEnergy(backboneEnergy)));
+
+        eE.setBackboneEnergy(backboneEnergy);
     }
 
     @Override

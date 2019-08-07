@@ -199,6 +199,10 @@ public class EnergyExpansion {
         }
     }
 
+    public void setBackboneEnergy(double backboneEnergy) {
+        this.backboneEnergy = backboneEnergy;
+    }
+
     /**
      * Computes a self energy, defined as energy with all sidechains but one
      * turned off, minus the backbone energy.
