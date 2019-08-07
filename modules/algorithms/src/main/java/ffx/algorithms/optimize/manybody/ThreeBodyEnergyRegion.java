@@ -68,7 +68,7 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
 
     private RotamerOptimization rO;
     private DistanceMatrix dM;
-    private RotamerOptimization.EnergyExpansion eE;
+    private EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -124,11 +124,9 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    public ThreeBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM,
-                                 RotamerOptimization.EnergyExpansion eE, Residue[] residues,
-                                 ArrayList<Residue> allResiduesList, RotamerLibrary library,
-                                 HashMap<Integer, Integer[]> threeBodyEnergyMap, BufferedWriter energyWriter,
-                                 Comm world, int numProc, double superpositionThreshold,
+    public ThreeBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE,
+                                 Residue[] residues, ArrayList<Residue> allResiduesList, RotamerLibrary library,
+                                 BufferedWriter energyWriter, Comm world, int numProc, double superpositionThreshold,
                                  boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
         this.rO = rotamerOptimization;
         this.dM = dM;
@@ -136,7 +134,6 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.library = library;
-        this.threeBodyEnergyMap = threeBodyEnergyMap;
         this.energyWriter = energyWriter;
         this.world = world;
         this.numProc = numProc;
@@ -146,6 +143,9 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
         this.verbose = verbose;
         this.writeEnergyRestart = writeEnergyRestart;
         this.printFiles = printFiles;
+
+        this.threeBodyEnergyMap = eE.getThreeBodyEnergyMap();
+        logger.info(format(" Number of 3-Body energies to calculate: %d", threeBodyEnergyMap.size()));
     }
 
     @Override

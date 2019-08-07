@@ -66,7 +66,7 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
     private RotamerOptimization rO;
     private DistanceMatrix dM;
-    private RotamerOptimization.EnergyExpansion eE;
+    private EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -126,11 +126,9 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, RotamerOptimization.EnergyExpansion eE,
-                               Residue[] residues,
-                               ArrayList<Residue> allResiduesList, RotamerLibrary library,
-                               HashMap<Integer, Integer[]> twoBodyEnergyMap, BufferedWriter energyWriter,
-                               Comm world, int numProc, boolean prunePairClashes, double superpositionThreshold,
+    public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE,
+                               Residue[] residues, ArrayList<Residue> allResiduesList, RotamerLibrary library,
+                               BufferedWriter energyWriter, Comm world, int numProc, boolean prunePairClashes, double superpositionThreshold,
                                boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
         this.rO = rotamerOptimization;
         this.dM = dM;
@@ -138,7 +136,6 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.library = library;
-        this.twoBodyEnergyMap = twoBodyEnergyMap;
         this.energyWriter = energyWriter;
         this.world = world;
         this.numProc = numProc;
@@ -149,6 +146,9 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
         this.verbose = verbose;
         this.writeEnergyRestart = writeEnergyRestart;
         this.printFiles = printFiles;
+
+        this.twoBodyEnergyMap = eE.getTwoBodyEnergyMap();
+        logger.info(format(" Number of 2-body energies to calculate: %d", twoBodyEnergyMap.size()));
     }
 
     @Override

@@ -62,7 +62,7 @@ public class FourBodyEnergyRegion extends WorkerRegion {
 
     private RotamerOptimization rO;
     private DistanceMatrix dM;
-    private RotamerOptimization.EnergyExpansion eE;
+    private EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -80,17 +80,17 @@ public class FourBodyEnergyRegion extends WorkerRegion {
      */
     private double superpositionThreshold;
 
-    public FourBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM,
-                                RotamerOptimization.EnergyExpansion eE,
-                                Residue[] residues, ArrayList<Residue> allResiduesList,
-                                HashMap<Integer, Integer[]> fourBodyEnergyMap, double superpositionThreshold) {
+    public FourBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE,
+                                Residue[] residues, ArrayList<Residue> allResiduesList, double superpositionThreshold) {
         this.rO = rotamerOptimization;
         this.dM = dM;
         this.eE = eE;
         this.residues = residues;
         this.allResiduesList = allResiduesList;
-        this.fourBodyEnergyMap = fourBodyEnergyMap;
         this.superpositionThreshold = superpositionThreshold;
+
+        this.fourBodyEnergyMap = eE.getFourBodyEnergyMap();
+        logger.info(format(" Running quads: %d jobs.", fourBodyEnergyMap.size()));
     }
 
     @Override

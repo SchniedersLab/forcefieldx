@@ -49,7 +49,7 @@ import ffx.potential.bonded.Residue;
 
 public class EnergyRegion extends ParallelRegion {
 
-    private RotamerOptimization.EnergyExpansion eE;
+    private EnergyExpansion eE;
     /**
      * Flag to control use of 3-body terms.
      */
@@ -70,8 +70,7 @@ public class EnergyRegion extends ParallelRegion {
         energyLoops = new EnergyLoop[nThreads];
     }
 
-    public void init(RotamerOptimization.EnergyExpansion eE,
-                     Residue[] residues, int[] rotamers, boolean threeBodyTerm) {
+    public void init(EnergyExpansion eE, Residue[] residues, int[] rotamers, boolean threeBodyTerm) {
         this.eE = eE;
         this.rotamers = rotamers;
         this.nResidues = residues.length;

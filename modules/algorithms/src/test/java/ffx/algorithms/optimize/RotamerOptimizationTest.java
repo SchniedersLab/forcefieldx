@@ -49,6 +49,7 @@ import org.junit.runners.Parameterized;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.optimize.manybody.EnergyExpansion;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
@@ -424,8 +425,6 @@ public class RotamerOptimizationTest extends PJDependentTest {
         rotamerOptimization.setSingletonClashThreshold(20.0);
         rotamerOptimization.setPairClashThreshold(20.0);
 
-        RotamerOptimization.EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
-
         double energy;
         int nRes = residueList.size();
         if (doOverallOpt) {
@@ -462,6 +461,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     rotCounter++;
                 }
 
+                EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                 double lowEnergy = eE.getSelf(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {
@@ -517,6 +517,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         }
                     }
 
+                    EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                     double lowEnergy = eE.get2Body(pairResidue, ri, j, rj);
 
                     for (rj = 1; rj < nRot; rj++) {
@@ -554,6 +555,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     rotCounter++;
                 }
 
+                EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                 double lowEnergy = eE.get2Body(pairResidue, bestRotI, j, rotCounter);
                 int bestRotJ = rotCounter;
                 for (int rj = 1; rj < nRotJ; rj++) {
@@ -625,6 +627,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                             }
                         }
 
+                        EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                         double lowEnergy = eE.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
                             if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
@@ -667,6 +670,8 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 while (rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
                     rotCounter++;
                 }
+
+                EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                 double lowEnergy = eE.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
@@ -732,8 +737,6 @@ public class RotamerOptimizationTest extends PJDependentTest {
         rotamerOptimization.setSingletonClashThreshold(20.0);
         rotamerOptimization.setPairClashThreshold(20.0);
 
-        RotamerOptimization.EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
-
         double energy;
         int nRes = residueList.size();
         if (doOverallOpt) {
@@ -770,6 +773,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     rotCounter++;
                 }
 
+                EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                 double lowEnergy = eE.getSelf(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {
@@ -827,6 +831,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         }
                     }
 
+                    EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                     double lowEnergy = eE.get2Body(pairResidue, ri, j, rj);
 
                     for (rj = 1; rj < nRot; rj++) {
@@ -864,6 +869,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     rotCounter++;
                 }
 
+                EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                 double lowEnergy = eE.get2Body(pairResidue, bestRotI, j, rotCounter);
                 int bestRotJ = rotCounter;
                 for (int rj = 1; rj < nRotJ; rj++) {
@@ -942,6 +948,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                             }
                         }
 
+                        EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                         double lowEnergy = eE.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
                             if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
@@ -984,6 +991,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 while (rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
                     rotCounter++;
                 }
+                EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                 double lowEnergy = eE.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {

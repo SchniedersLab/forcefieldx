@@ -67,7 +67,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     private static final Logger logger = Logger.getLogger(SelfEnergyRegion.class.getName());
 
     private RotamerOptimization rO;
-    private RotamerOptimization.EnergyExpansion eE;
+    private EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -122,16 +122,14 @@ public class SelfEnergyRegion extends WorkerRegion {
      */
     private double backboneEnergy;
 
-    public SelfEnergyRegion(RotamerOptimization rO, RotamerOptimization.EnergyExpansion eE,
-                            Residue[] residues, RotamerLibrary library,
-                            HashMap<Integer, Integer[]> selfEnergyMap, BufferedWriter energyWriter,
+    public SelfEnergyRegion(RotamerOptimization rO, EnergyExpansion eE,
+                            Residue[] residues, RotamerLibrary library, BufferedWriter energyWriter,
                             Comm world, int numProc, boolean pruneClashes, boolean master,
                             int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
         this.rO = rO;
         this.eE = eE;
         this.residues = residues;
         this.library = library;
-        this.selfEnergyMap = selfEnergyMap;
         this.energyWriter = energyWriter;
         this.world = world;
         this.numProc = numProc;
@@ -141,6 +139,9 @@ public class SelfEnergyRegion extends WorkerRegion {
         this.verbose = verbose;
         this.writeEnergyRestart = writeEnergyRestart;
         this.printFiles = printFiles;
+
+        this.selfEnergyMap = eE.getSelfEnergyMap();
+        logger.info(format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
     }
 
     public double getBackboneEnergy() {
