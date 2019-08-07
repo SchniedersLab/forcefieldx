@@ -61,6 +61,8 @@ public class FourBodyEnergyRegion extends WorkerRegion {
     private static final Logger logger = Logger.getLogger(FourBodyEnergyRegion.class.getName());
 
     private RotamerOptimization rO;
+    private DistanceMatrix dM;
+    private RotamerOptimization.EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -78,10 +80,13 @@ public class FourBodyEnergyRegion extends WorkerRegion {
      */
     private double superpositionThreshold;
 
-    public FourBodyEnergyRegion(RotamerOptimization rotamerOptimization, Residue[] residues,
-                                ArrayList<Residue> allResiduesList,
+    public FourBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM,
+                                RotamerOptimization.EnergyExpansion eE,
+                                Residue[] residues, ArrayList<Residue> allResiduesList,
                                 HashMap<Integer, Integer[]> fourBodyEnergyMap, double superpositionThreshold) {
         this.rO = rotamerOptimization;
+        this.dM = dM;
+        this.eE = eE;
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.fourBodyEnergyMap = fourBodyEnergyMap;
@@ -143,13 +148,13 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                 int indexK = allResiduesList.indexOf(residues[k]);
                 int indexL = allResiduesList.indexOf(residues[l]);
 
-                double rawDist = rO.getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk, indexL, rl);
-                double dIJ = rO.checkDistMatrix(indexI, ri, indexJ, rj);
-                double dIK = rO.checkDistMatrix(indexI, ri, indexK, rk);
-                double dIL = rO.checkDistMatrix(indexI, ri, indexL, rl);
-                double dJK = rO.checkDistMatrix(indexJ, rj, indexK, rk);
-                double dJL = rO.checkDistMatrix(indexJ, rj, indexL, rl);
-                double dKL = rO.checkDistMatrix(indexK, rk, indexL, rl);
+                double rawDist = dM.getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk, indexL, rl);
+                double dIJ = dM.checkDistMatrix(indexI, ri, indexJ, rj);
+                double dIK = dM.checkDistMatrix(indexI, ri, indexK, rk);
+                double dIL = dM.checkDistMatrix(indexI, ri, indexL, rl);
+                double dJK = dM.checkDistMatrix(indexJ, rj, indexK, rk);
+                double dJL = dM.checkDistMatrix(indexJ, rj, indexL, rl);
+                double dKL = dM.checkDistMatrix(indexK, rk, indexL, rl);
 
                 double minDist = DoubleStream.of(dIJ, dIK, dIL, dJK, dJL, dKL).min().getAsDouble();
 
@@ -158,7 +163,7 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                     distString = format("%10.3f", rawDist);
                 }
 
-                double resDist = rO.get4BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk, indexL, rl);
+                double resDist = dM.get4BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk, indexL, rl);
                 String resDistString = "     large";
                 if (resDist < Double.MAX_VALUE) {
                     resDistString = format("%5.3f", resDist);
@@ -172,7 +177,7 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                             rj, residues[k].toFormattedString(false, true),
                             rk, residues[l].toFormattedString(false, true),
                             rl, minDist, resDistString, superpositionThreshold));
-                } else if (rO.checkQuadDistThreshold(indexI, ri, indexJ, rj, indexK, rk, indexL, rl)) {
+                } else if (dM.checkQuadDistThreshold(indexI, ri, indexJ, rj, indexK, rk, indexL, rl)) {
                     // Set the 4-body energy to 0.0 for separation distances larger than the 4-body cutoff.
                     fourBodyEnergy = 0.0;
                     time += System.nanoTime();
@@ -184,7 +189,7 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                             rO.formatEnergy(fourBodyEnergy), distString, resDistString));
                 } else {
                     try {
-                        fourBodyEnergy = rO.compute4BodyEnergy(residues, i, ri, j, rj, k, rk, l, rl);
+                        fourBodyEnergy = eE.compute4BodyEnergy(residues, i, ri, j, rj, k, rk, l, rl);
                         time += System.nanoTime();
                         logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
                                 resi.toFormattedString(false, true), ri,
@@ -201,20 +206,20 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                                     resl.toFormattedString(false, true), rl,
                                     rO.formatEnergy(fourBodyEnergy), distString, resDistString));
                             sb.append(format("   Explain: (ref %d) \n", key));
-                            sb.append(format("     Self %3d %3d:                  %.3f\n", i, ri, rO.getSelf(i, ri)));
-                            sb.append(format("     Self %3d %3d:                  %.3f\n", j, rj, rO.getSelf(j, rj)));
-                            sb.append(format("     Self %3d %3d:                  %.3f\n", k, rk, rO.getSelf(k, rk)));
-                            sb.append(format("     Self %3d %3d:                  %.3f\n", l, rl, rO.getSelf(l, rl)));
-                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, j, rj, rO.get2Body(i, ri, j, rj)));
-                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, k, rk, rO.get2Body(i, ri, k, rk)));
-                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, l, rl, rO.get2Body(i, ri, l, rl)));
-                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, k, rk, rO.get2Body(j, rj, k, rk)));
-                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, l, rl, rO.get2Body(j, rj, l, rl)));
-                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", k, rk, l, rl, rO.get2Body(k, rk, l, rl)));
-                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, rO.get3Body(residues, i, ri, j, rj, k, rk)));
-                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, rO.get3Body(residues, i, ri, j, rj, l, rl)));
-                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, rO.get3Body(residues, i, ri, k, rk, l, rl)));
-                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, rO.get3Body(residues, j, rj, k, rk, l, rl)));
+                            sb.append(format("     Self %3d %3d:                  %.3f\n", i, ri, eE.getSelf(i, ri)));
+                            sb.append(format("     Self %3d %3d:                  %.3f\n", j, rj, eE.getSelf(j, rj)));
+                            sb.append(format("     Self %3d %3d:                  %.3f\n", k, rk, eE.getSelf(k, rk)));
+                            sb.append(format("     Self %3d %3d:                  %.3f\n", l, rl, eE.getSelf(l, rl)));
+                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, j, rj, eE.get2Body(i, ri, j, rj)));
+                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, k, rk, eE.get2Body(i, ri, k, rk)));
+                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, l, rl, eE.get2Body(i, ri, l, rl)));
+                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, k, rk, eE.get2Body(j, rj, k, rk)));
+                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, l, rl, eE.get2Body(j, rj, l, rl)));
+                            sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", k, rk, l, rl, eE.get2Body(k, rk, l, rl)));
+                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, eE.get3Body(residues, i, ri, j, rj, k, rk)));
+                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, eE.get3Body(residues, i, ri, j, rj, l, rl)));
+                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, eE.get3Body(residues, i, ri, k, rk, l, rl)));
+                            sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, eE.get3Body(residues, j, rj, k, rk, l, rl)));
                             sb.append(format("     backbone:                      %.3f\n", rO.getBackboneEnergy()));
                             sb.append(format("     quadEnergy:                 %.3f\n", fourBodyEnergy));
                             sb.append("     --s--\n");

@@ -66,7 +66,9 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
 
     private static final Logger logger = Logger.getLogger(ThreeBodyEnergyRegion.class.getName());
 
-    private RotamerOptimization rotamerOptimization;
+    private RotamerOptimization rO;
+    private DistanceMatrix dM;
+    private RotamerOptimization.EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -122,12 +124,15 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    public ThreeBodyEnergyRegion(RotamerOptimization rotamerOptimization, Residue[] residues,
+    public ThreeBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM,
+                                 RotamerOptimization.EnergyExpansion eE, Residue[] residues,
                                  ArrayList<Residue> allResiduesList, RotamerLibrary library,
                                  HashMap<Integer, Integer[]> threeBodyEnergyMap, BufferedWriter energyWriter,
                                  Comm world, int numProc, double superpositionThreshold,
                                  boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
-        this.rotamerOptimization = rotamerOptimization;
+        this.rO = rotamerOptimization;
+        this.dM = dM;
+        this.eE = eE;
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.library = library;
@@ -180,32 +185,28 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                 Residue resi = residues[i];
                 Rotamer[] roti = resi.getRotamers(library);
                 for (int ri = 0; ri < roti.length; ri++) {
-                    if (rotamerOptimization.check(i, ri)) {
+                    if (rO.check(i, ri)) {
                         continue;
                     }
                     for (int j = i + 1; j < residues.length; j++) {
                         Residue resj = residues[j];
                         Rotamer[] rotj = resj.getRotamers(library);
                         for (int rj = 0; rj < rotj.length; rj++) {
-                            if (rotamerOptimization.check(j, rj) ||
-                                    rotamerOptimization.check(i, ri, j, rj)) {
+                            if (rO.check(j, rj) || rO.check(i, ri, j, rj)) {
                                 continue;
                             }
                             for (int k = j + 1; k < residues.length; k++) {
                                 Residue resk = residues[k];
                                 Rotamer[] rotk = resk.getRotamers(library);
                                 for (int rk = 0; rk < rotk.length; rk++) {
-                                    if (rotamerOptimization.check(k, rk) ||
-                                            rotamerOptimization.check(i, ri, k, rk) ||
-                                            rotamerOptimization.check(j, rj, k, rk)) {
+                                    if (rO.check(k, rk) || rO.check(i, ri, k, rk) || rO.check(j, rj, k, rk)) {
                                         continue;
                                     }
                                     logger.info(format(" 3-Body energy %8s %-2d, %8s %-2d, %8s %-2d: %s",
                                             resi.toFormattedString(false, true),
                                             ri, resj.toFormattedString(false, true),
                                             rj, resk.toFormattedString(false, true),
-                                            rk, rotamerOptimization.formatEnergy(
-                                                    rotamerOptimization.get3Body(residues, i, ri, j, rj, k, rk))));
+                                            rk, rO.formatEnergy(eE.get3Body(residues, i, ri, j, rj, k, rk))));
                                 }
                             }
                         }
@@ -256,9 +257,8 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
 
                 // Initialize result.
                 if (i >= 0 && ri >= 0 && j >= 0 && rj >= 0 && k >= 0 && rk >= 0) {
-                    if ((!rotamerOptimization.check(i, ri) || !rotamerOptimization.check(j, rj) ||
-                            !rotamerOptimization.check(k, rk) || !rotamerOptimization.check(i, ri, j, rj) ||
-                            !rotamerOptimization.check(i, ri, k, rk) || !rotamerOptimization.check(j, rj, k, rk))) {
+                    if ((!rO.check(i, ri) || !rO.check(j, rj) || !rO.check(k, rk) ||
+                            !rO.check(i, ri, j, rj) || !rO.check(i, ri, k, rk) || !rO.check(j, rj, k, rk))) {
 
                         Residue residueI = residues[i];
                         Residue residueJ = residues[j];
@@ -268,13 +268,13 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                         int indexJ = allResiduesList.indexOf(residueJ);
                         int indexK = allResiduesList.indexOf(residueK);
 
-                        double rawDist = rotamerOptimization.getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
-                        double dIJ = rotamerOptimization.checkDistMatrix(indexI, ri, indexJ, rj);
-                        double dIK = rotamerOptimization.checkDistMatrix(indexI, ri, indexK, rk);
-                        double dJK = rotamerOptimization.checkDistMatrix(indexJ, rj, indexK, rk);
+                        double rawDist = dM.getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
+                        double dIJ = dM.checkDistMatrix(indexI, ri, indexJ, rj);
+                        double dIK = dM.checkDistMatrix(indexI, ri, indexK, rk);
+                        double dJK = dM.checkDistMatrix(indexJ, rj, indexK, rk);
                         double minDist = min(min(dIJ, dIK), dJK);
 
-                        double resDist = rotamerOptimization.get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
+                        double resDist = dM.get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
                         String resDistString = "     large";
                         if (resDist < Double.MAX_VALUE) {
                             resDistString = format("%5.3f", resDist);
@@ -293,7 +293,7 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                                     residueJ.toFormattedString(false, true), rj,
                                     residueK.toFormattedString(false, true), rk,
                                     minDist, resDistString, superpositionThreshold));
-                        } else if (rotamerOptimization.checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
+                        } else if (dM.checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
                             // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                             threeBodyEnergy = 0.0;
                             time += System.nanoTime();
@@ -301,16 +301,16 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                                     residueI.toFormattedString(false, true), ri,
                                     residueJ.toFormattedString(false, true), rj,
                                     residueK.toFormattedString(false, true), rk,
-                                    rotamerOptimization.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
+                                    rO.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
                         } else {
                             try {
-                                threeBodyEnergy = rotamerOptimization.compute3BodyEnergy(residues, i, ri, j, rj, k, rk);
+                                threeBodyEnergy = eE.compute3BodyEnergy(residues, i, ri, j, rj, k, rk);
                                 time += System.nanoTime();
                                 logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
                                         residueI.toFormattedString(false, true), ri,
                                         residueJ.toFormattedString(false, true), rj,
                                         residueK.toFormattedString(false, true), rk,
-                                        rotamerOptimization.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
+                                        rO.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
                             } catch (ArithmeticException ex) {
                                 threeBodyEnergy = Double.NaN;
                                 time += System.nanoTime();
@@ -344,9 +344,9 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                     if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0 && resk >= 0 && rotk >= 0) {
                         if (!Double.isFinite(energy)) {
                             logger.info(" Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
-                            rotamerOptimization.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
+                            rO.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                         }
-                        rotamerOptimization.set3Body(residues, resi, roti, resj, rotj, resk, rotk, energy);
+                        eE.set3Body(residues, resi, roti, resj, rotj, resk, rotk, energy);
                         if (rank == 0 && writeEnergyRestart && printFiles) {
                             try {
                                 energyWriter.append(format("Triple %d %d, %d %d, %d %d: %16.8f", resi, roti, resj, rotj, resk, rotk, energy));

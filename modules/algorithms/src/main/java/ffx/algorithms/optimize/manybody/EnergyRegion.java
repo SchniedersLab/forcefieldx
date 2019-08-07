@@ -49,7 +49,7 @@ import ffx.potential.bonded.Residue;
 
 public class EnergyRegion extends ParallelRegion {
 
-    private RotamerOptimization rotamerOptimization;
+    private RotamerOptimization.EnergyExpansion eE;
     /**
      * Flag to control use of 3-body terms.
      */
@@ -58,9 +58,9 @@ public class EnergyRegion extends ParallelRegion {
     private SharedDouble self;
     private SharedDouble twoBody;
     private SharedDouble threeBody;
-    private EnergyLoop energyLoops[];
+    private EnergyLoop[] energyLoops;
     private Residue[] residues;
-    private int rotamers[];
+    private int[] rotamers;
     private int nResidues;
 
     public EnergyRegion(int nThreads) {
@@ -70,9 +70,9 @@ public class EnergyRegion extends ParallelRegion {
         energyLoops = new EnergyLoop[nThreads];
     }
 
-    public void init(RotamerOptimization rotamerOptimization,
-                     Residue residues[], int rotamers[], boolean threeBodyTerm) {
-        this.rotamerOptimization = rotamerOptimization;
+    public void init(RotamerOptimization.EnergyExpansion eE,
+                     Residue[] residues, int[] rotamers, boolean threeBodyTerm) {
+        this.eE = eE;
         this.rotamers = rotamers;
         this.nResidues = residues.length;
         this.residues = Arrays.copyOf(residues, nResidues);
@@ -135,14 +135,14 @@ public class EnergyRegion extends ParallelRegion {
         public void run(int lb, int ub) {
             for (int a = lb; a <= ub; a++) {
                 int ai = rotamers[a];
-                selfSum += rotamerOptimization.getSelf(a, ai);
+                selfSum += eE.getSelf(a, ai);
                 for (int b = a + 1; b < nResidues; b++) {
                     int bi = rotamers[b];
-                    pairSum += rotamerOptimization.get2Body(a, ai, b, bi);
+                    pairSum += eE.get2Body(a, ai, b, bi);
                     if (threeBodyTerm) {
                         for (int c = b + 1; c < nResidues; c++) {
                             int ci = rotamers[c];
-                            threeBodySum += rotamerOptimization.get3Body(residues, a, ai, b, bi, c, ci);
+                            threeBodySum += eE.get3Body(residues, a, ai, b, bi, c, ci);
                         }
                     }
                 }

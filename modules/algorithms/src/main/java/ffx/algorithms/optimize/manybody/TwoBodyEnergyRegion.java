@@ -64,7 +64,9 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
     private static final Logger logger = Logger.getLogger(TwoBodyEnergyRegion.class.getName());
 
-    private RotamerOptimization rotamerOptimization;
+    private RotamerOptimization rO;
+    private DistanceMatrix dM;
+    private RotamerOptimization.EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -124,12 +126,15 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, Residue[] residues,
+    public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, RotamerOptimization.EnergyExpansion eE,
+                               Residue[] residues,
                                ArrayList<Residue> allResiduesList, RotamerLibrary library,
                                HashMap<Integer, Integer[]> twoBodyEnergyMap, BufferedWriter energyWriter,
                                Comm world, int numProc, boolean prunePairClashes, double superpositionThreshold,
                                boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
-        this.rotamerOptimization = rotamerOptimization;
+        this.rO = rotamerOptimization;
+        this.dM = dM;
+        this.eE = eE;
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.library = library;
@@ -179,11 +184,11 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
     @Override
     public void finish() {
         // Pre-Prune if pair-energy is Double.NaN.
-        rotamerOptimization.prePrunePairs(residues);
+        rO.prePrunePairs(residues);
 
         // Prune each rotamer that clashes with all rotamers from a 2nd residue.
         if (prunePairClashes) {
-            rotamerOptimization.prunePairClashes(residues);
+            rO.prunePairClashes(residues);
         }
 
         // Print what we've got so far.
@@ -192,22 +197,22 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
                 Residue resi = residues[i];
                 Rotamer[] roti = resi.getRotamers(library);
                 for (int ri = 0; ri < roti.length; ri++) {
-                    if (rotamerOptimization.check(i, ri)) {
+                    if (rO.check(i, ri)) {
                         continue;
                     }
                     for (int j = i + 1; j < residues.length; j++) {
                         Residue resj = residues[j];
                         Rotamer[] rotj = resj.getRotamers(library);
                         for (int rj = 0; rj < rotj.length; rj++) {
-                            if (rotamerOptimization.check(j, rj) ||
-                                    rotamerOptimization.check(i, ri, j, rj)) {
+                            if (rO.check(j, rj) ||
+                                    rO.check(i, ri, j, rj)) {
                                 continue;
                             }
                             logger.info(format(" Pair energy %8s %-2d, %8s %-2d: %s",
                                     residues[i].toFormattedString(false, true),
                                     ri, residues[j].toFormattedString(false, true),
-                                    rj, rotamerOptimization.formatEnergy(
-                                            rotamerOptimization.get2Body(i, ri, j, rj))));
+                                    rj, rO.formatEnergy(
+                                            eE.get2Body(i, ri, j, rj))));
                         }
                     }
                 }
@@ -252,20 +257,20 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
                 // Initialize result.
                 if (i >= 0 && ri >= 0 && j >= 0 && rj >= 0) {
-                    if (!rotamerOptimization.check(i, ri) ||
-                            !rotamerOptimization.check(j, rj) ||
-                            !rotamerOptimization.check(i, ri, j, rj)) {
+                    if (!rO.check(i, ri) ||
+                            !rO.check(j, rj) ||
+                            !rO.check(i, ri, j, rj)) {
                         Residue residueI = residues[i];
                         Residue residueJ = residues[j];
                         int indexI = allResiduesList.indexOf(residueI);
                         int indexJ = allResiduesList.indexOf(residueJ);
-                        double resDist = rotamerOptimization.getResidueDistance(indexI, ri, indexJ, rj);
+                        double resDist = dM.getResidueDistance(indexI, ri, indexJ, rj);
                         String resDistString = "large";
                         if (resDist < Double.MAX_VALUE) {
                             resDistString = format("%5.3f", resDist);
                         }
 
-                        double dist = rotamerOptimization.checkDistMatrix(indexI, ri, indexJ, rj);
+                        double dist = dM.checkDistMatrix(indexI, ri, indexJ, rj);
                         String distString = "     large";
                         if (dist < Double.MAX_VALUE) {
                             distString = format("%10.3f", dist);
@@ -279,23 +284,23 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
                                     residueI.toFormattedString(false, true),
                                     ri, residueJ.toFormattedString(false, true),
                                     rj, dist, resDist, superpositionThreshold));
-                        } else if (rotamerOptimization.checkPairDistThreshold(indexI, ri, indexJ, rj)) {
+                        } else if (dM.checkPairDistThreshold(indexI, ri, indexJ, rj)) {
                             // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                             twoBodyEnergy = 0.0;
                             time += System.nanoTime();
                             logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
                                     residueI.toFormattedString(false, true),
                                     ri, residueJ.toFormattedString(false, true),
-                                    rj, rotamerOptimization.formatEnergy(twoBodyEnergy),
+                                    rj, rO.formatEnergy(twoBodyEnergy),
                                     distString, resDistString, time * 1.0e-9));
                         } else {
                             try {
-                                twoBodyEnergy = rotamerOptimization.compute2BodyEnergy(residues, i, ri, j, rj);
+                                twoBodyEnergy = eE.compute2BodyEnergy(residues, i, ri, j, rj);
                                 time += System.nanoTime();
                                 logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
                                         residueI.toFormattedString(false, true),
                                         ri, residueJ.toFormattedString(false, true),
-                                        rj, rotamerOptimization.formatEnergy(twoBodyEnergy),
+                                        rj, rO.formatEnergy(twoBodyEnergy),
                                         distString, resDistString, time * 1.0e-9));
                             } catch (ArithmeticException ex) {
                                 twoBodyEnergy = Double.NaN;
@@ -330,9 +335,9 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
                     if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0) {
                         if (!Double.isFinite(energy)) {
                             logger.info(" Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
-                            rotamerOptimization.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
+                            rO.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                         }
-                        rotamerOptimization.set2Body(resi, roti, resj, rotj, energy);
+                        eE.set2Body(resi, roti, resj, rotj, energy);
                         if (rank == 0 && writeEnergyRestart && printFiles) {
                             try {
                                 energyWriter.append(format("Pair %d %d, %d %d: %16.8f", resi, roti, resj, rotj, energy));

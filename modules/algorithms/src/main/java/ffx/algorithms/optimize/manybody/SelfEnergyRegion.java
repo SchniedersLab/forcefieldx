@@ -66,7 +66,8 @@ public class SelfEnergyRegion extends WorkerRegion {
 
     private static final Logger logger = Logger.getLogger(SelfEnergyRegion.class.getName());
 
-    private RotamerOptimization rotamerOptimization;
+    private RotamerOptimization rO;
+    private RotamerOptimization.EnergyExpansion eE;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -121,11 +122,13 @@ public class SelfEnergyRegion extends WorkerRegion {
      */
     private double backboneEnergy;
 
-    public SelfEnergyRegion(RotamerOptimization rotamerOptimization, Residue[] residues, RotamerLibrary library,
+    public SelfEnergyRegion(RotamerOptimization rO, RotamerOptimization.EnergyExpansion eE,
+                            Residue[] residues, RotamerLibrary library,
                             HashMap<Integer, Integer[]> selfEnergyMap, BufferedWriter energyWriter,
                             Comm world, int numProc, boolean pruneClashes, boolean master,
                             int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
-        this.rotamerOptimization = rotamerOptimization;
+        this.rO = rO;
+        this.eE = eE;
         this.residues = residues;
         this.library = library;
         this.selfEnergyMap = selfEnergyMap;
@@ -168,12 +171,12 @@ public class SelfEnergyRegion extends WorkerRegion {
 
         // Compute backbone energy.
         try {
-            backboneEnergy = rotamerOptimization.computeBackboneEnergy(residues);
+            backboneEnergy = rO.computeBackboneEnergy(residues);
         } catch (ArithmeticException ex) {
             logger.severe(format(" Error in calculation of backbone energy %s", ex.getMessage()));
         }
-        rotamerOptimization.logIfMaster(format(" Backbone energy:  %s\n",
-                rotamerOptimization.formatEnergy(backboneEnergy)));
+        rO.logIfMaster(format(" Backbone energy:  %s\n",
+                rO.formatEnergy(backboneEnergy)));
     }
 
     @Override
@@ -206,11 +209,11 @@ public class SelfEnergyRegion extends WorkerRegion {
     @Override
     public void finish() {
         // Pre-Prune if self-energy is Double.NaN.
-        rotamerOptimization.prePruneSelves(residues);
+        rO.prePruneSelves(residues);
 
         // Prune clashes for all singles (not just the ones this node did).
         if (pruneClashes) {
-            rotamerOptimization.pruneSingleClashes(residues);
+            rO.pruneSingleClashes(residues);
         }
 
         // Print what we've got so far.
@@ -221,8 +224,8 @@ public class SelfEnergyRegion extends WorkerRegion {
                 for (int ri = 0; ri < rotamers.length; ri++) {
                     logger.info(format(" Self energy %8s %-2d: %s",
                             residues[i].toFormattedString(false, true),
-                            ri, rotamerOptimization.formatEnergy(
-                                    rotamerOptimization.getSelf(i, ri))));
+                            ri, rO.formatEnergy(
+                                    eE.getSelf(i, ri))));
                 }
             }
         }
@@ -259,14 +262,14 @@ public class SelfEnergyRegion extends WorkerRegion {
                 myBuffer.put(2, 0.0);
 
                 if (i >= 0 && ri >= 0) {
-                    if (!rotamerOptimization.check(i, ri)) {
+                    if (!rO.check(i, ri)) {
                         long time = -System.nanoTime();
                         double selfEnergy;
                         try {
-                            selfEnergy = rotamerOptimization.computeSelfEnergy(residues, i, ri);
+                            selfEnergy = eE.computeSelfEnergy(residues, i, ri);
                             time += System.nanoTime();
                             logger.info(format(" Self %8s %-2d: %s in %6.4f (sec).", residues[i].toFormattedString(false, true), ri,
-                                    rotamerOptimization.formatEnergy(selfEnergy), time * 1.0e-9));
+                                    rO.formatEnergy(selfEnergy), time * 1.0e-9));
                         } catch (ArithmeticException ex) {
                             selfEnergy = Double.NaN;
                             time += System.nanoTime();
@@ -299,9 +302,9 @@ public class SelfEnergyRegion extends WorkerRegion {
                     if (resi >= 0 && roti >= 0) {
                         if (Double.isNaN(energy)) {
                             logger.info(" Rotamer  eliminated: " + resi + ", " + roti);
-                            rotamerOptimization.eliminateRotamer(residues, resi, roti, false);
+                            rO.eliminateRotamer(residues, resi, roti, false);
                         }
-                        rotamerOptimization.setSelf(resi, roti, energy);
+                        eE.setSelf(resi, roti, energy);
                         if (rank == 0 && writeEnergyRestart && printFiles) {
                             try {
                                 energyWriter.append(format("Self %d %d: %16.8f", resi, roti, energy));

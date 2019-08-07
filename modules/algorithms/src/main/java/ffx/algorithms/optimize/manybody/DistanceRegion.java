@@ -63,6 +63,7 @@ public class DistanceRegion extends ParallelRegion {
     private static final Logger logger = Logger.getLogger(DistanceRegion.class.getName());
 
     private RotamerOptimization rotamerOptimization;
+    private DistanceMatrix dM;
     /**
      * MolecularAssembly to perform rotamer optimization on.
      */
@@ -88,7 +89,6 @@ public class DistanceRegion extends ParallelRegion {
      */
     private double[][][][] distanceMatrix;
 
-
     private final DistanceLoop[] distanceLoops;
     private final int nResidues;
     private final Crystal crystal;
@@ -97,7 +97,7 @@ public class DistanceRegion extends ParallelRegion {
     private final IntegerSchedule pairwiseSchedule;
 
     public DistanceRegion(int nt, int nResidues, Crystal crystal,
-                   int[][][] lists, IntegerSchedule schedule) {
+                          int[][][] lists, IntegerSchedule schedule) {
         distanceLoops = new DistanceLoop[nt];
         this.nResidues = nResidues;
         this.crystal = crystal;
@@ -109,9 +109,10 @@ public class DistanceRegion extends ParallelRegion {
         pairwiseSchedule = schedule;
     }
 
-    public void init(RotamerOptimization rotamerOptimization, MolecularAssembly molecularAssembly,
+    public void init(DistanceMatrix dM, RotamerOptimization rotamerOptimization, MolecularAssembly molecularAssembly,
                      Residue[] allResiduesArray, RotamerLibrary library, AlgorithmListener algorithmListener,
                      double[][][][] distanceMatrix) {
+        this.dM = dM;
         this.rotamerOptimization = rotamerOptimization;
         this.molecularAssembly = molecularAssembly;
         this.allResiduesArray = allResiduesArray;
@@ -218,7 +219,7 @@ public class DistanceRegion extends ParallelRegion {
                                     algorithmListener.algorithmUpdate(molecularAssembly);
                                 }
 
-                                double r = rotamerOptimization.interResidueDistance(xi, xj, symOp);
+                                double r = dM.interResidueDistance(xi, xj, symOp);
                                 if (i < j) {
                                     if (r < distanceMatrix[i][ri][j][rj]) {
                                         distanceMatrix[i][ri][j][rj] = r;
