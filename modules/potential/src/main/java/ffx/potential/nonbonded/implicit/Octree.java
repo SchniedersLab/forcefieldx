@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.nonbonded;
+package ffx.potential.nonbonded.implicit;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -358,7 +358,7 @@ public class Octree {
     /**
      * <p>Getter for the field <code>children</code>.</p>
      *
-     * @return an array of {@link ffx.potential.nonbonded.Octree} objects.
+     * @return an array of {@link Octree} objects.
      */
     public Octree[] getChildren() {
         return children;

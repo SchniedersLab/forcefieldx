@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.nonbonded;
+package ffx.potential.nonbonded.implicit;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -120,7 +120,7 @@ public class CavitationRegion extends ParallelRegion {
      * @param lambdaTerm
      * @param surfaceTension
      */
-    CavitationRegion(Atom[] atoms, double[] x, double[] y, double[] z,
+    public CavitationRegion(Atom[] atoms, double[] x, double[] y, double[] z,
                      boolean[] use, int[][][] neighborLists,
                      double[][][] grad, double[][][] lambdaGrad,
                      int nt, double probe, boolean lambdaTerm, double surfaceTension) {

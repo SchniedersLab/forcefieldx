@@ -43,7 +43,7 @@ import org.jogamp.vecmath.Point3d
 import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.bonded.Atom
-import ffx.potential.nonbonded.Octree
+import ffx.potential.nonbonded.implicit.Octree
 
 int maxTreeDepth = 10;
 int maxAtomsPerVolume = 20;

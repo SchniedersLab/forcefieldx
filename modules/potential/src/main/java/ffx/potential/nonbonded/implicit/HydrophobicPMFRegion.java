@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.nonbonded;
+package ffx.potential.nonbonded.implicit;
 
 import java.util.List;
 import java.util.logging.Level;

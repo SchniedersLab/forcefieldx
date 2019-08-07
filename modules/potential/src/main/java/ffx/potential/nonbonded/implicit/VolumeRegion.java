@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.nonbonded;
+package ffx.potential.nonbonded.implicit;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -405,7 +405,7 @@ public class VolumeRegion extends ParallelRegion {
      * @param z
      * @param nt
      */
-    VolumeRegion(Atom[] atoms, double[] x, double[] y, double[] z, double surfaceTension, int nt) {
+    public VolumeRegion(Atom[] atoms, double[] x, double[] y, double[] z, double surfaceTension, int nt) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.x = x;
