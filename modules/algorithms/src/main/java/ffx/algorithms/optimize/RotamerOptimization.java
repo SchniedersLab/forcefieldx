@@ -3739,7 +3739,7 @@ public class RotamerOptimization implements Terminatable {
 
         eR = new EliminatedRotamers(this, dM, library, allResiduesList, maxRotCheckDepth, clashThreshold,
                 pairClashThreshold, multiResClashThreshold, nucleicPruningFactor, nucleicPairsPruningFactor,
-                multiResPairClashAddn, pruneClashes, print, residues);
+                multiResPairClashAddn, pruneClashes, prunePairClashes, print, residues);
 
         if (decomposeOriginal) {
             assert library.getUsingOrigCoordsRotamer();
