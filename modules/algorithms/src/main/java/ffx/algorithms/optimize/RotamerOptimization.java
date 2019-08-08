@@ -361,6 +361,10 @@ public class RotamerOptimization implements Terminatable {
      */
     private double nucleicCorrectionThreshold = 0;
     /**
+     * The approximate energy from summing the backbone energy, self-energies, pair-energies, etc.
+     */
+    private double approximateEnergy = 0;
+    /**
      * Minimum number of nucleic acid Rotamers to use for rotamer optimization
      * should some be eliminated by the nucleic correction threshold.
      */
@@ -1267,7 +1271,7 @@ public class RotamerOptimization implements Terminatable {
                 }
                 applyRotamer(residuei, rotamersi[ri]);
                 // Compute the energy based on a 3-body approximation
-                double approximateEnergy = computeEnergy(residues, currentRotamers, false);
+                approximateEnergy = computeEnergy(residues, currentRotamers, false);
                 double comparisonEnergy = approximateEnergy;
                 evaluatedPermutations++;
                 // Compute the AMOEBA energy
@@ -1531,7 +1535,7 @@ public class RotamerOptimization implements Terminatable {
             throw new IllegalArgumentException(e);
         }
 
-        double approximateEnergy = eE.getBackboneEnergy() + selfSum + pairSum + threeBodySum;
+        approximateEnergy = eE.getBackboneEnergy() + selfSum + pairSum + threeBodySum;
         if (print) {
             logger.info(format(" Backbone                  %s", formatEnergy(eE.getBackboneEnergy())));
             logger.info(format(" Self Energy               %s", formatEnergy(selfSum)));
@@ -1669,6 +1673,9 @@ public class RotamerOptimization implements Terminatable {
         return optimum;
     }
 
+    public double getApproximate(){
+        return approximateEnergy;
+    }
     /**
      * <p>
      * setCoordinatesToEnsemble.</p>
@@ -2362,7 +2369,7 @@ public class RotamerOptimization implements Terminatable {
             logIfMaster(format(" %12s %25f %25s", "Self:", sumSelfEnergy, ""));
             logIfMaster(format(" %12s %25f %25s", "Pair:", sumPairEnergy, ""));
 
-            double approximateEnergy = eE.getBackboneEnergy() + sumSelfEnergy + sumPairEnergy;
+            approximateEnergy = eE.getBackboneEnergy() + sumSelfEnergy + sumPairEnergy;
 
             if (threeBodyTerm) {
                 for (int i = 0; i < nResidues - 2; i++) {
@@ -2610,7 +2617,7 @@ public class RotamerOptimization implements Terminatable {
         logIfMaster(format(" %15s %25f %25f", "Self:", sumSelfEnergy, sumLowSelfEnergy));
         logIfMaster(format(" %15s %25f %25f", "Pair:", sumPairEnergy, sumLowPairEnergy));
 
-        double approximateEnergy = eE.getBackboneEnergy() + sumSelfEnergy + sumPairEnergy;
+        approximateEnergy = eE.getBackboneEnergy() + sumSelfEnergy + sumPairEnergy;
 
         double sumTrimerEnergy = 0;
         if (threeBodyTerm) {
