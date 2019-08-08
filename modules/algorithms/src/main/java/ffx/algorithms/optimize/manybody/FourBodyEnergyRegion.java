@@ -63,6 +63,7 @@ public class FourBodyEnergyRegion extends WorkerRegion {
     private RotamerOptimization rO;
     private DistanceMatrix dM;
     private EnergyExpansion eE;
+    private EliminatedRotamers eR;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -80,11 +81,12 @@ public class FourBodyEnergyRegion extends WorkerRegion {
      */
     private double superpositionThreshold;
 
-    public FourBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE,
+    public FourBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE, EliminatedRotamers eR,
                                 Residue[] residues, ArrayList<Residue> allResiduesList, double superpositionThreshold) {
         this.rO = rotamerOptimization;
         this.dM = dM;
         this.eE = eE;
+        this.eR = eR;
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.superpositionThreshold = superpositionThreshold;
@@ -130,10 +132,10 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                 int l = job[6];
                 int rl = job[7];
 
-                if (rO.check(i, ri) || rO.check(j, rj) || rO.check(k, rk) || rO.check(l, rl)
-                        || rO.check(i, ri, j, rj) || rO.check(i, ri, k, rk)
-                        || rO.check(i, ri, l, rl) || rO.check(j, rj, k, rk)
-                        || rO.check(j, rj, l, rl) || rO.check(k, rk, l, rl)) {
+                if (eR.check(i, ri) || eR.check(j, rj) || eR.check(k, rk) || eR.check(l, rl)
+                        || eR.check(i, ri, j, rj) || eR.check(i, ri, k, rk)
+                        || eR.check(i, ri, l, rl) || eR.check(j, rj, k, rk)
+                        || eR.check(j, rj, l, rl) || eR.check(k, rk, l, rl)) {
                     // Not implemented: 3-body or 4-body checks.
                     continue;
                 }

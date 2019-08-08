@@ -14,6 +14,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import edu.rit.pj.WorkerTeam;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.numerics.Potential;
@@ -67,6 +69,7 @@ public class EnergyExpansion {
 
     private RotamerOptimization rO;
     private DistanceMatrix dM;
+    private EliminatedRotamers eR;
     /**
      * MolecularAssembly to perform rotamer optimization on.
      */
@@ -98,10 +101,6 @@ public class EnergyExpansion {
      */
     private boolean decomposeOriginal;
     /**
-     * Maximum number of 4-body energy values to compute.
-     */
-    private int max4BodyCount;
-    /**
      * Flag to indicate use of box optimization.
      */
     private boolean usingBoxOptimization;
@@ -121,6 +120,11 @@ public class EnergyExpansion {
      * Flag to indicate if this is the master process.
      */
     private final boolean master;
+
+    /**
+     * Maximum number of 4-body energy values to compute.
+     */
+    private int max4BodyCount = Integer.MAX_VALUE;
 
     /**
      * Default value for the ommRecalculateThreshold in kcal/mol.
@@ -148,13 +152,15 @@ public class EnergyExpansion {
      */
     private final boolean potentialIsOpenMM;
 
-    public EnergyExpansion(RotamerOptimization rO, DistanceMatrix dM, MolecularAssembly molecularAssembly, Potential potential,
+    public EnergyExpansion(RotamerOptimization rO, DistanceMatrix dM, EliminatedRotamers eR,
+                           MolecularAssembly molecularAssembly, Potential potential,
                            RotamerLibrary library, AlgorithmListener algorithmListener, ArrayList<Residue> allResiduesList,
                            int[][] resNeighbors, boolean threeBodyTerm, boolean decomposeOriginal,
-                           int max4BodyCount, boolean usingBoxOptimization, boolean verbose,
+                           boolean usingBoxOptimization, boolean verbose,
                            boolean pruneClashes, boolean prunePairClashes, boolean master) {
         this.rO = rO;
         this.dM = dM;
+        this.eR = eR;
         this.molecularAssembly = molecularAssembly;
         this.library = library;
         this.algorithmListener = algorithmListener;
@@ -162,12 +168,18 @@ public class EnergyExpansion {
         this.resNeighbors = resNeighbors;
         this.threeBodyTerm = threeBodyTerm;
         this.decomposeOriginal = decomposeOriginal;
-        this.max4BodyCount = max4BodyCount;
         this.usingBoxOptimization = usingBoxOptimization;
         this.verbose = verbose;
         this.pruneClashes = pruneClashes;
         this.prunePairClashes = prunePairClashes;
         this.master = master;
+
+        String quadMaxout = System.getProperty("ro-max4BodyCount");
+        if (quadMaxout != null) {
+            int value = Integer.parseInt(quadMaxout);
+            max4BodyCount = value;
+            logger.info(format(" (KEY) max4BodyCount: %d", this.max4BodyCount));
+        }
 
         String prop = System.getProperty("ro-singularityThreshold");
         double singT = DEFAULT_SINGULARITY_THRESHOLD;
@@ -789,11 +801,11 @@ public class EnergyExpansion {
             double currentMin = Double.MAX_VALUE;
             double currentMax = Double.MIN_VALUE;
             for (int rk = 0; rk < lenrk; rk++) {
-                if (rO.check(k, rk)) {
+                if (eR.check(k, rk)) {
                     // k,rk is part of no valid phase space, so ignore it.
                     continue;
                 }
-                if (rO.check(i, ri, k, rk) || rO.check(j, rj, k, rk)) {
+                if (eR.check(i, ri, k, rk) || eR.check(j, rj, k, rk)) {
                     // Not implemented: check(i, ri, j, rj, k, rk).
                     // k,rk conflicts with i,ri or j,rj, so the max is now Double.NaN. No effect on minimum.
                     currentMax = Double.NaN;
@@ -857,7 +869,7 @@ public class EnergyExpansion {
         // Loop over the 2nd residues' rotamers.
         for (int rj = 0; rj < lenrj; rj++) {
             // Check for an eliminated single or eliminated pair.
-            if (rO.check(i, ri) || rO.check(j, rj) || rO.check(i, ri, j, rj)) {
+            if (eR.check(i, ri) || eR.check(j, rj) || eR.check(i, ri, j, rj)) {
                 continue;
             }
 
@@ -913,6 +925,221 @@ public class EnergyExpansion {
         return valid;
     }
 
+    /**
+     * Calculates the minimum and maximum summations over additional residues
+     * for some pair ri-rj.
+     *
+     * @param residues Residues under consideration.
+     * @param minMax   Result array: 0 is min summation, 1 max summation.
+     * @param i        Residue i.
+     * @param ri       Rotamer for residue i.
+     * @param j        Residue j!=i.
+     * @param rj       Rotamer for residue j.
+     * @return False if ri-rj always clashes with other residues.
+     * @throws IllegalArgumentException If ri, rj, or ri-rj eliminated.
+     */
+    public boolean minMaxE2(Residue[] residues, double[] minMax, int i, int ri, int j, int rj)
+            throws IllegalArgumentException {
+        Residue resi = residues[i];
+        Residue resj = residues[j];
+        if (eR.check(i, ri) || eR.check(j, rj) || eR.check(i, ri, j, rj)) {
+            throw new IllegalArgumentException(format(" Called for minMaxE2 on an eliminated pair %s-%d %s-%d", resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj));
+        }
+
+        // Minimum summation over third residues k.
+        minMax[0] = 0;
+        // Maximum summation over third residues k.
+        minMax[1] = 0;
+
+        int nRes = residues.length;
+        for (int k = 0; k < nRes; k++) {
+            if (k == i || k == j) {
+                continue;
+            }
+            Residue resk = residues[k];
+            Rotamer[] rotsk = resk.getRotamers(library);
+            int lenrk = rotsk.length;
+            double[] minMaxK = new double[2];
+            minMaxK[0] = Double.MAX_VALUE;
+            minMaxK[1] = Double.MIN_VALUE;
+
+            for (int rk = 0; rk < lenrk; rk++) {
+                if (eR.check(k, rk)) {
+                    // Not a valid part of phase space.
+                    continue;
+                }
+                if (eR.check(i, ri, k, rk) || eR.check(j, rj, k, rk)) {
+                    // Not implemented: check(i, ri, j, rj, k, rk).
+
+                    // i,ri or j,rj clashes with this rotamer, max will be NaN.
+                    // Minimum for this rk will be a clash, which is never a minimum.
+                    minMaxK[1] = Double.NaN;
+                } else {
+
+                    // Min and max summations over 4th residues l, plus the ri-rk and rj-rk interactions.
+                    // If no 3-body term, just the ri-rk and rj-rk interactions.
+                    double currentMin = get2Body(i, ri, k, rk) + get2Body(j, rj, k, rk);
+                    double currentMax = currentMin;
+                    if (threeBodyTerm) {
+                        // If the 3-Body eliminated, would fill max to Double.NaN.
+                        currentMin += get3Body(residues, i, ri, j, rj, k, rk);
+                        currentMax = currentMin;
+
+                        // Obtain min and max summations over l.
+                        double[] minMaxTriple = new double[2];
+                        if (minMaxE3(residues, minMaxTriple, i, ri, j, rj, k, rk)) {
+                            // A non-finite triples minimum should have the code taking the else branch.
+                            assert (Double.isFinite(minMaxTriple[0]) && minMaxTriple[0] != Double.MAX_VALUE);
+
+                            // Add the min and max summations over all 4th residues l.
+                            currentMin += minMaxTriple[0];
+
+                            if (Double.isFinite(currentMax) && Double.isFinite(minMaxTriple[1])) {
+                                currentMax += minMaxTriple[1];
+                            } else {
+                                currentMax = Double.NaN;
+                            }
+                        } else {
+                            // i, ri, j, rj, k, rk creates an inevitable clash with some residue l.
+                            currentMin = Double.NaN;
+                            currentMax = Double.NaN;
+                        }
+                    }
+
+                    assert (threeBodyTerm || currentMax == currentMin);
+
+                    // Now check if rk displaces previously searched rk for min/max over this k.
+                    if (Double.isFinite(currentMin) && currentMin < minMaxK[0]) {
+                        // rk has a more favorable minimum than previously searched rk.
+                        minMaxK[0] = currentMin;
+                    } // Else, no new minimum found.
+
+                    if (Double.isFinite(currentMax) && Double.isFinite(minMaxK[1])) {
+                        // rk has a less favorable maximum than previously searched rk.
+                        minMaxK[1] = Math.max(currentMax, minMaxK[1]);
+                    } else {
+                        // Our maximum is a NaN.
+                        minMaxK[1] = Double.NaN;
+                    }
+                }
+            }
+
+            if (Double.isFinite(minMaxK[0])) {
+                // Add the minimum contribution from this k to the summation.
+                minMax[0] += minMaxK[0];
+            } else {
+                // Else, ri-rj conflicts with all rk for this k, and can be swiftly eliminated.
+                minMax[0] = Double.NaN;
+                minMax[1] = Double.NaN;
+                return false;
+            }
+            if (Double.isFinite(minMaxK[1]) && Double.isFinite(minMax[1])) {
+                // Add the max contribution from this k to the summation.
+                minMax[1] += minMaxK[1];
+            } else {
+                // Otherwise, the max for ri-rj is a clash.
+                minMax[1] = Double.NaN;
+            }
+        }
+
+        return Double.isFinite(minMax[0]);
+    }
+
+    /**
+     * Calculates the minimum and maximum summations over additional residues
+     * for some rotamer triples ri-rj-rk.
+     *
+     * @param residues Residues under consideration.
+     * @param minMax   Result array: 0 is min summation, 1 max summation.
+     * @param i        Residue i.
+     * @param ri       Rotamer for residue i.
+     * @param j        Residue j!=i.
+     * @param rj       Rotamer for residue j.
+     * @param k        Residue k!=j and k!=i.
+     * @param rk       Rotamer for residue k.
+     * @return False if ri-rj-rk always clashes with other residues.
+     * @throws IllegalArgumentException if there are pre-existing eliminations
+     *                                  in ri-rj-rk.
+     */
+    private boolean minMaxE3(Residue[] residues, double[] minMax, int i, int ri, int j, int rj, int k, int rk)
+            throws IllegalArgumentException {
+        Residue resi = residues[i];
+        Residue resj = residues[j];
+        Residue resk = residues[k];
+        if (eR.check(i, ri) || eR.check(j, rj) || eR.check(k, rk) ||
+                eR.check(i, ri, j, rj) || eR.check(i, ri, k, rk) || eR.check(j, rj, k, rk)) {
+            // Not implemented: check(i, ri, j, rj, k, rk).
+            throw new IllegalArgumentException(format(" Called for minMaxE2 on an eliminated triple %s-%d %s-%d %s-%d", resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk));
+        }
+
+        // These two are a summation of mins/maxes over all fourth residues l.
+        minMax[0] = 0;
+        minMax[1] = 0;
+        int nRes = residues.length;
+        for (int l = 0; l < nRes; l++) {
+            if (l == i || l == j || l == k) {
+                continue;
+            }
+            Residue resl = residues[l];
+            Rotamer[] rotsl = resl.getRotamers(library);
+            int lenrl = rotsl.length;
+
+            // Find min/max rl for residue l.
+            double currentMax = Double.MIN_VALUE;
+            double currentMin = Double.MAX_VALUE;
+
+            for (int rl = 0; rl < lenrl; rl++) {
+                if (eR.check(l, rl) || eR.check(k, rk, l, rl)) {
+                    // Not valid phase space for anything.
+                    continue;
+                }
+
+                double current;
+                if (eR.check(i, ri, l, rl) || eR.check(j, rj, l, rl)) {
+                    // Not implemented: checking ri-rj-rl, ri-rk-rl, rj-rk-rl, or ri-rj-rk-rl.
+                    current = Double.NaN;
+                } else {
+                    // ri-rj-rl is accounted for at a different part of the summation as ri-rj-rk.
+                    current = get3Body(residues, i, ri, k, rk, l, rl) + get3Body(residues, j, rj, k, rk, l, rl);
+                }
+
+                // TODO: Add quads to the DEE summation.
+                // Would have to replace "current" with array "currentQuads".
+                //double[] minMaxQuads;
+                // minMaxE4(args)
+                if (Double.isFinite(current) && current < currentMin) {
+                    // rl forms a more favorable 3-body than any prior rl for this residue l.
+                    currentMin = current;
+                }
+
+                if (Double.isFinite(current) && Double.isFinite(currentMax)) {
+                    if (current > currentMax) {
+                        currentMax = current;
+                    } // Else, no new finite max found.
+                } else {
+                    currentMax = Double.NaN;
+                }
+            }
+
+            if (Double.isFinite(currentMin)) {
+                minMax[0] += currentMin;
+            } else {
+                // Else, ri-rj-rk inevitably conflicts with l.
+                minMax[0] = Double.NaN;
+                minMax[1] = Double.NaN;
+                return false;
+            }
+
+            if (Double.isFinite(currentMax) && Double.isFinite(minMax[1])) {
+                minMax[1] += currentMax;
+            } else {
+                minMax[1] = Double.NaN;
+            }
+            // Finished with this residue l.
+        }
+        return Double.isFinite(minMax[0]);
+    }
+
     public HashMap<Integer, Integer[]> getSelfEnergyMap() {
         return selfEnergyMap;
     }
@@ -940,7 +1167,7 @@ public class EnergyExpansion {
             Rotamer roti[] = resi.getRotamers(library);
             selfEnergy[i] = new double[roti.length];
             for (int ri = 0; ri < roti.length; ri++) {
-                if (!rO.check(i, ri)) {
+                if (!eR.check(i, ri)) {
                     Integer selfJob[] = {i, ri};
                     if (decomposeOriginal && ri != 0) {
                         continue;
@@ -972,7 +1199,7 @@ public class EnergyExpansion {
             twoBodyEnergy[i] = new double[roti.length][lenNI][];
 
             for (int ri = 0; ri < roti.length; ri++) {
-                if (rO.check(i, ri)) {
+                if (eR.check(i, ri)) {
                     continue;
                 }
                 //for (int j = i + 1; j < nResidues; j++) {
@@ -984,7 +1211,7 @@ public class EnergyExpansion {
                         Rotamer rotj[] = resj.getRotamers(library);
                         twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
                         for (int rj = 0; rj < rotj.length; rj++) {
-                            if (rO.checkToJ(i, ri, j, rj)) {
+                            if (eR.checkToJ(i, ri, j, rj)) {
                                 continue;
                             }
 
@@ -1027,7 +1254,7 @@ public class EnergyExpansion {
             threeBodyEnergy[i] = new double[lenri][lenNI][][][];
 
             for (int ri = 0; ri < lenri; ri++) {
-                if (rO.check(i, ri)) {
+                if (eR.check(i, ri)) {
                     continue;
                 }
                 for (int indJ = 0; indJ < lenNI; indJ++) {
@@ -1042,7 +1269,7 @@ public class EnergyExpansion {
                     threeBodyEnergy[i][ri][indJ] = new double[lenrj][lenNJ][];
 
                     for (int rj = 0; rj < lenrj; rj++) {
-                        if (rO.checkToJ(i, ri, j, rj)) {
+                        if (eR.checkToJ(i, ri, j, rj)) {
                             continue;
                         }
                         //for (int k = j + 1; k < nResidues; k++) {
@@ -1055,7 +1282,7 @@ public class EnergyExpansion {
                             threeBodyEnergy[i][ri][indJ][rj][indK] = new double[lenrk];
 
                             for (int rk = 0; rk < lenrk; rk++) {
-                                if (rO.checkToK(i, ri, j, rj, k, rk)) {
+                                if (eR.checkToK(i, ri, j, rj, k, rk)) {
                                     continue;
                                 }
                                 if (dM.checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
@@ -1090,7 +1317,7 @@ public class EnergyExpansion {
             Residue resi = residues[i];
             Rotamer[] roti = resi.getRotamers(library);
             for (int ri = 0; ri < roti.length; ri++) {
-                if (rO.check(i, ri)) {
+                if (eR.check(i, ri)) {
                     continue;
                 }
                 for (int j = i + 1; j < nResidues; j++) {
@@ -1100,7 +1327,7 @@ public class EnergyExpansion {
                                 /*if (check(j, rj) || check(i, ri, j, rj)) {
                                  continue;
                                  }*/
-                        if (rO.checkToJ(i, ri, j, rj)) {
+                        if (eR.checkToJ(i, ri, j, rj)) {
                             continue;
                         }
                         for (int k = j + 1; k < nResidues; k++) {
@@ -1110,14 +1337,14 @@ public class EnergyExpansion {
                                         /*if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk) || check(i, ri, j, rj, k, rk)) {
                                          continue;
                                          }*/
-                                if (rO.checkToK(i, ri, j, rj, k, rk)) {
+                                if (eR.checkToK(i, ri, j, rj, k, rk)) {
                                     continue;
                                 }
                                 for (int l = k + 1; l < nResidues; l++) {
                                     Residue resl = residues[l];
                                     Rotamer[] rotl = resl.getRotamers(library);
                                     for (int rl = 0; rl < rotl.length; rl++) {
-                                        if (rO.checkToL(i, ri, j, rj, k, rk, l, rl)) {
+                                        if (eR.checkToL(i, ri, j, rj, k, rk, l, rl)) {
                                             continue;
                                         }
                                         Integer[] quadJob = {i, ri, j, rj, k, rk, l, rl};
@@ -1278,11 +1505,11 @@ public class EnergyExpansion {
                 rO.logIfMaster(" Loaded self energies from restart file.");
 
                 //Pre-Prune if self-energy is Double.NaN.
-                rO.prePruneSelves(residues);
+                eR.prePruneSelves(residues);
 
                 // prune singles
                 if (pruneClashes) {
-                    rO.pruneSingleClashes(residues);
+                    eR.pruneSingleClashes(residues);
                 }
             }
 
@@ -1370,11 +1597,11 @@ public class EnergyExpansion {
                 rO.logIfMaster(" Loaded 2-body energies from restart file.");
 
                 // Pre-Prune if pair-energy is Double.NaN.
-                rO.prePrunePairs(residues);
+                eR.prePrunePairs(residues);
 
                 // prune pairs
                 if (prunePairClashes) {
-                    rO.prunePairClashes(residues);
+                    eR.prunePairClashes(residues);
                 }
             }
 

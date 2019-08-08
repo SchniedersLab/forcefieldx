@@ -49,6 +49,7 @@ import org.junit.runners.Parameterized;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.optimize.manybody.EliminatedRotamers;
 import ffx.algorithms.optimize.manybody.EnergyExpansion;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -294,31 +295,30 @@ public class RotamerOptimizationTest extends PJDependentTest {
         });
     }
 
-    String info;
-    String filename;
-    String restartName;
-    int startResID;
-    int endResID;
-    int pruningLevel;
-    boolean useGoldstein;
-    boolean useThreeBody;
-    boolean useOriginalRotamers;
-    boolean doOverallOpt;
-    double expectedEnergy;
-    boolean doSelfOpt;
-    double expectedSelfEnergy;
-    boolean doPairOpt;
-    int pairResidue;
-    double expectedPairEnergy;
-    boolean doTripleOpt;
-    int tripleResidue1;
-    int tripleResidue2;
-    double expectedTripleEnergy;
-    double tolerance;
-    File structure;
-    File restartFile;
-    MolecularAssembly molecularAssembly;
-    ForceFieldEnergy forceFieldEnergy;
+    private String info;
+    private String filename;
+    private String restartName;
+    private int startResID;
+    private int endResID;
+    private int pruningLevel;
+    private boolean useGoldstein;
+    private boolean useThreeBody;
+    private boolean useOriginalRotamers;
+    private boolean doOverallOpt;
+    private double expectedEnergy;
+    private boolean doSelfOpt;
+    private double expectedSelfEnergy;
+    private boolean doPairOpt;
+    private int pairResidue;
+    private double expectedPairEnergy;
+    private boolean doTripleOpt;
+    private int tripleResidue1;
+    private int tripleResidue2;
+    private double expectedTripleEnergy;
+    private double tolerance;
+    private File restartFile;
+    private MolecularAssembly molecularAssembly;
+    private ForceFieldEnergy forceFieldEnergy;
 
     public RotamerOptimizationTest(String info,
                                    String filename,
@@ -364,12 +364,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
         this.tolerance = tolerance;
     }
 
-    public void load() {
-        /**
-         * Load the test system.
-         */
+    /**
+     * Load the test system.
+     */
+    private void load() {
         ClassLoader cl = this.getClass().getClassLoader();
-        structure = new File(cl.getResource(filename).getPath());
+        File structure = new File(cl.getResource(filename).getPath());
         restartFile = new File(cl.getResource(restartName).getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
         molecularAssembly = potentialUtils.openQuietly(structure.getAbsolutePath());
@@ -391,11 +391,9 @@ public class RotamerOptimizationTest extends PJDependentTest {
         RotamerLibrary rLib = new RotamerLibrary(useOriginalRotamers);
 
         int counter = 1;
-        ArrayList<Residue> residueList = new ArrayList<Residue>();
+        ArrayList<Residue> residueList = new ArrayList<>();
         Polymer[] polymers = molecularAssembly.getChains();
-        int nPolymers = polymers.length;
-        for (int p = 0; p < nPolymers; p++) {
-            Polymer polymer = polymers[p];
+        for (Polymer polymer : polymers) {
             ArrayList<Residue> residues = polymer.getResidues();
             for (int i = 0; i < endResID; i++) {
                 Residue residue = residues.get(i);
@@ -412,7 +410,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 counter++;
             }
         }
-        Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
+        Residue[] residues = residueList.toArray(new Residue[0]);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly,
                 forceFieldEnergy, null);
@@ -448,7 +446,9 @@ public class RotamerOptimizationTest extends PJDependentTest {
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
 
             // Check that optimized rotamers are equivalent to the lowest self-energy of each residue.
-            int optimum[] = rotamerOptimization.getOptimumRotamers();
+            int[] optimum = rotamerOptimization.getOptimumRotamers();
+
+            EliminatedRotamers eR = rotamerOptimization.getEliminatedRotamers();
 
             // Loop over all residues
             for (int i = 0; i < nRes; i++) {
@@ -457,7 +457,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 int nRot = rotI.length;
 
                 int rotCounter = 0;
-                while (rotCounter < nRot && rotamerOptimization.checkPrunedSingles(i, rotCounter)) {
+                while (rotCounter < nRot && eR.checkPrunedSingles(i, rotCounter)) {
                     rotCounter++;
                 }
 
@@ -465,7 +465,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 double lowEnergy = eE.getSelf(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {
-                    if (rotamerOptimization.checkPrunedSingles(i, ri)) {
+                    if (eR.checkPrunedSingles(i, ri)) {
                         continue;
                     } else {
                         double selfEnergy = eE.getSelf(i, ri);
@@ -486,19 +486,21 @@ public class RotamerOptimizationTest extends PJDependentTest {
             assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
 
             // Check that optimized rotamers are equivalent to the lowest 2-Body energy sum for the "pairResidue".
-            int optimum[] = rotamerOptimization.getOptimumRotamers();
+            int[] optimum = rotamerOptimization.getOptimumRotamers();
 
             Residue resI = residueList.get(pairResidue);
-            Rotamer rotI[] = resI.getRotamers(rLib);
+            Rotamer[] rotI = resI.getRotamers(rLib);
             int ni = rotI.length;
 
             double minEnergy = Double.POSITIVE_INFINITY;
             int bestRotI = -1;
 
+            EliminatedRotamers eR = rotamerOptimization.getEliminatedRotamers();
+
             // Loop over the pairResidue rotamers to find its lowest energy rotamer.
             for (int ri = 0; ri < ni; ri++) {
                 double energyForRi = 0.0;
-                if (rotamerOptimization.checkPrunedSingles(pairResidue, ri)) {
+                if (eR.checkPrunedSingles(pairResidue, ri)) {
                     continue;
                 }
                 // Loop over residue J
@@ -511,7 +513,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     int nRot = rotJ.length;
 
                     int rj = 0;
-                    while (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                    while (eR.checkPrunedSingles(j, rj) || eR.checkPrunedPairs(pairResidue, ri, j, rj)) {
                         if (++rj >= nRot) {
                             logger.warning("RJ is too large.");
                         }
@@ -521,7 +523,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     double lowEnergy = eE.get2Body(pairResidue, ri, j, rj);
 
                     for (rj = 1; rj < nRot; rj++) {
-                        if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                        if (eR.checkPrunedSingles(j, rj) || eR.checkPrunedPairs(pairResidue, ri, j, rj)) {
                             continue;
                         } else {
                             double pairEnergy = eE.get2Body(pairResidue, ri, j, rj);
@@ -551,7 +553,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 int nRotJ = rotJ.length;
 
                 int rotCounter = 0;
-                while (rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rotCounter) && rotCounter < nRotJ) {
+                while (eR.checkPrunedPairs(pairResidue, bestRotI, j, rotCounter) && rotCounter < nRotJ) {
                     rotCounter++;
                 }
 
@@ -559,7 +561,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 double lowEnergy = eE.get2Body(pairResidue, bestRotI, j, rotCounter);
                 int bestRotJ = rotCounter;
                 for (int rj = 1; rj < nRotJ; rj++) {
-                    if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
+                    if (eR.checkPrunedSingles(j, rj) || eR.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
                         continue;
                     } else {
                         double pairEnergy = eE.get2Body(pairResidue, bestRotI, j, rj);
@@ -587,28 +589,30 @@ public class RotamerOptimizationTest extends PJDependentTest {
             }
 
             //Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
-            int optimum[] = rotamerOptimization.getOptimumRotamers();
+            int[] optimum = rotamerOptimization.getOptimumRotamers();
 
             //fix residue 1 and gets its rotamers
             Residue resI = residueList.get(tripleResidue1);
-            Rotamer rotI[] = resI.getRotamers(rLib);
+            Rotamer[] rotI = resI.getRotamers(rLib);
             int ni = rotI.length;
 
             //fix residue 2 and get its rotamers
             Residue resJ = residueList.get(tripleResidue2);
-            Rotamer rotJ[] = resJ.getRotamers(rLib);
+            Rotamer[] rotJ = resJ.getRotamers(rLib);
             int nj = rotJ.length;
 
             double minEnergyIJ = Double.POSITIVE_INFINITY;
             int bestRotI = -1;
             int bestRotJ = -1;
 
+            EliminatedRotamers eR = rotamerOptimization.getEliminatedRotamers();
+
             for (int ri = 0; ri < ni; ri++) { //loop through rot I
-                if (rotamerOptimization.check(tripleResidue1, ri)) {
+                if (eR.check(tripleResidue1, ri)) {
                     continue;
                 }
                 for (int rj = 0; rj < nj; rj++) { //loop through rot J
-                    if (rotamerOptimization.checkPrunedSingles(tripleResidue2, rj) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)) {
+                    if (eR.checkPrunedSingles(tripleResidue2, rj) || eR.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)) {
                         continue;
                     }
                     double currentEnergy = 0.0;
@@ -617,11 +621,13 @@ public class RotamerOptimizationTest extends PJDependentTest {
                             continue;
                         }
                         Residue resK = residueList.get(k);
-                        Rotamer rotK[] = resK.getRotamers(rLib);
+                        Rotamer[] rotK = resK.getRotamers(rLib);
                         int nk = rotK.length;
 
                         int rkStart = 0;
-                        while (rotamerOptimization.checkPrunedSingles(k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
+                        while (eR.checkPrunedSingles(k, rkStart) ||
+                                eR.checkPrunedPairs(tripleResidue1, ri, k, rkStart) ||
+                                eR.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
                             if (++rkStart >= nk) {
                                 logger.warning("RJ is too large.");
                             }
@@ -630,7 +636,9 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                         double lowEnergy = eE.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
-                            if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
+                            if (eR.checkPrunedSingles(k, rk) ||
+                                    eR.checkPrunedPairs(tripleResidue1, ri, k, rk) ||
+                                    eR.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
                                 continue;
                             } else {
                                 double tripleEnergy = eE.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rk);
@@ -663,11 +671,11 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     continue;
                 }
                 Residue resK = residueList.get(k);
-                Rotamer rotK[] = resK.getRotamers(rLib);
+                Rotamer[] rotK = resK.getRotamers(rLib);
                 int nk = rotK.length;
 
                 int rotCounter = 0;
-                while (rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
+                while (eR.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) && eR.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
                     rotCounter++;
                 }
 
@@ -675,7 +683,8 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 double lowEnergy = eE.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
-                    if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rk)) {
+                    if (eR.checkPrunedSingles(k, rk) || eR.checkPrunedPairs(tripleResidue1, bestRotI, k, rk)
+                            || eR.checkPrunedPairs(tripleResidue2, bestRotJ, k, rk)) {
                         continue;
                     } else {
                         double tripleEnergy = eE.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
@@ -707,8 +716,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
         ArrayList<Residue> residueList = new ArrayList<Residue>();
         Polymer[] polymers = molecularAssembly.getChains();
         int nPolymers = polymers.length;
-        for (int p = 0; p < nPolymers; p++) {
-            Polymer polymer = polymers[p];
+        for (Polymer polymer : polymers) {
             ArrayList<Residue> residues = polymer.getResidues();
             for (int i = 0; i < endResID; i++) {
                 Residue residue = residues.get(i);
@@ -760,7 +768,9 @@ public class RotamerOptimizationTest extends PJDependentTest {
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
 
             // Check that optimized rotamers are equivalent to the lowest self-energy of each residue.
-            int optimum[] = rotamerOptimization.getOptimumRotamers();
+            int[] optimum = rotamerOptimization.getOptimumRotamers();
+
+            EliminatedRotamers eR = rotamerOptimization.getEliminatedRotamers();
 
             // Loop over all residues
             for (int i = 0; i < nRes; i++) {
@@ -769,7 +779,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 int nRot = rotI.length;
 
                 int rotCounter = 0;
-                while (rotCounter < nRot && rotamerOptimization.checkPrunedSingles(i, rotCounter)) {
+                while (rotCounter < nRot && eR.checkPrunedSingles(i, rotCounter)) {
                     rotCounter++;
                 }
 
@@ -777,7 +787,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 double lowEnergy = eE.getSelf(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {
-                    if (rotamerOptimization.checkPrunedSingles(i, ri)) {
+                    if (eR.checkPrunedSingles(i, ri)) {
                         continue;
                     } else {
                         double selfEnergy = eE.getSelf(i, ri);
@@ -800,19 +810,21 @@ public class RotamerOptimizationTest extends PJDependentTest {
             assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
 
             // Check that optimized rotamers are equivalent to the lowest 2-body energy sum for the "pairResidue".
-            int optimum[] = rotamerOptimization.getOptimumRotamers();
+            int[] optimum = rotamerOptimization.getOptimumRotamers();
 
             Residue resI = residueList.get(pairResidue);
-            Rotamer rotI[] = resI.getRotamers(rLib);
+            Rotamer[] rotI = resI.getRotamers(rLib);
             int ni = rotI.length;
 
             double minEnergy = Double.POSITIVE_INFINITY;
             int bestRotI = -1;
 
+            EliminatedRotamers eR = rotamerOptimization.getEliminatedRotamers();
+
             // Loop over the pairResidue rotamers to find its lowest energy rotamer.
             for (int ri = 0; ri < ni; ri++) {
                 double energyForRi = 0.0;
-                if (rotamerOptimization.checkPrunedSingles(pairResidue, ri)) {
+                if (eR.checkPrunedSingles(pairResidue, ri)) {
                     continue;
                 }
                 // Loop over residue J
@@ -825,7 +837,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     int nRot = rotJ.length;
 
                     int rj = 0;
-                    while (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                    while (eR.checkPrunedSingles(j, rj) || eR.checkPrunedPairs(pairResidue, ri, j, rj)) {
                         if (++rj >= nRot) {
                             logger.warning("RJ is too large.");
                         }
@@ -835,7 +847,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     double lowEnergy = eE.get2Body(pairResidue, ri, j, rj);
 
                     for (rj = 1; rj < nRot; rj++) {
-                        if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                        if (eR.checkPrunedSingles(j, rj) || eR.checkPrunedPairs(pairResidue, ri, j, rj)) {
                             continue;
                         } else {
                             double pairEnergy = eE.get2Body(pairResidue, ri, j, rj);
@@ -865,7 +877,7 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 int nRotJ = rotJ.length;
 
                 int rotCounter = 0;
-                while (rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rotCounter) && rotCounter < nRotJ) {
+                while (eR.checkPrunedPairs(pairResidue, bestRotI, j, rotCounter) && rotCounter < nRotJ) {
                     rotCounter++;
                 }
 
@@ -873,8 +885,8 @@ public class RotamerOptimizationTest extends PJDependentTest {
                 double lowEnergy = eE.get2Body(pairResidue, bestRotI, j, rotCounter);
                 int bestRotJ = rotCounter;
                 for (int rj = 1; rj < nRotJ; rj++) {
-                    if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
-                        continue;
+                    if (eR.checkPrunedSingles(j, rj) || eR.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
+                        //
                     } else {
                         double pairEnergy = eE.get2Body(pairResidue, bestRotI, j, rj);
                         if (pairEnergy < lowEnergy) {
@@ -908,28 +920,30 @@ public class RotamerOptimizationTest extends PJDependentTest {
             }
 
             //Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
-            int optimum[] = rotamerOptimization.getOptimumRotamers();
+            int[] optimum = rotamerOptimization.getOptimumRotamers();
 
             //fix residue 1 and gets its rotamers
             Residue resI = residueList.get(tripleResidue1);
-            Rotamer rotI[] = resI.getRotamers(rLib);
+            Rotamer[] rotI = resI.getRotamers(rLib);
             int ni = rotI.length;
 
             //fix residue 2 and get its rotamers
             Residue resJ = residueList.get(tripleResidue2);
-            Rotamer rotJ[] = resJ.getRotamers(rLib);
+            Rotamer[] rotJ = resJ.getRotamers(rLib);
             int nj = rotJ.length;
 
             double minEnergyIJ = Double.POSITIVE_INFINITY;
             int bestRotI = -1;
             int bestRotJ = -1;
 
+            EliminatedRotamers eR = rotamerOptimization.getEliminatedRotamers();
+
             for (int ri = 0; ri < ni; ri++) { //loop through rot I
-                if (rotamerOptimization.check(tripleResidue1, ri)) {
+                if (eR.check(tripleResidue1, ri)) {
                     continue;
                 }
                 for (int rj = 0; rj < nj; rj++) { //loop through rot J
-                    if (rotamerOptimization.checkPrunedSingles(tripleResidue2, rj) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)) {
+                    if (eR.checkPrunedSingles(tripleResidue2, rj) || eR.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)) {
                         continue;
                     }
                     double currentEnergy = 0.0;
@@ -938,11 +952,13 @@ public class RotamerOptimizationTest extends PJDependentTest {
                             continue;
                         }
                         Residue resK = residueList.get(k);
-                        Rotamer rotK[] = resK.getRotamers(rLib);
+                        Rotamer[] rotK = resK.getRotamers(rLib);
                         int nk = rotK.length;
 
                         int rkStart = 0;
-                        while (rotamerOptimization.checkPrunedSingles(k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
+                        while (eR.checkPrunedSingles(k, rkStart) ||
+                                eR.checkPrunedPairs(tripleResidue1, ri, k, rkStart) ||
+                                eR.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
                             if (++rkStart >= nk) {
                                 logger.warning("RJ is too large.");
                             }
@@ -951,8 +967,10 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                         double lowEnergy = eE.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
-                            if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
-                                continue;
+                            if (eR.checkPrunedSingles(k, rk) ||
+                                    eR.checkPrunedPairs(tripleResidue1, ri, k, rk) ||
+                                    eR.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
+                                //
                             } else {
                                 double tripleEnergy = eE.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rk);
                                 if (tripleEnergy < lowEnergy) {
@@ -984,19 +1002,22 @@ public class RotamerOptimizationTest extends PJDependentTest {
                     continue;
                 }
                 Residue resK = residueList.get(k);
-                Rotamer rotK[] = resK.getRotamers(rLib);
+                Rotamer[] rotK = resK.getRotamers(rLib);
                 int nk = rotK.length;
 
                 int rotCounter = 0;
-                while (rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
+                while (eR.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) &&
+                        eR.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
                     rotCounter++;
                 }
                 EnergyExpansion eE = rotamerOptimization.getEnergyExpansion();
                 double lowEnergy = eE.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
-                    if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rk)) {
-                        continue;
+                    if (eR.checkPrunedSingles(k, rk) ||
+                            eR.checkPrunedPairs(tripleResidue1, bestRotI, k, rk) ||
+                            eR.checkPrunedPairs(tripleResidue2, bestRotJ, k, rk)) {
+                        //
                     } else {
                         double tripleEnergy = eE.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
                         if (tripleEnergy < lowEnergy) {

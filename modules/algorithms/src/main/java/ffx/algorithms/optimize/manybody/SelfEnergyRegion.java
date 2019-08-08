@@ -68,6 +68,7 @@ public class SelfEnergyRegion extends WorkerRegion {
 
     private RotamerOptimization rO;
     private EnergyExpansion eE;
+    private EliminatedRotamers eR;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -117,12 +118,13 @@ public class SelfEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    public SelfEnergyRegion(RotamerOptimization rO, EnergyExpansion eE,
+    public SelfEnergyRegion(RotamerOptimization rO, EnergyExpansion eE, EliminatedRotamers eR,
                             Residue[] residues, RotamerLibrary library, BufferedWriter energyWriter,
                             Comm world, int numProc, boolean pruneClashes, boolean master,
                             int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
         this.rO = rO;
         this.eE = eE;
+        this.eR = eR;
         this.residues = residues;
         this.library = library;
         this.energyWriter = energyWriter;
@@ -204,11 +206,11 @@ public class SelfEnergyRegion extends WorkerRegion {
     @Override
     public void finish() {
         // Pre-Prune if self-energy is Double.NaN.
-        rO.prePruneSelves(residues);
+        eR.prePruneSelves(residues);
 
         // Prune clashes for all singles (not just the ones this node did).
         if (pruneClashes) {
-            rO.pruneSingleClashes(residues);
+            eR.pruneSingleClashes(residues);
         }
 
         // Print what we've got so far.
@@ -257,7 +259,7 @@ public class SelfEnergyRegion extends WorkerRegion {
                 myBuffer.put(2, 0.0);
 
                 if (i >= 0 && ri >= 0) {
-                    if (!rO.check(i, ri)) {
+                    if (!eR.check(i, ri)) {
                         long time = -System.nanoTime();
                         double selfEnergy;
                         try {
@@ -297,7 +299,7 @@ public class SelfEnergyRegion extends WorkerRegion {
                     if (resi >= 0 && roti >= 0) {
                         if (Double.isNaN(energy)) {
                             logger.info(" Rotamer  eliminated: " + resi + ", " + roti);
-                            rO.eliminateRotamer(residues, resi, roti, false);
+                            eR.eliminateRotamer(residues, resi, roti, false);
                         }
                         eE.setSelf(resi, roti, energy);
                         if (rank == 0 && writeEnergyRestart && printFiles) {

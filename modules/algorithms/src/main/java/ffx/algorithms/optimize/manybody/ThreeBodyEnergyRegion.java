@@ -69,6 +69,7 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
     private RotamerOptimization rO;
     private DistanceMatrix dM;
     private EnergyExpansion eE;
+    private EliminatedRotamers eR;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -124,13 +125,15 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    public ThreeBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE,
+    public ThreeBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM,
+                                 EnergyExpansion eE, EliminatedRotamers eR,
                                  Residue[] residues, ArrayList<Residue> allResiduesList, RotamerLibrary library,
                                  BufferedWriter energyWriter, Comm world, int numProc, double superpositionThreshold,
                                  boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
         this.rO = rotamerOptimization;
         this.dM = dM;
         this.eE = eE;
+        this.eR = eR;
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.library = library;
@@ -185,21 +188,21 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                 Residue resi = residues[i];
                 Rotamer[] roti = resi.getRotamers(library);
                 for (int ri = 0; ri < roti.length; ri++) {
-                    if (rO.check(i, ri)) {
+                    if (eR.check(i, ri)) {
                         continue;
                     }
                     for (int j = i + 1; j < residues.length; j++) {
                         Residue resj = residues[j];
                         Rotamer[] rotj = resj.getRotamers(library);
                         for (int rj = 0; rj < rotj.length; rj++) {
-                            if (rO.check(j, rj) || rO.check(i, ri, j, rj)) {
+                            if (eR.check(j, rj) || eR.check(i, ri, j, rj)) {
                                 continue;
                             }
                             for (int k = j + 1; k < residues.length; k++) {
                                 Residue resk = residues[k];
                                 Rotamer[] rotk = resk.getRotamers(library);
                                 for (int rk = 0; rk < rotk.length; rk++) {
-                                    if (rO.check(k, rk) || rO.check(i, ri, k, rk) || rO.check(j, rj, k, rk)) {
+                                    if (eR.check(k, rk) || eR.check(i, ri, k, rk) || eR.check(j, rj, k, rk)) {
                                         continue;
                                     }
                                     logger.info(format(" 3-Body energy %8s %-2d, %8s %-2d, %8s %-2d: %s",
@@ -257,8 +260,8 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
 
                 // Initialize result.
                 if (i >= 0 && ri >= 0 && j >= 0 && rj >= 0 && k >= 0 && rk >= 0) {
-                    if ((!rO.check(i, ri) || !rO.check(j, rj) || !rO.check(k, rk) ||
-                            !rO.check(i, ri, j, rj) || !rO.check(i, ri, k, rk) || !rO.check(j, rj, k, rk))) {
+                    if ((!eR.check(i, ri) || !eR.check(j, rj) || !eR.check(k, rk) ||
+                            !eR.check(i, ri, j, rj) || !eR.check(i, ri, k, rk) || !eR.check(j, rj, k, rk))) {
 
                         Residue residueI = residues[i];
                         Residue residueJ = residues[j];
@@ -344,7 +347,7 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                     if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0 && resk >= 0 && rotk >= 0) {
                         if (!Double.isFinite(energy)) {
                             logger.info(" Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
-                            rO.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
+                            eR.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                         }
                         eE.set3Body(residues, resi, roti, resj, rotj, resk, rotk, energy);
                         if (rank == 0 && writeEnergyRestart && printFiles) {

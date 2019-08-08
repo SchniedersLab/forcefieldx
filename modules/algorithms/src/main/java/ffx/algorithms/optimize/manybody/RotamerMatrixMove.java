@@ -53,6 +53,7 @@ import ffx.potential.bonded.RotamerLibrary;
 public class RotamerMatrixMove implements MCMove {
 
     private RotamerOptimization rotamerOptimization;
+    private EliminatedRotamers eR;
     private boolean monteCarloTesting;
 
     private final boolean useAllElims;
@@ -81,9 +82,11 @@ public class RotamerMatrixMove implements MCMove {
      * @param rots        Initial rotamer set
      */
     public RotamerMatrixMove(boolean useAllElims, int[] rots, Residue[] residues, RotamerLibrary library,
-                             RotamerOptimization rotamerOptimization, boolean monteCarloTesting) {
+                             RotamerOptimization rotamerOptimization, EliminatedRotamers eR,
+                             boolean monteCarloTesting) {
         this.useAllElims = useAllElims;
         this.rotamerOptimization = rotamerOptimization;
+        this.eR = eR;
         this.monteCarloTesting = monteCarloTesting;
 
         nRes = rots.length;
@@ -97,7 +100,7 @@ public class RotamerMatrixMove implements MCMove {
 
             int lenri = residues[i].getRotamers(library).length;
             for (int ri = 0; ri < lenri; ri++) {
-                if (!rotamerOptimization.check(i, ri)) {
+                if (!eR.check(i, ri)) {
                     resAllowed.add(ri);
                 }
             }

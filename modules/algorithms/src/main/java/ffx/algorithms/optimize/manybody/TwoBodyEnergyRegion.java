@@ -67,6 +67,7 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
     private RotamerOptimization rO;
     private DistanceMatrix dM;
     private EnergyExpansion eE;
+    private EliminatedRotamers eR;
     private final Residue[] residues;
     private Set<Integer> keySet;
     /**
@@ -126,13 +127,14 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
      */
     private boolean printFiles;
 
-    public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE,
+    public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM, EnergyExpansion eE, EliminatedRotamers eR,
                                Residue[] residues, ArrayList<Residue> allResiduesList, RotamerLibrary library,
                                BufferedWriter energyWriter, Comm world, int numProc, boolean prunePairClashes, double superpositionThreshold,
                                boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
         this.rO = rotamerOptimization;
         this.dM = dM;
         this.eE = eE;
+        this.eR = eR;
         this.residues = residues;
         this.allResiduesList = allResiduesList;
         this.library = library;
@@ -184,11 +186,11 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
     @Override
     public void finish() {
         // Pre-Prune if pair-energy is Double.NaN.
-        rO.prePrunePairs(residues);
+        eR.prePrunePairs(residues);
 
         // Prune each rotamer that clashes with all rotamers from a 2nd residue.
         if (prunePairClashes) {
-            rO.prunePairClashes(residues);
+            eR.prunePairClashes(residues);
         }
 
         // Print what we've got so far.
@@ -197,15 +199,15 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
                 Residue resi = residues[i];
                 Rotamer[] roti = resi.getRotamers(library);
                 for (int ri = 0; ri < roti.length; ri++) {
-                    if (rO.check(i, ri)) {
+                    if (eR.check(i, ri)) {
                         continue;
                     }
                     for (int j = i + 1; j < residues.length; j++) {
                         Residue resj = residues[j];
                         Rotamer[] rotj = resj.getRotamers(library);
                         for (int rj = 0; rj < rotj.length; rj++) {
-                            if (rO.check(j, rj) ||
-                                    rO.check(i, ri, j, rj)) {
+                            if (eR.check(j, rj) ||
+                                    eR.check(i, ri, j, rj)) {
                                 continue;
                             }
                             logger.info(format(" Pair energy %8s %-2d, %8s %-2d: %s",
@@ -257,9 +259,9 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
                 // Initialize result.
                 if (i >= 0 && ri >= 0 && j >= 0 && rj >= 0) {
-                    if (!rO.check(i, ri) ||
-                            !rO.check(j, rj) ||
-                            !rO.check(i, ri, j, rj)) {
+                    if (!eR.check(i, ri) ||
+                            !eR.check(j, rj) ||
+                            !eR.check(i, ri, j, rj)) {
                         Residue residueI = residues[i];
                         Residue residueJ = residues[j];
                         int indexI = allResiduesList.indexOf(residueI);
@@ -335,7 +337,7 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
                     if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0) {
                         if (!Double.isFinite(energy)) {
                             logger.info(" Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
-                            rO.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
+                            eR.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
                         }
                         eE.set2Body(resi, roti, resj, rotj, energy);
                         if (rank == 0 && writeEnergyRestart && printFiles) {
