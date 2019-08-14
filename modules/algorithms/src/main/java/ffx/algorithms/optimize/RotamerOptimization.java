@@ -57,6 +57,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -148,6 +149,14 @@ public class RotamerOptimization implements Terminatable {
     private DistanceMatrix dM;
     private EnergyExpansion eE;
     private EliminatedRotamers eR;
+    /**
+     * Parallel evaluation of quantities used during Goldstein Pair elimination.
+     */
+    private GoldsteinPairRegion goldsteinPairRegion;
+    /**
+     * Parallel evaluation of many-body energy sums.
+     */
+    private EnergyRegion energyRegion;
 
     /**
      * MolecularAssembly to perform rotamer optimization on.
@@ -343,10 +352,6 @@ public class RotamerOptimization implements Terminatable {
      */
     private double multiResPairClashAddn = 80.0;
     /**
-     * False unless ManyBodyTest is occurring.
-     */
-    private boolean monteCarloTesting = false;
-    /**
      * An array of atomic coordinates (length 3 * the number of atoms).
      */
     private double[] x = null;
@@ -416,67 +421,19 @@ public class RotamerOptimization implements Terminatable {
      * optimization.
      */
     private boolean compute4BodyEnergy = false;
-    /**
-     * Parallel evaluation of quantities used during Goldstein Pair elimination.
-     */
-    private GoldsteinPairRegion goldsteinPairRegion;
-    /**
-     * Parallel evaluation of many-body energy sums.
-     */
-    private EnergyRegion energyRegion;
+
     /**
      * Flag to indicate use of box optimization.
      */
     private boolean usingBoxOptimization = false;
-    /**
-     * Number of boxes for box optimization in X, Y, Z.
-     */
-    private int[] numXYZBoxes = {3, 3, 3};
-    /**
-     * Box border size.
-     */
-    private double boxBorderSize = 0;
-    /**
-     * Approximate box size.
-     */
-    private double approxBoxLength = 0;
-    /**
-     * Box optimization inclusion criteria.
-     */
-    private int boxInclusionCriterion = 1;
-    /**
-     * Index of the first box to optimize.
-     */
-    private int boxStart = 0;
-    /**
-     * Index of the last box to optimize.
-     */
-    private int boxEnd = -1;
-    /**
-     * Flag to indicate manual definition of a super box.
-     */
-    private boolean manualSuperbox = false;
-    /**
-     * Dimensions of the box.
-     */
-    private double[] boxDimensions;
-    /**
-     * Buffer size for the super box.
-     */
-    private double superboxBuffer = 8.0;
+    private BoxOptimization boxOpt;
+
     /**
      * If a pair of residues have two atoms closer together than the
      * superposition threshold, the energy is set to NaN.
      */
     private double superpositionThreshold = 0.25;
-    /**
-     * Box index loaded during a restart.
-     */
-    private int boxLoadIndex = -1;
-    /**
-     * Box indeces loaded during a restart.
-     */
-    private int[] boxLoadCellIndices;
+
     /**
      * Flag to indicate use of forced residues during the sliding window
      * algorithm.
@@ -588,15 +545,15 @@ public class RotamerOptimization implements Terminatable {
             master = false;
         }
 
+        boxOpt = new BoxOptimization();
+
         if (System.getProperty("verbose") != null) {
             if (System.getProperty("verbose").equalsIgnoreCase("true")) {
                 verbose = true;
             }
         }
 
-        /**
-         * Set the default 2-body Cutoff to the van der Waals cutoff.
-         */
+        // Set the default 2-body Cutoff to the van der Waals cutoff.
         ForceFieldEnergy forceFieldEnegy = molecularAssembly.getPotentialEnergy();
         VanDerWaals vdW = forceFieldEnegy.getVdwNode();
         if (vdW != null) {
@@ -659,7 +616,7 @@ public class RotamerOptimization implements Terminatable {
             logger.info(format(" (KEY) goldstein: %b", this.useGoldstein));
         }
         if (superpositionThreshold != null) {
-            Double value = Double.parseDouble(superpositionThreshold);
+            Double value = parseDouble(superpositionThreshold);
             this.superpositionThreshold = value;
             logger.info(format(" (KEY) superpositionThreshold: %.2f", this.superpositionThreshold));
         }
@@ -671,18 +628,18 @@ public class RotamerOptimization implements Terminatable {
             logger.info(format(" (KEY) ensembleNumber: %d", this.ensembleNumber));
         }
         if (ensembleBuffer != null) {
-            double value = Double.parseDouble(ensembleBuffer);
+            double value = parseDouble(ensembleBuffer);
             this.ensembleBuffer = value;
             this.ensembleBufferStep = 0.1 * this.ensembleBuffer;
             logger.info(format(" (KEY) ensembleBuffer: %.2f", this.ensembleBuffer));
         }
         if (ensembleEnergy != null) {
-            double value = Double.parseDouble(ensembleEnergy);
+            double value = parseDouble(ensembleEnergy);
             this.ensembleEnergy = value;
             logger.info(format(" (KEY) ensembleEnergy: %.2f", this.ensembleEnergy));
         }
         if (threeBodyCutoffDist != null) {
-            double value = Double.parseDouble(threeBodyCutoffDist);
+            double value = parseDouble(threeBodyCutoffDist);
             this.threeBodyCutoffDist = value;
             if (this.threeBodyCutoffDist < 0) {
                 logger.info(format("Warning: threeBodyCuoffDist should not be less than 0."));
@@ -690,13 +647,13 @@ public class RotamerOptimization implements Terminatable {
             logger.info(format(" (KEY) threeBodyCutoffDist: %.2f", this.threeBodyCutoffDist));
         }
         if (nucleicPruningFactor != null) {
-            double value = Double.parseDouble(nucleicPruningFactor);
+            double value = parseDouble(nucleicPruningFactor);
             this.nucleicPruningFactor = (value >= 0 ? value : 1.0);
             this.nucleicPairsPruningFactor = (1.0 + value) / 2;
             logger.info(format(" (KEY) nucleicPruningFactor: %.2f", this.nucleicPruningFactor));
         }
         if (nucleicCorrectionThreshold != null) {
-            double value = Double.parseDouble(nucleicCorrectionThreshold);
+            double value = parseDouble(nucleicCorrectionThreshold);
             this.nucleicCorrectionThreshold = (value >= 0 ? value : 0);
             logger.info(format(" (KEY) nucleicCorrectionThreshold: %.2f", this.nucleicCorrectionThreshold));
         }
@@ -706,53 +663,30 @@ public class RotamerOptimization implements Terminatable {
             logger.info(format(" (KEY) minimumNumberAcceptedNARotamers: %d", this.minNumberAcceptedNARotamers));
         }
         if (singletonClashThreshold != null) {
-            double value = Double.parseDouble(singletonClashThreshold);
+            double value = parseDouble(singletonClashThreshold);
             this.clashThreshold = value;
             logger.info(format(" (KEY) singletonClashThreshold: %.2f", this.clashThreshold));
         }
         if (multiResClashThreshold != null) {
-            double value = Double.parseDouble(multiResClashThreshold);
+            double value = parseDouble(multiResClashThreshold);
             this.multiResClashThreshold = value;
             logger.info(format(" (KEY) multiResClashThreshold: %.2f", this.multiResClashThreshold));
         }
         if (pairClashThreshold != null) {
-            double value = Double.parseDouble(pairClashThreshold);
+            double value = parseDouble(pairClashThreshold);
             this.pairClashThreshold = value;
             logger.info(format(" (KEY) pairClashThreshold: %.2f", this.pairClashThreshold));
         }
         if (multiResPairClashAddition != null) {
-            double value = Double.parseDouble(multiResPairClashAddition);
+            double value = parseDouble(multiResPairClashAddition);
             this.multiResPairClashAddn = value;
             logger.info(format(" (KEY) multiResPairClashAddition: %.2f", this.multiResPairClashAddn));
         }
         if (boxDimensions != null) {
-            // String should be in format (buffer,xmin,xmax,ymin,ymax,zmin,zmax)
-            try {
-                String[] bdTokens = boxDimensions.split(",+");
-                this.boxDimensions = new double[6];
-                if (bdTokens.length != 7) {
-                    logger.warning(" Improper number of arguments to boxDimensions; default settings used.");
-                } else {
-                    for (int i = 1; i < 7; i += 2) {
-                        this.boxDimensions[i - 1] = Double.parseDouble(bdTokens[i]);
-                        this.boxDimensions[i] = Double.parseDouble(bdTokens[i + 1]);
-                        if (this.boxDimensions[i] < this.boxDimensions[i - 1]) {
-                            logger.info(format(" Improper dimension min %8.5f > max %8.5f; max/min reversed.", this.boxDimensions[i - 1], this.boxDimensions[i]));
-                            double temp = this.boxDimensions[i];
-                            this.boxDimensions[i] = this.boxDimensions[i - 1];
-                            this.boxDimensions[i - 1] = temp;
-                        }
-                    }
-                    superboxBuffer = Double.parseDouble(bdTokens[0]);
-                    manualSuperbox = true;
-                }
-            } catch (Exception ex) {
-                logger.warning(format(" Error in parsing box dimensions: input discarded and defaults used: %s.", ex.toString()));
-                manualSuperbox = false;
-            }
+            boxOpt.update(boxDimensions);
         }
         if (mcTemp != null) {
-            double value = Double.parseDouble(mcTemp);
+            double value = parseDouble(mcTemp);
             this.mcTemp = value;
             logIfMaster(format(" (KEY) mcTemp: %10.6f", this.mcTemp));
         }
@@ -1854,7 +1788,7 @@ public class RotamerOptimization implements Terminatable {
                         e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance, direction);
                         break;
                     case BOX:
-                        e = boxOptimization(residueList);
+                        e = boxOpt.boxOptimization(residueList);
                         break;
                     default:
                         break;
@@ -1891,7 +1825,7 @@ public class RotamerOptimization implements Terminatable {
      * @param numXYZBoxes Int[3] of number of boxes in x, y, z.
      */
     public void setNumXYZBoxes(int[] numXYZBoxes) {
-        arraycopy(numXYZBoxes, 0, this.numXYZBoxes, 0, this.numXYZBoxes.length);
+        arraycopy(numXYZBoxes, 0, boxOpt.numXYZBoxes, 0, boxOpt.numXYZBoxes.length);
     }
 
     /**
@@ -1900,7 +1834,7 @@ public class RotamerOptimization implements Terminatable {
      * @param boxBorderSize Box overlap in Angstroms.
      */
     public void setBoxBorderSize(double boxBorderSize) {
-        this.boxBorderSize = boxBorderSize;
+        boxOpt.boxBorderSize = boxBorderSize;
     }
 
     /**
@@ -1911,7 +1845,7 @@ public class RotamerOptimization implements Terminatable {
      * @param approxBoxLength Optional box dimensions parameter (Angstroms).
      */
     public void setApproxBoxLength(double approxBoxLength) {
-        this.approxBoxLength = approxBoxLength;
+        boxOpt.approxBoxLength = approxBoxLength;
     }
 
     /**
@@ -1922,7 +1856,7 @@ public class RotamerOptimization implements Terminatable {
      * @param boxInclusionCriterion Criterion to use
      */
     public void setBoxInclusionCriterion(int boxInclusionCriterion) {
-        this.boxInclusionCriterion = boxInclusionCriterion;
+        boxOpt.boxInclusionCriterion = boxInclusionCriterion;
     }
 
     /**
@@ -1931,7 +1865,7 @@ public class RotamerOptimization implements Terminatable {
      * @param boxStart a int.
      */
     public void setBoxStart(int boxStart) {
-        this.boxStart = boxStart;
+        boxOpt.boxStart = boxStart;
     }
 
     /**
@@ -1941,7 +1875,7 @@ public class RotamerOptimization implements Terminatable {
      */
     public void setBoxEnd(int boxEnd) {
         // Is -1 if boxes run to completion.
-        this.boxEnd = boxEnd;
+        boxOpt.boxEnd = boxEnd;
     }
 
     /**
@@ -3020,355 +2954,6 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Returns the superbox used to generate the boxes for sliding box. If
-     * superbox coordinates manually set, uses them plus the defined buffer.
-     * Else, if an aperiodic system, uses maximum and minimum C alpha (or N1/9)
-     * coordinates plus superboxBuffer (by default, 8A, longer than a lysine
-     * side chain or N1/N9 distance to any other atom). Else, it just uses the
-     * ordinary crystal.
-     *
-     * @param residueList List of residues to incorporate.
-     * @return Superbox crystal.
-     */
-    private Crystal generateSuperbox(List<Residue> residueList) {
-        double[] maxXYZ = new double[3];
-        double[] minXYZ = new double[3];
-        Crystal originalCrystal = molecularAssembly.getCrystal();
-        if (manualSuperbox) {
-            for (int i = 0; i < maxXYZ.length; i++) {
-                int ii = 2 * i;
-                minXYZ[i] = boxDimensions[ii] - superboxBuffer;
-                maxXYZ[i] = boxDimensions[ii + 1] + superboxBuffer;
-            }
-        } else if (originalCrystal.aperiodic()) {
-            if (residueList == null || residueList.isEmpty()) {
-                throw new IllegalArgumentException(" Null or empty residue list when generating superbox.");
-            }
-            Atom initializerAtom = residueList.get(0).getReferenceAtom();
-            initializerAtom.getXYZ(minXYZ);
-            initializerAtom.getXYZ(maxXYZ);
-            for (Residue residue : residueList) {
-                Atom refAtom = residue.getReferenceAtom();
-                double[] refAtomCoords = new double[3];
-                refAtom.getXYZ(refAtomCoords);
-                for (int i = 0; i < 3; i++) {
-                    maxXYZ[i] = Math.max(refAtomCoords[i], maxXYZ[i]);
-                    minXYZ[i] = Math.min(refAtomCoords[i], minXYZ[i]);
-                }
-            }
-            for (int i = 0; i < 3; i++) {
-                minXYZ[i] -= superboxBuffer;
-                maxXYZ[i] += superboxBuffer;
-            }
-        } else {
-            return originalCrystal;
-        }
-        double newA = maxXYZ[0] - minXYZ[0];
-        double newB = maxXYZ[1] - minXYZ[1];
-        double newC = maxXYZ[2] - minXYZ[2];
-        if (manualSuperbox) {
-            logger.info(format(" Manual superbox set over (minX, maxX, minY, "
-                            + "maxY, minZ, maxZ): %f, %f, %f, %f, %f, %f",
-                    minXYZ[0], maxXYZ[0], minXYZ[1], maxXYZ[1], minXYZ[2], maxXYZ[2]));
-            logger.info(format(" Buffer size (included in dimensions): %f\n", superboxBuffer));
-        } else { // Crystal systems will have already returned.
-            logger.info(" System is aperiodic: protein box generated over these coordinates (minX, maxX, minY, maxY, minZ, maxZ):");
-            String message = " Aperiodic box dimensions: ";
-            for (int i = 0; i < minXYZ.length; i++) {
-                message = message.concat(format("%f,%f,", minXYZ[i], maxXYZ[i]));
-            }
-            message = message.substring(0, message.length() - 1);
-            logger.info(message);
-            logger.info(format(" Buffer size (included in dimensions): %f\n", superboxBuffer));
-        }
-        return new Crystal(newA, newB, newC, 90.0, 90.0, 90.0, "P1");
-    }
-
-    /**
-     * Breaks down a structure into a number of overlapping boxes for
-     * optimization.
-     *
-     * @return Potential energy of final structure.
-     */
-    private double boxOptimization(ArrayList<Residue> residueList) {
-        this.usingBoxOptimization = true;
-        long beginTime = -System.nanoTime();
-        Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
-        boolean firstCellSaved = false;
-
-        /*
-         * A new dummy Crystal will be constructed for an aperiodic system. The
-         * purpose is to avoid using the overly large dummy Crystal used for
-         * Ewald purposes. Atoms are not and should not be moved into the dummy
-         * Crystal boundaries; to check if an Atom is inside a cell, use an
-         * array of coordinates adjusted to be 0 < coordinate < 1.0.
-         */
-        Crystal crystal = generateSuperbox(residueList);
-
-        // Cells indexed by x*(YZ divisions) + y*(Z divisions) + z.
-        int totalCells = getTotalCellCount(crystal); // Also initializes cell count if using -bB
-        if (boxStart > totalCells - 1) {
-            logger.severe(format(" FFX shutting down: Box optimization start is out of range of total boxes: %d > %d", (boxStart + 1), totalCells));
-        }
-        if (boxEnd > totalCells - 1) {
-            boxEnd = totalCells - 1;
-            logIfMaster(" Final box out of range: reset to last possible box.");
-        } else if (boxEnd < 0) {
-            boxEnd = totalCells - 1;
-        }
-        BoxOptCell[] cells = loadCells(crystal, residues);
-        int numCells = cells.length;
-        logIfMaster(format(" Optimizing boxes  %d  to  %d", (boxStart + 1), (boxEnd + 1)));
-        for (int i = 0; i < numCells; i++) {
-            BoxOptCell celli = cells[i];
-            ArrayList<Residue> residuesList = celli.getResiduesAsList();
-            int[] cellIndices = celli.getXYZIndex();
-            logIfMaster(format("\n Iteration %d of the box optimization.", (i + 1)));
-            logIfMaster(format(" Cell index (linear): %d", (celli.getLinearIndex() + 1)));
-            logIfMaster(format(" Cell xyz indices: x = %d, y = %d, z = %d", cellIndices[0] + 1, cellIndices[1] + 1, cellIndices[2] + 1));
-            int nResidues = residuesList.size();
-            if (nResidues > 0) {
-                if (master && writeEnergyRestart && printFiles) {
-                    String boxHeader = format(" Box %d: %d,%d,%d", i + 1, cellIndices[0], cellIndices[1], cellIndices[2]);
-                    try {
-                        energyWriter.append(boxHeader);
-                        energyWriter.newLine();
-                        boxHeader = null;
-                    } catch (IOException ex) {
-                        logger.log(Level.SEVERE, " Exception writing box header to energy restart file.", ex);
-                    }
-                }
-
-                if (loadEnergyRestart) {
-                    boxLoadIndex = i + 1;
-                    boxLoadCellIndices = new int[3];
-                    boxLoadCellIndices[0] = cellIndices[0];
-                    boxLoadCellIndices[1] = cellIndices[1];
-                    boxLoadCellIndices[2] = cellIndices[2];
-                }
-
-                long boxTime = -System.nanoTime();
-                Residue firstResidue = residuesList.get(0);
-                Residue lastResidue = residuesList.get(nResidues - 1);
-                if (firstResidue != lastResidue) {
-                    logIfMaster(format(" Residues %s ... %s", firstResidue.toString(), lastResidue.toString()));
-                } else {
-                    logIfMaster(format(" Residue %s", firstResidue.toString()));
-                }
-                if (revert) {
-                    ResidueState[] coordinates = ResidueState.storeAllCoordinates(residuesList);
-                    // x is an array of coordinates for the entire molecular assembly.
-                    // If x has not yet been constructed, construct it.
-                    if (x == null) {
-                        Atom atoms[] = molecularAssembly.getAtomArray();
-                        int nAtoms = atoms.length;
-                        x = new double[nAtoms * 3];
-                    }
-
-                    double startingEnergy = 0;
-                    double finalEnergy = 0;
-                    try {
-                        startingEnergy = currentEnergy(residuesList);
-                    } catch (ArithmeticException ex) {
-                        logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
-                    }
-                    globalOptimization(residuesList);
-                    try {
-                        finalEnergy = currentEnergy(residuesList);
-                    } catch (ArithmeticException ex) {
-                        logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
-                    }
-
-                    if (startingEnergy <= finalEnergy) {
-                        logger.warning("Optimization did not yield a better energy. Reverting to original coordinates.");
-                        ResidueState.revertAllCoordinates(residuesList, coordinates);
-                    }
-                    long currentTime = System.nanoTime();
-                    boxTime += currentTime;
-                    logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-                    logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
-                } else {
-                    globalOptimization(residuesList);
-                    long currentTime = System.nanoTime();
-                    boxTime += currentTime;
-                    logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-                    logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
-                }
-                if (master && printFiles) {
-                    // Don't write a file if it's the final iteration.
-                    if (i == (numCells - 1)) {
-                        continue;
-                    }
-                    try {
-                        if (firstResidue != lastResidue) {
-                            logIfMaster(format(" File with residues %s ... %s in window written.", firstResidue.toString(), lastResidue.toString()));
-                        } else {
-                            logIfMaster(format(" File with residue %s in window written.", firstResidue.toString()));
-                        }
-                        firstCellSaved = true;
-                    } catch (Exception e) {
-                        logger.warning(format("Exception writing to file."));
-                    }
-                }
-            } else {
-                logIfMaster(format(" Empty box: no residues found."));
-            }
-        }
-        return 0.0;
-    }
-
-    /**
-     * Returns the number of cells (boxes) for box optimization; if the -bB flag
-     * is set, sets the final number of cells.
-     *
-     * @param crystal Crystal or dummy crystal being used to define boxes.
-     * @return Total number of cells.
-     */
-    private int getTotalCellCount(Crystal crystal) {
-        int numCells = 1;
-        if (approxBoxLength > 0) {
-            double[] boxes = new double[3];
-            boxes[0] = crystal.a / approxBoxLength;
-            boxes[1] = crystal.b / approxBoxLength;
-            boxes[2] = crystal.c / approxBoxLength;
-            for (int i = 0; i < boxes.length; i++) {
-                if (boxes[i] < 1) {
-                    numXYZBoxes[i] = 1;
-                } else {
-                    numXYZBoxes[i] = (int) boxes[i];
-                }
-            }
-        }
-        for (int i = 0; i < numXYZBoxes.length; i++) {
-            numCells *= numXYZBoxes[i];
-        }
-        return numCells;
-    }
-
-    /**
-     * Creates and fills cells (boxes) for box optimization.
-     *
-     * @param crystal  Polymer crystal or dummy crystal
-     * @param residues All residues to be optimized
-     * @return Filled cells.
-     */
-    private BoxOptCell[] loadCells(Crystal crystal, Residue[] residues) {
-        double xCellBorderFracSize = (boxBorderSize / crystal.a);
-        double yCellBorderFracSize = (boxBorderSize / crystal.b);
-        double zCellBorderFracSize = (boxBorderSize / crystal.c);
-        logIfMaster(format(" Number of boxes along x: %d, y: %d, z: %d", numXYZBoxes[0], numXYZBoxes[1], numXYZBoxes[2]));
-
-        int numCells = boxEnd - boxStart + 1;
-        BoxOptCell[] cells = new BoxOptCell[numCells];
-        int currentIndex = 0;
-        int filledCells = 0;
-        int[] xyzIndices = new int[3];
-        boolean doBreak = false; // Breaks the ijk loop if the last box passed.
-        /*
-         * Initializes coordinates for all the boxes, indexed linearly along z,
-         * then y, then x (so the box with xyz indices 2,3,2 in a crystal with
-         * 4, 5, and 3 boxes along xyz would be indexed 2*5*3 + 3*3 + 2 = 41.
-         * The int[] indices stores seperate x, y, and z indices.
-         */
-        for (int i = 0; i < numXYZBoxes[0]; i++) {
-            if (doBreak) {
-                break;
-            }
-            xyzIndices[0] = i;
-            for (int j = 0; j < numXYZBoxes[1]; j++) {
-                if (doBreak) {
-                    break;
-                }
-                xyzIndices[1] = j;
-                for (int k = 0; k < numXYZBoxes[2]; k++) {
-                    if (currentIndex < boxStart) {
-                        ++currentIndex;
-                        continue;
-                    } else if (currentIndex > boxEnd) {
-                        doBreak = true;
-                        break;
-                    }
-                    xyzIndices[2] = k;
-                    double[] fracCoords = new double[6];
-                    fracCoords[0] = (((1.0 * i) / numXYZBoxes[0]) - xCellBorderFracSize);
-                    fracCoords[1] = (((1.0 * j) / numXYZBoxes[1]) - yCellBorderFracSize);
-                    fracCoords[2] = (((1.0 * k) / numXYZBoxes[2]) - zCellBorderFracSize);
-                    fracCoords[3] = (((1.0 + i) / numXYZBoxes[0]) + xCellBorderFracSize);
-                    fracCoords[4] = (((1.0 + j) / numXYZBoxes[1]) + yCellBorderFracSize);
-                    fracCoords[5] = (((1.0 + k) / numXYZBoxes[2]) + zCellBorderFracSize);
-                    cells[filledCells++] = new BoxOptCell(fracCoords, xyzIndices, currentIndex);
-                    ++currentIndex;
-                }
-            }
-        }
-        assignResiduesToCells(crystal, residues, cells);
-        for (BoxOptCell cell : cells) {
-            cell.sortBoxResidues();
-        }
-        switch (direction) {
-            case BACKWARD:
-                BoxOptCell[] tempCells = new BoxOptCell[numCells];
-                for (int i = 0; i < numCells; i++) {
-                    tempCells[i] = cells[numCells - (i + 1)];
-                }
-                cells = tempCells;
-                // Fall through into forward case (for now).
-            case FORWARD:
-            default:
-                return cells;
-        }
-    }
-
-    /**
-     * Constructs the cells for box optimization and assigns them residues,
-     * presently based on C alpha fractional coordinates; by default, cells are
-     * sorted by global index. Presently, specifying approxBoxLength over-rides
-     * numXYZBoxes, and always rounds the number of boxes down (to ensure boxes
-     * are always at least the specified size).
-     *
-     * @param crystal  Crystal group.
-     * @param residues List of residues to be optimized.
-     * @return Array of filled Cells
-     */
-    private void assignResiduesToCells(Crystal crystal, Residue[] residues, BoxOptCell[] cells) {
-        // Search through residues, add them to all boxes containing their
-        // fractional coordinates.
-        int nSymm = crystal.spaceGroup.getNumberOfSymOps();
-
-        for (BoxOptCell cell : cells) {
-            Set<Residue> toAdd = new HashSet<>();
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
-                for (Residue residue : residues) {
-                    boolean contained;
-                    switch (boxInclusionCriterion) {
-                        case 2: {
-                            contained = cell.residueInsideCell(residue, crystal, symOp, true);
-                        }
-                        break;
-                        case 3: {
-                            contained = cell.anyRotamerInsideCell(residue, crystal, symOp, true, library);
-                        }
-                        break;
-                        case 1:
-                        default: {
-                            contained = cell.atomInsideCell(residue.getReferenceAtom(), crystal, symOp);
-                        }
-                    }
-                    if (contained) {
-                        toAdd.add(residue);
-                    }
-                }
-                // If the identity symop produces nothing, skip checking other symops.
-                if (toAdd.isEmpty()) {
-                    break;
-                }
-            }
-            toAdd.forEach(cell::addResidue);
-        }
-    }
-
-    /**
      * Sorts a passed List of Residues by global index.
      *
      * @param residues List of Residues to be sorted.
@@ -3770,7 +3355,7 @@ public class RotamerOptimization implements Terminatable {
         int loaded = 0;
         if (loadEnergyRestart) {
             if (usingBoxOptimization) {
-                loaded = eE.loadEnergyRestart(energyRestartFile, residues, boxLoadIndex, boxLoadCellIndices);
+                loaded = eE.loadEnergyRestart(energyRestartFile, residues, boxOpt.boxLoadIndex, boxOpt.boxLoadCellIndices);
             } else {
                 loaded = eE.loadEnergyRestart(energyRestartFile, residues);
             }
@@ -4884,25 +4469,425 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    /**
-     * Sets the monteCarloTesting boolean in RotamerOptimization.java to true or
-     * false. This should only be set to true when monte carlo is being tested
-     * through the ManyBodyTest.java script. When true, the method sets a seed
-     * for the pseudo-random number generator and allows the monte carlo rotamer
-     * optimization to be deterministic.
-     *
-     * @param bool True or false.
-     */
-    public void setMonteCarloTesting(boolean bool) {
-        this.monteCarloTesting = bool;
+    private class BoxOptimization {
+        /**
+         * Number of boxes for box optimization in X, Y, Z.
+         */
+        public int[] numXYZBoxes = {3, 3, 3};
+        /**
+         * Box border size.
+         */
+        public double boxBorderSize = 0;
+        /**
+         * Approximate box size.
+         */
+        public double approxBoxLength = 0;
+        /**
+         * Box optimization inclusion criteria.
+         */
+        public int boxInclusionCriterion = 1;
+        /**
+         * Index of the first box to optimize.
+         */
+        public int boxStart = 0;
+        /**
+         * Index of the last box to optimize.
+         */
+        public int boxEnd = -1;
+        /**
+         * Flag to indicate manual definition of a super box.
+         */
+        public boolean manualSuperbox = false;
+        /**
+         * Dimensions of the box.
+         */
+        public double[] boxDimensions;
+        /**
+         * Buffer size for the super box.
+         */
+        public double superboxBuffer = 8.0;
+        /**
+         * Box index loaded during a restart.
+         */
+        public int boxLoadIndex = -1;
+        /**
+         * Box indeces loaded during a restart.
+         */
+        public int[] boxLoadCellIndices;
 
+        public void update(String boxDim) {
+            // String should be in format (buffer,xmin,xmax,ymin,ymax,zmin,zmax)
+            try {
+                String[] bdTokens = boxDim.split(",+");
+                boxDimensions = new double[6];
+                if (bdTokens.length != 7) {
+                    logger.warning(" Improper number of arguments to boxDimensions; default settings used.");
+                } else {
+                    for (int i = 1; i < 7; i += 2) {
+                        boxDimensions[i - 1] = parseDouble(bdTokens[i]);
+                        boxDimensions[i] = parseDouble(bdTokens[i + 1]);
+                        if (boxDimensions[i] < boxDimensions[i - 1]) {
+                            logger.info(format(" Improper dimension min %8.5f > max %8.5f; max/min reversed.",
+                                    boxDimensions[i - 1], boxDimensions[i]));
+                            double temp = boxDimensions[i];
+                            boxDimensions[i] = boxDimensions[i - 1];
+                            boxDimensions[i - 1] = temp;
+                        }
+                    }
+                    superboxBuffer = parseDouble(bdTokens[0]);
+                    manualSuperbox = true;
+                }
+            } catch (Exception ex) {
+                logger.warning(format(" Error in parsing box dimensions: input discarded and defaults used: %s.", ex.toString()));
+                manualSuperbox = false;
+            }
+        }
+
+        /**
+         * Breaks down a structure into a number of overlapping boxes for
+         * optimization.
+         *
+         * @return Potential energy of final structure.
+         */
+        public double boxOptimization(ArrayList<Residue> residueList) {
+            usingBoxOptimization = true;
+            long beginTime = -System.nanoTime();
+            Residue[] residues = residueList.toArray(new Residue[0]);
+
+            /*
+             * A new dummy Crystal will be constructed for an aperiodic system. The
+             * purpose is to avoid using the overly large dummy Crystal used for
+             * Ewald purposes. Atoms are not and should not be moved into the dummy
+             * Crystal boundaries; to check if an Atom is inside a cell, use an
+             * array of coordinates adjusted to be 0 < coordinate < 1.0.
+             */
+            Crystal crystal = generateSuperbox(residueList);
+
+            // Cells indexed by x*(YZ divisions) + y*(Z divisions) + z.
+            int totalCells = getTotalCellCount(crystal); // Also initializes cell count if using -bB
+            if (boxStart > totalCells - 1) {
+                logger.severe(format(" FFX shutting down: Box optimization start is out of range of total boxes: %d > %d", (boxStart + 1), totalCells));
+            }
+            if (boxEnd > totalCells - 1) {
+                boxEnd = totalCells - 1;
+                logIfMaster(" Final box out of range: reset to last possible box.");
+            } else if (boxEnd < 0) {
+                boxEnd = totalCells - 1;
+            }
+            BoxOptCell[] cells = loadCells(crystal, residues);
+            int numCells = cells.length;
+            logIfMaster(format(" Optimizing boxes  %d  to  %d", (boxStart + 1), (boxEnd + 1)));
+            for (int i = 0; i < numCells; i++) {
+                BoxOptCell celli = cells[i];
+                ArrayList<Residue> residuesList = celli.getResiduesAsList();
+                int[] cellIndices = celli.getXYZIndex();
+                logIfMaster(format("\n Iteration %d of the box optimization.", (i + 1)));
+                logIfMaster(format(" Cell index (linear): %d", (celli.getLinearIndex() + 1)));
+                logIfMaster(format(" Cell xyz indices: x = %d, y = %d, z = %d", cellIndices[0] + 1, cellIndices[1] + 1, cellIndices[2] + 1));
+                int nResidues = residuesList.size();
+                if (nResidues > 0) {
+                    if (master && writeEnergyRestart && printFiles) {
+                        String boxHeader = format(" Box %d: %d,%d,%d", i + 1, cellIndices[0], cellIndices[1], cellIndices[2]);
+                        try {
+                            energyWriter.append(boxHeader);
+                            energyWriter.newLine();
+                            boxHeader = null;
+                        } catch (IOException ex) {
+                            logger.log(Level.SEVERE, " Exception writing box header to energy restart file.", ex);
+                        }
+                    }
+
+                    if (loadEnergyRestart) {
+                        boxLoadIndex = i + 1;
+                        boxLoadCellIndices = new int[3];
+                        boxLoadCellIndices[0] = cellIndices[0];
+                        boxLoadCellIndices[1] = cellIndices[1];
+                        boxLoadCellIndices[2] = cellIndices[2];
+                    }
+
+                    long boxTime = -System.nanoTime();
+                    Residue firstResidue = residuesList.get(0);
+                    Residue lastResidue = residuesList.get(nResidues - 1);
+                    if (firstResidue != lastResidue) {
+                        logIfMaster(format(" Residues %s ... %s", firstResidue.toString(), lastResidue.toString()));
+                    } else {
+                        logIfMaster(format(" Residue %s", firstResidue.toString()));
+                    }
+                    if (revert) {
+                        ResidueState[] coordinates = ResidueState.storeAllCoordinates(residuesList);
+                        // x is an array of coordinates for the entire molecular assembly.
+                        // If x has not yet been constructed, construct it.
+                        if (x == null) {
+                            Atom atoms[] = molecularAssembly.getAtomArray();
+                            int nAtoms = atoms.length;
+                            x = new double[nAtoms * 3];
+                        }
+
+                        double startingEnergy = 0;
+                        double finalEnergy = 0;
+                        try {
+                            startingEnergy = currentEnergy(residuesList);
+                        } catch (ArithmeticException ex) {
+                            logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
+                        }
+                        globalOptimization(residuesList);
+                        try {
+                            finalEnergy = currentEnergy(residuesList);
+                        } catch (ArithmeticException ex) {
+                            logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex.toString()));
+                        }
+
+                        if (startingEnergy <= finalEnergy) {
+                            logger.warning("Optimization did not yield a better energy. Reverting to original coordinates.");
+                            ResidueState.revertAllCoordinates(residuesList, coordinates);
+                        }
+                        long currentTime = System.nanoTime();
+                        boxTime += currentTime;
+                        logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
+                        logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+                    } else {
+                        globalOptimization(residuesList);
+                        long currentTime = System.nanoTime();
+                        boxTime += currentTime;
+                        logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
+                        logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+                    }
+                    if (master && printFiles) {
+                        // Don't write a file if it's the final iteration.
+                        if (i == (numCells - 1)) {
+                            continue;
+                        }
+                        try {
+                            if (firstResidue != lastResidue) {
+                                logIfMaster(format(" File with residues %s ... %s in window written.", firstResidue.toString(), lastResidue.toString()));
+                            } else {
+                                logIfMaster(format(" File with residue %s in window written.", firstResidue.toString()));
+                            }
+                        } catch (Exception e) {
+                            logger.warning("Exception writing to file.");
+                        }
+                    }
+                } else {
+                    logIfMaster(" Empty box: no residues found.");
+                }
+            }
+            return 0.0;
+        }
+
+        private Crystal generateSuperbox(List<Residue> residueList) {
+            double[] maxXYZ = new double[3];
+            double[] minXYZ = new double[3];
+            Crystal originalCrystal = molecularAssembly.getCrystal();
+            if (manualSuperbox) {
+                for (int i = 0; i < maxXYZ.length; i++) {
+                    int ii = 2 * i;
+                    minXYZ[i] = boxDimensions[ii] - superboxBuffer;
+                    maxXYZ[i] = boxDimensions[ii + 1] + superboxBuffer;
+                }
+            } else if (originalCrystal.aperiodic()) {
+                if (residueList == null || residueList.isEmpty()) {
+                    throw new IllegalArgumentException(" Null or empty residue list when generating superbox.");
+                }
+                Atom initializerAtom = residueList.get(0).getReferenceAtom();
+                initializerAtom.getXYZ(minXYZ);
+                initializerAtom.getXYZ(maxXYZ);
+                for (Residue residue : residueList) {
+                    Atom refAtom = residue.getReferenceAtom();
+                    double[] refAtomCoords = new double[3];
+                    refAtom.getXYZ(refAtomCoords);
+                    for (int i = 0; i < 3; i++) {
+                        maxXYZ[i] = Math.max(refAtomCoords[i], maxXYZ[i]);
+                        minXYZ[i] = Math.min(refAtomCoords[i], minXYZ[i]);
+                    }
+                }
+                for (int i = 0; i < 3; i++) {
+                    minXYZ[i] -= superboxBuffer;
+                    maxXYZ[i] += superboxBuffer;
+                }
+            } else {
+                return originalCrystal;
+            }
+            double newA = maxXYZ[0] - minXYZ[0];
+            double newB = maxXYZ[1] - minXYZ[1];
+            double newC = maxXYZ[2] - minXYZ[2];
+            if (manualSuperbox) {
+                logger.info(format(" Manual superbox set over (minX, maxX, minY, "
+                                + "maxY, minZ, maxZ): %f, %f, %f, %f, %f, %f",
+                        minXYZ[0], maxXYZ[0], minXYZ[1], maxXYZ[1], minXYZ[2], maxXYZ[2]));
+                logger.info(format(" Buffer size (included in dimensions): %f\n", superboxBuffer));
+            } else { // Crystal systems will have already returned.
+                logger.info(" System is aperiodic: protein box generated over these coordinates (minX, maxX, minY, maxY, minZ, maxZ):");
+                String message = " Aperiodic box dimensions: ";
+                for (int i = 0; i < minXYZ.length; i++) {
+                    message = message.concat(format("%f,%f,", minXYZ[i], maxXYZ[i]));
+                }
+                message = message.substring(0, message.length() - 1);
+                logger.info(message);
+                logger.info(format(" Buffer size (included in dimensions): %f\n", superboxBuffer));
+            }
+            return new Crystal(newA, newB, newC, 90.0, 90.0, 90.0, "P1");
+        }
+
+        /**
+         * Returns the number of cells (boxes) for box optimization; if the -bB flag
+         * is set, sets the final number of cells.
+         *
+         * @param crystal Crystal or dummy crystal being used to define boxes.
+         * @return Total number of cells.
+         */
+        private int getTotalCellCount(Crystal crystal) {
+            int numCells = 1;
+            if (approxBoxLength > 0) {
+                double[] boxes = new double[3];
+                boxes[0] = crystal.a / approxBoxLength;
+                boxes[1] = crystal.b / approxBoxLength;
+                boxes[2] = crystal.c / approxBoxLength;
+                for (int i = 0; i < boxes.length; i++) {
+                    if (boxes[i] < 1) {
+                        numXYZBoxes[i] = 1;
+                    } else {
+                        numXYZBoxes[i] = (int) boxes[i];
+                    }
+                }
+            }
+            for (int i = 0; i < numXYZBoxes.length; i++) {
+                numCells *= numXYZBoxes[i];
+            }
+            return numCells;
+        }
+
+        /**
+         * Creates and fills cells (boxes) for box optimization.
+         *
+         * @param crystal  Polymer crystal or dummy crystal
+         * @param residues All residues to be optimized
+         * @return Filled cells.
+         */
+        private BoxOptCell[] loadCells(Crystal crystal, Residue[] residues) {
+            double xCellBorderFracSize = (boxBorderSize / crystal.a);
+            double yCellBorderFracSize = (boxBorderSize / crystal.b);
+            double zCellBorderFracSize = (boxBorderSize / crystal.c);
+            logIfMaster(format(" Number of boxes along x: %d, y: %d, z: %d", numXYZBoxes[0], numXYZBoxes[1], numXYZBoxes[2]));
+
+            int numCells = boxEnd - boxStart + 1;
+            BoxOptCell[] cells = new BoxOptCell[numCells];
+            int currentIndex = 0;
+            int filledCells = 0;
+            int[] xyzIndices = new int[3];
+            boolean doBreak = false; // Breaks the ijk loop if the last box passed.
+            /*
+             * Initializes coordinates for all the boxes, indexed linearly along z,
+             * then y, then x (so the box with xyz indices 2,3,2 in a crystal with
+             * 4, 5, and 3 boxes along xyz would be indexed 2*5*3 + 3*3 + 2 = 41.
+             * The int[] indices stores seperate x, y, and z indices.
+             */
+            for (int i = 0; i < numXYZBoxes[0]; i++) {
+                if (doBreak) {
+                    break;
+                }
+                xyzIndices[0] = i;
+                for (int j = 0; j < numXYZBoxes[1]; j++) {
+                    if (doBreak) {
+                        break;
+                    }
+                    xyzIndices[1] = j;
+                    for (int k = 0; k < numXYZBoxes[2]; k++) {
+                        if (currentIndex < boxStart) {
+                            ++currentIndex;
+                            continue;
+                        } else if (currentIndex > boxEnd) {
+                            doBreak = true;
+                            break;
+                        }
+                        xyzIndices[2] = k;
+                        double[] fracCoords = new double[6];
+                        fracCoords[0] = (((1.0 * i) / numXYZBoxes[0]) - xCellBorderFracSize);
+                        fracCoords[1] = (((1.0 * j) / numXYZBoxes[1]) - yCellBorderFracSize);
+                        fracCoords[2] = (((1.0 * k) / numXYZBoxes[2]) - zCellBorderFracSize);
+                        fracCoords[3] = (((1.0 + i) / numXYZBoxes[0]) + xCellBorderFracSize);
+                        fracCoords[4] = (((1.0 + j) / numXYZBoxes[1]) + yCellBorderFracSize);
+                        fracCoords[5] = (((1.0 + k) / numXYZBoxes[2]) + zCellBorderFracSize);
+                        cells[filledCells++] = new BoxOptCell(fracCoords, xyzIndices, currentIndex);
+                        ++currentIndex;
+                    }
+                }
+            }
+            assignResiduesToCells(crystal, residues, cells);
+            for (BoxOptCell cell : cells) {
+                cell.sortBoxResidues();
+            }
+            switch (direction) {
+                case BACKWARD:
+                    BoxOptCell[] tempCells = new BoxOptCell[numCells];
+                    for (int i = 0; i < numCells; i++) {
+                        tempCells[i] = cells[numCells - (i + 1)];
+                    }
+                    cells = tempCells;
+                    // Fall through into forward case (for now).
+                case FORWARD:
+                default:
+                    return cells;
+            }
+        }
+
+        /**
+         * Constructs the cells for box optimization and assigns them residues,
+         * presently based on C alpha fractional coordinates; by default, cells are
+         * sorted by global index. Presently, specifying approxBoxLength over-rides
+         * numXYZBoxes, and always rounds the number of boxes down (to ensure boxes
+         * are always at least the specified size).
+         *
+         * @param crystal  Crystal group.
+         * @param residues List of residues to be optimized.
+         * @return Array of filled Cells
+         */
+        private void assignResiduesToCells(Crystal crystal, Residue[] residues, BoxOptCell[] cells) {
+            // Search through residues, add them to all boxes containing their
+            // fractional coordinates.
+            int nSymm = crystal.spaceGroup.getNumberOfSymOps();
+
+            for (BoxOptCell cell : cells) {
+                Set<Residue> toAdd = new HashSet<>();
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
+                    for (Residue residue : residues) {
+                        boolean contained;
+                        switch (boxInclusionCriterion) {
+                            case 2: {
+                                contained = cell.residueInsideCell(residue, crystal, symOp, true);
+                            }
+                            break;
+                            case 3: {
+                                contained = cell.anyRotamerInsideCell(residue, crystal, symOp, true, library);
+                            }
+                            break;
+                            case 1:
+                            default: {
+                                contained = cell.atomInsideCell(residue.getReferenceAtom(), crystal, symOp);
+                            }
+                        }
+                        if (contained) {
+                            toAdd.add(residue);
+                        }
+                    }
+                    // If the identity symop produces nothing, skip checking other symops.
+                    if (toAdd.isEmpty()) {
+                        break;
+                    }
+                }
+                toAdd.forEach(cell::addResidue);
+            }
+        }
     }
-
 
     /**
      * False unless JUnit testing.
      */
     private boolean testing = false;
+    /**
+     * False unless ManyBodyTest is occurring.
+     */
+    private boolean monteCarloTesting = false;
     /**
      * Test Self-Energy Elimination.
      */
@@ -4942,6 +4927,20 @@ public class RotamerOptimization implements Terminatable {
     public void turnRotamerPairEliminationOff() {
         logger.warning("TURNING PAIR ELIMINATION OFF.");
         pairEliminationOn = false;
+    }
+
+    /**
+     * Sets the monteCarloTesting boolean in RotamerOptimization.java to true or
+     * false. This should only be set to true when monte carlo is being tested
+     * through the ManyBodyTest.java script. When true, the method sets a seed
+     * for the pseudo-random number generator and allows the monte carlo rotamer
+     * optimization to be deterministic.
+     *
+     * @param bool True or false.
+     */
+    public void setMonteCarloTesting(boolean bool) {
+        this.monteCarloTesting = bool;
+
     }
 
     /**

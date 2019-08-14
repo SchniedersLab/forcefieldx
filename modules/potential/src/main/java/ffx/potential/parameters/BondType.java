@@ -289,8 +289,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        return String.format("bond  %5d  %5d  %6.1f  %7.4f", atomClasses[0],
-                atomClasses[1], forceConstant, distance);
+        return String.format("bond  %5d  %5d  %7.2f  %7.4f", atomClasses[0], atomClasses[1], forceConstant, distance);
     }
 
     /**

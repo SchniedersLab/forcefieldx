@@ -209,7 +209,7 @@ public class EnergyTest extends BaseFFXTest {
                         "Ubiquitin Benchmark",
                         "ffx/potential/structures/ubiquitin.xyz",
                         9737,
-                        2856.79963046, 6908,
+                        2856.59378034, 6908,
                         2018.16571190, 5094,
                          -6.98794687, 1958,
                         -55.63461732, 2835,

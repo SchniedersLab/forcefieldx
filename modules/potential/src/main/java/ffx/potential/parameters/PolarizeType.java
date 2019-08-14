@@ -351,7 +351,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     @Override
     public String toString() {
         StringBuilder polarizeString = new StringBuilder(String.format(
-                "polarize  %5d  %6.3f %6.3f", type, polarizability, thole));
+                "polarize  %5d  %8.5f %8.5f", type, polarizability, thole));
         if (polarizationGroup != null) {
             for (int a : polarizationGroup) {
                 polarizeString.append(String.format("  %5d", a));
