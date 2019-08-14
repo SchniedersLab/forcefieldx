@@ -106,10 +106,12 @@ public class ManyBodyTest extends PJDependentTest {
         // Evaluate the script.
         manyBody.run();
         double expectedTotalPotential = -219.8836543404126;
-
-
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
+        
+        double expectedApproximateEnergy = -211.27591296060083;
+        double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+        Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
         // Delete all created directories and files.
         try {
@@ -146,6 +148,10 @@ public class ManyBodyTest extends PJDependentTest {
         double expectedTotalPotential = -219.8836543404126;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+        
+        double expectedApproximateEnergy = -215.73796305229135;
+        double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+        Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
         // Delete all created directories and files.
         try {
@@ -186,6 +192,10 @@ public class ManyBodyTest extends PJDependentTest {
         double expectedTotalPotential = -203.72294133789995;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+        
+        double expectedApproximateEnergy = -194.09506556636578;
+        double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+        Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
         // Delete all created directories and files.
         try {
@@ -236,6 +246,10 @@ public class ManyBodyTest extends PJDependentTest {
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
+        double expectedApproximateEnergy = -260.25114435435523;
+        double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+        Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
+        
         // Delete all created directories and files.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
@@ -282,6 +296,10 @@ public class ManyBodyTest extends PJDependentTest {
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
+        double expectedApproximateEnergy = -219.12352063102995;
+        double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+        Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
+        
         // Delete all created directories and files.
         try {
             DirectoryUtils.deleteDirectoryTree(path);

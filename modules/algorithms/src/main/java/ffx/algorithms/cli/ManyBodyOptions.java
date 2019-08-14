@@ -857,6 +857,10 @@ public class ManyBodyOptions {
     public RotamerLibrary getRotamerLibrary() {
         return rLib;
     }
+    
+    public double getApproximate(){
+        return rotamerOptimization.getApproximate();
+    }
 
 //    /**
 //     * Saves all eliminated rotamers to an ouput file called "eliminated.csv"
