@@ -40,6 +40,8 @@ package ffx.potential.nonbonded.implicit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -117,6 +119,11 @@ public class DispersionRegion extends ParallelRegion {
     private final DispersionLoop[] dispersionLoop;
     private final SharedDouble sharedDispersion;
     private static final double DISP_OVERLAP_SCALE_FACTOR = 0.81;
+    /**
+     * This value was described as 0.36 in the original 2007 model (see Schnieders thesis)
+     * and more recently the value was reduced to 0.26.
+     */
+    private static final double DISP_OFFSET = 0.26;
     private static final double SLEVY = 1.0;
     private static final double AWATER = 0.033428;
     private static final double EPSO = 0.1100;
@@ -142,6 +149,7 @@ public class DispersionRegion extends ParallelRegion {
             VDWType type = atoms[i].getVDWType();
             double rmini = type.radius;
             rDisp[i] = rmini / 2.0;
+            logger.info(format(" Dispersion radii: %d %8.6f", i, rDisp[i]));
         }
         maxDispersionEnergy();
     }
@@ -180,6 +188,7 @@ public class DispersionRegion extends ParallelRegion {
         for (int i = 0; i < nAtoms; i++) {
             VDWType type = atoms[i].getVDWType();
             double epsi = type.wellDepth;
+            // Do not apply DISP_OFFSET here -- we don't want to change the shape of the Buffered-14-7 curve.
             double rmini = type.radius / 2.0;
             if (rDisp[i] > 0.0 && epsi > 0.0) {
                 double sqEpsoEpsi = sqrt(EPSO) + sqrt(epsi);
@@ -194,7 +203,8 @@ public class DispersionRegion extends ParallelRegion {
                 double rmixh3 = pow(rmixh, 3);
                 double rmixh7 = pow(rmixh, 7);
                 double ah = emixh * rmixh7;
-                double ri = rDisp[i] + 0.26;
+                // Apply the DISP_OFFSET here to start the integral beyond the atomic radius of atom i.
+                double ri = rDisp[i] + DISP_OFFSET;
                 double ri3 = pow(ri, 3);
                 double ri7 = pow(ri, 7);
                 double ri11 = pow(ri, 11);
@@ -214,6 +224,7 @@ public class DispersionRegion extends ParallelRegion {
                 }
             }
             cDisp[i] = SLEVY * AWATER * cDisp[i];
+            // logger.info(format(" Max dispersion: %d %8.6f", i, cDisp[i]));
         }
     }
 
@@ -332,6 +343,7 @@ public class DispersionRegion extends ParallelRegion {
             double sum = 0.0;
             VDWType type = atoms[i].getVDWType();
             double epsi = type.wellDepth;
+            // Do not apply DISP_OFFSET to rmini -- we don't want to change the shape of the Buffered-14-7 curve.
             double rmini = type.radius / 2.0;
             double emixo = (4.0 * EPSO * epsi) / (pow(sqrt(EPSO) + sqrt(epsi), 2));
             double rmixo = 2.0 * (pow(RMINO, 3) + pow(rmini, 3)) / (pow(RMINO, 2) + pow(rmini, 2));
@@ -341,7 +353,9 @@ public class DispersionRegion extends ParallelRegion {
             double rmixh = 2.0 * (pow(RMINH, 3) + pow(rmini, 3)) / (pow(RMINH, 2) + pow(rmini, 2));
             double rmixh7 = pow(rmixh, 7);
             double ah = emixh * rmixh7;
-            double ri = rDisp[i];
+            // Apply the DISP_OFFSET here to start the integral beyond the atomic radius of atom i.
+            double ri = rDisp[i] + DISP_OFFSET;
+            // Atom k descreens with no offset applied.
             double rk = rDisp[k];
             double sk = rk * DISP_OVERLAP_SCALE_FACTOR;
             double sk2 = sk * sk;

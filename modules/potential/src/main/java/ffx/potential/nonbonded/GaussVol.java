@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -119,6 +118,8 @@ public class GaussVol {
     // private static double VOLMINB = 0.1 * ANG3;
     /**
      * Volume cutoffs for switching function in Angstroms.
+     * <p>
+     * Original values
      */
     private static double ANG3 = 1.0;
     private static double VOLMINA = 0.01 * ANG3;
@@ -226,11 +227,6 @@ public class GaussVol {
      * Surface area multiplicative switch.
      */
     private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
-
-    /**
-     * Maximum number of overlaps encountered; helps make
-     */
-    private int maxOverlapsEncountered = -1;
 
     /**
      * Creates/Initializes a GaussVol instance.
@@ -357,9 +353,9 @@ public class GaussVol {
     /**
      * Set the isHydrogen flag.
      *
-     * @param isHydrogen
+     * @param isHydrogen Per atom flag to indicate if its a hydrogen.
      * @return The number of atoms.
-     * @throws Exception
+     * @throws Exception Throws an exception if the array is null or the number of entries is incorrect.
      */
     int setIsHydrogen(boolean[] isHydrogen) throws Exception {
         if (nAtoms == isHydrogen.length) {
@@ -568,9 +564,9 @@ public class GaussVol {
     /**
      * Collect the volume base cavitation energy and gradient contributions.
      *
-     * @param taperVolume
-     * @param dTaperVolumedR
-     * @param gradient
+     * @param taperVolume    Tapered volume (A^3).
+     * @param dTaperVolumedR Derivative of the tapered volume with respect to effective radius.
+     * @param gradient       Array to accumulate derivatives.
      */
     private void addVolumeGradient(double taperVolume, double dTaperVolumedR, double[][] gradient) {
         taperVolume *= solventPressure;
@@ -586,9 +582,9 @@ public class GaussVol {
     /**
      * Collect the surface area based cavitation energy and gradient contributions.
      *
-     * @param taperSA
-     * @param dTaperSAdR
-     * @param gradient
+     * @param taperSA    Tapered surface area (A^2).
+     * @param dTaperSAdR Derivative of the tapered surface area with respect to effective radius.
+     * @param gradient   Array to accumulate derivatives.
      */
     private void addSurfaceAreaGradient(double taperSA, double dTaperSAdR, double[][] gradient) {
         double factor = surfaceTension * taperSA + surfaceAreaEnergy * dTaperSAdR;
@@ -1017,8 +1013,8 @@ public class GaussVol {
          * @param gammas     Atomic surface tensions.
          * @param ishydrogen True if the atom is a hydrogen.
          */
-         void computeOverlapTreeR(double[][] pos, double[] radii,
-                                double[] volumes, double[] gammas, boolean[] ishydrogen) {
+        void computeOverlapTreeR(double[][] pos, double[] radii,
+                                 double[] volumes, double[] gammas, boolean[] ishydrogen) {
             initOverlapTree(pos, radii, volumes, gammas, ishydrogen);
             for (int slot = 1; slot <= nAtoms; slot++) {
                 computeAndAddChildrenR(slot);
@@ -1175,8 +1171,8 @@ public class GaussVol {
          * @param self_volume
          */
         void computeVolume2R(double[][] pos, double[] volume, double[] energy,
-                            double[][] dr, double[] dv,
-                            double[] free_volume, double[] self_volume) {
+                             double[][] dr, double[] dv,
+                             double[] free_volume, double[] self_volume) {
 
             double[] psi1i = new double[1];
             double[] f1i = new double[1];

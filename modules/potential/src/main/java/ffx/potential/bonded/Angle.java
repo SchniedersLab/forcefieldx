@@ -138,9 +138,6 @@ public class Angle extends BondedTerm {
         String key = AngleType.sortKey(c);
         AngleType angleType = forceField.getAngleType(key);
         if (angleType == null) {
-
-
-
             logger.severe("No AngleType for key: " + key);
             return null;
         }
