@@ -99,23 +99,33 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private static final double DEFAULT_OVERLAP_SCALE = 0.69;
     /**
-     * Default surface tension for apolar models with an explicit dispersion term.
-     */
-    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.08;
-    /**
-     * Default solvent pressure for apolar models with an explicit volume term.
-     */
-    private static final double DEFAULT_SOLVENT_PRESSURE = 0.0327;
-    /**
-     * Default probe radius for use with Gaussian Volumes.
-     */
-    private static final double DEFAULT_GAUSSVOL_PROBE = 1.92;
-    /**
      * Default surface tension for apolar models without an explicit dispersion
      * term. This is lower than CAVDISP, since the favorable dispersion term is
      * implicitly included.
      */
     private static final double DEFAULT_CAV_SURFACE_TENSION = 0.0049;
+    /**
+     * Default surface tension for apolar models with an explicit dispersion term.
+     */
+    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.08;
+    /**
+     * Default solvent pressure for apolar models with an explicit volume term.
+     *
+     * Original value of 0.0327 kcal/mol/A^3 is based on using rigorous solvent
+     * accessible volumes.
+     *
+     * For use with GausVol volumes (i.e. a vdW volume with a probe of 1.0 A),
+     * a larger solvent pressure of 0.076 is needed.
+     */
+    private static final double DEFAULT_SOLVENT_PRESSURE = 0.076;
+
+    /**
+     * Default probe radius for use with Gaussian Volumes.
+     */
+    private static final double DEFAULT_GAUSSVOL_PROBE = 1.0;
+    /** Default dielectric offset **/
+    private static final double DEFAULT_DIELECTRIC_OFFSET = 0.09;
+
     /**
      * Empirical scaling of the Bondi radii.
      */
@@ -146,7 +156,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * W. C. Still, A. Tempczyk, R. C. Hawley and T. Hendrickson, "A Semianalytical Treatment of Solvation for Molecular
      * Mechanics and Dynamics", J. Amer. Chem. Soc., 112, 6127-6129 (1990)
      */
-    private final double dOffset = 0.09;
+    private final double dOffset = DEFAULT_DIELECTRIC_OFFSET;
     /**
      * Force field in use.
      */
@@ -1113,6 +1123,35 @@ public class GeneralizedKirkwood implements LambdaInterface {
         return gkEnergyRegion.getInteractions();
     }
 
+    void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
+        if (lambdaTerm) {
+            this.lPow = lPow;
+            this.dlPow = dlPow;
+            this.dl2Pow = dl2Pow;
+        } else {
+            // If the lambdaTerm flag is false, lambda must be set to one.
+            this.lambda = 1.0;
+            this.lPow = 1.0;
+            this.dlPow = 0.0;
+            this.dl2Pow = 0.0;
+        }
+    }
+
+    /**
+     * <p>getNonPolarModel.</p>
+     *
+     * @param nonpolarModel a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar} object.
+     */
+    public static NonPolar getNonPolarModel(String nonpolarModel) {
+        try {
+            return NonPolar.valueOf(toEnumForm(nonpolarModel));
+        } catch (IllegalArgumentException ex) {
+            logger.warning(" Unrecognized nonpolar model requested; defaulting to NONE.");
+            return NonPolar.NONE;
+        }
+    }
+
     /**
      * {@inheritDoc}
      * <p>
@@ -1129,20 +1168,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             lPow = 1.0;
             dlPow = 0.0;
             dl2Pow = 0.0;
-        }
-    }
-
-    void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
-        if (lambdaTerm) {
-            this.lPow = lPow;
-            this.dlPow = dlPow;
-            this.dl2Pow = dl2Pow;
-        } else {
-            // If the lambdaTerm flag is false, lambda must be set to one.
-            this.lambda = 1.0;
-            this.lPow = 1.0;
-            this.dlPow = 0.0;
-            this.dl2Pow = 0.0;
         }
     }
 
@@ -1188,18 +1213,4 @@ public class GeneralizedKirkwood implements LambdaInterface {
     public void getdEdXdL(double[] gradient) {
     }
 
-    /**
-     * <p>getNonPolarModel.</p>
-     *
-     * @param nonpolarModel a {@link java.lang.String} object.
-     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar} object.
-     */
-    public static NonPolar getNonPolarModel(String nonpolarModel) {
-        try {
-            return NonPolar.valueOf(toEnumForm(nonpolarModel));
-        } catch (IllegalArgumentException ex) {
-            logger.warning(" Unrecognized nonpolar model requested; defaulting to NONE.");
-            return NonPolar.NONE;
-        }
-    }
 }

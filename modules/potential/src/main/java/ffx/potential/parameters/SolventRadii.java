@@ -260,9 +260,9 @@ public class SolventRadii {
      * AMOEBA 2009 Class 15
      * <p>
      * Generalized Kirkwood    -89.54460344
-     * Cavitation                7.25359658
+     * Cavitation                7.25565967
      * Dispersion               -3.86494289
-     * Solvation               -86.15594975
+     * Solvation               -86.15388666
      */
     private static final double GK_AMOEBA_CHLORIDE = 3.661;
     /**
@@ -1048,6 +1048,21 @@ public class SolventRadii {
         AMOEBA_BIO_2018_GK_RADII.put(62, AMOEBA_NUC_2017_GK_RADII.get(20));
         AMOEBA_BIO_2018_GK_RADII.put(63, AMOEBA_NUC_2017_GK_RADII.get(21));
         AMOEBA_BIO_2018_GK_RADII.put(64, AMOEBA_NUC_2017_GK_RADII.get(22));
+
+        AMOEBA_BIO_2018_GK_RADII.put(92, GK_AMOEBA_LITHIUM / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(93, GK_AMOEBA_SODIUM / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(94, GK_AMOEBA_POTASSIUM / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(95, GK_AMOEBA_RUBIDIUM / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(96, GK_AMOEBA_CESIUM / 2.0);
+        // Class 97: Berylium Ion Be+2
+        AMOEBA_BIO_2018_GK_RADII.put(98, GK_AMOEBA_MAGNESIUM / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(99, GK_AMOEBA_CALCIUM / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(100, GK_AMOEBA_ZINC / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(101, GK_AMOEBA_FLUORIDE / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(102, GK_AMOEBA_CHLORIDE / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(103, GK_AMOEBA_BROMIDE / 2.0);
+        AMOEBA_BIO_2018_GK_RADII.put(104, GK_AMOEBA_IODIDE / 2.0);
+
 
     }
 }
