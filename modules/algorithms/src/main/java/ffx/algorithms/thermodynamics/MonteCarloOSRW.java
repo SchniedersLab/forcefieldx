@@ -248,7 +248,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
         double[] currentCoordinates = new double[n];
         double[] proposedCoordinates = new double[n];
         int numMoves = totalSteps / stepsPerMove;
-        logger.info(String.format(" steps per move are %d", stepsPerMove));
         int acceptLambda = 0;
         int acceptMD = 0;
 
@@ -452,7 +451,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
         double[] currentCoordinates = new double[n];
         double[] proposedCoordinates = new double[n];
         int numMoves = totalSteps / stepsPerMove;
-        logger.info(String.format(" steps per move are %d", stepsPerMove));
         int acceptMD = 0;
         int acceptMCOSRW = 0;
 
