@@ -148,12 +148,8 @@ public class EnergyTest extends BaseFFXTest {
                         0.0, 0,
                         20.45106694, 2290,
                         -169.03958434, 2485,
-                        // Double Loop polarization energy approach.
                         -11.76558725, 2485,
-                        -263.21775560, 2556, true},
-                        // Single loop polarization as -0.5 u.E
-                        // -22.60274971, 2485,
-                        // -249.22843049, 2556, true},
+                        -211.44726955, 2556, true},
                 {
                         "Amber99sb Peptide",
                         "ffx/potential/structures/peptide-amber99sb.xyz",
