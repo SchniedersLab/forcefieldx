@@ -103,7 +103,7 @@ public class EnergyTest extends BaseFFXTest {
                         "DHFR Benchmark",
                         "ffx/potential/structures/dhfr.xyz",
                         23558,
-                        6624.21260754, 16569,
+                        6623.70878543, 16569,
                         4748.78155255, 11584,
                         -19.78973386, 4031,
                         -132.74781407, 7023,
