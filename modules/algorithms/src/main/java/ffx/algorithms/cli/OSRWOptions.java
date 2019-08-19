@@ -103,8 +103,8 @@ public class OSRWOptions {
     /**
      * --mcL or --mcLambdaStd sets the standard deviation for lambda.
      */
-    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.1", description = "Standard deviation for lambda move.")
-    private double mcL = 0.1;
+    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.01", description = "Standard deviation for lambda move.")
+    private double mcL = 0.01;
 
     /**
      * --ts or --twoStep Sample MC-OSRW using separate lambda and MD moves.
