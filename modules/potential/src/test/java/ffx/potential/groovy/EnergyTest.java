@@ -150,7 +150,7 @@ public class EnergyTest extends BaseFFXTest {
                         -169.03958434, 2485,
                         // Double Loop polarization energy approach.
                         -11.76558725, 2485,
-                        -260.06559295, 2556, true},
+                        -263.21775560, 2556, true},
                         // Single loop polarization as -0.5 u.E
                         // -22.60274971, 2485,
                         // -249.22843049, 2556, true},
