@@ -74,13 +74,13 @@ import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldName;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.potential.parameters.ISolvRadType;
 import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.RelativeSolvationType;
+import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.StretchBendType;
 import ffx.potential.parameters.StretchTorsionType;
 import ffx.potential.parameters.TorsionTorsionType;
@@ -376,11 +376,11 @@ public class ForceFieldFilter {
                             case POLARIZE:
                                 parsePolarizeType(input, tokens);
                                 break;
-                            case ISOLVRAD:
-                                parseISolvRad(input, tokens);
-                                break;
                             case RELATIVESOLV:
                                 parseRelativeSolvation(input, tokens);
+                                break;
+                            case SOLUTE:
+                                parseSolute(input, tokens);
                                 break;
                             default:
                                 logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
@@ -494,8 +494,8 @@ public class ForceFieldFilter {
                 case RELATIVESOLV:
                     parseRelativeSolvation(input, tokens);
                     break;
-                case ISOLVRAD:
-                    parseISolvRad(input, tokens);
+                case SOLUTE:
+                    parseSolute(input, tokens);
                     break;
                 default:
                     logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
@@ -1378,18 +1378,19 @@ public class ForceFieldFilter {
         return null;
     }
 
-    private ISolvRadType parseISolvRad(String input, String[] tokens) {
-        if (tokens.length < 3) {
-            logger.log(Level.WARNING, "Invalid ISolvRad type:\n{0}", input);
+    private SoluteType parseSolute(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid SOLUTE type:\n{0}", input);
         } else {
             try {
                 int atomType = parseInt(tokens[1].trim());
-                double radiusScale = parseDouble(tokens[2].trim());
-                ISolvRadType iSolvRadType = new ISolvRadType(atomType, radiusScale);
-                forceField.addForceFieldType(iSolvRadType);
-                return iSolvRadType;
+                String description = tokens[2].trim();
+                double diameter = parseDouble(tokens[3].trim());
+                SoluteType soluteType = new SoluteType(atomType, description, diameter);
+                forceField.addForceFieldType(soluteType);
+                return soluteType;
             } catch (NumberFormatException e) {
-                String message = "Exception parsing ISolvRad type:\n" + input + "\n";
+                String message = "Exception parsing SOLUTE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
         }

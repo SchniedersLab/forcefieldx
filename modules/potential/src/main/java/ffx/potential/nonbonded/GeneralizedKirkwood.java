@@ -63,7 +63,7 @@ import ffx.potential.nonbonded.implicit.PermanentGKFieldRegion;
 import ffx.potential.nonbonded.implicit.VolumeRegion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.SolventRadii;
+import ffx.potential.parameters.SoluteRadii;
 import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_ELECTRIC;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
@@ -117,7 +117,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * For use with GausVol volumes (i.e. a vdW volume with a probe of 1.0 A),
      * a larger solvent pressure of 0.076 is needed.
      */
-    private static final double DEFAULT_SOLVENT_PRESSURE = 0.076;
+    private static final double DEFAULT_SOLVENT_PRESSURE = 0.070;
 
     /**
      * Default probe radius for use with Gaussian Volumes.
@@ -572,7 +572,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         logger.info("  Continuum Solvation ");
         logger.info(format("   Generalized Kirkwood Cut-Off:       %8.3f (A)", cutoff));
         logger.info(format("   Solvent Dielectric:                 %8.3f", epsilon));
-        SolventRadii.logRadiiSource(forceField);
+        SoluteRadii.logRadiiSource(forceField);
         logger.info(format("   Non-Polar Model:                  %10s",
                 nonPolar.toString().replace('_', '-')));
 
@@ -763,7 +763,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         fill(use, true);
 
-        bondiScale = SolventRadii.applyGKRadii(forceField, bondiScale, atoms, baseRadius);
+        bondiScale = SoluteRadii.applyGKRadii(forceField, bondiScale, atoms, baseRadius);
 
         // Set up HCT overlap scale factors and any requested radii overrides.
         for (int i = 0; i < nAtoms; i++) {

@@ -49,11 +49,11 @@ import ffx.potential.bonded.Atom;
  *
  * @author Michael J. Schnieders
  */
-public class SolventRadii {
+public class SoluteRadii {
 
-    private static final Logger logger = Logger.getLogger(SolventRadii.class.getName());
+    private static final Logger logger = Logger.getLogger(SoluteRadii.class.getName());
 
-    private SolventRadii() {
+    private SoluteRadii() {
     }
 
     /**
@@ -101,38 +101,16 @@ public class SolventRadii {
 
     public static double applyGKRadii(ForceField forceField, double bondiScale,
                                       Atom[] atoms, double[] baseRadius) {
-        Map<Integer, Double> radiiMap = null;
-
-        String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
-                ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
-        forcefieldName = forcefieldName.replaceAll("_", "-");
-
-        if (forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true)) {
-            if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
-                radiiMap = AMOEBA_2009_GK_RADII;
-                bondiScale = 1.0;
-            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {
-                radiiMap = AMOEBA_2014_GK_RADII;
-                bondiScale = 1.0;
-            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-NUC-2017")) {
-                radiiMap = AMOEBA_NUC_2017_GK_RADII;
-                bondiScale = 1.0;
-            } else if (forcefieldName.equalsIgnoreCase("AMOEBA-BIO-2018")) {
-                radiiMap = AMOEBA_BIO_2018_GK_RADII;
-                bondiScale = 1.0;
-            }
-        }
-
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             baseRadius[i] = DEFAULT_RADII.get(atom.getAtomicNumber()) * bondiScale;
             int key = atom.getAtomType().atomClass;
-            if (radiiMap != null && radiiMap.containsKey(key)) {
-                baseRadius[i] = radiiMap.get(key);
+            SoluteType soluteType = forceField.getSoluteType(Integer.toString(key));
+            if (soluteType != null) {
+                baseRadius[i] = soluteType.diameter * 0.5;
             }
         }
-
         return bondiScale;
     }
 
@@ -254,14 +232,18 @@ public class SolventRadii {
     private static final double GK_AMOEBA_FLUORIDE = 2.734;
     /**
      * Chloride Ion Cl-
-     * Wang Thesis:  -86.12 kca/mol
-     * Grossfield et al: -86.5 kca/mol
+     *
+     * Target Data:
+     * Grossfield et al: -86.5 kca/mol (from previous AMOEBA Chloride parameters).
+     * Wang Thesis:  -86.12 kca/mol (from 2018).
+     * Nonpolar solvation: 2.87 kcal/mol
+
      * <p>
      * AMOEBA 2009 Class 15
      * <p>
      * Generalized Kirkwood    -89.54460344
      * Cavitation                7.25565967
-     * Dispersion               -3.86494289
+     * Dispersion               -3.86494289 (Nonpolar total: 3.39)
      * Solvation               -86.15388666
      */
     private static final double GK_AMOEBA_CHLORIDE = 3.661;

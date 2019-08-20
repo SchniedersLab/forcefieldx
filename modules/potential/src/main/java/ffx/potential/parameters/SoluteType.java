@@ -42,32 +42,39 @@ import java.util.Comparator;
 import ffx.potential.parameters.ForceField.ForceFieldType;
 
 /**
- * The ISolvRadType class defines one implicit solvent radius scaling factor.
+ * The SoluteType class defines one implicit solvent radius.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public final class ISolvRadType extends BaseType implements Comparator<String> {
+public final class SoluteType extends BaseType implements Comparator<String> {
 
     /**
-     * Atom classes that form this bond stretch.
+     * Atom class for this solute type.
      */
-    private int atomType;
-    /**
-     * Multiply this by VdW radius to get base Born radius.
-     */
-    public final double radiusScale;
+    private int atomClass;
 
     /**
-     * <p>Constructor for ISolvRadType.</p>
+     * Solute atomic diameter.
+     */
+    public final double diameter;
+
+    /**
+     * Solute atom chemical description.
+     */
+    public final String description;
+
+    /**
+     * <p>Constructor for SoluteType.</p>
      *
-     * @param atomType    a int.
-     * @param radiusScale a double.
+     * @param atomClass    a int.
+     * @param diameter a double.
      */
-    public ISolvRadType(int atomType, double radiusScale) {
-        super(ForceFieldType.ISOLVRAD, Integer.toString(atomType));
-        this.atomType = atomType;
-        this.radiusScale = radiusScale;
+    public SoluteType(int atomClass, String description, double diameter) {
+        super(ForceFieldType.SOLUTE, Integer.toString(atomClass));
+        this.atomClass = atomClass;
+        this.diameter = diameter;
+        this.description = description;
     }
 
     /**
@@ -77,8 +84,8 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
      * @param increment a int.
      */
     void incrementType(int increment) {
-        atomType += increment;
-        setKey(Integer.toString(atomType));
+        atomClass += increment;
+        setKey(Integer.toString(atomClass));
     }
 
     /**
@@ -88,7 +95,7 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        return String.format("isolvrad  %4d  %6.4f", atomType, radiusScale);
+        return String.format("solute  %4d  %30s  %7.5f", atomClass, description, diameter);
     }
 
     /**
@@ -110,11 +117,11 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
         if (other == this) {
             return true;
         }
-        if (!(other instanceof ISolvRadType)) {
+        if (!(other instanceof SoluteType)) {
             return false;
         }
-        ISolvRadType otherType = (ISolvRadType) other;
-        return (otherType.atomType == this.atomType);
+        SoluteType otherType = (SoluteType) other;
+        return (otherType.atomClass == this.atomClass);
     }
 
     /**
@@ -123,7 +130,7 @@ public final class ISolvRadType extends BaseType implements Comparator<String> {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 97 * hash + this.atomType;
+        hash = 97 * hash + this.atomClass;
         return hash;
     }
 }

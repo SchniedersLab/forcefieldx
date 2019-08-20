@@ -275,13 +275,13 @@ public class ForceField {
         BIOTYPE,
         BOND,
         CHARGE,
-        ISOLVRAD,
         IMPROPER,
         IMPTORS,
         MULTIPOLE,
         OPBEND,
         PITORS,
         POLARIZE,
+        SOLUTE,
         STRBND,
         STRTORS,
         TORSION,
@@ -335,7 +335,6 @@ public class ForceField {
     private final Map<String, BioType> bioTypes;
     private final Map<String, BondType> bondTypes;
     private final Map<String, ChargeType> chargeTypes;
-    private final Map<String, ISolvRadType> iSolvRadTypes;
     private final Map<String, MultipoleType> multipoleTypes;
     private final Map<String, OutOfPlaneBendType> outOfPlaneBendTypes;
     private final Map<String, PolarizeType> polarizeTypes;
@@ -346,6 +345,7 @@ public class ForceField {
     private final Map<String, TorsionType> torsionTypes;
     private final Map<String, TorsionType> improperTypes;
     private final Map<String, ImproperTorsionType> imptorsTypes;
+    private final Map<String, SoluteType> soluteTypes;
     private final Map<String, TorsionTorsionType> torsionTorsionTypes;
     private final Map<String, UreyBradleyType> ureyBradleyTypes;
     private final Map<String, VDWType> vanderWaalsTypes;
@@ -371,7 +371,7 @@ public class ForceField {
         bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
         bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
         chargeTypes = new TreeMap<>(new ChargeType(0, 0));
-        iSolvRadTypes = new TreeMap<>(new ISolvRadType(0, 0.0));
+        soluteTypes = new TreeMap<>(new SoluteType(0, "",0.0));
         multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
         outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
         piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
@@ -395,7 +395,7 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.BOND, bondTypes);
         forceFieldTypes.put(ForceFieldType.BIOTYPE, bioTypes);
         forceFieldTypes.put(ForceFieldType.CHARGE, chargeTypes);
-        forceFieldTypes.put(ForceFieldType.ISOLVRAD, iSolvRadTypes);
+        forceFieldTypes.put(ForceFieldType.SOLUTE, soluteTypes);
         forceFieldTypes.put(ForceFieldType.OPBEND, outOfPlaneBendTypes);
         forceFieldTypes.put(ForceFieldType.MULTIPOLE, multipoleTypes);
         forceFieldTypes.put(ForceFieldType.PITORS, piTorsionTypes);
@@ -518,8 +518,8 @@ public class ForceField {
             vanderWaals14Type.incrementClass(classOffset);
         }
 
-        for (ISolvRadType iSolvRadType : iSolvRadTypes.values()) {
-            iSolvRadType.incrementType(typeOffset);
+        for (SoluteType soluteType : soluteTypes.values()) {
+            soluteType.incrementType(typeOffset);
         }
     }
 
@@ -621,9 +621,8 @@ public class ForceField {
             vanderWaals14Types.put(vdwType.getKey(), vdwType);
         }
 
-        for (ISolvRadType iSolvRadType : patch.iSolvRadTypes.values()) {
-            iSolvRadTypes.put(iSolvRadType.getKey(), iSolvRadType);
-//            logger.info(" Adding iSolvRadType to map: " + iSolvRadType.getKey() + "/" + iSolvRadType);
+        for (SoluteType soluteType : patch.soluteTypes.values()) {
+            soluteTypes.put(soluteType.getKey(), soluteType);
         }
 
         for (RelativeSolvationType rsType : patch.relativeSolvationTypes.values()) {
@@ -1100,6 +1099,16 @@ public class ForceField {
     }
 
     /**
+     * Get a SoluteType.
+     *
+     * @param key The class of the atom.
+     * @return The SoluteType if its present.
+     */
+    public SoluteType getSoluteType(String key) {
+        return soluteTypes.get(key);
+    }
+
+    /**
      * <p>Getter for the field <code>relativeSolvationTypes</code>.</p>
      *
      * @return a {@link java.util.HashMap} object.
@@ -1301,7 +1310,9 @@ public class ForceField {
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.VDWType} object.
      */
-    public VDWType getVDW14Type(String key) { return vanderWaals14Types.get(key); }
+    public VDWType getVDW14Type(String key) {
+        return vanderWaals14Types.get(key);
+    }
 
     /**
      * <p>
