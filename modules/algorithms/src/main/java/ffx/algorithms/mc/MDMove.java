@@ -167,7 +167,6 @@ public class MDMove implements MCMove {
 
         mdMoveCounter++;
 
-        logger.info(String.format(" mdSteps are %d", mdSteps));
         boolean initVelocities = true;
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
         energyChange = molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();

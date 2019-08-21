@@ -118,6 +118,10 @@ public class OSRWOptions {
     @CommandLine.Option(names = {"--lw", "--lambdaWritOut"}, paramLabel = "0.0",
             description = "Only write out snapshots if lambda is greater than the value specified.")
     private double lambdaWriteOut = 0.0;
+    
+    @CommandLine.Option(names = {"--mcMDE","--mcMDEquilibration"},
+            description = "Specifies whether the user wants to equilibrate the system using shorter MD trajectories than those used for production sampling.")
+    private boolean mcMDE = false;
 
     /**
      * <p>
@@ -323,7 +327,7 @@ public class OSRWOptions {
         if (nEquil > 0) {
             logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
             mcOSRW.setEquilibration(true);
-            mcOSRW.setMDMoveParameters(nEquil, mcMD, dynamics.dt);
+            mcOSRW.setMDMoveParameters(nEquil, mcMD, dynamics.dt, mcMDE);
             mcOSRW.sampleTwoStep();
             mcOSRW.setEquilibration(false);
             logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
@@ -331,7 +335,7 @@ public class OSRWOptions {
 
         logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
         mcOSRW.setLambdaStdDev(mcL);
-        mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt);
+        mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt, mcMDE);
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
             mcOSRW.setLambdaWriteOut(lambdaWriteOut);
         }

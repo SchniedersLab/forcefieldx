@@ -124,9 +124,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     private static final double NS2SEC = 1e-9;
     /**
-     * Energy conservation during MD moves should generally be within ~0.1 kcal/mol.
-     * A change in total energy of 1.0 kcal/mol or more is of significant concern that the time step is too large,
-     * or lambda moves are too aggressive.
+     * Energy conservation during MD moves should generally be within ~0.1
+     * kcal/mol. A change in total energy of 1.0 kcal/mol or more is of
+     * significant concern that the time step is too large, or lambda moves are
+     * too aggressive.
      */
     private final double EnergyConservationTolerance = 10.0;
 
@@ -134,17 +135,20 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * <p>
      * Constructor for MonteCarloOSRW.</p>
      *
-     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param osrw                a {@link AbstractOSRW} object.
-     * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly} object.
-     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param osrw a {@link AbstractOSRW} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
+     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a {@link ThermostatEnum} object.
-     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param requestedIntegrator a
+     * {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      */
     public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
-                          MolecularAssembly molecularAssembly, CompositeConfiguration properties,
-                          AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+            MolecularAssembly molecularAssembly, CompositeConfiguration properties,
+            AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
         this.potential = potentialEnergy;
         this.osrw = osrw;
 
@@ -169,15 +173,19 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * the stepsPerMove and timeStep parameters to the current value in this
      * class
      *
-     * @param totalSteps   a int.
+     * @param totalSteps a int.
      * @param stepsPerMove a int.
-     * @param timeStep     a double.
+     * @param timeStep a double.
+     * @param mcMDE a boolean
      */
-    public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
-        if(equilibration){
-            stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
-        } else if(!equilibration){
-            mdMove.setMDIntervalSteps(stepsPerMove);
+    public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep, boolean mcMDE) {
+
+        if (mcMDE) {
+            if (equilibration) {
+                stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
+            } else if (!equilibration) {
+                mdMove.setMDIntervalSteps(stepsPerMove);
+            }
         }
         this.totalSteps = totalSteps;
         this.stepsPerMove = stepsPerMove;
@@ -229,13 +237,15 @@ public class MonteCarloOSRW extends BoltzmannMC {
     }
 
     /**
-     * The goal is to sample lambda and coordinates (X) separately to converge the ensemble
-     * average dU/dL for every state (lambda) along the thermodynamic path.
+     * The goal is to sample lambda and coordinates (X) separately to converge
+     * the ensemble average dU/dL for every state (lambda) along the
+     * thermodynamic path.
      * <p>
      * 1.) At a fixed lambda, run a defined length MD trajectory to "move"
      * coordinates and dU/dL.
      * <p>
-     * 2.) Accept / Reject the MD move using the total Hamiltonian (Kinetic energy + OSRW energy).
+     * 2.) Accept / Reject the MD move using the total Hamiltonian (Kinetic
+     * energy + OSRW energy).
      * <p>
      * 3.) Randomly change the value of Lambda.
      * <p>
@@ -435,14 +445,17 @@ public class MonteCarloOSRW extends BoltzmannMC {
     }
 
     /**
-     * The goal is to sample lambda and coordinates (X) simultaneously to converge the ensemble
-     * average dU/dL for every state (lambda) along the thermodynamic path.
+     * The goal is to sample lambda and coordinates (X) simultaneously to
+     * converge the ensemble average dU/dL for every state (lambda) along the
+     * thermodynamic path.
      * <p>
      * 1.) Randomly change the value of Lambda.
      * <p>
-     * 2.) At the proposed lambda, run a defined length MD trajectory to "move" coordinates and dU/dL.
+     * 2.) At the proposed lambda, run a defined length MD trajectory to "move"
+     * coordinates and dU/dL.
      * <p>
-     * 3.) Accept / Reject the Lambda + MD move using the total Hamiltonian (Kinetic energy + OSRW energy).
+     * 3.) Accept / Reject the Lambda + MD move using the total Hamiltonian
+     * (Kinetic energy + OSRW energy).
      * <p>
      * 4.) Add to the bias.
      */
