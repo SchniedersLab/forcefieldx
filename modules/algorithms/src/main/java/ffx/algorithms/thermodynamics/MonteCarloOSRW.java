@@ -176,6 +176,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
     public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
         if(equilibration){
             stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
+        } else if(!equilibration){
+            mdMove.setMDIntervalSteps(stepsPerMove);
         }
         this.totalSteps = totalSteps;
         this.stepsPerMove = stepsPerMove;

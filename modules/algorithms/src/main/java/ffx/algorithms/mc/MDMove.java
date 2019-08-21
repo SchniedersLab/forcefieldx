@@ -167,6 +167,7 @@ public class MDMove implements MCMove {
 
         mdMoveCounter++;
 
+        logger.info(String.format(" mdSteps are %d", mdSteps));
         boolean initVelocities = true;
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
         energyChange = molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
@@ -187,6 +188,10 @@ public class MDMove implements MCMove {
             logger.fine(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
                     normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
         }
+    }
+    
+    public void setMDIntervalSteps(int intervalSteps){
+        molecularDynamics.setIntervalSteps(intervalSteps);
     }
 
     /**

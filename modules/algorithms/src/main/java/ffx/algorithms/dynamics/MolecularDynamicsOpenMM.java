@@ -240,6 +240,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      *
      * @param intervalSteps a int.
      */
+    @Override
     public void setIntervalSteps(int intervalSteps) {
         this.intervalSteps = intervalSteps;
         logger.info(String.format(" Interval Steps set at %d", intervalSteps));
