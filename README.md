@@ -9,16 +9,13 @@ Force Field X is an atomic resolution molecular modeling application that target
 
 Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more details.
 
-[![Build Status](https://travis-ci.org/mjschnie/ffx.svg?branch=master)](https://travis-ci.org/mjschnie/ffx/)
-[![codecov](https://codecov.io/gh/mjschnie/ffx/branch/master/graph/badge.svg)](https://codecov.io/gh/mjschnie/ffx)
-
 ---
 
 ## Clone Force Field X
 
 To clone the Force Field X source using GIT:
 
-    git clone git@github.com:mjschnie/ffx.git ffx
+    git clone git@github.com:SchniedersLab/forcefieldx.git forcefieldx
 
 In the future, your clone of Force Field X can be updated to the latest version using the command:
 

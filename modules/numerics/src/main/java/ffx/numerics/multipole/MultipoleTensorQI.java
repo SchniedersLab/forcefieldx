@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.numerics.multipole;
 
-import java.util.logging.Logger;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import static ffx.numerics.math.VectorMath.diff;
@@ -61,15 +59,95 @@ import static ffx.numerics.math.VectorMath.scalar;
  */
 public class MultipoleTensorQI extends MultipoleTensor {
 
-    private static final Logger logger = Logger.getLogger(MultipoleTensorQI.class.getName());
-
     private double dEdZ = 0.0;
     private double d2EdZ2 = 0.0;
+
+    // Rotation Matrix from Global to QI.
+    private double r00, r01, r02;
+    private double r10, r11, r12;
+    private double r20, r21, r22;
+
+    // Rotation Matrix from QI to Global.
+    private double ir00, ir01, ir02;
+    private double ir10, ir11, ir12;
+    private double ir20, ir21, ir22;
 
     public MultipoleTensorQI(OPERATOR operator, int order, double aewald) {
         super(operator, COORDINATES.QI, order, aewald);
     }
 
+    /**
+     * Specific to QI; sets transform to rotate multipoles to (and from)
+     * quasi-internal frame.
+     */
+    private void setQIRotationMatrix(double dx, double dy, double dz) {
+
+        double[] zAxis = {dx, dy, dz};
+        double[] xAxis = {dx, dy, dz};
+        if (dy != 0.0 || dz != 0.0) {
+            xAxis[0] += 1.0;
+        } else {
+            xAxis[1] += 1.0;
+        }
+
+        norm(zAxis, zAxis);
+        ir02 = zAxis[0];
+        ir12 = zAxis[1];
+        ir22 = zAxis[2];
+
+        double dot = dot(xAxis, zAxis);
+        scalar(zAxis, dot, zAxis);
+        diff(xAxis, zAxis, xAxis);
+        norm(xAxis, xAxis);
+
+        ir00 = xAxis[0];
+        ir10 = xAxis[1];
+        ir20 = xAxis[2];
+        ir01 = ir20 * ir12 - ir10 * ir22;
+        ir11 = ir00 * ir22 - ir20 * ir02;
+        ir21 = ir10 * ir02 - ir00 * ir12;
+
+        // Set the forward elements as the transpose of the inverse matrix.
+        r00 = ir00;
+        r11 = ir11;
+        r22 = ir22;
+        r01 = ir10;
+        r02 = ir20;
+        r10 = ir01;
+        r12 = ir21;
+        r20 = ir02;
+        r21 = ir12;
+    }
+
+    private void inducedIFieldForTorque() {
+        E000 = -szi * R001;
+        E100 = -sxi * R200;
+        E010 = -syi * R020;
+        E001 = -szi * R002;
+        E200 = -szi * R201;
+        E020 = -szi * R021;
+        E002 = -szi * R003;
+        E110 = 0.0;
+        E101 = -sxi * R201;
+        E011 = -syi * R021;
+    }
+
+    private void inducedKFieldForTorque() {
+        E000 = szk * R001;
+        E100 = sxk * R200;
+        E010 = syk * R020;
+        E001 = szk * R002;
+        E200 = szk * R201;
+        E020 = szk * R021;
+        E002 = szk * R003;
+        E110 = 0.0;
+        E101 = sxk * R201;
+        E011 = syk * R021;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double multipoleEnergy(double[] Fi, double[] Ti, double[] Tk) {
         // Compute the potential due to site I at site K.
@@ -107,6 +185,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         return energy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
                                      double[] Fi, double[] Ti, double[] Tk) {
@@ -168,23 +249,28 @@ public class MultipoleTensorQI extends MultipoleTensor {
         return energy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdZ() {
         return dEdZ;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdZ2() {
         return d2EdZ2;
     }
 
     /**
-     * @return Whether anything changed as a result.
+     * {@inheritDoc}
      */
     @Override
     protected boolean setR(double[] r, double lambdaFunction) {
-        if (rprev != null && r[0] == rprev[0] && r[1] == rprev[1]
-                && r[2] == rprev[2] && lambdaFunction == rprev[3]) {
+        if (r[0] == rprev[0] && r[1] == rprev[1] && r[2] == rprev[2] && lambdaFunction == rprev[3]) {
             return true;
         }
         rprev[0] = r[0];
@@ -207,7 +293,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
      * "Tlmnj", which can be called directly to get a single tensor element. It
      * does not store intermediate values of the recursion, causing it to scale
      * O(order^8). For order = 5, this approach is a factor of 10 slower than
-     * recursion.
+     * recursion that stores intermediates.
      *
      * @param r      double[] vector between two sites. r[0] and r[1] must equal 0.0.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
@@ -240,6 +326,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void recursion(final double[] r, final double[] tensor) {
         setR(r);
@@ -341,6 +430,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double Tlmnj(final int l, final int m, final int n,
                            final int j, final double[] r, final double[] T000) {
@@ -369,7 +461,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     /**
-     * Hard coded computation of all Cartesian multipole tensors up to 4th
+     * Hard coded computation of all multipole tensors up to 4th
      * order, based on a quasi-internal frame, which is sufficient for
      * quadrupole-induced dipole forces.
      */
@@ -561,6 +653,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         R402 = z * term4011 + term4001;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void multipoleIField() {
         double term000 = qi * R000;
@@ -609,6 +704,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = term011;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void multipoleKField() {
         double term000 = qk * R000;
@@ -657,6 +755,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = term011;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void multipoleIdX() {
         double term100 = -dxi * R200;
@@ -695,6 +796,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = term111;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void multipoleIdY() {
         double term010 = -dyi * R020;
@@ -733,6 +837,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = term021;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void multipoleIdZ() {
         double term001 = qi * R001;
@@ -782,7 +889,8 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     /**
-     * WARNING: Requires 6th-order tensors!
+     * This requires 6th-order tensors!
+     * {@inheritDoc}
      */
     @Override
     protected void multipoleIdZ2() {
@@ -832,6 +940,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = term012;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedIField() {
         E000 = -uzi * R001;
@@ -846,6 +957,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = -uyi * R021;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedKField() {
         E000 = uzk * R001;
@@ -860,6 +974,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = uyk * R021;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedIFieldCR() {
         E000 = -pzi * R001;
@@ -874,6 +991,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = -pyi * R021;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedKFieldCR() {
         E000 = pzk * R001;
@@ -888,34 +1008,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = pyk * R021;
     }
 
-    @Override
-    protected void inducedIFieldForTorque() {
-        E000 = -szi * R001;
-        E100 = -sxi * R200;
-        E010 = -syi * R020;
-        E001 = -szi * R002;
-        E200 = -szi * R201;
-        E020 = -szi * R021;
-        E002 = -szi * R003;
-        E110 = 0.0;
-        E101 = -sxi * R201;
-        E011 = -syi * R021;
-    }
-
-    @Override
-    protected void inducedKFieldForTorque() {
-        E000 = szk * R001;
-        E100 = sxk * R200;
-        E010 = syk * R020;
-        E001 = szk * R002;
-        E200 = szk * R201;
-        E020 = szk * R021;
-        E002 = szk * R003;
-        E110 = 0.0;
-        E101 = sxk * R201;
-        E011 = syk * R021;
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedIdX() {
         E000 = -sxi * R200;
@@ -930,6 +1025,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = 0.0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedIdY() {
         E000 = -syi * R020;
@@ -944,6 +1042,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = -szi * R022;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedIdZ() {
         E000 = -szi * R002;
@@ -958,6 +1059,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = -syi * R022;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedKdX() {
         E000 = sxk * R200;
@@ -972,6 +1076,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = 0.0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedKdY() {
         E000 = syk * R020;
@@ -986,6 +1093,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E011 = szk * R022;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void inducedKdZ() {
         E000 = szk * R002;
@@ -1001,48 +1111,8 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     /**
-     * Specific to QI; sets transform to rotate multipoles to (and from)
-     * quasi-internal frame.
+     * {@inheritDoc}
      */
-    private void setQIRotationMatrix(double dx, double dy, double dz) {
-
-        double[] zAxis = {dx, dy, dz};
-        double[] xAxis = {dx, dy, dz};
-        if (dy != 0.0 || dz != 0.0) {
-            xAxis[0] += 1.0;
-        } else {
-            xAxis[1] += 1.0;
-        }
-
-        norm(zAxis, zAxis);
-        ir02 = zAxis[0];
-        ir12 = zAxis[1];
-        ir22 = zAxis[2];
-
-        double dot = dot(xAxis, zAxis);
-        scalar(zAxis, dot, zAxis);
-        diff(xAxis, zAxis, xAxis);
-        norm(xAxis, xAxis);
-
-        ir00 = xAxis[0];
-        ir10 = xAxis[1];
-        ir20 = xAxis[2];
-        ir01 = ir20 * ir12 - ir10 * ir22;
-        ir11 = ir00 * ir22 - ir20 * ir02;
-        ir21 = ir10 * ir02 - ir00 * ir12;
-
-        // Set the forward elements as the transpose of the inverse matrix.
-        r00 = ir00;
-        r11 = ir11;
-        r22 = ir22;
-        r01 = ir10;
-        r02 = ir20;
-        r10 = ir01;
-        r12 = ir21;
-        r20 = ir02;
-        r21 = ir12;
-    }
-
     @Override
     protected void setDipoleI(double[] Ui, double[] UiCR) {
         double dx = Ui[0];
@@ -1059,6 +1129,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         pzi = r20 * dx + r21 * dy + r22 * dz;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void setDipoleK(double[] Uk, double[] UkCR) {
         double dx = Uk[0];
@@ -1075,6 +1148,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
         pzk = r20 * dx + r21 * dy + r22 * dz;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void setMultipoleI(double[] Qi) {
 
@@ -1136,6 +1212,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void setMultipoleK(double[] Qk) {
 
@@ -1196,6 +1275,9 @@ public class MultipoleTensorQI extends MultipoleTensor {
                 + r22 * (r20 * qxz + r21 * qyz + r22 * qzz);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void qiToGlobal(double[] v1, double[] v2, double[] v3) {
         double vx = v1[0];
@@ -1220,13 +1302,4 @@ public class MultipoleTensorQI extends MultipoleTensor {
         v3[2] = ir20 * vx + ir21 * vy + ir22 * vz;
     }
 
-    // Rotation Matrix from Global to QI.
-    private double r00, r01, r02;
-    private double r10, r11, r12;
-    private double r20, r21, r22;
-
-    // Rotation Matrix from QI to Global.
-    private double ir00, ir01, ir02;
-    private double ir10, ir11, ir12;
-    private double ir20, ir21, ir22;
 }

@@ -73,6 +73,7 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import edu.rit.mp.CharacterBuf;
 import edu.rit.pj.Comm;
+import edu.uiowa.jopenmm.AmoebaOpenMMLibrary;
 import edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMLibrary.*;
 import edu.uiowa.jopenmm.OpenMMUtils;
@@ -150,6 +151,7 @@ import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaTorsionTorsionF
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_addParticle;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_create;
+import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setAlchemicalMethod;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setCutoffDistance;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setNonbondedMethod;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setParticleExclusions;
@@ -184,8 +186,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.switching.LinearDerivativeSwitch;
-import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
@@ -228,12 +228,9 @@ import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.HHG;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.CUBIC_MEAN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
-import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.BUFFERED_14_7;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
 
 /**
@@ -1386,20 +1383,23 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             Pointer version = OpenMM_Platform_getOpenMMVersion();
             logger.log(Level.INFO, " Version: {0}", version.getString(0));
 
+            // Print out the OpenMM lib directory.
+            logger.log(Level.FINE, " Lib Directory:       {0}", OpenMMUtils.getLibDirectory());
+            // Load platforms and print out their names.
+            PointerByReference libs = OpenMM_Platform_loadPluginsFromDirectory(OpenMMUtils.getLibDirectory());
+            int numLibs = OpenMM_StringArray_getSize(libs);
+            logger.log(Level.FINE, " Number of libraries: {0}", numLibs);
+            for (int i = 0; i < numLibs; i++) {
+                String libString = stringFromArray(libs, i);
+                logger.log(Level.FINE, "  Library: {0}", libString);
+            }
+            OpenMM_StringArray_destroy(libs);
+
             // Print out the OpenMM plugin directory.
-            logger.log(Level.INFO, " Plugin Dir: {0}", OpenMMUtils.OPENMM_PLUGIN_DIR);
-
-            /*
-              Load plugins and print out plugins.
-              Call the method twice to avoid a bug where not all platforms are list
-              after the first call.
-            */
-            PointerByReference plugins = OpenMM_Platform_loadPluginsFromDirectory(OpenMMUtils.OPENMM_PLUGIN_DIR);
-            OpenMM_StringArray_destroy(plugins);
-
-            plugins = OpenMM_Platform_loadPluginsFromDirectory(OpenMMUtils.OPENMM_PLUGIN_DIR);
+            logger.log(Level.INFO, "\n Plugin Directory:  {0}", OpenMMUtils.getPluginDirectory());
+            // Load plugins and print out their names.
+            PointerByReference plugins = OpenMM_Platform_loadPluginsFromDirectory(OpenMMUtils.getPluginDirectory());
             int numPlugins = OpenMM_StringArray_getSize(plugins);
-
             logger.log(Level.INFO, " Number of Plugins: {0}", numPlugins);
             boolean cuda = false;
             for (int i = 0; i < numPlugins; i++) {
@@ -1415,6 +1415,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
             OpenMM_StringArray_destroy(plugins);
 
+            int numPlatforms = OpenMM_Platform_getNumPlatforms();
+            logger.log(Level.INFO, " Number of Platforms: {0}", numPlatforms);
+
             if (requestedPlatform == Platform.OMM_CUDA && !cuda) {
                 logger.info(" The OMM_CUDA platform was requested, but is not available.");
             }
@@ -1429,9 +1432,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
                 OpenMM_StringArray_destroy(pluginFailers);
             }
-
-            int numPlatforms = OpenMM_Platform_getNumPlatforms();
-            logger.log(Level.INFO, " Number of Platforms: {0}", numPlatforms);
 
             String defaultPrecision = "mixed";
             String precision = molecularAssembly.getForceField().getString(ForceField.ForceFieldString.PRECISION, defaultPrecision).toLowerCase();
@@ -1729,47 +1729,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         private double lambdaTorsion = 1.0;
         /**
-         * Value of the AMOEBA van der Waals lambda state variable.
-         * <p>
-         * This controls turning on "regular" AMOEBA vdW interactions after
-         * "softcore" AMOEBA vdW create space.
-         */
-        private double lambdaAmoebaVDW = 1.0;
-        /**
          * The lambda value that defines when the electrostatics will start to turn on for full path non-bonded term scaling.
          * <p>
          * A value of 0.4 is quite conservative (i.e. the vdW repulsion is strong enough by L=0.4 to promote a smooth dU/dL).
          */
         private double electrostaticStart = 0.5;
-        /**
-         * The lambda value that defines when non-softcored AMOEBA vdW will begin turning on
-         * for alchemical atoms.
-         * <p>
-         * If this value is set to 1.0, non-softcored AMOEBA vdW will not be turned on.
-         * <p>
-         * Testing shows this value needs to be at least L=~0.3 to prevent large dU/dL values (i.e. due to
-         * the softcore vdW not being sufficiently grown in yet).
-         */
-        private double nonSoftcoreAMOEBAvdWStart = 0.5;
-        /**
-         * The lambda value that defines when softcore AMOEBA vdW will finish on and begin turning off for alchemical atoms.
-         * These must be turned off because they do not include hydrogen reduction factors.
-         * <p>
-         * If this value is set to 1.0, softcored AMOEBA vdw will not be turned off.
-         */
-        private double softcoreAMOEBAvdWMidPoint = 0.5;
-        /**
-         * The maximum lambda value passed to the approximate softcore AMOEBA term.
-         * <p>
-         * The softcore vdW is of the form E = L^Beta * vdW(L).
-         * <p>
-         * For Beta = 3, softcoreAMOEBAvdWMax needs to be at least 0.7.
-         */
-        private double softcoreAMOEBAvdWMax = 0.7;
-        /**
-         * The switching function used to turn on/off the softcore AMOEBA vdW.
-         */
-        private UnivariateSwitchingFunction softcoreAMOEBASwitch = null;
 
         OpenMMSystem(MolecularAssembly molecularAssembly) {
             // Create the OpenMM System
@@ -1808,6 +1772,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             } else {
                 addBondForce();
             }
+
+            // Read alchemical information -- this needs to be done before creating forces.
+            elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, false);
+            vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
+            torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
+
+            lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
 
             // Add Angle Force.
             addAngleForce();
@@ -1860,13 +1831,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             }
 
-            // Read alchemical information
-            elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, false);
-            vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
-            torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
-
-            lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
-
             if (lambdaTerm) {
                 logger.info(format("\n Lambda scales torsions:          %s", torsionLambdaTerm));
                 logger.info(format(" Lambda scales vdW interactions:  %s", vdwLambdaTerm));
@@ -1880,39 +1844,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     lambdaStart = 0.0;
                 }
                 logger.info(format(" Lambda path start:              %6.3f", lambdaStart));
-
-                // Define AMOEBA specific vdW lambda path details.
-                if (vdwLambdaTerm && amoebaVDWForce != null) {
-                    softcoreAMOEBAvdWMidPoint = forceField.getDouble(
-                            ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MIDPOINT, softcoreAMOEBAvdWMidPoint);
-                    if (softcoreAMOEBAvdWMidPoint > 1.0) {
-                        softcoreAMOEBAvdWMidPoint = 1.0;
-                    } else if (softcoreAMOEBAvdWMidPoint < 0.0) {
-                        softcoreAMOEBAvdWMidPoint = 0.0;
-                    }
-
-                    nonSoftcoreAMOEBAvdWStart = forceField.getDouble(
-                            ForceFieldDouble.NON_SOFTCORE_AMOEBA_VDW_START, nonSoftcoreAMOEBAvdWStart);
-                    if (nonSoftcoreAMOEBAvdWStart > 1.0) {
-                        nonSoftcoreAMOEBAvdWStart = 1.0;
-                    } else if (nonSoftcoreAMOEBAvdWStart < 0.0) {
-                        nonSoftcoreAMOEBAvdWStart = 0.0;
-                    }
-
-                    softcoreAMOEBASwitch = new LinearDerivativeSwitch();
-
-                    softcoreAMOEBAvdWMax = forceField.getDouble(
-                            ForceFieldDouble.SOFTCORE_AMOEBA_VDW_MAX, softcoreAMOEBAvdWMax);
-                    if (softcoreAMOEBAvdWMax > 1.0) {
-                        softcoreAMOEBAvdWMax = 1.0;
-                    } else if (softcoreAMOEBAvdWMax < 0.1) {
-                        softcoreAMOEBAvdWMax = 0.1;
-                    }
-
-                    logger.info(format(" Softcore AMOEBA vdW midpoint:   %6.3f", softcoreAMOEBAvdWMidPoint));
-                    logger.info(format(" Softcore AMOEBA vdW max lambda: %6.3f", softcoreAMOEBAvdWMax));
-                    logger.info(format(" Non-Softcore AMOEBA vdW start:  %6.3f", nonSoftcoreAMOEBAvdWStart));
-                }
 
                 // Define electrostatics to turn on at a value different from 0.5.
                 if (vdwLambdaTerm && elecLambdaTerm) {
@@ -1940,9 +1871,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // Applied to softcore vdW forces.
             lambdaVDW = 1.0;
 
-            // Applied to normal AMOEBA eps values for alchemical atoms.
-            lambdaAmoebaVDW = 1.0;
-
             // Applied to normal electrostatic parameters for alchemical atoms.
             lambdaElec = 1.0;
 
@@ -1962,20 +1890,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     lambdaElec = (lambda - electrostaticStart) / elecWindow;
                 }
                 lambdaVDW = lambda;
-                setAMOEBAVDW(lambda);
             } else if (vdwLambdaTerm) {
                 // Lambda effects vdW, with electrostatics turned off.
                 lambdaElec = 0.0;
                 lambdaVDW = lambda;
-                setAMOEBAVDW(lambda);
             } else if (elecLambdaTerm) {
                 // Lambda effects electrostatics, but not vdW.
                 lambdaElec = lambda;
             }
-
-            // Raise the electrostatics lambda to the 3/2 power; the dependence for two particles
-            // interacting is then L^3, dU/dL = 3*L^2, and d2U/dL2 = 6*L
-            // lambdaElec = pow(lambdaElec, 1.5);
         }
 
         public void destroy() {
@@ -2051,19 +1973,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * @param atoms Atoms in this list are considered.
          */
         void updateParameters(Atom[] atoms) {
-            if (vdwLambdaTerm && (amoebaVDWForce != null || fixedChargeNonBondedForce != null)) {
-                if (!softcoreCreated) {
-                    if (amoebaVDWForce != null) {
-                        addAmoebaVDWSoftcoreForce();
-                    } else {
+            if (vdwLambdaTerm) {
+                if (fixedChargeNonBondedForce != null) {
+                    if (!softcoreCreated) {
                         addCustomNonbondedSoftcoreForce();
+                        // Re-initialize the context.
+                        openMMContext.reinitContext();
+                        softcoreCreated = true;
                     }
-
-                    // Re-initialize the context.
-                    openMMContext.reinitContext();
-                    softcoreCreated = true;
+                    openMMContext.setParameter("vdw_lambda", lambdaVDW);
+                } else if (amoebaVDWForce != null) {
+                    openMMContext.setParameter("AmoebaVdwLambda", lambdaVDW);
                 }
-                openMMContext.setParameter("vdw_lambda", lambdaVDW);
             }
 
             if (torsionLambdaTerm) {
@@ -3212,10 +3133,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
                 VDWType vdwType = atom.getVDWType();
+                int isAlchemical = atom.applyLambda() ? 1 : 0;
                 OpenMM_AmoebaVdwForce_addParticle(amoebaVDWForce,
                         ired[i], OpenMM_NmPerAngstrom * vdwType.radius * radScale,
                         OpenMM_KJPerKcal * vdwType.wellDepth,
-                        vdwType.reductionFactor);
+                        vdwType.reductionFactor, isAlchemical);
             }
 
             OpenMM_AmoebaVdwForce_setCutoffDistance(amoebaVDWForce, nonbondedCutoff.off * OpenMM_NmPerAngstrom);
@@ -3233,6 +3155,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_CutoffPeriodic);
             }
 
+            if (vdwLambdaTerm) {
+                OpenMM_AmoebaVdwForce_setAlchemicalMethod(amoebaVDWForce,
+                        AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Decouple);
+            }
 
             // Create exclusion lists.
             PointerByReference exclusions = OpenMM_IntArray_create(0);
@@ -3259,220 +3185,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_System_addForce(system, amoebaVDWForce);
 
             logger.log(Level.INFO, format("  AMOEBA van der Waals force \t\t%d", forceGroup));
-        }
-
-        /**
-         * Add an approximate AMOEBA softcore van der Waals force to the OpenMM System.
-         */
-        private void addAmoebaVDWSoftcoreForce() {
-            VanDerWaals vdW = getVdwNode();
-            if (vdW == null) {
-                return;
-            }
-
-            // Buffered 14-7 with Cubic Mean and HHG rule for epsilon is supported.
-            VanDerWaalsForm vdwForm = vdW.getVDWForm();
-            if (vdwForm.vdwType != BUFFERED_14_7
-                    || vdwForm.radiusRule != CUBIC_MEAN
-                    || vdwForm.epsilonRule != HHG) {
-                logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
-                logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
-                logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
-                logger.log(Level.SEVERE, " Unsupported van der Waals functional form.");
-                return;
-            }
-
-            double radScale = 1.0;
-            if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
-                radScale = 0.5;
-            }
-
-            // Sterics mixing rules.
-            // Eps rule: HHG
-            String stericsMixingRules = " epsilon = 4.0 * (epsilon1 * epsilon2) / ((sqrt(epsilon1) + sqrt(epsilon2)) * (sqrt(epsilon1) + sqrt(epsilon2)));";
-
-            // Radius rule: cubic mean
-            stericsMixingRules += " rmin = 2.0 * ((rmin1 * rmin1 * rmin1) + (rmin2 * rmin2 * rmin2)) / ((rmin1 * rmin1) + (rmin2 * rmin2));";
-
-            // Softcore Lennard-Jones, with a form equivalent to that used in FFX VanDerWaals class.
-            String stericsEnergyExpression = " (vdw_lambda^beta)*epsilon*t1*t2;";
-            // Effective softcore distance for sterics.
-            stericsEnergyExpression += " t1 = 1.07^7/(alpha * (1.0 - vdw_lambda)^2.0 + (rho + 0.07)^7);";
-            stericsEnergyExpression += " t2 = 1.12/  (alpha * (1.0 - vdw_lambda)^2.0 + (rho^7) + 0.12) - 2.0;";
-            stericsEnergyExpression += " rho = r/rmin;";
-            // Define energy expression for sterics.
-            String energyExpression = stericsEnergyExpression + stericsMixingRules;
-
-            PointerByReference amoebaSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
-
-            // Get the Alpha and Beta constants from the VanDerWaals instance.
-            double alpha = vdW.getAlpha();
-            double beta = vdW.getBeta();
-
-            OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "vdw_lambda", 1.0);
-            OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "alpha", alpha);
-            OpenMM_CustomNonbondedForce_addGlobalParameter(amoebaSoftcore, "beta", beta);
-            OpenMM_CustomNonbondedForce_addPerParticleParameter(amoebaSoftcore, "rmin");
-            OpenMM_CustomNonbondedForce_addPerParticleParameter(amoebaSoftcore, "epsilon");
-
-            // Add particles.
-            PointerByReference alchemicalGroup = OpenMM_IntSet_create();
-            PointerByReference nonAlchemicalGroup = OpenMM_IntSet_create();
-
-            int nAtoms = atoms.length;
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                VDWType vdwType = atom.getVDWType();
-
-                if (atom.applyLambda()) {
-                    OpenMM_IntSet_insert(alchemicalGroup, i);
-                } else {
-                    OpenMM_IntSet_insert(nonAlchemicalGroup, i);
-                }
-
-                double rminValue = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-                double epsValue = OpenMM_KJPerKcal * vdwType.wellDepth;
-
-                PointerByReference particleParameters = OpenMM_DoubleArray_create(0);
-                OpenMM_DoubleArray_append(particleParameters, rminValue);
-                OpenMM_DoubleArray_append(particleParameters, epsValue);
-                OpenMM_CustomNonbondedForce_addParticle(amoebaSoftcore, particleParameters);
-                OpenMM_DoubleArray_destroy(particleParameters);
-            }
-
-            OpenMM_CustomNonbondedForce_addInteractionGroup(amoebaSoftcore, alchemicalGroup, alchemicalGroup);
-            OpenMM_CustomNonbondedForce_addInteractionGroup(amoebaSoftcore, alchemicalGroup, nonAlchemicalGroup);
-            OpenMM_IntSet_destroy(alchemicalGroup);
-            OpenMM_IntSet_destroy(nonAlchemicalGroup);
-
-            Crystal crystal = getCrystal();
-            if (crystal.aperiodic()) {
-                OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaSoftcore,
-                        OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_NoCutoff);
-            } else {
-                OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaSoftcore,
-                        OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_CutoffPeriodic);
-            }
-
-            NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
-            double off = nonbondedCutoff.off;
-            double cut = nonbondedCutoff.cut;
-            if (cut == off) {
-                logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
-                if (cut == Double.MAX_VALUE || cut == Double.POSITIVE_INFINITY) {
-                    logger.info(" Detected infinite or max-value cutoff; setting cut to 1E+40 for OpenMM.");
-                    cut = 1E40;
-                } else {
-                    logger.info(String.format(" Detected cut %8.4g == off %8.4g; scaling cut to 0.99 of off for OpenMM.", cut, off));
-                    cut *= 0.99;
-                }
-            }
-
-            OpenMM_CustomNonbondedForce_setCutoffDistance(amoebaSoftcore, OpenMM_NmPerAngstrom * off);
-            OpenMM_CustomNonbondedForce_setUseSwitchingFunction(amoebaSoftcore, OpenMM_True);
-            OpenMM_CustomNonbondedForce_setSwitchingDistance(amoebaSoftcore, OpenMM_NmPerAngstrom * cut);
-
-            // Add energy parameter derivative
-            // OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(amoebaSoftcore, "vdw_lambda");
-
-            // Alchemical with Alchemical could be either softcore or normal interactions (softcore here).
-            PointerByReference amoebaAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
-
-            // Non-Alchemical with Alchemical is essentially always softcore.
-            PointerByReference amoebaNonAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
-
-            // Currently both are treated the same (so we could condense the code below).
-            OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
-            OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "alpha", alpha);
-            OpenMM_CustomBondForce_addGlobalParameter(amoebaAlchemicalAlchemicalStericsForce, "beta", beta);
-            OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "rmin");
-            OpenMM_CustomBondForce_addPerBondParameter(amoebaAlchemicalAlchemicalStericsForce, "epsilon");
-
-            OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
-            OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "alpha", alpha);
-            OpenMM_CustomBondForce_addGlobalParameter(amoebaNonAlchemicalAlchemicalStericsForce, "beta", beta);
-            OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "rmin");
-            OpenMM_CustomBondForce_addPerBondParameter(amoebaNonAlchemicalAlchemicalStericsForce, "epsilon");
-
-            double[] mask = new double[nAtoms];
-            boolean[] vdw14 = new boolean[nAtoms];
-            fill(mask, 1.0);
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom1 = atoms[i];
-                VDWType vdwType1 = atom1.getVDWType();
-                vdW.applyMask(mask, vdw14, i);
-                for (int j = i + 1; j < nAtoms; j++) {
-                    if (mask[j] == 0.0) {
-                        Atom atom2 = atoms[j];
-                        VDWType vdwType2 = atom2.getVDWType();
-
-                        boolean bothAlchemical = false;
-                        boolean oneAlchemical = false;
-
-                        if (atom1.applyLambda() && atom2.applyLambda()) {
-                            bothAlchemical = true;
-                        } else if ((atom1.applyLambda() && !atom2.applyLambda()) || (!atom1.applyLambda() && atom2.applyLambda())) {
-                            oneAlchemical = true;
-                        } else {
-                            continue;
-                        }
-
-                        double ri = vdwType1.radius;
-                        double rj = vdwType2.radius;
-                        double ri2 = ri * ri;
-                        double rj2 = rj * rj;
-                        double ri3 = ri2 * ri;
-                        double rj3 = rj2 * rj;
-                        double rmin = 2.0 * (ri3 + rj3) / (ri2 + rj2);
-
-                        double e1 = vdwType1.wellDepth;
-                        double e2 = vdwType2.wellDepth;
-                        double se1 = sqrt(e1);
-                        double se2 = sqrt(e2);
-                        double epsilon = -4.0 * (e1 * e2) / ((se1 + se2) * (se1 + se2));
-
-                        PointerByReference bondParameters = OpenMM_DoubleArray_create(0);
-                        OpenMM_DoubleArray_append(bondParameters, OpenMM_NmPerAngstrom * rmin * radScale);
-                        OpenMM_DoubleArray_append(bondParameters, OpenMM_KJPerKcal * epsilon);
-                        if (bothAlchemical) {
-                            OpenMM_CustomBondForce_addBond(amoebaAlchemicalAlchemicalStericsForce, i, j, bondParameters);
-                        } else if (oneAlchemical) {
-                            OpenMM_CustomBondForce_addBond(amoebaNonAlchemicalAlchemicalStericsForce, i, j, bondParameters);
-                        }
-                        OpenMM_DoubleArray_destroy(bondParameters);
-                    }
-                }
-                vdW.removeMask(mask, vdw14, i);
-            }
-
-        /*
-        if (crystal.aperiodic()) {
-            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaAlchemicalAlchemicalStericsForce,
-                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_NoCutoff);
-            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaNonAlchemicalAlchemicalStericsForce,
-                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_NoCutoff);
-        } else {
-            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaAlchemicalAlchemicalStericsForce,
-                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_CutoffPeriodic);
-            OpenMM_CustomNonbondedForce_setNonbondedMethod(amoebaNonAlchemicalAlchemicalStericsForce,
-                    OpenMM_CustomNonbondedForce_NonbondedMethod.OpenMM_CustomNonbondedForce_CutoffPeriodic);
-        }*/
-
-            ForceField.ForceFieldInteger vdwForceGroup = ForceField.ForceFieldInteger.VDW_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(vdwForceGroup, vdwForceGroup.getDefaultValue());
-            OpenMM_Force_setForceGroup(amoebaSoftcore, forceGroup);
-            OpenMM_Force_setForceGroup(amoebaAlchemicalAlchemicalStericsForce, forceGroup);
-            OpenMM_Force_setForceGroup(amoebaNonAlchemicalAlchemicalStericsForce, forceGroup);
-
-            //OpenMM_CustomBondForce_addEnergyParameterDerivative(amoebaAlchemicalAlchemicalStericsForce, "vdw_lambda");
-            //OpenMM_CustomBondForce_addEnergyParameterDerivative(amoebaNonAlchemicalAlchemicalStericsForce, "vdw_lambda");
-
-            OpenMM_System_addForce(system, amoebaSoftcore);
-            OpenMM_System_addForce(system, amoebaAlchemicalAlchemicalStericsForce);
-            OpenMM_System_addForce(system, amoebaNonAlchemicalAlchemicalStericsForce);
-
-            logger.log(Level.INFO, format("  AMOEBA softcore van der Waals force \t%d", forceGroup));
-            logger.log(Level.INFO, format("   Alpha = %8.6f and beta = %8.6f", alpha, beta));
         }
 
         /**
@@ -3987,13 +3699,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     useFactor = 0.0;
                 }
 
-                if (vdwLambdaTerm && atom.applyLambda()) {
-                    useFactor *= lambdaAmoebaVDW;
-                }
-
+                int isAlchemical = atom.applyLambda() ? 1 : 0;
                 double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
                 OpenMM_AmoebaVdwForce_setParticleParameters(amoebaVDWForce, index, ired[index],
-                        OpenMM_NmPerAngstrom * vdwType.radius * radScale, eps, vdwType.reductionFactor);
+                        OpenMM_NmPerAngstrom * vdwType.radius * radScale, eps,
+                        vdwType.reductionFactor, isAlchemical);
             }
 
             if (openMMContext.context != null) {
@@ -4612,46 +4322,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 crystal.setCellVectors(latticeVectors);
                 ForceFieldEnergyOpenMM.super.setCrystal(crystal);
             }
-        }
-
-        /**
-         * Configure the lambdaVDW and lambdaAmoebaVDW variables.
-         *
-         * @param lambda Current lambda value.
-         */
-        private void setAMOEBAVDW(double lambda) {
-            if (openMMSystem.amoebaVDWForce == null) {
-                return;
-            }
-
-            // Define the magnitude of the turn on/off range.
-            double turnOnRange = softcoreAMOEBAvdWMidPoint;
-            double turnOffRange = 1.0 - softcoreAMOEBAvdWMidPoint;
-
-            // Map lambdaVDW to a value between 0..1 over the on/off range.
-            if (lambda < softcoreAMOEBAvdWMidPoint) {
-                // Turn on softcore that lack reduction factors.
-                lambdaVDW = lambda / turnOnRange;
-            } else {
-                // Turn off softcore that lack reduction factors.
-                if (turnOffRange <= 0.0) {
-                    lambdaVDW = 0.0;
-                } else {
-                    lambdaVDW = (1.0 - lambda) / turnOffRange;
-                }
-            }
-
-            // Apply a switched dependence to lambda so that the vdW dU/dL derivative is 0 at the midpoint.
-            lambdaVDW = softcoreAMOEBASwitch.valueAt(lambdaVDW);
-
-            // Scale the lambda vdW so that it doesn't reach full strength.
-            lambdaVDW = lambdaVDW * softcoreAMOEBAvdWMax;
-
-            lambdaAmoebaVDW = 0.0;
-            if (lambda > nonSoftcoreAMOEBAvdWStart) {
-                lambdaAmoebaVDW = (lambda - nonSoftcoreAMOEBAvdWStart) / (1.0 - nonSoftcoreAMOEBAvdWStart);
-            }
-            lambdaAmoebaVDW = lambdaAmoebaVDW * lambdaAmoebaVDW;
         }
     }
 

@@ -103,7 +103,6 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         // Energy of multipole k in the field of induced dipole i.
         double energy = scaleEnergy * dotMultipoleK();
 
-
         // Get the induced-induced portion of the force.
         Fi[0] = -0.5 * scaleMutual * (pxk * E200 + pyk * E110 + pzk * E101);
         Fi[1] = -0.5 * scaleMutual * (pxk * E110 + pyk * E020 + pzk * E011);
@@ -1801,18 +1800,6 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         term011 += syk * R021;
         term011 += szk * R012;
         E011 = term011;
-    }
-
-    /**
-     * <p>inducedIFieldForTorque.</p>
-     */
-    protected void inducedIFieldForTorque() {
-    }
-
-    /**
-     * <p>inducedKFieldForTorque.</p>
-     */
-    protected void inducedKFieldForTorque() {
     }
 
     /**

@@ -1118,7 +1118,7 @@
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
         <jcuda.version>0.8.0</jcuda.version>
         <junit.version>4.12</junit.version>
-        <jopenmm.version>7.3.1</jopenmm.version>
+        <jopenmm.version>7.4.0</jopenmm.version>
         <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
         <biojava.version>5.2.1</biojava.version>

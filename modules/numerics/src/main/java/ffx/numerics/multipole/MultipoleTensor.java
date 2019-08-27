@@ -453,47 +453,6 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * Prepare tensor with the given parameters. This method represents no
-     * particular tensor (damping and lambdaFunction are never applied
-     * simultaneously); it serves instead to consolidate code paths and to
-     * *UN-SET* parameters from previous uses.
-     * <p>
-     * Irrelevant parameters may be omitted via overloads: lambdaFunction
-     * necessary only for softcored interactions, dipoles only for polarization,
-     * and damping parameters only for Thole tensors.
-     *
-     * @param r              interatomic distance
-     * @param lambdaFunction addl. atomic distance to account for softcoring
-     * @param Qi             multipole of first atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
-     * @param Qk             multipole of second atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
-     * @param damp           aka pgamma, damping coefficient
-     * @param aiak           1/(alphai*alphak)^6
-     * @param operator       a {@link MultipoleTensor.OPERATOR} object.
-     * @param ui             an array of {@link double} objects.
-     * @param uiCR           an array of {@link double} objects.
-     * @param uk             an array of {@link double} objects.
-     * @param ukCR           an array of {@link double} objects.
-     */
-    public final void generateTensor(OPERATOR operator, double[] r, double lambdaFunction, double[] Qi, double[] Qk,
-                                     double[] ui, double[] uiCR, double[] uk, double[] ukCR, double damp, double aiak) {
-        boolean operatorChange = this.operator != operator;
-        if (operatorChange) {
-            setOperator(operator);
-        }
-        if (operator == OPERATOR.THOLE_FIELD) {
-            setTholeDamping(damp, aiak);
-        }
-        boolean distanceChanged = setR(r, lambdaFunction);
-        setMultipoles(Qi, Qk);
-        setDipoles(ui, uiCR, uk, ukCR);
-        if (!recycleTensors || distanceChanged) {
-            generateTensor();
-        } else {
-            tensorsRecycled++;
-        }
-    }
-
-    /**
      * For the MultipoleTensorTest class and testing.
      *
      * @param r              an array of {@link double} objects.
@@ -514,7 +473,7 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * For the MultipoleTensorTest class and testing.
+     * Generate the tensor for the interaction between Qi and Qk.
      *
      * @param r    an array of {@link double} objects.
      * @param Qi   an array of {@link double} objects.
@@ -534,39 +493,6 @@ public abstract class MultipoleTensor {
             generateTensor();
         }
     }
-
-    /**
-     * <p>multipoleEnergy.</p>
-     *
-     * @param Fi an array of {@link double} objects.
-     * @param Ti an array of {@link double} objects.
-     * @param Tk an array of {@link double} objects.
-     * @return a double.
-     */
-    public abstract double multipoleEnergy(double[] Fi, double[] Ti, double[] Tk);
-
-    /**
-     * <p>polarizationEnergy.</p>
-     *
-     * @param scaleField  a double.
-     * @param scaleEnergy a double.
-     * @param scaleMutual a double.
-     * @param Fi          an array of {@link double} objects.
-     * @param Ti          an array of {@link double} objects.
-     * @param Tk          an array of {@link double} objects.
-     * @return a double.
-     */
-    public abstract double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
-                                              double[] Fi, double[] Ti, double[] Tk);
-
-    /**
-     * Is a no-op when not using QI.
-     *
-     * @param Fi an array of {@link double} objects.
-     * @param Ti an array of {@link double} objects.
-     * @param Tk an array of {@link double} objects.
-     */
-    protected abstract void qiToGlobal(double[] Fi, double[] Ti, double[] Tk);
 
     /**
      * <p>getRecycledCount.</p>
@@ -893,43 +819,6 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * This method is a driver to collect elements of the Cartesian multipole
-     * tensor given the recursion relationships implemented by the method
-     * "Tlmnj", which can be called directly to get a single tensor element. It
-     * does not store intermediate values of the recursion, causing it to scale
-     * O(order^8). For order = 5, this approach is a factor of 10 slower than
-     * recursion.
-     *
-     * @param r      double[] vector between two sites.
-     * @param tensor double[] length must be at least binomial(order + 3, 3).
-     */
-    protected abstract void noStorageRecursion(double[] r, double[] tensor);
-
-    /**
-     * This routine implements the recurrence relations for computation of any
-     * Cartesian multipole tensor in ~O(L^8) time, where L is the total order l
-     * + m + n, given the auxiliary elements T0000.
-     * <br>
-     * It implements the recursion relationships in brute force fashion, without
-     * saving intermediate values. This is useful for finding a single tensor,
-     * rather than all binomial(L + 3, 3).
-     * <br>
-     * The specific recursion equations (41-43) and set of auxiliary tensor
-     * elements from equation (40) can be found in Challacombe et al.
-     *
-     * @param l    int The number of (d/dx) operations.
-     * @param m    int The number of (d/dy) operations.
-     * @param n    int The number of (d/dz) operations.
-     * @param j    int j = 0 is the Tlmn tensor, j .GT. 0 is an intermediate.
-     * @param r    double[] The {x,y,z} coordinates.
-     * @param T000 double[] Initial auxiliary tensor elements from Eq. (40).
-     * @return double The requested Tensor element (intermediate if j .GT. 0).
-     * @since 1.0
-     */
-    protected abstract double Tlmnj(final int l, final int m, final int n,
-                                    final int j, final double[] r, final double[] T000);
-
-    /**
      * <p>unrolled.</p>
      *
      * @param r      an array of {@link double} objects.
@@ -950,14 +839,6 @@ public abstract class MultipoleTensor {
                 throw new IllegalArgumentException();
         }
     }
-
-    /**
-     * <p>recursion.</p>
-     *
-     * @param r      an array of {@link double} objects.
-     * @param tensor an array of {@link double} objects.
-     */
-    protected abstract void recursion(final double[] r, final double[] tensor);
 
     /**
      * This function is a driver to collect elements of the Cartesian multipole
@@ -1380,27 +1261,6 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * Hard coded computation of all Cartesian multipole tensors up to 4th
-     * order, in the global frame, which is sufficient for quadrupole-induced
-     * dipole forces.
-     */
-    protected abstract void order4();
-
-    /**
-     * Hard coded computation of all Cartesian multipole tensors up to 5th
-     * order, in the global frame, which is sufficient for quadrupole-quadrupole
-     * forces.
-     */
-    protected abstract void order5();
-
-    /**
-     * Hard coded computation of all Cartesian multipole tensors up to 5th
-     * order, in the global frame, which is sufficient for quadrupole-quadrupole
-     * forces and orthogonal space sampling.
-     */
-    protected abstract void order6();
-
-    /**
      * Just the energy portion of multipoleEnergyQI().
      *
      * @return a double.
@@ -1419,20 +1279,6 @@ public abstract class MultipoleTensor {
         multipoleKField();
         return dotMultipoleI();
     }
-
-    /**
-     * <p>getdEdZ.</p>
-     *
-     * @return a double.
-     */
-    public abstract double getdEdZ();
-
-    /**
-     * <p>getd2EdZ2.</p>
-     *
-     * @return a double.
-     */
-    public abstract double getd2EdZ2();
 
     /**
      * inducedIField_qi + inducedIFieldCR_qi -&gt; dotMultipoleK
@@ -1471,118 +1317,6 @@ public abstract class MultipoleTensor {
                 + qxzi * (uxk * scaleDipole + pxk * scaleDipoleCR) * R201
                 + qyzi * (uyk * scaleDipole + pyk * scaleDipoleCR) * R021;
     }
-
-    /**
-     * <p>uiDotvk.</p>
-     *
-     * @return a double.
-     */
-    public final double uiDotvk() {
-        return uxi * -pxk * R200
-                + uyi * -pyk * R020
-                + uzi * -pzk * R002;
-    }
-
-    /**
-     * <p>ukDotvi.</p>
-     *
-     * @return a double.
-     */
-    public final double ukDotvi() {
-        return uxk * -pxi * R200
-                + uyk * -pyi * R020
-                + uzk * -pzi * R002;
-    }
-
-    /**
-     * <p>multipoleIField.</p>
-     */
-    protected abstract void multipoleIField();
-
-    /**
-     * <p>multipoleKField.</p>
-     */
-    protected abstract void multipoleKField();
-
-    /**
-     * <p>multipoleIdX.</p>
-     */
-    protected abstract void multipoleIdX();
-
-    /**
-     * <p>multipoleIdY.</p>
-     */
-    protected abstract void multipoleIdY();
-
-    /**
-     * <p>multipoleIdZ.</p>
-     */
-    protected abstract void multipoleIdZ();
-
-    /**
-     * Never used by Global coordinates; necessary only for lambda derivatives.
-     */
-    protected abstract void multipoleIdZ2();
-
-    /**
-     * <p>inducedIField.</p>
-     */
-    protected abstract void inducedIField();
-
-    /**
-     * <p>inducedKField.</p>
-     */
-    protected abstract void inducedKField();
-
-    /**
-     * <p>inducedIFieldCR.</p>
-     */
-    protected abstract void inducedIFieldCR();
-
-    /**
-     * <p>inducedKFieldCR.</p>
-     */
-    protected abstract void inducedKFieldCR();
-
-    /**
-     * <p>inducedIFieldForTorque.</p>
-     */
-    protected abstract void inducedIFieldForTorque();
-
-    /**
-     * <p>inducedKFieldForTorque.</p>
-     */
-    protected abstract void inducedKFieldForTorque();
-
-    /**
-     * <p>inducedIdX.</p>
-     */
-    protected abstract void inducedIdX();
-
-    /**
-     * <p>inducedIdY.</p>
-     */
-    protected abstract void inducedIdY();
-
-    /**
-     * <p>inducedIdZ.</p>
-     */
-    protected abstract void inducedIdZ();
-
-    /**
-     * <p>inducedKdX.</p>
-     */
-    protected abstract void inducedKdX();
-
-    /**
-     * <p>inducedKdY.</p>
-     */
-    protected abstract void inducedKdY();
-
-    /**
-     * <p>inducedKdZ.</p>
-     */
-    protected abstract void inducedKdZ();
 
     /**
      * <p>multipoleITorque.</p>
@@ -1812,7 +1546,7 @@ public abstract class MultipoleTensor {
      *
      * @param T an array of {@link double} objects.
      */
-    protected final void setTensor(double[] T) {
+    final void setTensor(double[] T) {
         if (T == null || order < 0) {
             return;
         }
@@ -1920,6 +1654,39 @@ public abstract class MultipoleTensor {
     }
 
     /**
+     * <p>multipoleEnergy.</p>
+     *
+     * @param Fi an array of {@link double} objects.
+     * @param Ti an array of {@link double} objects.
+     * @param Tk an array of {@link double} objects.
+     * @return a double.
+     */
+    public abstract double multipoleEnergy(double[] Fi, double[] Ti, double[] Tk);
+
+    /**
+     * <p>polarizationEnergy.</p>
+     *
+     * @param scaleField  a double.
+     * @param scaleEnergy a double.
+     * @param scaleMutual a double.
+     * @param Fi          an array of {@link double} objects.
+     * @param Ti          an array of {@link double} objects.
+     * @param Tk          an array of {@link double} objects.
+     * @return a double.
+     */
+    public abstract double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
+                                              double[] Fi, double[] Ti, double[] Tk);
+
+    /**
+     * Is a no-op when not using QI.
+     *
+     * @param Fi an array of {@link double} objects.
+     * @param Ti an array of {@link double} objects.
+     * @param Tk an array of {@link double} objects.
+     */
+    protected abstract void qiToGlobal(double[] Fi, double[] Ti, double[] Tk);
+
+    /**
      * <p>scaleInduced.</p>
      *
      * @param scaleField  a double.
@@ -1945,6 +1712,51 @@ public abstract class MultipoleTensor {
         syk = 0.5 * (uyk + pyk);
         szk = 0.5 * (uzk + pzk);
     }
+
+    /**
+     * This method is a driver to collect elements of the Cartesian multipole
+     * tensor given the recursion relationships implemented by the method
+     * "Tlmnj", which can be called directly to get a single tensor element. It
+     * does not store intermediate values of the recursion, causing it to scale
+     * O(order^8). For order = 5, this approach is a factor of 10 slower than
+     * recursion.
+     *
+     * @param r      double[] vector between two sites.
+     * @param tensor double[] length must be at least binomial(order + 3, 3).
+     */
+    protected abstract void noStorageRecursion(double[] r, double[] tensor);
+
+    /**
+     * This routine implements the recurrence relations for computation of any
+     * Cartesian multipole tensor in ~O(L^8) time, where L is the total order l
+     * + m + n, given the auxiliary elements T0000.
+     * <br>
+     * It implements the recursion relationships in brute force fashion, without
+     * saving intermediate values. This is useful for finding a single tensor,
+     * rather than all binomial(L + 3, 3).
+     * <br>
+     * The specific recursion equations (41-43) and set of auxiliary tensor
+     * elements from equation (40) can be found in Challacombe et al.
+     *
+     * @param l    int The number of (d/dx) operations.
+     * @param m    int The number of (d/dy) operations.
+     * @param n    int The number of (d/dz) operations.
+     * @param j    int j = 0 is the Tlmn tensor, j .GT. 0 is an intermediate.
+     * @param r    double[] The {x,y,z} coordinates.
+     * @param T000 double[] Initial auxiliary tensor elements from Eq. (40).
+     * @return double The requested Tensor element (intermediate if j .GT. 0).
+     * @since 1.0
+     */
+    protected abstract double Tlmnj(final int l, final int m, final int n,
+                                    final int j, final double[] r, final double[] T000);
+
+    /**
+     * <p>recursion.</p>
+     *
+     * @param r      an array of {@link double} objects.
+     * @param tensor an array of {@link double} objects.
+     */
+    protected abstract void recursion(final double[] r, final double[] tensor);
 
     /**
      * <p>setMultipoleI.</p>
@@ -1975,6 +1787,121 @@ public abstract class MultipoleTensor {
      * @param ukCR an array of {@link double} objects.
      */
     protected abstract void setDipoleK(double[] uk, double[] ukCR);
+
+    /**
+     * Hard coded computation of all Cartesian multipole tensors up to 4th
+     * order, in the global frame, which is sufficient for quadrupole-induced
+     * dipole forces.
+     */
+    protected abstract void order4();
+
+    /**
+     * Hard coded computation of all Cartesian multipole tensors up to 5th
+     * order, in the global frame, which is sufficient for quadrupole-quadrupole
+     * forces.
+     */
+    protected abstract void order5();
+
+    /**
+     * Hard coded computation of all Cartesian multipole tensors up to 5th
+     * order, in the global frame, which is sufficient for quadrupole-quadrupole
+     * forces and orthogonal space sampling.
+     */
+    protected abstract void order6();
+
+    /**
+     * <p>multipoleIField.</p>
+     */
+    protected abstract void multipoleIField();
+
+    /**
+     * <p>multipoleKField.</p>
+     */
+    protected abstract void multipoleKField();
+
+    /**
+     * <p>multipoleIdX.</p>
+     */
+    protected abstract void multipoleIdX();
+
+    /**
+     * <p>multipoleIdY.</p>
+     */
+    protected abstract void multipoleIdY();
+
+    /**
+     * <p>multipoleIdZ.</p>
+     */
+    protected abstract void multipoleIdZ();
+
+    /**
+     * Never used by Global coordinates; necessary only for lambda derivatives.
+     */
+    protected abstract void multipoleIdZ2();
+
+    /**
+     * <p>inducedIField.</p>
+     */
+    protected abstract void inducedIField();
+
+    /**
+     * <p>inducedKField.</p>
+     */
+    protected abstract void inducedKField();
+
+    /**
+     * <p>inducedIFieldCR.</p>
+     */
+    protected abstract void inducedIFieldCR();
+
+    /**
+     * <p>inducedKFieldCR.</p>
+     */
+    protected abstract void inducedKFieldCR();
+
+    /**
+     * <p>inducedIdX.</p>
+     */
+    protected abstract void inducedIdX();
+
+    /**
+     * <p>inducedIdY.</p>
+     */
+    protected abstract void inducedIdY();
+
+    /**
+     * <p>inducedIdZ.</p>
+     */
+    protected abstract void inducedIdZ();
+
+    /**
+     * <p>inducedKdX.</p>
+     */
+    protected abstract void inducedKdX();
+
+    /**
+     * <p>inducedKdY.</p>
+     */
+    protected abstract void inducedKdY();
+
+    /**
+     * <p>inducedKdZ.</p>
+     */
+    protected abstract void inducedKdZ();
+
+    /**
+     * <p>getdEdZ.</p>
+     *
+     * @return a double.
+     */
+    public abstract double getdEdZ();
+
+    /**
+     * <p>getd2EdZ2.</p>
+     *
+     * @return a double.
+     */
+    public abstract double getd2EdZ2();
 
     /**
      * Constant <code>oneThird=1.0 / 3.0</code>
