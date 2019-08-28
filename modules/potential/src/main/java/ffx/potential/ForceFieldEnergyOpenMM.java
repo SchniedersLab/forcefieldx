@@ -156,6 +156,8 @@ import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setCut
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setNonbondedMethod;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setParticleExclusions;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setParticleParameters;
+import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setSoftcoreAlpha;
+import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setSoftcorePower;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_setUseDispersionCorrection;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaWcaDispersionForce_addParticle;
@@ -3158,6 +3160,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (vdwLambdaTerm) {
                 OpenMM_AmoebaVdwForce_setAlchemicalMethod(amoebaVDWForce,
                         AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Decouple);
+                OpenMM_AmoebaVdwForce_setSoftcoreAlpha(amoebaVDWForce, vdW.getAlpha());
+                OpenMM_AmoebaVdwForce_setSoftcorePower(amoebaVDWForce, (int) vdW.getBeta());
             }
 
             // Create exclusion lists.
