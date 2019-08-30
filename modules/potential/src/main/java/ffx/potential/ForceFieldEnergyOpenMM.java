@@ -1891,6 +1891,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     // Turn electrostatics on during the latter part of the path.
                     double elecWindow = 1.0 - electrostaticStart;
                     lambdaElec = (lambda - electrostaticStart) / elecWindow;
+                    // We need to square lambda, so dU/dL = 2*lambdaElec = 0 for lambdaElec = 0.
+                    lambdaElec *= lambdaElec;
                 }
                 lambdaVDW = lambda;
             } else if (vdwLambdaTerm) {
