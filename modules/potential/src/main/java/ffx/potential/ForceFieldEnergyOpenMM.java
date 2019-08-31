@@ -67,6 +67,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.round;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toRadians;
@@ -1737,6 +1738,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * the ion having a formal negative charge and a large polarizability.
          */
         private double electrostaticStart = 0.6;
+        private double electrostaticLambdaPower = 3.0;
 
         OpenMMSystem(MolecularAssembly molecularAssembly) {
             // Create the OpenMM System
@@ -1782,6 +1784,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
 
             lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
+
+            electrostaticLambdaPower = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
 
             // Add Angle Force.
             addAngleForce();
@@ -1891,8 +1895,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     // Turn electrostatics on during the latter part of the path.
                     double elecWindow = 1.0 - electrostaticStart;
                     lambdaElec = (lambda - electrostaticStart) / elecWindow;
-                    // We need to square lambda, so dU/dL = 2*lambdaElec = 0 for lambdaElec = 0.
-                    lambdaElec *= lambdaElec;
+                    lambdaElec = pow(lambdaElec, electrostaticLambdaPower);
                 }
                 lambdaVDW = lambda;
             } else if (vdwLambdaTerm) {
