@@ -37,9 +37,15 @@
 //******************************************************************************
 package ffx.numerics.atomic;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
+import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 
 /**
  * Implementation of maintaining a 3D double array that is operated on by multiple threads.
@@ -48,6 +54,8 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
  * @since 1.0
  */
 public class AtomicDoubleArray3D {
+
+    private static final Logger logger = Logger.getLogger(AtomicDoubleArray3D.class.getName());
 
     /**
      * Each dimension is stored in its own AtomicDoubleArray.
@@ -74,23 +82,9 @@ public class AtomicDoubleArray3D {
      */
     public AtomicDoubleArray3D(AtomicDoubleArrayImpl atomicDoubleArrayImpl, int size, int nThreads) {
         atomicDoubleArray = new AtomicDoubleArray[3];
-        switch (atomicDoubleArrayImpl) {
-            case ADDER:
-                atomicDoubleArray[0] = new AdderDoubleArray(size);
-                atomicDoubleArray[1] = new AdderDoubleArray(size);
-                atomicDoubleArray[2] = new AdderDoubleArray(size);
-                break;
-            case PJ:
-                atomicDoubleArray[0] = new PJDoubleArray(size);
-                atomicDoubleArray[1] = new PJDoubleArray(size);
-                atomicDoubleArray[2] = new PJDoubleArray(size);
-                break;
-            default:
-            case MULTI:
-                atomicDoubleArray[0] = new MultiDoubleArray(nThreads, size);
-                atomicDoubleArray[1] = new MultiDoubleArray(nThreads, size);
-                atomicDoubleArray[2] = new MultiDoubleArray(nThreads, size);
-        }
+        atomicDoubleArray[0] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
+        atomicDoubleArray[1] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
+        atomicDoubleArray[2] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
     }
 
     public AtomicDoubleArray3D(AtomicDoubleArray x, AtomicDoubleArray y, AtomicDoubleArray z) {
@@ -122,6 +116,34 @@ public class AtomicDoubleArray3D {
         atomicDoubleArray[0].reset(threadID, lb, ub);
         atomicDoubleArray[1].reset(threadID, lb, ub);
         atomicDoubleArray[2].reset(threadID, lb, ub);
+    }
+
+    /**
+     * Reset the double array to Zero.
+     *
+     * @param parallelTeam a ParallelTeam.
+     * @param lb           a int.
+     * @param ub           a int.
+     */
+    public void reset(ParallelTeam parallelTeam, int lb, int ub) {
+        try {
+            parallelTeam.execute(new ParallelRegion() {
+                @Override
+                public void run() throws Exception {
+                    int nThreads = parallelTeam.getThreadCount();
+                    execute(0, nThreads - 1, new IntegerForLoop() {
+                        @Override
+                        public void run(int first, int last) {
+                            for (int i = first; i <= last; i++) {
+                                reset(i, lb, ub);
+                            }
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception resetting an AtomicDoubleArray3D", e);
+        }
     }
 
     /**
@@ -168,6 +190,32 @@ public class AtomicDoubleArray3D {
     }
 
     /**
+     * Perform reduction between the given lower bound (lb) and upper bound (up)
+     * if necessary.
+     *
+     * @param lb a int.
+     * @param ub a int.
+     */
+    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
+
+        try {
+            parallelTeam.execute(new ParallelRegion() {
+                @Override
+                public void run() throws Exception {
+                    execute(lb, ub, new IntegerForLoop() {
+                        @Override
+                        public void run(int first, int last) {
+                            reduce(first, last);
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception reducing an AtomicDoubleArray3D", e);
+        }
+    }
+
+    /**
      * Get the value of the array at the specified index (usually subsequent to
      * calling the <code>reduce</code> method.
      *
@@ -200,4 +248,15 @@ public class AtomicDoubleArray3D {
         return atomicDoubleArray[2].get(index);
     }
 
+    /**
+     * Get the value of the array at the specified index (usually subsequent to
+     * calling the <code>reduce</code> method.
+     *
+     * @param dim   Dimension [0, 1, 2]
+     * @param index a int.
+     * @return a double.
+     */
+    public double get(int dim, int index) {
+        return atomicDoubleArray[dim].get(index);
+    }
 }

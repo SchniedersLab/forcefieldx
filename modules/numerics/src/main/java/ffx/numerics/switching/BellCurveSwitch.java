@@ -37,53 +37,51 @@
 //******************************************************************************
 package ffx.numerics.switching;
 
-import static org.apache.commons.math3.util.FastMath.pow;
+import org.apache.commons.math3.util.FastMath;
 
 /**
- * A PowerSwitch interpolates between 0 and 1 vi f(x) = (ax)^beta, where x must
- * be between 0 and 1/a.
+ * Implements a bell-shaped switching function by stitching together
+ * a pair of MultiplicativeSwitches. f(midpoint - 0.5*width) = 0,
+ * f(midpoint) = 1, f(midpoint + 0.5*width) = 0.
  *
  * @author Jacob M. Litman
- * @author Michael J. Schnieders
+ * @author Rae Corrigan
  */
-public class PowerSwitch implements UnivariateSwitchingFunction {
+public class BellCurveSwitch implements UnivariateSwitchingFunction {
+    private final double midpoint;
+    private final double halfWidth;
+    private final double invWidth;
+    private final UnivariateSwitchingFunction switchingFunction;
+    private final UnivariateSwitchingFunction secondSwitchingFunction;
 
     /**
-     * The multiplier a.
+     * Construct a bell curve (spliced 5-'th order Hermite splines) of width 1.0, midpoint 0.5.
      */
-    private final double a;
-    /**
-     * The power of the switch.
-     */
-    private final double beta;
-    /**
-     * The upper bound of the switch.
-     */
-    private final double ub;
-
-    /**
-     * Default Constructor of the PowerSwitch: constructs a linear switch.
-     */
-    public PowerSwitch() {
-        this(1.0, 1.0);
+    public BellCurveSwitch() {
+        this(0.5);
     }
 
     /**
-     * Constructor of the PowerSwitch.
+     * Construct a bell curve (spliced 5-'th order Hermite splines) of width 1.0.
      *
-     * @param a    The upper bound of the switch is 1.0 / a.
-     * @param beta The power of the function f(x) = (ax)^beta,
+     * @param midpoint Midpoint of the curve.
      */
-    public PowerSwitch(double a, double beta) {
-        if (a <= 0) {
-            throw new IllegalArgumentException(" The constant a must be > 0");
-        }
-        if (beta == 0) {
-            throw new IllegalArgumentException(" The exponent must be > 0 (preferably >= 1)");
-        }
-        this.a = a;
-        this.beta = beta;
-        ub = 1.0 / a;
+    public BellCurveSwitch(double midpoint) {
+        this(midpoint, 1.0);
+    }
+
+    /**
+     * Construct a bell curve (spliced 5-'th order Hermite splines).
+     * @param midpoint Midpoint of the curve.
+     * @param width Width of the curve, between the two zero points.
+     */
+    public BellCurveSwitch(double midpoint, double width) {
+        this.midpoint = midpoint;
+        invWidth = 1.0 / width;
+
+        halfWidth = 0.5 * width;
+        switchingFunction = new MultiplicativeSwitch(midpoint - halfWidth, midpoint);
+        secondSwitchingFunction = new MultiplicativeSwitch(midpoint + halfWidth, midpoint);
     }
 
     /**
@@ -91,7 +89,7 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double getZeroBound() {
-        return 0;
+        return midpoint - halfWidth;
     }
 
     /**
@@ -99,7 +97,7 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double getOneBound() {
-        return ub;
+        return midpoint + halfWidth;
     }
 
     /**
@@ -107,7 +105,7 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public boolean constantOutsideBounds() {
-        return false;
+        return switchingFunction.constantOutsideBounds() && secondSwitchingFunction.constantOutsideBounds();
     }
 
     /**
@@ -115,18 +113,7 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public boolean validOutsideBounds() {
-        return false;
-    }
-
-    /**
-     * Power switch derivatives can be zero at the zero bound if the exponent
-     * is greater than the derivative order.
-     *
-     * @return the highest order zero derivative at zero bound
-     */
-    @Override
-    public int highestOrderZeroDerivativeAtZeroBound() {
-        return beta >= 1 ? ((int) beta) - 1 : 0;
+        return switchingFunction.validOutsideBounds() && secondSwitchingFunction.validOutsideBounds();
     }
 
     /**
@@ -134,7 +121,7 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public int getHighestOrderZeroDerivative() {
-        return 0;
+        return Math.min(switchingFunction.getHighestOrderZeroDerivative(), secondSwitchingFunction.getHighestOrderZeroDerivative());
     }
 
     /**
@@ -142,7 +129,7 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public boolean symmetricToUnity() {
-        return (beta == 1.0);
+        return switchingFunction.symmetricToUnity() && secondSwitchingFunction.symmetricToUnity();
     }
 
     /**
@@ -150,26 +137,35 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double valueAt(double x) throws IllegalArgumentException {
-        x *= a;
-        return pow(x, beta);
+        if (x > midpoint) {
+            return secondSwitchingFunction.valueAt(x);
+        } else {
+            return switchingFunction.valueAt(x);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        x *= a;
-        return beta * a * pow(x, beta - 1);
+    public double firstDerivative(double x) {
+        if (x > midpoint) {
+            return invWidth * secondSwitchingFunction.firstDerivative(x);
+        } else {
+            return invWidth * switchingFunction.firstDerivative(x);
+        }
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc}return max(cut, off);
      */
     @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        x *= a;
-        return beta == 1.0 ? 0.0 : beta * (beta - 1) * a * a * pow(x, beta - 2);
+    public double secondDerivative(double x) {
+        if (x > midpoint) {
+            return invWidth * invWidth * secondSwitchingFunction.secondDerivative(x);
+        } else {
+            return invWidth * invWidth * switchingFunction.secondDerivative(x);
+        }
     }
 
     /**
@@ -177,52 +173,17 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        x *= a;
-        if (order < 1) {
-            throw new IllegalArgumentException("Order must be >= 1");
-        }
-        switch (order) {
-            case 1:
-                return firstDerivative(x);
-            case 2:
-                return secondDerivative(x);
-            default:
-                double orderDiff = order - beta;
-                if (orderDiff % 1.0 == 0 && orderDiff >= 1.0) {
-                    return 0.0;
-                } else {
-                    double val = pow(x, beta - order);
-                    for (int i = 0; i < order; i++) {
-                        val *= (beta - i) * a;
-                    }
-                    return val;
-                }
+        double mult = FastMath.pow(invWidth, order);
+        if (x > midpoint) {
+            return mult * secondSwitchingFunction.nthDerivative(x, order);
+        } else {
+            return mult * switchingFunction.nthDerivative(x, order);
         }
     }
 
-    /**
-     * Gets the value of a in f(x) = (a*x)^beta.
-     *
-     * @return Multiplier of input
-     */
-    public double getMultiplier() {
-        return a;
-    }
-
-    /**
-     * Gets the value of beta in f(x) = (a*x)^beta
-     *
-     * @return Exponent of input
-     */
-    public double getExponent() {
-        return beta;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
-        return String.format("Power switching function f(x) = (%8.4g * x)^%8.4g", a, beta);
+        return String.format(" Spliced 5'th order Hermite splines with midpoint " +
+                "%11.5g, width %11.5g", midpoint, 2.0 * halfWidth);
     }
 }

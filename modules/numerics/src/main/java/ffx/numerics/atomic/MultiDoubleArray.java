@@ -38,6 +38,14 @@
 package ffx.numerics.atomic;
 
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 
 /**
  * The MultiDoubleArray avoids the need for Atomic variables, but at the cost
@@ -47,6 +55,8 @@ import java.util.Arrays;
  * @since 1.0
  */
 public class MultiDoubleArray implements AtomicDoubleArray {
+
+    private static final Logger logger = Logger.getLogger(MultiDoubleArray.class.getName());
 
     private final int threadCount;
     private final double[][] array;
@@ -77,12 +87,37 @@ public class MultiDoubleArray implements AtomicDoubleArray {
     /**
      * {@inheritDoc}
      * <p>
-     * Initialize the storage space for the specified thread, to given value,
-     * after assuring adequate storage size.
+     * Initialize the storage space for the specified thread.
      */
     @Override
     public void reset(int threadID, int lb, int ub) {
         Arrays.fill(array[threadID], 0.0);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Initialize the storage space for all threads.
+     */
+    @Override
+    public void reset(ParallelTeam parallelTeam, int lb, int ub) {
+        try {
+            parallelTeam.execute(new ParallelRegion() {
+                @Override
+                public void run() throws Exception {
+                    execute(0, threadCount - 1, new IntegerForLoop() {
+                        @Override
+                        public void run(int first, int last) {
+                            for (int i = first; i <= last; i++) {
+                                reset(i, lb, ub);
+                            }
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception resetting an MultiDoubleArray", e);
+        }
     }
 
     /**
@@ -114,6 +149,30 @@ public class MultiDoubleArray implements AtomicDoubleArray {
             for (int i = lb; i <= ub; i++) {
                 gx[i] += gxt[i];
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Reduce the contributions from each thread into array[0];
+     */
+    @Override
+    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
+        try {
+            parallelTeam.execute(new ParallelRegion() {
+                @Override
+                public void run() throws Exception {
+                    execute(lb, ub, new IntegerForLoop() {
+                        @Override
+                        public void run(int first, int last) {
+                            reduce(first, last);
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception reducing an MultiDoubleArray", e);
         }
     }
 

@@ -477,7 +477,6 @@
                                              srcdir="${basedir}/src/main/groovy/"
                                              listfiles="false" verbose="true"
                                              stacktrace="true" parameters="true">
-
                                         <classpath refid="maven.compile.classpath"/>
                                     </groovyc>
                                 </target>
@@ -556,11 +555,10 @@
                                 <!-- reactorModuleConvergence/ -->
                                 <requirePluginVersions/>
                                 <requireMavenVersion>
-                                    <version>3.1</version>
+                                    <version>3.0</version>
                                 </requireMavenVersion>
-                                <!-- Note Groovy 2.5.6 is not compatible with JDK 13 -->
                                 <requireJavaVersion>
-                                    <version>[1.8,12.1]</version>
+                                    <version>[1.8,13.1]</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
@@ -590,7 +588,6 @@
                                            use="true"
                                            windowtitle="${project.name}"
                                            doctitle="${project.name}"
-
                                 />
                             </target>
                         </configuration>
@@ -1106,13 +1103,13 @@
         <!-- Specify versions of Dependencies to Use -->
         <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
-        <commons-collections4.version>4.4</commons-collections4.version>
-        <commons-configuration2.version>2.5</commons-configuration2.version>
+        <commons-collections4.version>4.3</commons-collections4.version>
+        <commons-configuration2.version>2.4</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
-        <guava.version>28.1-jre</guava.version>
-        <groovy-all.version>2.5.6.1</groovy-all.version>
+        <guava.version>27.1-jre</guava.version>
+        <groovy-all.version>2.5.8.1</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.7.0</java3d.version>
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
@@ -1123,9 +1120,9 @@
         <jna.version>4.1.0</jna.version>
         <biojava.version>5.2.1</biojava.version>
         <cdk.version>2.0</cdk.version>
-        <clustering.version>1.2.0</clustering.version>
-        <fastutil.version>8.3.0</fastutil.version>
-        <picocli.version>3.9.2</picocli.version>
+        <clustering.version>1.1.0</clustering.version>
+        <fastutil.version>8.2.1</fastutil.version>
+        <picocli.version>4.0.1</picocli.version>
         <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Maven Core Plugin Versions -->
@@ -1158,7 +1155,7 @@
         <scm.version>1.11.2</scm.version>
         <!-- MojoHaus Plugins -->
         <jdepend.version>2.0</jdepend.version>
-        <appassembler.version>2.1.0</appassembler.version>
+        <appassembler.version>1.10</appassembler.version>
         <buildnumber.version>1.2.10</buildnumber.version>
         <exec.version>1.6.0</exec.version>
         <versions.version>2.7</versions.version>

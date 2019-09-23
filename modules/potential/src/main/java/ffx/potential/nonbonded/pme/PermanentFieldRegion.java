@@ -57,17 +57,18 @@ import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.PMETimings;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import static ffx.numerics.special.Erf.erfc;
@@ -83,12 +84,17 @@ import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
 
 /**
- * The Permanent Field Region should be executed by a ParallelTeam with
- * exactly 2 threads. The Real Space and Reciprocal Space Sections will be
- * run concurrently, each with the number of threads defined by their
- * respective ParallelTeam instances.
+ * Parallel computation of the permanent field.
+ * <p>
+ * This class can be executed by a ParallelTeam with exactly 2 threads.
+ * <p>
+ * The Real Space and Reciprocal Space Sections will be run concurrently,
+ * each with the number of threads defined by their respective ParallelTeam instances.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
-public class PermanentFieldRegion extends ParallelRegion {
+public class PermanentFieldRegion extends ParallelRegion implements MaskingInterface {
 
     private static final Logger logger = Logger.getLogger(PermanentFieldRegion.class.getName());
 
@@ -189,13 +195,13 @@ public class PermanentFieldRegion extends ParallelRegion {
     private IntegerSchedule permanentSchedule;
 
     /**
-     * Field array for each thread. [threadID][X/Y/Z][atomID]
+     * Field array.
      */
-    private double[][][] field;
+    private AtomicDoubleArray3D field;
     /**
-     * Chain rule field array for each thread. [threadID][X/Y/Z][atomID]
+     * Chain rule field array.
      */
-    private double[][][] fieldCR;
+    private AtomicDoubleArray3D fieldCR;
     /**
      * Timing variables.
      */
@@ -240,7 +246,7 @@ public class PermanentFieldRegion extends ParallelRegion {
                      LambdaMode lambdaMode, boolean reciprocalSpaceTerm, ReciprocalSpace reciprocalSpace,
                      EwaldParameters ewaldParameters, PCGSolver pcgSolver,
                      IntegerSchedule permanentSchedule, RealSpaceNeighborParameters realSpaceNeighborParameters,
-                     double[][][] field, double[][][] fieldCR, PMETimings pmeTimings) {
+                     AtomicDoubleArray3D field, AtomicDoubleArray3D fieldCR, PMETimings pmeTimings) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.coordinates = coordinates;
@@ -292,6 +298,87 @@ public class PermanentFieldRegion extends ParallelRegion {
         } catch (Exception e) {
             String message = "Fatal exception computing the permanent multipole field.\n";
             logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    /**
+     * Apply permanent field masking rules.
+     *
+     * @param i     The atom whose masking rules should be applied.
+     * @param is14  True if atom i and the current atom are 1-4 to each other.
+     * @param masks One or more masking arrays.
+     */
+    @Override
+    public void applyMask(int i, boolean[] is14, double[]... masks) {
+        double[] maskp_local = masks[0];
+        double[] mask_local = masks[1];
+        Atom ai = atoms[i];
+        for (Torsion torsion : ai.getTorsions()) {
+            Atom ak = torsion.get1_4(ai);
+            if (ak != null) {
+                int index = ak.getIndex() - 1;
+                maskp_local[index] = scaleParameters.p14scale;
+                for (int k : ip11[i]) {
+                    if (k == index) {
+                        maskp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
+                        break;
+                    }
+                }
+            }
+        }
+        for (Angle angle : ai.getAngles()) {
+            Atom ak = angle.get1_3(ai);
+            if (ak != null) {
+                int index = ak.getIndex() - 1;
+                maskp_local[index] = scaleParameters.p13scale;
+            }
+        }
+        for (Bond bond : ai.getBonds()) {
+            int index = bond.get1_2(ai).getIndex() - 1;
+            maskp_local[index] = scaleParameters.p12scale;
+        }
+
+        // Apply group based polarization masking rule.
+        for (int index : ip11[i]) {
+            mask_local[index] = scaleParameters.d11scale;
+        }
+    }
+
+    /**
+     * Remove permanent field masking rules.
+     *
+     * @param i     The atom whose masking rules should be removed.
+     * @param is14  True if atom i and the current atom are 1-4 to each other.
+     * @param masks One or more masking arrays.
+     */
+    @Override
+    public void removeMask(int i, boolean[] is14, double[]... masks) {
+        double[] maskp_local = masks[0];
+        double[] mask_local = masks[1];
+        Atom ai = atoms[i];
+        for (Atom ak : ai.get1_5s()) {
+            maskp_local[ak.getIndex() - 1] = 1.0;
+        }
+        for (Torsion torsion : ai.getTorsions()) {
+            Atom ak = torsion.get1_4(ai);
+            if (ak != null) {
+                int index = ak.getIndex() - 1;
+                maskp_local[index] = 1.0;
+            }
+        }
+        for (Angle angle : ai.getAngles()) {
+            Atom ak = angle.get1_3(ai);
+            if (ak != null) {
+                int index = ak.getIndex() - 1;
+                maskp_local[index] = 1.0;
+            }
+        }
+        for (Bond bond : ai.getBonds()) {
+            int index = bond.get1_2(ai).getIndex() - 1;
+            maskp_local[index] = 1.0;
+        }
+        for (int index : ip11[i]) {
+            mask_local[index] = 1.0;
         }
     }
 
@@ -449,18 +536,6 @@ public class PermanentFieldRegion extends ParallelRegion {
             public void start() {
                 int threadIndex = getThreadIndex();
                 realSpacePermTime[threadIndex] -= System.nanoTime();
-                double[] fX = field[threadIndex][0];
-                double[] fY = field[threadIndex][1];
-                double[] fZ = field[threadIndex][2];
-                double[] fXCR = fieldCR[threadIndex][0];
-                double[] fYCR = fieldCR[threadIndex][1];
-                double[] fZCR = fieldCR[threadIndex][2];
-                fill(fX, 0.0);
-                fill(fY, 0.0);
-                fill(fZ, 0.0);
-                fill(fXCR, 0.0);
-                fill(fYCR, 0.0);
-                fill(fZCR, 0.0);
             }
 
             @Override
@@ -493,10 +568,9 @@ public class PermanentFieldRegion extends ParallelRegion {
 
         private class PermanentRealSpaceFieldLoop extends IntegerForLoop {
 
+            private int threadID;
             private final double[] dx_local;
             private final double[][] transOp;
-            private double[] fX, fY, fZ;
-            private double[] fXCR, fYCR, fZCR;
             private double[] mask_local;
             private double[] maskp_local;
             private int count;
@@ -512,15 +586,9 @@ public class PermanentFieldRegion extends ParallelRegion {
 
             @Override
             public void start() {
-                int threadIndex = getThreadIndex();
-                realSpacePermTime[threadIndex] -= System.nanoTime();
+                threadID = getThreadIndex();
+                realSpacePermTime[threadID] -= System.nanoTime();
                 count = 0;
-                fX = field[threadIndex][0];
-                fY = field[threadIndex][1];
-                fZ = field[threadIndex][2];
-                fXCR = fieldCR[threadIndex][0];
-                fYCR = fieldCR[threadIndex][1];
-                fZCR = fieldCR[threadIndex][2];
                 int nAtoms = atoms.length;
                 if (mask_local == null || mask_local.length < nAtoms) {
                     mask_local = new double[nAtoms];
@@ -532,9 +600,8 @@ public class PermanentFieldRegion extends ParallelRegion {
 
             @Override
             public void finish() {
-                int threadIndex = getThreadIndex();
                 sharedCount.addAndGet(count);
-                realSpacePermTime[threadIndex] += System.nanoTime();
+                realSpacePermTime[threadID] += System.nanoTime();
             }
 
             @Override
@@ -558,6 +625,15 @@ public class PermanentFieldRegion extends ParallelRegion {
                     if (!use[i]) {
                         continue;
                     }
+
+                    // Zero out accumulation variables for the field at atom i.
+                    double fix = 0.0;
+                    double fiy = 0.0;
+                    double fiz = 0.0;
+                    double fixCR = 0.0;
+                    double fiyCR = 0.0;
+                    double fizCR = 0.0;
+
                     final int moleculei = molecule[i];
                     final double pdi = ipdamp[i];
                     final double pti = thole[i];
@@ -576,36 +652,8 @@ public class PermanentFieldRegion extends ParallelRegion {
                     final double qixz = globalMultipolei[t101] * oneThird;
                     final double qiyz = globalMultipolei[t011] * oneThird;
 
-                    // Apply energy masking rules.
-                    Atom ai = atoms[i];
-                    for (Torsion torsion : ai.getTorsions()) {
-                        Atom ak = torsion.get1_4(ai);
-                        if (ak != null) {
-                            int index = ak.getIndex() - 1;
-                            maskp_local[index] = scaleParameters.p14scale;
-                            for (int k : ip11[i]) {
-                                if (k == index) {
-                                    maskp_local[index] = scaleParameters.intra14Scale * scaleParameters.p14scale;
-                                }
-                            }
-                        }
-                    }
-                    for (Angle angle : ai.getAngles()) {
-                        Atom ak = angle.get1_3(ai);
-                        if (ak != null) {
-                            int index = ak.getIndex() - 1;
-                            maskp_local[index] = scaleParameters.p13scale;
-                        }
-                    }
-                    for (Bond bond : ai.getBonds()) {
-                        int index = bond.get1_2(ai).getIndex() - 1;
-                        maskp_local[index] = scaleParameters.p12scale;
-                    }
-
-                    // Apply group based polarization masking rule.
-                    for (int index : ip11[i]) {
-                        mask_local[index] = scaleParameters.d11scale;
-                    }
+                    // Apply field masking rules.
+                    applyMask(i, null, maskp_local, mask_local);
 
                     // Loop over the neighbor list.
                     final int[] list = lists[i];
@@ -613,7 +661,6 @@ public class PermanentFieldRegion extends ParallelRegion {
                     preCounts[i] = 0;
                     final int[] ewald = ewalds[i];
                     int[] preList = preLists[i];
-
                     for (int k : list) {
                         if (!use[k]) {
                             continue;
@@ -652,6 +699,8 @@ public class PermanentFieldRegion extends ParallelRegion {
                             final double qkxz = globalMultipolek[t101] * oneThird;
                             final double qkyz = globalMultipolek[t011] * oneThird;
                             double r = sqrt(r2);
+
+                            // Store a short neighbor list for the SCF pre-conditioner.
                             if (r < preconditionerCutoff) {
                                 if (preList.length <= preCounts[i]) {
                                     int len = preList.length;
@@ -715,16 +764,12 @@ public class PermanentFieldRegion extends ParallelRegion {
                             final double fkdx = xr * ddr357i - drr3 * dix - drr5 * qix;
                             final double fkdy = yr * ddr357i - drr3 * diy - drr5 * qiy;
                             final double fkdz = zr * ddr357i - drr3 * diz - drr5 * qiz;
-                            fX[k] += (fkmx - fkdx);
-                            fY[k] += (fkmy - fkdy);
-                            fZ[k] += (fkmz - fkdz);
+                            field.add(threadID, k, fkmx - fkdx, fkmy - fkdy, fkmz - fkdz);
                             final double prr357i = prr3 * ci + prr5 * dir + prr7 * qir;
                             final double fkpx = xr * prr357i - prr3 * dix - prr5 * qix;
                             final double fkpy = yr * prr357i - prr3 * diy - prr5 * qiy;
                             final double fkpz = zr * prr357i - prr3 * diz - prr5 * qiz;
-                            fXCR[k] += (fkmx - fkpx);
-                            fYCR[k] += (fkmy - fkpy);
-                            fZCR[k] += (fkmz - fkpz);
+                            fieldCR.add(threadID, k, fkmx - fkpx, fkmy - fkpy, fkmz - fkpz);
                             final double dkr = dkx * xr + dky * yr + dkz * zr;
                             final double qkx = 2.0 * (qkxx * xr + qkxy * yr + qkxz * zr);
                             final double qky = 2.0 * (qkxy * xr + qkyy * yr + qkyz * zr);
@@ -738,43 +783,23 @@ public class PermanentFieldRegion extends ParallelRegion {
                             final double fidx = -xr * drr357k - drr3 * dkx + drr5 * qkx;
                             final double fidy = -yr * drr357k - drr3 * dky + drr5 * qky;
                             final double fidz = -zr * drr357k - drr3 * dkz + drr5 * qkz;
-                            fX[i] += (fimx - fidx);
-                            fY[i] += (fimy - fidy);
-                            fZ[i] += (fimz - fidz);
+                            fix += fimx - fidx;
+                            fiy += fimy - fidy;
+                            fiz += fimz - fidz;
                             final double prr357k = prr3 * ck - prr5 * dkr + prr7 * qkr;
                             final double fipx = -xr * prr357k - prr3 * dkx + prr5 * qkx;
                             final double fipy = -yr * prr357k - prr3 * dky + prr5 * qky;
                             final double fipz = -zr * prr357k - prr3 * dkz + prr5 * qkz;
-                            fXCR[i] += (fimx - fipx);
-                            fYCR[i] += (fimy - fipy);
-                            fZCR[i] += (fimz - fipz);
+                            fixCR += fimx - fipx;
+                            fiyCR += fimy - fipy;
+                            fizCR += fimz - fipz;
                         }
                     }
-
-                    for (Atom ak : ai.get1_5s()) {
-                        maskp_local[ak.getIndex() - 1] = 1.0;
-                    }
-                    for (Torsion torsion : ai.getTorsions()) {
-                        Atom ak = torsion.get1_4(ai);
-                        if (ak != null) {
-                            int index = ak.getIndex() - 1;
-                            maskp_local[index] = 1.0;
-                        }
-                    }
-                    for (Angle angle : ai.getAngles()) {
-                        Atom ak = angle.get1_3(ai);
-                        if (ak != null) {
-                            int index = ak.getIndex() - 1;
-                            maskp_local[index] = 1.0;
-                        }
-                    }
-                    for (Bond bond : ai.getBonds()) {
-                        int index = bond.get1_2(ai).getIndex() - 1;
-                        maskp_local[index] = 1.0;
-                    }
-                    for (int index : ip11[i]) {
-                        mask_local[index] = 1.0;
-                    }
+                    // Add in field contributions at Atom i.
+                    field.add(threadID, i, fix, fiy, fiz);
+                    fieldCR.add(threadID, i, fixCR, fiyCR, fizCR);
+                    // Remove field masking rules.
+                    removeMask(i, null, maskp_local, mask_local);
                 }
 
                 // Loop over symmetry mates.
@@ -798,6 +823,10 @@ public class PermanentFieldRegion extends ParallelRegion {
                         if (!use[i]) {
                             continue;
                         }
+                        // Zero out accumulation variables for the field at atom i.
+                        double fix = 0.0;
+                        double fiy = 0.0;
+                        double fiz = 0.0;
                         final double pdi = ipdamp[i];
                         final double pti = thole[i];
                         final double[] multipolei = mpole[i];
@@ -817,13 +846,11 @@ public class PermanentFieldRegion extends ParallelRegion {
 
                         // Loop over the neighbor list.
                         final int[] list = lists[i];
-                        final int npair = list.length;
                         counts[i] = 0;
                         preCounts[i] = 0;
                         final int[] ewald = ewalds[i];
                         final int[] preList = preLists[i];
-                        for (int j = 0; j < npair; j++) {
-                            int k = list[j];
+                        for (int k : list) {
                             if (!use[k]) {
                                 continue;
                             }
@@ -924,33 +951,23 @@ public class PermanentFieldRegion extends ParallelRegion {
                                 final double fkdx = xr * ddr357i - drr3 * dix - drr5 * qix;
                                 final double fkdy = yr * ddr357i - drr3 * diy - drr5 * qiy;
                                 final double fkdz = zr * ddr357i - drr3 * diz - drr5 * qiz;
-
-                                final double fix = selfScale * (fimx - fidx);
-                                final double fiy = selfScale * (fimy - fidy);
-                                final double fiz = selfScale * (fimz - fidz);
-                                fX[i] += fix;
-                                fY[i] += fiy;
-                                fZ[i] += fiz;
-                                fXCR[i] += fix;
-                                fYCR[i] += fiy;
-                                fZCR[i] += fiz;
+                                fix += selfScale * (fimx - fidx);
+                                fiy += selfScale * (fimy - fidy);
+                                fiz += selfScale * (fimz - fidz);
                                 final double xc = selfScale * (fkmx - fkdx);
                                 final double yc = selfScale * (fkmy - fkdy);
                                 final double zc = selfScale * (fkmz - fkdz);
                                 final double fkx = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
                                 final double fky = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
                                 final double fkz = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
-                                fX[k] += fkx;
-                                fY[k] += fky;
-                                fZ[k] += fkz;
-                                fXCR[k] += fkx;
-                                fYCR[k] += fky;
-                                fZCR[k] += fkz;
+                                field.add(threadID, k, fkx, fky, fkz);
+                                fieldCR.add(threadID, k, fkx, fky, fkz);
                             }
                         }
+                        field.add(threadID, i, fix, fiy, fiz);
+                        fieldCR.add(threadID, i, fix, fiy, fiz);
                     }
                 }
-
             }
         }
     }

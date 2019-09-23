@@ -43,20 +43,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 
-import ffx.numerics.Constraint;
-import ffx.potential.constraint.SettleConstraint;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -74,8 +73,12 @@ import ffx.crystal.NCSCrystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
+import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.switching.ConstantSwitch;
+import ffx.numerics.switching.UnivariateFunctionFactory;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
@@ -98,6 +101,8 @@ import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
+import ffx.potential.constraint.CcmaConstraint;
+import ffx.potential.constraint.SettleConstraint;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
@@ -119,7 +124,8 @@ import ffx.potential.utils.PotentialsUtils;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
- * Compute the potential energy and derivatives of an AMOEBA system.
+ * Compute the potential energy and derivatives of a molecular system
+ * described by a force field.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -1241,6 +1247,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 if (toks.length < 2) {
                     throw new IllegalArgumentException(format(" restrain-distance value %s could not be parsed!", bondRest));
                 }
+                // Internally, everything starts with 0, but restrain distance starts at 1, so that 1 has to be subtracted
                 int at1 = Integer.parseInt(toks[0]) - 1;
                 int at2 = Integer.parseInt(toks[1]) - 1;
 
@@ -1254,27 +1261,49 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 }
                 double dist;
                 switch (toks.length) {
+                    case 0:
+                    case 1:
+                        throw new IllegalArgumentException(format(" restrain-distance value %s could not be parsed!", bondRest));
+                    case 2:
                     case 3:
                         double[] xyz1 = new double[3];
                         xyz1 = a1.getXYZ(xyz1);
                         double[] xyz2 = new double[3];
                         xyz2 = a2.getXYZ(xyz2);
+                        // Current distance between restrained atoms
                         dist = crystal.minDistOverSymOps(xyz1, xyz2);
                         break;
                     case 4:
                         dist = Double.parseDouble(toks[3]);
                         break;
                     case 5:
+                    default:
                         double minDist = Double.parseDouble(toks[3]);
                         double maxDist = Double.parseDouble(toks[4]);
                         dist = 0.5 * (minDist + maxDist);
                         flatBottomRadius = 0.5 * Math.abs(maxDist - minDist);
                         break;
-                    default:
-                        throw new IllegalArgumentException(format(" restrain-distance value %s could not be parsed!", bondRest));
                 }
 
-                setRestraintBond(a1, a2, dist, forceConst, flatBottomRadius);
+                UnivariateSwitchingFunction switchF;
+                double lamStart = RestraintBond.DEFAULT_RB_LAM_START;
+                double lamEnd = RestraintBond.DEFAULT_RB_LAM_END;
+                if (toks.length > 5) {
+                    int offset = 5;
+                    if (toks[5].matches("^[01](?:\\.[0-9]*)?")) {
+                        offset = 6;
+                        lamStart = Double.parseDouble(toks[5]);
+                        if (toks[6].matches("^[01](?:\\.[0-9]*)?")) {
+                            offset = 7;
+                            lamEnd = Double.parseDouble(toks[6]);
+                        }
+                    }
+                    switchF = UnivariateFunctionFactory.parseUSF(toks, offset);
+                } else {
+                    switchF = new ConstantSwitch();
+                }
+
+                setRestraintBond(a1, a2, dist, forceConst, flatBottomRadius, lamStart, lamEnd, switchF);
             } catch (Exception ex) {
                 logger.info(format(" Exception in parsing restrain-distance: %s", ex.toString()));
             }
@@ -1283,14 +1312,22 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         String constraintStrings = forceField.getString(ForceFieldString.CONSTRAIN, forceField.getString(ForceFieldString.RATTLE, null));
         if (constraintStrings != null) {
             constraints = new ArrayList<>();
-
             logger.info(format(" Experimental: parsing constraints option %s", constraintStrings));
+
+            Set<Bond> numericBonds = new HashSet<>(1);
+            Set<Angle> numericAngles = new HashSet<>(1);
+
+            // Totally empty constrain option: constrain only X-H bonds. No other options applied.
             if (constraintStrings.isEmpty() || constraintStrings.matches("^\\s*$")) {
                 // Assume constraining only X-H bonds (i.e. RIGID-HYDROGEN).
                 logger.info(" Constraining X-H bonds.");
-                logger.severe(" TODO: Implement this.");
+                numericBonds = Arrays.stream(bonds).
+                        filter((Bond bond) -> bond.getAtom(0).getAtomicNumber() == 1 || bond.getAtom(1).getAtomicNumber() == 1).
+                        collect(Collectors.toSet());
             } else {
                 String[] constraintToks = constraintStrings.split("\\s+");
+
+                // First, accumulate SETTLE constraints.
                 for (String tok : constraintToks) {
                     if (tok.equalsIgnoreCase("WATER")) {
                         logger.info(" Constraining waters to be rigid based on angle & bonds.");
@@ -1316,15 +1353,43 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         settleStream = Stream.concat(settleStream, molecularAssembly.getWaters().stream());
                         // Map them into new Settle constraints and collect.
                         List<SettleConstraint> settleConstraints = settleStream.map((MSNode m) -> m.getAngleList().get(0)).
-                                map(SettleConstraint::new).
+                                map(SettleConstraint::settleFactory).
                                 collect(Collectors.toList());
                         constraints.addAll(settleConstraints);
 
-                    } else {
-                        logger.severe(" Implement constraints that aren't SETTLE constraints.");
+                    } else if (tok.equalsIgnoreCase("DIATOMIC")) {
+                        logger.severe(" Diatomic distance constraints not yet implemented properly.");
+                    } else if (tok.equalsIgnoreCase("TRIATOMIC")) {
+                        logger.severe(" Triatomic SETTLE constraints for non-water molecules not yet implemented properly.");
+                    }
+                }
+
+                // Second, accumulate bond/angle constraints.
+                for (String tok : constraintToks) {
+                    if (tok.equalsIgnoreCase("BONDS")) {
+                        numericBonds = new HashSet<>(Arrays.asList(bonds));
+                    } else if (tok.equalsIgnoreCase("ANGLES")) {
+                        numericAngles = new HashSet<>(Arrays.asList(angles));
                     }
                 }
             }
+
+            // Remove bonds that are already dealt with via angles.
+            for (Angle angle : numericAngles) {
+                numericBonds.removeAll(angle.getBondList());
+            }
+
+            // Remove already-constrained angles and bonds (e.g. SETTLE-constrained ones).
+            List<Angle> ccmaAngles = numericAngles.stream().
+                    filter((Angle ang) -> !ang.isConstrained()).
+                    collect(Collectors.toList());
+            List<Bond> ccmaBonds = numericBonds.stream().
+                    filter((Bond bond) -> !bond.isConstrained())
+                    .collect(Collectors.toList());
+
+            CcmaConstraint ccmaConstraint = CcmaConstraint.ccmaFactory(ccmaBonds, ccmaAngles,
+                    atoms, getMass(), CcmaConstraint.DEFAULT_CCMA_NONZERO_CUTOFF);
+            constraints.add(ccmaConstraint);
 
             logger.info(format(" Added %d constraints.", constraints.size()));
         } else {
@@ -1934,12 +1999,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             totalEnergy = 0.0;
 
             // Zero out the Cartesian coordinate gradient for each atom.
-            if (gradient) {
-                for (int i = 0; i < nAtoms; i++) {
-                    atoms[i].setXYZGradient(0.0, 0.0, 0.0);
-                    atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
-                }
-            }
+//            if (gradient) {
+//                for (int i = 0; i < nAtoms; i++) {
+//                    atoms[i].setXYZGradient(0.0, 0.0, 0.0);
+//                    atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
+//                }
+//            }
 
             // Computed the bonded energy terms in parallel.
             try {
@@ -2451,6 +2516,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * Applies constraints to positions
+     *
      * @param xPrior
      * @param xNew
      */
@@ -2595,7 +2661,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         assert (g != null);
         double[] grad = new double[3];
         int n = getNumberOfVariables();
-        if (g==null || g.length < n) {
+        if (g == null || g.length < n) {
             g = new double[n];
         }
         int index = 0;
@@ -2916,15 +2982,35 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param forceConstant the force constant in kcal/mole.
      * @param flatBottom    Radius of a flat-bottom potential in Angstroms.
      */
-    private void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
+    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
+        setRestraintBond(a1, a2, distance, forceConstant, flatBottom, RestraintBond.DEFAULT_RB_LAM_START, RestraintBond.DEFAULT_RB_LAM_END, new ConstantSwitch());
+    }
+
+    /**
+     * <p>
+     * setRestraintBond</p>
+
+     * @param a1            a {@link ffx.potential.bonded.Atom} object.
+     * @param a2            a {@link ffx.potential.bonded.Atom} object.
+     * @param distance      a double.
+     * @param forceConstant the force constant in kcal/mole.
+     * @param flatBottom    Radius of a flat-bottom potential in Angstroms.
+     * @param lamStart      At what lambda does the restraint begin to take effect?
+     * @param lamEnd        At what lambda does the restraint hit full strength?
+     * @param switchingFunction Switching function to use as a lambda dependence.
+     */
+    private void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom,
+                                  double lamStart, double lamEnd, UnivariateSwitchingFunction switchingFunction) {
         restraintBondTerm = true;
-        RestraintBond rb = new RestraintBond(a1, a2, crystal);
+        boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
+        RestraintBond rb = new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
         int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
         if (flatBottom != 0) {
             rb.setBondType(new BondType(classes, forceConstant, distance, BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom));
         } else {
             rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
         }
+
         // As long as we continue to add elements one-at-a-time to an array, this code will continue to be ugly.
         RestraintBond[] newRbs = new RestraintBond[++nRestraintBonds];
         if (restraintBonds != null && restraintBonds.length != 0) {
@@ -3960,12 +4046,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             // Define how the gradient will be accumulated.
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
             ForceField forceField = molecularAssembly.getForceField();
+
             String value = forceField.getString(ForceFieldString.ARRAY_REDUCTION, "MULTI");
             try {
                 atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
             } catch (Exception e) {
                 logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
             }
+            logger.fine(format("  Bonded using %s arrays.", atomicDoubleArrayImpl.toString()));
 
             grad = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, nThreads);
             if (lambdaTerm) {
@@ -4290,9 +4378,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 int threadID = getThreadIndex();
                 if (gradient) {
                     grad.reset(threadID, first, last);
+                    for (int i = first; i <= last; i++) {
+                        atoms[i].setXYZGradient(0.0, 0.0, 0.0);
+                    }
                 }
                 if (lambdaTerm) {
                     lambdaGrad.reset(threadID, first, last);
+                    for (int i = first; i <= last; i++) {
+                        atoms[i].setLambdaXYZGradient(0.0, 0.0, 0.0);
+                    }
                 }
             }
         }
@@ -4363,7 +4457,24 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             public void run(int first, int last) throws Exception {
                 for (int i = first; i <= last; i++) {
                     BondedTerm term = terms[i];
-                    if (!lambdaBondedTerms || term.applyLambda()) {
+                    /*
+                     * The logic here deals with how DualTopologyEnergy (DTE) works.
+                     * If this ForceFieldEnergy (FFE) is not part of a DTE, lambdaBondedTerms is always false, and the term is always evaluated.
+                     *
+                     * Most bonded terms should be at full-strength, regardless of lambda, "complemented" to 1.0*strength.
+                     * Outside FFE, DTE scales the initial, !lambdaBondedTerms evaluation by f(lambda).
+                     *
+                     * In the case of a bonded term lacking any softcore atoms, this will be externally complemented by the other FFE topology.
+                     * If there is internal lambda-scaling, that will separately apply at both ends.
+                     *
+                     * In the case of a bonded term with a softcore atom, it's a bit trickier.
+                     * If it's unscaled by lambda, it needs to be internally complemented; we re-evaluate it with lambdaBondedTerms true.
+                     * This second evaluation is scaled by DTE by a factor of f(1-lambda), and becomes "restraintEnergy".
+                     * If it is scaled internally by lambda, we assume that the energy term is not meant to be internally complemented.
+                     * In that case, we skip evaluation into restraintEnergy.
+                     */
+                    boolean used = !lambdaBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
+                    if (used) {
                         localEnergy += term.energy(gradient, threadID, grad, lambdaGrad);
                         if (computeRMSD) {
                             double value = term.getValue();

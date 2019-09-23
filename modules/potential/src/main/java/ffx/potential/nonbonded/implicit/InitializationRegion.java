@@ -35,67 +35,70 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.nonbonded.pme;
+package ffx.potential.nonbonded.implicit;
 
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.SymOp;
+import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 
 /**
- * Parallel expansion of the asymmetric unit induced dipoles to symmetry mates
- * by applying symmetry operator rotation matrices.
+ * Parallel initialization of accumulation arrays for Generalized Kirkwood.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class ExpandInducedDipolesRegion extends ParallelRegion {
+public class InitializationRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(ExpandInducedDipolesRegion.class.getName());
+    private static final Logger logger = Logger.getLogger(InitializationRegion.class.getName());
 
     /**
-     * An ordered array of atoms in the system.
+     * Array of atoms.
      */
     private Atom[] atoms;
     /**
-     * Unit cell and spacegroup information.
+     * True if GK is being turned on/off.
      */
-    private Crystal crystal;
+    private boolean lambdaTerm;
     /**
-     * Dimensions of [nsymm][nAtoms][3]
+     * Atomic Gradient array.
      */
-    public double[][][] inducedDipole;
-    public double[][][] inducedDipoleCR;
+    private AtomicDoubleArray3D grad;
+    /**
+     * Atomic Torque array.
+     */
+    private AtomicDoubleArray3D torque;
+    /**
+     * Shared array for computation of Born radii gradient.
+     */
+    private AtomicDoubleArray sharedBornGrad;
 
-    private final ExpandInducedDipoleLoop[] expandInducedDipoleLoop;
+    private final InitializationLoop[] initializationLoop;
 
-    public ExpandInducedDipolesRegion(int maxThreads) {
-        expandInducedDipoleLoop = new ExpandInducedDipoleLoop[maxThreads];
-        for (int i = 0; i < maxThreads; i++) {
-            expandInducedDipoleLoop[i] = new ExpandInducedDipoleLoop();
-        }
+    public InitializationRegion(int maxThreads) {
+        initializationLoop = new InitializationLoop[maxThreads];
     }
 
-    public void init(Atom[] atoms, Crystal crystal,
-                     double[][][] inducedDipole, double[][][] inducedDipoleCR) {
-        // Input
+    public void init(Atom[] atoms, boolean lambdaTerm,
+                     AtomicDoubleArray3D grad, AtomicDoubleArray3D torque,
+                     AtomicDoubleArray sharedBornGrad) {
         this.atoms = atoms;
-        this.crystal = crystal;
-        // Output
-        this.inducedDipole = inducedDipole;
-        this.inducedDipoleCR = inducedDipoleCR;
+        this.lambdaTerm = lambdaTerm;
+        this.grad = grad;
+        this.torque = torque;
+        this.sharedBornGrad = sharedBornGrad;
     }
 
     /**
-     * Execute the ExpandInducedDipolesRegion with the passed ParallelTeam.
+     * Execute the InitializationRegion with the passed ParallelTeam.
      *
      * @param parallelTeam The ParallelTeam instance to execute with.
      */
@@ -103,23 +106,28 @@ public class ExpandInducedDipolesRegion extends ParallelRegion {
         try {
             parallelTeam.execute(this);
         } catch (Exception e) {
-            String message = " Exception expanding induced dipoles.\n";
-            logger.log(Level.WARNING, message, e);
+            String message = " Exception expanding initializing GK.\n";
+            logger.log(Level.SEVERE, message, e);
         }
     }
 
     @Override
     public void run() {
+        int threadIndex = getThreadIndex();
+        if (initializationLoop[threadIndex] == null) {
+            initializationLoop[threadIndex] = new InitializationLoop();
+        }
         try {
             int nAtoms = atoms.length;
-            execute(0, nAtoms - 1, expandInducedDipoleLoop[getThreadIndex()]);
+            execute(0, nAtoms - 1, initializationLoop[threadIndex]);
         } catch (Exception e) {
-            String message = "Fatal exception expanding coordinates in thread: " + getThreadIndex() + "\n";
+            String message = "Fatal exception initializing coordinates in thread: " + threadIndex + "\n";
             logger.log(Level.SEVERE, message, e);
         }
     }
 
-    private class ExpandInducedDipoleLoop extends IntegerForLoop {
+    private class InitializationLoop extends IntegerForLoop {
+        private int threadID;
 
         @Override
         public IntegerSchedule schedule() {
@@ -127,14 +135,21 @@ public class ExpandInducedDipolesRegion extends ParallelRegion {
         }
 
         @Override
+        public void start() {
+            threadID = getThreadIndex();
+        }
+
+        @Override
         public void run(int lb, int ub) {
-            List<SymOp> symOps = crystal.spaceGroup.symOps;
-            int nSymm = symOps.size();
-            for (int s = 1; s < nSymm; s++) {
-                SymOp symOp = crystal.spaceGroup.symOps.get(s);
-                for (int ii = lb; ii <= ub; ii++) {
-                    crystal.applySymRot(inducedDipole[0][ii], inducedDipole[s][ii], symOp);
-                    crystal.applySymRot(inducedDipoleCR[0][ii], inducedDipoleCR[s][ii], symOp);
+            grad.reset(threadID, lb, ub);
+            torque.reset(threadID, lb, ub);
+            sharedBornGrad.reset(threadID, lb, ub);
+            if (lambdaTerm) {
+                for (int i = lb; i <= ub; i++) {
+                    if (!atoms[i].applyLambda()) {
+                        logger.info(format(" Atom %s is not alchemical.", atoms[i].toString()));
+                        logger.severe(" Alchemical GK calculations require all atoms to be alchemical.");
+                    }
                 }
             }
         }

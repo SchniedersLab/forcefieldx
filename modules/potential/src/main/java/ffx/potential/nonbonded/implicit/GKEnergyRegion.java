@@ -40,20 +40,19 @@ package ffx.potential.nonbonded.implicit;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.reduction.DoubleOp;
 import edu.rit.pj.reduction.SharedDouble;
-import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.ParticleMeshEwald;
@@ -73,8 +72,9 @@ import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
 
 /**
- * Compute the Generalized Kirkwood reaction field energy.
+ * Parallel calculation of the Generalized Kirkwood reaction field energy.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class GKEnergyRegion extends ParallelRegion {
@@ -128,35 +128,17 @@ public class GKEnergyRegion extends ParallelRegion {
 
     private boolean gradient = false;
     /**
-     * Boolean flag to indicate GK will be scaled by the lambda state variable.
+     * Atomic 3D Gradient array.
      */
-    private boolean lambdaTerm;
+    private AtomicDoubleArray3D grad;
     /**
-     * lPow equals lambda^polarizationLambdaExponent, where polarizationLambdaExponent also used by PME.
+     * Atomic 3D Torque array.
      */
-    private double lPow = 1.0;
-    /**
-     * First derivative of lPow with respect to l.
-     */
-    private double dlPow = 0.0;
-
-    private double[][][] grad;
-    /**
-     * Torque array for each thread.
-     */
-    private double[][][] torque;
-    /**
-     * Lambda gradient array for each thread (dU/dX/dL)
-     */
-    private double[][][] lambdaGrad;
-    /**
-     * Lambda torque array for each thread.
-     */
-    private double[][][] lambdaTorque;
+    private AtomicDoubleArray3D torque;
     /**
      * Shared array for computation of Born radii gradient.
      */
-    private SharedDoubleArray sharedBornGrad;
+    private AtomicDoubleArray sharedBornGrad;
 
     /**
      * Treatment of polarization.
@@ -229,9 +211,9 @@ public class GKEnergyRegion extends ParallelRegion {
 
     public void init(Atom[] atoms, double[][][] globalMultipole, double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      Crystal crystal, double[][][] sXYZ, int[][][] neighborLists, boolean[] use, double cut2,
-                     double[] baseRadius, double[] born, boolean lambdaTerm, double lPow, double dlPow, boolean gradient,
-                     double[][][] grad, double[][][] torque, double[][][] lambdaGrad, double[][][] lambdaTorque,
-                     SharedDoubleArray sharedBornGrad) {
+                     double[] baseRadius, double[] born, boolean gradient,
+                     AtomicDoubleArray3D grad, AtomicDoubleArray3D torque, AtomicDoubleArray sharedBornGrad) {
+        // Input
         this.atoms = atoms;
         this.globalMultipole = globalMultipole;
         this.inducedDipole = inducedDipole;
@@ -243,14 +225,10 @@ public class GKEnergyRegion extends ParallelRegion {
         this.cut2 = cut2;
         this.baseRadius = baseRadius;
         this.born = born;
-        this.lambdaTerm = lambdaTerm;
-        this.lPow = lPow;
-        this.dlPow = dlPow;
         this.gradient = gradient;
+        // Output
         this.grad = grad;
         this.torque = torque;
-        this.lambdaGrad = lambdaGrad;
-        this.lambdaTorque = lambdaTorque;
         this.sharedBornGrad = sharedBornGrad;
     }
 
@@ -300,30 +278,21 @@ public class GKEnergyRegion extends ParallelRegion {
         private final double[] gqxy;
         private final double[] gqxz;
         private final double[] gqyz;
-        private double[] gb_local;
-        private double[] gbi_local;
         private final double[] dx_local;
-        private double[] gX;
-        private double[] gY;
-        private double[] gZ;
-        private double[] tX;
-        private double[] tY;
-        private double[] tZ;
-        private double[] lgX;
-        private double[] lgY;
-        private double[] lgZ;
-        private double[] ltX;
-        private double[] ltY;
-        private double[] ltZ;
         private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
         private double ck, uxk, uyk, uzk, qxxk, qxyk, qxzk, qyyk, qyzk, qzzk;
         private double dxi, dyi, dzi, pxi, pyi, pzi, sxi, syi, szi;
         private double dxk, dyk, dzk, pxk, pyk, pzk, sxk, syk, szk;
         private double xr, yr, zr, xr2, yr2, zr2, rbi, rbk;
         private double xi, yi, zi;
+        private double dedxi, dedyi, dedzi;
+        private double dborni;
+        private double trqxi, trqyi, trqzi;
+
         private boolean gradient = false;
         private int count;
         private int iSymm;
+        private int threadID;
         private double[][] transOp;
         private double gkEnergy;
         // Extra padding to avert cache interference.
@@ -353,33 +322,9 @@ public class GKEnergyRegion extends ParallelRegion {
 
         @Override
         public void start() {
-            int nAtoms = atoms.length;
-            if (gb_local == null || gb_local.length != nAtoms) {
-                gb_local = new double[nAtoms];
-                gbi_local = new double[nAtoms];
-            }
-
             gkEnergy = 0.0;
             count = 0;
-            int threadID = getThreadIndex();
-            gX = grad[threadID][0];
-            gY = grad[threadID][1];
-            gZ = grad[threadID][2];
-            tX = torque[threadID][0];
-            tY = torque[threadID][1];
-            tZ = torque[threadID][2];
-            if (gradient) {
-                fill(gb_local, 0.0);
-                fill(gbi_local, 0.0);
-            }
-            if (lambdaTerm) {
-                lgX = lambdaGrad[threadID][0];
-                lgY = lambdaGrad[threadID][1];
-                lgZ = lambdaGrad[threadID][2];
-                ltX = lambdaTorque[threadID][0];
-                ltY = lambdaTorque[threadID][1];
-                ltZ = lambdaTorque[threadID][2];
-            }
+            threadID = getThreadIndex();
         }
 
         @Override
@@ -399,6 +344,16 @@ public class GKEnergyRegion extends ParallelRegion {
                     if (!use[i]) {
                         continue;
                     }
+
+                    // Zero out force accumulation for atom i.
+                    dedxi = 0.0;
+                    dedyi = 0.0;
+                    dedzi = 0.0;
+                    dborni = 0.0;
+                    trqxi = 0.0;
+                    trqyi = 0.0;
+                    trqzi = 0.0;
+
                     xi = x[i];
                     yi = y[i];
                     zi = z[i];
@@ -434,7 +389,6 @@ public class GKEnergyRegion extends ParallelRegion {
                     if (iSymm == 0) {
                         // Include self-interactions for the asymmetric unit atoms.
                         interaction(i, i);
-
                             /*
                               Formula for Born energy approximation for cavitation energy is:
                               e = surfaceTension / 6 * (ri + probe)^2 * (ri/rb)^6.
@@ -450,11 +404,16 @@ public class GKEnergyRegion extends ParallelRegion {
                                 ratio *= (ratio * ratio);
                                 double saTerm = surfaceTension * r * r * ratio / 6.0;
                                 gkEnergy += saTerm;
-                                gb_local[i] -= 6.0 * saTerm / born[i];
+                                sharedBornGrad.sub(threadID, i, 6.0 * saTerm / born[i]);
                                 break;
                             default:
                                 break;
                         }
+                    }
+                    if (gradient) {
+                        grad.add(threadID, i, dedxi, dedyi, dedzi);
+                        torque.add(threadID, i, trqxi, trqyi, trqzi);
+                        sharedBornGrad.add(threadID, i, dborni);
                     }
                 }
             }
@@ -464,10 +423,6 @@ public class GKEnergyRegion extends ParallelRegion {
         public void finish() {
             sharedInteractions.addAndGet(count);
             sharedGKEnergy.addAndGet(gkEnergy);
-            if (gradient) {
-                // Reduce the torque contributions computed by the current thread into the shared array.
-                sharedBornGrad.reduce(gb_local, DoubleOp.SUM);
-            }
         }
 
         private void interaction(int i, int k) {
@@ -612,7 +567,7 @@ public class GKEnergyRegion extends ParallelRegion {
             gkEnergy += eik;
             count++;
 
-            if (gradient || lambdaTerm) {
+            if (gradient) {
                 // Compute the additional GK tensors required to compute the energy gradient.
                 gradientTensors();
 
@@ -1141,7 +1096,7 @@ public class GKEnergyRegion extends ParallelRegion {
             double selfScale = 1.0;
             if (i == k) {
                 if (iSymm == 0) {
-                    gb_local[i] += drbi;
+                    sharedBornGrad.add(threadID, i, drbi);
                     return;
                 } else {
                     selfScale = 0.5;
@@ -1152,28 +1107,17 @@ public class GKEnergyRegion extends ParallelRegion {
             final double dedx = selfScale * dEdX();
             final double dedy = selfScale * dEdY();
             final double dedz = selfScale * dEdZ();
-
-            gX[i] -= lPow * dedx;
-            gY[i] -= lPow * dedy;
-            gZ[i] -= lPow * dedz;
-            gb_local[i] += selfScale * drbi;
+            dedxi -= dedx;
+            dedyi -= dedy;
+            dedzi -= dedz;
+            dborni += selfScale * drbi;
 
             final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
             final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
             final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
 
-            gX[k] += lPow * dedxk;
-            gY[k] += lPow * dedyk;
-            gZ[k] += lPow * dedzk;
-            gb_local[k] += selfScale * drbk;
-            if (lambdaTerm) {
-                lgX[i] -= dlPow * dedx;
-                lgY[i] -= dlPow * dedy;
-                lgZ[i] -= dlPow * dedz;
-                lgX[k] += dlPow * dedxk;
-                lgY[k] += dlPow * dedyk;
-                lgZ[k] += dlPow * dedzk;
-            }
+            grad.add(threadID, k, dedxk, dedyk, dedzk);
+            sharedBornGrad.add(threadID, k, selfScale * drbk);
             permanentEnergyTorque(i, k);
         }
 
@@ -1520,7 +1464,6 @@ public class GKEnergyRegion extends ParallelRegion {
             tkx += 2.0 * (qxyk * kxz + qyyk * kyz + qyzk * kzz - qxzk * kxy - qyzk * kyy - qzzk * kzy);
             tky += 2.0 * (qxzk * kxx + qyzk * kyx + qzzk * kzx - qxxk * kxz - qxyk * kyz - qxzk * kzz);
             tkz += 2.0 * (qxxk * kxy + qxyk * kyy + qxzk * kzy - qxyk * kxx - qyyk * kyx - qyzk * kzx);
-
             if (i == k) {
                 double selfScale = 0.5;
                 tix *= selfScale;
@@ -1530,25 +1473,14 @@ public class GKEnergyRegion extends ParallelRegion {
                 tky *= selfScale;
                 tkz *= selfScale;
             }
-
-            tX[i] += lPow * tix;
-            tY[i] += lPow * tiy;
-            tZ[i] += lPow * tiz;
+            trqxi += tix;
+            trqyi += tiy;
+            trqzi += tiz;
 
             final double rtkx = tkx * transOp[0][0] + tky * transOp[1][0] + tkz * transOp[2][0];
             final double rtky = tkx * transOp[0][1] + tky * transOp[1][1] + tkz * transOp[2][1];
             final double rtkz = tkx * transOp[0][2] + tky * transOp[1][2] + tkz * transOp[2][2];
-            tX[k] += lPow * rtkx;
-            tY[k] += lPow * rtky;
-            tZ[k] += lPow * rtkz;
-            if (lambdaTerm) {
-                ltX[i] += dlPow * tix;
-                ltY[i] += dlPow * tiy;
-                ltZ[i] += dlPow * tiz;
-                ltX[k] += dlPow * rtkx;
-                ltY[k] += dlPow * rtky;
-                ltZ[k] += dlPow * rtkz;
-            }
+            torque.add(threadID, k, rtkx, rtky, rtkz);
         }
 
         private void polarizationEnergyGradient(int i, int k) {
@@ -1730,7 +1662,7 @@ public class GKEnergyRegion extends ParallelRegion {
 
             // Increment the gradients and Born chain rule term.
             if (i == k && iSymm == 0) {
-                gb_local[i] += dbi;
+                dborni += dbi;
             } else {
                 if (i == k) {
                     dpdx *= 0.5;
@@ -1739,27 +1671,16 @@ public class GKEnergyRegion extends ParallelRegion {
                     dbi *= 0.5;
                     dbk *= 0.5;
                 }
-                gX[i] -= lPow * dpdx;
-                gY[i] -= lPow * dpdy;
-                gZ[i] -= lPow * dpdz;
-                gb_local[i] += dbi;
+                dedxi -= dpdx;
+                dedyi -= dpdy;
+                dedzi -= dpdz;
+                dborni += dbi;
 
                 final double rdpdx = dpdx * transOp[0][0] + dpdy * transOp[1][0] + dpdz * transOp[2][0];
                 final double rdpdy = dpdx * transOp[0][1] + dpdy * transOp[1][1] + dpdz * transOp[2][1];
                 final double rdpdz = dpdx * transOp[0][2] + dpdy * transOp[1][2] + dpdz * transOp[2][2];
-                gX[k] += lPow * rdpdx;
-                gY[k] += lPow * rdpdy;
-                gZ[k] += lPow * rdpdz;
-                gb_local[k] += dbk;
-
-                if (lambdaTerm) {
-                    lgX[i] -= dlPow * dpdx;
-                    lgY[i] -= dlPow * dpdy;
-                    lgZ[i] -= dlPow * dpdz;
-                    lgX[k] += dlPow * rdpdx;
-                    lgY[k] += dlPow * rdpdy;
-                    lgZ[k] += dlPow * rdpdz;
-                }
+                grad.add(threadID, k, rdpdx, rdpdy, rdpdz);
+                sharedBornGrad.add(threadID, k, dbk);
             }
             polarizationEnergyTorque(i, k);
         }
@@ -1855,9 +1776,9 @@ public class GKEnergyRegion extends ParallelRegion {
             tkx += 2.0 * (qxyk * fkxz + qyyk * fkyz + qyzk * fkzz - qxzk * fkxy - qyzk * fkyy - qzzk * fkzy);
             tky += 2.0 * (qxzk * fkxx + qyzk * fkyx + qzzk * fkzx - qxxk * fkxz - qxyk * fkyz - qxzk * fkzz);
             tkz += 2.0 * (qxxk * fkxy + qxyk * fkyy + qxzk * fkzy - qxyk * fkxx - qyyk * fkyx - qyzk * fkzx);
-            tX[i] += lPow * tix;
-            tY[i] += lPow * tiy;
-            tZ[i] += lPow * tiz;
+            trqxi += tix;
+            trqyi += tiy;
+            trqzi += tiz;
 
             final double rx = tkx;
             final double ry = tky;
@@ -1865,18 +1786,7 @@ public class GKEnergyRegion extends ParallelRegion {
             tkx = rx * transOp[0][0] + ry * transOp[1][0] + rz * transOp[2][0];
             tky = rx * transOp[0][1] + ry * transOp[1][1] + rz * transOp[2][1];
             tkz = rx * transOp[0][2] + ry * transOp[1][2] + rz * transOp[2][2];
-
-            tX[k] += lPow * tkx;
-            tY[k] += lPow * tky;
-            tZ[k] += lPow * tkz;
-            if (lambdaTerm) {
-                ltX[i] += dlPow * tix;
-                ltY[i] += dlPow * tiy;
-                ltZ[i] += dlPow * tiz;
-                ltX[k] += dlPow * tkx;
-                ltY[k] += dlPow * tky;
-                ltZ[k] += dlPow * tkz;
-            }
+            torque.add(threadID, k, tkx, tky, tkz);
         }
     }
 

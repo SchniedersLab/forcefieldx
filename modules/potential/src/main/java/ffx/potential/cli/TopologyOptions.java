@@ -47,12 +47,12 @@ import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import ffx.numerics.Potential;
+import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.numerics.switching.PowerSwitch;
 import ffx.numerics.switching.SquaredTrigSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.MultiplicativeSwitch;
 
 import picocli.CommandLine.Option;
 

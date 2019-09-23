@@ -40,25 +40,24 @@ package ffx.potential.nonbonded.implicit;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.reduction.DoubleOp;
-import edu.rit.pj.reduction.SharedDoubleArray;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.dWater;
 
 /**
- * Compute the Generalized Kirkwood induced reaction field in parallel.
+ * Parallel calculation of the Generalized Kirkwood induced reaction field.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class InducedGKFieldRegion extends ParallelRegion {
@@ -102,13 +101,13 @@ public class InducedGKFieldRegion extends ParallelRegion {
      */
     private double[] born;
     /**
-     * Shared arrays for computation of the GK field for each symmetry operator.
+     * Atomic GK field array.
      */
-    public SharedDoubleArray[] sharedGKField;
+    private AtomicDoubleArray3D sharedGKField;
     /**
-     * Shared arrays for computation of the GK field chain-rule term for each symmetry operator.
+     * Atomic GK field chain-rule array.
      */
-    public SharedDoubleArray[] sharedGKFieldCR;
+    private AtomicDoubleArray3D sharedGKFieldCR;
 
     /**
      * Empirical constant that controls the GK cross-term.
@@ -139,7 +138,7 @@ public class InducedGKFieldRegion extends ParallelRegion {
     public void init(Atom[] atoms, double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      Crystal crystal, double[][][] sXYZ, int[][][] neighborLists,
                      boolean[] use, double cut2, double[] born,
-                     SharedDoubleArray[] sharedGKField, SharedDoubleArray[] sharedGKFieldCR) {
+                     AtomicDoubleArray3D sharedGKField, AtomicDoubleArray3D sharedGKFieldCR) {
         this.atoms = atoms;
         this.inducedDipole = inducedDipole;
         this.inducedDipoleCR = inducedDipoleCR;
@@ -151,20 +150,6 @@ public class InducedGKFieldRegion extends ParallelRegion {
         this.born = born;
         this.sharedGKField = sharedGKField;
         this.sharedGKFieldCR = sharedGKFieldCR;
-    }
-
-
-    @Override
-    public void start() {
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            sharedGKField[0].set(i, 0.0);
-            sharedGKField[1].set(i, 0.0);
-            sharedGKField[2].set(i, 0.0);
-            sharedGKFieldCR[0].set(i, 0.0);
-            sharedGKFieldCR[1].set(i, 0.0);
-            sharedGKFieldCR[2].set(i, 0.0);
-        }
     }
 
     @Override
@@ -186,16 +171,11 @@ public class InducedGKFieldRegion extends ParallelRegion {
      */
     private class InducedGKFieldLoop extends IntegerForLoop {
 
+        private int threadID;
         private final double[][] a;
         private final double[] gux;
         private final double[] guy;
         private final double[] guz;
-        private double[] fx_local;
-        private double[] fy_local;
-        private double[] fz_local;
-        private double[] fxCR_local;
-        private double[] fyCR_local;
-        private double[] fzCR_local;
         private final double[] dx_local;
         private double xi, yi, zi;
         private double uix, uiy, uiz;
@@ -217,38 +197,9 @@ public class InducedGKFieldRegion extends ParallelRegion {
         }
 
         @Override
-        public void start() {
-            int nAtoms = atoms.length;
-            if (fx_local == null || fx_local.length != nAtoms) {
-                fx_local = new double[nAtoms];
-                fy_local = new double[nAtoms];
-                fz_local = new double[nAtoms];
-                fxCR_local = new double[nAtoms];
-                fyCR_local = new double[nAtoms];
-                fzCR_local = new double[nAtoms];
-            }
-            fill(fx_local, 0.0);
-            fill(fy_local, 0.0);
-            fill(fz_local, 0.0);
-            fill(fxCR_local, 0.0);
-            fill(fyCR_local, 0.0);
-            fill(fzCR_local, 0.0);
-        }
-
-        @Override
-        public void finish() {
-
-            // Reduce the field contributions computed by the current thread into the shared arrays.
-            sharedGKField[0].reduce(fx_local, DoubleOp.SUM);
-            sharedGKField[1].reduce(fy_local, DoubleOp.SUM);
-            sharedGKField[2].reduce(fz_local, DoubleOp.SUM);
-            sharedGKFieldCR[0].reduce(fxCR_local, DoubleOp.SUM);
-            sharedGKFieldCR[1].reduce(fyCR_local, DoubleOp.SUM);
-            sharedGKFieldCR[2].reduce(fzCR_local, DoubleOp.SUM);
-        }
-
-        @Override
         public void run(int lb, int ub) {
+
+            threadID = getThreadIndex();
 
             double[] x = sXYZ[0][0];
             double[] y = sXYZ[0][1];
@@ -372,31 +323,23 @@ public class InducedGKFieldRegion extends ParallelRegion {
                 fkzCR *= 0.5;
             }
 
-            fx_local[i] += fix;
-            fy_local[i] += fiy;
-            fz_local[i] += fiz;
             double xc = fkx;
             double yc = fky;
             double zc = fkz;
             fkx = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
             fky = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
             fkz = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
-            fx_local[k] += fkx;
-            fy_local[k] += fky;
-            fz_local[k] += fkz;
+            sharedGKField.add(threadID, i, fix, fiy, fiz);
+            sharedGKField.add(threadID, k, fkx, fky, fkz);
 
-            fxCR_local[i] += fixCR;
-            fyCR_local[i] += fiyCR;
-            fzCR_local[i] += fizCR;
             xc = fkxCR;
             yc = fkyCR;
             zc = fkzCR;
             fkxCR = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
             fkyCR = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
             fkzCR = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
-            fxCR_local[k] += fkxCR;
-            fyCR_local[k] += fkyCR;
-            fzCR_local[k] += fkzCR;
+            sharedGKFieldCR.add(threadID, i, fixCR, fiyCR, fizCR);
+            sharedGKFieldCR.add(threadID, k, fkxCR, fkyCR, fkzCR);
         }
     }
 }

@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
+import ffx.numerics.Constraint;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
@@ -120,6 +121,14 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * Flag to indicate decomposition of ESV derivatives.
      */
     private boolean decomposeEsvDeriv = false;
+    /**
+     * Flag indicating if this term is constrained.
+     */
+    private boolean isConstrained = false;
+    /**
+     * Constraint on this BondedTerm, if any (else null).
+     */
+    private Constraint constraint = null;
 
     /**
      * Default Constructor
@@ -212,6 +221,36 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             }
         }
         return true;
+    }
+
+    /**
+     * Check if this BondedTerm is lambda-sensitive (e.g. a softcored dihedral).
+     *
+     * @return True if Lambda affects the energy of this term.
+     */
+    public boolean isLambdaScaled() {
+        return false;
+    }
+
+    /**
+     * Check if this BondedTerm is constrained.
+     *
+     * @return If constrained.
+     */
+    public boolean isConstrained() {
+        return isConstrained;
+    }
+
+    /**
+     * Sets the Constraint on this bond (clearing it if null). May recursively
+     * set the Constraint on component terms (i.e. an Angle will call setConstraint
+     * on its component Bonds).
+     *
+     * @param c Constraint or null to clear.
+     */
+    public void setConstraint(Constraint c) {
+        this.constraint = c;
+        isConstrained = c != null;
     }
 
     /**

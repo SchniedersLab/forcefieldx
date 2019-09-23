@@ -28,6 +28,12 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
             <type>jar</type>
@@ -50,7 +56,6 @@
             <version>${junit.version}</version>
             <type>jar</type>
         </dependency>
-
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>pj</artifactId>

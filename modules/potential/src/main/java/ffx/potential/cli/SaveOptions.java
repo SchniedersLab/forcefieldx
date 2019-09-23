@@ -56,6 +56,7 @@ public class SaveOptions {
     private boolean constrain = false;
 
     private double[] x;
+    private double[] outputX;
 
     /**
      * Performs key operations prior to saving to disc, such as application of geometric constraints.
@@ -73,12 +74,15 @@ public class SaveOptions {
      */
     public void preSaveOperations(ForceFieldEnergy ffe) {
         if (constrain) {
+            int nVars = ffe.getNumberOfVariables();
             if (x == null) {
-                x = new double[ffe.getNumberOfVariables()];
+                x = new double[nVars];
+                outputX = new double[nVars];
             }
             x = ffe.getCoordinates(x);
-            ffe.applyAllConstraintPositions(x, x);
-            ffe.setCoordinates(x);
+            System.arraycopy(x, 0, outputX, 0, nVars);
+            ffe.applyAllConstraintPositions(x, outputX);
+            ffe.setCoordinates(outputX);
         }
     }
 }

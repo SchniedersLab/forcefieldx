@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.nonbonded;
+package ffx.numerics.switching;
 
 import static java.lang.String.format;
 

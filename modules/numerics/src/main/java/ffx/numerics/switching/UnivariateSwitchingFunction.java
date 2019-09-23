@@ -145,4 +145,6 @@ public interface UnivariateSwitchingFunction {
      * @throws java.lang.IllegalArgumentException If derivative undefined at x.
      */
     double nthDerivative(double x, int order) throws IllegalArgumentException;
+
+    // Note: implementations should have a well-defined toString() method!
 }

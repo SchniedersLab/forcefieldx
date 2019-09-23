@@ -151,7 +151,20 @@ public class NucleicAcidUtils {
             }
 
             // Check if this is a lone 3'-terminal phosphate cap; if so, will skip a lot of logic.
-            boolean threePrimeCap = (position == LAST_RESIDUE && natoms < 7);
+            boolean threePrimeCap = false;
+            if (natoms < 7) {
+                boolean unrecognized = false;
+                for (Atom atom : resAtoms) {
+                    String aname = atom.getName();
+                    // Recognized: P, OP[1-3], O5' (will be renamed to OP3), HOP[1-3], and DOP[1-3] (deuterated)
+                    if (!(aname.equals("P") || aname.matches("[HD]?OP[1-3]") || aname.matches("O5\'"))) {
+                        unrecognized = true;
+                        break;
+                    }
+                }
+                threePrimeCap = !unrecognized;
+                logger.info(" three prime cap " + threePrimeCap);
+            }
 
             // Check if the sugar is deoxyribose and change the residue name if necessary.
             boolean isDNA = false;

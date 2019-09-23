@@ -108,15 +108,30 @@ public class OutOfPlaneBend extends BondedTerm {
         Atom centralAtom = angle.atoms[1];
         if (centralAtom.isTrigonal()) {
             Atom atom4 = angle.getTrigonalAtom();
-            String key = atom4.getAtomType().atomClass + " " + centralAtom.getAtomType().atomClass
-                    + " 0 0";
-            OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(key);
-            if (outOfPlaneBendType != null) {
+            int class4 = atom4.getAtomType().atomClass;
+            int class0 = angle.atoms[0].getAtomType().atomClass;
+            int class1 = angle.atoms[1].getAtomType().atomClass;
+            int class2 = angle.atoms[2].getAtomType().atomClass;
+
+            // First check for an atom4-center-edge-edge type (also checking reversed edges).
+            String key = String.format("%d %d %d %d", class4, class1, class0, class2);
+            OutOfPlaneBendType oopBendType = forceField.getOutOfPlaneBendType(key);
+            if (oopBendType == null) {
+                key = String.format("%d %d %d %d", class4, class1, class2, class0);
+                oopBendType = forceField.getOutOfPlaneBendType(key);
+            }
+
+            // Then, check for a generic OOP bend type atom4-center-any-any
+            if (oopBendType == null) {
+                key = String.format("%d %d 0 0", class4, class1);
+                oopBendType = forceField.getOutOfPlaneBendType(key);
+            }
+            if (oopBendType != null) {
                 if (angle.getAngleMode() == AngleType.AngleMode.IN_PLANE) {
                     angle.setInPlaneAtom(atom4);
                 }
                 OutOfPlaneBend newOutOfPlaneBend = new OutOfPlaneBend(angle, atom4);
-                newOutOfPlaneBend.outOfPlaneBendType = outOfPlaneBendType;
+                newOutOfPlaneBend.outOfPlaneBendType = oopBendType;
                 return newOutOfPlaneBend;
             }
         }

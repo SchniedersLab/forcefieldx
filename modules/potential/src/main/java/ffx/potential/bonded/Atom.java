@@ -610,6 +610,23 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
+     * Count the number of bonded hydrogen.
+     * @return the count.
+     */
+    public int getNumberOfBondedHydrogen() {
+        // Count the number of hydrogen attached to this atom.
+        ArrayList<Bond> bonds = getBonds();
+        int n = 0;
+        for (Bond b1 : bonds) {
+                Atom atom = b1.get1_2(this);
+                if (atom.getAtomType().atomicNumber == 1) {
+                    n += 1;
+                }
+            }
+        return n;
+    }
+
+    /**
      * <p>
      * isHeavy checks whether this Atom is a heavy (non-hydrogen) atom.</p>
      *

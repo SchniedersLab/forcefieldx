@@ -62,6 +62,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -347,7 +348,6 @@ public class VanDerWaals implements MaskingInterface,
         } catch (Exception e) {
             logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
         }
-        logger.info(format("  Using %s arrays.", atomicDoubleArrayImpl.toString()));
 
         // Allocate coordinate arrays and set up reduction indices and values.
         initAtomArrays();
@@ -839,12 +839,12 @@ public class VanDerWaals implements MaskingInterface,
      * Apply masking rules for 1-2, 1-3 and 1-4 interactions.
      */
     @Override
-    public void applyMask(final double[] mask, final boolean[] ivdw14, final int i) {
-
+    public void applyMask(final int i, final boolean[] is14, final double[]... masks) {
+        double[] mask = masks[0];
         final int[] torsionMaski = torsionMask[i];
         for (int value : torsionMaski) {
             mask[value] = vdwForm.scale14;
-            ivdw14[value] = true;
+            is14[value] = true;
         }
         final int[] angleMaski = angleMask[i];
         for (int value : angleMaski) {
@@ -862,12 +862,12 @@ public class VanDerWaals implements MaskingInterface,
      * Remove the masking rules for 1-2, 1-3 and 1-4 interactions.
      */
     @Override
-    public void removeMask(final double[] mask, final boolean[] ivdw14, final int i) {
-
+    public void removeMask(final int i, final boolean[] is14, final double[]... masks) {
+        double[] mask = masks[0];
         final int[] torsionMaski = torsionMask[i];
         for (int value : torsionMaski) {
             mask[value] = 1.0;
-            ivdw14[value] = false;
+            is14[value] = false;
         }
         final int[] angleMaski = angleMask[i];
         for (int value : angleMaski) {
@@ -1425,7 +1425,7 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             // Log timings.
-            if (threadIndex == 0 && logger.isLoggable(Level.FINER)) {
+            if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
                 double total = (initializationTotal + vdwTotal + reductionTotal) * 1e-9;
                 logger.fine(format("\n Van der Waals: %7.4f (sec)", total));
                 logger.fine(" Thread    Init    Energy  Reduce  Total     Counts");
@@ -1658,6 +1658,7 @@ public class VanDerWaals implements MaskingInterface,
                 if (lambdaFactorsLocal == null) {
                     System.exit(1);
                 }
+
                 if (mask == null || mask.length < nAtoms) {
                     mask = new double[nAtoms];
                     fill(mask, 1.0);
@@ -1718,7 +1719,7 @@ public class VanDerWaals implements MaskingInterface,
                     double lyredi = 0.0;
                     double lzredi = 0.0;
                     double localEsvDerivI = 0.0;
-                    applyMask(mask, vdw14, i);
+                    applyMask(i, vdw14, mask);
                     // Default is that the outer loop atom is hard.
                     boolean[] softCorei = softCore[HARD];
                     if (isSoft[i]) {
@@ -1932,7 +1933,7 @@ public class VanDerWaals implements MaskingInterface,
                             esvDeriv[idxi].addAndGet(localEsvDerivI);
                         }
                     }
-                    removeMask(mask, vdw14, i);
+                    removeMask(i, vdw14, mask);
                 }
                 energy += e;
                 List<SymOp> symOps = crystal.spaceGroup.symOps;

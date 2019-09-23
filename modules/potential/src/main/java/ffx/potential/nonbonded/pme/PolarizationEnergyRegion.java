@@ -49,6 +49,12 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_ELECTRIC;
 
+/**
+ * Parallel computation of the polarization energy as sum over atomic contributions (-1/2 u.E).
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class PolarizationEnergyRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(PolarizationEnergyRegion.class.getName());

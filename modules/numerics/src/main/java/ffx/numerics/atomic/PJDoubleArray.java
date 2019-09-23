@@ -37,6 +37,12 @@
 //******************************************************************************
 package ffx.numerics.atomic;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDoubleArray;
 
 /**
@@ -55,12 +61,14 @@ import edu.rit.pj.reduction.SharedDoubleArray;
  */
 public class PJDoubleArray implements AtomicDoubleArray {
 
+    private static final Logger logger = Logger.getLogger(PJDoubleArray.class.getName());
+
     private SharedDoubleArray array;
 
     /**
      * <p>Constructor for PJDoubleArray.</p>
      *
-     * @param size     a int.
+     * @param size a int.
      */
     public PJDoubleArray(int size) {
         array = new SharedDoubleArray(size);
@@ -90,6 +98,28 @@ public class PJDoubleArray implements AtomicDoubleArray {
      * {@inheritDoc}
      */
     @Override
+    public void reset(ParallelTeam parallelTeam, int lb, int ub) {
+        try {
+            parallelTeam.execute(new ParallelRegion() {
+                @Override
+                public void run() throws Exception {
+                    execute(lb, ub, new IntegerForLoop() {
+                        @Override
+                        public void run(int first, int last) {
+                            reset(getThreadIndex(), first, last);
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception resetting an PJDoubleArray", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void add(int threadID, int index, double value) {
         array.getAndAdd(index, value);
     }
@@ -109,6 +139,15 @@ public class PJDoubleArray implements AtomicDoubleArray {
      */
     @Override
     public void reduce(int lb, int ub) {
+        // Nothing to do.
+    }
+
+    /**
+     * {@inheritDoc}
+     * Reduction is handled atomically by the PJ SharedDoubleArray.
+     */
+    @Override
+    public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
         // Nothing to do.
     }
 

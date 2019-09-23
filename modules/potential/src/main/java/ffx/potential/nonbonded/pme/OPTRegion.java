@@ -43,8 +43,8 @@ import java.util.logging.Logger;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.reduction.SharedDoubleArray;
 
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
@@ -52,6 +52,12 @@ import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t010;
 import static ffx.potential.parameters.MultipoleType.t100;
 
+/**
+ * Parallel computation of the OPT induced dipoles.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class OPTRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(OPTRegion.class.getName());
@@ -70,13 +76,13 @@ public class OPTRegion extends ParallelRegion {
     private double[][] cartesianDipolePhiCR;
 
     /**
-     * Field array for each thread. [threadID][X/Y/Z][atomID]
+     * Field array.
      */
-    private double[][][] field;
+    private AtomicDoubleArray3D field;
     /**
-     * Chain rule field array for each thread. [threadID][X/Y/Z][atomID]
+     * Chain rule field array.
      */
-    private double[][][] fieldCR;
+    private AtomicDoubleArray3D fieldCR;
 
     /**
      * Flag to indicate use of generalized Kirkwood.
@@ -87,10 +93,9 @@ public class OPTRegion extends ParallelRegion {
     private double aewald3;
 
     private int currentOptOrder;
-    private final int maxThreads;
     private final OPTLoop[] optLoop;
     public final double[] optCoefficients;
-    public final double[] optCoefficientsSum;
+    private final double[] optCoefficientsSum;
 
     /**
      * Induced dipoles for extrapolated perturbation theory.
@@ -100,7 +105,6 @@ public class OPTRegion extends ParallelRegion {
     public double[][][] optDipoleCR;
 
     public OPTRegion(int nt) {
-        maxThreads = nt;
         optLoop = new OPTLoop[nt];
         optCoefficients = new double[optOrder + 1];
         optCoefficientsSum = new double[optOrder + 1];
@@ -158,7 +162,7 @@ public class OPTRegion extends ParallelRegion {
     public void init(int currentOptOrder, Atom[] atoms, double[] polarizability,
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      double[][] cartesianDipolePhi, double[][] cartesianDipolePhiCR,
-                     double[][][] field, double[][][] fieldCR,
+                     AtomicDoubleArray3D field, AtomicDoubleArray3D fieldCR,
                      boolean generalizedKirkwoodTerm, GeneralizedKirkwood generalizedKirkwood,
                      EwaldParameters ewaldParameters) {
         this.currentOptOrder = currentOptOrder;
@@ -192,7 +196,6 @@ public class OPTRegion extends ParallelRegion {
             String message = "Fatal exception computing the opt induced dipoles in thread " + getThreadIndex() + "\n";
             logger.log(Level.SEVERE, message, e);
         }
-
     }
 
     private class OPTLoop extends IntegerForLoop {
@@ -204,32 +207,10 @@ public class OPTRegion extends ParallelRegion {
 
         @Override
         public void run(int lb, int ub) throws Exception {
+            int threadID = getThreadIndex();
             final double[][] induced0 = inducedDipole[0];
             final double[][] inducedCR0 = inducedDipoleCR[0];
 
-            // Reduce the real space field.
-            for (int i = lb; i <= ub; i++) {
-                double fx = 0.0;
-                double fy = 0.0;
-                double fz = 0.0;
-                double fxCR = 0.0;
-                double fyCR = 0.0;
-                double fzCR = 0.0;
-                for (int j = 1; j < maxThreads; j++) {
-                    fx += field[j][0][i];
-                    fy += field[j][1][i];
-                    fz += field[j][2][i];
-                    fxCR += fieldCR[j][0][i];
-                    fyCR += fieldCR[j][1][i];
-                    fzCR += fieldCR[j][2][i];
-                }
-                field[0][0][i] += fx;
-                field[0][1][i] += fy;
-                field[0][2][i] += fz;
-                fieldCR[0][0][i] += fxCR;
-                fieldCR[0][1][i] += fyCR;
-                fieldCR[0][2][i] += fzCR;
-            }
             if (aewald > 0.0) {
                 // Add the self and reciprocal space fields to the real space field.
                 for (int i = lb; i <= ub; i++) {
@@ -243,28 +224,23 @@ public class OPTRegion extends ParallelRegion {
                     double fxCR = aewald3 * dipoleCRi[0] - phiCRi[t100];
                     double fyCR = aewald3 * dipoleCRi[1] - phiCRi[t010];
                     double fzCR = aewald3 * dipoleCRi[2] - phiCRi[t001];
-                    field[0][0][i] += fx;
-                    field[0][1][i] += fy;
-                    field[0][2][i] += fz;
-                    fieldCR[0][0][i] += fxCR;
-                    fieldCR[0][1][i] += fyCR;
-                    fieldCR[0][2][i] += fzCR;
+                    field.add(threadID, i, fx, fy, fz);
+                    fieldCR.add(threadID, i, fxCR, fyCR, fzCR);
                 }
             }
             if (generalizedKirkwoodTerm) {
-                SharedDoubleArray[] gkField = generalizedKirkwood.sharedGKField;
-                SharedDoubleArray[] gkFieldCR = generalizedKirkwood.sharedGKFieldCR;
-
+                AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
+                AtomicDoubleArray3D fieldGKCR = generalizedKirkwood.getFieldGKCR();
                 // Add the GK reaction field to the intramolecular field.
                 for (int i = lb; i <= ub; i++) {
-                    field[0][0][i] += gkField[0].get(i);
-                    field[0][1][i] += gkField[1].get(i);
-                    field[0][2][i] += gkField[2].get(i);
-                    fieldCR[0][0][i] += gkFieldCR[0].get(i);
-                    fieldCR[0][1][i] += gkFieldCR[1].get(i);
-                    fieldCR[0][2][i] += gkFieldCR[2].get(i);
+                    field.add(threadID, i, fieldGK.getX(i), fieldGK.getY(i), fieldGK.getZ(i));
+                    fieldCR.add(threadID, i, fieldGKCR.getX(i), fieldGKCR.getY(i), fieldGKCR.getZ(i));
                 }
             }
+
+            // Reduce the real space field.
+            field.reduce(lb, ub);
+            fieldCR.reduce(lb, ub);
 
             // Collect the current Opt Order induced dipole.
             for (int i = lb; i <= ub; i++) {
@@ -272,8 +248,8 @@ public class OPTRegion extends ParallelRegion {
                 final double[] indCR = inducedCR0[i];
                 final double polar = polarizability[i];
                 for (int j = 0; j < 3; j++) {
-                    optDipole[currentOptOrder][i][j] = polar * field[0][j][i];
-                    optDipoleCR[currentOptOrder][i][j] = polar * fieldCR[0][j][i];
+                    optDipole[currentOptOrder][i][j] = polar * field.get(j, i);
+                    optDipoleCR[currentOptOrder][i][j] = polar * fieldCR.get(j, i);
                     ind[j] = optDipole[currentOptOrder][i][j];
                     indCR[j] = optDipoleCR[currentOptOrder][i][j];
                 }

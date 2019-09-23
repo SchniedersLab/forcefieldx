@@ -223,7 +223,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py
      * script (available from the wiki) to draw these easily in PyMol.
      */
-    boolean printInducedDipoles = Boolean.valueOf(System.getProperty("pme.printInducedDipoles", "false"));
+    boolean printInducedDipoles = Boolean.parseBoolean(System.getProperty("pme.printInducedDipoles", "false"));
 
     /**
      * Log the seven components of total electrostatic energy at each
@@ -237,7 +237,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * Disables windowed lambda ranges by setting permLambdaStart =
      * polLambdaStart = 0.0 and permLambdaEnd = polLambdaEnd = 1.0.
      */
-    protected final boolean noWindowing = Boolean.valueOf(System.getProperty("pme.noWindowing", "false"));
+    protected final boolean noWindowing = Boolean.parseBoolean(System.getProperty("pme.noWindowing", "false"));
 
     /**
      * Default cutoff values for PME and aperiodic systems.
@@ -280,34 +280,6 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * @return a double.
      */
     public abstract double getEwaldCutoff();
-
-    /**
-     * <p>getGradient.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    protected abstract double[][][] getGradient();
-
-    /**
-     * <p>getTorque.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    protected abstract double[][][] getTorque();
-
-    /**
-     * <p>getLambdaGradient.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    protected abstract double[][][] getLambdaGradient();
-
-    /**
-     * <p>getLambdaTorque.</p>
-     *
-     * @return an array of {@link double} objects.
-     */
-    protected abstract double[][][] getLambdaTorque();
 
     /**
      * <p>Setter for the field <code>atoms</code>.</p>

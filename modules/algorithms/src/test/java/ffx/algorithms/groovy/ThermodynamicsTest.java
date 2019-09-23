@@ -94,58 +94,57 @@ public class ThermodynamicsTest extends PJDependentTest {
          */
         return Arrays.asList(new Object[][]{
                 {
-                        "Thermodynamics Help Message Test", new String[]{}, ThermoTestMode.HELP, 0, 0, null, null,
+                        "Thermodynamics Help Message Test", new String[]{}, ThermoTestMode.HELP, false, 0, 0, null, null,
                         null, null, null, null, new String[]{}, new String[]{}, new String[]{"-h", "true"}
                 },
                 {
-                        "Acetamide Implicit Solvation Free Energy: -10.8 kcal/mol",
+                        "Acetamide Implicit Solvation Free Energy: -8.5 kcal/mol",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.FREE, -10.8, 1.0, null, null, null, null, null, null,
-                        new String[]{"-C", "10", "-d", "1.0", "-n", "50000", "-w", "5", "--bM", "0.25", "--tp", "4"},
-                        new String[]{}, new String[]{}
+                        ThermoTestMode.FREE, false, -8.5, 1.0, null, null, null, null, null, null,
+                        new String[]{"-C", "10", "--s1", "1", "--f1", "9", "-d", "1.0", "-n", "20000", "-w", "5", "--bM", "0.25", "--tp", "2.0"},
+                        new String[]{"randomseed", "42"}, new String[]{}
                 },
                 {
                         "Acetamide Implicit Solvation Gradients: L = 0.9",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, intRange(1, 3),
-                        new double[]{-14.00257395309939, -14.1547628}, new double[]{-47.720369065614356, 2.88020118},
-                        new double[]{-636.2715875415239, Double.NaN},
+                        ThermoTestMode.GRAD, false, 0, 0, intRange(1, 3),
+                        // new double[]{-19.5922844295, Double.NaN}, new double[]{-9.19007695807, Double.NaN},
+                        new double[]{ -18.85584096, Double.NaN}, new double[]{-8.371806437, Double.NaN},
+                        new double[]{-0.411272333503, Double.NaN},
                         new double[][][]{
-                                {{-2.5060460011671735, -0.8234854351948333, -0.8116457717486729},
-                                        {13.563606950444527, 0.04427870228203579, 8.168310921746576}},
-                                {{0.3245837863444, -0.3346459581204537, 0.21247087522245325},
-                                        {-2.1088804470365896, -0.18290359797842182, -0.7158477527631418}}},
-                        new double[][][]{
-                                {{6.626133521887895, -6.419129838368647, 6.117539850782897},
-                                        {-44.36007075466142, -5.35872684032147, -19.08550997093686}},
+                                {{-0.9032063972624029, -0.9091307927702053, 0.07070715071076905},
+                                        {6.336321525587566, -0.9091139791706401, 5.073742114349582}},
                                 new double[2][3]},
-                        new String[]{"-l", "0.9"}, new String[]{}, new String[]{}
+                        new double[][][]{
+                                {{2.0679591685061096, -0.4446936399271604, 1.2610754559142918},
+                                        {-10.490557931892937, -1.382090643790419, -4.493259894567457}},
+                                new double[2][3]},
+                        new String[]{"-l", "0.9", "--s1", "1", "--f1", "9", "--s1", "1", "--f1", "9"}, new String[]{}, new String[]{}
                 },
                 {
                         "Acetamide Implicit Solvation Gradients: L = 1.0",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, intRange(1, 3),
-                        new double[]{-22.662937227970133, -22.4300811}, new double[]{-132.55658073781763, -4.28073063},
-                        new double[]{-1060.4526459025403, Double.NaN},
+                        ThermoTestMode.GRAD, false, 0, 0, intRange(1, 3),
+                        new double[]{-19.68445574427762, Double.NaN}, new double[]{-8.067900244458935, Double.NaN},
+                        new double[]{7.5710964747886464, Double.NaN},
                         new double[][][]{
-                                {{-1.3035254731208519, -1.988438628083957, 0.29857442339340845},
-                                        {5.5130755912652365, -0.9282309835540822, 4.704644297391372}},
-                                {{1.670608498, -1.693777005, 1.106802141},
-                                        {-10.81375409, -0.871398548, -3.61577372}}},
-                        new double[][][]{
-                                {{18.405926449688586, -17.830916217690675, 16.99316625217472},
-                                        {-123.22241876294834, -14.885352334226242, -53.01530547482457}},
+                                {{-0.6943279470072035, -0.9537582511328658, 0.198314546700465},
+                                        {5.287165262047079, -1.046675303630384, 4.624270493233988}},
                                 new double[2][3]},
-                        new String[]{"-l", "1.0"}, new String[]{}, new String[]{}
+                        new double[][][]{
+                                {{2.143024730254365, -0.45122930785646503, 1.315837310988282},
+                                        {-10.494445226130521, -1.3588903479284937, -4.49831592705943}},
+                                new double[2][3]},
+                        new String[]{"-l", "1.0", "--s1", "1", "--f1", "9", "--s1", "1", "--f1", "9"}, new String[]{}, new String[]{}
                 },
                 {
                         // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the ions, and some water.
                         "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 0.0",
                         new String[]{"ffx/algorithms/structures/4icb_ca_a.xyz", "ffx/algorithms/structures/4icb_ca_b.xyz",
                                 "ffx/algorithms/structures/4icb_mg_a.xyz", "ffx/algorithms/structures/4icb_mg_b.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
+                        ThermoTestMode.GRAD, true, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-8422.43552052, 0}, new double[]{-0.0234728644, 0}, new double[]{-187.693010, Double.NaN},
+                        new double[]{-8422.43552052, 0}, new double[]{0, 0}, new double[]{-187.708505969645246, Double.NaN},
                         new double[][][]{
                                 {{1.51602997670091, -0.16798107175016064, 1.1909011229485826},
                                         {-1.2287108493416157, 0.3317143880292477, -1.168707082997385},
@@ -183,9 +182,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                         "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 0.5",
                         new String[]{"ffx/algorithms/structures/4icb_ca_a.xyz", "ffx/algorithms/structures/4icb_ca_b.xyz",
                                 "ffx/algorithms/structures/4icb_mg_a.xyz", "ffx/algorithms/structures/4icb_mg_b.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
+                        ThermoTestMode.GRAD, false, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-8441.45436853, 0}, new double[]{-59.7520122, 0}, new double[]{0.170957221, Double.NaN},
+                        new double[]{-8441.45436853, 0}, new double[]{-59.7520122, 0}, new double[]{0, Double.NaN},
                         new double[][][]{
                                 {{1.516028943632357, -0.16798187601812842, 1.1909000012817135},
                                         {-1.2287100421217505, 0.33171692634032457, -1.1687028725533608},
@@ -223,9 +222,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                         "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 1.0",
                         new String[]{"ffx/algorithms/structures/4icb_ca_a.xyz", "ffx/algorithms/structures/4icb_ca_b.xyz",
                                 "ffx/algorithms/structures/4icb_mg_a.xyz", "ffx/algorithms/structures/4icb_mg_b.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
+                        ThermoTestMode.GRAD, true, 0, 0, new int[]{1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-8460.47321653, 0}, new double[]{0.0234728644, 0}, new double[]{187.739955, Double.NaN},
+                        new double[]{-8460.47321653, 0}, new double[]{0, 0}, new double[]{187.70850596942546, Double.NaN},
                         new double[][][]{
                                 {{1.5160279105638157, -0.16798268028609797, 1.1908988796148456},
                                         {-1.2287092349018947, 0.3317194646514121, -1.1686986621093438},
@@ -263,9 +262,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                         "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.0",
                         new String[]{"ffx/algorithms/structures/5cpv_ca_a.xyz", "ffx/algorithms/structures/5cpv_ca_b.xyz",
                                 "ffx/algorithms/structures/5cpv_mg_a.xyz", "ffx/algorithms/structures/5cpv_mg_b.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
+                        ThermoTestMode.GRAD, true, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-10378.104156403408, 0}, new double[]{-0.0337450891, 0}, new double[]{-197.374818, Double.NaN},
+                        new double[]{-10378.104156403408, 0}, new double[]{0, 0}, new double[]{-197.40065865800716, Double.NaN},
                         new double[][][]{
                                 {{-1.1610229302444828,0.8877842196621852,-0.38190472079527416},
                                         {0.17141739386080523,-0.6936874602017804,-0.2646850671524603},
@@ -302,9 +301,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                         "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.5",
                         new String[]{"ffx/algorithms/structures/5cpv_ca_a.xyz", "ffx/algorithms/structures/5cpv_ca_b.xyz",
                                 "ffx/algorithms/structures/5cpv_mg_a.xyz", "ffx/algorithms/structures/5cpv_mg_b.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
+                        ThermoTestMode.GRAD, true, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-10398.105024790417, 0}, new double[]{-62.8370972544, 0}, new double[]{0.245771737152, Double.NaN},
+                        new double[]{-10398.105024790417, 0}, new double[]{-62.8370972544, 0}, new double[]{0, Double.NaN},
                         new double[][][]{
                                 {{-1.1610220532282816,0.8877825087765396,-0.38190561321870153},
                                         {0.17141666802985345,-0.6936868435232721,-0.26468548230330735},
@@ -341,9 +340,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                         "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 1.0",
                         new String[]{"ffx/algorithms/structures/5cpv_ca_a.xyz", "ffx/algorithms/structures/5cpv_ca_b.xyz",
                                 "ffx/algorithms/structures/5cpv_mg_a.xyz", "ffx/algorithms/structures/5cpv_mg_b.xyz"},
-                        ThermoTestMode.GRAD, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
+                        ThermoTestMode.GRAD, true, 0, 0, new int[]{1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                         // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                        new double[]{-10418.105893177431, 0}, new double[]{0.0337450891052, 0}, new double[]{197.442308197, Double.NaN},
+                        new double[]{-10418.105893177431, 0}, new double[]{0, 0}, new double[]{197.40065865800716, Double.NaN},
                         new double[][][]{
                                 {{-1.1610211762120812,0.887780797890894,-0.3819065056421289},
                                         {0.17141594219890166,-0.6936862268447639,-0.2646858974541544},
@@ -375,6 +374,284 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 // Fill in once I can get the bias-deposition actually working.
                                 new double[12][3]},
                         new String[]{"-l", "1.0", "--sf", "TRIG", "--uaA", "810-829.1339-1447.1476-1490.1603.1605-1610", "--uaB", "810-829.1339-1447.1476-1490.1603.1605-1610"}, new String[]{"disable-neighbor-updates", "true"}, new String[]{}
+                },
+                {
+                    "Water-Sodium to Water Dimer Softcoring Test: L = 0.0",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, true, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{2.61926128937,0}, new double[]{17.7107919457, 0}, new double[]{-403.664911547, Double.NaN},
+                        new double[][][]{
+                                {{-5.677212457329941,1.4246439517642553,-2.2981580040498444},
+                                        {-16.262337142221504,-4.01152481099988,2.8309493281407083},
+                                        {20.234575856650853,-2.575942513845196,0.3415783090214405},
+                                        {-4.107688955265742E-5,-3.0491094574426836E-4,1.5088773834574196E-4},
+                                        {3.855038222953342E-5,3.0678248144100465E-4,-1.5278355755630972E-4},
+                                        {2.5265073231240012E-6,-1.8715356967362725E-6,1.895819210567746E-6},
+                                        {1.7049737429005947,5.162823373080822,-0.8743696331123039}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{34.717862394027094,-6.918833553692483,13.770559137316184},
+                                        {44.6501751603733,28.43111292615495,-17.0699023179925},
+                                        {-125.31576661843137,11.778366126287878,-3.1016651209654698},
+                                        {0.0,0.0,0.0},
+                                        {0.0,0.0,0.0},
+                                        {0.0,0.0,0.0},
+                                        {45.94772906403098,-33.29064549875034,6.401008301641785}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.0", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 0.1",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, true, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{2.850550906,0}, new double[]{-8.71629068942, 0}, new double[]{-141.329823284, Double.NaN},
+                        new double[][][]{
+                                {{-2.9145419263022183,0.8087080881505835,-1.1826969161418945},
+                                        {-10.75486342640376,-1.8502906018217953,1.441002156956333},
+                                        {10.24415407077068,-1.5066777027112754,0.13037812748160396},
+                                        {-3.940188541217106E-5,-3.046447158662098E-4,1.504274409501606E-4},
+                                        {4.348535004930246E-5,3.0537557756647634E-4,-1.5274632518595476E-4},
+                                        {5.712456879867664E-6,-9.857865557163607E-7,1.145744081896436E-6},
+                                        {3.425241486013779,2.548260471307343,-0.38868219515588814}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{21.219764941164165,-5.301043079657732,8.702685150224386},
+                                        {59.404183336652935,15.559560209446712,-10.86515770297192},
+                                        {-76.64822167834306,9.426371612748719,-1.3109489861942616},
+                                        {8.074643396228061E-5,1.2233389408248271E-5,-2.0734472804670857E-5},
+                                        {2.2173087875276693E-4,-6.414406402810961E-5,2.6740754942568507E-6},
+                                        {1.7176239889004114E-4,3.3106310006263015E-5,-3.056405648898283E-5},
+                                        {-3.9762008391856365,-19.684869938173087,3.4734701633955916}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.1", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 0.25",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, false, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{0.974157909812,0}, new double[]{-10.6503844408, 0}, new double[]{85.6111397243, Double.NaN},
+                        new double[][][]{
+                                {{-0.8087917281519832,0.230920162100479,-0.31677660566831417},
+                                        {-3.2828492735876607,-0.4439185686570825,0.3694313047851273},
+                                        {2.7179567720851567,-0.4453048785572774,0.02913967164983769},
+                                        {1.1191654242300788E-4,-2.8436948793288743E-4,1.1810143809370248E-4},
+                                        {3.948395026959898E-4,1.992169489195181E-4,-1.434611972003E-4},
+                                        {4.178187790317917E-4,1.7909105729778537E-5,-3.118731586794815E-5},
+                                        {1.3727596548303362,0.6583705285471645,-0.08173782369167623}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{8.203573000276744,-2.407260166945433,3.3325694163231305},
+                                        {34.07610421632959,4.853369454929932,-4.037664708947347},
+                                        {-28.691594190062066,4.581997199828557,-0.30050567027187414},
+                                        {0.0030722784633713677,4.013278190369727E-4,-6.302447025815397E-4},
+                                        {0.006927249436665227,-0.0021139142799777464,2.0753922987915073E-4},
+                                        {0.008777938573427544,2.1069797116961348E-4,-5.578096868382651E-4},
+                                        {-13.606860493017741,-7.026604599323282,1.006581478055631}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.25", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 0.4",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, true, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{0.110037916292,0}, new double[]{-2.26607999096, 0}, new double[]{30.1632932351, Double.NaN},
+                        new double[][][]{
+                                {{-0.1135918356399739,0.031116766115897736,-0.041752199556192734},
+                                        {-0.4844299250151845,-0.052731371080211295,0.044681832632104526},
+                                        {0.34363344315228866,-0.058702201304027674,0.003020221799192616},
+                                        {0.0015984934497727645,-9.5805104515793E-5,-1.7187445022315994E-4},
+                                        {0.0036936320812564253,-8.190880189616524E-4,-2.9551973622635126E-5},
+                                        {0.004965647007413021,1.9626489810683822E-5,-2.4565648661058724E-4},
+                                        {0.24413054496442746,0.08121207290200799,-0.005502771964648001}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{1.9790078473632116,-0.5466360053457613,0.7442354166761601},
+                                        {7.5148029466680395,1.0124425518627698,-0.8308708232627937},
+                                        {-6.43514862353287,1.0832749443479637,-0.07362559817071525},
+                                        {0.020724339018201313,0.002599652594099935,-0.003961656523433774},
+                                        {0.04599278248257384,-0.014257367173055743,0.0016722631878542601},
+                                        {0.0653051230131746,-5.218785659658921E-4,-0.002695798950450919},
+                                        {-3.1906844150123317,-1.5369018977200506,0.16524619704337926}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.4", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 0.5",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, true, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{-0.00563228503,0}, new double[]{-0.384474276341, 0}, new double[]{9.92344157784, Double.NaN},
+                        new double[][][]{
+                                {{-0.009836012990445158,0.0029589899860514987,-0.0034155479511113907},
+                                        {-0.10184729530732066,5.327593924820649E-4,0.0057353060076526016},
+                                        {0.016303644915009106,-0.003689130235597261,-0.0025312483345677947},
+                                        {0.0038107513266330815,0.003205959229414844,-8.159303166222604E-4},
+                                        {0.015696774651107862,-0.0037059448135031083,2.7367574864321055E-4},
+                                        {0.013110199299505135,-0.0030608519096883596,-6.447454233376755E-4},
+                                        {0.06276193810551062,0.00375821835084032,0.0013984902693433081}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{0.34392939856659827,-0.09158200189901379,0.12910527928175775},
+                                        {1.1760470096366977,0.23616310164517534,-0.05057458142688201},
+                                        {-1.0121014533251116,0.15248505767669873,-0.07620425570370314},
+                                        {0.011511611202389766,0.10091080897132744,-0.010683387778191795},
+                                        {0.26561965255269504,-0.057037692991738595,0.004170051640670491},
+                                        {0.06748923520446536,-0.09680681673784088,-0.004103281313994225},
+                                        {-0.8524954538377344,-0.24413245666460826,0.008290175300342928}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.5", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 0.6",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, true, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{-0.010482021204,0}, new double[]{0.180367758296, 0}, new double[]{3.43489697899, Double.NaN},
+                        new double[][][]{
+                                {{-0.008649580249889975,0.0022485600112194097,-8.650726609048702E-4},
+                                        {-0.11266057761820013,0.024694362034725272,0.0260361864833212},
+                                        {0.015218945213069365,-0.00914553962283122,-0.02282021358689983},
+                                        {2.5066123005239126E-4,0.031224802161732783,-0.0034016265001422597},
+                                        {0.08190367312390062,-0.018650512458739874,3.4326425602877264E-4},
+                                        {0.0064502702618650975,-0.028665281917196323,-2.4419049163833308E-5},
+                                        {0.017486608039202628,-0.0017063902089100456,7.31881057760824E-4}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{-0.2058541574059063,0.04582469500939303,-0.032210244958406097},
+                                        {-1.0401985420569162,0.37454108615584125,0.47159019722227746},
+                                        {0.621062316619004,-0.20684943525738805,-0.39772097441817644},
+                                        {-0.10747378808409644,0.5344440256235907,-0.051334182756052026},
+                                        {1.2489110819012346,-0.2984439482946815,-0.007849154127628813},
+                                        {-0.2968358770072303,-0.4711447951314603,0.027030911889720764},
+                                        {-0.21961103396608955,0.02162837189470477,-0.009506552851734766}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.6", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 0.75",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, false, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{0.0829830017977,0}, new double[]{1.27996801166, 0}, new double[]{11.9168667081, Double.NaN},
+                        new double[][][]{
+                                {{-0.08520546853249629,0.02002391005107648,-0.015337962582326878},
+                                        {-0.5072588908421117,0.17043258439271164,0.2050240947794576},
+                                        {0.25349423271871935,-0.0805529898238775,-0.17425804293531943},
+                                        {-0.0506141349576535,0.22437919802386463,-0.02673413275920512},
+                                        {0.5612744057443229,-0.15045901450002216,-0.007975329992730817},
+                                        {-0.17340305926115046,-0.1836639508243553,0.019217340035074935},
+                                        {0.0017129151303696705,-1.5973731939765025E-4,6.403345504972649E-5}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{-0.9272841243095468,0.22051093159987895,-0.19112897890018363},
+                                        {-4.804523425931252,1.8204016841668706,2.205227241175209},
+                                        {2.994591363051441,-0.8476847561428067,-1.8543652609150763},
+                                        {-0.6630357716342526,2.3143378077667545,-0.3143349864556007},
+                                        {5.981286181791292,-1.7558797902974297,-0.1325990985326137},
+                                        {-2.5478012735172113,-1.7548767300847088,0.28852239893802845},
+                                        {-0.033232949450470756,0.003190852991440346,-0.0013213153097627725}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.75", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 0.9",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, true, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{0.397347160918,0}, new double[]{2.75351951766, 0}, new double[]{5.37105253479, Double.NaN},
+                        new double[][][]{
+                                {{-0.31777515190383454,0.06654081254942476,-0.061155191586619},
+                                        {-1.6398611619313017,0.5966978877811928,0.7834547554508479},
+                                        {1.0488049692859205,-0.2533323908962118,-0.6671198866431937},
+                                        {-0.2740673658300599,0.8081103620907575,-0.10766129298323851},
+                                        {2.047913761610311,-0.6075094312234967,-0.06048821698815812},
+                                        {-0.8650389649167101,-0.6105053956998422,0.11296922972554538},
+                                        {2.3913685674263586E-5,-1.84460182457579E-6,6.030248161425271E-7}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{-2.2518864370570797,0.34060365423349903,-0.39403631649939214},
+                                        {-10.009715065439687,3.6614921088174124,5.8097209404351},
+                                        {7.999725481943763,-1.2317995270963276,-5.0518709728060704},
+                                        {-2.770170337863771,5.712033354860753,-0.7489455032193499},
+                                        {13.829283560251287,-4.313426777210048,-0.6802886194434065},
+                                        {-6.796164346239962,-4.168990151630222,1.065450769329658},
+                                        {-0.001072855594543585,8.733802493437212E-5,-3.0297796539917875E-5}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "0.9", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Softcoring Test: L = 1.0",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.GRAD, true, 0, 0, intRange(1, 8),
+                        // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                        new double[]{0.678991455919,0}, new double[]{2.62955540214, 0}, new double[]{-9.66072732215, Double.NaN},
+                        new double[][][]{
+                                {{-0.5967303838923714,0.09294823835932634,-0.10065639850802355},
+                                        {-2.7182918130174105,0.9717379671351778,1.5205922317233873},
+                                        {2.059991765566265,-0.34808314525235373,-1.325262659176951},
+                                        {-0.6963970726796157,1.5240570186788684,-0.18878016013974244},
+                                        {3.628422351985993,-1.0902413269297175,-0.16292088956721837},
+                                        {-1.6769948479628611,-1.150418751991301,0.2570278756685478},
+                                        {0.0,0.0,0.0}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new double[][][]{
+                                {{-3.3452690489458763,0.1345828814666643,-0.35806274829197704},
+                                        {-10.93663217405725,3.541368037656955,8.988383737482236},
+                                        {12.27657065565445,-0.4907488150661682,-8.232590002516137},
+                                        {-5.952373992671734,8.67661156047595,-0.8110392583955152},
+                                        {17.201456551782357,-5.049385958157128,-1.4130599622896023},
+                                        {-9.243751991761942,-6.81242770637627,1.826368234010993},
+                                        {0.0,0.0,0.0}},
+                                // Fill in once I can get the bias-deposition actually working.
+                                new double[7][3]},
+                        new String[]{"-l", "1.0", "--la1", "1-3", "--la2", "1"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Water-Sodium to Water Dimer Free Energy Test",
+                        new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
+                        ThermoTestMode.FREE, true, 17.0, 3.0, null, null, null, null, null, null,
+                        new String[]{"-d", "1.0", "-l", "0.5", "--la1", "1-3", "--la2", "1", "-n", "50000", "-Q", "20000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
+                        new String[]{"disable-neighbor-updates", "true", "lambda-bin-width", "0.025", "flambda-bin-width", "5.0", "randomseed", "2019"},
+                        new String[]{}
                 }
         });
     }
@@ -467,6 +744,8 @@ public class ThermodynamicsTest extends PJDependentTest {
 
     private final String info;
     private final ThermoTestMode mode;
+    private final boolean ciOnly;
+    private final boolean doTest;
     private final String[] filenames;
     private final File tempDir;
     private final File[] copiedFiles;
@@ -519,7 +798,7 @@ public class ThermodynamicsTest extends PJDependentTest {
     private final double dudxTol = DEFAULT_DUDX_TOL;
     private final double d2udxdlTol = DEFAULT_D2UDXDL_TOL;
 
-    public ThermodynamicsTest(String info, String[] filenames, ThermoTestMode mode,
+    public ThermodynamicsTest(String info, String[] filenames, ThermoTestMode mode, boolean ciOnly,
                               double freeEnergy, double feTol,
                               int[] gradAtomIndices,
                               double[] pe, double[] dudl, double[] d2udl2,
@@ -527,208 +806,236 @@ public class ThermodynamicsTest extends PJDependentTest {
                               String[] options, String[] properties, String[] flags) throws IOException {
         this.info = info;
         this.mode = mode;
-        int nFiles = filenames.length;
+        this.ciOnly = ciOnly;
+        ffxCI = Boolean.parseBoolean(System.getProperty("ffx.ci", "false"));
+        doTest = (ffxCI || !ciOnly);
 
-        String tempDirName = String.format("temp-%016x/", new Random().nextLong());
-        tempDir = new File(tempDirName);
-        tempDir.mkdir();
-        logger.fine(String.format(" Running test %s in directory %s", info, tempDir));
-        this.filenames = Arrays.copyOf(filenames, nFiles);
-        copiedFiles = new File[nFiles];
+        if (doTest) {
+            int nFiles = filenames.length;
+            String tempDirName = String.format("temp-%016x/", new Random().nextLong());
+            tempDir = new File(tempDirName);
+            tempDir.mkdir();
+            logger.fine(String.format(" Running test %s in directory %s", info, tempDir));
+            this.filenames = Arrays.copyOf(filenames, nFiles);
+            copiedFiles = new File[nFiles];
 
-        String[] copiedExtensions = new String[]{"dyn", "key", "properties", "his", "lam"};
-        for (int i = 0; i < nFiles; i++) {
-            File srcFile = new File("src/main/java/" + filenames[i]);
-            File tempFile = new File(tempDirName + FilenameUtils.getName(filenames[i]));
-            FileUtils.copyFile(srcFile, tempFile);
-            logger.fine(String.format(" Copied file %s to %s", srcFile, tempFile));
-            copiedFiles[i] = tempFile;
+            String[] copiedExtensions = new String[]{"dyn", "key", "properties", "his", "lam"};
+            for (int i = 0; i < nFiles; i++) {
+                File srcFile = new File("src/main/java/" + filenames[i]);
+                File tempFile = new File(tempDirName + FilenameUtils.getName(filenames[i]));
+                FileUtils.copyFile(srcFile, tempFile);
+                logger.fine(String.format(" Copied file %s to %s", srcFile, tempFile));
+                copiedFiles[i] = tempFile;
 
-            for (String ext : copiedExtensions) {
-                srcFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
-                if (srcFile.exists()) {
-                    logger.fine(" Copying extension " + ext);
-                    tempFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
-                    logger.fine(String.format(" Copied file %s to %s", srcFile, tempFile));
-                    FileUtils.copyFile(srcFile, tempFile);
+                for (String ext : copiedExtensions) {
+                    srcFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
+                    if (srcFile.exists()) {
+                        logger.fine(" Copying extension " + ext);
+                        tempFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
+                        logger.fine(String.format(" Copied file %s to %s", srcFile, tempFile));
+                        FileUtils.copyFile(srcFile, tempFile);
+                    }
                 }
             }
-        }
-        ffxCI = Boolean.parseBoolean(System.getProperty("ffx.ci", "false"));
 
-        switch (mode) {
-            case HELP:
-                assertTrue(String.format("Help tests must have no file arguments, found %d for %s", nFiles, info), nFiles == 0);
-                break;
-            default:
-                assertTrue(String.format("Must have 1, 2, or 4 distinct filenames, found %d for test %s", nFiles, info),
-                        nFiles == 1 || nFiles == 2 || nFiles == 4);
-                for (int i = 0; i < nFiles; i++) {
-                    for (int j = i + 1; j < nFiles; j++) {
-                        assertNotEquals(String.format(" Filenames %d and %d matched in test %s: files %s and %s", i, j, info, filenames[i], filenames[j]),
-                                filenames[i], filenames[j]);
+            switch (mode) {
+                case HELP:
+                    assertTrue(String.format("Help tests must have no file arguments, found %d for %s", nFiles, info), nFiles == 0);
+                    break;
+                default:
+                    assertTrue(String.format("Must have 1, 2, or 4 distinct filenames, found %d for test %s", nFiles, info),
+                            nFiles == 1 || nFiles == 2 || nFiles == 4);
+                    for (int i = 0; i < nFiles; i++) {
+                        for (int j = i + 1; j < nFiles; j++) {
+                            assertNotEquals(String.format(" Filenames %d and %d matched in test %s: files %s and %s", i, j, info, filenames[i], filenames[j]),
+                                    filenames[i], filenames[j]);
+                        }
+                    }
+                    break;
+            }
+            int nOpts = options.length;
+            int nProps = properties.length;
+            int nFlags = flags.length;
+
+            if (nOpts > 0) {
+                assertTrue(String.format("Unmatched option key %s for test %s", options[nOpts - 1], info),
+                        options.length % 2 == 0);
+            }
+            if (nProps > 0) {
+                assertTrue(String.format("Unmatched property key %s for test %s", properties[nProps - 1], info),
+                        properties.length % 2 == 0);
+            }
+            if (nFlags > 0) {
+                assertTrue(String.format("Unmatched flag key %s for test %s", flags[nFlags - 1], info),
+                        flags.length % 2 == 0);
+            }
+
+            Pattern validOption = Pattern.compile("^--?[^D]");
+            Pattern validProperty = Pattern.compile("^[^-]");
+
+            Map<String, String> groovyOpts = new HashMap<>(DEFAULT_OPTIONS);
+            for (int i = 0; i < nOpts; i += 2) {
+                String opti = options[i];
+                assertTrue(String.format(" Option %s for test %s does not look like a Groovy option!", opti, info),
+                        validOption.matcher(opti).find());
+                groovyOpts.put(opti, options[i + 1]);
+            }
+            this.opts = Collections.unmodifiableMap(groovyOpts);
+
+            Map<String, String> addedProps = new HashMap<>(DEFAULT_PROPERTIES);
+            for (int i = 0; i < nProps; i += 2) {
+                String propi = properties[i];
+                assertTrue(String.format(" Property %s for test %s does not look like a property!", propi, info),
+                        validProperty.matcher(propi).find());
+                addedProps.put(propi, properties[i + 1]);
+            }
+            algorithmConfig = new MapConfiguration(addedProps);
+
+
+            Map<String, Boolean> addedFlags = new HashMap<>(DEFAULT_FLAGS);
+            for (int i = 0; i < nFlags; i += 2) {
+                String flagi = flags[i];
+                assertTrue(String.format(" Flag %s for test %s does not look like a flag!", flagi, info),
+                        validOption.matcher(flagi).find());
+                String vali = flags[i + 1];
+                assertTrue(String.format(" Value %s for flag %s in test %s is not a true/false value!", vali, flagi, info),
+                        vali.equalsIgnoreCase("TRUE") || vali.equalsIgnoreCase("FALSE"));
+                addedFlags.put(flagi, Boolean.parseBoolean(vali));
+            }
+            this.flags = Collections.unmodifiableList(
+                    addedFlags.entrySet().stream().
+                            filter(Map.Entry::getValue).
+                            map(Map.Entry::getKey).
+                            collect(Collectors.toList()));
+
+            // Only meaningful for free energy evaluations.
+            this.freeEnergy = freeEnergy;
+            this.feTol = feTol;
+            if (mode == ThermoTestMode.FREE) {
+                assertTrue(String.format(" Free energy tolerance for test %s was %10.4g <= 0!", info, feTol), feTol > 0);
+            }
+
+            // Only meaningful for gradient evaluations.
+            this.dudx = new double[2][][];
+            this.d2udxdl = new double[2][][];
+            boolean isGradient = (mode == ThermoTestMode.GRAD);
+            if (isGradient) {
+                numGradAtoms = ffxCI ? gradAtomIndices.length : Math.min(DEFAULT_GRADIENT_EVALS, gradAtomIndices.length);
+                this.gradAtomIndices = Arrays.copyOf(gradAtomIndices, numGradAtoms);
+
+                if (debugMode) {
+                    this.pe = this.dudl = this.d2udl2 = null;
+                } else {
+                    assertNotNull(gradAtomIndices);
+                    assertNotNull(pe);
+                    assertNotNull(dudl);
+                    assertNotNull(d2udl2);
+
+                    this.pe = Arrays.copyOf(pe, 2);
+                    this.dudl = Arrays.copyOf(dudl, 2);
+                    this.d2udl2 = Arrays.copyOf(d2udl2, 2);
+                    for (int i = 0; i < 2; i++) {
+                        assertNotNull(dudx[i]);
+                        assertNotNull(d2udxdl[i]);
+                        this.dudx[i] = new double[numGradAtoms][3];
+                        this.d2udxdl[i] = new double[numGradAtoms][3];
+
+                        for (int j = 0; j < numGradAtoms; j++) {
+                            assertNotNull(dudx[i][j]);
+                            assertNotNull(d2udxdl[i][j]);
+                            System.arraycopy(dudx[i][j], 0, this.dudx[i][j], 0, 3);
+                            System.arraycopy(d2udxdl[i][j], 0, this.d2udxdl[i][j], 0, 3);
+                        }
                     }
                 }
-                break;
-        }
-        int nOpts = options.length;
-        int nProps = properties.length;
-        int nFlags = flags.length;
-
-        if (nOpts > 0) {
-            assertTrue(String.format("Unmatched option key %s for test %s", options[nOpts - 1], info),
-                    options.length % 2 == 0);
-        }
-        if (nProps > 0) {
-            assertTrue(String.format("Unmatched property key %s for test %s", properties[nProps - 1], info),
-                    properties.length % 2 == 0);
-        }
-        if (nFlags > 0) {
-            assertTrue(String.format("Unmatched flag key %s for test %s", flags[nFlags - 1], info),
-                    flags.length % 2 == 0);
-        }
-
-        Pattern validOption = Pattern.compile("^--?[^D]");
-        Pattern validProperty = Pattern.compile("^[^-]");
-
-        Map<String, String> groovyOpts = new HashMap<>(DEFAULT_OPTIONS);
-        for (int i = 0; i < nOpts; i += 2) {
-            String opti = options[i];
-            assertTrue(String.format(" Option %s for test %s does not look like a Groovy option!", opti, info),
-                    validOption.matcher(opti).find());
-            groovyOpts.put(opti, options[i + 1]);
-        }
-        this.opts = Collections.unmodifiableMap(groovyOpts);
-
-        Map<String, String> addedProps = new HashMap<>(DEFAULT_PROPERTIES);
-        for (int i = 0; i < nProps; i += 2) {
-            String propi = properties[i];
-            assertTrue(String.format(" Property %s for test %s does not look like a property!", propi, info),
-                    validProperty.matcher(propi).find());
-            addedProps.put(propi, properties[i + 1]);
-        }
-        algorithmConfig = new MapConfiguration(addedProps);
-
-
-        Map<String, Boolean> addedFlags = new HashMap<>(DEFAULT_FLAGS);
-        for (int i = 0; i < nFlags; i += 2) {
-            String flagi = flags[i];
-            assertTrue(String.format(" Flag %s for test %s does not look like a flag!", flagi, info),
-                    validOption.matcher(flagi).find());
-            String vali = flags[i + 1];
-            assertTrue(String.format(" Value %s for flag %s in test %s is not a true/false value!", vali, flagi, info),
-                    vali.equalsIgnoreCase("TRUE") || vali.equalsIgnoreCase("FALSE"));
-            addedFlags.put(flagi, Boolean.parseBoolean(vali));
-        }
-        this.flags = Collections.unmodifiableList(
-                addedFlags.entrySet().stream().
-                        filter(Map.Entry::getValue).
-                        map(Map.Entry::getKey).
-                        collect(Collectors.toList()));
-
-        // Only meaningful for free energy evaluations.
-        this.freeEnergy = freeEnergy;
-        this.feTol = feTol;
-        if (mode == ThermoTestMode.FREE) {
-            assertTrue(String.format(" Free energy tolerance for test %s was %10.4g <= 0!", info, feTol), feTol > 0);
-        }
-
-        // Only meaningful for gradient evaluations.
-        this.dudx = new double[2][][];
-        this.d2udxdl = new double[2][][];
-        boolean isGradient = (mode == ThermoTestMode.GRAD);
-        if (isGradient) {
-            numGradAtoms = ffxCI ? gradAtomIndices.length : Math.min(DEFAULT_GRADIENT_EVALS, gradAtomIndices.length);
-            this.gradAtomIndices = Arrays.copyOf(gradAtomIndices, numGradAtoms);
-
-            if (debugMode) {
-                this.pe = this.dudl = this.d2udl2 = null;
             } else {
-                assertNotNull(gradAtomIndices);
-                assertNotNull(pe);
-                assertNotNull(dudl);
-                assertNotNull(d2udl2);
-
-                this.pe = Arrays.copyOf(pe, 2);
-                this.dudl = Arrays.copyOf(dudl, 2);
-                this.d2udl2 = Arrays.copyOf(d2udl2, 2);
+                this.gradAtomIndices = null;
+                numGradAtoms = 0;
+                this.pe = null;
+                this.dudl = null;
+                this.d2udl2 = null;
                 for (int i = 0; i < 2; i++) {
-                    assertNotNull(dudx[i]);
-                    assertNotNull(d2udxdl[i]);
-                    this.dudx[i] = new double[numGradAtoms][3];
-                    this.d2udxdl[i] = new double[numGradAtoms][3];
-
-                    for (int j = 0; j < numGradAtoms; j++) {
-                        assertNotNull(dudx[i][j]);
-                        assertNotNull(d2udxdl[i][j]);
-                        System.arraycopy(dudx[i][j], 0, this.dudx[i][j], 0, 3);
-                        System.arraycopy(d2udxdl[i][j], 0, this.d2udxdl[i][j], 0, 3);
-                    }
+                    this.dudx[i] = null;
+                    this.d2udxdl[i] = null;
                 }
             }
         } else {
-            this.gradAtomIndices = null;
+            logger.fine(" Skipping test " + info);
+            this.filenames = new String[0];
+            tempDir = null;
+            copiedFiles = new File[0];
+            opts = Collections.emptyMap();
+            this.flags = Collections.emptyList();
+            this.freeEnergy = 0;
+            this.feTol = 0;
+            this.gradAtomIndices = new int[0];
             numGradAtoms = 0;
-            this.pe = null;
-            this.dudl = null;
-            this.d2udl2 = null;
-            for (int i = 0; i < 2; i++) {
-                this.dudx[i] = null;
-                this.d2udxdl[i] = null;
-            }
+            this.pe = new double[0];
+            this.dudl = new double[0];
+            this.d2udl2 = new double[0];
+            this.dudx = new double[0][0][0];
+            this.d2udxdl = new double[0][0][0];
         }
     }
 
     @Before
     public void before() {
-        binding = new Binding();
-        thermo = new Thermodynamics();
-        thermo.setBinding(binding);
+        if (doTest) {
+            binding = new Binding();
+            thermo = new Thermodynamics();
+            thermo.setBinding(binding);
+        }
     }
 
     @After
     public void after() throws IOException {
-        // Clean up the temporary directory if it exists.
-        if (tempDir != null && tempDir.exists()) {
-            if (tempDir.isDirectory()) {
-                for (File file : tempDir.listFiles()) {
-                    if (file.isDirectory()) {
-                        for (File file2 : file.listFiles()) {
-                            // Should never have to go more than 2-deep into the temporary directory.
-                            file2.delete();
+        if (doTest) {
+            // Clean up the temporary directory if it exists.
+            if (tempDir != null && tempDir.exists()) {
+                if (tempDir.isDirectory()) {
+                    for (File file : tempDir.listFiles()) {
+                        if (file.isDirectory()) {
+                            for (File file2 : file.listFiles()) {
+                                // Should never have to go more than 2-deep into the temporary directory.
+                                file2.delete();
+                            }
                         }
+                        file.delete();
                     }
-                    file.delete();
+                } else {
+                    logger.warning(String.format(" Expected %s (temporary directory) to be a directory!", tempDir));
                 }
-            } else {
-                logger.warning(String.format(" Expected %s (temporary directory) to be a directory!", tempDir));
+                tempDir.delete();
             }
-            tempDir.delete();
-        }
 
-        if (thermo.getOSRW() == null) {
-            assert mode == ThermoTestMode.HELP;
-        } else {
-            thermo.destroyPotentials();
+            if (thermo.getOSRW() == null) {
+                assert mode == ThermoTestMode.HELP;
+            } else {
+                thermo.destroyPotentials();
+            }
+            System.gc();
         }
-        System.gc();
     }
 
     @Test
     public void testThermodynamics() {
-        logger.info(String.format(" Thermodynamics test: %s\n", info));
-        switch (mode) {
-            case HELP:
-                testHelp();
-                break;
-            case FREE:
-                testFreeEnergy();
-                break;
-            case GRAD:
-                testStaticGradients();
-                break;
-            default:
-                throw new IllegalStateException(String.format(" Thermodynamics test mode %s not recognized!", mode));
+        if (doTest) {
+            logger.info(String.format(" Thermodynamics test: %s\n", info));
+            switch (mode) {
+                case HELP:
+                    testHelp();
+                    break;
+                case FREE:
+                    testFreeEnergy();
+                    break;
+                case GRAD:
+                    testStaticGradients();
+                    break;
+                default:
+                    throw new IllegalStateException(String.format(" Thermodynamics test mode %s not recognized!", mode));
+            }
+        } else {
+            logger.info(String.format(" Skipping test %s: use ffx.ci true to enable!", info));
         }
     }
 
@@ -850,7 +1157,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         checkThGradArray(er.gradient, dudx, tableIndex, dudxTol, "dU/dX gradient");
         if (er.hasSecondDerivatives) {
             checkThGradScalar(er.secondLam, d2udl2, tableIndex, d2udl2Tol, "d2U/dL2");
-            checkThGradArray(er.lamGradient, d2udxdl, tableIndex, d2udxdlTol, "d2U/dXdL");
+            checkThGradArray(er.lamGradient, d2udxdl, tableIndex, d2udxdlTol, "d2U/dXdL gradient");
         }
 
         return er;

@@ -57,7 +57,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
 
 /**
- * Compute Hydrophobic PMF.
+ * Initial implementation of a Hydrophobic PMF.
  *
  * @since 1.0
  */

@@ -50,6 +50,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.reduction.SharedDouble;
 
+import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Descriptions;
 import ffx.potential.bonded.BondedTerm;
@@ -57,7 +58,6 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
-import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.parameters.MultipoleType;
 import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
@@ -71,7 +71,6 @@ import static ffx.potential.parameters.MultipoleType.zeroM;
  * Softcoring follows the same form used by OSRW lambda.
  *
  * @author Stephen LuCore
- *
  * @since 1.0
  */
 public abstract class ExtendedVariable {

@@ -49,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 import ffx.numerics.switching.PowerSwitch;
 import ffx.numerics.switching.SquaredTrigSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
-import ffx.potential.nonbonded.MultiplicativeSwitch;
+import ffx.numerics.switching.MultiplicativeSwitch;
 
 /**
  * Test the various switching functions.

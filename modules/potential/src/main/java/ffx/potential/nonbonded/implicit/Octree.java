@@ -51,9 +51,10 @@ import org.jogamp.vecmath.Point3d;
 import ffx.potential.bonded.Atom;
 
 /**
- * <p>Octree class.</p>
+ * <p>Initial implementation of an Octree decomposition.</p>
  *
- * @author Stephen LuCore
+ * @author Stephen D. LuCore
+ * @since 1.0
  */
 public class Octree {
 

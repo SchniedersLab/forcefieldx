@@ -40,18 +40,16 @@ package ffx.potential.nonbonded.implicit;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.reduction.DoubleOp;
-import edu.rit.pj.reduction.SharedDoubleArray;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.dWater;
@@ -67,8 +65,9 @@ import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
 
 /**
- * Compute the Generalized Kirkwood permanent reaction field in parallel.
+ * Parallel computation of the Generalized Kirkwood permanent reaction field.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class PermanentGKFieldRegion extends ParallelRegion {
@@ -108,10 +107,9 @@ public class PermanentGKFieldRegion extends ParallelRegion {
      */
     private double[] born;
     /**
-     * Shared arrays for computation of the GK field for each symmetry operator.
+     * Atomic GK field array.
      */
-    public SharedDoubleArray[] sharedGKField;
-
+    private AtomicDoubleArray3D sharedGKField;
     /**
      * Empirical constant that controls the GK cross-term.
      */
@@ -146,7 +144,7 @@ public class PermanentGKFieldRegion extends ParallelRegion {
 
     public void init(Atom[] atoms, double[][][] globalMultipole,
                      Crystal crystal, double[][][] sXYZ, int[][][] neighborLists,
-                     boolean[] use, double cut2, double[] born, SharedDoubleArray[] sharedGKField) {
+                     boolean[] use, double cut2, double[] born, AtomicDoubleArray3D sharedGKField) {
         this.atoms = atoms;
         this.globalMultipole = globalMultipole;
         this.crystal = crystal;
@@ -156,17 +154,6 @@ public class PermanentGKFieldRegion extends ParallelRegion {
         this.cut2 = cut2;
         this.born = born;
         this.sharedGKField = sharedGKField;
-    }
-
-
-    @Override
-    public void start() {
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            sharedGKField[0].set(i, 0.0);
-            sharedGKField[1].set(i, 0.0);
-            sharedGKField[2].set(i, 0.0);
-        }
     }
 
     @Override
@@ -188,14 +175,12 @@ public class PermanentGKFieldRegion extends ParallelRegion {
      */
     private class PermanentGKFieldLoop extends IntegerForLoop {
 
+        private int threadID;
         private final double[][] a;
         private final double[] gc;
         private final double[] gux, guy, guz;
         private final double[] gqxx, gqyy, gqzz;
         private final double[] gqxy, gqxz, gqyz;
-        private double[] fx_local;
-        private double[] fy_local;
-        private double[] fz_local;
         private final double[] dx_local;
         private double xi, yi, zi;
         private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
@@ -223,28 +208,9 @@ public class PermanentGKFieldRegion extends ParallelRegion {
         }
 
         @Override
-        public void start() {
-            int nAtoms = atoms.length;
-            if (fx_local == null || fx_local.length != nAtoms) {
-                fx_local = new double[nAtoms];
-                fy_local = new double[nAtoms];
-                fz_local = new double[nAtoms];
-            }
-            fill(fx_local, 0.0);
-            fill(fy_local, 0.0);
-            fill(fz_local, 0.0);
-        }
-
-        @Override
-        public void finish() {
-            // Reduce the field contributions computed by the current thread into the shared arrays.
-            sharedGKField[0].reduce(fx_local, DoubleOp.SUM);
-            sharedGKField[1].reduce(fy_local, DoubleOp.SUM);
-            sharedGKField[2].reduce(fz_local, DoubleOp.SUM);
-        }
-
-        @Override
         public void run(int lb, int ub) {
+
+            threadID = getThreadIndex();
 
             double[] x = sXYZ[0][0];
             double[] y = sXYZ[0][1];
@@ -471,9 +437,6 @@ public class PermanentGKFieldRegion extends ParallelRegion {
                 fky *= 0.5;
                 fkz *= 0.5;
             }
-            fx_local[i] += fix;
-            fy_local[i] += fiy;
-            fz_local[i] += fiz;
 
             double xc = fkx;
             double yc = fky;
@@ -481,9 +444,9 @@ public class PermanentGKFieldRegion extends ParallelRegion {
             fkx = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
             fky = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
             fkz = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
-            fx_local[k] += fkx;
-            fy_local[k] += fky;
-            fz_local[k] += fkz;
+
+            sharedGKField.add(threadID, i, fix, fiy, fiz);
+            sharedGKField.add(threadID, k, fkx, fky, fkz);
         }
     }
 

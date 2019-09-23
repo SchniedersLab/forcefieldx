@@ -2575,22 +2575,34 @@ public final class PDBFilter extends SystemFilter {
                      * Convert 1 and 2-character nucleic acid names to
                      * 3-character names.
                      */
-                    if (name.length() == 1) {
-                        if (name.equals("A")) {
+                    switch(name) {
+                        case "A":
                             name = NucleicAcid3.ADE.toString();
-                        } else if (name.equals("C")) {
+                            break;
+                        case "C":
                             name = NucleicAcid3.CYT.toString();
-                        } else if (name.equals("G")) {
+                            break;
+                        case "G":
                             name = NucleicAcid3.GUA.toString();
-                        } else if (name.equals("T")) {
+                            break;
+                        case "T":
                             name = NucleicAcid3.THY.toString();
-                        } else if (name.equals("U")) {
-                            name = NucleicAcid3.URI.toString();
-                        }
-                    } else if (name.length() == 2) {
-                        if (name.equals("YG")) {
+                            break;
+                        case "YG":
                             name = NucleicAcid3.YYG.toString();
-                        }
+                            break;
+                        case "DA":
+                            name = NucleicAcid3.DAD.toString();
+                            break;
+                        case "DC":
+                            name = NucleicAcid3.DCY.toString();
+                            break;
+                        case "DG":
+                            name = NucleicAcid3.DGU.toString();
+                            break;
+                        case "DT":
+                            name = NucleicAcid3.DTY.toString();
+                            break;
                     }
                     residue.setName(name);
                     NucleicAcid3 nucleicAcid = null;
@@ -2647,28 +2659,28 @@ public final class PDBFilter extends SystemFilter {
                 try {
                     switch (hetatm) {
                         case NA:
-                            atom.setAtomType(findAtomType(2003));
+                            atom.setAtomType(findAtomType(2004));
                             break;
                         case K:
-                            atom.setAtomType(findAtomType(2004));
+                            atom.setAtomType(findAtomType(2005));
                             break;
                         case MG:
                         case MG2:
-                            atom.setAtomType(findAtomType(2005));
+                            atom.setAtomType(findAtomType(2008));
                             break;
                         case CA:
                         case CA2:
-                            atom.setAtomType(findAtomType(2006));
+                            atom.setAtomType(findAtomType(2009));
                             break;
                         case CL:
-                            atom.setAtomType(findAtomType(2007));
+                            atom.setAtomType(findAtomType(2011));
                             break;
-                        case ZN:
+                        /*case ZN:
                         case ZN2:
                             atom.setAtomType(findAtomType(2008));
-                            break;
+                            break;*/
                         case BR:
-                            atom.setAtomType(findAtomType(2009));
+                            atom.setAtomType(findAtomType(2012));
                             break;
                         default:
                             logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));

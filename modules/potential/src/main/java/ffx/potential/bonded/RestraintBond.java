@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import ffx.numerics.switching.UnivariateFunctionFactory;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Geometry;
 import org.jogamp.java3d.LineArray;
@@ -49,10 +50,11 @@ import org.jogamp.java3d.Transform3D;
 import org.jogamp.java3d.TransformGroup;
 import org.jogamp.vecmath.AxisAngle4d;
 import org.jogamp.vecmath.Vector3d;
-import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.switching.ConstantSwitch;
+import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
 import static ffx.numerics.math.VectorMath.angle;
@@ -77,14 +79,20 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(RestraintBond.class.getName());
 
+    public static final double DEFAULT_RB_LAM_START = 0.75;
+    public static final double DEFAULT_RB_LAM_END = 1.0;
+
+    private boolean lambdaTerm = false;
     private double lambda = 1.0;
     private double restraintLambda = 1.0;
-    private double rL3 = 1.0;
-    private double rL2 = 1.0;
-    private double rL1 = 1.0;
-    private double restraintLambdaStart = 0.75;
-    private final double restraintLambdaStop = 1.00;
-    private double restraintLambdaWindow = (restraintLambdaStop - restraintLambdaStart);
+    private double switchVal = 1.0;
+    private double switchdUdL = 1.0;
+    private double switchd2UdL2 = 1.0;
+    private final double restraintLambdaStart;
+    private final double restraintLambdaStop;
+    private final double restraintLambdaWindow;
+    private final double rlwInv;
+    private final UnivariateSwitchingFunction switchingFunction;
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
     private double[][] dEdXdL = new double[2][3];
@@ -95,19 +103,29 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
     @Override
     public void setLambda(double lambda) {
         this.lambda = lambda;
-
-        if (lambda < restraintLambdaStart) {
-            restraintLambda = 1.0;
-            rL3 = 1.0;
-            rL2 = 0.0;
-            rL1 = 0.0;
+        if (lambdaTerm) {
+            if (lambda < restraintLambdaStart) {
+                restraintLambda = 0.0;
+                switchVal = 0.0;
+                switchdUdL = 0;
+                switchd2UdL2 = 0;
+            } else if (lambda > restraintLambdaStop) {
+                restraintLambda = 1.0;
+                switchVal = 1.0;
+                switchdUdL = 0;
+                switchd2UdL2 = 0;
+            } else {
+                restraintLambda = (lambda - restraintLambdaStart) / restraintLambdaWindow;
+                switchVal = switchingFunction.valueAt(restraintLambda);
+                switchdUdL = rlwInv * switchingFunction.firstDerivative(restraintLambda);
+                switchd2UdL2 = rlwInv * rlwInv * switchingFunction.secondDerivative(restraintLambda);
+            }
         } else {
-            restraintLambda = 1.0 - (lambda - restraintLambdaStart) / restraintLambdaWindow;
-            rL3 = pow(restraintLambda, 3.0);
-            rL2 = -3.0 * pow(restraintLambda, 2.0) / restraintLambdaWindow;
-            rL1 = 6.0 * restraintLambda / (restraintLambdaWindow * restraintLambdaWindow);
+            restraintLambda = 1.0;
+            switchVal = 1.0;
+            switchdUdL = 0.0;
+            switchd2UdL2 = 0.0;
         }
-
     }
 
     /**
@@ -118,11 +136,17 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         return lambda;
     }
 
+    @Override
+    public boolean isLambdaScaled() {
+        return lambdaTerm;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public double getdEdL() {
+
         return dEdL;
     }
 
@@ -206,7 +230,41 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
      * @param a2      Atom number 2.
      * @param crystal the Crystal defines boundary and symmetry conditions.
      */
-    public RestraintBond(Atom a1, Atom a2, Crystal crystal) {
+    public RestraintBond(Atom a1, Atom a2, Crystal crystal, boolean lambdaTerm) {
+        this(a1, a2, crystal, lambdaTerm, new ConstantSwitch());
+    }
+
+    /**
+     * Creates a distance restraint between two Atoms.
+     *
+     * @param a1 First Atom.
+     * @param a2 Second Atom.
+     * @param crystal Any Crystal used by the system.
+     * @param lambdaTerm Whether lambda affects this restraint.
+     * @param sf Switching function determining lambda dependence; null produces a ConstantSwitch.
+     */
+    public RestraintBond(Atom a1, Atom a2, Crystal crystal, boolean lambdaTerm, UnivariateSwitchingFunction sf) {
+        this(a1, a2, crystal, lambdaTerm, DEFAULT_RB_LAM_START, DEFAULT_RB_LAM_END, sf);
+    }
+
+    /**
+     * Creates a distance restraint between two Atoms.
+     *
+     * @param a1            First Atom.
+     * @param a2            Second Atom.
+     * @param crystal       Any Crystal used by the system.
+     * @param lambdaTerm    Whether lambda affects this restraint.
+     * @param lamStart      At what lambda does the restraint begin to take effect?
+     * @param lamEnd        At what lambda does the restraint hit full strength?
+     * @param sf            Switching function determining lambda dependence; null produces a ConstantSwitch.
+     */
+    public RestraintBond(Atom a1, Atom a2, Crystal crystal, boolean lambdaTerm, double lamStart, double lamEnd, UnivariateSwitchingFunction sf) {
+        restraintLambdaStart = lamStart;
+        restraintLambdaStop = lamEnd;
+        assert lamEnd > lamStart;
+        restraintLambdaWindow = lamEnd - lamStart;
+        rlwInv = 1.0 / restraintLambdaWindow;
+
         atoms = new Atom[2];
 
         this.crystal = crystal;
@@ -222,6 +280,9 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         }
         setID_Key(false);
         viewModel = RendererCache.ViewModel.WIREFRAME;
+        switchingFunction = (sf == null ? new ConstantSwitch() : sf);
+        this.lambdaTerm = lambdaTerm;
+        this.setLambda(1.0);
     }
 
     /**
@@ -652,8 +713,9 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
             crystal.image(v10);
         }
 
+        // value is the magnitude of the separation vector
         value = r(v10);
-        double dv = value - bondType.distance;
+        double dv = value - bondType.distance; // bondType.distance = ideal bond length
         if (bondType.bondFunction.hasFlatBottom()) {
             if (dv > 0) {
                 dv = Math.max(0, dv - bondType.flatBottomRadius);
@@ -664,9 +726,10 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
 
         double dv2 = dv * dv;
         double kx2 = units * bondType.forceConstant * dv2 * esvLambda;
-        energy = rL3 * kx2;
-        dEdL = rL2 * kx2;
-        d2EdL2 = rL1 * kx2;
+
+        energy = switchVal * kx2;
+        dEdL = switchdUdL * kx2;
+        d2EdL2 = switchd2UdL2 * kx2;
         double deddt = 2.0 * units * bondType.forceConstant * dv * esvLambda;
         double de = 0.0;
 
@@ -674,16 +737,16 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
             de = deddt / value;
         }
 
-        scalar(v10, rL3 * de, g0);
-        scalar(v10, -rL3 * de, g1);
+        scalar(v10, switchVal * de, g0);
+        scalar(v10, -switchVal * de, g1);
         if (gradient) {
             grad.add(threadID, atoms[0].getIndex() - 1, g0[0], g0[1], g0[2]);
             grad.add(threadID, atoms[1].getIndex() - 1, g1[0], g1[1], g1[2]);
         }
 
         // Remove the factor of rL3
-        scalar(v10, rL2 * de, g0);
-        scalar(v10, -rL2 * de, g1);
+        scalar(v10, switchdUdL * de, g0);
+        scalar(v10, -switchdUdL * de, g1);
         dEdXdL[0][0] = g0[0];
         dEdXdL[0][1] = g0[1];
         dEdXdL[0][2] = g0[2];
@@ -716,10 +779,19 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
                 "Restraint-Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
                 atoms[1].getIndex(), atoms[1].getAtomType().name,
                 bondType.distance, value, energy));
-        // Below would print atom name instead of atom type name (sometimes more informative), and maintain more consistent columns.
-        /*logger.info(String.format(" %s %6d-%-4s %6d-%-4s %6.4f  %6.4f  %10.4f",
-                "Restraint-Bond", atoms[0].getIndex(), atoms[0].getName(),
-                atoms[1].getIndex(), atoms[1].getName(),
-                bondType.distance, value, energy));*/
+        if (!(switchingFunction instanceof  ConstantSwitch)) {
+            logger.info(String.format(" Switching function (lambda dependence): %s", switchingFunction.toString()));
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(String.format(" Distance restraint between atoms %s-%d %s-%d, " +
+                "current distance %10.4g, optimum %10.4g with a %10.4g Angstrom flat bottom, with force constant %10.4g.",
+                atoms[0],atoms[0].getIndex(), atoms[1], atoms[1].getIndex(), value, bondType.distance, bondType.flatBottomRadius, bondType.forceConstant));
+        if (!(switchingFunction instanceof ConstantSwitch)) {
+            sb.append(String.format("\n Switching function (lambda dependence): %s", switchingFunction.toString()));
+        }
+        return sb.toString();
     }
 }

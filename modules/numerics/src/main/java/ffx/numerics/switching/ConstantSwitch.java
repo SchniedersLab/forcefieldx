@@ -38,28 +38,21 @@
 package ffx.numerics.switching;
 
 /**
- * A LinearDerivativeSwitch interpolates between 0 and 1 vi f(x) = 2*x - x^2.
- * <p>
- * The derivative is then linear in x: f'(x) = 2 - 2*x
- * <p>
- * Limiting behavior is given by: f(0) = 0, f(1) = 1, f'(0) = 2, f'(1) = 0.
+ * The ConstantSwitch returns 1 for all input values x. This is useful for
+ * having a single code path that accomodates both "real" switching behavior and no
+ * switching behavior.
  *
- * @author Michael J. Schnieders
+ *  @author Jacob M. Litman
+ *  @author Michael J. Schnieders
  */
-public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
-
-    /**
-     * Constructor for the LinearDerivativeSwitch.
-     */
-    public LinearDerivativeSwitch() {
-    }
+public class ConstantSwitch implements UnivariateSwitchingFunction {
 
     /**
      * {@inheritDoc}
      */
     @Override
     public double getZeroBound() {
-        return 0;
+        return Double.NaN;
     }
 
     /**
@@ -75,7 +68,7 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public boolean constantOutsideBounds() {
-        return false;
+        return true;
     }
 
     /**
@@ -91,7 +84,7 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public int getHighestOrderZeroDerivative() {
-        return 0;
+        return 1;
     }
 
     /**
@@ -99,7 +92,7 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public boolean symmetricToUnity() {
-        return false;
+        return true;
     }
 
     /**
@@ -107,23 +100,23 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double valueAt(double x) throws IllegalArgumentException {
-        return 2 * x - (x * x);
+        return 1.0;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public double firstDerivative(double x) throws IllegalArgumentException {
-        return 2.0 - 2.0 * x;
+    public double firstDerivative(double x) {
+        return 0.0;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public double secondDerivative(double x) throws IllegalArgumentException {
-        return -2.0;
+    public double secondDerivative(double x) {
+        return 0.0;
     }
 
     /**
@@ -131,21 +124,14 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
-        if (order < 1) {
-            throw new IllegalArgumentException("Order must be >= 1");
+        if (order < 0) {
+            throw new IllegalArgumentException(String.format(" Order must be > 0, was %d", order));
         }
-        switch (order) {
-            case 1:
-                return firstDerivative(x);
-            case 2:
-                return secondDerivative(x);
-            default:
-                return 0;
-        }
+        return 0.0;
     }
 
     @Override
     public String toString() {
-        return "Polynomial switch of form f(x) = 2x - x^2";
+        return "Constant-value f(x) = 1, with no switching behavior (i.e. a dummy switch)";
     }
 }

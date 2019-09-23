@@ -37,10 +37,7 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -235,6 +232,19 @@ public class AminoAcidUtils {
             case FIRST_RESIDUE:
                 switch (aminoAcid) {
                     case PRO:
+                        // Check if, for some reason, the structure has an H1 but not an H2 or H3.
+                        List<Atom> resAtoms = residue.getAtomList();
+                        Optional<Atom> H1 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H1")).findAny();
+                        Optional<Atom> H2 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H2")).findAny();
+                        Optional<Atom> H3 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H3")).findAny();
+                        if (H1.isPresent() && H2.isPresent() && H3.isPresent()) {
+                            logger.severe(String.format(" Proline residue %s somehow has three N-terminal hydrogens!", residue));
+                        }
+                        if (H1.isPresent() && H2.isPresent()) {
+                            H1.get().setName("H3");
+                        } else if (H1.isPresent() && H3.isPresent()) {
+                            H1.get().setName("H2");
+                        } // Else, all is hunky-dory!
                         buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0,
                                 atomType, forceField, bondList);
                         buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0,

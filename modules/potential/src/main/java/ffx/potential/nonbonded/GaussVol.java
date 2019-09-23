@@ -50,6 +50,9 @@ import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.numerics.atomic.AtomicDoubleArray;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.switching.MultiplicativeSwitch;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.rsq;
 import static ffx.numerics.math.VectorMath.scalar;
@@ -130,6 +133,13 @@ public class GaussVol {
     private static double ANG3 = 1.0;
     private static double VOLMINA = 0.01 * ANG3;
     private static double VOLMINB = 0.1 * ANG3;
+    /**
+     * Original crossover in Schnieders thesis: 3.0*(surface tension/solvent pressure)
+     * Initially set to 7.339 to match value in Tinker
+     * Later updated to 4.49 based on work with Schnieders thesis compounds in Sept 2019
+     * Most recently set to 9.00 to better match experiment
+     */
+    private static String CROSSOVER = "9.00";
 
     /**
      * Number of atoms.
@@ -199,16 +209,36 @@ public class GaussVol {
     private double[] surfaceAreaGradient;
     /**
      * Solvent pressure in kcal/mol/Ang^3.
+     * Original value from Schnieders thesis work: 0.0327
+     * Value based on testing with Schnieders thesis test set, Sept 2019: 0.11337
      */
-    private double solventPressure = 0.0327;
+    //private double solventPressure = 0.0327;
+    private double solventPressure = 0.05185;
+    /**
+     * Volume offset in Ang^3
+     * Set based on comparison of FFX Volumes for small alkanes (methane-decane)
+     * to Tinker Solvent-Accessible Volumes (using H and a probe of 1.4 in Tinker)
+     */
+    //private double volumeOffsetTinker = 22.085;
+    private double volumeOffsetVdwToSEV = 27.939;
+    /**
+     * Surface Area offset in Ang^2
+     * Set based on comparison of FFX Surface Areas for small alkanes (methane-decane)
+     * to Tinker Solvent-Accessible Surface Areas (using H and a probe of 1.4 in Tinker)
+     */
+    //private double surfaceAreaOffsetTinker = 42.208;
+    private double surfaceAreaOffsetVdwToSASA = 46.111;
     /**
      * Surface tension in kcal/mol/Ang^2.
      */
-    private double surfaceTension = 0.08;
+    //private double surfaceTension = 0.08;
+    private double surfaceTension = 0.16;
     /**
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
+     * Originally 3.0*surfaceTension/solventPressure
+     * Reset to 7.339 to match Tinker
      */
-    private double crossOver = 3.0 * surfaceTension / solventPressure;
+    private double crossOver = Double.parseDouble(System.getProperty("crossover", CROSSOVER));
     /**
      * Begin turning off the Volume term.
      */
@@ -434,7 +464,8 @@ public class GaussVol {
      * @return The cavitation energy.
      */
     public double computeVolumeAndSA(double[][] positions) {
-        return energyAndGradient(positions, new double[3][positions.length]);
+        return energyAndGradient(positions, new AtomicDoubleArray3D(
+                AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI, positions.length, 1));
     }
 
     /**
@@ -444,7 +475,7 @@ public class GaussVol {
      * @param gradient  Atomic coordinate gradient.
      * @return The cavitation energy.
      */
-    public double energyAndGradient(double[][] positions, double[][] gradient) {
+    public double energyAndGradient(double[][] positions, AtomicDoubleArray3D gradient) {
 
         // Output
         double[][] grad = new double[nAtoms][3];
@@ -480,7 +511,7 @@ public class GaussVol {
         }
 
         // Save the total molecular volume.
-        volume = totalVolume[0];
+        volume = totalVolume[0] + volumeOffsetVdwToSEV;
 
         // Calculate a purely volume based cavitation energy.
         volumeEnergy = volume * solventPressure;
@@ -492,6 +523,15 @@ public class GaussVol {
         // Load the offset radii and volumes.
         this.radii = radiiOffset;
         this.volumes = volumeOffset;
+
+        // Print Radii
+//        for (int i = 0; i < radii.length; i++) {
+//            System.out.println("Cavitation radius: " + i + ", " + radii[i]);
+//        }
+
+        // Print Crossover Point and Solvent Pressure Values
+//        System.out.println("\nCrossover Point: " + crossOver);
+//        System.out.println("Solvent Pressure: " + solventPressure + "\n");
 
         // Run Volume calculation on radii that are slightly offset in order to do finite difference to get back surface area
         rescanTreeVolumes(positions);
@@ -513,7 +553,7 @@ public class GaussVol {
         }
 
         // Calculate the surface area.
-        surfaceArea = (selfVolumeOffsetSum - selfVolumeSum) / offset;
+        surfaceArea = ((selfVolumeOffsetSum - selfVolumeSum) / offset) + surfaceAreaOffsetVdwToSASA;
 
         // Calculate a purely surface area based cavitation energy.
         surfaceAreaEnergy = surfaceArea * surfaceTension;
@@ -574,14 +614,18 @@ public class GaussVol {
      * @param dTaperVolumedR Derivative of the tapered volume with respect to effective radius.
      * @param gradient       Array to accumulate derivatives.
      */
-    private void addVolumeGradient(double taperVolume, double dTaperVolumedR, double[][] gradient) {
+    private void addVolumeGradient(double taperVolume, double dTaperVolumedR, AtomicDoubleArray3D gradient) {
         taperVolume *= solventPressure;
         dTaperVolumedR *= volumeEnergy;
         for (int i = 0; i < nAtoms; i++) {
             int index = i * 3;
-            gradient[0][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
-            gradient[1][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
-            gradient[2][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index];
+//            gradient[0][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+//            gradient[1][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+//            gradient[2][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index];
+            double gx = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+            double gy = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+            double gz = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index];
+            gradient.add(0, i, gx, gy, gz);
         }
     }
 
@@ -592,13 +636,17 @@ public class GaussVol {
      * @param dTaperSAdR Derivative of the tapered surface area with respect to effective radius.
      * @param gradient   Array to accumulate derivatives.
      */
-    private void addSurfaceAreaGradient(double taperSA, double dTaperSAdR, double[][] gradient) {
+    private void addSurfaceAreaGradient(double taperSA, double dTaperSAdR, AtomicDoubleArray3D gradient) {
         double factor = surfaceTension * taperSA + surfaceAreaEnergy * dTaperSAdR;
         for (int i = 0; i < nAtoms; i++) {
             int index = i * 3;
-            gradient[0][i] += factor * surfaceAreaGradient[index++];
-            gradient[1][i] += factor * surfaceAreaGradient[index++];
-            gradient[2][i] += factor * surfaceAreaGradient[index];
+//            gradient[0][i] += factor * surfaceAreaGradient[index++];
+//            gradient[1][i] += factor * surfaceAreaGradient[index++];
+//            gradient[2][i] += factor * surfaceAreaGradient[index];
+            double gx = factor * surfaceAreaGradient[index++];
+            double gy = factor * surfaceAreaGradient[index++];
+            double gz = factor * surfaceAreaGradient[index];
+            gradient.add(0, i, gx, gy, gz);
         }
     }
 

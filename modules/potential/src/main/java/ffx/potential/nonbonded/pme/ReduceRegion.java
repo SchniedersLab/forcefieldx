@@ -45,7 +45,9 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
@@ -56,21 +58,22 @@ import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
 
+/**
+ * Parallel conversion of torques into forces, and then reduce them.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class ReduceRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(ReduceRegion.class.getName());
 
-    /**
-     * Number of threads used by the ReduceRegjon.
-     */
-    private final int maxThreads;
     /**
      * If set to false, multipoles are fixed in their local frame and torques
      * are zero, which is useful for narrowing down discrepancies between
      * analytic and finite-difference derivatives(default is true).
      */
     private final boolean rotateMultipoles;
-
     /**
      * If lambdaTerm is true, some ligand atom interactions with the environment
      * are being turned on/off.
@@ -97,29 +100,26 @@ public class ReduceRegion extends ParallelRegion {
      */
     private int[][] axisAtom;
     /**
-     * Gradient array for each thread. [threadID][X/Y/Z][atomID]
+     * Atomic Gradient array.
      */
-    private double[][][] grad;
+    private AtomicDoubleArray3D grad;
     /**
-     * Torque array for each thread. [threadID][X/Y/Z][atomID]
+     * Atomic Torque array.
      */
-    private double[][][] torque;
+    private AtomicDoubleArray3D torque;
     /**
      * Partial derivative of the gradient with respect to Lambda.
-     * [threadID][X/Y/Z][atomID]
      */
-    private double[][][] lambdaGrad;
+    private AtomicDoubleArray3D lambdaGrad;
     /**
      * Partial derivative of the torque with respect to Lambda.
-     * [threadID][X/Y/Z][atomID]
      */
-    private double[][][] lambdaTorque;
+    private AtomicDoubleArray3D lambdaTorque;
 
     private final TorqueLoop[] torqueLoop;
     private final ReduceLoop[] reduceLoop;
 
     public ReduceRegion(int threadCount, ForceField forceField) {
-        maxThreads = threadCount;
         torqueLoop = new TorqueLoop[threadCount];
         reduceLoop = new ReduceLoop[threadCount];
         rotateMultipoles = forceField.getBoolean(ForceField.ForceFieldBoolean.ROTATE_MULTIPOLES, true);
@@ -128,8 +128,8 @@ public class ReduceRegion extends ParallelRegion {
     public void init(boolean lambdaTerm, boolean gradient,
                      Atom[] atoms, double[][][] coordinates,
                      MultipoleFrameDefinition[] frame, int[][] axisAtom,
-                     double[][][] grad, double[][][] torque,
-                     double[][][] lambdaGrad, double[][][] lambdaTorque) {
+                     AtomicDoubleArray3D grad, AtomicDoubleArray3D torque,
+                     AtomicDoubleArray3D lambdaGrad, AtomicDoubleArray3D lambdaTorque) {
         this.lambdaTerm = lambdaTerm;
         this.gradient = gradient;
         this.atoms = atoms;
@@ -140,6 +140,20 @@ public class ReduceRegion extends ParallelRegion {
         this.torque = torque;
         this.lambdaGrad = lambdaGrad;
         this.lambdaTorque = lambdaTorque;
+    }
+
+    /**
+     * Execute the ReduceRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void excuteWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = "Exception calculating torques.";
+            logger.log(Level.SEVERE, message, e);
+        }
     }
 
     @Override
@@ -179,8 +193,8 @@ public class ReduceRegion extends ParallelRegion {
         private final double[] t1 = new double[3];
         private final double[] t2 = new double[3];
         private final double[] localOrigin = new double[3];
-        private double[][] g;
-        private double[][] lg;
+        private int threadID;
+
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -192,28 +206,26 @@ public class ReduceRegion extends ParallelRegion {
 
         @Override
         public void start() {
-            int threadID = getThreadIndex();
-            g = grad[threadID];
-            if (lambdaTerm) {
-                lg = lambdaGrad[threadID];
-            }
+            threadID = getThreadIndex();
         }
 
         @Override
         public void run(int lb, int ub) {
             if (gradient) {
+                torque.reduce(lb, ub);
                 for (int i = lb; i <= ub; i++) {
-                    torque(i, torque, g);
+                    torque(i, torque, grad);
                 }
             }
             if (lambdaTerm) {
+                lambdaTorque.reduce(lb, ub);
                 for (int i = lb; i <= ub; i++) {
-                    torque(i, lambdaTorque, lg);
+                    torque(i, lambdaTorque, lambdaGrad);
                 }
             }
         }
 
-        public void torque(int i, double[][][] tq, double[][] gd) {
+        public void torque(int i, AtomicDoubleArray3D tq, AtomicDoubleArray3D gd) {
             final int[] ax = axisAtom[i];
             // Ions, for example, have no torque.
             if (ax == null || ax.length < 2) {
@@ -224,18 +236,13 @@ public class ReduceRegion extends ParallelRegion {
             final int ic = ax[1];
             int id = 0;
 
-            // Reduce the torque for atom i.
-            trq[0] = tq[0][0][i];
-            trq[1] = tq[0][1][i];
-            trq[2] = tq[0][2][i];
-            for (int j = 1; j < maxThreads; j++) {
-                trq[0] += tq[j][0][i];
-                trq[1] += tq[j][1][i];
-                trq[2] += tq[j][2][i];
-            }
-            double x[] = coordinates[0][0];
-            double y[] = coordinates[0][1];
-            double z[] = coordinates[0][2];
+            trq[0] = tq.getX(i);
+            trq[1] = tq.getY(i);
+            trq[2] = tq.getZ(i);
+
+            double[] x = coordinates[0][0];
+            double[] y = coordinates[0][1];
+            double[] z = coordinates[0][2];
             localOrigin[0] = x[ib];
             localOrigin[1] = y[ib];
             localOrigin[2] = z[ib];
@@ -296,6 +303,7 @@ public class ReduceRegion extends ParallelRegion {
             double dphidu = -(trq[0] * u[0] + trq[1] * u[1] + trq[2] * u[2]);
             double dphidv = -(trq[0] * v[0] + trq[1] * v[1] + trq[2] * v[2]);
             double dphidw = -(trq[0] * w[0] + trq[1] * w[1] + trq[2] * w[2]);
+            double[][] g = new double[4][3];
             switch (frame[i]) {
                 case ZTHENBISECTOR:
                     // Build some additional axes needed for the Z-then-Bisector method
@@ -346,29 +354,39 @@ public class ReduceRegion extends ParallelRegion {
                         double du = ur[j] * dphidr / (ru * ursin) + us[j] * dphids / ru;
                         double dv = (vssin * s[j] - vscos * t1[j]) * dphidu / (rv * (ut1sin + ut2sin));
                         double dw = (wssin * s[j] - wscos * t2[j]) * dphidu / (rw * (ut1sin + ut2sin));
-                        gd[j][ia] += du;
-                        gd[j][ic] += dv;
-                        gd[j][id] += dw;
-                        gd[j][ib] -= (du + dv + dw);
+                        g[0][j] = du; // Atom A
+                        g[1][j] = dv; // Atom C
+                        g[2][j] = dw; // Atom D
+                        g[3][j] = -(du + dv + dw); // Atom B
                     }
+                    gd.add(threadID, ia, g[0][0], g[0][1], g[0][2]);
+                    gd.add(threadID, ic, g[1][0], g[1][1], g[1][2]);
+                    gd.add(threadID, id, g[2][0], g[2][1], g[2][2]);
+                    gd.add(threadID, ib, g[3][0], g[3][1], g[3][2]);
                     break;
                 case ZTHENX:
                     for (int j = 0; j < 3; j++) {
                         double du = uv[j] * dphidv / (ru * uvsin) + uw[j] * dphidw / ru;
                         double dv = -uv[j] * dphidu / (rv * uvsin);
-                        gd[j][ia] += du;
-                        gd[j][ic] += dv;
-                        gd[j][ib] -= (du + dv);
+                        g[0][j] = du; // Atom A
+                        g[1][j] = dv; // Atom C
+                        g[2][j] = -(du + dv); // Atom B
                     }
+                    gd.add(threadID, ia, g[0][0], g[0][1], g[0][2]);
+                    gd.add(threadID, ic, g[1][0], g[1][1], g[1][2]);
+                    gd.add(threadID, ib, g[2][0], g[2][1], g[2][2]);
                     break;
                 case BISECTOR:
                     for (int j = 0; j < 3; j++) {
                         double du = uv[j] * dphidv / (ru * uvsin) + 0.5 * uw[j] * dphidw / ru;
                         double dv = -uv[j] * dphidu / (rv * uvsin) + 0.5 * vw[j] * dphidw / rv;
-                        gd[j][ia] += du;
-                        gd[j][ic] += dv;
-                        gd[j][ib] -= (du + dv);
+                        g[0][j] = du; // Atom A
+                        g[1][j] = dv; // Atom C
+                        g[2][j] = -(du + dv); // Atom B
                     }
+                    gd.add(threadID, ia, g[0][0], g[0][1], g[0][2]);
+                    gd.add(threadID, ic, g[1][0], g[1][1], g[1][2]);
+                    gd.add(threadID, ib, g[2][0], g[2][1], g[2][2]);
                     break;
                 default:
                     String message = "Fatal exception: Unknown frame definition: " + frame[i] + "\n";
@@ -388,38 +406,14 @@ public class ReduceRegion extends ParallelRegion {
         @Override
         public void run(int lb, int ub) throws Exception {
             if (gradient) {
-                double[] gx = grad[0][0];
-                double[] gy = grad[0][1];
-                double[] gz = grad[0][2];
-                for (int j = 1; j < maxThreads; j++) {
-                    double[] tx = grad[j][0];
-                    double[] ty = grad[j][1];
-                    double[] tz = grad[j][2];
-                    for (int i = lb; i <= ub; i++) {
-                        gx[i] += tx[i];
-                        gy[i] += ty[i];
-                        gz[i] += tz[i];
-                    }
-                }
+                grad.reduce(lb, ub);
                 for (int i = lb; i <= ub; i++) {
                     Atom ai = atoms[i];
-                    ai.addToXYZGradient(gx[i], gy[i], gz[i]);
+                    ai.addToXYZGradient(grad.getX(i), grad.getY(i), grad.getZ(i));
                 }
             }
             if (lambdaTerm) {
-                double[] lx = lambdaGrad[0][0];
-                double[] ly = lambdaGrad[0][1];
-                double[] lz = lambdaGrad[0][2];
-                for (int j = 1; j < maxThreads; j++) {
-                    double[] tx = lambdaGrad[j][0];
-                    double[] ty = lambdaGrad[j][1];
-                    double[] tz = lambdaGrad[j][2];
-                    for (int i = lb; i <= ub; i++) {
-                        lx[i] += tx[i];
-                        ly[i] += ty[i];
-                        lz[i] += tz[i];
-                    }
-                }
+                lambdaGrad.reduce(lb, ub);
             }
         }
     }

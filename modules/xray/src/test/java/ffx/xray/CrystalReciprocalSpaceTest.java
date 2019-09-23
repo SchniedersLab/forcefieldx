@@ -107,9 +107,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 1 4 reflection should be correct",
-                -712.4444541709152, a.re(), 0.0001);
+                -753.4722104328415, a.re(), 0.0001);
         assertEquals("1 1 4 reflection should be correct",
-                -1040.6144214816625, a.im(), 0.0001);
+                -1012.1341308707798, a.im(), 0.0001);
 
         b.re(-70.4582);
         b.im(-486.142);
@@ -120,9 +120,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("2 1 10 reflection should be correct",
-                -138.7497092372501, a.re(), 0.0001);
+                -69.3966088405437, a.re(), 0.0001);
         assertEquals("2 1 10 reflection should be correct",
-                -394.8067906226747, a.im(), 0.0001);
+                -412.0147625765327, a.im(), 0.0001);
     }
 
     @Test
@@ -176,9 +176,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 9 4 reflection should be correct",
-                -494.8141910253083, a.re(), 0.0001);
+                -493.7799429881329, a.re(), 0.0001);
         assertEquals("1 9 4 reflection should be correct",
-                478.95302009324877, a.im(), 0.0001);
+                460.7022632345927, a.im(), 0.0001);
 
         b.re(-129.767);
         b.im(-76.9812);
@@ -189,8 +189,8 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("5 26 8 reflection should be correct",
-                -124.17614410062062, a.re(), 0.0001);
+                -123.05535567943379, a.re(), 0.0001);
         assertEquals("5 26 8 reflection should be correct",
-                -74.71740957877782, a.im(), 0.0001);
+                -74.59007322382718, a.im(), 0.0001);
     }
 }

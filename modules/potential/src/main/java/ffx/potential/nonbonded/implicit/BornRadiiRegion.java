@@ -56,12 +56,11 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import ffx.potential.utils.EnergyException;
-
 
 /**
- * Compute Born radii in parallel via the Grycuk method.
+ * Parallel computation of Born radii via the Grycuk method.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class BornRadiiRegion extends ParallelRegion {

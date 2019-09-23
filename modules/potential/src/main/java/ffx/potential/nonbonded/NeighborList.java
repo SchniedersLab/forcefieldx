@@ -1047,7 +1047,7 @@ public class NeighborList extends ParallelRegion {
 
                 // Interactions between atoms in the asymmetric unit may be masked.
                 if (maskingRules != null) {
-                    maskingRules.applyMask(mask, vdw14, atomIndex);
+                    maskingRules.applyMask(atomIndex, vdw14, mask);
                 }
 
                 // If the self-volume is being searched for pairs, we must avoid double counting.
@@ -1105,7 +1105,7 @@ public class NeighborList extends ParallelRegion {
 
             // Interactions between atoms in the asymmetric unit may be masked.
             if (iSymm == 0 && maskingRules != null) {
-                maskingRules.removeMask(mask, vdw14, atomIndex);
+                maskingRules.removeMask(atomIndex, vdw14, mask);
             }
         }
     }

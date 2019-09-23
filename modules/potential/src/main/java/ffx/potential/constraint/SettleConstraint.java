@@ -106,10 +106,12 @@ public class SettleConstraint implements Constraint {
 
     /**
      * Constructs a SETTLE constraint from an angle and its two bonds.
+     * Does not inform a012 that it is now constrained, which is why
+     * there is a factory method wrapping the private constructor.
      *
      * @param a012 Angle to construct a SETTLE constraint from.
      */
-    public SettleConstraint(Angle a012) {
+    private SettleConstraint(Angle a012) {
         Atom center = a012.getCentralAtom();
         index0 = center.getXyzIndex() - 1;
 
@@ -130,6 +132,20 @@ public class SettleConstraint implements Constraint {
     }
 
     /**
+     * Constructs a SETTLE constraint from an angle and its two bonds.
+     * Factory used mostly to avoid a leaking-this scenario, as this
+     * method also passes the new SETTLE constraint to a012.
+     *
+     * @param a012 Angle to construct a SETTLE constraint from.
+     * @return New SettleConstraint.
+     */
+    public static SettleConstraint settleFactory(Angle a012) {
+        SettleConstraint newC = new SettleConstraint(a012);
+        a012.setConstraint(newC);
+        return newC;
+    }
+
+    /**
      * Calculates the distance AC based on known side lengths AB, BC, and angle ABC.
      * Intended to get the H-H pseudo-bond for rigid water molecules.
      *
@@ -138,7 +154,7 @@ public class SettleConstraint implements Constraint {
      * @param angABC Angle between points A, B, and C, in degrees.
      * @return Distance between points A and C
      */
-    private static double lawOfCosines(double distAB, double distBC, double angABC) {
+    static double lawOfCosines(double distAB, double distBC, double angABC) {
         double val = distAB*distAB;
         val += distBC*distBC;
         val -= (2*distAB*distBC*FastMath.cos(FastMath.toRadians(angABC)));

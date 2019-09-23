@@ -54,20 +54,20 @@ public interface MaskingInterface {
      * Interactions with atom i that should not be included in the NeighborList
      * should be set to 0.
      *
-     * @param mask  The masking array.
-     * @param vdw14 True if atom i and the current atom are 1-4 to each other.
      * @param i     The atom whose masking rules should be applied.
+     * @param is14  True if atom i and the current atom are 1-4 to each other.
+     * @param masks One or more masking arrays.
      * @since 1.0
      */
-    void applyMask(final double[] mask, final boolean[] vdw14, final int i);
+    void applyMask(final int i, final boolean[] is14, final double[]... masks);
 
     /**
-     * After calling removeMask, all entries in the mask array should be 1.
+     * After calling removeMask, all entries in the mask array should be 1 and is14 array false.
      *
-     * @param mask  The masking array.
-     * @param vdw14 True if atom i and the current atom are 1-4 to each other.
      * @param i     The atom whose masking rules should be removed.
+     * @param is14  True if atom i and the current atom are 1-4 to each other.
+     * @param masks One or more masking arrays.
      * @since 1.0
      */
-    void removeMask(final double[] mask, final boolean[] vdw14, final int i);
+    void removeMask(final int i, final boolean[] is14, final double[]... masks);
 }

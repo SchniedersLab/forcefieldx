@@ -67,9 +67,7 @@ import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.r;
 
 /**
- * Compute Volume energy.
- *
- * @since 1.0
+ * Initial port of the TINKER volume area code.
  */
 public class VolumeRegion extends ParallelRegion {
 

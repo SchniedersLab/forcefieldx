@@ -45,9 +45,11 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.crystal.Crystal;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
@@ -77,6 +79,12 @@ import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
 
+/**
+ * Parallel evaluation of the PME reciprocal space energy and gradient.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class ReciprocalEnergyRegion extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(ReciprocalEnergyRegion.class.getName());
@@ -154,23 +162,21 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     private ReciprocalSpace reciprocalSpace;
     private Polarization polarization;
     /**
-     * Gradient array for each thread. [threadID][X/Y/Z][atomID]
+     * Atomic Gradient array.
      */
-    private double[][][] grad;
+    private AtomicDoubleArray3D grad;
     /**
-     * Torque array for each thread. [threadID][X/Y/Z][atomID]
+     * Atomic Torque array.
      */
-    private double[][][] torque;
+    private AtomicDoubleArray3D torque;
     /**
      * Partial derivative of the gradient with respect to Lambda.
-     * [threadID][X/Y/Z][atomID]
      */
-    private double[][][] lambdaGrad;
+    private AtomicDoubleArray3D lambdaGrad;
     /**
      * Partial derivative of the torque with respect to Lambda.
-     * [threadID][X/Y/Z][atomID]
      */
-    private double[][][] lambdaTorque;
+    private AtomicDoubleArray3D lambdaTorque;
     /**
      * If true, compute coordinate gradient.
      */
@@ -217,8 +223,8 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                      double[][][] inducedDipole, double[][][] inducedDipoleCR,
                      double[][] cartesianDipolePhi, double[][] cartesianDipolePhiCR,
                      ReciprocalSpace reciprocalSpace, Polarization polarization,
-                     double[][][] grad, double[][][] torque,
-                     double[][][] lambdaGrad, double[][][] lambdaTorque,
+                     AtomicDoubleArray3D grad, AtomicDoubleArray3D torque,
+                     AtomicDoubleArray3D lambdaGrad, AtomicDoubleArray3D lambdaTorque,
                      boolean gradient, boolean lambdaTerm,
                      SharedDouble shareddEdLambda, SharedDouble sharedd2EdLambda2,
                      AlchemicalParameters alchemicalParameters) {
@@ -264,6 +270,20 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
     public double getInducedDipoleReciprocalEnergy() {
         return inducedDipoleRecipEnergy.get();
+    }
+
+    /**
+     * Execute the ReciprocalEnergyRegion with the passed ParallelTeam.
+     *
+     * @param parallelTeam The ParallelTeam instance to execute with.
+     */
+    public void executeWith(ParallelTeam parallelTeam) {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = " Exception computing the electrostatic energy.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
     }
 
     @Override
@@ -320,8 +340,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
     private class PermanentReciprocalEnergyLoop extends IntegerForLoop {
 
-        private double[] gX, gY, gZ, tX, tY, tZ;
-        private double[] lgX, lgY, lgZ, ltX, ltY, ltZ;
+        int threadID;
         double eSelf;
         double eRecip;
 
@@ -334,21 +353,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         public void start() {
             eSelf = 0.0;
             eRecip = 0.0;
-            int ti = getThreadIndex();
-            gX = grad[ti][0];
-            gY = grad[ti][1];
-            gZ = grad[ti][2];
-            tX = torque[ti][0];
-            tY = torque[ti][1];
-            tZ = torque[ti][2];
-            if (lambdaTerm) {
-                lgX = lambdaGrad[ti][0];
-                lgY = lambdaGrad[ti][1];
-                lgZ = lambdaGrad[ti][2];
-                ltX = lambdaTorque[ti][0];
-                ltY = lambdaTorque[ti][1];
-                ltZ = lambdaTorque[ti][2];
-            }
+            threadID = getThreadIndex();
         }
 
         @Override
@@ -357,7 +362,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             // Permanent multipole self energy and gradient.
             for (int i = lb; i <= ub; i++) {
                 if (use[i]) {
-                    double in[] = globalMultipole[0][i];
+                    double[] in = globalMultipole[0][i];
                     double cii = in[t000] * in[t000];
                     double dii = in[t100] * in[t100] + in[t010] * in[t010] + in[t001] * in[t001];
                     double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002]
@@ -423,22 +428,16 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                         tqz -= twoThirds * (mpole[t200] * phi[t110] + mpole[t110] * phi[t020] + mpole[t101] * phi[t011]
                                 - mpole[t110] * phi[t200] - mpole[t020] * phi[t110] - mpole[t011] * phi[t101]);
                         if (gradient) {
-                            gX[i] += permanentScale * electric * dfx;
-                            gY[i] += permanentScale * electric * dfy;
-                            gZ[i] += permanentScale * electric * dfz;
-                            tX[i] += permanentScale * electric * tqx;
-                            tY[i] += permanentScale * electric * tqy;
-                            tZ[i] += permanentScale * electric * tqz;
+                            double factor = permanentScale * electric;
+                            grad.add(threadID, i, factor * dfx, factor * dfy, factor * dfz);
+                            torque.add(threadID, i, factor * tqx, factor * tqy, factor * tqz);
                         }
                         if (lambdaTerm) {
                             dUdL += dEdLSign * dlPowPerm * e;
                             d2UdL2 += dEdLSign * d2lPowPerm * e;
-                            lgX[i] += dEdLSign * dlPowPerm * electric * dfx;
-                            lgY[i] += dEdLSign * dlPowPerm * electric * dfy;
-                            lgZ[i] += dEdLSign * dlPowPerm * electric * dfz;
-                            ltX[i] += dEdLSign * dlPowPerm * electric * tqx;
-                            ltY[i] += dEdLSign * dlPowPerm * electric * tqy;
-                            ltZ[i] += dEdLSign * dlPowPerm * electric * tqz;
+                            double factor = dEdLSign * dlPowPerm * electric;
+                            lambdaGrad.add(threadID, i, factor * dfx, factor * dfy, factor * dfz);
+                            lambdaTorque.add(threadID, i, factor * tqx, factor * tqy, factor * tqz);
                         }
                     }
 
@@ -462,8 +461,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
         private double eSelf;
         private double eRecip;
-        private double[] gX, gY, gZ, tX, tY, tZ;
-        private double[] lgX, lgY, lgZ, ltX, ltY, ltZ;
+        private int threadID;
         private final double[] sfPhi = new double[tensorCount];
         private final double[] sPhi = new double[tensorCount];
 
@@ -476,21 +474,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         public void start() {
             eSelf = 0.0;
             eRecip = 0.0;
-            int threadID = getThreadIndex();
-            gX = grad[threadID][0];
-            gY = grad[threadID][1];
-            gZ = grad[threadID][2];
-            tX = torque[threadID][0];
-            tY = torque[threadID][1];
-            tZ = torque[threadID][2];
-            if (lambdaTerm) {
-                lgX = lambdaGrad[threadID][0];
-                lgY = lambdaGrad[threadID][1];
-                lgZ = lambdaGrad[threadID][2];
-                ltX = lambdaTorque[threadID][0];
-                ltY = lambdaTorque[threadID][1];
-                ltZ = lambdaTorque[threadID][2];
-            }
+            threadID = getThreadIndex();
         }
 
         @Override
@@ -526,13 +510,10 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                         final double tix = aewald4 * (diy * uiz - diz * uiy);
                         final double tiy = aewald4 * (diz * uix - dix * uiz);
                         final double tiz = aewald4 * (dix * uiy - diy * uix);
-                        tX[i] += polarizationScale * tix;
-                        tY[i] += polarizationScale * tiy;
-                        tZ[i] += polarizationScale * tiz;
+                        torque.add(threadID, i, polarizationScale * tix, polarizationScale * tiy, polarizationScale * tiz);
                         if (lambdaTerm) {
-                            ltX[i] += dEdLSign * dlPowPol * tix;
-                            ltY[i] += dEdLSign * dlPowPol * tiy;
-                            ltZ[i] += dEdLSign * dlPowPol * tiz;
+                            double factor = dEdLSign * dlPowPol;
+                            lambdaTorque.add(threadID, i, factor * tix, factor * tiy, factor * tiz);
                         }
                     }
                 }
@@ -597,19 +578,12 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                         tqx *= electric;
                         tqy *= electric;
                         tqz *= electric;
-                        gX[i] += polarizationScale * dfx;
-                        gY[i] += polarizationScale * dfy;
-                        gZ[i] += polarizationScale * dfz;
-                        tX[i] += polarizationScale * tqx;
-                        tY[i] += polarizationScale * tqy;
-                        tZ[i] += polarizationScale * tqz;
+                        grad.add(threadID, i, polarizationScale * dfx, polarizationScale * dfy, polarizationScale * dfz);
+                        torque.add(threadID, i, polarizationScale * tqx, polarizationScale * tqy, polarizationScale * tqz);
                         if (lambdaTerm) {
-                            lgX[i] += dEdLSign * dlPowPol * dfx;
-                            lgY[i] += dEdLSign * dlPowPol * dfy;
-                            lgZ[i] += dEdLSign * dlPowPol * dfz;
-                            ltX[i] += dEdLSign * dlPowPol * tqx;
-                            ltY[i] += dEdLSign * dlPowPol * tqy;
-                            ltZ[i] += dEdLSign * dlPowPol * tqz;
+                            double factor = dEdLSign * dlPowPol;
+                            lambdaGrad.add(threadID, i, factor * dfx, factor * dfy, factor * dfz);
+                            lambdaTorque.add(threadID, i, factor * tqx, factor * tqy, factor * tqz);
                         }
                     }
                 }

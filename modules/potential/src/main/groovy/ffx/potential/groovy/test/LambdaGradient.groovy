@@ -250,6 +250,9 @@ class LambdaGradient extends PotentialScript {
 
         // Test Lambda gradient in the neighborhood of the lambda variable.
         for (int j = 0; j < 3; j++) {
+            // Loop-local counter for printout.
+            int jd2EdXdLFailures = 0;
+
             lambda = alchemical.initialLambda - lambdaMoveSize + lambdaMoveSize * j
 
             if (lambda - gradientOptions.dx < 0.0) {
@@ -331,13 +334,14 @@ class LambdaGradient extends PotentialScript {
                         logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
                         logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
                         ndEdXdLFailures++
+                        jd2EdXdLFailures++;
                     }
                 }
                 rmsError = Math.sqrt(rmsError / nAtoms)
                 if (ndEdXdLFailures == 0) {
                     logger.info(String.format(" dE/dX/dL passed for all atoms: RMS error %15.8f", rmsError))
                 } else {
-                    logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", ndEdXdLFailures, nAtoms, rmsError))
+                    logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", jd2EdXdLFailures, nAtoms, rmsError))
                 }
                 logger.info("")
             }

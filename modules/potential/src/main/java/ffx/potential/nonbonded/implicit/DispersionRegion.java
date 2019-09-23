@@ -39,7 +39,6 @@ package ffx.potential.nonbonded.implicit;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -53,12 +52,14 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.crystal.Crystal;
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.VDWType;
 
 /**
- * Compute Dispersion energy in parallel via pairwise descreening.
+ * Parallel calculation of continuum dispersion energy via pairwise descreening.
  *
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class DispersionRegion extends ParallelRegion {
@@ -92,25 +93,11 @@ public class DispersionRegion extends ParallelRegion {
     /**
      * Boolean flag to indicate GK will be scaled by the lambda state variable.
      */
-    private boolean lambdaTerm;
     private boolean gradient = false;
-    /**
-     * lPow equals lambda^polarizationLambdaExponent, where polarizationLambdaExponent also used by PME.
-     */
-    private double lPow = 1.0;
-    /**
-     * First derivative of lPow with respect to l.
-     */
-    private double dlPow = 0.0;
     /**
      * Gradient array for each thread.
      */
-    private double[][][] grad;
-    /**
-     * Lambda gradient array for each thread (dU/dX/dL)
-     */
-    private double[][][] lambdaGrad;
-
+    private AtomicDoubleArray3D grad;
     /**
      * Radius of each atom for calculation of dispersion energy.
      */
@@ -123,7 +110,7 @@ public class DispersionRegion extends ParallelRegion {
      * This value was described as 0.36 in the original 2007 model (see Schnieders thesis)
      * and more recently the value was reduced to 0.26.
      */
-    private static final double DISP_OFFSET = 0.26;
+    private static final double DISP_OFFSET = 0.838;
     private static final double SLEVY = 1.0;
     private static final double AWATER = 0.033428;
     private static final double EPSO = 0.1100;
@@ -156,8 +143,7 @@ public class DispersionRegion extends ParallelRegion {
 
     public void init(Atom[] atoms, Crystal crystal, boolean[] use, int[][][] neighborLists,
                      double[] x, double[] y, double[] z, double cut2,
-                     boolean gradient, boolean lambdaTerm,
-                     double lPow, double dlPow, double[][][] grad, double[][][] lambdaGrad) {
+                     boolean gradient, AtomicDoubleArray3D grad) {
         this.atoms = atoms;
         this.crystal = crystal;
         this.use = use;
@@ -167,11 +153,7 @@ public class DispersionRegion extends ParallelRegion {
         this.z = z;
         this.cut2 = cut2;
         this.gradient = gradient;
-        this.lambdaTerm = lambdaTerm;
-        this.lPow = lPow;
-        this.dlPow = dlPow;
         this.grad = grad;
-        this.lambdaGrad = lambdaGrad;
     }
 
     public double getEnergy() {
@@ -251,17 +233,11 @@ public class DispersionRegion extends ParallelRegion {
      * @since 1.0
      */
     private class DispersionLoop extends IntegerForLoop {
-
-        private double[] gX;
-        private double[] gY;
-        private double[] gZ;
-        private double[] lgX;
-        private double[] lgY;
-        private double[] lgZ;
         private double edisp;
         private final double[] dx_local;
         private double r, r2, r3;
         private double xr, yr, zr;
+        private int threadID;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -272,15 +248,7 @@ public class DispersionRegion extends ParallelRegion {
 
         @Override
         public void start() {
-            int threadID = getThreadIndex();
-            gX = grad[threadID][0];
-            gY = grad[threadID][1];
-            gZ = grad[threadID][2];
-            if (lambdaTerm) {
-                lgX = lambdaGrad[threadID][0];
-                lgY = lambdaGrad[threadID][1];
-                lgZ = lambdaGrad[threadID][2];
-            }
+            threadID = getThreadIndex();
             edisp = 0;
         }
 
@@ -542,20 +510,8 @@ public class DispersionRegion extends ParallelRegion {
                     double dedx = de * xr;
                     double dedy = de * yr;
                     double dedz = de * zr;
-                    gX[i] += lPow * dedx;
-                    gY[i] += lPow * dedy;
-                    gZ[i] += lPow * dedz;
-                    gX[k] -= lPow * dedx;
-                    gY[k] -= lPow * dedy;
-                    gZ[k] -= lPow * dedz;
-                    if (lambdaTerm) {
-                        lgX[i] += dlPow * dedx;
-                        lgY[i] += dlPow * dedy;
-                        lgZ[i] += dlPow * dedz;
-                        lgX[k] -= dlPow * dedx;
-                        lgY[k] -= dlPow * dedy;
-                        lgZ[k] -= dlPow * dedz;
-                    }
+                    grad.add(threadID, i, dedx, dedy, dedz);
+                    grad.sub(threadID, k, dedx, dedy, dedz);
                 }
             }
             return sum;
