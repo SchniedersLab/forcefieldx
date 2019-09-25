@@ -44,6 +44,9 @@ import java.util.logging.Logger;
 
 /**
  * Read in the TT-OSRW Histogram.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 class HistogramReader extends BufferedReader {
 

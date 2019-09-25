@@ -44,8 +44,10 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 /**
- * Read in the current value of Lambda, its velocity and the number of
- * counts.
+ * Read in the current value of Lambda, its velocity and the number of counts.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 class LambdaReader extends BufferedReader {
 

@@ -79,11 +79,12 @@ import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS
  * An implementation of Transition-Tempered Orthogonal Space Random Walk
  * algorithm.
  * <p>
- * Only partially implements LambdaInterface; does not return 2'nd lambda
- * derivatives, as 2'nd derivatives of the bias require 3'rd derivatives of
- * the underlying Hamiltonian.
+ * This only partially implements the LambdaInterface, since it does not return 2nd lambda
+ * derivatives. The 2nd derivatives of the bias require 3rd derivatives of
+ * the underlying Hamiltonian (not these derivatives are not needed for OSRW MD).
  *
  * @author Michael J. Schnieders, James Dama, Wei Yang and Pengyu Ren
+ * @since 1.0
  */
 public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterface {
 
@@ -107,11 +108,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     private boolean tempering = true;
     /**
      * The Dama et al. transition-tempering rate parameter. A reasonable value
-     * is about 2 to 8 kT, with larger values being more conservative (slower decay).
+     * is about 2 to 8 kT, with larger values being resulting in slower decay.
      * <p>
-     * The default temperingFactor = 8.0.
+     * The default temperingFactor = 2.0.
      */
-    private double temperingFactor = 8.0;
+    private double temperingFactor = 2.0;
     /**
      * This deltaT is used to determine the tempering weight as described below for the temperingWeight variable.
      * <p>
@@ -137,7 +138,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * <p>
      * biasHeight = max[minBias - temperOffset, 0]
      * <p>
-     * The default temperOffset = 1.0.
+     * The default temperOffset = 1.0 kcal/mol.
      */
     private double temperOffset;
     /**
@@ -720,7 +721,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return val;
     }
 
-    public void setCurrentLambdaforRank(int rank, double lambda) {
+    void setCurrentLambdaforRank(int rank, double lambda) {
         currentLambdaValues[rank] = lambda;
     }
 
@@ -1324,7 +1325,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
-        logger.info(format(" Set lambda write out threshold to %f lambda", lambdaWriteOut));
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Set lambda write out threshold to %6.3f lambda", lambdaWriteOut));
+        }
     }
 
 }

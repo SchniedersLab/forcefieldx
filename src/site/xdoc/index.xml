@@ -37,16 +37,17 @@
                                 "Growth of the Asymmetric Unit into a Crystal via alcHEmy" (GAUCHE)
                             </li>
                             <li>Many-body dead-end elimination (MB-DEE) for global optimization of non-pairwise energy
-                                functions over a discrete permutation space (i.e. side-chain rotamers).
+                                functions over a discrete permutation space (i.e. side-chain rotamers). This algorithm
+                                is accelerated across one or more GPUs using MPI and OpenMM.
                             </li>
                             <li>A general "dual force field" framework to compute the thermodynamic cost to change
-                                between
-                                fixed charge (i.e. OPLS-AA or Amber) and a polarizable multipole force field (i.e.
-                                AMOEBA).
+                                between a fixed charge force field (e.g. OPLS-AA or Amber) and the polarizable multipole
+                                AMOEBA force field. This approach has been extended to explore computing the coarsen
+                                and refine legs of the indirect free energy path simultaneously (i.e. "Simultaneous Bookending"),
+                                which helps the method scale to protein sized systems.
                             </li>
                             <li>Refinement of biomolecular structures against experimental data sets (i.e. X-ray /
-                                neutron diffraction
-                                and/or CryoEM) and the polarizable AMOEBA force field.
+                                neutron diffraction and/or CryoEM) and the polarizable AMOEBA force field.
                             </li>
                         </ul>
                     </td>

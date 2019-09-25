@@ -592,7 +592,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
-        if (esvTerm) {  // TODO: Move ESV neighborlist construction into the parallel team.
+        if (esvTerm) {
             neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
         } else {
             neighborListOnly = true;

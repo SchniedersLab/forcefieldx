@@ -153,7 +153,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Number of processes.
      */
-    protected final int numProc;
+    final int numProc;
     /**
      * Rank of this process.
      */
@@ -617,16 +617,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * Specify if MC-OSRW restart files should be written.
-     * TODO: move this method to MC-OSRW.
-     *
-     * @param mcRestart True to indicate writing MC OSRW restart files.
-     */
-    public void setMCRestartWriter(boolean mcRestart) {
-        this.mcRestart = mcRestart;
-    }
-
-    /**
      * Indicate if the Lambda extended system particle should be propagated using Langevin dynamics.
      *
      * @param propagateLambda If true, Lambda will be propagated using Langevin dynamics.
@@ -638,7 +628,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Propagate Lambda using Langevin dynamics.
      */
-    protected void langevin() {
+    void langevin() {
         // Compute the random force pre-factor (kcal/mol * psec^-2).
         double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
 
@@ -883,15 +873,6 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public void setThetaMass(double thetaMass) {
         this.thetaMass = thetaMass;
-    }
-
-    /**
-     * <p>Setter for the field <code>resetStatistics</code>.</p>
-     *
-     * @param resetStatistics a boolean.
-     */
-    public void setResetStatistics(boolean resetStatistics) {
-        this.resetStatistics = resetStatistics;
     }
 
     /**

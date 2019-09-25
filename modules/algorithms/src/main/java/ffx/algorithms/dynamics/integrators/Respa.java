@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
@@ -186,7 +187,9 @@ public class Respa extends Integrator {
         innerTimeStep = dt / innerSteps;
         halfInnerTimeStep = 0.5 * innerTimeStep;
 
-        logger.info(format(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, innerTimeStep));
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, innerTimeStep));
+        }
     }
 
     /**

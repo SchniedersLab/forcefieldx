@@ -348,7 +348,8 @@ public class NeighborList extends ParallelRegion {
         }
 
         // Initialize the neighbor list builder subcells.
-        initNeighborList(true);
+        boolean print = logger.isLoggable(Level.FINE);
+        initNeighborList(print);
     }
 
     /**

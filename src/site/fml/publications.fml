@@ -4,6 +4,70 @@
       xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
       title="Publications"
       toplink="false">
+    <part id="2019">
+        <title>2019</title>
+        <faq id="23">
+            <question>
+                Tollefson, M. R., Litman, J. M., Qi, G., O’Connell, C. E., Wipfler, M. J.,
+                Marini, R. J., Bernabe, H. V., Tollefson, W. T. A., Braun, T. A., Casavant, T. L.,
+                Smith, R. J. H. and M. J. Schnieders,
+                Structural Insights into Hearing Loss Genetics from Polarizable Protein Repacking.
+                <i>Biophysical Journal</i>
+                <b>2019</b>, 117 (3), 602-612.
+                <a href="http://dx.doi.org/10.1016/j.bpj.2019.06.030">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    Hearing loss is associated with ?8100 mutations in 152 genes, and within the coding regions of
+                    these genes are over 60,000 missense variants. The majority of these variants are classified as
+                    <i>variants of uncertain significance</i>
+                    to reflect our inability to ascribe a phenotypic effect to the observed amino acid change.
+                    A promising source of pathogenicity information is biophysical simulation, although input protein structures
+                    often contain defects because of limitations in experimental data and/or only distant homology to a template.
+                    Here, we combine the polarizable atomic multipole optimized energetics for biomolecular applications force field,
+                    many-body optimization theory, and graphical processing unit acceleration to repack all
+                    deafness-associated proteins and thereby improve average structure MolProbity score from 2.2 to 1.0.
+                    We then used these optimized wild-type models to create over 60,000 structures for missense variants in the
+                    Deafness Variation Database, which are being incorporated into the Deafness Variation Database to inform
+                    deafness pathogenicity prediction. Finally, this work demonstrates that advanced polarizable atomic multipole
+                    force fields are efficient enough to repack the entire human proteome.
+                </p>
+            </answer>
+        </faq>
+        <faq id="22">
+            <question>
+                Litman, J. M.,  Thiel, A. C., and M. J. Schnieders,
+                Scalable Indirect Free Energy Method Applied to Divalent Cation-Metalloprotein Binding.
+                <i>Journal of Chemical Theory and Computation</i>
+                <b>2019</b>, 15 (8), 4602-4614.
+                <a href="http://dx.doi.org/10.1021/acs.jctc.9b00147">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    Many biological processes are based on molecular recognition between highly charged molecules such as nucleic acids,
+                    inorganic ions, charged amino acids, etc. For such cases, it has been demonstrated that molecular simulations with
+                    fixed partial charges often fail to achieve experimental accuracy. Although incorporation of more advanced
+                    electrostatic models (such as multipoles, mutual polarization, etc.) can significantly improve simulation accuracy,
+                    it increases computational expense by a factor of 5–20×. Indirect free energy (IFE) methods can mitigate this cost
+                    by modeling intermediate states at fixed-charge resolution. For example, an efficient “reference” model such as a
+                    pairwise Amber, CHARMM, or OPLS-AA force field can be used to derive an initial estimate, followed by thermodynamic
+                    corrections to a more advanced “target” potential such as the polarizable AMOEBA model. Unfortunately, all currently
+                    described IFE methods encounter difficulties reweighting more than ∼50 atoms between resolutions due to extensive
+                    scaling of both the magnitude of the thermodynamic corrections and their statistical uncertainty. We present an
+                    approach called “simultaneous bookending” (SB) that is fundamentally different from existing IFE methods based on a
+                    tunable sampling approximation, which permits scaling to thousands of atoms. SB is demonstrated on the
+                    relative binding affinity of Mg<sup>2+</sup>/Ca<sup>2+</sup> to a set of metalloproteins with up to 2972 atoms, finding no statistically
+                    significant difference between direct AMOEBA results and those from correcting Amber to AMOEBA. The ability to
+                    change the resolution of thousands of atoms during reweighting suggests the approach may be applicable in the
+                    future to protein–protein binding affinities or nucleic acid thermodynamics.
+                </p>
+            </answer>
+        </faq>
+    </part>
     <part id="2016">
         <title>2016</title>
         <faq id="21">

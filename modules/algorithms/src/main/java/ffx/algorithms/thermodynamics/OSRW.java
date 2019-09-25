@@ -69,9 +69,10 @@ import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
 
 /**
- * An implementation of the Orthogonal Space Random Walk algorithm.
+ * An implementation of the 2nd order Orthogonal Space Random Walk algorithm.
  *
  * @author Michael J. Schnieders, Wei Yang and Pengyu Ren
+ * @since 1.0
  */
 public class OSRW extends AbstractOSRW {
 
@@ -970,7 +971,9 @@ public class OSRW extends AbstractOSRW {
     @Override
     public void setLambdaWriteOut(double lambdaWriteOut) {
         this.lambdaWriteOut = lambdaWriteOut;
-        logger.info(String.format(" Set lambda write out threshold to %f lambda", lambdaWriteOut));
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Set lambda write out threshold to %6.3f lambda", lambdaWriteOut));
+        }
     }
 
     /**

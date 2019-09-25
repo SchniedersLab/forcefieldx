@@ -41,8 +41,10 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 /**
- * Write out the current value of Lambda, its velocity and the number of
- * counts.
+ * Write out the current value of Lambda, its velocity and the number of counts.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 class LambdaWriter extends PrintWriter {
 

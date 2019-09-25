@@ -493,7 +493,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.info(format("\n MC Orthogonal Space Sampling Round %d", imove + 1));
                 lambdaMove.move();
                 proposedLambda = osrw.getLambda();
-                logger.info(format("\n Running MD at proposed lambda=%5.3f.", proposedLambda));
+                logger.info(format(" Proposed lambda: %5.3f.", proposedLambda));
             }
 
             if (logger.isLoggable(Level.FINE)) {

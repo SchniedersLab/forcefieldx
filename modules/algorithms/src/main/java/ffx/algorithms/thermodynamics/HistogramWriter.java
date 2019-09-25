@@ -42,6 +42,9 @@ import java.io.Writer;
 
 /**
  * Write out the TT-OSRW Histogram.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 class HistogramWriter extends PrintWriter {
 

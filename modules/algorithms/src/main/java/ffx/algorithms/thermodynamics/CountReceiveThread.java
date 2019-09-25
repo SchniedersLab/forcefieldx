@@ -50,6 +50,9 @@ import edu.rit.mp.DoubleBuf;
 
 /**
  * The CountReceiveThread accumulates TT-OSRW statistics from multiple asynchronous walkers.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 class CountReceiveThread extends Thread {
 
