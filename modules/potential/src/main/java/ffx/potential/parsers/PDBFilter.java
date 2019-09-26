@@ -88,6 +88,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
 import static ffx.numerics.math.VectorMath.diff;
+import static ffx.numerics.math.VectorMath.dist;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.potential.bonded.AminoAcidUtils.renameArginineHydrogens;
 import static ffx.potential.bonded.AminoAcidUtils.renameAsparagineHydrogens;
@@ -2258,7 +2259,7 @@ public final class PDBFilter extends SystemFilter {
                 if (SG1 == null || SG2 == null) {
                     continue;
                 }
-                double d = VectorMath.dist(SG1.getXYZ(null), SG2.getXYZ(null));
+                double d = dist(SG1.getXYZ(null), SG2.getXYZ(null));
                 if (d < 5.0) {
                     r1.setName("CYX");
                     r2.setName("CYX");
@@ -2302,7 +2303,7 @@ public final class PDBFilter extends SystemFilter {
             } else {
                 bond.setBondType(bondType);
             }
-            double d = VectorMath.dist(a1.getXYZ(null), a2.getXYZ(null));
+            double d = dist(a1.getXYZ(null), a2.getXYZ(null));
             Polymer c1 = activeMolecularAssembly.getChain(a1.getSegID());
             Polymer c2 = activeMolecularAssembly.getChain(a2.getSegID());
             Residue r1 = c1.getResidue(a1.getResidueNumber());
@@ -2530,21 +2531,22 @@ public final class PDBFilter extends SystemFilter {
                     }
                     // Check for a patch.
                     if (!aa) {
-                        logger.info(" Checking for non-standard amino acid patch " + name);
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine(" Checking for non-standard amino acid patch " + name);
+                        }
                         HashMap<String, AtomType> types = forceField.getAtomTypes(name);
                         if (types.isEmpty()) {
                             isProtein = false;
                             break;
                         } else {
-                            logger.info(" Patch found for non-standard amino acid " + name);
+                            if (logger.isLoggable(Level.FINE)) {
+                                logger.fine(" Patch found for non-standard amino acid " + name);
+                            }
                         }
                     }
                 }
 
-                /**
-                 * If all the residues in this chain have known amino acids
-                 * names, then attempt to assign atom types.
-                 */
+                // If all the residues in this chain have known amino acids names, then attempt to assign atom types.
                 if (isProtein) {
                     try {
                         logger.info(format(" Amino acid chain %s", polymer.getName()));
@@ -2564,17 +2566,12 @@ public final class PDBFilter extends SystemFilter {
                     continue;
                 }
 
-                /**
-                 * Check if all residues have known nucleic acids names.
-                 */
+                // Check if all residues have known nucleic acids names.
                 boolean isNucleicAcid = true;
                 for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
                     Residue residue = residues.get(residueNumber);
                     String name = residue.getName().toUpperCase();
-                    /**
-                     * Convert 1 and 2-character nucleic acid names to
-                     * 3-character names.
-                     */
+                    // Convert 1 and 2-character nucleic acid names to 3-character names.
                     switch(name) {
                         case "A":
                             name = NucleicAcid3.ADE.toString();
@@ -2621,14 +2618,16 @@ public final class PDBFilter extends SystemFilter {
                     }
                 }
 
-                /**
-                 * If all the residues in this chain have known nucleic acids
-                 * names, then attempt to assign atom types.
+                /*
+                  If all the residues in this chain have known nucleic acids
+                  names, then attempt to assign atom types.
                  */
                 if (isNucleicAcid) {
                     try {
                         logger.info(format(" Nucleic acid chain %s", polymer.getName()));
-                        logger.info(String.format(" EXPERIMENTAL: Finding chain breaks for possible nucleic acid chain %s", polymer.getName()));
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine(format(" EXPERIMENTAL: Finding chain breaks for possible nucleic acid chain %s", polymer.getName()));
+                        }
                         double dist = properties.getDouble("chainbreak", 4.0);
                         // Detect main chain breaks!
                         List<List<Residue>> subChains = findChainBreaks(residues, dist);
@@ -2672,13 +2671,13 @@ public final class PDBFilter extends SystemFilter {
                         case CA2:
                             atom.setAtomType(findAtomType(2009));
                             break;
+                        case ZN:
+                        case ZN2:
+                            atom.setAtomType(findAtomType(2010));
+                            break;
                         case CL:
                             atom.setAtomType(findAtomType(2011));
                             break;
-                        /*case ZN:
-                        case ZN2:
-                            atom.setAtomType(findAtomType(2008));
-                            break;*/
                         case BR:
                             atom.setAtomType(findAtomType(2012));
                             break;
@@ -2977,12 +2976,10 @@ public final class PDBFilter extends SystemFilter {
     }
 
     private List<List<Residue>> findChainBreaks(List<Residue> residues, double cutoff) {
-        List<List<Residue>> subChains = new ArrayList<List<Residue>>();
+        List<List<Residue>> subChains = new ArrayList<>();
 
-        /**
-         * Chain-start atom: N (amino)/O5' (nucleic)
-         * Chain-end atom:   C (amino)/O3' (nucleic)
-         */
+        // Chain-start atom: N (amino)/O5* (nucleic)
+        // Chain-end atom:   C (amino)/O3* (nucleic)
         Residue.ResidueType rType = residues.get(0).getResidueType();
         String startAtName;
         String endAtName;
@@ -2992,8 +2989,8 @@ public final class PDBFilter extends SystemFilter {
                 endAtName = "C";
                 break;
             case NA:
-                startAtName = "O5\'";
-                endAtName = "O3\'";
+                startAtName = "O5*";
+                endAtName = "O3*";
                 break;
             case UNK:
             default:
@@ -3011,16 +3008,12 @@ public final class PDBFilter extends SystemFilter {
         for (Residue residue : residues) {
             List<Atom> resAtoms = residue.getAtomList();
             if (priorEndAtom == null) {
-                /**
-                 * Initialization.
-                 */
-                subChain = new ArrayList<Residue>();
+                // Initialization.
+                subChain = new ArrayList<>();
                 subChain.add(residue);
                 subChains.add(subChain);
             } else {
-                /**
-                 * Find the start atom of the current residue.
-                 */
+                // Find the start atom of the current residue.
                 Atom startAtom = null;
                 for (Atom a : resAtoms) {
                     if (a.getName().equalsIgnoreCase(startAtName)) {
@@ -3032,16 +3025,11 @@ public final class PDBFilter extends SystemFilter {
                     subChain.add(residue);
                     continue;
                 }
-                /**
-                 * Compute the distance between the previous carbonyl carbon and
-                 * the current nitrogen.
-                 */
-                double r = VectorMath.dist(priorEndAtom.getXYZ(null), startAtom.getXYZ(null));
+                // Compute the distance between the previous carbonyl carbon and the current nitrogen.
+                double r = dist(priorEndAtom.getXYZ(null), startAtom.getXYZ(null));
                 if (r > cutoff) {
-                    /**
-                     * Start a new chain.
-                     */
-                    subChain = new ArrayList<Residue>();
+                    // Start a new chain.
+                    subChain = new ArrayList<>();
                     subChain.add(residue);
                     subChains.add(subChain);
                     char ch1 = previousResidue.getChainID();
@@ -3049,16 +3037,12 @@ public final class PDBFilter extends SystemFilter {
                     sb.append(format("\n C-N distance of %6.2f A for %c-%s and %c-%s.",
                             r, ch1, previousResidue.toString(), ch2, residue.toString()));
                 } else {
-                    /**
-                     * Continue the current chain.
-                     */
+                    // Continue the current chain.
                     subChain.add(residue);
                 }
             }
 
-            /**
-             * Save the carbonyl carbon.
-             */
+            // Save the carbonyl carbon.
             for (Atom a : resAtoms) {
                 if (a.getName().equalsIgnoreCase(endAtName)) {
                     priorEndAtom = a;
@@ -3355,7 +3339,9 @@ public final class PDBFilter extends SystemFilter {
                     line = currentReader.readLine();
                 }
                 if (eof) {
-                    logger.log(Level.INFO, String.format(" End of file reached for %s", readFile));
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, format("\n End of file reached for %s", readFile));
+                    }
                     currentReader.close();
                     return numModels;
                 }
@@ -3423,7 +3409,9 @@ public final class PDBFilter extends SystemFilter {
                     line = currentReader.readLine();
                 }
                 if (eof) {
-                    logger.log(Level.INFO, String.format(" End of file reached for %s", readFile));
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, format("\n End of file reached for %s", readFile));
+                    }
                     currentReader.close();
                     return false;
                 }

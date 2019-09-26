@@ -49,12 +49,15 @@ import static java.lang.String.format;
 
 import org.apache.commons.math3.util.FastMath;
 
+import static org.apache.commons.math3.util.FastMath.toDegrees;
+
 import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
+import static ffx.numerics.math.VectorMath.dist;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
 import static ffx.potential.bonded.BondedUtils.buildHydrogen;
@@ -109,8 +112,7 @@ public class NucleicAcidUtils {
 
         // Loop over residues.
         int numberOfResidues = residues.size();
-        for (int residueNumber = 0; residueNumber
-                < numberOfResidues; residueNumber++) {
+        for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
 
             // Match the residue name to a known nucleic acid residue.
             Residue residue = residues.get(residueNumber);
@@ -143,6 +145,7 @@ public class NucleicAcidUtils {
             if (residueNumber == 0) {
                 position = FIRST_RESIDUE;
             }
+
             if (residueNumber == numberOfResidues - 1) {
                 lastRes = true;
                 if (position != FIRST_RESIDUE) {
@@ -163,7 +166,6 @@ public class NucleicAcidUtils {
                     }
                 }
                 threePrimeCap = !unrecognized;
-                logger.info(" three prime cap " + threePrimeCap);
             }
 
             // Check if the sugar is deoxyribose and change the residue name if necessary.
@@ -234,7 +236,9 @@ public class NucleicAcidUtils {
             Atom sugarO3 = null;
 
             if (threePrimeCap) {
-                logger.info(String.format(" EXPERIMENTAL: Adding 3\'-terminal phosphate cap %s", residue));
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(format(" EXPERIMENTAL: Adding 3\'-terminal phosphate cap %s", residue));
+                }
                 Residue priorResidue = residues.get(residueNumber - 1);
                 int phosType = isDNA ? 1252 : 1240;
                 int oxygenType = isDNA ? 1253 : 1241;
@@ -263,10 +267,11 @@ public class NucleicAcidUtils {
                 }
             } else {
                 if (position == FIRST_RESIDUE) {
-                    /**
-                     * The 5' O5' oxygen of the nucleic acid is generally terminated
-                     * by 1.) A phosphate group PO3 (-3). 2.) A hydrogen.
-                     *
+
+                    /*
+                     * The 5' O5' oxygen of the nucleic acid is generally terminated by
+                     * 1.) A phosphate group PO3 (-3).
+                     * 2.) A hydrogen.
                      * If the base has phosphate atom we will assume a PO3 group.
                      */
                     phosphate = (Atom) residue.getAtomNode("P");
@@ -566,17 +571,17 @@ public class NucleicAcidUtils {
             double[] xyzP = new double[3];
             xyzOP1 = OP1.getXYZ(xyzOP1);
             xyzP = P.getXYZ(xyzP);
-            double distance = VectorMath.dist(xyzP, xyzOP1);
+            double distance = dist(xyzP, xyzOP1);
 
             // Borrow the O5'-P-OP1 angle.
             double[] xyzRiboO = new double[3];
             xyzRiboO = riboOxygen.getXYZ(xyzRiboO);
-            double angle = FastMath.toDegrees(VectorMath.bondAngle(xyzRiboO, xyzP, xyzOP1));
+            double angle = toDegrees(VectorMath.bondAngle(xyzRiboO, xyzP, xyzOP1));
 
             // Borrow the C5'-O5'-P-OP1 dihedral (which will have +120 or +240 degrees added on).
             double[] xyzRiboC = new double[3];
             xyzRiboC = riboCarbon.getXYZ(xyzRiboC);
-            double dihedralOP1 = FastMath.toDegrees(VectorMath.dihedralAngle(xyzRiboC, xyzRiboO, xyzP, xyzOP1));
+            double dihedralOP1 = toDegrees(VectorMath.dihedralAngle(xyzRiboC, xyzRiboO, xyzP, xyzOP1));
 
             Atom OP3 = buildHydrogen(residue, "OP3", P, distance, riboOxygen, angle, riboCarbon, dihedralOP1 + 120, 0, aType, forceField, bondList);
 
@@ -585,19 +590,19 @@ public class NucleicAcidUtils {
             xyzOP2 = OP2.getXYZ(xyzOP2);
             double[] xyzChiral1 = new double[3];
             xyzChiral1 = OP3.getXYZ(xyzChiral1);
-            double distChiral1 = VectorMath.dist(xyzChiral1, xyzOP2);
+            double distChiral1 = dist(xyzChiral1, xyzOP2);
 
             // Measure OP3-OP2 distance for test dihedral + 240 degrees.
             //intxyz(OP3, P, pOP1, OP1, op1Pop2, O5s, 109.4, 1);
             intxyz(OP3, P, distance, riboOxygen, angle, riboCarbon, dihedralOP1 + 240, 0);
             double[] xyzChiral2 = new double[3];
             xyzChiral2 = OP3.getXYZ(xyzChiral2);
-            double distChiral2 = VectorMath.dist(xyzChiral2, xyzOP2);
+            double distChiral2 = dist(xyzChiral2, xyzOP2);
 
-            logger.fine(String.format(" Bond: %10.5f Angle: %10.5f Dihedral: %10.5f", distance, angle, dihedralOP1));
-            logger.fine(String.format(" OP2 position: %s", Arrays.toString(xyzOP2)));
-            logger.fine(String.format(" Position 1: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral1[0], xyzChiral1[1], xyzChiral1[2], distChiral1));
-            logger.fine(String.format(" Position 2: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral2[0], xyzChiral2[1], xyzChiral2[2], distChiral2));
+            logger.fine(format(" Bond: %10.5f Angle: %10.5f Dihedral: %10.5f", distance, angle, dihedralOP1));
+            logger.fine(format(" OP2 position: %s", Arrays.toString(xyzOP2)));
+            logger.fine(format(" Position 1: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral1[0], xyzChiral1[1], xyzChiral1[2], distChiral1));
+            logger.fine(format(" Position 2: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral2[0], xyzChiral2[1], xyzChiral2[2], distChiral2));
             if (distChiral1 > distChiral2) {
                 logger.fine(" Picked dihedral +120");
                 OP3.setXYZ(xyzChiral1);

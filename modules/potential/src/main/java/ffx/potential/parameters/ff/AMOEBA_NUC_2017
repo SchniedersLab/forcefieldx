@@ -640,6 +640,7 @@ biotype   2006  RB    "Rubidium Ion           "    108
 biotype   2007  CS    "Cesium Ion             "    109
 biotype   2008  MG    "Magnesium Ion          "    111
 biotype   2009  CA    "Calcium Ion            "    112
+biotype   2010  ZN    "Zinc Ion               "    113
 biotype   2012  F     "Fluoride Ion           "    114
 biotype   2013  CL    "Chloride Ion           "    115
 biotype   2014  BR    "Bromide Ion            "    116

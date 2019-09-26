@@ -41,6 +41,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Double.isNaN;
+import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -273,14 +274,8 @@ public class DiffractionRefinementData {
             }
         }
 
-        if (logger.isLoggable(Level.WARNING)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\ninternally flagging Rfree reflections\n");
-            sb.append("  flagging 5% of observed data reflections\n");
-            sb.append(String.format("  selected %d of %d reflections\n",
-                    nfree, n));
-
-            logger.warning(sb.toString());
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(format(" Assigned %d of %d reflections to the R free set (5%%).\n", nfree, n));
         }
     }
 

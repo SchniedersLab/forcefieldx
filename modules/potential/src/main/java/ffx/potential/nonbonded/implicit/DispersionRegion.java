@@ -132,11 +132,17 @@ public class DispersionRegion extends ParallelRegion {
         int nAtoms = atoms.length;
         cDisp = new double[nAtoms];
         rDisp = new double[nAtoms];
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(" Dispersion radii:");
+        }
+
         for (int i = 0; i < nAtoms; i++) {
             VDWType type = atoms[i].getVDWType();
             double rmini = type.radius;
             rDisp[i] = rmini / 2.0;
-            logger.info(format(" Dispersion radii: %d %8.6f", i, rDisp[i]));
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest(format(" %d %s %8.6f", i, atoms[i].toString(), rDisp[i]));
+            }
         }
         maxDispersionEnergy();
     }

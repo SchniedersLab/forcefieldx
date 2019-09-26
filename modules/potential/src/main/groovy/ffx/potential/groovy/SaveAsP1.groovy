@@ -99,10 +99,12 @@ class SaveAsP1 extends PotentialScript {
         }
 
         String fileName = FilenameUtils.getName(modelFilename)
-        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
-        File saveLocation = new File(dirName + fileName)
+        String dirName = saveDir.getAbsolutePath()
+        File saveLocation = new File(dirName + File.separator + fileName)
 
-        saveOptions.preSaveOperations(activeAssembly);
+        logger.info(" Saving P1 file to: " + saveLocation)
+
+        saveOptions.preSaveOperations(activeAssembly)
         potentialFunctions.saveAsP1(activeAssembly, saveLocation)
 
         return this

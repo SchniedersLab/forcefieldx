@@ -381,8 +381,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             final double alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
             final double beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
             final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-            final String spacegroup = forceField.getString(
-                    ForceFieldString.SPACEGROUP, "P1");
+            final String spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P1");
             Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
             if (!filter.writeFileAsP1(file, false, crystal)) {
                 logger.info(format(" Save failed for %s", assembly.toString()));

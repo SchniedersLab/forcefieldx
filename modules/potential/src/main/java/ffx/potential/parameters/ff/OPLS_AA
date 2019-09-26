@@ -2728,8 +2728,7 @@ biotype   2004  NA    "Sodium Ion             "    349
 biotype   2005  K     "Potassium Ion          "    350
 biotype   2008  MG    "Magnesium Ion          "    353
 biotype   2009  CA    "Calcium Ion            "    354
-biotype   2013  CL    "Chloride Ion           "    344
-
+biotype   2010  ZN    "Zinc Ion               "    834
 
 bond      1      2   367.0   1.3800
 bond      1      3   420.0   1.3570
