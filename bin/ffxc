@@ -163,8 +163,22 @@ if [ $hasAwkSed ]; then
     if [ $USE_EXPTL_FLAGS ]; then
         EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
     fi
+
+    CVERS="`nvcc --version`"
+    if [ ! -z "$CVERS" ]; then
+      CVERS="`echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//'`"
+      NVFIRST="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }'`"
+      NVSEC="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $2; }'`"
+      if [ $NVFIRST -gt 9 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 9.2 if you wish to use CUDA-accelerated OpenMM calculations"
+      elif [ $NVFIRST -lt 9 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 9.2 if you wish to use CUDA-accelerated OpenMM calculations"
+      elif [ $NVSEC -ne 2 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 9.2 if you wish to use CUDA-accelerated OpenMM calculations"
+      fi
+    fi
 else
-    echo " The JRE version could not be autodetected. Please use JDK 1.8 through JDK 13."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 13 and (optionally) CUDA toolkit 9.2."
 fi
 
 # For Cygwin, switch paths to Windows format before running java
