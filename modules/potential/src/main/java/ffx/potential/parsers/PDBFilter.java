@@ -2625,12 +2625,18 @@ public final class PDBFilter extends SystemFilter {
                 if (isNucleicAcid) {
                     try {
                         logger.info(format(" Nucleic acid chain %s", polymer.getName()));
+
+                        /*
+                        TODO: Fix detection of NA chain breaks.
                         if (logger.isLoggable(Level.FINE)) {
                             logger.fine(format(" EXPERIMENTAL: Finding chain breaks for possible nucleic acid chain %s", polymer.getName()));
                         }
                         double dist = properties.getDouble("chainbreak", 4.0);
                         // Detect main chain breaks!
-                        List<List<Residue>> subChains = findChainBreaks(residues, dist);
+                        List<List<Residue>> subChains = findChainBreaks(residues, dist);*/
+
+                        List<List<Residue>> subChains = new ArrayList<>(1);
+                        subChains.add(residues);
 
                         for (List<Residue> subChain : subChains) {
                             assignNucleicAcidAtomTypes(subChain, forceField, bondList);
