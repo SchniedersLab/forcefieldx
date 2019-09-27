@@ -217,10 +217,10 @@ class Solvator extends PotentialScript {
                                 }
                             }
                         }
-                        logger.info(format(" Constructing domain %3d-%3d-%3d with %d atoms.", i, j, k, neighborAtoms.size()));
-                        logger.info(format(" Neighbors along X: %s", neighborsI.toListString()));
-                        logger.info(format(" Neighbors along Y: %s", neighborsJ.toListString()));
-                        logger.info(format(" Neighbors along Z: %s\n", neighborsK.toListString()));
+                        logger.fine(format(" Constructing domain %3d-%3d-%3d with %d atoms.", i, j, k, neighborAtoms.size()));
+                        logger.fine(format(" Neighbors along X: %s", neighborsI.toListString()));
+                        logger.fine(format(" Neighbors along Y: %s", neighborsJ.toListString()));
+                        logger.fine(format(" Neighbors along Z: %s\n", neighborsK.toListString()));
                         withAdjacent[i][j][k] = new Atom[neighborAtoms.size()];
                         withAdjacent[i][j][k] = neighborAtoms.toArray(withAdjacent[i][j][k]);
                     }
@@ -231,17 +231,6 @@ class Solvator extends PotentialScript {
             double avgAtoms = ((double) soluteAtoms.length) / nBoxes;
             time += System.nanoTime();
             logger.info(format(" Decomposed the solute into %d domains of side length %11.4g, averaging %10.3g atoms apiece in %8.3g sec.", nBoxes, domainLength, avgAtoms, (time * 1E-9)));
-            int sumDomainAtoms = 0;
-            int sumWithAdjAtoms = 0;
-            for (int i = 0; i < nX; i++) {
-                for (int j = 0; j < nY; j++) {
-                    for (int k = 0; k < nZ; k++) {
-                        sumDomainAtoms += domains[i][j][k].length;
-                        sumWithAdjAtoms += withAdjacent[i][j][k].length;
-                    }
-                }
-            }
-            logger.info(format(" Domains contain %d atoms, withAdjacent %d", sumDomainAtoms, sumWithAdjAtoms));
         }
 
         /**
