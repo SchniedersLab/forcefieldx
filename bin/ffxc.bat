@@ -92,6 +92,7 @@ if "%REPO%"=="" set REPO=%BASEDIR%
 
 set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all.jar
 
+@REM TODO: Set this by the FFX_MEMORY environment variable.
 set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M 
 
 @REM Figure out how to print to screen: Cannot autodetect JVM version. JDK 1.8 preferred, else JDK 9 possibly compatible. Incompatible with any other JDK.

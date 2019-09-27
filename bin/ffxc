@@ -113,7 +113,12 @@ else
 fi
 JLP=modules/numerics/src/main/java/ffx/numerics/fft
 
-EXTRA_JVM_ARGUMENTS="-Xms4G -Xmx4G -Xss1M"
+JVM_MEM="4G"
+if [ ! -z "$FFX_MEMORY" ]; then
+  JVM_MEM="$FFX_MEMORY"
+fi
+
+EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss1M"
 
 if [ -z $TMPDIR ]; then
     if [ -z $TMP ]; then
@@ -190,7 +195,8 @@ if $cygwin; then
   [ -n "$REPO" ] && REPO=`cygpath --path --windows "$REPO"`
   echo " Java exec: $JAVACMD"
   echo " Classpath: $CLASSPATH"
-  EXTRA_JVM_ARGUMENTS="-Xms2G -Xmx2G -Xss1M"
+  # I'm not sure why this is here.
+  #EXTRA_JVM_ARGUMENTS="-Xms2G -Xmx2G -Xss1M"
 fi
 
 EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
