@@ -648,8 +648,8 @@ public class ThermodynamicsTest extends PJDependentTest {
                 {
                         "Water-Sodium to Water Dimer Free Energy Test",
                         new String[]{"ffx/algorithms/structures/water-dimer.xyz", "ffx/algorithms/structures/water-na.xyz"},
-                        ThermoTestMode.FREE, true, 16.0, 6.0, null, null, null, null, null, null,
-                        new String[]{"-d", "1.0", "-l", "0.5", "--la1", "1-3", "--la2", "1", "-n", "50000", "-Q", "20000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
+                        ThermoTestMode.FREE, true, 16.0, 16.0, null, null, null, null, null, null,
+                        new String[]{"-d", "1.0", "-l", "0.5", "--la1", "1-3", "--la2", "1", "-n", "20000", "-Q", "5000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
                         new String[]{"disable-neighbor-updates", "true", "lambda-bin-width", "0.025", "flambda-bin-width", "5.0", "randomseed", "2019"},
                         new String[]{}
                 }
