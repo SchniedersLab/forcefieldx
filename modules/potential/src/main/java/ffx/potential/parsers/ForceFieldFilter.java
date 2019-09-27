@@ -831,6 +831,31 @@ public class ForceFieldFilter {
     }
 
     private MultipoleType parseMultipoleType(String input, String[] tokens, BufferedReader br) {
+
+        // Add terminating zeros to multipole types with only one or two atom types in definition
+        // These one and two atom type multipoles are common is PolType2 parameter files
+        if(tokens.length < 5){
+            if(tokens.length == 4){
+                // Two atom type in multipole definition
+                String [] tmp = tokens;
+                tokens = Arrays.copyOf(tokens,5);
+                tokens[0] = tmp[0];
+                tokens[1] = tmp[1];
+                tokens[2] = tmp[2];
+                tokens[3] = "0";
+                tokens[4] = tmp[3];
+            } else if(tokens.length == 3){
+                // One atom type in multipole definition
+                String [] tmp = tokens;
+                tokens = Arrays.copyOf(tokens,5);
+                tokens[0] = tmp[0];
+                tokens[1] = tmp[1];
+                tokens[2] = "0";
+                tokens[3] = "0";
+                tokens[4] = tmp[2];
+            }
+        }
+
         if (tokens.length < 5) {
             logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
         } else {
