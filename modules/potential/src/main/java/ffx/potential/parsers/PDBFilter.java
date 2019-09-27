@@ -229,6 +229,8 @@ public final class PDBFilter extends SystemFilter {
      * Standardize atom names to PDB standard by default.
      */
     private static final boolean standardizeAtomNames = Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "true"));
+    private static final double DEFAULT_AA_CHAINBREAK = 3.0;
+    private static final double DEFAULT_NA_CHAINBREAK_MULT = 2.0;
 
     static {
         Set<String> bbAts = new HashSet<>();
@@ -2550,7 +2552,7 @@ public final class PDBFilter extends SystemFilter {
                 if (isProtein) {
                     try {
                         logger.info(format(" Amino acid chain %s", polymer.getName()));
-                        double dist = properties.getDouble("chainbreak", 3.0);
+                        double dist = properties.getDouble("chainbreak", DEFAULT_AA_CHAINBREAK);
                         // Detect main chain breaks!
                         List<List<Residue>> subChains = findChainBreaks(residues, dist);
                         for (List<Residue> subChain : subChains) {
@@ -2626,17 +2628,13 @@ public final class PDBFilter extends SystemFilter {
                     try {
                         logger.info(format(" Nucleic acid chain %s", polymer.getName()));
 
-                        /*
-                        TODO: Fix detection of NA chain breaks.
                         if (logger.isLoggable(Level.FINE)) {
                             logger.fine(format(" EXPERIMENTAL: Finding chain breaks for possible nucleic acid chain %s", polymer.getName()));
                         }
-                        double dist = properties.getDouble("chainbreak", 4.0);
+                        double dist = properties.getDouble("chainbreak", DEFAULT_AA_CHAINBREAK);
+                        dist *= DEFAULT_NA_CHAINBREAK_MULT;
                         // Detect main chain breaks!
-                        List<List<Residue>> subChains = findChainBreaks(residues, dist);*/
-
-                        List<List<Residue>> subChains = new ArrayList<>(1);
-                        subChains.add(residues);
+                        List<List<Residue>> subChains = findChainBreaks(residues, dist);
 
                         for (List<Residue> subChain : subChains) {
                             assignNucleicAcidAtomTypes(subChain, forceField, bondList);
@@ -2995,8 +2993,16 @@ public final class PDBFilter extends SystemFilter {
                 endAtName = "C";
                 break;
             case NA:
-                startAtName = "O5*";
-                endAtName = "O3*";
+                boolean namedStar = residues.stream().
+                        flatMap((Residue r) -> r.getAtomList().stream()).
+                        anyMatch((Atom a) -> a.getName().equals("O5*"));
+                if (namedStar) {
+                    startAtName = "O5*";
+                    endAtName = "O3*";
+                } else {
+                    startAtName = "O5\'";
+                    endAtName = "O3\'";
+                }
                 break;
             case UNK:
             default:
