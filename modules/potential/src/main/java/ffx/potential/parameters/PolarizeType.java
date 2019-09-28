@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
 
@@ -393,9 +394,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      */
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 37 * hash + type;
-        return hash;
+        return Objects.hash(type);
     }
 
 }

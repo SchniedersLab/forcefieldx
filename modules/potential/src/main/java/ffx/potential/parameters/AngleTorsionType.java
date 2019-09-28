@@ -37,9 +37,9 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 import static java.util.Arrays.copyOf;
 
 
@@ -237,9 +237,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
      */
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 29 * hash + Arrays.hashCode(atomClasses);
-        return hash;
+        return Objects.hash(atomClasses);
     }
 
 }

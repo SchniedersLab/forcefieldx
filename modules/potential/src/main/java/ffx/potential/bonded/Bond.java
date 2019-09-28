@@ -86,8 +86,6 @@ public class Bond extends BondedTerm {
         SINGLEBOND, DOUBLEBOND, TRIPLEBOND;
     }
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Length in Angstroms that is added to Atomic Radii when determining if two
      * Atoms are within bonding distance

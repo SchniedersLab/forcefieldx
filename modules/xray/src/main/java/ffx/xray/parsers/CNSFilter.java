@@ -209,9 +209,9 @@ public class CNSFilter implements DiffractionFileFilter {
         StringBuilder sb = new StringBuilder();
         sb.append(format("\n Opening %s\n", cnsFile.getName()));
 
-        if (refinementData.rfreeflag < 0) {
+        if (refinementData.rFreeFlag < 0) {
             refinementData.setFreeRFlag(1);
-            sb.append(format(" Setting R free flag to CNS default: %d\n", refinementData.rfreeflag));
+            sb.append(format(" Setting R free flag to CNS default: %d\n", refinementData.rFreeFlag));
         }
 
         try {
@@ -287,8 +287,8 @@ public class CNSFilter implements DiffractionFileFilter {
                             boolean friedel = reflectionList.findSymHKL(ih, ik, il, mate, transpose);
                             HKL hkl = reflectionList.getHKL(mate);
                             if (hkl != null) {
-                                if (refinementData.fsigfcutoff > 0.0
-                                        && (fo / sigFo) < refinementData.fsigfcutoff) {
+                                if (refinementData.fSigFCutoff > 0.0
+                                        && (fo / sigFo) < refinementData.fSigFCutoff) {
                                     nCut++;
                                 } else if (friedel) {
                                     anofSigF[hkl.index()][2] = fo;
@@ -341,7 +341,7 @@ public class CNSFilter implements DiffractionFileFilter {
             br.close();
 
             // Set up fsigf from F+ and F-.
-            refinementData.generate_fsigf_from_anofsigf(anofSigF);
+            refinementData.generateFsigFfromAnomalousFsigF(anofSigF);
         } catch (IOException e) {
             String message = "CNS IO Exception.";
             logger.log(Level.WARNING, message, e);

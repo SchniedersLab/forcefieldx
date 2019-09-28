@@ -410,15 +410,15 @@ public class MTZFilter implements DiffractionFileFilter {
                 transpose = true;
             }
 
-            if (none > (nZero * 2) && refinementData.rfreeflag < 0) {
+            if (none > (nZero * 2) && refinementData.rFreeFlag < 0) {
                 refinementData.setFreeRFlag(0);
-                sb.append(format(" Setting R free flag to %d based on MTZ file data.\n", refinementData.rfreeflag));
-            } else if (nZero > (none * 2) && refinementData.rfreeflag < 0) {
+                sb.append(format(" Setting R free flag to %d based on MTZ file data.\n", refinementData.rFreeFlag));
+            } else if (nZero > (none * 2) && refinementData.rFreeFlag < 0) {
                 refinementData.setFreeRFlag(1);
-                sb.append(format(" Setting R free flag to %d based on MTZ file data.\n", refinementData.rfreeflag));
-            } else if (refinementData.rfreeflag < 0) {
+                sb.append(format(" Setting R free flag to %d based on MTZ file data.\n", refinementData.rFreeFlag));
+            } else if (refinementData.rFreeFlag < 0) {
                 refinementData.setFreeRFlag(0);
-                sb.append(format(" Setting R free flag to MTZ default: %d\n", refinementData.rfreeflag));
+                sb.append(format(" Setting R free flag to MTZ default: %d\n", refinementData.rFreeFlag));
             }
 
             // Reopen to start at beginning
@@ -447,8 +447,8 @@ public class MTZFilter implements DiffractionFileFilter {
                 HKL hkl = reflectionList.getHKL(mate);
                 if (hkl != null) {
                     if (fo > 0 && sigFo > 0) {
-                        if (refinementData.fsigfcutoff > 0.0) {
-                            if ((data[fo] / data[sigFo]) < refinementData.fsigfcutoff) {
+                        if (refinementData.fSigFCutoff > 0.0) {
+                            if ((data[fo] / data[sigFo]) < refinementData.fSigFCutoff) {
                                 nCut++;
                                 continue;
                             }
@@ -463,8 +463,8 @@ public class MTZFilter implements DiffractionFileFilter {
                         }
                     } else {
                         if (fPlus > 0 && sigFPlus > 0) {
-                            if (refinementData.fsigfcutoff > 0.0) {
-                                if ((data[fPlus] / data[sigFPlus]) < refinementData.fsigfcutoff) {
+                            if (refinementData.fSigFCutoff > 0.0) {
+                                if ((data[fPlus] / data[sigFPlus]) < refinementData.fSigFCutoff) {
                                     nCut++;
                                     continue;
                                 }
@@ -473,8 +473,8 @@ public class MTZFilter implements DiffractionFileFilter {
                             anofSigF[hkl.index()][1] = data[sigFPlus];
                         }
                         if (fMinus > 0 && sigFMinus > 0) {
-                            if (refinementData.fsigfcutoff > 0.0) {
-                                if ((data[fMinus] / data[sigFMinus]) < refinementData.fsigfcutoff) {
+                            if (refinementData.fSigFCutoff > 0.0) {
+                                if ((data[fMinus] / data[sigFMinus]) < refinementData.fSigFCutoff) {
                                     nCut++;
                                     continue;
                                 }
@@ -508,7 +508,7 @@ public class MTZFilter implements DiffractionFileFilter {
             }
 
             // Set up fsigf from F+ and F-.
-            refinementData.generate_fsigf_from_anofsigf(anofSigF);
+            refinementData.generateFsigFfromAnomalousFsigF(anofSigF);
 
             // Log results.
             if (logger.isLoggable(Level.INFO)) {

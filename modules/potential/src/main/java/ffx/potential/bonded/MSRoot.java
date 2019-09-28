@@ -45,8 +45,6 @@ package ffx.potential.bonded;
  */
 public class MSRoot extends MSNode {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constant <code>MultiScaleLevel=ROLS.MaxLengthScale</code>
      */
@@ -71,13 +69,8 @@ public class MSRoot extends MSNode {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        return false;
+    public boolean equals(Object o) {
+        return this == o;
     }
 
     /**

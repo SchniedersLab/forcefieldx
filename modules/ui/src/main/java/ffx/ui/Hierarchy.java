@@ -67,7 +67,6 @@ import ffx.potential.bonded.RendererCache;
 public final class Hierarchy extends JTree implements TreeSelectionListener {
 
     private static final Logger logger = Logger.getLogger(Hierarchy.class.getName());
-    private static final long serialVersionUID = 1L;
     private final MSRoot root;
     private final MainPanel mainPanel;
     private DefaultTreeModel hierarchyModel;

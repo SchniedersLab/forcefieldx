@@ -39,6 +39,7 @@ package ffx.xray;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -70,9 +71,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     private final ReflectionList reflectionlist;
     private final DiffractionRefinementData refinementData;
     private final Crystal crystal;
-    private final CrystalReciprocalSpace crs;
+    private final CrystalReciprocalSpace crystalReciprocalSpace;
     private final ScaleBulkEnergy bulkSolventEnergy;
-    private final int solvent_n;
+    private final int solventN;
     private final int n;
     private final double[] x;
     private final double[] grad;
@@ -87,40 +88,39 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * <p>
      * Constructor for ScaleBulkMinimize.</p>
      *
-     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
-     * @param crs            a {@link ffx.xray.CrystalReciprocalSpace} object.
-     * @param parallelTeam   the ParallelTeam to execute the ScaleBulkMinimize.
+     * @param reflectionList         a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementData         a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param crystalReciprocalSpace a {@link ffx.xray.CrystalReciprocalSpace} object.
+     * @param parallelTeam           the ParallelTeam to execute the ScaleBulkMinimize.
      */
-    public ScaleBulkMinimize(ReflectionList reflectionlist,
-                             DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs, ParallelTeam parallelTeam) {
-        this.reflectionlist = reflectionlist;
-        this.refinementData = refinementdata;
-        this.crystal = reflectionlist.crystal;
-        this.crs = crs;
+    public ScaleBulkMinimize(ReflectionList reflectionList, DiffractionRefinementData refinementData,
+                             CrystalReciprocalSpace crystalReciprocalSpace, ParallelTeam parallelTeam) {
+        this.reflectionlist = reflectionList;
+        this.refinementData = refinementData;
+        this.crystal = reflectionList.crystal;
+        this.crystalReciprocalSpace = crystalReciprocalSpace;
 
-        if (crs.solventModel == SolventModel.NONE) {
-            solvent_n = 1;
+        if (crystalReciprocalSpace.solventModel == SolventModel.NONE) {
+            solventN = 1;
         } else {
-            solvent_n = 3;
+            solventN = 3;
         }
-        n = solvent_n + refinementdata.scale_n;
-        bulkSolventEnergy = new ScaleBulkEnergy(reflectionlist, refinementdata, n, parallelTeam);
+        n = solventN + refinementData.nScale;
+        bulkSolventEnergy = new ScaleBulkEnergy(reflectionList, refinementData, n, parallelTeam);
 
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
         fill(scaling, 1.0);
 
-        x[0] = refinementdata.model_k;
-        if (solvent_n > 1) {
-            x[1] = refinementdata.solvent_k;
-            x[2] = refinementdata.solvent_ueq;
+        x[0] = refinementData.modelScaleK;
+        if (solventN > 1) {
+            x[1] = refinementData.bulkSolventK;
+            x[2] = refinementData.bulkSolventUeq;
         }
         for (int i = 0; i < 6; i++) {
-            if (crystal.scale_b[i] >= 0) {
-                x[solvent_n + crystal.scale_b[i]]
-                        = refinementdata.model_b[i];
+            if (crystal.scaleB[i] >= 0) {
+                x[solventN + crystal.scaleB[i]] = refinementData.modelAnisoB[i];
             }
         }
 
@@ -151,7 +151,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * @param x an array of {@link double} objects.
      * @return an array of {@link double} objects.
      */
-    public double[] getCoordinates(double x[]) {
+    public double[] getCoordinates(double[] x) {
         if (x == null) {
             x = new double[this.x.length];
         }
@@ -161,25 +161,23 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
     private void setInitialScale() {
         double[][] fc = refinementData.fc;
-        double[][] fo = refinementData.fsigf;
+        double[][] fSigf = refinementData.fSigF;
 
         bulkSolventEnergy.setScaling(scaling);
         double e = bulkSolventEnergy.energyAndGradient(x, grad);
         bulkSolventEnergy.setScaling(null);
 
-        double fct, sumfofc, sumfc;
-        sumfofc = sumfc = 0.0;
+        double sumfofc = 0.0;
+        double sumfc = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            if (Double.isNaN(fc[i][0])
-                    || Double.isNaN(fo[i][0])
-                    || fo[i][1] <= 0.0) {
+            if (isNaN(fc[i][0]) || isNaN(fSigf[i][0]) || fSigf[i][1] <= 0.0) {
                 continue;
             }
 
-            fct = refinementData.fcTotF(i);
-            sumfofc += fo[i][0] * fct;
-            sumfc += fct * fct;
+            double fcTotF = refinementData.fcTotF(i);
+            sumfofc += fSigf[i][0] * fcTotF;
+            sumfc += fcTotF * fcTotF;
         }
 
         x[0] = log(4.0 * sumfofc / sumfc);
@@ -190,40 +188,37 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * ksbsGridOptimize</p>
      */
     public void ksbsGridOptimize() {
-        if (solvent_n < 3) {
+        if (solventN < 3) {
             return;
         }
 
         bulkSolventEnergy.setScaling(scaling);
 
         double min = Double.POSITIVE_INFINITY;
-        double k = refinementData.solvent_k;
+        double bulkSolventK = refinementData.bulkSolventK;
+        double bulkSolventUeq = refinementData.bulkSolventUeq;
         double kmin = 0.05;
         double kmax = 0.9;
         double kstep = 0.05;
-        double b = refinementData.solvent_ueq;
         double bmin = 10.0;
         double bmax = 200.0;
         double bstep = 10.0;
         for (double i = kmin; i <= kmax; i += kstep) {
             for (double j = bmin; j <= bmax; j += bstep) {
-
                 x[1] = i;
                 x[2] = j;
                 double sum = bulkSolventEnergy.energyAndGradient(x, grad);
-
-                logger.info("ks: " + i + " bs: " + j + " sum: " + sum);
+                logger.info(" ks: " + i + " bs: " + j + " sum: " + sum);
                 if (sum < min) {
                     min = sum;
-                    k = i;
-                    b = j;
+                    bulkSolventK = i;
+                    bulkSolventUeq = j;
                 }
             }
         }
-        logger.info("minks: " + k + " minbs: " + b + " min: " + min);
-        refinementData.solvent_k = k;
-        refinementData.solvent_ueq = b;
-
+        logger.info(" minks: " + bulkSolventK + " minbs: " + bulkSolventUeq + " min: " + min);
+        refinementData.bulkSolventK = bulkSolventK;
+        refinementData.bulkSolventUeq = bulkSolventUeq;
         bulkSolventEnergy.setScaling(null);
     }
 
@@ -231,50 +226,48 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * <p>
      * GridOptimize</p>
      */
-    void GridOptimize() {
-        if (crs == null) {
+    void gridOptimize() {
+        if (crystalReciprocalSpace == null) {
             return;
         }
 
         bulkSolventEnergy.setScaling(scaling);
 
         double min = Double.POSITIVE_INFINITY;
-        double a = crs.solventA;
-        double b = crs.solventB;
-        double amin = a - 1.0;
-        double amax = (a + 1.0) / 0.9999;
+        double solventA = crystalReciprocalSpace.solventA;
+        double solventB = crystalReciprocalSpace.solventB;
+        double amin = solventA - 1.0;
+        double amax = (solventA + 1.0) / 0.9999;
         double astep = 0.25;
-        double bmin = b - 0.2;
-        double bmax = (b + 0.2) / 0.9999;
+        double bmin = solventB - 0.2;
+        double bmax = (solventB + 0.2) / 0.9999;
         double bstep = 0.05;
-        if (crs.solventModel == SolventModel.BINARY) {
-            amin = a - 0.2;
-            amax = (a + 0.2) / 0.9999;
+        if (crystalReciprocalSpace.solventModel == SolventModel.BINARY) {
+            amin = solventA - 0.2;
+            amax = (solventA + 0.2) / 0.9999;
             astep = 0.05;
         }
 
         logger.info(" Bulk Solvent Grid Search");
         for (double i = amin; i <= amax; i += astep) {
             for (double j = bmin; j <= bmax; j += bstep) {
-                crs.setSolventAB(i, j);
-                crs.computeDensity(refinementData.fs);
+                crystalReciprocalSpace.setSolventAB(i, j);
+                crystalReciprocalSpace.computeDensity(refinementData.fs);
                 double sum = bulkSolventEnergy.energy(x);
-                //double sum = bulkSolventEnergy.energyAndGradient(x, grad);
-                logger.info(format(" A: %6.3f B: %6.3f sum: %12.8f", i, j, sum));
+                logger.info(format(" A: %6.3f B: %6.3f Sum: %12.8f", i, j, sum));
                 if (sum < min) {
                     min = sum;
-                    a = i;
-                    b = j;
+                    solventA = i;
+                    solventB = j;
                 }
             }
         }
 
-        logger.info(format("\n Minimum at\n A: %6.3f B: %6.3f sum: %12.8f", a, b, min));
-        crs.setSolventAB(a, b);
-        refinementData.solvent_a = a;
-        refinementData.solvent_b = b;
-        crs.computeDensity(refinementData.fs);
-
+        logger.info(format("\n Minimum at\n A: %6.3f B: %6.3f Sum: %12.8f", solventA, solventB, min));
+        crystalReciprocalSpace.setSolventAB(solventA, solventB);
+        refinementData.solventA = solventA;
+        refinementData.solventB = solventB;
+        crystalReciprocalSpace.computeDensity(refinementData.fs);
         bulkSolventEnergy.setScaling(null);
     }
 
@@ -308,9 +301,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * @return a {@link ffx.xray.ScaleBulkEnergy} object.
      */
     public ScaleBulkEnergy minimize(int m, double eps) {
-
         bulkSolventEnergy.setScaling(scaling);
-
         double e = bulkSolventEnergy.energyAndGradient(x, grad);
 
         long mtime = -System.nanoTime();
@@ -328,21 +319,20 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
-        refinementData.model_k = x[0] / scaling[0];
-        if (solvent_n > 1) {
-            refinementData.solvent_k = x[1] / scaling[1];
-            refinementData.solvent_ueq = x[2] / scaling[2];
-
-            if (crs != null) {
-                refinementData.solvent_a = crs.solventA;
-                refinementData.solvent_b = crs.solventB;
+        refinementData.modelScaleK = x[0] / scaling[0];
+        if (solventN > 1) {
+            refinementData.bulkSolventK = x[1] / scaling[1];
+            refinementData.bulkSolventUeq = x[2] / scaling[2];
+            if (crystalReciprocalSpace != null) {
+                refinementData.solventA = crystalReciprocalSpace.solventA;
+                refinementData.solventB = crystalReciprocalSpace.solventB;
             }
         }
         for (int i = 0; i < 6; i++) {
-            if (crystal.scale_b[i] >= 0) {
-                refinementData.model_b[i]
-                        = x[solvent_n + crystal.scale_b[i]]
-                        / scaling[solvent_n + crystal.scale_b[i]];
+            int offset = crystal.scaleB[i];
+            if (offset >= 0) {
+                int index = solventN + offset;
+                refinementData.modelAnisoB[i] = x[index] / scaling[index];
             }
         }
 
@@ -360,7 +350,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * {@inheritDoc}
      */
     @Override
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
+    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms,
+                                      double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
         Double seconds = (currentTime - time) * 1.0e-9;
         time = currentTime;

@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 import static java.lang.String.format;
 
 /**
@@ -232,9 +233,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
      */
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 79 * hash + Arrays.hashCode(atomClasses);
-        return hash;
+        return Objects.hash(atomClasses);
     }
 
 }

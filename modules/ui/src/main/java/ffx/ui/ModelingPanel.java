@@ -109,12 +109,10 @@ import static ffx.utilities.FileUtils.copyInputStreamToTmpFile;
  *
  * @author Michael J. Schnieders
  */
-public class ModelingPanel extends JPanel implements ActionListener,
-        MouseListener {
+public class ModelingPanel extends JPanel implements ActionListener, MouseListener {
 
     private static final Logger logger = Logger.getLogger(ModelingPanel.class.getName());
     private static final Preferences prefs = Preferences.userNodeForPackage(ModelingPanel.class);
-    private static final long serialVersionUID = 1L;
 
     private final MainPanel mainPanel;
     /**

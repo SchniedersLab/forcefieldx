@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -322,8 +323,6 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 37 * hash + Arrays.hashCode(atomClasses);
-        return hash;
+        return Objects.hash(atomClasses);
     }
 }

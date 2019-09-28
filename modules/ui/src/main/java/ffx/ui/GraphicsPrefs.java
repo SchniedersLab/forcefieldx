@@ -67,7 +67,6 @@ import ffx.potential.bonded.RendererCache;
 public class GraphicsPrefs extends JDialog implements ActionListener {
 
     private static final Logger logger = Logger.getLogger(GraphicsPrefs.class.getName());
-    private static final long serialVersionUID = 1L;
     private MSRoot root;
     private GridBagConstraints constraints;
     private boolean change = false;

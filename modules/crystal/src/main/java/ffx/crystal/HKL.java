@@ -37,26 +37,24 @@
 //******************************************************************************
 package ffx.crystal;
 
-import static org.apache.commons.math3.util.FastMath.PI;
+import java.util.Objects;
 
-import ffx.utilities.HashCodeUtil;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * <p>
  * The HKL class represents a single reflection.</p>
  *
  * @author Timothy D. Fenn
- *
- * @since 1.0
- *
  * @see ReflectionList
+ * @since 1.0
  */
 public class HKL {
 
     /**
      * Constant <code>ndiv=12.0</code>
      */
-    public static final double ndiv = 12.0;
+    static final double ndiv = 12.0;
     protected int h;
     protected int k;
     protected int l;
@@ -64,7 +62,6 @@ public class HKL {
     protected int allowed;
     protected int bin;
     protected int index;
-    private int hashCode;
 
     /**
      * <p>
@@ -92,10 +89,10 @@ public class HKL {
      * <p>
      * Constructor for HKL.</p>
      *
-     * @param h a int.
-     * @param k a int.
-     * @param l a int.
-     * @param eps a int.
+     * @param h       a int.
+     * @param k       a int.
+     * @param l       a int.
+     * @param eps     a int.
      * @param allowed a int.
      */
     public HKL(int h, int k, int l, int eps, int allowed) {
@@ -110,19 +107,11 @@ public class HKL {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof HKL)) {
-            return false;
-        }
-        if (this == obj) {
-            return true;
-        }
-        return (this.h() == ((HKL) obj).h()
-                && this.k() == ((HKL) obj).k()
-                && this.l() == ((HKL) obj).l());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HKL hkl = (HKL) o;
+        return (h == hkl.h() && k == hkl.k() && l == hkl.l());
     }
 
     /**
@@ -130,14 +119,7 @@ public class HKL {
      */
     @Override
     public int hashCode() {
-        if (hashCode == 0) {
-            int result = HashCodeUtil.SEED;
-            result = HashCodeUtil.hash(result, h);
-            result = HashCodeUtil.hash(result, k);
-            result = HashCodeUtil.hash(result, l);
-            hashCode = result;
-        }
-        return hashCode;
+        return Objects.hash(h, k, l);
     }
 
     /**
@@ -156,7 +138,7 @@ public class HKL {
      * @return a int.
      */
     public int h() {
-        return this.h;
+        return h;
     }
 
     /**
@@ -176,7 +158,7 @@ public class HKL {
      * @return a int.
      */
     public int k() {
-        return this.k;
+        return k;
     }
 
     /**
@@ -196,7 +178,7 @@ public class HKL {
      * @return a int.
      */
     public int l() {
-        return this.l;
+        return l;
     }
 
     /**
@@ -216,7 +198,7 @@ public class HKL {
      * @return a int.
      */
     public int bin() {
-        return this.bin;
+        return bin;
     }
 
     /**
@@ -236,7 +218,7 @@ public class HKL {
      * @return a int.
      */
     public int index() {
-        return this.index;
+        return index;
     }
 
     /**
@@ -256,7 +238,7 @@ public class HKL {
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @return a {@link ffx.crystal.HKL} object.
      */
-    public static HKL neg(HKL hkl) {
+    static HKL neg(HKL hkl) {
         return new HKL(-hkl.h(), -hkl.k(), -hkl.l());
     }
 
@@ -267,7 +249,7 @@ public class HKL {
      * @return a int.
      */
     public int epsilon() {
-        return this.epsilon;
+        return epsilon;
     }
 
     /**
@@ -301,7 +283,7 @@ public class HKL {
      * @return a double.
      */
     public double allowed() {
-        return ((double) this.allowed) * (PI / ndiv);
+        return ((double) allowed) * (PI / ndiv);
     }
 
     /**
@@ -331,7 +313,7 @@ public class HKL {
      * @param hkl a {@link ffx.crystal.HKL} object.
      * @return a boolean.
      */
-    public static boolean sys_abs(HKL hkl) {
+    static boolean sys_abs(HKL hkl) {
         return (hkl.epsilon == 0);
     }
 }

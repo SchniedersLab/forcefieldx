@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
@@ -235,12 +237,12 @@ public abstract class MSGroup extends MSNode {
 
         String resName = a1.getResidueName();
         if (resName == null) {
-            logger.warning(String.format(" Residue name of atom1 %s is null!", a1));
+            logger.warning(format(" Residue name of atom 1 (%s) is null!", a1));
             return false;
         } else {
             String r2name = a2.getResidueName();
             if (r2name == null) {
-                logger.warning(String.format(" Residue name of atom2 %s is null!", a2));
+                logger.warning(format(" Residue name of atom 2 (%s) is null!", a2));
                 return false;
             } else if (!resName.equals(r2name)) {
                 return false;

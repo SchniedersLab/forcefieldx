@@ -175,7 +175,6 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         gradient[index] += dEdXdL[1][2];
     }
 
-    private static final long serialVersionUID = 1L;
     /**
      * Length in Angstroms that is added to Atomic Radii when determining if two
      * Atoms are within bonding distance

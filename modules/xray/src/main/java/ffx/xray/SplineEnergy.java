@@ -101,7 +101,7 @@ public class SplineEnergy implements Potential {
         this.refinementData = refinementData;
         this.type = type;
         this.fc = refinementData.fc;
-        this.fo = refinementData.fsigf;
+        this.fo = refinementData.fSigF;
 
         // initialize params
         this.spline = new ReflectionSpline(reflectionList, nParams);

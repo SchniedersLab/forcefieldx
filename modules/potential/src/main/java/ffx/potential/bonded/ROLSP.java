@@ -39,12 +39,10 @@ package ffx.potential.bonded;
 
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import org.jogamp.java3d.BranchGroup;
-
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The ROLSP class is used for Proof-Of-Concept Parallel Recusive Over Length
@@ -103,11 +101,8 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
      * Overidden equals method.
      */
     @Override
-    public boolean equals(Object object) {
-        if (!(object instanceof ROLSP)) {
-            return false;
-        }
-        return this == object;
+    public boolean equals(Object o) {
+        return this == o;
     }
 
     /**
@@ -117,9 +112,9 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     public int hashCode() {
         MSNode child = (MSNode) getChildAt(0);
         if (child == null) {
-            return hash(SEED, "none".hashCode());
+            return Objects.hash("none");
         }
-        return hash(SEED, child.hashCode());
+        return Objects.hash(child.hashCode());
     }
 
     /**

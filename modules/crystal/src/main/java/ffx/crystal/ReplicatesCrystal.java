@@ -38,6 +38,7 @@
 package ffx.crystal;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -209,29 +210,19 @@ public class ReplicatesCrystal extends Crystal {
      * Two crystals are equal only if all unit cell parameters are exactly the same.
      */
     @Override
-    public boolean strictEquals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
-        if (!(obj instanceof ReplicatesCrystal)) {
-            return false;
-        }
-
-        if (this == obj) {
-            return true;
-        }
-
-        ReplicatesCrystal other = (ReplicatesCrystal) obj;
-
-        if (!this.unitCell.strictEquals(other.unitCell)) {
-            return false;
-        }
-
-        return (a == other.a && b == other.b && c == other.c
-                && alpha == other.alpha && beta == other.beta && gamma == other.gamma
-                && spaceGroup.number == other.spaceGroup.number
-                && spaceGroup.symOps.size() == other.spaceGroup.symOps.size());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReplicatesCrystal replicatesCrystal = (ReplicatesCrystal) o;
+        return (Objects.equals(unitCell, replicatesCrystal.unitCell) &&
+                a == replicatesCrystal.a &&
+                b == replicatesCrystal.b &&
+                c == replicatesCrystal.c &&
+                alpha == replicatesCrystal.alpha &&
+                beta == replicatesCrystal.beta &&
+                gamma == replicatesCrystal.gamma &&
+                spaceGroup.number == replicatesCrystal.spaceGroup.number &&
+                spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
     }
 
     /**

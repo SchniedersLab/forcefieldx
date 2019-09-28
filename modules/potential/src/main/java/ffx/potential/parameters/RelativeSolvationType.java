@@ -107,9 +107,7 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
      */
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 23 * hash + Objects.hashCode(this.resName);
-        return hash;
+        return Objects.hash(resName);
     }
 
     /**

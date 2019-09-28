@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import ffx.potential.parameters.ForceField;
@@ -52,30 +53,23 @@ import ffx.potential.parameters.ForceField;
 public class Molecule extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(Molecule.class.getName());
-    private static final long serialVersionUID = 1L;
+
     /**
      * Residue number assigned in PDB files.
      */
-    private int residueNum = -1;
+    private int residueNum;
     /**
      * Residue name assigned in PDB files.
      */
-    private String residueName = null;
+    private String residueName;
     /**
      * Possibly redundant chainID assigned in PDB files.
      */
-    private Character chainID = null;
+    private Character chainID;
     /**
      * Unique segID.
      */
-    private String segID = null;
-
-    /**
-     * <p>
-     * Constructor for Molecule.</p>
-     */
-    public Molecule() {
-    }
+    private String segID;
 
     /**
      * <p>
@@ -86,7 +80,9 @@ public class Molecule extends MSGroup {
     public Molecule(String name) {
         super(name);
         residueName = name;
+        residueNum = -1;
         chainID = 'A';
+        segID = "A";
     }
 
     /**
@@ -105,6 +101,25 @@ public class Molecule extends MSGroup {
         this.residueNum = residueNum;
         this.chainID = chainID;
         this.segID = segID;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Molecule molecule = (Molecule) o;
+        return residueNum == molecule.residueNum &&
+                Objects.equals(residueName, molecule.residueName) &&
+                Objects.equals(segID, molecule.segID);
+    }
+
+    public String getKey() {
+        return residueNum + residueName + segID;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(residueNum, residueName, segID);
     }
 
     /**
@@ -168,12 +183,14 @@ public class Molecule extends MSGroup {
      */
     @Override
     public void setName(String name) {
-        if (segID != null) {
-            super.setName(name + "-" + residueNum + " " + segID);
-        } else {
-            super.setName(name);
+        if (name != null) {
+            if (segID != null) {
+                super.setName(name + "-" + residueNum + " " + segID);
+            } else {
+                super.setName(name);
+            }
+            this.residueName = name;
         }
-        this.residueName = name;
     }
 
     /**
@@ -226,4 +243,6 @@ public class Molecule extends MSGroup {
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
     }
+
+
 }

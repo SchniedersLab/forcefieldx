@@ -100,7 +100,6 @@ import ffx.utilities.Keyword;
  */
 public final class KeywordPanel extends JPanel implements ActionListener {
 
-    private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger(KeywordPanel.class.getName());
     private static final Preferences preferences = Preferences.userNodeForPackage(KeywordPanel.class);
     /**

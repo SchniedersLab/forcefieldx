@@ -38,6 +38,7 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
+import java.util.Objects;
 import static java.lang.String.format;
 
 /**
@@ -154,8 +155,6 @@ public final class BioType extends BaseType implements Comparator<String> {
      */
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 17 * hash + index;
-        return hash;
+        return Objects.hash(index);
     }
 }

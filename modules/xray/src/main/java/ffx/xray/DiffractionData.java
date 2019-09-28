@@ -92,8 +92,8 @@ public class DiffractionData implements DataContainer {
     private final Resolution[] resolution;
     private final ReflectionList[] reflectionList;
     private final DiffractionRefinementData[] refinementData;
-    private final CrystalReciprocalSpace[] crs_fc;
-    private final CrystalReciprocalSpace[] crs_fs;
+    private final CrystalReciprocalSpace[] crystalReciprocalSpacesFc;
+    private final CrystalReciprocalSpace[] crystalReciprocalSpacesFs;
     private final SolventModel solventModel;
     private final RefinementModel refinementModel;
     private ScaleBulkMinimize[] scaleBulkMinimize;
@@ -260,7 +260,7 @@ public class DiffractionData implements DataContainer {
         splineMinimize = new SplineMinimize[n];
         crystalStats = new CrystalStats[n];
 
-        // read in Fo/sigFo/FreeR
+        // Read in Fo/sigFo/FreeR
         File tmp;
         Crystal crystalinit = Crystal.checkProperties(properties);
         Resolution resolutioninit = Resolution.checkProperties(properties);
@@ -371,30 +371,30 @@ public class DiffractionData implements DataContainer {
 
 
         // set up FFT and run it
-        crs_fc = new CrystalReciprocalSpace[n];
-        crs_fs = new CrystalReciprocalSpace[n];
+        crystalReciprocalSpacesFc = new CrystalReciprocalSpace[n];
+        crystalReciprocalSpacesFs = new CrystalReciprocalSpace[n];
 
         parallelTeam = assembly[0].getParallelTeam();
 
         parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             // Atomic Scattering
-            crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i], refinementModel.getTotalAtomArray(),
+            crystalReciprocalSpacesFc[i] = new CrystalReciprocalSpace(reflectionList[i], refinementModel.getTotalAtomArray(),
                     parallelTeam, parallelTeam, false, dataFiles[i].isNeutron());
-            refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
-            crs_fc[i].setUse3G(use_3g);
-            crs_fc[i].setWeight(dataFiles[i].getWeight());
-            crs_fc[i].lambdaTerm = false;
-            crs_fc[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
+            refinementData[i].setCrystalReciprocalSpaceFc(crystalReciprocalSpacesFc[i]);
+            crystalReciprocalSpacesFc[i].setUse3G(use_3g);
+            crystalReciprocalSpacesFc[i].setWeight(dataFiles[i].getWeight());
+            crystalReciprocalSpacesFc[i].lambdaTerm = false;
+            crystalReciprocalSpacesFc[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
 
             // Bulk Solvent Scattering
-            crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i], refinementModel.getTotalAtomArray(),
+            crystalReciprocalSpacesFs[i] = new CrystalReciprocalSpace(reflectionList[i], refinementModel.getTotalAtomArray(),
                     parallelTeam, parallelTeam, true, dataFiles[i].isNeutron(), solventmodel);
-            refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
-            crs_fs[i].setUse3G(use_3g);
-            crs_fs[i].setWeight(dataFiles[i].getWeight());
-            crs_fs[i].lambdaTerm = false;
-            crs_fs[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
+            refinementData[i].setCrystalReciprocalSpaceFs(crystalReciprocalSpacesFs[i]);
+            crystalReciprocalSpacesFs[i].setUse3G(use_3g);
+            crystalReciprocalSpacesFs[i].setWeight(dataFiles[i].getWeight());
+            crystalReciprocalSpacesFs[i].lambdaTerm = false;
+            crystalReciprocalSpacesFs[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
             crystalStats[i] = new CrystalStats(reflectionList[i], refinementData[i]);
         }
 
@@ -442,15 +442,15 @@ public class DiffractionData implements DataContainer {
 
         // set up FFT and run it
         for (int i = 0; i < n; i++) {
-            crs_fc[i] = new CrystalReciprocalSpace(reflectionList[i], tmprefinementmodel.getTotalAtomArray(),
+            crystalReciprocalSpacesFc[i] = new CrystalReciprocalSpace(reflectionList[i], tmprefinementmodel.getTotalAtomArray(),
                     parallelTeam, parallelTeam, false, dataFiles[i].isNeutron());
-            crs_fc[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
-            refinementData[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
+            crystalReciprocalSpacesFc[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
+            refinementData[i].setCrystalReciprocalSpaceFc(crystalReciprocalSpacesFc[i]);
 
-            crs_fs[i] = new CrystalReciprocalSpace(reflectionList[i], tmprefinementmodel.getTotalAtomArray(),
+            crystalReciprocalSpacesFs[i] = new CrystalReciprocalSpace(reflectionList[i], tmprefinementmodel.getTotalAtomArray(),
                     parallelTeam, parallelTeam, true, dataFiles[i].isNeutron(), solventModel);
-            crs_fs[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
-            refinementData[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
+            crystalReciprocalSpacesFs[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
+            refinementData[i].setCrystalReciprocalSpaceFs(crystalReciprocalSpacesFs[i]);
         }
 
         int nhkl = refinementData[0].n;
@@ -459,9 +459,9 @@ public class DiffractionData implements DataContainer {
 
         // Run FFTs.
         for (int i = 0; i < n; i++) {
-            crs_fc[i].computeDensity(fc);
+            crystalReciprocalSpacesFc[i].computeDensity(fc);
             if (solventModel != SolventModel.NONE) {
-                crs_fs[i].computeDensity(fs);
+                crystalReciprocalSpacesFs[i].computeDensity(fs);
             }
 
             // Average in with current data.
@@ -482,10 +482,10 @@ public class DiffractionData implements DataContainer {
      * @param x array of coordinates to move atoms to
      * @see CrystalReciprocalSpace#setCoordinates(double[])
      */
-    void setFFTCoordinates(double x[]) {
+    void setFFTCoordinates(double[] x) {
         for (int i = 0; i < n; i++) {
-            crs_fc[i].setCoordinates(x);
-            crs_fs[i].setCoordinates(x);
+            crystalReciprocalSpacesFc[i].setCoordinates(x);
+            crystalReciprocalSpacesFs[i].setCoordinates(x);
         }
     }
 
@@ -497,9 +497,9 @@ public class DiffractionData implements DataContainer {
      */
     public void computeAtomicDensity() {
         for (int i = 0; i < n; i++) {
-            crs_fc[i].computeDensity(refinementData[i].fc);
+            crystalReciprocalSpacesFc[i].computeDensity(refinementData[i].fc);
             if (solventModel != SolventModel.NONE) {
-                crs_fs[i].computeDensity(refinementData[i].fs);
+                crystalReciprocalSpacesFs[i].computeDensity(refinementData[i].fs);
             }
         }
     }
@@ -516,11 +516,11 @@ public class DiffractionData implements DataContainer {
      */
     void computeAtomicGradients(RefinementMode refinementMode) {
         for (int i = 0; i < n; i++) {
-            crs_fc[i].computeAtomicGradients(refinementData[i].dfc,
-                    refinementData[i].freer, refinementData[i].rfreeflag,
+            crystalReciprocalSpacesFc[i].computeAtomicGradients(refinementData[i].dFc,
+                    refinementData[i].freeR, refinementData[i].rFreeFlag,
                     refinementMode);
-            crs_fs[i].computeAtomicGradients(refinementData[i].dfs,
-                    refinementData[i].freer, refinementData[i].rfreeflag,
+            crystalReciprocalSpacesFs[i].computeAtomicGradients(refinementData[i].dFs,
+                    refinementData[i].freeR, refinementData[i].rFreeFlag,
                     refinementMode);
         }
     }
@@ -642,7 +642,7 @@ public class DiffractionData implements DataContainer {
                     crystalStats[i].getRFree(),
                     assembly[0].getPotentialEnergy().getTotalEnergy(),
                     dataFiles[i].getWeight() * sigmaAMinimize[i].calculateLikelihood(),
-                    dataFiles[i].getWeight() * refinementData[i].llkf));
+                    dataFiles[i].getWeight() * refinementData[i].llkF));
         }
 
         return sb.toString();
@@ -694,13 +694,12 @@ public class DiffractionData implements DataContainer {
                 scaleBulkFit(i);
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.append(format(" Statistics for Data Set %d of %d\n\n"
+            String sb = format(" Statistics for Data Set %d of %d\n\n"
                             + "  Weight:     %6.2f\n  Neutron data: %4s\n"
                             + "  Model:        %s\n  Data file:    %s\n",
                     i + 1, n, dataFiles[i].getWeight(), dataFiles[i].isNeutron(),
-                    modelName, dataFiles[i].getFilename()));
-            logger.info(sb.toString());
+                    modelName, dataFiles[i].getFilename());
+            logger.info(sb);
 
             crystalStats[i].printScaleStats();
             crystalStats[i].printDPIStats(nnonh, nat);
@@ -725,29 +724,28 @@ public class DiffractionData implements DataContainer {
      * @param i a int.
      */
     public void scaleBulkFit(int i) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(format(" Scaling Data Set %d of %d\n\n  Weight: %6.2f\n  Neutron data: %s\n  Model: %s\n  Data file: %s",
+        String sb = format(" Scaling Data Set %d of %d\n\n  Weight: %6.2f\n  Neutron data: %s\n  Model: %s\n  Data file: %s",
                 i + 1, n, dataFiles[i].getWeight(), dataFiles[i].isNeutron(),
-                modelName, dataFiles[i].getFilename()));
-        logger.info(sb.toString());
+                modelName, dataFiles[i].getFilename());
+        logger.info(sb);
 
         // reset some values
-        refinementData[i].solvent_k = 0.33;
-        refinementData[i].solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
-        refinementData[i].model_k = 0.0;
+        refinementData[i].bulkSolventK = 0.33;
+        refinementData[i].bulkSolventUeq = 50.0 / (8.0 * Math.PI * Math.PI);
+        refinementData[i].modelScaleK = 0.0;
         for (int j = 0; j < 6; j++) {
-            refinementData[i].model_b[j] = 0.0;
+            refinementData[i].modelAnisoB[j] = 0.0;
         }
 
         // run FFTs
-        crs_fc[i].computeDensity(refinementData[i].fc);
+        crystalReciprocalSpacesFc[i].computeDensity(refinementData[i].fc);
         if (solventModel != SolventModel.NONE) {
-            crs_fs[i].computeDensity(refinementData[i].fs);
+            crystalReciprocalSpacesFs[i].computeDensity(refinementData[i].fs);
         }
 
         // initialize minimizers
         scaleBulkMinimize[i] = new ScaleBulkMinimize(reflectionList[i],
-                refinementData[i], crs_fs[i], parallelTeam);
+                refinementData[i], crystalReciprocalSpacesFs[i], parallelTeam);
         splineMinimize[i] = new SplineMinimize(reflectionList[i],
                 refinementData[i], refinementData[i].spline,
                 SplineEnergy.Type.FOFC);
@@ -755,7 +753,7 @@ public class DiffractionData implements DataContainer {
         // minimize
         if (solventModel != SolventModel.NONE && gridSearch) {
             scaleBulkMinimize[i].minimize(6, xrayScaleTol);
-            scaleBulkMinimize[i].GridOptimize();
+            scaleBulkMinimize[i].gridOptimize();
         }
         scaleBulkMinimize[i].minimize(6, xrayScaleTol);
 
@@ -777,8 +775,8 @@ public class DiffractionData implements DataContainer {
      */
     void setLambdaTerm(boolean lambdaTerm) {
         for (int i = 0; i < n; i++) {
-            crs_fc[i].setLambdaTerm(lambdaTerm);
-            crs_fs[i].setLambdaTerm(lambdaTerm);
+            crystalReciprocalSpacesFc[i].setLambdaTerm(lambdaTerm);
+            crystalReciprocalSpacesFs[i].setLambdaTerm(lambdaTerm);
         }
     }
 
@@ -792,9 +790,9 @@ public class DiffractionData implements DataContainer {
     public void setSolventAB(double a, double b) {
         for (int i = 0; i < n; i++) {
             if (solventModel != SolventModel.NONE) {
-                refinementData[i].solvent_a = a;
-                refinementData[i].solvent_b = b;
-                crs_fs[i].setSolventAB(a, b);
+                refinementData[i].solventA = a;
+                refinementData[i].solventB = b;
+                crystalReciprocalSpacesFs[i].setSolventAB(a, b);
             }
         }
     }
@@ -806,13 +804,13 @@ public class DiffractionData implements DataContainer {
         logger.info(" Performing 10 Fc calculations for timing...");
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < 10; j++) {
-                crs_fc[i].computeDensity(refinementData[i].fc, true);
-                crs_fs[i].computeDensity(refinementData[i].fs, true);
-                crs_fc[i].computeAtomicGradients(refinementData[i].dfc,
-                        refinementData[i].freer, refinementData[i].rfreeflag,
+                crystalReciprocalSpacesFc[i].computeDensity(refinementData[i].fc, true);
+                crystalReciprocalSpacesFs[i].computeDensity(refinementData[i].fs, true);
+                crystalReciprocalSpacesFc[i].computeAtomicGradients(refinementData[i].dFc,
+                        refinementData[i].freeR, refinementData[i].rFreeFlag,
                         RefinementMode.COORDINATES, true);
-                crs_fs[i].computeAtomicGradients(refinementData[i].dfs,
-                        refinementData[i].freer, refinementData[i].rfreeflag,
+                crystalReciprocalSpacesFs[i].computeAtomicGradients(refinementData[i].dFs,
+                        refinementData[i].freeR, refinementData[i].rFreeFlag,
                         RefinementMode.COORDINATES, true);
             }
         }
@@ -914,26 +912,26 @@ public class DiffractionData implements DataContainer {
         }
 
         // Fo-Fc
-        crs_fc[i].computeAtomicGradients(refinementData[i].fofc1,
-                refinementData[i].freer, refinementData[i].rfreeflag,
+        crystalReciprocalSpacesFc[i].computeAtomicGradients(refinementData[i].foFc1,
+                refinementData[i].freeR, refinementData[i].rFreeFlag,
                 RefinementMode.COORDINATES);
-        double[] densityGrid = crs_fc[i].getDensityGrid();
-        int extx = (int) crs_fc[i].getXDim();
-        int exty = (int) crs_fc[i].getYDim();
-        int extz = (int) crs_fc[i].getZDim();
+        double[] densityGrid = crystalReciprocalSpacesFc[i].getDensityGrid();
+        int extx = (int) crystalReciprocalSpacesFc[i].getXDim();
+        int exty = (int) crystalReciprocalSpacesFc[i].getYDim();
+        int extz = (int) crystalReciprocalSpacesFc[i].getZDim();
 
         CCP4MapWriter mapwriter = new CCP4MapWriter(extx, exty, extz,
                 crystal[i], FilenameUtils.removeExtension(filename) + "_fofc.map");
         mapwriter.write(densityGrid);
 
         // 2Fo-Fc
-        crs_fc[i].computeAtomicGradients(refinementData[i].fofc2,
-                refinementData[i].freer, refinementData[i].rfreeflag,
+        crystalReciprocalSpacesFc[i].computeAtomicGradients(refinementData[i].foFc2,
+                refinementData[i].freeR, refinementData[i].rFreeFlag,
                 RefinementMode.COORDINATES);
-        densityGrid = crs_fc[i].getDensityGrid();
-        extx = (int) crs_fc[i].getXDim();
-        exty = (int) crs_fc[i].getYDim();
-        extz = (int) crs_fc[i].getZDim();
+        densityGrid = crystalReciprocalSpacesFc[i].getDensityGrid();
+        extx = (int) crystalReciprocalSpacesFc[i].getXDim();
+        exty = (int) crystalReciprocalSpacesFc[i].getYDim();
+        extz = (int) crystalReciprocalSpacesFc[i].getZDim();
 
         mapwriter = new CCP4MapWriter(extx, exty, extz,
                 crystal[i], FilenameUtils.removeExtension(filename) + "_2fofc.map");
@@ -1009,10 +1007,10 @@ public class DiffractionData implements DataContainer {
      */
     private void writeSolventMask(String filename, int i) {
         if (solventModel != SolventModel.NONE) {
-            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs[i].getXDim(),
-                    (int) crs_fs[i].getYDim(), (int) crs_fs[i].getZDim(),
+            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crystalReciprocalSpacesFs[i].getXDim(),
+                    (int) crystalReciprocalSpacesFs[i].getYDim(), (int) crystalReciprocalSpacesFs[i].getZDim(),
                     crystal[i], filename);
-            mapwriter.write(crs_fs[i].getSolventGrid());
+            mapwriter.write(crystalReciprocalSpacesFs[i].getSolventGrid());
         }
     }
 
@@ -1093,8 +1091,8 @@ public class DiffractionData implements DataContainer {
      *
      * @return the crs_fc
      */
-    public CrystalReciprocalSpace[] getCrs_fc() {
-        return crs_fc;
+    public CrystalReciprocalSpace[] getCrystalReciprocalSpacesFc() {
+        return crystalReciprocalSpacesFc;
     }
 
     /**
@@ -1102,8 +1100,8 @@ public class DiffractionData implements DataContainer {
      *
      * @return the crs_fs
      */
-    public CrystalReciprocalSpace[] getCrs_fs() {
-        return crs_fs;
+    public CrystalReciprocalSpace[] getCrystalReciprocalSpacesFs() {
+        return crystalReciprocalSpacesFs;
     }
 
     /**
@@ -1224,60 +1222,6 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * <p>Getter for the field <code>bSimWeight</code>.</p>
-     *
-     * @return the bSimWeight
-     */
-    public double getbSimWeight() {
-        return bSimWeight;
-    }
-
-    /**
-     * <p>Getter for the field <code>bNonZeroWeight</code>.</p>
-     *
-     * @return the bNonZeroWeight
-     */
-    public double getbNonZeroWeight() {
-        return bNonZeroWeight;
-    }
-
-    /**
-     * <p>Getter for the field <code>bMass</code>.</p>
-     *
-     * @return the bMass
-     */
-    public double getbMass() {
-        return bMass;
-    }
-
-    /**
-     * <p>isResidueBFactor.</p>
-     *
-     * @return the residueBFactor
-     */
-    public boolean isResidueBFactor() {
-        return residueBFactor;
-    }
-
-    /**
-     * <p>Getter for the field <code>nResidueBFactor</code>.</p>
-     *
-     * @return the nResidueBFactor
-     */
-    public int getnResidueBFactor() {
-        return nResidueBFactor;
-    }
-
-    /**
-     * <p>isAddAnisou.</p>
-     *
-     * @return the addAnisou
-     */
-    public boolean isAddAnisou() {
-        return addAnisou;
-    }
-
-    /**
      * <p>isRefineMolOcc.</p>
      *
      * @return the refineMolOcc
@@ -1287,11 +1231,65 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>bSimWeight</code>.</p>
+     *
+     * @return the bSimWeight
+     */
+    double getbSimWeight() {
+        return bSimWeight;
+    }
+
+    /**
+     * <p>Getter for the field <code>bNonZeroWeight</code>.</p>
+     *
+     * @return the bNonZeroWeight
+     */
+    double getbNonZeroWeight() {
+        return bNonZeroWeight;
+    }
+
+    /**
+     * <p>Getter for the field <code>bMass</code>.</p>
+     *
+     * @return the bMass
+     */
+    double getbMass() {
+        return bMass;
+    }
+
+    /**
+     * <p>isResidueBFactor.</p>
+     *
+     * @return the residueBFactor
+     */
+    boolean isResidueBFactor() {
+        return residueBFactor;
+    }
+
+    /**
+     * <p>Getter for the field <code>nResidueBFactor</code>.</p>
+     *
+     * @return the nResidueBFactor
+     */
+    int getnResidueBFactor() {
+        return nResidueBFactor;
+    }
+
+    /**
+     * <p>isAddAnisou.</p>
+     *
+     * @return the addAnisou
+     */
+    boolean isAddAnisou() {
+        return addAnisou;
+    }
+
+    /**
      * <p>Getter for the field <code>occMass</code>.</p>
      *
      * @return the occMass
      */
-    public double getOccMass() {
+    double getOccMass() {
         return occMass;
     }
 
