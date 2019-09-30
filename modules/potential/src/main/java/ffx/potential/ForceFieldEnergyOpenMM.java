@@ -894,191 +894,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         openMMSystem.updateParameters(atoms);
     }
 
-    /**
-     * Destroys pointer references to Context, Integrator and System to free up
-     * memory.
-     */
-    private void freeOpenMM() {
-        openMMContext.destroyContext();
-        openMMSystem.destroy();
-    }
-
-    /**
-     * Private method for internal use, so we don't have subclasses calling
-     * super.energy, and this class delegating to the subclass's getGradient
-     * method.
-     *
-     * @param forces Reference to forces returned by OpenMM.
-     * @param g      Gradient array to fill.
-     * @return Gradient array.
-     */
-    private double[] fillGradients(PointerByReference forces, double[] g) {
-        int n = getNumberOfVariables();
-        if (g == null || g.length < n) {
-            g = new double[n];
-        }
-        int index = 0;
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.isActive()) {
-                OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(forces, i);
-
-                // Convert OpenMM Forces in KJ/Nm into an FFX gradient in Kcal/A.
-                double gx = -posInNm.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-                double gy = -posInNm.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-                double gz = -posInNm.z * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
-                if (isNaN(gx) || isInfinite(gx) || isNaN(gy) || isInfinite(gy) || isNaN(gz) || isInfinite(gz)) {
-                    StringBuilder sb = new StringBuilder(
-                            format(" The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a.toString(), gx, gy, gz));
-                    double[] vals = new double[3];
-                    a.getVelocity(vals);
-                    sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-                    a.getAcceleration(vals);
-                    sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-                    a.getPreviousAcceleration(vals);
-                    sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
-                    throw new EnergyException(sb.toString());
-                }
-                a.setXYZGradient(gx, gy, gz);
-                g[index++] = gx;
-                g[index++] = gy;
-                g[index++] = gz;
-            }
-        }
-        return g;
-    }
-
-    /**
-     * Gets the default co-processor device, ignoring any CUDA_DEVICE over-ride.
-     * This is either determined by process rank and the
-     * availableDevices/CUDA_DEVICES property, or just 0 if neither property is
-     * sets.
-     *
-     * @param props Properties in use.
-     * @return Pre-override device index.
-     */
-    private static int getDefaultDevice(CompositeConfiguration props) {
-        String availDeviceProp = props.getString("availableDevices",
-                props.getString("CUDA_DEVICES"));
-        if (availDeviceProp == null) {
-            int nDevs = props.getInt("numCudaDevices", 1);
-            availDeviceProp = IntStream.range(0, nDevs).
-                    mapToObj(Integer::toString).
-                    collect(Collectors.joining(" "));
-        }
-        availDeviceProp = availDeviceProp.trim();
-
-        String[] availDevices = availDeviceProp.split("\\s+");
-        int nDevs = availDevices.length;
-        int[] devs = new int[nDevs];
-        for (int i = 0; i < nDevs; i++) {
-            devs[i] = Integer.parseInt(availDevices[i]);
-        }
-
-        logger.info(format(" Number of CUDA devices: %d.", nDevs));
-
-        int index = 0;
-        try {
-            Comm world = Comm.world();
-            if (world != null) {
-                int size = world.size();
-
-                // Format the host as a CharacterBuf of length 100.
-                int messageLen = 100;
-                String host = world.host();
-                // Truncate to max 100 characters.
-                host = host.substring(0, Math.min(messageLen, host.length()));
-                // Pad to 100 characters.
-                host = String.format("%-100s", host);
-                char[] messageOut = host.toCharArray();
-                CharacterBuf out = CharacterBuf.buffer(messageOut);
-
-                // Now create CharacterBuf array for all incoming messages.
-                char[][] incoming = new char[size][messageLen];
-                CharacterBuf[] in = new CharacterBuf[size];
-                for (int i = 0; i < size; i++) {
-                    in[i] = CharacterBuf.buffer(incoming[i]);
-                }
-
-                try {
-                    world.allGather(out, in);
-                } catch (IOException ex) {
-                    logger.severe(String.format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
-                }
-                int ownIndex = -1;
-                int rank = world.rank();
-                boolean selfFound = false;
-
-                for (int i = 0; i < size; i++) {
-                    String hostI = new String(incoming[i]);
-                    if (hostI.equalsIgnoreCase(host)) {
-                        ++ownIndex;
-                        if (i == rank) {
-                            selfFound = true;
-                            break;
-                        }
-                    }
-                }
-                if (!selfFound) {
-                    logger.severe(String.format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
-                } else {
-                    index = ownIndex % nDevs;
-                }
-            }
-        } catch (IllegalStateException ise) {
-            // Behavior is just to keep index = 0.
-        }
-        return devs[index];
-    }
-
-    /**
-     * Add an Andersen thermostat to the system.
-     *
-     * @param targetTemp    Target temperature in Kelvins.
-     * @param collisionFreq Collision frequency in 1/psec
-     */
-    private void addAndersenThermostat(double targetTemp, double collisionFreq) {
-        openMMSystem.addAndersenThermostat(targetTemp, collisionFreq);
-    }
-
     public void setOpenMMPeriodicBoxVectors() {
         openMMContext.setPeriodicBoxVectors();
     }
 
-    public void setDefaultPeriodicBoxVectors() {
-        openMMSystem.setDefaultPeriodicBoxVectors();
-    }
-
     public void getPeriodicBoxVectors(PointerByReference state) {
         openMMSystem.getPeriodicBoxVectors(state);
-    }
-
-    /**
-     * Create a JNA Pointer to a String.
-     *
-     * @param string WARNING: assumes ascii-only string
-     * @return pointer.
-     */
-    private Pointer pointerForString(String string) {
-        Pointer pointer = new Memory(string.length() + 1);
-        pointer.setString(0, string);
-        return pointer;
-    }
-
-    /**
-     * Returns the platform array as a String
-     *
-     * @param stringArray The OpenMM String array.
-     * @param i           The index of the String to return.
-     * @return String The requested String.
-     */
-    private String stringFromArray(PointerByReference stringArray, int i) {
-        Pointer platformPtr = OpenMM_StringArray_get(stringArray, i);
-        if (platformPtr == null) {
-            return null;
-        }
-        return platformPtr.getString(0);
     }
 
     /**
@@ -3179,20 +3000,21 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_AmoebaVdwForce_setSoftcorePower(amoebaVDWForce, (int) vdW.getBeta());
             }
 
+            int[][] bondMask = vdW.getBondMask();
+            int[][] angleMask = vdW.getAngleMask();
+
             // Create exclusion lists.
             PointerByReference exclusions = OpenMM_IntArray_create(0);
-            double[] mask = new double[nAtoms];
-            boolean[] vdw14 = new boolean[nAtoms];
-            fill(mask, 1.0);
             for (int i = 0; i < nAtoms; i++) {
                 OpenMM_IntArray_append(exclusions, i);
-                vdW.applyMask(i, vdw14, mask);
-                for (int j = 0; j < nAtoms; j++) {
-                    if (mask[j] == 0.0) {
-                        OpenMM_IntArray_append(exclusions, j);
-                    }
+                final int[] bondMaski = bondMask[i];
+                for (int value : bondMaski) {
+                    OpenMM_IntArray_append(exclusions, value);
                 }
-                vdW.removeMask(i, vdw14, mask);
+                final int[] angleMaski = angleMask[i];
+                for (int value : angleMaski) {
+                    OpenMM_IntArray_append(exclusions, value);
+                }
                 OpenMM_AmoebaVdwForce_setParticleExclusions(amoebaVDWForce, i, exclusions);
                 OpenMM_IntArray_resize(exclusions, 0);
             }
@@ -4344,4 +4166,182 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
     }
 
+    /**
+     * Destroys pointer references to Context, Integrator and System to free up
+     * memory.
+     */
+    private void freeOpenMM() {
+        openMMContext.destroyContext();
+        openMMSystem.destroy();
+    }
+
+    /**
+     * Add an Andersen thermostat to the system.
+     *
+     * @param targetTemp    Target temperature in Kelvins.
+     * @param collisionFreq Collision frequency in 1/psec
+     */
+    private void addAndersenThermostat(double targetTemp, double collisionFreq) {
+        openMMSystem.addAndersenThermostat(targetTemp, collisionFreq);
+    }
+
+    /**
+     * Private method for internal use, so we don't have subclasses calling
+     * super.energy, and this class delegating to the subclass's getGradient
+     * method.
+     *
+     * @param forces Reference to forces returned by OpenMM.
+     * @param g      Gradient array to fill.
+     * @return Gradient array.
+     */
+    private double[] fillGradients(PointerByReference forces, double[] g) {
+        int n = getNumberOfVariables();
+        if (g == null || g.length < n) {
+            g = new double[n];
+        }
+        int index = 0;
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(forces, i);
+
+                // Convert OpenMM Forces in KJ/Nm into an FFX gradient in Kcal/A.
+                double gx = -posInNm.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+                double gy = -posInNm.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+                double gz = -posInNm.z * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+                if (isNaN(gx) || isInfinite(gx) || isNaN(gy) || isInfinite(gy) || isNaN(gz) || isInfinite(gz)) {
+                    StringBuilder sb = new StringBuilder(
+                            format(" The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a.toString(), gx, gy, gz));
+                    double[] vals = new double[3];
+                    a.getVelocity(vals);
+                    sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getAcceleration(vals);
+                    sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getPreviousAcceleration(vals);
+                    sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    throw new EnergyException(sb.toString());
+                }
+                a.setXYZGradient(gx, gy, gz);
+                g[index++] = gx;
+                g[index++] = gy;
+                g[index++] = gz;
+            }
+        }
+        return g;
+    }
+
+    private void setDefaultPeriodicBoxVectors() {
+        openMMSystem.setDefaultPeriodicBoxVectors();
+    }
+
+    /**
+     * Gets the default co-processor device, ignoring any CUDA_DEVICE over-ride.
+     * This is either determined by process rank and the
+     * availableDevices/CUDA_DEVICES property, or just 0 if neither property is
+     * sets.
+     *
+     * @param props Properties in use.
+     * @return Pre-override device index.
+     */
+    private static int getDefaultDevice(CompositeConfiguration props) {
+        String availDeviceProp = props.getString("availableDevices",
+                props.getString("CUDA_DEVICES"));
+        if (availDeviceProp == null) {
+            int nDevs = props.getInt("numCudaDevices", 1);
+            availDeviceProp = IntStream.range(0, nDevs).
+                    mapToObj(Integer::toString).
+                    collect(Collectors.joining(" "));
+        }
+        availDeviceProp = availDeviceProp.trim();
+
+        String[] availDevices = availDeviceProp.split("\\s+");
+        int nDevs = availDevices.length;
+        int[] devs = new int[nDevs];
+        for (int i = 0; i < nDevs; i++) {
+            devs[i] = Integer.parseInt(availDevices[i]);
+        }
+
+        logger.info(format(" Number of CUDA devices: %d.", nDevs));
+
+        int index = 0;
+        try {
+            Comm world = Comm.world();
+            if (world != null) {
+                int size = world.size();
+
+                // Format the host as a CharacterBuf of length 100.
+                int messageLen = 100;
+                String host = world.host();
+                // Truncate to max 100 characters.
+                host = host.substring(0, Math.min(messageLen, host.length()));
+                // Pad to 100 characters.
+                host = String.format("%-100s", host);
+                char[] messageOut = host.toCharArray();
+                CharacterBuf out = CharacterBuf.buffer(messageOut);
+
+                // Now create CharacterBuf array for all incoming messages.
+                char[][] incoming = new char[size][messageLen];
+                CharacterBuf[] in = new CharacterBuf[size];
+                for (int i = 0; i < size; i++) {
+                    in[i] = CharacterBuf.buffer(incoming[i]);
+                }
+
+                try {
+                    world.allGather(out, in);
+                } catch (IOException ex) {
+                    logger.severe(String.format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
+                }
+                int ownIndex = -1;
+                int rank = world.rank();
+                boolean selfFound = false;
+
+                for (int i = 0; i < size; i++) {
+                    String hostI = new String(incoming[i]);
+                    if (hostI.equalsIgnoreCase(host)) {
+                        ++ownIndex;
+                        if (i == rank) {
+                            selfFound = true;
+                            break;
+                        }
+                    }
+                }
+                if (!selfFound) {
+                    logger.severe(String.format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
+                } else {
+                    index = ownIndex % nDevs;
+                }
+            }
+        } catch (IllegalStateException ise) {
+            // Behavior is just to keep index = 0.
+        }
+        return devs[index];
+    }
+
+    /**
+     * Create a JNA Pointer to a String.
+     *
+     * @param string WARNING: assumes ascii-only string
+     * @return pointer.
+     */
+    private static Pointer pointerForString(String string) {
+        Pointer pointer = new Memory(string.length() + 1);
+        pointer.setString(0, string);
+        return pointer;
+    }
+
+    /**
+     * Returns the platform array as a String
+     *
+     * @param stringArray The OpenMM String array.
+     * @param i           The index of the String to return.
+     * @return String The requested String.
+     */
+    private static String stringFromArray(PointerByReference stringArray, int i) {
+        Pointer platformPtr = OpenMM_StringArray_get(stringArray, i);
+        if (platformPtr == null) {
+            return null;
+        }
+        return platformPtr.getString(0);
+    }
 }
