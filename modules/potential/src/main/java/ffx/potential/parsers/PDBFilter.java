@@ -2680,7 +2680,7 @@ public final class PDBFilter extends SystemFilter {
                             atom.setAtomType(findAtomType(2010));
                             break;
                         case CL:
-                            atom.setAtomType(findAtomType(2011));
+                            atom.setAtomType(findAtomType(2013));
                             break;
                         case BR:
                             atom.setAtomType(findAtomType(2012));
