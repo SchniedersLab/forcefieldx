@@ -37,7 +37,18 @@
 //******************************************************************************
 package ffx.algorithms.cli;
 
+import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.crystal.CrystalPotential;
+import ffx.potential.MolecularAssembly;
 import picocli.CommandLine;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.logging.Logger;
 
 /**
  * Represents command line options for scripts that calculate thermodynamics.
@@ -47,6 +58,7 @@ import picocli.CommandLine;
  * @since 1.0
  */
 public class ThermodynamicsOptions {
+    private static final Logger logger = Logger.getLogger(ThermodynamicsOptions.class.getName());
 
     /**
      * -Q or --equilibrate sets the number of equilibration steps prior to
@@ -65,6 +77,14 @@ public class ThermodynamicsOptions {
     private boolean resetNumSteps = false;
 
     /**
+     * --tA or --thermodynamicsAlgorithm specifies the algorithm to be used;
+     * currently serves as a switch between OST and window-based methods.
+     */
+    @CommandLine.Option(names = {"--tA", "--thermodynamicsAlgorithm"}, paramLabel = "OST",
+            description = "Choice of thermodynamics algorithm. OST/OSRW use OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
+    private String thermoAlgoString = "OST";
+
+    /**
      * <p>Getter for the field <code>resetNumSteps</code>.</p>
      *
      * @return a boolean.
@@ -80,5 +100,108 @@ public class ThermodynamicsOptions {
      */
     public int getEquilSteps() {
         return nEquil;
+    }
+
+    /**
+     * Run an alchemical free energy window.
+     *
+     * @param topologies All involved MolecularAssemblies.
+     * @param potential  The Potential to be sampled.
+     * @param dynamics   DynamicsOptions.
+     * @param writeOut   WriteoutOptions
+     * @param dyn        MD restart file
+     * @param aListener  AlgorithmListener
+     * @return           The MolecularDynamics object constructed.
+     */
+    public MolecularDynamics runFixedAlchemy(MolecularAssembly[] topologies, CrystalPotential potential,
+             DynamicsOptions dynamics, WriteoutOptions writeOut, File dyn, AlgorithmListener aListener) {
+        dynamics.init();
+
+        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(topologies[0], potential, topologies[0].getProperties(),
+                aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
+        for (int i = 1; i < topologies.length; i++) {
+            molDyn.addAssembly(topologies[i], topologies[i].getProperties());
+        }
+
+        boolean initVelocities = true;
+        int nSteps = dynamics.steps;
+        molDyn.setRestartFrequency(dynamics.getCheckpoint());
+        // Start sampling.
+        if (nEquil > 0) {
+            logger.info(" Beginning equilibration");
+            runDynamics(molDyn, nEquil, dynamics, writeOut, true, dyn);
+            logger.info(" Beginning fixed-lambda alchemical sampling");
+        } else {
+            logger.info(" Beginning fixed-lambda alchemical sampling without equilibration");
+            if (!resetNumSteps) {
+                /*int nEnergyCount = ttOSRW.getEnergyCount();
+                if (nEnergyCount > 0) {
+                    nSteps -= nEnergyCount;
+                    logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
+                    initVelocities = false;
+                }*/
+                // Temporary workaround for being unable to pick up preexisting steps.
+                initVelocities = false;
+            }
+        }
+        if (nSteps > 0) {
+            runDynamics(molDyn, nSteps, dynamics, writeOut, initVelocities, dyn);
+        } else {
+            logger.info(" No steps remaining for this process!");
+        }
+        return molDyn;
+    }
+
+    private void runDynamics(MolecularDynamics md, int nSteps, DynamicsOptions dynamics, WriteoutOptions writeOut,
+                             boolean initVelocities, File dyn) {
+        md.dynamic(nSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
+                initVelocities, writeOut.getFileType(), dynamics.getCheckpoint(), dyn);
+    }
+
+    /**
+     * <p>Return the selected Thermodynamics algorithm as an enumerated type.</p>
+     *
+     * @return Corresponding thermodynamics algorithm
+     */
+    public ThermodynamicsAlgorithm getAlgorithm() {
+        return ThermodynamicsAlgorithm.parse(thermoAlgoString);
+    }
+
+    /**
+     * Represents categories of thermodynamics algorithms that must be handled differentially.
+     * For legacy reasons, MC-OST and MD-OST are both just "OST", and the differences are handled
+     * in OSRWOptions and Thermodynamics.groovy. Introduced primarily to get BAR working.
+     */
+    public enum ThermodynamicsAlgorithm {
+        // TODO: Separate MC-OST from MD-OST. Requires coupled changes elsewhere.
+        // Fixed represents generation of snapshots for estimators like BAR, FEP, etc.
+        OST("OSRW", "MC-OSRW", "MC-OST", "MD-OSRW", "MD-OST", "DEFAULT"),
+        FIXED("BAR", "MBAR", "FEP", "WINDOWED");
+
+        private final Set<String> aliases;
+
+        ThermodynamicsAlgorithm(String... aliases) {
+            // If, for some reason, there are 100+ aliases, might change to a HashSet.
+            Set<String> names = new TreeSet<>(Arrays.asList(aliases));
+            names.add(this.name());
+            this.aliases = Collections.unmodifiableSet(names);
+        }
+
+        /**
+         * Parse a String to a corresponding thermodynamics algorithm, recognizing aliases.
+         *
+         * @param name Name to parse
+         * @return A ThermodynamicsAlgorithm.
+         * @throws IllegalArgumentException If name did not correspond to any alias of any ThermodynamicsAlgorithm.
+         */
+        public static ThermodynamicsAlgorithm parse(String name) throws IllegalArgumentException {
+            String ucName = name.toUpperCase();
+            for (ThermodynamicsAlgorithm ta : values()) {
+                if (ta.aliases.contains(ucName)) {
+                    return ta;
+                }
+            }
+            throw new IllegalArgumentException(String.format(" Could not parse %s as a ThermodynamicsAlgorithm", name));
+        }
     }
 }

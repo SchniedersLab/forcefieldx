@@ -773,7 +773,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (vanderWaalsTerm) {
             multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
             if (multipoleTerm) {
-                polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
+                String polarizeString = forceField.getString(ForceFieldString.POLARIZATION, "NONE");
+                boolean defaultPolarizeTerm = !polarizeString.equalsIgnoreCase("NONE");
+                polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, defaultPolarizeTerm);
                 generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
             } else {
                 // If multipole electrostatics is turned off, turn off all electrostatics.
