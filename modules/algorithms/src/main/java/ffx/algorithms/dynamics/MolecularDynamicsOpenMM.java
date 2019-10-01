@@ -262,7 +262,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             case BUSSI:
             case BERENDSEN:
                 if (!integratorString.equalsIgnoreCase("LANGEVIN")) {
-                    logger.info(String.format(" Replacing %s thermostat Andersen", thermostatType));
+                    logger.info(String.format(" Replacing FFX thermostat %s with OpenMM Andersen thermostat", thermostatType));
                     forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
                     if (NPT) {
                         setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
