@@ -38,6 +38,7 @@
 package ffx.crystal;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -173,24 +174,19 @@ public class NCSCrystal extends Crystal {
      * same.
      */
     @Override
-    public boolean strictEquals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
-        if (!(obj instanceof NCSCrystal)) {
-            return false;
-        }
-
-        if (this == obj) {
-            return true;
-        }
-
-        NCSCrystal other = (NCSCrystal) obj;
-        return this.unitCell.strictEquals(other.unitCell) && (a == other.a && b == other.b && c == other.c
-                && alpha == other.alpha && beta == other.beta && gamma == other.gamma
-                && spaceGroup.number == other.spaceGroup.number
-                && spaceGroup.symOps.size() == other.spaceGroup.symOps.size());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NCSCrystal ncsCrystal = (NCSCrystal) o;
+        return (Objects.equals(unitCell, ncsCrystal.unitCell) &&
+                a == ncsCrystal.a &&
+                b == ncsCrystal.b &&
+                c == ncsCrystal.c &&
+                alpha == ncsCrystal.alpha &&
+                beta == ncsCrystal.beta &&
+                gamma == ncsCrystal.gamma &&
+                spaceGroup.number == ncsCrystal.spaceGroup.number &&
+                spaceGroup.symOps.size() == ncsCrystal.spaceGroup.symOps.size());
     }
 
     /**

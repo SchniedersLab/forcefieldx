@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
 
@@ -341,8 +342,6 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + Arrays.hashCode(atomClasses);
-        return hash;
+        return Objects.hash(atomClasses);
     }
 }

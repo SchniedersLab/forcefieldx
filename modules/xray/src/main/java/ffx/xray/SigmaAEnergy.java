@@ -68,6 +68,7 @@ import ffx.crystal.ReflectionSpline;
 import ffx.numerics.Potential;
 import ffx.numerics.math.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import static ffx.crystal.Crystal.invressq;
 import static ffx.numerics.math.VectorMath.dot;
 import static ffx.numerics.math.VectorMath.mat3Mat3;
 import static ffx.numerics.math.VectorMath.mat3SymVec6;
@@ -115,22 +116,30 @@ public class SigmaAEnergy implements Potential {
     private static final double sim_r = -0.74817947490;
 
     private final ReflectionList reflectionList;
-    private final Crystal crystal;
     private final DiffractionRefinementData refinementData;
     private final ParallelTeam parallelTeam;
-    private final SigmaARegion sigmaARegion;
-    private final double dfscale;
-    private final double[][] fo;
-    private final double[][] fctot;
-    private final double[][] fofc1;
-    private final double[][] fofc2;
-    private final double[][] fomphi;
-    private final double[][] dfc;
-    private final double[][] dfs;
-    private final double[][] recipt;
+    private final Crystal crystal;
+    private final double[][] fSigF;
+    private final double[][] fcTot;
+    private final double[][] fomPhi;
+    private final double[][] foFc1;
+    private final double[][] foFc2;
+    private final double[][] dFc;
+    private final double[][] dFs;
+    private final int nBins;
+
+    /**
+     * Crystal Volume^2 / (2 * number of grid points)
+     */
+    private final double dfScale;
+    /**
+     * Transpose of the matrix 'A' that converts from Cartesian to fractional coordinates.
+     */
+    private final double[][] transposeA;
     private final double[] sa;
     private final double[] wa;
-    private final int n;
+
+    private final SigmaARegion sigmaARegion;
     private double[] optimizationScaling = null;
     private double totalEnergy;
     private final boolean useCernBessel;
@@ -144,34 +153,32 @@ public class SigmaAEnergy implements Potential {
      * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
      * @param parallelTeam   the ParallelTeam to execute the SigmaAEnergy.
      */
-    SigmaAEnergy(ReflectionList reflectionList,
-                        DiffractionRefinementData refinementData,
-                        ParallelTeam parallelTeam) {
+    SigmaAEnergy(ReflectionList reflectionList, DiffractionRefinementData refinementData,
+                 ParallelTeam parallelTeam) {
         this.reflectionList = reflectionList;
-        this.crystal = reflectionList.crystal;
         this.refinementData = refinementData;
-        this.fo = refinementData.fsigf;
-        this.fctot = refinementData.fctot;
-        this.fomphi = refinementData.fomphi;
-        this.fofc1 = refinementData.fofc1;
-        this.fofc2 = refinementData.fofc2;
-        this.dfc = refinementData.dfc;
-        this.dfs = refinementData.dfs;
-        this.n = refinementData.nbins;
+        this.parallelTeam = parallelTeam;
+        this.crystal = reflectionList.crystal;
+        this.fSigF = refinementData.fSigF;
+        this.fcTot = refinementData.fcTot;
+        this.fomPhi = refinementData.fomPhi;
+        this.foFc1 = refinementData.foFc1;
+        this.foFc2 = refinementData.foFc2;
+        this.dFc = refinementData.dFc;
+        this.dFs = refinementData.dFs;
+        this.nBins = refinementData.nBins;
 
         // Initialize parameters.
-        assert (refinementData.crs_fc != null);
-        double fftgrid = 2.0 * refinementData.crs_fc.getXDim()
-                * refinementData.crs_fc.getYDim()
-                * refinementData.crs_fc.getZDim();
-        dfscale = (crystal.volume * crystal.volume) / fftgrid;
-        recipt = transpose3(crystal.A);
-        sa = new double[n];
-        wa = new double[n];
+        assert (refinementData.crystalReciprocalSpaceFc != null);
+        double nGrid2 = 2.0 * refinementData.crystalReciprocalSpaceFc.getXDim()
+                * refinementData.crystalReciprocalSpaceFc.getYDim()
+                * refinementData.crystalReciprocalSpaceFc.getZDim();
+        dfScale = (crystal.volume * crystal.volume) / nGrid2;
+        transposeA = transpose3(crystal.A);
+        sa = new double[nBins];
+        wa = new double[nBins];
 
-        this.parallelTeam = parallelTeam;
         sigmaARegion = new SigmaARegion(this.parallelTeam.getThreadCount());
-
         String cernBessel = System.getProperty("cern.bessel");
         useCernBessel = (cernBessel == null || !cernBessel.equalsIgnoreCase("false"));
     }
@@ -229,19 +236,19 @@ public class SigmaAEnergy implements Potential {
         }
 
         double sum = sigmaARegion.sum.get();
-        double sumr = sigmaARegion.sumr.get();
-        refinementData.llkr = sumr;
-        refinementData.llkf = sum;
+        double sumR = sigmaARegion.sumR.get();
+        refinementData.llkR = sumR;
+        refinementData.llkF = sum;
 
         if (print) {
-            int nsum = sigmaARegion.nsum.get();
-            int nsumr = sigmaARegion.nsumr.get();
+            int nSum = sigmaARegion.nSum.get();
+            int nSumr = sigmaARegion.nSumR.get();
             StringBuilder sb = new StringBuilder("\n");
-            sb.append(" sigmaA (s and w) fit using only Rfree reflections\n");
+            sb.append(" sigmaA (s and w) fit using only R free reflections\n");
             sb.append(format("      # HKL: %10d (free set) %10d (working set) %10d (total)\n",
-                    nsum, nsumr, nsum + nsumr));
+                    nSum, nSumr, nSum + nSumr));
             sb.append(format("   residual: %10g (free set) %10g (working set) %10g (total)\n",
-                    sum, sumr, sum + sumr));
+                    sum, sumR, sum + sumR));
             sb.append("    x: ");
             for (double x1 : x) {
                 sb.append(format("%g ", x1));
@@ -285,7 +292,7 @@ public class SigmaAEnergy implements Potential {
      */
     @Override
     public void setScaling(double[] scaling) {
-        if (scaling != null && scaling.length == n * 2) {
+        if (scaling != null && scaling.length == nBins * 2) {
             optimizationScaling = scaling;
         } else {
             optimizationScaling = null;
@@ -378,19 +385,19 @@ public class SigmaAEnergy implements Potential {
         private final double[][] resm = new double[3][3];
         private final double[] model_b = new double[6];
         private final double[][] ustar = new double[3][3];
-        SharedInteger nsum;
-        SharedInteger nsumr;
+        SharedInteger nSum;
+        SharedInteger nSumR;
         SharedDouble sum;
-        SharedDouble sumr;
+        SharedDouble sumR;
         SharedDoubleArray grad;
         SigmaALoop[] sigmaALoop;
 
         SigmaARegion(int nThreads) {
             sigmaALoop = new SigmaALoop[nThreads];
-            nsum = new SharedInteger();
-            nsumr = new SharedInteger();
+            nSum = new SharedInteger();
+            nSumR = new SharedInteger();
             sum = new SharedDouble();
-            sumr = new SharedDouble();
+            sumR = new SharedDouble();
         }
 
         public void init(double[] x, double[] g, boolean gradient) {
@@ -420,26 +427,26 @@ public class SigmaAEnergy implements Potential {
                 }
             }
             sum.set(0.0);
-            nsum.set(0);
-            sumr.set(0.0);
-            nsumr.set(0);
+            nSum.set(0);
+            sumR.set(0.0);
+            nSumR.set(0);
 
-            modelK = refinementData.model_k;
-            solventK = refinementData.solvent_k;
-            solventUEq = refinementData.solvent_ueq;
-            arraycopy(refinementData.model_b, 0, model_b, 0, 6);
+            modelK = refinementData.modelScaleK;
+            solventK = refinementData.bulkSolventK;
+            solventUEq = refinementData.bulkSolventUeq;
+            arraycopy(refinementData.modelAnisoB, 0, model_b, 0, 6);
 
             // Generate Ustar
             mat3SymVec6(crystal.A, model_b, resm);
-            mat3Mat3(resm, recipt, ustar);
+            mat3Mat3(resm, transposeA, ustar);
 
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < nBins; i++) {
                 sa[i] = 1.0 + x[i];
-                wa[i] = x[n + i];
+                wa[i] = x[nBins + i];
             }
 
             // Cheap method of preventing negative w values.
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < nBins; i++) {
                 if (wa[i] <= 0.0) {
                     wa[i] = 1.0e-6;
                 }
@@ -464,11 +471,11 @@ public class SigmaAEnergy implements Potential {
         private class SigmaALoop extends IntegerForLoop {
 
             // Thread local work variables.
-            private double lsum;
-            private double lsumr;
-            private int lnsum;
-            private int lnsumr;
-            private final double[] lgrad;
+            private double lSum;
+            private double lSumR;
+            private int lSumN;
+            private int lSumRN;
+            private final double[] lGrad;
             private final double[] resv = new double[3];
             private final double[] ihc = new double[3];
             private final ComplexNumber resc = new ComplexNumber();
@@ -483,29 +490,29 @@ public class SigmaAEnergy implements Potential {
             private final ComplexNumber mfo = new ComplexNumber();
             private final ComplexNumber mfo2 = new ComplexNumber();
             private final ComplexNumber dfcc = new ComplexNumber();
-            private final ReflectionSpline spline = new ReflectionSpline(reflectionList, n);
+            private final ReflectionSpline spline = new ReflectionSpline(reflectionList, nBins);
 
-            public SigmaALoop() {
-                lgrad = new double[2 * n];
+            SigmaALoop() {
+                lGrad = new double[2 * nBins];
             }
 
             @Override
             public void start() {
-                lsum = 0.0;
-                lsumr = 0.0;
-                lnsum = 0;
-                lnsumr = 0;
-                fill(lgrad, 0.0);
+                lSum = 0.0;
+                lSumR = 0.0;
+                lSumN = 0;
+                lSumRN = 0;
+                fill(lGrad, 0.0);
             }
 
             @Override
             public void finish() {
-                sum.addAndGet(lsum);
-                sumr.addAndGet(lsumr);
-                nsum.addAndGet(lnsum);
-                nsumr.addAndGet(lnsumr);
-                for (int i = 0; i < lgrad.length; i++) {
-                    grad.getAndAdd(i, lgrad[i]);
+                sum.addAndGet(lSum);
+                sumR.addAndGet(lSumR);
+                nSum.addAndGet(lSumN);
+                nSumR.addAndGet(lSumRN);
+                for (int i = 0; i < lGrad.length; i++) {
+                    grad.getAndAdd(i, lGrad[i]);
                 }
             }
 
@@ -520,7 +527,7 @@ public class SigmaAEnergy implements Potential {
                     ihc[2] = ih.l();
                     vec3Mat3(ihc, ustar, resv);
                     double u = modelK - dot(resv, ihc);
-                    double s = Crystal.invressq(crystal, ih);
+                    double s = invressq(crystal, ih);
                     double ebs = exp(-twoPI2 * solventUEq * s);
                     double ksebs = solventK * ebs;
                     double kmems = exp(0.25 * u);
@@ -528,8 +535,8 @@ public class SigmaAEnergy implements Potential {
                     double epsc = ih.epsilonc();
 
                     // Spline setup
-                    double ecscale = spline.f(s, refinementData.fcesq);
-                    double eoscale = spline.f(s, refinementData.foesq);
+                    double ecscale = spline.f(s, refinementData.esqFc);
+                    double eoscale = spline.f(s, refinementData.esqFo);
                     double sqrtECScale = sqrt(ecscale);
                     double sqrtEOScale = sqrt(eoscale);
                     double iSqrtEOScale = 1.0 / sqrtEOScale;
@@ -542,7 +549,7 @@ public class SigmaAEnergy implements Potential {
                     refinementData.getFcIP(i, fcc);
                     refinementData.getFsIP(i, fsc);
                     fct.copy(fcc);
-                    if (refinementData.crs_fs.solventModel != SolventModel.NONE) {
+                    if (refinementData.crystalReciprocalSpaceFs.solventModel != SolventModel.NONE) {
                         resc.copy(fsc);
                         resc.timesIP(ksebs);
                         fct.plusIP(resc);
@@ -558,8 +565,8 @@ public class SigmaAEnergy implements Potential {
                     ect.timesIP(sqrtECScale);
                     kect.copy(kfct);
                     kect.timesIP(sqrtECScale);
-                    double eo = fo[i][0] * sqrtEOScale;
-                    double sigeo = fo[i][1] * sqrtEOScale;
+                    double eo = fSigF[i][0] * sqrtEOScale;
+                    double sigeo = fSigF[i][1] * sqrtEOScale;
                     double eo2 = eo * eo;
                     double akect = kect.abs();
                     double kect2 = akect * akect;
@@ -584,20 +591,6 @@ public class SigmaAEnergy implements Potential {
                             dinot = sim(fomx);
                         }
                         cf = 1.0;
-                        /*
-                         double orig_inot = sim_integ(fomx);
-                         double orig_dinot = sim(fomx);
-                         double cern_inot = ModifiedBessel.lnI0(fomx);
-                         double cern_dinot = ModifiedBessel.i1OverI0(fomx);
-                         double inot_percError = Math.abs((cern_inot - orig_inot) / orig_inot) * 100;
-                         double dinot_percError = Math.abs((cern_dinot - orig_dinot) / orig_dinot) * 100;
-                         if (inot_percError > 10) {
-                         System.out.format("inot: %1.8f\tcern: %1.8f\targs: %1.8f\n", orig_inot, cern_inot, fomx);
-                         }
-                         if (dinot_percError > 10) {
-                         System.out.format("dinot: %1.8f\tdcern: %1.8f\targ: %1.8f\n", orig_dinot, cern_dinot, fomx);
-                         }
-                         */
                     }
                     double llk = cf * log(d) + (eo2 + sa2 * kect2) * id - inot;
 
@@ -606,8 +599,8 @@ public class SigmaAEnergy implements Potential {
                     double phi = kect.phase();
                     double sinPhi = sin(phi);
                     double cosPhi = cos(phi);
-                    fomphi[i][0] = dinot;
-                    fomphi[i][1] = phi;
+                    fomPhi[i][0] = dinot;
+                    fomPhi[i][1] = phi;
                     mfo.re(f * cosPhi);
                     mfo.im(f * sinPhi);
                     mfo2.re(2.0 * f * cosPhi);
@@ -616,41 +609,41 @@ public class SigmaAEnergy implements Potential {
                     dfcc.re(sai * akect * cosPhi);
                     dfcc.im(sai * akect * sinPhi);
                     // Set up map coefficients
-                    fofc1[i][0] = 0.0;
-                    fofc1[i][1] = 0.0;
-                    fofc2[i][0] = 0.0;
-                    fofc2[i][1] = 0.0;
-                    dfc[i][0] = 0.0;
-                    dfc[i][1] = 0.0;
-                    dfs[i][0] = 0.0;
-                    dfs[i][1] = 0.0;
-                    if (isNaN(fctot[i][0])) {
-                        if (!isNaN(fo[i][0])) {
-                            fofc2[i][0] = mfo.re() * iSqrtEOScale;
-                            fofc2[i][1] = mfo.im() * iSqrtEOScale;
+                    foFc1[i][0] = 0.0;
+                    foFc1[i][1] = 0.0;
+                    foFc2[i][0] = 0.0;
+                    foFc2[i][1] = 0.0;
+                    dFc[i][0] = 0.0;
+                    dFc[i][1] = 0.0;
+                    dFs[i][0] = 0.0;
+                    dFs[i][1] = 0.0;
+                    if (isNaN(fcTot[i][0])) {
+                        if (!isNaN(fSigF[i][0])) {
+                            foFc2[i][0] = mfo.re() * iSqrtEOScale;
+                            foFc2[i][1] = mfo.im() * iSqrtEOScale;
                         }
                         continue;
                     }
-                    if (isNaN(fo[i][0])) {
-                        if (!isNaN(fctot[i][0])) {
-                            fofc2[i][0] = dfcc.re() * iSqrtEOScale;
-                            fofc2[i][1] = dfcc.im() * iSqrtEOScale;
+                    if (isNaN(fSigF[i][0])) {
+                        if (!isNaN(fcTot[i][0])) {
+                            foFc2[i][0] = dfcc.re() * iSqrtEOScale;
+                            foFc2[i][1] = dfcc.im() * iSqrtEOScale;
                         }
                         continue;
                     }
                     // Update Fctot
-                    fctot[i][0] = kfct.re();
-                    fctot[i][1] = kfct.im();
+                    fcTot[i][0] = kfct.re();
+                    fcTot[i][1] = kfct.im();
                     // mFo - DFc
                     resc.copy(mfo);
                     resc.minusIP(dfcc);
-                    fofc1[i][0] = resc.re() * iSqrtEOScale;
-                    fofc1[i][1] = resc.im() * iSqrtEOScale;
+                    foFc1[i][0] = resc.re() * iSqrtEOScale;
+                    foFc1[i][1] = resc.im() * iSqrtEOScale;
                     // 2mFo - DFc
                     resc.copy(mfo2);
                     resc.minusIP(dfcc);
-                    fofc2[i][0] = resc.re() * iSqrtEOScale;
-                    fofc2[i][1] = resc.im() * iSqrtEOScale;
+                    foFc2[i][0] = resc.re() * iSqrtEOScale;
+                    foFc2[i][1] = resc.im() * iSqrtEOScale;
 
                     // Derivatives
                     double dafct = d * fct.abs();
@@ -670,18 +663,18 @@ public class SigmaAEnergy implements Potential {
                             + 2.0 * eo * sai * akect * id2 * dinot);
 
                     // Partial LLK wrt Fc or Fs
-                    dfc[i][0] = dfcr * dfscale;
-                    dfc[i][1] = dfci * dfscale;
-                    dfs[i][0] = dfsr * dfscale;
-                    dfs[i][1] = dfsi * dfscale;
+                    dFc[i][0] = dfcr * dfScale;
+                    dFc[i][1] = dfci * dfScale;
+                    dFs[i][0] = dfsr * dfScale;
+                    dFs[i][1] = dfsi * dfScale;
 
-                    // Only use freeR flagged reflections in overall sum
+                    // Only use free R flagged reflections in overall sum
                     if (refinementData.isFreeR(i)) {
-                        lsum += llk;
-                        lnsum++;
+                        lSum += llk;
+                        lSumN++;
                     } else {
-                        lsumr += llk;
-                        lnsumr++;
+                        lSumR += llk;
+                        lSumRN++;
                         dfsa = dfwa = 0.0;
                     }
 
@@ -693,13 +686,13 @@ public class SigmaAEnergy implements Potential {
                         double g1 = spline.dfi1();
                         double g2 = spline.dfi2();
                         // s derivative
-                        lgrad[i0] += dfsa * g0;
-                        lgrad[i1] += dfsa * g1;
-                        lgrad[i2] += dfsa * g2;
+                        lGrad[i0] += dfsa * g0;
+                        lGrad[i1] += dfsa * g1;
+                        lGrad[i2] += dfsa * g2;
                         // w derivative
-                        lgrad[n + i0] += dfwa * g0;
-                        lgrad[n + i1] += dfwa * g1;
-                        lgrad[n + i2] += dfwa * g2;
+                        lGrad[nBins + i0] += dfwa * g0;
+                        lGrad[nBins + i1] += dfwa * g1;
+                        lGrad[nBins + i2] += dfwa * g2;
                     }
                 }
             }

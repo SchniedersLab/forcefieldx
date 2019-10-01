@@ -75,9 +75,6 @@ import ffx.ui.properties.FFXLocale;
  */
 public class MainMenu extends JMenuBar {
 
-    private static final Logger logger = Logger.getLogger(MainMenu.class.getName());
-    private static final long serialVersionUID = 1L;
-
     /**
      * Note that the getMenuShortcutKeyMask() is deprecated in JDK 10 and replaced with
      * getMenuShortcutKeyMaskEx(). However, this later method is not present in JDK 8/9.

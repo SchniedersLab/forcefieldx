@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -1033,9 +1034,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 29 * hash + Arrays.hashCode(frameAtomTypes);
-        return hash;
+        return Objects.hash(frameAtomTypes);
     }
 
     /* Indices into a 1D tensor array based on compressed tensor notation. This makes multipole code easier to read. */

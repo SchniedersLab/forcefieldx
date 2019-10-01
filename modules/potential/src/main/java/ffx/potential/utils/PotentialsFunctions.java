@@ -243,7 +243,6 @@ public interface PotentialsFunctions {
      * @param file     Destination file
      */
     void savePDBSymMates(MolecularAssembly assembly, File file);
-    // Will use default suffix of _symMate
 
     /**
      * Saves the symmetry mates of a MolecularAssembly to PDB files.

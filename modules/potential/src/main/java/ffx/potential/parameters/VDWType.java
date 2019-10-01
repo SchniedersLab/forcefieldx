@@ -38,7 +38,8 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
-import static java.lang.Integer.*;
+import java.util.Objects;
+import static java.lang.Integer.parseInt;
 import static java.lang.StrictMath.abs;
 import static java.lang.String.format;
 
@@ -204,9 +205,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
      */
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + this.atomClass;
-        return hash;
+        return Objects.hash(atomClass);
     }
 
 }

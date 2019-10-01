@@ -109,7 +109,12 @@ fi
 CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
 
 # These flags for for JDK 8.
-EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M"
+JVM_MEM="4G"
+if [ ! -z "$FFX_MEMORY" ]; then
+  JVM_MEM="$FFX_MEMORY"
+fi
+
+EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss1M"
 
 if [ -z $TMPDIR ]; then
     if [ -z $TMP ]; then

@@ -39,6 +39,7 @@ package ffx.crystal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -61,7 +62,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.dot;
 import static ffx.numerics.math.VectorMath.mat3Mat3;
@@ -186,8 +186,8 @@ public class Crystal {
     public double interfacialRadiusC;
 
     private boolean aperiodic;
-    public int[] scale_b = new int[6];
-    public int scale_n;
+    public int[] scaleB = new int[6];
+    public int scaleN;
     /**
      * An atom and one of its symmetry copies within the specialPositionCutoff
      * should be flagged to be at a special position.
@@ -233,7 +233,7 @@ public class Crystal {
         }
 
         for (int i = 0; i < 6; i++) {
-            scale_b[i] = -1;
+            scaleB[i] = -1;
         }
 
         SymOp symop;
@@ -242,36 +242,36 @@ public class Crystal {
         switch (crystalSystem) {
             case TRICLINIC:
                 for (int i = 0; i < 6; i++) {
-                    scale_b[i] = index++;
+                    scaleB[i] = index++;
                 }
                 break;
             case MONOCLINIC:
                 index = 0;
-                scale_b[0] = index++;
-                scale_b[1] = index++;
-                scale_b[2] = index++;
+                scaleB[0] = index++;
+                scaleB[1] = index++;
+                scaleB[2] = index++;
                 // determine unique axis
                 symop = spaceGroup.symOps.get(1);
                 rot = symop.rot;
                 if (rot[0][0] > 0) {
-                    scale_b[5] = index++;
+                    scaleB[5] = index++;
                 } else if (rot[1][1] > 0) {
-                    scale_b[4] = index++;
+                    scaleB[4] = index++;
                 } else {
-                    scale_b[3] = index++;
+                    scaleB[3] = index++;
                 }
                 break;
             case ORTHORHOMBIC:
                 index = 0;
-                scale_b[0] = index++;
-                scale_b[1] = index++;
-                scale_b[2] = index++;
+                scaleB[0] = index++;
+                scaleB[1] = index++;
+                scaleB[2] = index++;
                 break;
             case TETRAGONAL:
                 index = 0;
-                scale_b[0] = index++;
-                scale_b[1] = scale_b[0];
-                scale_b[2] = index++;
+                scaleB[0] = index++;
+                scaleB[1] = scaleB[0];
+                scaleB[2] = index++;
                 break;
             case TRIGONAL:
             case HEXAGONAL:
@@ -284,25 +284,25 @@ public class Crystal {
                             || (rot[2][1] * rot[2][2] == -1)
                             || (rot[1][1] * rot[1][2] == 1)
                             || (rot[2][1] * rot[2][2] == 1)) {
-                        scale_b[0] = index++;
-                        scale_b[1] = index++;
-                        scale_b[2] = scale_b[1];
+                        scaleB[0] = index++;
+                        scaleB[1] = index++;
+                        scaleB[2] = scaleB[1];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][2] == -1)
                             || (rot[2][0] * rot[2][2] == -1)
                             || (rot[0][0] * rot[0][2] == 1)
                             || (rot[2][0] * rot[2][2] == 1)) {
-                        scale_b[0] = index++;
-                        scale_b[1] = index++;
-                        scale_b[2] = scale_b[0];
+                        scaleB[0] = index++;
+                        scaleB[1] = index++;
+                        scaleB[2] = scaleB[0];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][1] == -1)
                             || (rot[1][0] * rot[1][1] == -1)
                             || (rot[0][0] * rot[0][1] == 1)
                             || (rot[1][0] * rot[1][1] == 1)) {
-                        scale_b[0] = index++;
-                        scale_b[1] = scale_b[0];
-                        scale_b[2] = index++;
+                        scaleB[0] = index++;
+                        scaleB[1] = scaleB[0];
+                        scaleB[2] = index++;
                         hexagonal = true;
                     }
                     if (hexagonal) {
@@ -312,15 +312,15 @@ public class Crystal {
                 if (!hexagonal) {
                     // rhombohedral
                     index = 0;
-                    scale_b[3] = index++;
-                    scale_b[4] = scale_b[3];
-                    scale_b[5] = scale_b[3];
+                    scaleB[3] = index++;
+                    scaleB[4] = scaleB[3];
+                    scaleB[5] = scaleB[3];
                 }
                 break;
             case CUBIC:
                 break;
         }
-        scale_n = index;
+        scaleN = index;
 
         updateCrystal();
     }
@@ -704,8 +704,7 @@ public class Crystal {
      * <p>
      * {@inheritDoc}
      */
-    @Override
-    public boolean equals(Object obj) {
+    public boolean looseEquals(Object obj) {
         if (obj == null) {
             return false;
         }
@@ -715,9 +714,7 @@ public class Crystal {
         if (this == obj) {
             return true;
         }
-
         Crystal other = (Crystal) obj;
-
         return (abs(a - other.a) < 0.01
                 && abs(b - other.b) < 0.01
                 && abs(c - other.c) < 0.01
@@ -731,27 +728,21 @@ public class Crystal {
      * Two crystals are equal only if all unit cell parameters are exactly the
      * same.
      *
-     * @param obj the Crystal to compare to.
+     * @param o the Crystal to compare to.
      * @return true if all unit cell parameters are exactly the same.
      */
-    public boolean strictEquals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
-        if (!(obj instanceof Crystal)) {
-            return false;
-        }
-
-        if (this == obj) {
-            return true;
-        }
-
-        Crystal other = (Crystal) obj;
-
-        return (a == other.a && b == other.b && c == other.c
-                && alpha == other.alpha && beta == other.beta && gamma == other.gamma
-                && spaceGroup.number == other.spaceGroup.number);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Crystal crystal = (Crystal) o;
+        return (a == crystal.a &&
+                b == crystal.b &&
+                c == crystal.c &&
+                alpha == crystal.alpha &&
+                beta == crystal.beta &&
+                gamma == crystal.gamma &&
+                spaceGroup.number == crystal.spaceGroup.number);
     }
 
     /**
@@ -759,15 +750,7 @@ public class Crystal {
      */
     @Override
     public int hashCode() {
-        int hash = HashCodeUtil.SEED;
-        hash = HashCodeUtil.hash(hash, this.a);
-        hash = HashCodeUtil.hash(hash, this.b);
-        hash = HashCodeUtil.hash(hash, this.c);
-        hash = HashCodeUtil.hash(hash, this.alpha);
-        hash = HashCodeUtil.hash(hash, this.beta);
-        hash = HashCodeUtil.hash(hash, this.gamma);
-        hash = HashCodeUtil.hash(hash, this.spaceGroup.number);
-        return hash;
+        return Objects.hash(a, b, c, alpha, beta, gamma, spaceGroup.number);
     }
 
     /**

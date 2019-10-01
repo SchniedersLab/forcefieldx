@@ -198,15 +198,15 @@ public class RealSpaceData implements DataContainer {
         }
 
         // get Fo-Fc difference density
-        diffractionData.getCrs_fc()[0].computeAtomicGradients(diffractionData.getRefinementData()[0].fofc1,
-                diffractionData.getRefinementData()[0].freer,
-                diffractionData.getRefinementData()[0].rfreeflag,
+        diffractionData.getCrystalReciprocalSpacesFc()[0].computeAtomicGradients(diffractionData.getRefinementData()[0].foFc1,
+                diffractionData.getRefinementData()[0].freeR,
+                diffractionData.getRefinementData()[0].rFreeFlag,
                 RefinementMode.COORDINATES);
 
         refinementData[0].setOrigin(0, 0, 0);
-        int extx = (int) diffractionData.getCrs_fc()[0].getXDim();
-        int exty = (int) diffractionData.getCrs_fc()[0].getYDim();
-        int extz = (int) diffractionData.getCrs_fc()[0].getZDim();
+        int extx = (int) diffractionData.getCrystalReciprocalSpacesFc()[0].getXDim();
+        int exty = (int) diffractionData.getCrystalReciprocalSpacesFc()[0].getYDim();
+        int extz = (int) diffractionData.getCrystalReciprocalSpacesFc()[0].getZDim();
         refinementData[0].setExtent(extx, exty, extz);
         refinementData[0].setNI(extx, exty, extz);
         refinementData[0].setData(new double[extx * exty * extz]);
@@ -215,7 +215,7 @@ public class RealSpaceData implements DataContainer {
                 for (int i = 0; i < extx; i++) {
                     int index1 = (i + extx * (j + exty * k));
                     int index2 = 2 * index1;
-                    refinementData[0].getData()[index1] = diffractionData.getCrs_fc()[0].getDensityGrid()[index2];
+                    refinementData[0].getData()[index1] = diffractionData.getCrystalReciprocalSpacesFc()[0].getDensityGrid()[index2];
                 }
             }
         }

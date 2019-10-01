@@ -39,6 +39,7 @@ package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -55,8 +56,6 @@ import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.potential.extended.ExtUtils.prop;
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The MultiResidue class allows switching between residues for uses such as
@@ -1055,22 +1054,12 @@ public class MultiResidue extends Residue {
      * number, the same ResidueType, and the same AA3/NA3.
      */
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        MultiResidue other = (MultiResidue) object;
-        if (consideredResidues.size() != other.getResidueCount()) {
-            return false;
-        }
-        if (getParent() == null || other.getParent() == null) {
-            return getResidueNumber() == other.getResidueNumber();
-        } else if (getParent() == other.getParent()) {
-            return getResidueNumber() == other.getResidueNumber();
-        }
-        return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MultiResidue multiResidue = (MultiResidue) o;
+        return getResidueCount() == multiResidue.getResidueCount() &&
+                Objects.equals(getParent(), multiResidue.getParent());
     }
 
     /**
@@ -1078,11 +1067,7 @@ public class MultiResidue extends Residue {
      */
     @Override
     public int hashCode() {
-        int hash = hash(SEED, getParent().hashCode());
-        hash = hash(hash, consideredResidues.size());
-        // Use of consideredResidues.size() MAY BE DANGEROUS if people start to muck
-        // with the considered residues list after construction.
-        return hash(hash, getResidueNumber());
+        return Objects.hash(getResidueCount(), getParent());
     }
 
     /**

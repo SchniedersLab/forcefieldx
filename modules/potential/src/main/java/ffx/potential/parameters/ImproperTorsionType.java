@@ -37,9 +37,9 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 import static java.lang.Integer.parseInt;
 
 import static org.apache.commons.math3.util.FastMath.cos;
@@ -103,12 +103,11 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
     /**
      * Returns true if the atoms can be assigned this improperTorsionType.
      *
-     * @param inputClasses The atom classes will be re-ordered if its member
-     *                     atoms match this ImproperTorsionType. The trigonal atom will not change
-     *                     position.
+     * @param inputClasses          The atom classes will be re-ordered if its member
+     *                              atoms match this ImproperTorsionType. The trigonal atom will not change
+     *                              position.
      * @param allowInitialWildCards Allow wildcard match to first two classes.
-     * @param allowFinalWildCard Allow wildcard match for final class.
-     *
+     * @param allowFinalWildCard    Allow wildcard match for final class.
      * @return True if this torsionType is assignable to the atom array.
      */
     public boolean assigned(int[] inputClasses, boolean allowInitialWildCards, boolean allowFinalWildCard) {
@@ -336,9 +335,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      */
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + Arrays.hashCode(atomClasses);
-        return hash;
+        return Objects.hash(atomClasses);
     }
 
 }

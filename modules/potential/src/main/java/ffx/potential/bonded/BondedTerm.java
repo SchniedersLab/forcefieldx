@@ -52,8 +52,6 @@ import org.jogamp.vecmath.Color3f;
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.potential.bonded.Atom.Resolution;
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The BondedTerm class is extended by all Valence Geometry classes (bond,
@@ -599,8 +597,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * {@inheritDoc}
      */
     @Override
-    public final int hashCode() {
-        return hash(SEED, getID().hashCode());
+    public int hashCode() {
+        return Objects.hash(getID());
     }
 
     /**

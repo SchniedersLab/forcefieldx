@@ -52,8 +52,6 @@ import org.jogamp.java3d.BranchGroup;
  */
 public class Joint extends MSNode {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * First group forming this Joint
      */

@@ -77,10 +77,6 @@ import java.util.logging.Logger;
  */
 public class LogPanel extends JPanel implements ActionListener {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger(LogPanel.class.getName());
     private Vector<Thread> tinkerThreads;
     // A Hashtable of JTextAreas labeled by absolute path to the Log File each

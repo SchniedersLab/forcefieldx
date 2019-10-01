@@ -203,11 +203,11 @@ public class XRayMinimizeTest {
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionList,
                 atomArray, parallelTeam, parallelTeam, false);
         crs.computeDensity(refinementData.fc);
-        refinementData.setCrystalReciprocalSpace_fc(crs);
+        refinementData.setCrystalReciprocalSpaceFc(crs);
         crs = new CrystalReciprocalSpace(reflectionList,
                 atomArray, parallelTeam, parallelTeam, true);
         crs.computeDensity(refinementData.fs);
-        refinementData.setCrystalReciprocalSpace_fs(crs);
+        refinementData.setCrystalReciprocalSpaceFs(crs);
 
         ScaleBulkMinimize scaleBulkMinimize = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
         scaleBulkMinimize.minimize(6, 1.0e-4);
@@ -253,7 +253,7 @@ public class XRayMinimizeTest {
     public void testScaleBulk() {
         ScaleBulkMinimize scaleBulkMinimize
                 = new ScaleBulkMinimize(reflectionList, refinementData,
-                refinementData.crs_fs, parallelTeam);
+                refinementData.crystalReciprocalSpaceFs, parallelTeam);
         ScaleBulkEnergy scaleBulkEnergy = scaleBulkMinimize.getScaleBulkEnergy();
         int n = scaleBulkMinimize.getNumberOfVariables();
         double[] x = new double[n];

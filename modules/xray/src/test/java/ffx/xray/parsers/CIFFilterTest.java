@@ -79,12 +79,12 @@ public class CIFFilterTest {
         HKL hkl = reflectionList.getHKL(58, 0, 13);
         assertEquals("58 0 13 F", 99.7, refinementData.getF(hkl.index()), 0.01);
         assertEquals("58 0 13 sigF", 69.7, refinementData.getSigF(hkl.index()), 0.01);
-        assertEquals("58 0 13 freeR value", 1, refinementData.freer[hkl.index()]);
+        assertEquals("58 0 13 freeR value", 1, refinementData.freeR[hkl.index()]);
 
         hkl = reflectionList.getHKL(28, 20, 5);
         assertEquals("28 20 5 F", 428.1, refinementData.getF(hkl.index()), 0.01);
         assertEquals("28 20 5 sigF", 10.1, refinementData.getSigF(hkl.index()), 0.01);
-        assertEquals("28 20 5 freeR value", 0, refinementData.freer[hkl.index()]);
+        assertEquals("28 20 5 freeR value", 0, refinementData.freeR[hkl.index()]);
     }
 
     @Test
@@ -111,11 +111,11 @@ public class CIFFilterTest {
         HKL hkl = reflectionList.getHKL(-21, -6, 7);
         assertEquals("-21 -6 7 F", 18.6, refinementData.getF(hkl.index()), 0.01);
         assertEquals("-21 -6 7 sigF", 3.6, refinementData.getSigF(hkl.index()), 0.01);
-        assertEquals("-21 -6 7 freeR value", 0, refinementData.freer[hkl.index()]);
+        assertEquals("-21 -6 7 freeR value", 0, refinementData.freeR[hkl.index()]);
 
         hkl = reflectionList.getHKL(-21, -6, 8);
         assertEquals("-21 -6 7 F", 20.2, refinementData.getF(hkl.index()), 0.01);
         assertEquals("-21 -6 7 sigF", 5.0, refinementData.getSigF(hkl.index()), 0.01);
-        assertEquals("-21 -6 7 freeR value", 1, refinementData.freer[hkl.index()]);
+        assertEquals("-21 -6 7 freeR value", 1, refinementData.freeR[hkl.index()]);
     }
 }

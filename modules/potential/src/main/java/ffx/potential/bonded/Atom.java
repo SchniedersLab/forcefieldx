@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -71,8 +72,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -611,6 +610,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * Count the number of bonded hydrogen.
+     *
      * @return the count.
      */
     public int getNumberOfBondedHydrogen() {
@@ -618,11 +618,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
         ArrayList<Bond> bonds = getBonds();
         int n = 0;
         for (Bond b1 : bonds) {
-                Atom atom = b1.get1_2(this);
-                if (atom.getAtomType().atomicNumber == 1) {
-                    n += 1;
-                }
+            Atom atom = b1.get1_2(this);
+            if (atom.getAtomType().atomicNumber == 1) {
+                n += 1;
             }
+        }
         return n;
     }
 
@@ -738,24 +738,39 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * This definition allows residue name to differ between two equal atoms.
      */
     @Override
-    public final boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object == null || !(object instanceof Atom)) {
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Atom atom = (Atom) o;
+
+        // TDOO: Check initialization of the segID field.
+        if ((segID == null || atom.segID == null)) {
             return false;
         }
-        Atom other = (Atom) object;
 
-        return (other.resName != null && other.resName.equals(resName)
-                && other.resSeq == resSeq
-                && other.getName() != null && other.getName().equals(getName())
-                && other.segID != null && other.segID.equals(segID));
+        return Objects.equals(resName, atom.resName) &&
+                resSeq == atom.resSeq &&
+                Objects.equals(getName(), atom.getName()) &&
+                Objects.equals(segID, atom.segID);
+
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(resName, resSeq, getName(), segID);
+        // return Objects.hash(resName, resSeq, getName());
+
+//        int hash = hash(SEED, resName);
+//        hash = hash(hash, resSeq);
+//        hash = hash(hash, getName());
+//        return hash(hash, segID);
+    }
+
 
     /**
      * <p>
@@ -1184,7 +1199,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (resName != null) {
             return resName;
         }
-        Residue r = (Residue) getMSNode(Residue.class);
+        Residue r = getMSNode(Residue.class);
         if (r != null) {
             return r.getName();
         }
@@ -1403,18 +1418,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public final double getRedZ() {
         return redXYZ == null ? xyz[2] : redXYZ[2];
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final int hashCode() {
-        //return hash(SEED, xyzIndex);
-        int hash = hash(SEED, resName);
-        hash = hash(hash, resSeq);
-        hash = hash(hash, getName());
-        return hash(hash, segID);
     }
 
     /**

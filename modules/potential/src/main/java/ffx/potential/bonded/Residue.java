@@ -40,6 +40,7 @@ package ffx.potential.bonded;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
@@ -56,8 +57,6 @@ import org.jogamp.vecmath.Vector3d;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
@@ -1044,47 +1043,24 @@ public class Residue extends MSGroup {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * Overidden equals method that return true if object is not equals to this,
-     * is of the same class, has the same parent Polymer, the same sequence
-     * number, the same ResidueType, and the same AA3/NA3.
      */
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        Residue other = (Residue) object;
-        ResidueType otherType = other.getResidueType();
-        if (residueType != otherType) {
-            return false;
-        }
-        switch (residueType) {
-            case AA:
-                if (aa != other.aa) {
-                    return false;
-                }
-                break;
-            case NA:
-                if (na != other.na) {
-                    return false;
-                }
-                break;
-            default:
-                break;
-        }
-        if (!getName().equals(other.getName())) {
-            return false;
-        }
-        if (getParent() == null || other.getParent() == null) {
-            return (getResidueNumber() == other.getResidueNumber());
-        } else if (getParent() == other.getParent()) {
-            return (getResidueNumber() == other.getResidueNumber());
-        } else {
-            return false;
-        }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Residue residue = (Residue) o;
+        return Objects.equals(segID, residue.segID) &&
+                Objects.equals(getResidueNumber(), residue.getResidueNumber()) &&
+                residueType == residue.residueType &&
+                Objects.equals(getName(), residue.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(segID, getResidueNumber(), residueType, getName());
     }
 
     /**
@@ -1104,22 +1080,6 @@ public class Residue extends MSGroup {
         }
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        int hash = hash(SEED, segID);
-        hash = hash(hash, getResidueNumber());
-        hash = hash(hash, residueType);
-        if (residueType == ResidueType.AA) {
-            hash = hash(hash, aa);
-        } else if (residueType == ResidueType.NA) {
-            hash = hash(hash, na);
-        }
-        return hash(hash, getName());
     }
 
     /**

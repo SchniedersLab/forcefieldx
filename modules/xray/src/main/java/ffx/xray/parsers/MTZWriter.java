@@ -218,7 +218,7 @@ public class MTZWriter {
                 colMinMax[i][1] = Float.NEGATIVE_INFINITY;
             }
             ReflectionSpline sigmaASpline = new ReflectionSpline(reflectionList,
-                    refinementData.sigmaa.length);
+                    refinementData.sigmaA.length);
             int col = 0;
 
             colname.add("H");
@@ -391,14 +391,14 @@ public class MTZWriter {
                     col++;
 
                     // FOM/phase (2)
-                    fMapData = (float) refinementData.fomphi[i][0];
+                    fMapData = (float) refinementData.fomPhi[i][0];
                     if (!isNaN(fMapData)) {
                         colMinMax[col][0] = Math.min(fMapData, colMinMax[col][0]);
                         colMinMax[col][1] = Math.max(fMapData, colMinMax[col][1]);
                     }
                     byteBuffer.order(byteOrder).putFloat(fMapData);
                     col++;
-                    fMapData = (float) toDegrees(refinementData.fomphi[i][1]);
+                    fMapData = (float) toDegrees(refinementData.fomPhi[i][1]);
                     colMinMax[col][0] = min(fMapData, colMinMax[col][0]);
                     colMinMax[col][1] = max(fMapData, colMinMax[col][1]);
                     byteBuffer.order(byteOrder).putFloat(fMapData);
@@ -406,8 +406,8 @@ public class MTZWriter {
 
                     // Spline setup.
                     spline.f(ss, refinementData.spline);
-                    double sa = sigmaASpline.f(ss, refinementData.sigmaa);
-                    double wa = sigmaASpline.f(ss, refinementData.sigmaw);
+                    double sa = sigmaASpline.f(ss, refinementData.sigmaA);
+                    double wa = sigmaASpline.f(ss, refinementData.sigmaW);
 
                     // sigmaA/w (2)
                     fMapData = (float) sa;

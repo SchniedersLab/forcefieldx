@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
@@ -51,8 +52,6 @@ import org.jogamp.vecmath.Color3f;
 import ffx.numerics.math.VectorMath;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The Polymer class encapsulates a peptide or nucleotide chain.
@@ -208,14 +207,19 @@ public class Polymer extends MSGroup {
      * Overidden equals method.
      */
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        Polymer other = (Polymer) object;
-        return getName().equals(other.getName());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Polymer polymer = (Polymer) o;
+        return polymerNumber == polymer.polymerNumber && Objects.equals(getName(), polymer.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(polymerNumber, getName());
     }
 
     /**
@@ -505,14 +509,6 @@ public class Polymer extends MSGroup {
      */
     public void setLink(boolean link) {
         this.link = link;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return hash(SEED, polymerNumber);
     }
 
     /**

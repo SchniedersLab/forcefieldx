@@ -63,12 +63,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ffx.utilities.Keyword;
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The KeywordComponent class is used to represent one TINKER keyword.
@@ -473,7 +472,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      */
     @Override
     public int hashCode() {
-        return hash(SEED, keyword.hashCode());
+        return Objects.hash(keyword.hashCode());
     }
 
     private void initSwingComponents() {

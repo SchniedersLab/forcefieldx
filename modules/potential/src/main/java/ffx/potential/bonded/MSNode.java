@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
@@ -52,9 +53,6 @@ import org.jogamp.java3d.J3DGraphics2D;
 import org.jogamp.java3d.Material;
 import org.jogamp.java3d.Node;
 import org.jogamp.vecmath.Color3f;
-
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The MSNode class forms the basic unit that all data classes extend.
@@ -65,7 +63,6 @@ import static ffx.utilities.HashCodeUtil.hash;
 @SuppressWarnings("CloneableImplementsClone")
 public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
-    private static final long serialVersionUID = 1L;
     /**
      * The multiscale level of this node.
      */
@@ -593,20 +590,11 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * non-reference equality is desired.
      */
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        MSNode other = (MSNode) object;
-        if (name == null && other.getName() == null) {
-            return true;
-        } else if (name != null && other.getName() != null) {
-            return name.equals(other.getName());
-        } else {
-            return false;
-        }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MSNode msNode = (MSNode) o;
+        return Objects.equals(name, msNode.getName());
     }
 
     /**
@@ -614,11 +602,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     @Override
     public int hashCode() {
-        if (name != null) {
-            return hash(SEED, name.hashCode());
-        } else {
-            return SEED;
-        }
+        return Objects.hash(name);
     }
 
     /**

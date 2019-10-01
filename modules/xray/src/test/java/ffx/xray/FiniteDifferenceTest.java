@@ -180,11 +180,11 @@ public class FiniteDifferenceTest {
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionList,
                 atomArray, parallelTeam, parallelTeam, false, false);
         crs.computeDensity(refinementData.fc);
-        refinementData.setCrystalReciprocalSpace_fc(crs);
+        refinementData.setCrystalReciprocalSpaceFc(crs);
         crs = new CrystalReciprocalSpace(reflectionList,
                 atomArray, parallelTeam, parallelTeam, true, false, solventModel);
         crs.computeDensity(refinementData.fs);
-        refinementData.setCrystalReciprocalSpace_fs(crs);
+        refinementData.setCrystalReciprocalSpaceFs(crs);
 
         ScaleBulkMinimize scaleBulkMinimize
                 = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
@@ -214,8 +214,8 @@ public class FiniteDifferenceTest {
         double delta = 1e-4;
 
         // compute gradients
-        refinementData.crs_fc.computeAtomicGradients(refinementData.dfc,
-                refinementData.freer, refinementData.rfreeflag,
+        refinementData.crystalReciprocalSpaceFc.computeAtomicGradients(refinementData.dFc,
+                refinementData.freeR, refinementData.rFreeFlag,
                 RefinementMode.COORDINATES_AND_BFACTORS);
 
         double mean = 0.0;
@@ -232,41 +232,41 @@ public class FiniteDifferenceTest {
             atom.getXYZGradient(gxyz);
             double bg = atom.getTempFactorGradient();
 
-            refinementData.crs_fc.deltaX(index, delta);
-            refinementData.crs_fc.computeDensity(refinementData.fc);
+            refinementData.crystalReciprocalSpaceFc.deltaX(index, delta);
+            refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
             double llk1 = sigmaAMinimize.calculateLikelihood();
-            refinementData.crs_fc.deltaX(index, -delta);
-            refinementData.crs_fc.computeDensity(refinementData.fc);
+            refinementData.crystalReciprocalSpaceFc.deltaX(index, -delta);
+            refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
             double llk2 = sigmaAMinimize.calculateLikelihood();
             double fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format(" X A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[0], fd, gxyz[0] - fd));
-            refinementData.crs_fc.deltaX(index, 0.0);
+            refinementData.crystalReciprocalSpaceFc.deltaX(index, 0.0);
 
             nmean++;
             mean += (gxyz[0] / fd - mean) / nmean;
 
-            refinementData.crs_fc.deltaY(index, delta);
-            refinementData.crs_fc.computeDensity(refinementData.fc);
+            refinementData.crystalReciprocalSpaceFc.deltaY(index, delta);
+            refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
             llk1 = sigmaAMinimize.calculateLikelihood();
-            refinementData.crs_fc.deltaY(index, -delta);
-            refinementData.crs_fc.computeDensity(refinementData.fc);
+            refinementData.crystalReciprocalSpaceFc.deltaY(index, -delta);
+            refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
             llk2 = sigmaAMinimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format(" Y A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[1], fd, gxyz[1] - fd));
-            refinementData.crs_fc.deltaY(index, 0.0);
+            refinementData.crystalReciprocalSpaceFc.deltaY(index, 0.0);
 
             nmean++;
             mean += (gxyz[1] / fd - mean) / nmean;
 
-            refinementData.crs_fc.deltaZ(index, delta);
-            refinementData.crs_fc.computeDensity(refinementData.fc);
+            refinementData.crystalReciprocalSpaceFc.deltaZ(index, delta);
+            refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
             llk1 = sigmaAMinimize.calculateLikelihood();
-            refinementData.crs_fc.deltaZ(index, -delta);
-            refinementData.crs_fc.computeDensity(refinementData.fc);
+            refinementData.crystalReciprocalSpaceFc.deltaZ(index, -delta);
+            refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
             llk2 = sigmaAMinimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format(" Z A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[2], fd, gxyz[2] - fd));
-            refinementData.crs_fc.deltaZ(index, 0.0);
+            refinementData.crystalReciprocalSpaceFc.deltaZ(index, 0.0);
 
             nmean++;
             mean += (gxyz[2] / fd - mean) / nmean;
@@ -274,10 +274,10 @@ public class FiniteDifferenceTest {
             if (atom.getAnisou(null) == null) {
                 double b = atom.getTempFactor();
                 atom.setTempFactor(b + delta);
-                refinementData.crs_fc.computeDensity(refinementData.fc);
+                refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
                 llk1 = sigmaAMinimize.calculateLikelihood();
                 atom.setTempFactor(b - delta);
-                refinementData.crs_fc.computeDensity(refinementData.fc);
+                refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
                 llk2 = sigmaAMinimize.calculateLikelihood();
                 fd = (llk1 - llk2) / (2.0 * delta);
                 System.out.print(String.format(" B A: %16.8f FD: %16.8f Error: %16.8f\n",
@@ -292,11 +292,11 @@ public class FiniteDifferenceTest {
                     double tmpu = anisou[j];
                     anisou[j] = tmpu + b2u(delta);
                     atom.setAnisou(anisou);
-                    refinementData.crs_fc.computeDensity(refinementData.fc);
+                    refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
                     llk1 = sigmaAMinimize.calculateLikelihood();
                     anisou[j] = tmpu - b2u(delta);
                     atom.setAnisou(anisou);
-                    refinementData.crs_fc.computeDensity(refinementData.fc);
+                    refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
                     llk2 = sigmaAMinimize.calculateLikelihood();
                     fd = (llk1 - llk2) / (2.0 * b2u(delta));
                     atom.getAnisouGradient(anisouG);

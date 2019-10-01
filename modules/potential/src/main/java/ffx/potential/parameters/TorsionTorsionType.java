@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
@@ -649,8 +650,6 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      */
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 47 * hash + Arrays.hashCode(atomClasses);
-        return hash;
+        return Objects.hash(atomClasses);
     }
 }

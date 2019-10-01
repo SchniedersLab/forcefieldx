@@ -38,6 +38,7 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * The AtomType class represents one molecular mechanics atom type.
@@ -165,8 +166,6 @@ public final class AtomType extends BaseType implements Comparator<String> {
      */
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 71 * hash + this.type;
-        return hash;
+        return Objects.hash(type);
     }
 }
