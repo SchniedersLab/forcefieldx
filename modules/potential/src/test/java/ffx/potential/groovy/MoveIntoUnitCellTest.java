@@ -46,6 +46,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import ffx.potential.groovy.MoveIntoUnitCell;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;

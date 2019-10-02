@@ -71,6 +71,7 @@ import ffx.algorithms.thermodynamics.AbstractOSRW;
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.algorithms.groovy.Thermodynamics;
 
 import groovy.lang.Binding;
 
@@ -104,7 +105,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                         new String[]{"-C", "10", "--s1", "1", "--f1", "9", "-d", "1.0", "-n", "20000", "-w", "5", "--bM", "0.25", "--tp", "2.0"},
                         new String[]{"randomseed", "42"}, new String[]{}
                 },
-                {
+                /*{
                         "Acetamide Implicit Solvation Gradients: L = 0.9",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
                         ThermoTestMode.GRAD, false, 0, 0, intRange(1, 3),
@@ -120,8 +121,8 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-10.490557931892937, -1.382090643790419, -4.493259894567457}},
                                 new double[2][3]},
                         new String[]{"-l", "0.9", "--s1", "1", "--f1", "9", "--s1", "1", "--f1", "9"}, new String[]{}, new String[]{}
-                },
-                {
+                },*/
+                /*{
                         "Acetamide Implicit Solvation Gradients: L = 1.0",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
                         ThermoTestMode.GRAD, false, 0, 0, intRange(1, 3),
@@ -136,7 +137,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                         {-10.494445226130521, -1.3588903479284937, -4.49831592705943}},
                                 new double[2][3]},
                         new String[]{"-l", "1.0", "--s1", "1", "--f1", "9", "--s1", "1", "--f1", "9"}, new String[]{}, new String[]{}
-                },
+                },*/
                 {
                         // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the ions, and some water.
                         "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 0.0",
