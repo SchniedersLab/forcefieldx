@@ -40,7 +40,6 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
@@ -628,21 +627,11 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof TorsionTorsionType)) {
-            return false;
-        }
-        TorsionTorsionType torsionTorsionType = (TorsionTorsionType) other;
-        int[] c = torsionTorsionType.atomClasses;
-        for (int i = 0; i < c.length; i++) {
-            if (c[i] != atomClasses[i]) {
-                return false;
-            }
-        }
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TorsionTorsionType torsionTorsionType = (TorsionTorsionType) o;
+        return Arrays.equals(atomClasses, torsionTorsionType.atomClasses);
     }
 
     /**
@@ -650,6 +639,6 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      */
     @Override
     public int hashCode() {
-        return Objects.hash(atomClasses);
+        return Arrays.hashCode(atomClasses);
     }
 }

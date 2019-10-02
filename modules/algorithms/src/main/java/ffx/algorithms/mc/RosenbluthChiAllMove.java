@@ -49,6 +49,7 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
@@ -154,6 +155,7 @@ public class RosenbluthChiAllMove implements MCMove {
     private boolean accepted = false;
     private static int numAccepted = 0;
     private final MODE mode;
+    private final boolean torsionSampling;
     private final double CATASTROPHE_THRESHOLD = -10000;
     /**
      * Original energy.
@@ -198,12 +200,15 @@ public class RosenbluthChiAllMove implements MCMove {
     RosenbluthChiAllMove(MolecularAssembly molecularAssembly, Residue target,
                          int testSetSize, ForceFieldEnergy forceFieldEnergy, double temperature,
                          boolean writeSnapshots, int moveNumber, boolean verbose) {
-        if (System.getProperty("cbmc-type") != null) {
-            mode = MODE.valueOf(System.getProperty("cbmc-type"));
+
+        CompositeConfiguration properties = molecularAssembly.getProperties();
+        if (properties.containsKey("cbmc-type")) {
+            mode = MODE.valueOf(properties.getString("cbmc-type"));
         } else {
             logger.severe("CBMC: must specify a bias type.");
             mode = MODE.CHEAP;
         }
+
         this.startTime = System.nanoTime();
         this.molecularAssembly = molecularAssembly;
         this.target = target;
@@ -214,19 +219,20 @@ public class RosenbluthChiAllMove implements MCMove {
         this.verbose = verbose;
         origState = target.storeState();
 
-        randInts = System.getProperty("cbmc-randInts") != null;
-        noSnaps = System.getProperty("cbmc-noSnaps") != null;
-        printTestSets = System.getProperty("cbmc-printTestSets") != null;
-        logTimings = System.getProperty("cbmc-logTimings") != null;
-        verboseEnergies = System.getProperty("cbmc-verboseEnergies") != null;
+        randInts = properties.getBoolean("cbmc-randInts", false);
+        noSnaps = properties.getBoolean("cbmc-noSnaps", false);
+        printTestSets = properties.getBoolean("cbmc-printTestSets", false);
+        logTimings = properties.getBoolean("cbmc-logTimings", false);
+        verboseEnergies = properties.getBoolean("cbmc-verboseEnergies", false);
 
         if (writeSnapshots) {
             snapshotWriter = new SnapshotWriter(molecularAssembly, false);
         }
-        doChi[0] = System.getProperty("cbmc-doChi0") != null;
-        doChi[1] = System.getProperty("cbmc-doChi1") != null;
-        doChi[2] = System.getProperty("cbmc-doChi2") != null;
-        doChi[3] = System.getProperty("cbmc-doChi3") != null;
+
+        doChi[0] = properties.getBoolean("cbmc-doChi0", false);
+        doChi[1] = properties.getBoolean("cbmc-doChi1", false);
+        doChi[2] = properties.getBoolean("cbmc-doChi2", false);
+        doChi[3] = properties.getBoolean("cbmc-doChi3", false);
         if (!doChi[0] && !doChi[1] && !doChi[2] && !doChi[3]) {
             doChi[0] = true;
             doChi[1] = true;
@@ -236,7 +242,7 @@ public class RosenbluthChiAllMove implements MCMove {
         updateAll();
         origEnergy = totalEnergy();
 
-        boolean torsionSampling = System.getProperty("cbmc-torsionSampler") != null;
+        torsionSampling = properties.getBoolean("cbmc-torsionSampler", false);
         if (torsionSampling) {
             logger.info(" Torsion Sampler engaged!");
             HashMap<Integer, BackBondedList> map = createBackBondedMap(AminoAcid3.valueOf(target.getName()));
@@ -1103,9 +1109,11 @@ public class RosenbluthChiAllMove implements MCMove {
             }
         }
 
-        if (System.getProperty("cbmc-torsionSampler") != null) {
+
+
+        if (torsionSampling) {
             try {
-                File output = new File(System.getProperty("cbmc-torsionSampler"));
+                File output = new File("torsionSampler.log");
                 BufferedWriter bw = new BufferedWriter(new FileWriter(output));
                 bw.write(sb.toString());
                 bw.close();

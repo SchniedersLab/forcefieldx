@@ -3094,6 +3094,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 // Define the frame definition.
                 int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
                 switch (multipoleType.frameDefinition) {
+                    case NONE:
+                        axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+                        break;
                     case ZONLY:
                         axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
                         break;
@@ -3106,7 +3109,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     case ZTHENBISECTOR:
                         axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
                         break;
-                    case TRISECTOR:
+                    case THREEFOLD:
                         axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
                         break;
                     default:
@@ -3769,6 +3772,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 // Define the frame definition.
                 int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
                 switch (multipoleType.frameDefinition) {
+                    case NONE:
+                        axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+                        break;
                     case ZONLY:
                         axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
                         break;
@@ -3781,7 +3787,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     case ZTHENBISECTOR:
                         axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
                         break;
-                    case TRISECTOR:
+                    case THREEFOLD:
                         axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
                         break;
                     default:

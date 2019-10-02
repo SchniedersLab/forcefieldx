@@ -208,87 +208,80 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space constructor, assumes this is not a bulk solvent
      * mask and is not a neutron data set
      *
-     * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure
-     *                       factors
-     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for
-     *                       structure factor computation
+     * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure factors
+     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
      * @param fftTeam        {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam   {@link edu.rit.pj.ParallelTeam} for parallelization
      */
     public CrystalReciprocalSpace(ReflectionList reflectionList,
                                   Atom[] atoms, ParallelTeam fftTeam, ParallelTeam parallelTeam) {
         this(reflectionList, atoms, fftTeam, parallelTeam, false, false,
-                SolventModel.POLYNOMIAL);
+                SolventModel.POLYNOMIAL, GridMethod.SLICE);
     }
 
     /**
      * Crystal Reciprocal Space constructor, assumes this is not a neutron data
      * set and implements a polynomial bulk solvent mask if needed
      *
-     * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure
-     *                       factors
-     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for
-     *                       structure factor computation
+     * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure factors
+     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
      * @param fftTeam        {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam   {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventMask    true if this is a bulk solvent mask
      */
-    public CrystalReciprocalSpace(ReflectionList reflectionList,
-                                  Atom[] atoms,
+    public CrystalReciprocalSpace(ReflectionList reflectionList, Atom[] atoms,
                                   ParallelTeam fftTeam, ParallelTeam parallelTeam,
                                   boolean solventMask) {
         this(reflectionList, atoms, fftTeam, parallelTeam, solventMask, false,
-                SolventModel.POLYNOMIAL);
+                SolventModel.POLYNOMIAL, GridMethod.SLICE);
     }
 
     /**
      * Crystal Reciprocal Space constructor, assumes a polynomial bulk solvent
      * mask if needed
      *
-     * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure
-     *                       factors
-     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for
-     *                       structure factor computation
+     * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure factors
+     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
      * @param fftTeam        {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam   {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventMask    true if this is a bulk solvent mask
      * @param neutron        true if this is a neutron structure
      */
     public CrystalReciprocalSpace(ReflectionList reflectionList,
-                                  Atom[] atoms,
-                                  ParallelTeam fftTeam, ParallelTeam parallelTeam,
+                                  Atom[] atoms, ParallelTeam fftTeam, ParallelTeam parallelTeam,
                                   boolean solventMask, boolean neutron) {
         this(reflectionList, atoms, fftTeam, parallelTeam, solventMask, neutron,
-                SolventModel.POLYNOMIAL);
+                SolventModel.POLYNOMIAL, GridMethod.SLICE);
     }
 
     /**
      * Crystal Reciprocal Space constructor, all parameters provided
      *
-     * @param reflectionlist the {@link ffx.crystal.ReflectionList} to fill with structure
-     *                       factors
-     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for
-     *                       structure factor computation
+     * @param reflectionlist the {@link ffx.crystal.ReflectionList} to fill with structure factors
+     * @param atoms          array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
      * @param fftTeam        {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam   {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventMask    true if this is a bulk solvent mask
      * @param neutron        true if this is a neutron structure
      * @param solventModel   bulk solvent model type
+     * @param gridMethod     parallel method for putting density onto the FFT grid.
      * @see CrystalReciprocalSpace.SolventModel
      */
-    public CrystalReciprocalSpace(ReflectionList reflectionlist,
-                                  Atom[] atoms,
+    public CrystalReciprocalSpace(ReflectionList reflectionlist, Atom[] atoms,
                                   ParallelTeam fftTeam, ParallelTeam parallelTeam,
-                                  boolean solventMask, boolean neutron, SolventModel solventModel) {
+                                  boolean solventMask, boolean neutron,
+                                  SolventModel solventModel, GridMethod gridMethod) {
         this.reflectionList = reflectionlist;
-        this.crystal = reflectionlist.crystal;
         this.atoms = atoms;
-        this.nAtoms = atoms.length;
         this.parallelTeam = parallelTeam;
         this.solvent = solventMask;
-        this.solventModel = solventModel;
         this.neutron = neutron;
-        this.nSymm = 1;
+        this.solventModel = solventModel;
+        this.gridMethod = gridMethod;
+
+        nAtoms = atoms.length;
+        crystal = reflectionlist.crystal;
+        nSymm = 1;
         threadCount = parallelTeam.getThreadCount();
 
         // Necssary for the bulk-solvent expansion!
@@ -465,8 +458,7 @@ public class CrystalReciprocalSpace {
             StringBuilder sb = new StringBuilder();
             if (solvent) {
                 sb.append("  Bulk Solvent Grid\n");
-                sb.append(format("  Bulk solvent model type:           %8s\n",
-                        solventModel.toString()));
+                sb.append(format("  Bulk solvent model type:           %8s\n", solventModel.toString()));
             } else {
                 sb.append("  Atomic Scattering Grid\n");
             }
@@ -476,15 +468,6 @@ public class CrystalReciprocalSpace {
             sb.append(format("  Grid dimensions:                (%3d,%3d,%3d)\n", fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
-
-        String gridString = System.getProperty("grid-method", "SLICE").toUpperCase();
-        GridMethod tempGrid;
-        try {
-            tempGrid = GridMethod.valueOf(gridString);
-        } catch (Exception e) {
-            tempGrid = GridMethod.SLICE;
-        }
-        gridMethod = tempGrid;
 
         if (solvent) {
             int minWork = nSymm;

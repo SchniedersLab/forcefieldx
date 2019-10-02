@@ -44,6 +44,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.String.format;
+
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.optimize.RotamerOptimization;
@@ -119,12 +123,12 @@ public class MultiDynamicsOptions {
         boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
 
         if (autoDist) {
-            String openName = String.format("%s_%d", toOpen, rank + 1);
+            String openName = format("%s_%d", toOpen, rank + 1);
             File testFile = new File(openName);
             if (testFile.exists()) {
                 toOpen = openName;
             } else {
-                logger.warning(String.format(" File %s does not exist; using default %s", openName, toOpen));
+                logger.warning(format(" File %s does not exist; using default %s", openName, toOpen));
             }
         }
         MolecularAssembly assembly = alchemy.openFile(afuncts, topOptions, threadsPer, toOpen, topNum);
@@ -254,10 +258,10 @@ public class MultiDynamicsOptions {
                     resNum = Integer.parseInt(m.group(1));
                 }
             } else {
-                logger.warning(String.format(" Could not parse %s as a valid residue!", ts));
+                logger.warning(format(" Could not parse %s as a valid residue!", ts));
                 continue;
             }
-            logger.info(String.format(" Looking for chain %c residue %d", chainID, resNum));
+            logger.info(format(" Looking for chain %c residue %d", chainID, resNum));
 
             for (Polymer p : mola.getChains()) {
                 if (p.getChainID() == chainID) {
@@ -279,17 +283,23 @@ public class MultiDynamicsOptions {
         ropt.setRotamerLibrary(rLib);
 
         ropt.setThreeBodyEnergy(false);
-        if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
-            logger.info(String.format(" Setting ensemble to default of number of walkers %d", worldSize));
+
+        CompositeConfiguration properties = mola.getProperties();
+        if (!properties.containsKey("ro-ensembleNumber") && !properties.containsKey("ro-ensembleEnergy")) {
+            logger.info(format(" Setting ensemble to default of number of walkers %d", worldSize));
             ropt.setEnsemble(worldSize);
         }
+
         ropt.setPrintFiles(false);
         ropt.setResiduesIgnoreNull(residueList);
 
         RotamerLibrary.measureRotamers(residueList, false);
 
-        String oldLazyMat = System.getProperty("ro-lazyMatrix");
-        System.setProperty("ro-lazyMatrix", "true");
+        boolean lazyMat = properties.getBoolean("ro-lazyMatrix", false);
+        if (!lazyMat) {
+            properties.clearProperty("ro-lazyMatrix");
+            properties.addProperty("ro-lazyMatrix", true);
+        }
 
         ropt.optimize(RotamerOptimization.Algorithm.ALL);
         ropt.setCoordinatesToEnsemble(rank);
@@ -305,10 +315,8 @@ public class MultiDynamicsOptions {
             linter.setLambda(initLam);
         }
 
-        if (oldLazyMat != null) {
-            System.setProperty("ro-lazyMatrix", oldLazyMat);
-        } else {
-            System.clearProperty("ro-lazyMatrix");
+        if (!lazyMat) {
+            properties.clearProperty("ro-lazyMatrix");
         }
     }
 }

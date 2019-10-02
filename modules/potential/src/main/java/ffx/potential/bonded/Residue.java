@@ -1256,7 +1256,6 @@ public class Residue extends MSGroup {
     private static Point2d point2d = new Point2d();
 
     static {
-
         String origAtEndStr = System.getProperty("ro-origAtEnd");
         if (origAtEndStr != null) {
             origAtEnd = Boolean.parseBoolean(origAtEndStr);

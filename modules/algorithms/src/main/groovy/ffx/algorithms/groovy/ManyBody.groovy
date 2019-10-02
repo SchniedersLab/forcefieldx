@@ -83,13 +83,14 @@ class ManyBody extends AlgorithmsScript {
     ManyBody run() {
 
         if (!init()) {
-            return this;
+            return this
         }
 
         String priorGKwarn = System.getProperty("gk-suppressWarnings");
         if (priorGKwarn == null || priorGKwarn.isEmpty()) {
             System.setProperty("gk-suppressWarnings", "true");
         }
+
         String modelFileName;
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0));

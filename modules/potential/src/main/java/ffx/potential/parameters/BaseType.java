@@ -55,7 +55,7 @@ public abstract class BaseType {
     /**
      * The ForceFieldType of this term.
      */
-    protected ForceFieldType forceFieldType;
+    ForceFieldType forceFieldType;
     /**
      * The look-up key for this term, which is usually a concatenation of atom classes or atom types.
      */

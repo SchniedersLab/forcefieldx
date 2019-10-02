@@ -51,7 +51,9 @@ import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.numerics.switching.PowerSwitch;
 import ffx.numerics.switching.SquaredTrigSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
+import ffx.potential.DualTopologyEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
 
 import picocli.CommandLine.Option;
@@ -349,7 +351,7 @@ public class TopologyOptions {
                 break;
             case 2:
                 sb.append("dual topology ");
-                ffx.potential.DualTopologyEnergy dte = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
                 if (numParallel == 2) {
                     dte.setParallel(true);
                 }
@@ -357,9 +359,9 @@ public class TopologyOptions {
                 break;
             case 4:
                 sb.append("quad topology ");
-                ffx.potential.DualTopologyEnergy dta = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
-                ffx.potential.DualTopologyEnergy dtb = new ffx.potential.DualTopologyEnergy(topologies[3], topologies[2], sf);
-                ffx.potential.QuadTopologyEnergy qte = new ffx.potential.QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
+                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
+                QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
                 if (numParallel >= 2) {
                     qte.setParallel(true);
                     if (numParallel == 4) {

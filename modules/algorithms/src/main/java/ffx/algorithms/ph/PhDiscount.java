@@ -147,6 +147,7 @@ public class PhDiscount implements MonteCarloListener {
         SystemFilter.setVersioning(SystemFilter.Versioning.PREFIX_ABSOLUTE);
 
         titrationConfig.print();
+
         ExtUtils.printConfigSet("All Config:", System.getProperties(), keyPrefixes);
         logger.info(format(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", esvSystem.getConstantPh()));
         forceFieldEnergy.reInit();

@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import static java.lang.Integer.parseInt;
@@ -81,7 +82,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
     /**
      * Is this a normal vdW parameter or is it for 1-4 interactions.
      */
-    public VDWMode vdwMode;
+    private VDWMode vdwMode;
 
     /**
      * van der Waals constructor. If the reduction factor is .LE. 0.0, no
@@ -178,10 +179,8 @@ public final class VDWType extends BaseType implements Comparator<String> {
      */
     @Override
     public int compare(String s1, String s2) {
-
         int t1 = parseInt(s1);
         int t2 = parseInt(s2);
-
         return Integer.compare(t1, t2);
     }
 
@@ -189,14 +188,10 @@ public final class VDWType extends BaseType implements Comparator<String> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof VDWType)) {
-            return false;
-        }
-        VDWType vdwType = (VDWType) other;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VDWType vdwType = (VDWType) o;
         return (vdwType.atomClass == this.atomClass);
     }
 

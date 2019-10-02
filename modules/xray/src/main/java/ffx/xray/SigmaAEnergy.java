@@ -179,8 +179,7 @@ public class SigmaAEnergy implements Potential {
         wa = new double[nBins];
 
         sigmaARegion = new SigmaARegion(this.parallelTeam.getThreadCount());
-        String cernBessel = System.getProperty("cern.bessel");
-        useCernBessel = (cernBessel == null || !cernBessel.equalsIgnoreCase("false"));
+        useCernBessel = true;
     }
 
     /**

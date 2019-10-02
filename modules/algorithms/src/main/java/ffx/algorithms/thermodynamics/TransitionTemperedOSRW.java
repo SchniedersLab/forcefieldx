@@ -274,20 +274,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
 
         double defaultOffset = 20.0 * biasMag;
-        String propString = System.getProperty("ttosrw-temperOffset", Double.toString(defaultOffset));
-        temperOffset = defaultOffset;
-        try {
-            temperOffset = Double.parseDouble(propString);
-        } catch (NumberFormatException ex) {
-            logger.info(format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
-            temperOffset = defaultOffset;
-        }
+        temperOffset = properties.getDouble("ttosrw-temperOffset", defaultOffset);
         if (temperOffset < 0.0) {
             temperOffset = 0.0;
         }
         logger.info(format("  Coverage before tempering:     %7.4g kcal/mol", temperOffset));
 
-        propString = System.getProperty("ttosrw-integrationType", "SIMPSONS");
+        String propString = properties.getString("ttosrw-integrationType", "SIMPSONS");
         IntegrationType testType;
         try {
             testType = IntegrationType.valueOf(propString.toUpperCase());

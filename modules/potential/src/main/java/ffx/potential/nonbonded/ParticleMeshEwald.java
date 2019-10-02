@@ -223,7 +223,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py
      * script (available from the wiki) to draw these easily in PyMol.
      */
-    boolean printInducedDipoles = Boolean.parseBoolean(System.getProperty("pme.printInducedDipoles", "false"));
+    protected boolean printInducedDipoles = false;
 
     /**
      * Log the seven components of total electrostatic energy at each
@@ -232,12 +232,12 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * GeneralizedKirkwood. Self, Recip terms apply only to periodic systems; GK
      * applies only when requested and aperiodic.
      */
-    public boolean printDecomposition;
+    public boolean printDecomposition = false;
     /**
      * Disables windowed lambda ranges by setting permLambdaStart =
      * polLambdaStart = 0.0 and permLambdaEnd = polLambdaEnd = 1.0.
      */
-    protected final boolean noWindowing = Boolean.parseBoolean(System.getProperty("pme.noWindowing", "false"));
+    public boolean noWindowing = false;
 
     /**
      * Default cutoff values for PME and aperiodic systems.

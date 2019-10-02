@@ -157,7 +157,7 @@ public class ForceField {
         /* Miscellaneous */
         RIGID_SCALE, RESTRAINT_K, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
         /* Non-polar Implicit Solvent */
-        PROBE_RADIUS, SURFACE_TENSION, SOLVENT_PRESSURE,
+        PROBE_RADIUS, SURFACE_TENSION, SOLVENT_PRESSURE, CROSS_OVER,
         /* OpenMM finite-difference lambda step size */
         FD_DLAMBDA,
         /* OpenMM coefficient of friction for Langevin integrator */
@@ -315,7 +315,7 @@ public class ForceField {
     /**
      * Flag to prevent patch renumbering.
      */
-    private static final boolean noRenumbering = System.getProperty("noPatchRenumbering") != null;
+    private final boolean noRenumbering;
 
     /**
      * URL to the force field parameter file.
@@ -358,6 +358,9 @@ public class ForceField {
      */
     public ForceField(CompositeConfiguration properties) {
         this.properties = properties;
+
+        noRenumbering = properties.getBoolean("noPatchRenumbering", false);
+
         /*
           Each force field "type" implements the "Comparator<String>" interface
           so that passing an "empty" instance of the "type" to its TreeMap

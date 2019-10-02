@@ -51,6 +51,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import ffx.potential.groovy.PrepareSpaceGroups;
+import ffx.utilities.BaseFFXTest;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
@@ -58,33 +59,12 @@ import groovy.lang.Binding;
 /**
  * Test the Energy script.
  */
-public class PrepareSpaceGroupsTest {
+public class PrepareSpaceGroupsTest extends BaseFFXTest {
 
     Binding binding;
     PrepareSpaceGroups prepareSpaceGroups;
 
     private static final Logger logger = Logger.getLogger(PrepareSpaceGroupsTest.class.getName());
-    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
-    private static final Level testLevel;
-    private static final Level ffxLevel;
-    static {
-        Level lev;
-        try {
-            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
-            lev = origLevel;
-        }
-        testLevel = lev;
-
-        try {
-            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
-            lev = origLevel;
-        }
-        ffxLevel = lev;
-    }
 
     @Before
     public void before() {
@@ -93,23 +73,10 @@ public class PrepareSpaceGroupsTest {
         prepareSpaceGroups.setBinding(binding);
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        // Set appropriate logging levels for interior/exterior Loggers.
-        Logger.getLogger("ffx").setLevel(ffxLevel);
-        logger.setLevel(testLevel);
-    }
-
     @After
     public void after() {
         prepareSpaceGroups.destroyPotentials();
         System.gc();
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        Logger.getLogger("ffx").setLevel(origLevel);
-        logger.setLevel(origLevel);
     }
 
     @Test

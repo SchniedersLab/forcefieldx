@@ -59,6 +59,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.BaseFFXTest;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.MTZFilter;
@@ -69,7 +70,7 @@ import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
  * @author Timothy D. Fenn
  */
 @RunWith(Parameterized.class)
-public class FiniteDifferenceTest {
+public class FiniteDifferenceTest extends BaseFFXTest {
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -83,7 +84,6 @@ public class FiniteDifferenceTest {
         });
     }
 
-    private final boolean ci;
     private final boolean ciOnly;
     private final Atom[] atomArray;
     private final int[] atoms;
@@ -96,8 +96,7 @@ public class FiniteDifferenceTest {
         this.ciOnly = ciOnly;
         this.atoms = atoms;
 
-        ci = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
-        if (!ci && ciOnly) {
+        if (!ffxCI && ciOnly) {
             atomArray = null;
             refinementData = null;
             sigmaAMinimize = null;
@@ -175,14 +174,22 @@ public class FiniteDifferenceTest {
             }
         }
 
+        String gridString = properties.getString("grid-method", "SLICE").toUpperCase();
+        CrystalReciprocalSpace.GridMethod gridMethod;
+        try {
+            gridMethod =  CrystalReciprocalSpace.GridMethod.valueOf(gridString);
+        } catch (Exception e) {
+            gridMethod = CrystalReciprocalSpace.GridMethod.SLICE;
+        }
+
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionList,
-                atomArray, parallelTeam, parallelTeam, false, false);
+                atomArray, parallelTeam, parallelTeam, false, false, NONE, gridMethod);
         crs.computeDensity(refinementData.fc);
         refinementData.setCrystalReciprocalSpaceFc(crs);
         crs = new CrystalReciprocalSpace(reflectionList,
-                atomArray, parallelTeam, parallelTeam, true, false, solventModel);
+                atomArray, parallelTeam, parallelTeam, true, false, solventModel, gridMethod);
         crs.computeDensity(refinementData.fs);
         refinementData.setCrystalReciprocalSpaceFs(crs);
 
@@ -206,7 +213,7 @@ public class FiniteDifferenceTest {
 
     @Test
     public void testFiniteDifferences() {
-        if (!ci && ciOnly) {
+        if (!ffxCI && ciOnly) {
             return;
         }
 

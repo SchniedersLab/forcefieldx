@@ -205,7 +205,7 @@ class CrystalMin extends AlgorithmsScript {
             writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
             int numModels = systemFilter.countNumModels()
             if(numModels>1){
-                writeFilter.setModelNumbering(true, 0)
+                writeFilter.setModelNumbering(0)
             }
             writeFilter.writeFile(saveFile, true, false, false)
         }

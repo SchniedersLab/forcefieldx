@@ -259,19 +259,20 @@ public abstract class SystemFilter {
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
 
     private static final Logger logger = Logger.getLogger(SystemFilter.class.getName());
+
     /**
      * Constant <code>dieOnMissingAtom=</code>
      */
-    static final boolean dieOnMissingAtom;
-
-    static {
-        String dieOn = System.getProperty("trajectory-dieOnMissing");
-        if (dieOn == null) {
-            dieOnMissingAtom = false;
-        } else {
-            dieOnMissingAtom = Boolean.parseBoolean(dieOn);
-        }
-    }
+    protected final boolean dieOnMissingAtom;
+    /**
+     * Standardize atom names to PDB standard by default.
+     */
+    protected final boolean standardizeAtomNames;
+    /**
+     * True if atoms are to be printed to their van der Waals centers instead of
+     * nuclear centers (applies primarily to hydrogens).
+     */
+    protected final boolean vdwH;
 
     /**
      * The atomList is filled by filters that extend SystemFilter.
@@ -317,14 +318,29 @@ public abstract class SystemFilter {
      */
     protected boolean fileRead = false;
     /**
-     * True if atoms are to be printed to their van der Waals centers instead of
-     * nuclear centers (applies primarily to hydrogens).
-     */
-    boolean vdwH;
-    /**
      * A set of coordinate restraints obtained from the properties.
      */
     private List<CoordRestraint> coordRestraints;
+
+    /**
+     * Initializations common to the all the constructors.
+     *
+     * @param forceField The force field.
+     * @param properties The CompositeConfiguration properties.
+     */
+    private SystemFilter(ForceField forceField, CompositeConfiguration properties) {
+        this.forceField = forceField;
+        this.properties = properties;
+        if (properties != null) {
+            vdwH = properties.getBoolean("vdwHydrogens", false);
+            dieOnMissingAtom = properties.getBoolean("trajectory-dieOnMissing", false);
+            standardizeAtomNames = properties.getBoolean("standardizeAtomNames", true);
+        } else {
+            vdwH = false;
+            dieOnMissingAtom = false;
+            standardizeAtomNames = true;
+        }
+    }
 
     /**
      * <p>
@@ -337,19 +353,12 @@ public abstract class SystemFilter {
      */
     public SystemFilter(List<File> files, MolecularAssembly molecularAssembly,
                         ForceField forceField, CompositeConfiguration properties) {
+        this(forceField, properties);
         this.files = files;
         if (files != null) {
             this.currentFile = files.get(0);
         }
         this.activeMolecularAssembly = molecularAssembly;
-        this.forceField = forceField;
-        this.properties = properties;
-
-        if (properties != null) {
-            vdwH = properties.getBoolean("vdwHydrogens", false);
-        } else {
-            vdwH = false;
-        }
     }
 
     /**
@@ -363,20 +372,13 @@ public abstract class SystemFilter {
      */
     public SystemFilter(File file, MolecularAssembly molecularAssembly,
                         ForceField forceField, CompositeConfiguration properties) {
+        this(forceField, properties);
         files = new ArrayList<>();
         if (file != null) {
             files.add(file);
         }
         this.currentFile = file;
         this.activeMolecularAssembly = molecularAssembly;
-        this.forceField = forceField;
-        this.properties = properties;
-
-        if (properties != null) {
-            vdwH = properties.getBoolean("vdwHydrogens", false);
-        } else {
-            vdwH = false;
-        }
     }
 
     /**
@@ -390,6 +392,7 @@ public abstract class SystemFilter {
      */
     public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies,
                         ForceField forceField, CompositeConfiguration properties) {
+        this(forceField, properties);
         files = new ArrayList<>();
         if (file != null) {
             files.add(file);
@@ -397,14 +400,6 @@ public abstract class SystemFilter {
         this.currentFile = file;
         this.systems = new ArrayList<>(molecularAssemblies);
         this.activeMolecularAssembly = systems.get(0);
-        this.forceField = forceField;
-        this.properties = properties;
-
-        if (properties != null) {
-            vdwH = properties.getBoolean("vdwHydrogens", false);
-        } else {
-            vdwH = false;
-        }
     }
 
     /**
@@ -430,7 +425,6 @@ public abstract class SystemFilter {
      * @return If next model read.
      */
     public abstract boolean readNext(boolean resetPosition);
-
 
     /**
      * Reads the next model if applicable (currently, ARC files only).
@@ -498,11 +492,9 @@ public abstract class SystemFilter {
      */
     public MolecularAssembly[] getMolecularAssemblys() {
         if (systems.size() > 0) {
-            MolecularAssembly[] assemblies = new MolecularAssembly[systems.size()];
-            return systems.toArray(assemblies);
+            return systems.toArray(new MolecularAssembly[0]);
         } else {
-            MolecularAssembly[] assemblies = {activeMolecularAssembly};
-            return assemblies;
+            return new MolecularAssembly[]{activeMolecularAssembly};
         }
     }
 
@@ -635,7 +627,6 @@ public abstract class SystemFilter {
           public concrete, but skeletal method, and then have readFile() call a
           protected abstract readFile method for each implementation.
         */
-
         Atom[] molaAtoms = activeMolecularAssembly.getAtomArray();
         int nmolaAtoms = molaAtoms.length;
         String[] nouseKeys = properties.getStringArray("nouse");

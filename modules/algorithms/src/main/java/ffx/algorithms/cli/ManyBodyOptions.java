@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.optimize.RotamerOptimization;
@@ -688,11 +689,10 @@ public class ManyBodyOptions {
         } else {
             ArrayList<Residue> residueList = new ArrayList<>();
             Polymer[] polymers = activeAssembly.getChains();
-            boolean ignoreNA = false;
-            String ignoreNAProp = System.getProperty("ignoreNA");
-            if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
-                ignoreNA = true;
-            }
+
+            CompositeConfiguration properties = activeAssembly.getProperties();
+            boolean ignoreNA = properties.getBoolean("ignoreNA", false);
+
             if (!listResidues.equalsIgnoreCase("none")) {
                 int n = 0;
                 for (String s : resList) {
