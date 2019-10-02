@@ -49,6 +49,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
@@ -304,29 +307,35 @@ public class XYZFilter extends SystemFilter {
     @Override
     public int countNumModels() {
         File xyzFile = activeMolecularAssembly.getFile();
-        BufferedReader bufferedReaderCount = null;
-        try {
-            FileReader fr = new FileReader(xyzFile);
-            bufferedReaderCount = new BufferedReader(fr);
-        } catch (IOException e) {
-            logger.severe(e.toString());
-        }
-        int numModels = 0;
-        try {
-            String data = bufferedReaderCount.readLine();
-            Atom[] atoms = activeMolecularAssembly.getAtomArray();
-            int nSystem = atoms.length;
-            int numLines = 1;
-            while (data != null) {
-                data = bufferedReaderCount.readLine();
-                numLines++;
+        int nAtoms = activeMolecularAssembly.getAtomArray().length;
+        Pattern crystInfoPattern = Pattern.compile("^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){3} *$");
+
+        try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
+            String line = br.readLine();
+            int nSnaps = 0;
+            // For each header line, will read either X or X+1 lines, where X is the number of atoms.
+            while (line != null) {
+                assert Integer.parseInt(line.trim().split("\\s+")[0]) == nAtoms;
+                // Read either the crystal information *or* the first line of the snapshot.
+                line = br.readLine();
+                Matcher m = crystInfoPattern.matcher(line);
+                if (m.matches()) {
+                    // If this is crystal information, move onto the first line of the snapshot.
+                    br.readLine();
+                }
+                // Read lines 2-X of the XYZ.
+                for (int i = 1; i < nAtoms; i++) {
+                    br.readLine();
+                }
+
+                ++nSnaps;
+                line = br.readLine();
             }
-            numModels = (int) Math.floor(numLines / nSystem);
-        } catch (Exception e) {
-            String message = format("Exception.", xyzFile);
-            logger.log(Level.WARNING, message, e);
+            return nSnaps;
+        } catch (Exception ex) {
+            logger.log(Level.WARNING, String.format(" Exception reading trajectory file %s: %s", xyzFile, ex));
+            return 1;
         }
-        return numModels;
     }
 
     /**

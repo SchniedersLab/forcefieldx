@@ -106,7 +106,6 @@ class SaveAsPDB extends PotentialScript {
         }
         String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
-        String extension = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
         File modelFile = new File(dirName + fileName)
         File saveFile = potentialFunctions.versionFile(modelFile)

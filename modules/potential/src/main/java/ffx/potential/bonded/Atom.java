@@ -937,9 +937,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Gets the partial atomic charge
      *
      * @return partial atomic charge
+     * @throws IllegalStateException If the atom does not have a known multipole type.
      */
-    public double getCharge() {
-        return 1.0;
+    public double getCharge() throws IllegalStateException {
+        if (multipoleType != null) {
+            return multipoleType.getCharge();
+        }
+        throw new IllegalStateException(String.format(" Atom %s does not yet have an assigned multipole type!", toString()));
     }
 
     /**

@@ -37,8 +37,6 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
-import ffx.algorithms.dynamics.MolecularDynamics
-
 import java.util.stream.Collectors
 
 import org.apache.commons.configuration2.Configuration
@@ -293,6 +291,10 @@ class Thermodynamics extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
+        if (osrw == null) {
+            return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+        } else {
+            return Collections.singletonList(osrw);
+        }
     }
 }

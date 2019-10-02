@@ -412,7 +412,7 @@ public abstract class SystemFilter {
     }
 
     /**
-     * Reads the next model if applicable (currently, ARC files only).
+     * Reads the next model if applicable (currently, ARC and PDB files only).
      *
      * @return If next model read.
      */
