@@ -686,6 +686,7 @@ class Solvator extends PotentialScript {
             logger.info(" Ions will be placed into chain ${ionChain}");
             double volume = newBox[0] * newBox[1] * newBox[2];
             // newCrystal.volume may also work.
+            // The L -> mL and M -> mM conversions cancel.
             double ionsPermM = volume * Constants.LITERS_PER_CUBIC_ANGSTROM * Constants.AVOGADRO;
 
             List<IonAddition> byConc = new ArrayList<>();
