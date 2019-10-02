@@ -1,11 +1,10 @@
 # Must be coupled with a .pdb or .xyz from which to copy the ions. Internal geometry for polyatomic ions will be copied exactly, with CoM translated to replace a solvent molecule. Rotations are not yet randomized.
 
 # FORMAT
-# ReferenceAtomStart ReferenceAtomEnd Concentration [Charge]
+# ReferenceAtomStart ReferenceAtomEnd Concentration
 # ReferenceAtomStart is the first atom number (inclusive, 1-indexed) of the ion to include.
 # ReferenceAtomEnd is the last atom number (inclusive, 1-indexed) of the ion to include. Cannot be skipped, even for monoatomic ions.
 # Concentration can either be a number in mM (millimolar), or NEUT to indicate the system should be neutralized using this ion.
-# Charge is only required if there are neutralizing ion(s), and should be equal to the sum of charge monopole moments of the ion.
 # Up to two neutralizing ions may be specified, one anion and one cation. Only one will be used to neutralize the sum of solute + other ion charges. This does assume all other solvent molecules are neutral.
 
 # Examples:

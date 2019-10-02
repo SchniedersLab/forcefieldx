@@ -694,7 +694,7 @@ class Solvator extends PotentialScript {
             IonAddition neutCation = null;
 
             BufferedReader br;
-            Pattern ionicPattern = Pattern.compile("^\\s*([0-9]+) +([0-9]+) +([0-9]+(?:\\.[0-9]*)?|NEUT\\S*) *([-+]?[0-9]+)?");
+            Pattern ionicPattern = Pattern.compile("^\\s*([0-9]+) +([0-9]+) +([0-9]+(?:\\.[0-9]*)?|NEUT\\S*) *");
             Pattern concPatt = Pattern.compile("^[0-9]+(?:\\.[0-9]*)?");
             // Parse .ions file to figure out which ions need to be added.
             try {
