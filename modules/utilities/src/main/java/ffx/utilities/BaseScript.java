@@ -60,7 +60,7 @@ public class BaseScript extends Script {
     /**
      * The logger for this class.
      */
-    public static final Logger logger = Logger.getLogger(BaseScript.class.getName());
+    protected static final Logger logger = Logger.getLogger(BaseScript.class.getName());
 
     /**
      * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does not.

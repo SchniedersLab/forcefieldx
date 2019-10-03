@@ -41,14 +41,94 @@ package ffx.utilities;
  * Library class containing constants such as Avogadro's number.
  *
  * @author Jacob M. Litman
+ * @author Michael J. Schnieders
  */
 public class Constants {
+
+    // SI units: kg, m, s, C, K, mol, lm
+    // Our typical units: g/mol, Angstrom, psec, elementary charges, K, mol, N/A
+    // Below constants are the seven defining constants of SI as of May 20 2019 (BIPM).
+
     /**
-     * Avogadro's number, as copied from Barostat.java.
+     * Hyperfine transition frequency of cesium in Hertz, defining the second.
      */
-    public static final double AVOGADRO = 6.02214129e23;
+    public static final long DEL_V_Cs_SI = 9192631770L;
+    /**
+     * Speed of light in m/s, defining the meter.
+     */
+    public static final int SPEED_OF_LIGHT_SI = 299792458;
+    /**
+     * Planck constant in J*s, defining the kilogram (by defining the derived Joule)
+     */
+    public static final double PLANCK_CONSTANT_SI = 6.62607015E-34;
+    /**
+     * Elementary charge in Coulombs, defining the Coulomb.
+     */
+    public static final double ELEMENTARY_CHARGE_SI = 1.602176634E-19;
+    /**
+     * Boltzmann's constant in J/K, defining the Kelvin.
+     */
+    public static final double BOLTZMANN_SI = 1.380649E-23;
+    /**
+     * Avogadro's number, defining the mol.
+     */
+    public static final double AVOGADRO = 6.02214076E23;
+    /**
+     * Luminous efficacy in lm/W, defining the lumen.
+     */
+    public static final int K_CD_SI = 683;
+
+    // Conversions here, often by definition.
     public static final double LITERS_PER_CUBIC_ANGSTROM = 1E-30;
     public static final double ATM_TO_BAR = 1.01325;
+    public static final double KCAL_TO_KJ = 4.184;
+    public static final double KJ_TO_KCAL = 1.0 / KCAL_TO_KJ;
+    public static final double METERS_TO_ANG = 1E10;
+    public static final double SEC_TO_PSEC = 1E12;
+    public static final double KG_TO_GRAMS = 1000;
+
+    // Other constants
+    /**
+     * Ideal gas constant in kcal/(mol*K)
+     */
+    public static final double R = BOLTZMANN_SI * AVOGADRO * 0.001 * KJ_TO_KCAL;
+    /**
+     * Boltzmann/ideal gas constant in units of g*Ang^2/(mol*psec^2*K).
+     */
+    public static final double kB = BOLTZMANN_SI * KG_TO_GRAMS * METERS_TO_ANG * METERS_TO_ANG * AVOGADRO / (SEC_TO_PSEC * SEC_TO_PSEC);
+
+    /**
+     * Permittivity of water at STP.
+     */
+    public static final double dWater = 78.3;
+
+    /**
+     * Convert nanoseconds to seconds.
+     */
+    public static final double NS2SEC = 1e-9;
+
+    // Below are constants not updated to SI standard and likely will never be updated to SI standard.
+
+    /**
+     * Conversion from electron**2/Ang to kcal/mole.
+     *
+     * Note -- this value varies slightly between force field definitions and can be set using the
+     * ELECTRIC property. As such, SHOULD NOT ever be updated to SI standard.
+     *
+     */
+    public static final double DEFAULT_ELECTRIC = 332.063709;
+
+    /**
+     * Conversion from electron-Angstroms to Debyes. NOT at current SI standard.
+     */
+    public static final double ELEC_ANG_TO_DEBYE = 4.80321;
+
+    /**
+     * Conversion from electron-Angstroms^2 to Buckinghams. NOT at current SI standard.
+     */
+    public static final double ELEC_ANG2_TO_BUCKINGHAMS = ELEC_ANG_TO_DEBYE * ELEC_ANG_TO_DEBYE;
+
+    // Library class: make the default constructor private to ensure it's never constructed.
     private Constants() {
 
     }

@@ -1015,9 +1015,9 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String version = "1.0.0-BETA";
     /**
-     * Constant <code>date="January 2019"</code>
+     * Constant <code>date="October 2019"</code>
      */
-    public static final String date = "January 2019";
+    public static final String date = "October 2019";
 
     private static final String commitVersion;
     private static final String commitDate;

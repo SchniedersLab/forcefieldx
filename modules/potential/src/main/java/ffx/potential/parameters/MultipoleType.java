@@ -58,6 +58,8 @@ import static ffx.numerics.math.VectorMath.dot;
 import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
+import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
+import static ffx.utilities.Constants.ELEC_ANG2_TO_BUCKINGHAMS;
 
 /**
  * The MultipoleType class defines a multipole in its local frame.
@@ -77,15 +79,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
 
         NONE, ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, THREEFOLD,
     }
-
-    /**
-     * Conversion from electron-Angstroms to Debyes
-     */
-    public static final double DEBYE = 4.80321;
-    /**
-     * Conversion from electron-Angstroms^2 to Buckinghams
-     */
-    private static final double BUCKINGHAM = DEBYE * DEBYE;
     /**
      * Conversion from Bohr to Angstroms
      */

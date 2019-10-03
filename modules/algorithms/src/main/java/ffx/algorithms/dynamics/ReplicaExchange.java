@@ -50,6 +50,7 @@ import edu.rit.pj.Comm;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
+import static ffx.utilities.Constants.kB;
 
 /**
  * The ReplicaExchange implements temperature and lambda replica exchange
@@ -212,8 +213,8 @@ public class ReplicaExchange implements Terminatable {
 
             double tempA = parameters[i1][0];
             double tempB = parameters[i2][0];
-            double betaA = Thermostat.convert / (tempA * Thermostat.kB);
-            double betaB = Thermostat.convert / (tempB * Thermostat.kB);
+            double betaA = Thermostat.convert / (tempA * kB);
+            double betaB = Thermostat.convert / (tempB * kB);
             double energyA = parameters[i1][1];
             double energyB = parameters[i2][1];
             /**

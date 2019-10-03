@@ -44,6 +44,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 
+import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -2152,7 +2153,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             completedSCFCycles++;
             previousEps = eps;
             eps = sorRegion.getEps();
-            eps = MultipoleType.DEBYE * sqrt(eps / (double) nAtoms);
+            eps = Constants.ELEC_ANG_TO_DEBYE * sqrt(eps / (double) nAtoms);
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(
@@ -6699,7 +6700,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             // eps = max(eps, epsCR);
             eps = max(pcgIterRegion2.epsShared.get(), pcgIterRegion2.epsCRShared.get());
             completedSCFCycles++;
-            eps = MultipoleType.DEBYE * sqrt(eps / (double) nAtoms);
+            eps = Constants.ELEC_ANG_TO_DEBYE * sqrt(eps / (double) nAtoms);
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(

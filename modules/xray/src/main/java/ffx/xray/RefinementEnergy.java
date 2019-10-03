@@ -62,6 +62,7 @@ import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import static ffx.numerics.math.VectorMath.b2u;
+import static ffx.utilities.Constants.kB;
 
 /**
  * Combine the X-ray target and chemical potential energy using the
@@ -414,7 +415,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         double e = 0.0;
 
         if (thermostat != null) {
-            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * kB);
         }
 
         unscaleCoordinates(x);
@@ -490,7 +491,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         fill(g, 0.0);
 
         if (thermostat != null) {
-            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * kB);
         }
 
         unscaleCoordinates(x);
@@ -704,7 +705,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         if (thermostat != null) {
-            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * kB);
         }
         logger.info(" kTscale: " + kTScale);
         logger.info(data.printEnergyUpdate());
@@ -772,7 +773,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     public double getdEdL() {
         double dEdL = 0.0;
         if (thermostat != null) {
-            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * kB);
         }
         int assemblysize = molecularAssemblies.length;
 
@@ -801,7 +802,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     public double getd2EdL2() {
         double d2EdL2 = 0.0;
         if (thermostat != null) {
-            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * kB);
         }
         int assemblysize = molecularAssemblies.length;
 
@@ -824,7 +825,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     public void getdEdXdL(double[] gradient) {
         double weight = data.getWeight();
         if (thermostat != null) {
-            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+            kTScale = Thermostat.convert / (thermostat.getTargetTemperature() * kB);
         }
         int assemblysize = molecularAssemblies.length;
 

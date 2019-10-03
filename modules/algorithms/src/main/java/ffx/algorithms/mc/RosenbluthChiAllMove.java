@@ -67,7 +67,7 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.PDBFilter;
-import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
+import static ffx.utilities.Constants.R;
 
 /**
  * Represents a Boltzmann-drawn spin of all residue torsions for use with
@@ -214,7 +214,7 @@ public class RosenbluthChiAllMove implements MCMove {
         this.target = target;
         this.testSetSize = testSetSize;
         this.forceFieldEnergy = forceFieldEnergy;
-        this.beta = 1 / (BOLTZMANN * temperature);
+        this.beta = 1 / (R * temperature);
         this.moveNumber = moveNumber;
         this.verbose = verbose;
         origState = target.storeState();

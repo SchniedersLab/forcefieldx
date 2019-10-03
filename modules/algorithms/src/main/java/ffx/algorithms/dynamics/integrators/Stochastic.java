@@ -44,6 +44,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.numerics.Potential;
+import ffx.utilities.Constants;
 
 /**
  * Stochastic dynamics time step via a velocity Verlet integration algorithm.
@@ -222,7 +223,7 @@ public class Stochastic extends Integrator {
                             + 1877509.0 * fdt7 / 105696460800.0);
                 }
                 // Compute random terms to thermostat the nonzero friction case.
-                double ktm = Thermostat.kB * temperature / m;
+                double ktm = Constants.kB * temperature / m;
                 double psig = sqrt(ktm * pterm) / friction;
                 double vsig = sqrt(ktm * vterm);
                 double rhoc = sqrt(1.0 - rho * rho);

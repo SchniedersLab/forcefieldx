@@ -57,7 +57,7 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parsers.PDBFilter;
-import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
+import static ffx.utilities.Constants.R;
 
 /**
  * Orientational Biased Monte Carlo (as applied to chi0 torsion of peptide side-chains.
@@ -210,7 +210,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
 
         // Apply acceptance criterion.
         double temperature = thermostat.getCurrentTemperature();
-        double beta = 1.0 / (BOLTZMANN * temperature);
+        double beta = 1.0 / (R * temperature);
         double dInd = uIndN - uIndO;
         double dIndE = exp(-beta * dInd);
         double criterion = (Wn / Wo) * exp(-beta * (uIndN - uIndO));
@@ -265,7 +265,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
                                               ResidueState oldConf, List<MCMove> oldTrialSet,
                                               ResidueState newConf, List<MCMove> newTrialSet) {
         double temperature = thermostat.getCurrentTemperature();
-        double beta = 1.0 / (BOLTZMANN * temperature);
+        double beta = 1.0 / (R * temperature);
 
         // Initialize and add up Wo.
         Wo = exp(-beta * getTorsionEnergy(chi0));
