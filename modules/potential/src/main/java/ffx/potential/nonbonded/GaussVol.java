@@ -53,7 +53,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
-import groovy.ui.SystemOutputInterceptor;
 
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.rsq;
