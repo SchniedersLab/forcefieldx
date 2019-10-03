@@ -1620,6 +1620,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private void writeDynamicsRestart() {
         if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
             logger.info(" Wrote dynamics restart file to " + restartFile.getName());
+            if (constantPressure) {
+                Crystal crystal = molecularAssembly.getCrystal();
+                double currentDensity = crystal.getDensity(molecularAssembly.getTotalMass());
+                logger.info(format(" Density %6.3f (g/cc) with unit cell %s.",
+                        currentDensity, crystal.toShortString()));
+            }
         } else {
             logger.info(" Writing dynamics restart file to " + restartFile.getName() + " failed.");
         }
