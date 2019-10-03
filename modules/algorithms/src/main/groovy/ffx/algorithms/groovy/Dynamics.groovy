@@ -133,7 +133,7 @@ class Dynamics extends AlgorithmsScript {
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
         potential = activeAssembly.getPotentialEnergy();
-        boolean updatesDisabled = activeAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
+        boolean updatesDisabled = activeAssembly.getForceField().getBoolean("DISABLE_NEIGHBOR_UPDATES", false)
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
         }

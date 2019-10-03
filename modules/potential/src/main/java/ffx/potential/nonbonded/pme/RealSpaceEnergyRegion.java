@@ -295,16 +295,16 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     public RealSpaceEnergyRegion(int nt, ForceField forceField, ELEC_FORM elecForm, boolean lambdaTerm) {
         maxThreads = nt;
-        electric = forceField.getDouble(ForceField.ForceFieldDouble.ELECTRIC, Constants.DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
         sharedInteractions = new SharedInteger();
         realSpaceEnergyLoop = new RealSpaceEnergyLoop[nt];
 
         // Flag to indicate application of an intermolecular softcore potential.
         if (lambdaTerm) {
             intermolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+                    "INTERMOLECULAR_SOFTCORE", false);
             intramolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+                    "INTRAMOLECULAR_SOFTCORE", false);
         } else {
             intermolecularSoftcore = false;
             intramolecularSoftcore = false;

@@ -195,10 +195,10 @@ public class InitializationRegion extends ParallelRegion {
     public InitializationRegion(int maxThreads, ForceField forceField) {
         initializationLoop = new InitializationLoop[maxThreads];
         rotateMultipolesLoop = new RotateMultipolesLoop[maxThreads];
-        useCharges = forceField.getBoolean(ForceField.ForceFieldBoolean.USE_CHARGES, true);
-        useDipoles = forceField.getBoolean(ForceField.ForceFieldBoolean.USE_DIPOLES, true);
-        useQuadrupoles = forceField.getBoolean(ForceField.ForceFieldBoolean.USE_QUADRUPOLES, true);
-        rotateMultipoles = forceField.getBoolean(ForceField.ForceFieldBoolean.ROTATE_MULTIPOLES, true);
+        useCharges = forceField.getBoolean("USE_CHARGES", true);
+        useDipoles = forceField.getBoolean("USE_DIPOLES", true);
+        useQuadrupoles = forceField.getBoolean("USE_QUADRUPOLES", true);
+        rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
     }
 
     public void init(boolean lambdaTerm, boolean gradient, double lambdaScaleMultipoles,

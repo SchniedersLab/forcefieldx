@@ -1067,8 +1067,8 @@ public class MolecularAssembly extends MSGroup {
         removeLeaves();
 
         // Apply the Heavy Hydrogen flag.
-        boolean heavyHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.HEAVY_HYDROGENS, false);
-        heavyHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.HEAVY_HYDROGEN, heavyHydrogen);
+        boolean heavyHydrogen = forceField.getBoolean("HEAVY_HYDROGENS", false);
+        heavyHydrogen = forceField.getBoolean("HEAVY_HYDROGEN", heavyHydrogen);
         if (heavyHydrogen) {
             applyHeavyHydrogen();
         }

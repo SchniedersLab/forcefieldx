@@ -126,16 +126,33 @@ class Timer extends AlgorithmsScript {
         refinementEnergy.getCoordinates(x)
         Potential energy = refinementEnergy.getDataEnergy()
 
-        for (int i = 0; i < timerOptions.iterations; i++) {
+        int nEvals = timerOptions.iterations;
+        long minTime = Long.MAX_VALUE
+        double sumTime2 = 0.0
+        int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
+        for (int i = 0; i < nEvals; i++) {
             long time = -System.nanoTime()
-            if (!timerOptions.noGradient) {
-                energy.energyAndGradient(x, g)
+            double e = 0.0
+            if (timerOptions.noGradient) {
+                e = energy.energy(x)
             } else {
-                energy.energy(x)
+                e = energy.energyAndGradient(x,g)
             }
             time += System.nanoTime()
-            logger.info(String.format(" Time %12.8f (sec)", time * 1.0e-9))
+            logger.info(String.format(" Target energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
+            minTime = time < minTime ? time : minTime;
+            if (i >= (int) (nEvals / 2)) {
+                double time2 = time * 1.0E-9
+                sumTime2 += (time2 * time2)
+            }
         }
+
+        ++halfnEvals
+        double rmsTime = Math.sqrt(sumTime2 / halfnEvals)
+        logger.info(String.format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
+        logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
+
+
 
         return this
     }

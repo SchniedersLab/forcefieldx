@@ -78,9 +78,6 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.ScfPredictor.PredictorMode;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
@@ -640,8 +637,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      *
      * @param atoms        the Atom array to do electrostatics on.
      * @param molecule     the molecule number for each atom.
-     * @param forceField   the ForceField the defines the electrostatics
-     *                     parameters.
+     * @param forceField   the ForceField the defines the electrostatics parameters.
      * @param crystal      The boundary conditions.
      * @param elecForm     The electrostatics functional form.
      * @param neighborList The NeighborList for both van der Waals and PME.
@@ -662,53 +658,54 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         maxThreads = parallelTeam.getThreadCount();
 
-        electric = forceField.getDouble(ForceFieldDouble.ELECTRIC, 332.063709);
-        polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
-        poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-5);
+        electric = forceField.getDouble("ELECTRIC", 332.063709);
+        polsor = forceField.getDouble("POLAR_SOR", 0.70);
+        poleps = forceField.getDouble("POLAR_EPS", 1e-5);
         if (elecForm == ELEC_FORM.PAM) {
-            m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
-            m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
-            m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
-            m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 0.8);
+            m12scale = forceField.getDouble("MPOLE_12_SCALE", 0.0);
+            m13scale = forceField.getDouble("MPOLE_13_SCALE", 0.0);
+            m14scale = forceField.getDouble("MPOLE_14_SCALE", 0.4);
+            m15scale = forceField.getDouble("MPOLE_15_SCALE", 0.8);
         } else {
-            double mpole14 = forceField.getDouble(ForceFieldDouble.CHG_14_SCALE, 2.0);
+            double mpole14 = forceField.getDouble("CHG_14_SCALE", 2.0);
             mpole14 = 1.0 / mpole14;
-            m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
-            m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
-            m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, mpole14);
-            m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 1.0);
+            m12scale = forceField.getDouble("MPOLE_12_SCALE", 0.0);
+            m13scale = forceField.getDouble("MPOLE_13_SCALE", 0.0);
+            m14scale = forceField.getDouble("MPOLE_14_SCALE", mpole14);
+            m15scale = forceField.getDouble("MPOLE_15_SCALE", 1.0);
         }
-        intra14Scale = forceField.getDouble(ForceFieldDouble.POLAR_14_INTRA, 0.5);
-        d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);
-        p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
-        p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
-        p14scale = forceField.getDouble(ForceFieldDouble.POLAR_14_SCALE, 1.0);
-        p15scale = forceField.getDouble(ForceFieldDouble.POLAR_15_SCALE, 1.0);
-        useCharges = forceField.getBoolean(ForceFieldBoolean.USE_CHARGES, true);
-        useDipoles = forceField.getBoolean(ForceFieldBoolean.USE_DIPOLES, true);
-        useQuadrupoles = forceField.getBoolean(ForceFieldBoolean.USE_QUADRUPOLES, true);
-        rotateMultipoles = forceField.getBoolean(ForceFieldBoolean.ROTATE_MULTIPOLES, true);
-        //lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        intra14Scale = forceField.getDouble("POLAR_14_INTRA", 0.5);
+        d11scale = forceField.getDouble("DIRECT_11_SCALE", 0.0);
+        p12scale = forceField.getDouble("POLAR_12_SCALE", 0.0);
+        p13scale = forceField.getDouble("POLAR_13_SCALE", 0.0);
+        p14scale = forceField.getDouble("POLAR_14_SCALE", 1.0);
+        p15scale = forceField.getDouble("POLAR_15_SCALE", 1.0);
+        useCharges = forceField.getBoolean("USE_CHARGES", true);
+        useDipoles = forceField.getBoolean("USE_DIPOLES", true);
+        useQuadrupoles = forceField.getBoolean("USE_QUADRUPOLES", true);
+        rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
+        //lambdaTerm = forceField.getBoolean("LAMBDATERM, false);
         // If PME-specific lambda term not set, default to force field-wide lambda term.
-        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
+        lambdaTerm = forceField.getBoolean("ELEC_LAMBDATERM",
+                forceField.getBoolean("LAMBDATERM", false));
 
         CompositeConfiguration properties = forceField.getProperties();
         printInducedDipoles = properties.getBoolean("pme.printInducedDipoles", false);
         noWindowing = properties.getBoolean("pme.noWindowing", false);
 
         if (!crystal.aperiodic()) {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+            off = forceField.getDouble("EWALD_CUTOFF", 7.0);
         } else {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
+            off = forceField.getDouble("EWALD_CUTOFF", 1000.0);
         }
 
-        // double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
-        // aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
+        // double ewaldPrecision = forceField.getDouble("EWALD_PRECISION, 1.0e-8);
+        // aewald = forceField.getDouble("EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
 
-        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, 0.545);
+        aewald = forceField.getDouble("EWALD_ALPHA", 0.545);
         setEwaldParameters(off, aewald);
 
-        reciprocalSpaceTerm = forceField.getBoolean(ForceFieldBoolean.RECIPTERM, true);
+        reciprocalSpaceTerm = forceField.getBoolean("RECIPTERM", true);
 
         /**
          * Instantiate the requested SCF predictor; default is a 6th-order least
@@ -720,7 +717,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             scfPredictor = new ScfPredictor(predictorMode, predictorOrder, forceField);
         }
 
-        String algorithm = forceField.getString(ForceFieldString.SCF_ALGORITHM, "CG");
+        String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
         try {
             algorithm = algorithm.replaceAll("-", "_").toUpperCase();
             scfAlgorithm = SCFAlgorithm.valueOf(algorithm);
@@ -734,7 +731,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             scfAlgorithm = SCFAlgorithm.CG;
         }
 
-        generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+        generalizedKirkwoodTerm = forceField.getBoolean("GKTERM", false);
         if (generalizedKirkwoodTerm && scfAlgorithm == SCFAlgorithm.CG) {
             scfAlgorithm = SCFAlgorithm.SOR;
             logger.warning("Preconditioner does not yet support GK; setting scf-algorithm=SOR instead.");
@@ -751,12 +748,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             pcgInitRegion2 = new PCGInitRegion2(maxThreads);
             pcgIterRegion1 = new PCGIterRegion1(maxThreads);
             pcgIterRegion2 = new PCGIterRegion2(maxThreads);
-            boolean preconditioner = forceField.getBoolean(ForceFieldBoolean.USE_SCF_PRECONDITIONER, true);
+            boolean preconditioner = forceField.getBoolean("USE_SCF_PRECONDITIONER", true);
             if (preconditioner) {
-                preconditionerCutoff = forceField.getDouble(
-                        ForceFieldDouble.CG_PRECONDITIONER_CUTOFF, 4.5);
-                preconditionerEwald = forceField.getDouble(
-                        ForceFieldDouble.CG_PRECONDITIONER_EWALD, 0.0);
+                preconditionerCutoff = forceField.getDouble("CG_PRECONDITIONER_CUTOFF", 4.5);
+                        preconditionerEwald = forceField.getDouble("CG_PRECONDITIONER_EWALD", 0.0);
             } else {
                 preconditionerCutoff = 0.0;
             }
@@ -775,7 +770,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable
              * trajectories.
              */
-            permLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 2.0);
+            permLambdaAlpha = forceField.getDouble("PERMANENT_LAMBDA_ALPHA", 2.0);
             if (permLambdaAlpha < 0.0 || permLambdaAlpha > 3.0) {
                 logger.warning("Invalid value for permanent-lambda-alpha (<0.0 || >3.0); reverting to 2.0");
                 permLambdaAlpha = 2.0;
@@ -785,7 +780,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              * beginning of the permanent schedule. Choosing a power of 3 or
              * greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              */
-            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
+            permLambdaExponent = forceField.getDouble("PERMANENT_LAMBDA_EXPONENT", 3.0);
             if (permLambdaExponent < 0.0) {
                 logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 3.0");
                 permLambdaExponent = 3.0;
@@ -798,7 +793,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              * A value of 0.0 is also admissible: when polarization is not being
              * softcored but instead scaled, as by ExtendedSystem.
              */
-            polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
+            polLambdaExponent = forceField.getDouble("POLARIZATION_LAMBDA_EXPONENT", 3.0);
             if (polLambdaExponent < 0.0) {
                 logger.warning("Invalid value for polarization-lambda-exponent (<0.0); reverting to 3.0");
                 polLambdaExponent = 3.0;
@@ -815,7 +810,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                  * Values of PERMANENT_LAMBDA_START below 0.5 can lead to
                  * unstable trajectories.
                  */
-                permLambdaStart = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_START, 0.4);
+                permLambdaStart = forceField.getDouble("PERMANENT_LAMBDA_START", 0.4);
                 if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
                     logger.warning("Invalid value for perm-lambda-start (<0.0 || >1.0); reverting to 0.4");
                     permLambdaStart = 0.4;
@@ -824,7 +819,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                  * Values of PERMANENT_LAMBDA_END must be greater than
                  * permLambdaStart and <= 1.0.
                  */
-                permLambdaEnd = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_END, 1.0);
+                permLambdaEnd = forceField.getDouble("PERMANENT_LAMBDA_END", 1.0);
                 if (permLambdaEnd < permLambdaStart || permLambdaEnd > 1.0) {
                     logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
                     permLambdaEnd = 1.0;
@@ -838,7 +833,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                  * condensed phase SCF calculations are necessary from the
                  * beginning of the window to lambda=1.
                  */
-                polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.7);
+                polLambdaStart = forceField.getDouble("POLARIZATION_LAMBDA_START", 0.7);
                 if (polLambdaStart < 0.0 || polLambdaStart > 0.7) {
                     logger.warning("Invalid value for polarization-lambda-start (<0.0 || >0.7); reverting to 0.7");
                     polLambdaStart = 0.7;
@@ -849,7 +844,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                  * been completely turned on. Values other than 1.0 have not
                  * been tested.
                  */
-                polLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
+                polLambdaEnd = forceField.getDouble("POLARIZATION_LAMBDA_END", 1.0);
                 if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
                     logger.warning("Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
                     polLambdaEnd = 1.0;
@@ -866,24 +861,24 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              * The LAMBDA_VAPOR_ELEC defines if intramolecular electrostatics of
              * the ligand in vapor will be considered.
              */
-            doLigandVaporElec = forceField.getBoolean(ForceFieldBoolean.LIGAND_VAPOR_ELEC, true);
-            doNoLigandCondensedSCF = forceField.getBoolean(ForceFieldBoolean.NO_LIGAND_CONDENSED_SCF, true);
+            doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
+            doNoLigandCondensedSCF = forceField.getBoolean("NO_LIGAND_CONDENSED_SCF", true);
 
             /**
              * Flag to indicate application of an intermolecular softcore
              * potential.
              */
             intermolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+                    "INTERMOLECULAR_SOFTCORE", false);
             intramolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+                    "INTRAMOLECULAR_SOFTCORE", false);
         }
 
-        String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
+        String polar = forceField.getString("POLARIZATION", "MUTUAL");
         if (elecForm == ELEC_FORM.FIXED_CHARGE) {
             polar = "NONE";
         }
-        boolean polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
+        boolean polarizationTerm = forceField.getBoolean("POLARIZETERM", true);
         if (polarizationTerm == false || polar.equalsIgnoreCase("NONE")) {
             polarization = Polarization.NONE;
         } else if (polar.equalsIgnoreCase("DIRECT")) {
@@ -892,7 +887,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             polarization = Polarization.MUTUAL;
         }
 
-        String temp = forceField.getString(ForceField.ForceFieldString.FFT_METHOD, "PJ");
+        String temp = forceField.getString("FFT_METHOD", "PJ");
         FFTMethod method;
         try {
             method = ReciprocalSpace.FFTMethod.valueOf(temp.toUpperCase().trim());
@@ -954,7 +949,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             boolean concurrent;
             int realThreads = 1;
             try {
-                realThreads = forceField.getInteger(ForceField.ForceFieldInteger.PME_REAL_THREADS);
+                realThreads = forceField.getInteger("PME_REAL_THREADS");
                 if (realThreads >= maxThreads || realThreads < 1) {
                     throw new Exception("pme-real-threads must be < ffx.nt and greater than 0");
                 }
@@ -1273,7 +1268,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
             vacuumRanges = new Range[maxThreads];
-            vacuumNeighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
+            vacuumNeighborList.setDisableUpdates(forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false));
         } else {
             vaporCrystal = null;
             vaporLists = null;
