@@ -75,7 +75,7 @@ class Volume extends PotentialScript {
      */
     @CommandLine.Option(names = ['-p', '--probe'], paramLabel = "0.0",
             description = "Add a probe radius offset to all atomic radii")
-    private double probe = 1.0
+    private double probe = 0.0
 
     /**
      * -v or --verbose enables printing out all energy components for multi-snapshot files (
