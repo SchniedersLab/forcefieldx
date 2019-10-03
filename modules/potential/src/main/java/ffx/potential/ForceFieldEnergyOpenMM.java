@@ -55,7 +55,6 @@ import static java.lang.Double.isFinite;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
-import static java.util.Arrays.fill;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
@@ -235,6 +234,7 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
+import ffx.utilities.Constants;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -1763,7 +1763,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         void addMonteCarloBarostat(double targetPressure, double targetTemp, int frequency) {
             if (ommBarostat == null) {
-                double pressureInBar = targetPressure * 1.01325;
+                double pressureInBar = targetPressure * Constants.ATM_TO_BAR;
                 ommBarostat = OpenMM_MonteCarloBarostat_create(pressureInBar, targetTemp, frequency);
 
                 CompositeConfiguration properties = molecularAssembly.getProperties();

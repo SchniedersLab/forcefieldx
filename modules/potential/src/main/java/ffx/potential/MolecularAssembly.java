@@ -50,6 +50,9 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -2230,6 +2233,61 @@ public class MolecularAssembly extends MSGroup {
         moveIntoUnitCell(getIons());
         moveIntoUnitCell(getMolecules());
     }
+
+    /**
+     * Returns a list of all water molecules in the system, including
+     * both those properly under the water node and those under the
+     * molecules node.
+     *
+     * @return All waters in the system
+     */
+    private List<Molecule> getAllWatersInclMistyped() {
+        Stream<Molecule> mistyped = getMolecules().parallelStream().
+                map((MSNode m) -> (Molecule) m).
+                filter((Molecule m) -> {
+                    List<Atom> atoms = m.getAtomList();
+                    if (atoms.size() != 3) {
+                        return false;
+                    }
+                    int nO = 0;
+                    int nH = 0;
+                    for (Atom atom : atoms) {
+                        int el = atom.getAtomicNumber();
+                        if (el == 1) {
+                            ++nH;
+                        } else if (nH == 8) {
+                            ++nO;
+                        }
+                    }
+                    return nO == 1 && nH == 2;
+                });
+        return Stream.concat(mistyped, getWaters().stream().map((MSNode m) -> (Molecule) m)).distinct().collect(Collectors.toList());
+    }
+
+    /**
+     * Renames water protons to H1 and H2.
+     */
+    void renameWaterProtons() {
+        for (Molecule water : getAllWatersInclMistyped()) {
+            Atom H1 = water.getAtomByName("H1", false);
+            Atom H2 = water.getAtomByName("H2", false);
+            if (H1 != null && H2 != null) {
+                continue;
+            }
+            for (Atom a : water.getAtomList()) {
+                if (a.getAtomicNumber() == 1) {
+                    if (H1 == null) {
+                        H1 = a;
+                        H1.setName("H1");
+                    } else if (H2 == null) {
+                        H2 = a;
+                        H2.setName("H2");
+                    }
+                }
+            }
+        }
+    }
+
 
     private void moveIntoUnitCell(MSNode[] groups) {
         if (groups != null && groups.length > 0) {
