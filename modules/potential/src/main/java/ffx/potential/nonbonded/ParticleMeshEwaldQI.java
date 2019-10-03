@@ -3751,8 +3751,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              */
             if (esvTerm) {
                 for (int i = 0; i < numESVs; i++) {
-                    esvPermRealDeriv_shared[i].getAndSet(0.0);
-                    esvInducedRealDeriv_shared[i].getAndSet(0.0);
+                    esvPermRealDeriv_shared[i].set(0.0);
+                    esvInducedRealDeriv_shared[i].set(0.0);
                 }
             }
         }

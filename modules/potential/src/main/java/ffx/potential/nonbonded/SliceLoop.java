@@ -56,8 +56,8 @@ import edu.rit.pj.IntegerForLoop;
  */
 public abstract class SliceLoop extends IntegerForLoop {
 
-    int nAtoms;
-    int nSymm;
+    private int nAtoms;
+    private int nSymm;
     protected boolean rebuildList = false;
     protected ArrayList<Integer> buildListA = new ArrayList<>();
     protected ArrayList<Integer> buildListS = new ArrayList<>();
@@ -78,7 +78,6 @@ public abstract class SliceLoop extends IntegerForLoop {
      * @param zAtListBuild an array of {@link int} objects.
      */
     public void saveZValues(int[][] zAtListBuild) {
-
     }
 
     /**

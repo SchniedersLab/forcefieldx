@@ -70,7 +70,6 @@ public abstract class RowLoop extends IntegerForLoop {
      * @param zAtListBuild an array of {@link int} objects.
      */
     public void saveZYValues(int[][][] zAtListBuild) {
-
     }
 
     /**

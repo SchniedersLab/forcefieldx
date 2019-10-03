@@ -1329,7 +1329,7 @@ public class VanDerWaals implements MaskingInterface,
             }
             if (esvTerm) {
                 for (int i = 0; i < numESVs; i++) {
-                    esvDeriv[i].getAndSet(0.0);
+                    esvDeriv[i].set(0.0);
                 }
                 lambdaFactors = new LambdaFactorsESV[threadCount];
                 for (int i = 0; i < threadCount; i++) {
