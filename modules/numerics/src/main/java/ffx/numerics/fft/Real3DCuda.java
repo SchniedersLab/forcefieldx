@@ -185,8 +185,8 @@ public class Real3DCuda implements Runnable {
         // Load the CUBIN file and obtain the "recipSummation" function.
         try {
             String bit = System.getProperty("sun.arch.data.model").trim();
-            URL source = getClass().getClassLoader().getResource("ffx/numerics/fft/recipSummation-" + bit + ".cubin");
-            File cubinFile = File.createTempFile("recipSummation", "cubin");
+            URL source = getClass().getClassLoader().getResource("ffx/numerics/fft/recipSummation.ptx");
+            File cubinFile = File.createTempFile("recipSummation", "ptx");
             FileUtils.copyURLToFile(source, cubinFile);
             module = new CUmodule();
             cuModuleLoad(module, cubinFile.getCanonicalPath());

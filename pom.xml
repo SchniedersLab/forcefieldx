@@ -1139,7 +1139,7 @@
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.7.0</java3d.version>
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
-        <jcuda.version>0.8.0</jcuda.version>
+        <jcuda.version>0.9.2</jcuda.version>
         <junit.version>4.12</junit.version>
         <jopenmm.version>7.4.0</jopenmm.version>
         <pj.version>1.0.1</pj.version>

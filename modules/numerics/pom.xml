@@ -26,7 +26,7 @@
                 </directory>
                 <targetPath>ffx/numerics/fft</targetPath>
                 <includes>
-                    <include>*.cu*</include>
+                    <include>*.ptx</include>
                     <include>*.cl</include>
                 </includes>
             </resource>
