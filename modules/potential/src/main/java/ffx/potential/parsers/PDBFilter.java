@@ -2409,6 +2409,9 @@ public final class PDBFilter extends SystemFilter {
                         case "T":
                             name = NucleicAcid3.THY.toString();
                             break;
+                        case "U":
+                            name = NucleicAcid3.URI.toString();
+                            break;
                         case "YG":
                             name = NucleicAcid3.YYG.toString();
                             break;
