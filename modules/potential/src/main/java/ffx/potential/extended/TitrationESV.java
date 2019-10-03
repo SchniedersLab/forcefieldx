@@ -41,6 +41,7 @@ import static java.lang.String.format;
 
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.extended.TitrationUtils.Titration;
+import ffx.utilities.Constants;
 
 /**
  * An extended system variable that allows continuous fractional protonation of
@@ -110,7 +111,7 @@ public final class TitrationESV extends ExtendedVariable {
      */
     protected double getPhBias(double temperature) {
         double lambda = getLambda();
-        double uph = ExtConstants.log10 * ExtConstants.Boltzmann * temperature * (pKaModel - constPh) * lambda;
+        double uph = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh) * lambda;
         double umod = referenceEnergy * lambda;     // TODO Find PMFs for monomers/trimers/pentapeptides.
         return uph + umod;
     }
@@ -122,7 +123,7 @@ public final class TitrationESV extends ExtendedVariable {
      * @return a double.
      */
     protected double getPhBiasDeriv(double temperature) {
-        double duphdl = ExtConstants.log10 * ExtConstants.Boltzmann * temperature * (pKaModel - constPh);
+        double duphdl = ExtConstants.log10 * Constants.R * temperature * (pKaModel - constPh);
         double dumoddl = referenceEnergy;
         return duphdl + dumoddl;
     }

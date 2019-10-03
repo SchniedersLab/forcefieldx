@@ -51,6 +51,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.PolarizeType;
+import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -247,15 +248,6 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * Constant <code>APERIODIC_DEFAULT_EWALD_CUTOFF=1000.0</code>
      */
     public static final double APERIODIC_DEFAULT_EWALD_CUTOFF = 1000.0;
-
-    /**
-     * Conversion from electron**2/Ang to kcal/mole.
-     *
-     * Note -- this value varies slightly between force field definitions and can be set using the
-     * ELECTRIC property.
-     *
-     */
-    public static final double DEFAULT_ELECTRIC = 332.063709;
     public double electric = DEFAULT_ELECTRIC;
 
     /**

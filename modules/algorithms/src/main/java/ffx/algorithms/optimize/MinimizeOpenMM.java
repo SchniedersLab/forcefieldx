@@ -75,7 +75,7 @@ import ffx.potential.bonded.Atom;
  */
 public class MinimizeOpenMM extends Minimize {
 
-    public static final Logger logger = Logger.getLogger(MinimizeOpenMM.class.getName());
+    private static final Logger logger = Logger.getLogger(MinimizeOpenMM.class.getName());
 
     public MinimizeOpenMM(MolecularAssembly molecularAssembly) {
         super(molecularAssembly, molecularAssembly.getPotentialEnergy(), null);

@@ -53,6 +53,7 @@ import ffx.algorithms.mc.MDMove;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.EnergyException;
+import static ffx.utilities.Constants.NS2SEC;
 
 /**
  * Sample a thermodynamic path using the OSRW method, with the time-dependent
@@ -120,10 +121,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     private boolean equilibration = false;
     /**
-     * Convert nanoseconds to seconds.
-     */
-    private static final double NS2SEC = 1e-9;
-    /**
      * Energy conservation during MD moves should generally be within ~0.1
      * kcal/mol. A change in total energy of 1.0 kcal/mol or more is of
      * significant concern that the time step is too large, or lambda moves are
@@ -183,7 +180,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
         if (mcMDE) {
             if (equilibration) {
                 stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
-            } else if (!equilibration) {
+            } else {
                 mdMove.setMDIntervalSteps(stepsPerMove);
             }
         }

@@ -75,6 +75,8 @@ import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
+import ffx.utilities.Constants;
+
 import static ffx.numerics.math.VectorMath.cross;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.dot;
@@ -82,7 +84,6 @@ import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
 import static ffx.numerics.special.Erf.erfc;
-import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -294,7 +295,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     public RealSpaceEnergyRegion(int nt, ForceField forceField, ELEC_FORM elecForm, boolean lambdaTerm) {
         maxThreads = nt;
-        electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
         sharedInteractions = new SharedInteger();
         realSpaceEnergyLoop = new RealSpaceEnergyLoop[nt];
 

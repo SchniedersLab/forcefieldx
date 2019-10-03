@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
+import static ffx.utilities.Constants.R;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 
@@ -56,14 +57,10 @@ public abstract class BoltzmannMC implements MetropolisMC {
     /**
      * Constant <code>logger</code>
      */
-    public static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
-    /**
-     * Constant <code>BOLTZMANN=0.0019872041</code>
-     */
-    static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
+    private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
 
     private double temperature = 298.15; // Room temperature (also SATP).
-    private double kbTinv = -1.0 / (BOLTZMANN * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
+    private double kbTinv = -1.0 / (R * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
     private boolean print = true;
 
     private double e1 = 0.0;
@@ -101,7 +98,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
     @Override
     public void setTemperature(double temp) {
         temperature = temp;
-        kbTinv = -1.0 / (BOLTZMANN * temperature);
+        kbTinv = -1.0 / (R * temperature);
     }
 
     /**

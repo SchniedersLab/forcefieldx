@@ -70,7 +70,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import static ffx.algorithms.dynamics.thermostats.Thermostat.convert;
-import static ffx.algorithms.dynamics.thermostats.Thermostat.kB;
+import static ffx.utilities.Constants.kB;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation

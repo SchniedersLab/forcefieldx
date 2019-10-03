@@ -69,8 +69,9 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
-import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_ELECTRIC;
+import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.utilities.Constants.dWater;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -92,10 +93,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
         CAV, CAV_DISP, GAUSS_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
 
-    /**
-     * Permittivity of water at STP.
-     */
-    public static final double dWater = 78.3;
     /**
      * Default Bondi scale factor.
      */

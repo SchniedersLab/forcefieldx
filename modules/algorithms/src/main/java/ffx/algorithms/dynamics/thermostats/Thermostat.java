@@ -48,6 +48,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
 import ffx.numerics.Constraint;
+import static ffx.utilities.Constants.kB;
 
 /**
  * The abstract Thermostat class implements methods common to all thermostats
@@ -77,19 +78,10 @@ public abstract class Thermostat {
             return ThermostatEnum.BERENDSEN;
         }
     }
-
-    /**
-     * Boltzmann constant in units of g*Ang**2/ps**2/mole/K
-     */
-    public static final double kB = 0.83144725;
     /**
      * Conversion from kcal/mole to g*Ang**2/ps**2.
      */
     public static final double convert = 4.1840e2;
-    /**
-     * Gas constant (in Kcal/mole/Kelvin).
-     */
-    public static final double R = 1.9872066e-3;
 
     /**
      * The identity of this Thermostat.

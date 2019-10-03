@@ -62,6 +62,8 @@ import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.utils.EnergyException;
+import ffx.utilities.Constants;
+
 import static ffx.numerics.special.Erf.erfc;
 
 /**
@@ -381,7 +383,7 @@ public class PCGSolver {
             previousEps = eps;
             eps = max(pcgIterRegion2.getEps(), pcgIterRegion2.getEpsCR());
             completedSCFCycles++;
-            eps = MultipoleType.DEBYE * sqrt(eps / (double) nAtoms);
+            eps = Constants.ELEC_ANG_TO_DEBYE * sqrt(eps / (double) nAtoms);
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(

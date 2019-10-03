@@ -45,7 +45,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.OptimizationListener;
@@ -53,6 +52,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.XtalEnergy;
+import ffx.utilities.Constants;
 
 /**
  * Minimize the energy of a system to an RMS gradient per atom convergence criteria.
@@ -450,7 +450,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
         double PRESCON = 6.85684112e4;
         double temperature = 298.15;
         int nAtoms = molecularAssembly.getAtomArray().length;
-        double pressure = PRESCON * (nAtoms * Thermostat.R * temperature / unitCell.volume - dedv);
+        double pressure = PRESCON * (nAtoms * Constants.R * temperature / unitCell.volume - dedv);
 
         logger.info(format("\n Pressure estimate (%6.2f Kelvin): %12.8f (atm)", temperature, pressure));
 

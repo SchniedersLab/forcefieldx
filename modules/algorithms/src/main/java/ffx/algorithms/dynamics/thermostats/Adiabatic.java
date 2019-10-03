@@ -39,6 +39,7 @@ package ffx.algorithms.dynamics.thermostats;
 
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
+import ffx.utilities.Constants;
 
 import java.util.Collections;
 import java.util.List;
@@ -103,6 +104,6 @@ public class Adiabatic extends Thermostat {
     @Override
     public void setTargetTemperature(double t) {
         targetTemperature = t;
-        kT = t * kB;
+        kT = t * Constants.kB;
     }
 }

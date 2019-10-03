@@ -52,7 +52,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
-import static ffx.potential.nonbonded.GeneralizedKirkwood.dWater;
+import static ffx.utilities.Constants.dWater;
 
 /**
  * Parallel calculation of the Generalized Kirkwood induced reaction field.

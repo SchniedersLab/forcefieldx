@@ -64,7 +64,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import static ffx.potential.extended.ExtConstants.RNG;
-import static ffx.potential.extended.ExtConstants.kB;
+import static ffx.utilities.Constants.kB;
 
 /**
  * <p>ExtUtils class.</p>

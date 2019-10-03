@@ -63,6 +63,8 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
+import ffx.utilities.Constants;
+
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 
@@ -259,7 +261,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
 
         esvList = new ArrayList<>();
-        currentTemperature = ExtConstants.roomTemperature;
+        currentTemperature = Constants.ROOM_TEMPERATURE;
 
         // Initialize atom arrays with the existing assembly.
         extendedAtoms = mola.getAtomArray();
@@ -544,7 +546,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             return 0.0;
         }
         if (config.forceRoomTemp) {
-            return biasEnergy(ExtConstants.roomTemperature);
+            return biasEnergy(Constants.ROOM_TEMPERATURE);
         } else {
             return biasEnergy(temperature);
         }
@@ -569,7 +571,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      */
     public void propagateESVs(double temperature, double dt, double currentTimePs) {
         if (config.forceRoomTemp) {
-            temperature = ExtConstants.roomTemperature;
+            temperature = Constants.ROOM_TEMPERATURE;
         } else {
             currentTemperature = temperature;
         }
@@ -778,7 +780,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     private double getDerivative(int esvID) {
         final double temperature = (config.forceRoomTemp)
-                ? ExtConstants.roomTemperature : currentTemperature;
+                ? Constants.ROOM_TEMPERATURE : currentTemperature;
         final boolean p = config.decomposeDeriv;
         ExtendedVariable esv = esvList.get(esvID);
         double esvDeriv = 0.0;

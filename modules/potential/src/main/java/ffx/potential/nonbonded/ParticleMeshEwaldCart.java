@@ -40,9 +40,11 @@ package ffx.potential.nonbonded;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -367,7 +369,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         maxThreads = parallelTeam.getThreadCount();
 
-        electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
         poleps = forceField.getDouble("POLAR_EPS", 1e-5);
 
         // If PME-specific lambda term not set, default to force field-wide lambda term.
@@ -1675,7 +1677,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             completedSCFCycles++;
             previousEps = eps;
             eps = sorRegion.getEps();
-            eps = MultipoleType.DEBYE * sqrt(eps / (double) nAtoms);
+            eps = Constants.ELEC_ANG_TO_DEBYE * sqrt(eps / (double) nAtoms);
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(

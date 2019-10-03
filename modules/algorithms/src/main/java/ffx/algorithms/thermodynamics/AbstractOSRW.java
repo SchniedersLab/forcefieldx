@@ -42,6 +42,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -630,7 +631,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     void langevin() {
         // Compute the random force pre-factor (kcal/mol * psec^-2).
-        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
+        double rt2 = 2.0 * Constants.R * temperature * thetaFriction / dt;
 
         // Compute the random force.
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;

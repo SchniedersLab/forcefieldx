@@ -57,6 +57,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.intxyz;
+import static ffx.utilities.Constants.kB;
 
 /**
  * The MultiResidue class allows switching between residues for uses such as
@@ -91,10 +92,6 @@ public class MultiTerminus extends Residue {
      * Charge state of the termini.
      */
     public boolean isCharged;
-    /**
-     * Constant <code>kB=0.83144725</code>
-     */
-    public static final double kB = 0.83144725;
 
     private Atom uberH3;
     private Atom uberHO;

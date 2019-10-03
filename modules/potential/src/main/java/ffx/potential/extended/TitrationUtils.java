@@ -60,6 +60,8 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.Constants;
+
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**
@@ -851,7 +853,7 @@ public class TitrationUtils {
                 } else {
                     // PREVIOUSLY: draw vel from maxwell and set accel to zero
                     a.setXYZGradient(0, 0, 0);
-                    a.setVelocity(ExtUtils.maxwellVelocity(a.getMass(), ExtConstants.roomTemperature));
+                    a.setVelocity(ExtUtils.maxwellVelocity(a.getMass(), Constants.ROOM_TEMPERATURE));
                     a.setAcceleration(new double[]{0, 0, 0});
                     a.setPreviousAcceleration(new double[]{0, 0, 0});
                 }
