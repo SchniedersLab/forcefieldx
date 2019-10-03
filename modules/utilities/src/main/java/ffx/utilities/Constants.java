@@ -107,6 +107,11 @@ public class Constants {
      */
     public static final double NS2SEC = 1e-9;
 
+    /**
+     * Room temperature ~= 298.15 Kelvins.
+     */
+    public static final double ROOM_TEMPERATURE = 298.15;
+
     // Below are constants not updated to SI standard and likely will never be updated to SI standard.
 
     /**

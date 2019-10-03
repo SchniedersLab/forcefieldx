@@ -64,7 +64,6 @@ import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Torsion;
-import ffx.potential.extended.ExtConstants;
 import ffx.potential.extended.ExtUtils;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.TitrationUtils.Snapshots;
@@ -73,8 +72,9 @@ import ffx.potential.extended.TitrationUtils.TitrationConfig;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.SystemTemperatureException;
-import static ffx.potential.extended.ExtConstants.ns2sec;
+import ffx.utilities.Constants;
 import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
+import static ffx.utilities.Constants.NS2SEC;
 
 /**
  * <p>PhDiscount class.</p>
@@ -347,7 +347,7 @@ public class PhDiscount implements MonteCarloListener {
                 format("Un',Un: %16.8f, %16.8f", Un_prime, Un)));
 
         /* Calculate acceptance probability from detailed balance equation. */
-        final double beta = 1 / (ExtConstants.Boltzmann * thermostat.getCurrentTemperature());
+        final double beta = 1 / (Constants.R * thermostat.getCurrentTemperature());
         final double dgDiscrete = Un - Uo;
         final double dgContinuous = Un_prime - Uo_prime;
         final double crit = FastMath.exp(-beta * (dgDiscrete - dgContinuous));
@@ -357,12 +357,12 @@ public class PhDiscount implements MonteCarloListener {
         long took = System.nanoTime() - startTime;
         if (rand <= crit) {
             logger.info(format(" %-40s %-s", "Monte-Carlo accepted.",
-                    format("Wallclock: %8.3f sec", took * ns2sec)));
+                    format("Wallclock: %8.3f sec", took * NS2SEC)));
             writeSnapshot(".post-acpt");
             return true;
         } else {
             logger.info(format(" %-40s %-s", "Monte-Carlo denied; reverting state.",
-                    format("Wallclock: %8.3f sec", took * ns2sec)));
+                    format("Wallclock: %8.3f sec", took * NS2SEC)));
             writeSnapshot(".post-deny");
             assemblyState.revertState();
             forceFieldEnergy.reInit();

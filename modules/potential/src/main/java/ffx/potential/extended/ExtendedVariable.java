@@ -59,6 +59,8 @@ import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
 import ffx.potential.parameters.MultipoleType;
+import ffx.utilities.Constants;
+
 import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.potential.parameters.MultipoleType.zeroM;
@@ -261,7 +263,7 @@ public abstract class ExtendedVariable {
         if (!config.propagation) {
             return;
         }
-        double rt2 = 2.0 * ExtConstants.Boltzmann * setTemperature * config.thetaFriction / dt;
+        double rt2 = 2.0 * Constants.R * setTemperature * config.thetaFriction / dt;
         double randomForce = sqrt(rt2) * RNG.nextGaussian() / ExtConstants.forceToKcal;
         double dEdL = -dEdEsv * sin(2.0 * theta);
         halfThetaVelocity = (halfThetaVelocity * (2.0 * config.thetaMass - config.thetaFriction * dt)
