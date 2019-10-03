@@ -131,7 +131,7 @@ public class PermanentGKFieldRegion extends ParallelRegion {
     public PermanentGKFieldRegion(int nt, ForceField forceField) {
 
         // Set the Kirkwood multipolar reaction field constants.
-        double epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON, dWater);
+        double epsilon = forceField.getDouble("GK_EPSILON", dWater);
         fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
         fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
         fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);

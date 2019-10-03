@@ -250,7 +250,7 @@ public class DiffractionData implements DataContainer {
 
         ForceField forceField = assembly[0].getForceField();
         nativeEnvironmentApproximation = forceField.getBoolean(
-                ForceField.ForceFieldBoolean.NATIVE_ENVIRONMENT_APPROXIMATION, false);
+                "NATIVE_ENVIRONMENT_APPROXIMATION", false);
 
         crystal = new Crystal[n];
         resolution = new Resolution[n];

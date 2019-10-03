@@ -261,7 +261,7 @@ public class MMgksa {
     public void setDecompose(boolean decompose) {
         this.decompose = decompose;
         try {
-            String cavModel = mola.getForceField().getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
+            String cavModel = mola.getForceField().getString("CAVMODEL", "CAV_DISP").toUpperCase();
             nonPolar = GeneralizedKirkwood.getNonPolarModel(cavModel);
         } catch (Exception ex) {
             nonPolar = NonPolar.NONE;

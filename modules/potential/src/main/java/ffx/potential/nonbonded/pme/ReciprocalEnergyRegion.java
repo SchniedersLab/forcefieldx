@@ -209,7 +209,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         inducedDipoleRecipEnergy = new SharedDouble();
         maxThreads = nt;
 
-        electric = forceField.getDouble(ForceField.ForceFieldDouble.ELECTRIC, DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
         aewald1 = -electric * aewald / SQRT_PI;
         aewald2 = 2.0 * aewald * aewald;
         aewald3 = -2.0 / 3.0 * electric * aewald * aewald * aewald / SQRT_PI;

@@ -154,7 +154,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
         Torsion torsion = new Torsion(bond1, middleBond, bond3);
         torsion.torsionType = torsionType;
-        torsion.units = forceField.getDouble(ForceField.ForceFieldDouble.TORSIONUNIT, 1.0);
+        torsion.units = forceField.getDouble("TORSIONUNIT", 1.0);
 
         return torsion;
     }

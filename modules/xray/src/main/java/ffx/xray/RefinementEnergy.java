@@ -57,7 +57,6 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
@@ -193,8 +192,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
         // Determine if lambda derivatives are needed.
         ForceField forceField = molecularAssemblies[0].getForceField();
-        // boolean lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
-        printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, true);
+        // boolean lambdaTerm = forceField.getBoolean("LAMBDATERM", false);
+        printOnFailure = forceField.getBoolean("PRINT_ON_FAILURE", true);
 
         // Fill an active atom array.
         int count = 0;
@@ -376,7 +375,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
             printOnFailure = onFail;
         } else {
             try {
-                molecularAssemblies[0].getForceField().getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE);
+                molecularAssemblies[0].getForceField().getBoolean("PRINT_ON_FAILURE");
                 /*
                  * If the call was successful, the property was explicitly set
                  * somewhere and should be kept. If an exception was thrown, the

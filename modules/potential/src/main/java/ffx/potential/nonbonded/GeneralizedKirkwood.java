@@ -70,7 +70,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_ELECTRIC;
-import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
@@ -133,7 +132,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * Original crossover in Schnieders thesis: 3.0*(surface tension/solvent pressure)
-     *
+     * <p>
      * Currently set to 9.0 to match Chandler et al. simulation data.
      */
     private static final double DEFAULT_CROSSOVER = 9.0;
@@ -434,13 +433,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
         polarization = particleMeshEwald.polarization;
 
         // Set the conversion from electron**2/Ang to kcal/mole
-        electric = forceField.getDouble(ForceField.ForceFieldDouble.ELECTRIC, DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
 
         // Set the Kirkwood multipolar reaction field constants.
-        epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON, dWater);
+        epsilon = forceField.getDouble("GK_EPSILON", dWater);
 
         // Define how force arrays will be accumulated.
-        String value = forceField.getString(ARRAY_REDUCTION, "MULTI");
+        String value = forceField.getString("ARRAY_REDUCTION", "MULTI");
         try {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
         } catch (Exception e) {
@@ -449,12 +448,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         // Define default Bondi scale factor, and HCT overlap scale factors.
-        bondiScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_BONDIOVERRIDE, DEFAULT_BONDI_SCALE);
-        heavyAtomOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, DEFAULT_OVERLAP_SCALE);
-        hydrogenOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, heavyAtomOverlapScale);
+        bondiScale = forceField.getDouble("GK_BONDIOVERRIDE", DEFAULT_BONDI_SCALE);
+        heavyAtomOverlapScale = forceField.getDouble("GK_OVERLAPSCALE", DEFAULT_OVERLAP_SCALE);
+        hydrogenOverlapScale = forceField.getDouble("GK_HYDROGEN_OVERLAPSCALE", heavyAtomOverlapScale);
 
         // Process any radii override values.
-        String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
+        String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
         if (radiiProp != null) {
             String[] tokens = radiiProp.split("A");
             for (String token : tokens) {
@@ -471,7 +470,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         NonPolar nonpolarModel;
         try {
-            String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
+            String cavModel = forceField.getString("CAVMODEL", "CAV_DISP").toUpperCase();
             nonpolarModel = getNonPolarModel(cavModel);
         } catch (Exception ex) {
             nonpolarModel = NonPolar.NONE;
@@ -483,20 +482,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fieldGK = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
         fieldGKCR = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
 
-        nativeEnvironmentApproximation = forceField.getBoolean(
-                ForceField.ForceFieldBoolean.NATIVE_ENVIRONMENT_APPROXIMATION, false);
-        double tempProbe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
-        cutoff = forceField.getDouble(ForceField.ForceFieldDouble.GK_CUTOFF, particleMeshEwald.getEwaldCutoff());
+        nativeEnvironmentApproximation = forceField.getBoolean("NATIVE_ENVIRONMENT_APPROXIMATION", false);
+        double tempProbe = forceField.getDouble("PROBE_RADIUS", 1.4);
+        cutoff = forceField.getDouble("GK_CUTOFF", particleMeshEwald.getEwaldCutoff());
         cut2 = cutoff * cutoff;
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_LAMBDATERM,
-                forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
+        lambdaTerm = forceField.getBoolean("GK_LAMBDATERM",
+                forceField.getBoolean("LAMBDATERM", false));
 
 
         /*
           If polarization lambda exponent is set to 0.0, then we're running
           Dual-Topology and the GK energy will be scaled with the overall system lambda value.
          */
-        double polLambdaExp = forceField.getDouble(ForceField.ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
+        double polLambdaExp = forceField.getDouble("POLARIZATION_LAMBDA_EXPONENT", 3.0);
         if (polLambdaExp == 0.0) {
             lambdaTerm = false;
             logger.info(" GK lambda term set to false.");
@@ -504,8 +502,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         // If PME includes polarization and is a function of lambda, GK must also.
         if (!lambdaTerm && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
-            if (forceField.getBoolean(ForceField.ForceFieldBoolean.ELEC_LAMBDATERM,
-                    forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false))) {
+            if (forceField.getBoolean("ELEC_LAMBDATERM",
+                    forceField.getBoolean("LAMBDATERM", false))) {
                 logger.info(" If PME includes polarization and is a function of lambda, GK must also.");
                 lambdaTerm = true;
             }
@@ -513,7 +511,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         initAtomArrays();
 
-        doVolume = forceField.getBoolean(ForceField.ForceFieldBoolean.VOLUME, false);
+        doVolume = forceField.getBoolean("VOLUME", false);
 
         double tensionDefault;
         switch (nonPolar) {
@@ -550,7 +548,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double fourThirdsPI = 4.0 / 3.0 * PI;
                 double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0);
 
-                probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, DEFAULT_GAUSSVOL_PROBE);
+                probe = forceField.getDouble("PROBE_RADIUS", DEFAULT_GAUSSVOL_PROBE);
                 int index = 0;
                 double hydrogenFactor = 0.035;
                 int nCarbons = 0;
@@ -609,9 +607,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 break;
         }
 
-        surfaceTension = forceField.getDouble(ForceField.ForceFieldDouble.SURFACE_TENSION, tensionDefault);
-        solventPressue = forceField.getDouble(ForceField.ForceFieldDouble.SOLVENT_PRESSURE, DEFAULT_SOLVENT_PRESSURE);
-        crossOver = forceField.getDouble(ForceField.ForceFieldDouble.CROSS_OVER, DEFAULT_CROSSOVER);
+        surfaceTension = forceField.getDouble("SURFACE_TENSION", tensionDefault);
+        solventPressue = forceField.getDouble("SOLVENT_PRESSURE", DEFAULT_SOLVENT_PRESSURE);
+        crossOver = forceField.getDouble("CROSS_OVER", DEFAULT_CROSSOVER);
 
         if (gaussVol != null) {
             gaussVol.setSurfaceTension(surfaceTension);

@@ -53,8 +53,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
@@ -375,13 +373,13 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             XYZFilter filter = new XYZFilter(file, assembly, null, null);
             ForceField forceField = assembly.getForceField();
-            final double a = forceField.getDouble(ForceFieldDouble.A_AXIS, 10.0);
-            final double b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
-            final double c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
-            final double alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
-            final double beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
-            final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-            final String spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P1");
+            final double a = forceField.getDouble("A_AXIS", 10.0);
+            final double b = forceField.getDouble("B_AXIS", a);
+            final double c = forceField.getDouble("C_AXIS", a);
+            final double alpha = forceField.getDouble("ALPHA", 90.0);
+            final double beta = forceField.getDouble("BETA", 90.0);
+            final double gamma = forceField.getDouble("GAMMA", 90.0);
+            final String spacegroup = forceField.getString("SPACEGROUP", "P1");
             Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
             if (!filter.writeFileAsP1(file, false, crystal)) {
                 logger.info(format(" Save failed for %s", assembly.toString()));

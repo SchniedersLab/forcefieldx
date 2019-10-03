@@ -116,7 +116,7 @@ public class MultiTerminus extends Residue {
         super(residue.getName(), residue.getResidueNumber(), residue.residueType,
                 residue.getChainID(), residue.getChainID().toString());
         try {
-            String ffString = forceField.getString(ForceField.ForceFieldString.FORCEFIELD);
+            String ffString = forceField.getString("FORCEFIELD");
             if (ForceField.ForceFieldName.valueOf(ffString) != ForceField.ForceFieldName.AMOEBA_PROTEIN_2013) {
                 logger.severe("MultiTerminus supported only under AMOEBA_PROTEIN_2013.");
             }

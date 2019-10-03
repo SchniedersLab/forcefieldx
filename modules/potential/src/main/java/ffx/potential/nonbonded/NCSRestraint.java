@@ -96,7 +96,7 @@ public class NCSRestraint implements LambdaInterface {
         spaceGroup = this.ncsCrystal.spaceGroup;
         nSymm = spaceGroup.getNumberOfSymOps();
         assert (nAtoms % nSymm == 0);
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        lambdaTerm = forceField.getBoolean("LAMBDATERM", false);
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
         } else {

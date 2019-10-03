@@ -101,7 +101,7 @@ public class CoordRestraint implements LambdaInterface {
      * @param forceField the ForceField to apply.
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField) {
-        this(atoms, forceField, forceField.getBoolean(ForceField.ForceFieldBoolean.RESTRAIN_WITH_LAMBDA, true));
+        this(atoms, forceField, forceField.getBoolean("RESTRAIN_WITH_LAMBDA", true));
     }
 
     /**
@@ -113,7 +113,7 @@ public class CoordRestraint implements LambdaInterface {
      * @param useLambda  If false, do not apply lambda term to this restraint.
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField, boolean useLambda) {
-        this(atoms, forceField, useLambda, forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0));
+        this(atoms, forceField, useLambda, forceField.getDouble("RESTRAINT_K", 10.0));
     }
 
     /**
@@ -130,7 +130,7 @@ public class CoordRestraint implements LambdaInterface {
         nAtoms = atoms.length;
 
         if (useLambda) {
-            lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+            lambdaTerm = forceField.getBoolean("LAMBDATERM", false);
         } else {
             lambdaTerm = false;
         }

@@ -175,10 +175,8 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
 
         // Flag to indicate application of an intermolecular softcore potential.
         if (lambdaTerm) {
-            intermolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
-            intramolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+            intermolecularSoftcore = forceField.getBoolean("INTERMOLECULAR_SOFTCORE", false);
+            intramolecularSoftcore = forceField.getBoolean("INTRAMOLECULAR_SOFTCORE", false);
         } else {
             intermolecularSoftcore = false;
             intramolecularSoftcore = false;

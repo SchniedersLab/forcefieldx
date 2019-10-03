@@ -79,7 +79,7 @@ public class PolarizationEnergyRegion extends ParallelRegion {
     private final SharedDouble polarizationEnergy = new SharedDouble();
 
     public PolarizationEnergyRegion(int nt, ForceField forceField) {
-        electric = forceField.getDouble(ForceField.ForceFieldDouble.ELECTRIC, DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
         polarizationLoop = new PolarizationEnergyLoop[nt];
     }
 

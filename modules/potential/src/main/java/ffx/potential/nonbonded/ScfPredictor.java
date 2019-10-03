@@ -57,7 +57,6 @@ import org.apache.commons.math3.util.Pair;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import static ffx.numerics.math.VectorMath.binomial;
 
 /**
@@ -134,7 +133,7 @@ public class ScfPredictor {
             if (predictorMode == PredictorMode.LS) {
                 leastSquaresPredictor = new LeastSquaresPredictor(eps);
             }
-            if (ff.getBoolean(ForceFieldBoolean.LAMBDATERM, false) || ExtendedSystem.esvSystemActive) {
+            if (ff.getBoolean("LAMBDATERM", false) || ExtendedSystem.esvSystemActive) {
                 predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
                 predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
             } else {

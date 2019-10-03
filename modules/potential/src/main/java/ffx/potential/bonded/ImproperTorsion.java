@@ -131,7 +131,7 @@ public class ImproperTorsion extends BondedTerm {
         ArrayList<ImproperTorsion> improperTorsions = new ArrayList<>();
 
         Collection<ImproperTorsionType> types = forceField.getImproperTypes();
-        double units = forceField.getDouble(ForceField.ForceFieldDouble.IMPTORUNIT, 1.0);
+        double units = forceField.getDouble("IMPTORUNIT", 1.0);
         boolean done = false;
 
         // No wild card matches.

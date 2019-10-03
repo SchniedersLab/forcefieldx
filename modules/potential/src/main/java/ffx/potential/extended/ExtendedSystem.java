@@ -229,8 +229,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         ffe = (ForceFieldEnergy) potential;
 
         ForceField ff = mola.getForceField();
-        vdwTerm = ff.getBoolean(ForceField.ForceFieldBoolean.VDWTERM, true);
-        mpoleTerm = ff.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
+        vdwTerm = ff.getBoolean("VDWTERM", true);
+        mpoleTerm = ff.getBoolean("MPOLETERM", true);
 
         VanDerWaals vdwNode = null;
         ParticleMeshEwaldQI pmeNode = null;

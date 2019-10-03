@@ -47,11 +47,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
-import static ffx.potential.parameters.ForceField.ForceFieldString.EPSILONRULE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSRULE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSSIZE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSTYPE;
-import static ffx.potential.parameters.ForceField.ForceFieldString.VDWTYPE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
@@ -169,7 +164,7 @@ public class VanDerWaalsForm {
         radiusType = RADIUS_TYPE.R_MIN;
 
         // Define functional form.
-        String value = forceField.getString(VDWTYPE, vdwType.toString());
+        String value = forceField.getString("VDWTYPE", vdwType.toString());
         try {
             vdwType = VDW_TYPE.valueOf(toEnumForm(value));
         } catch (Exception e) {
@@ -189,7 +184,7 @@ public class VanDerWaalsForm {
         }
 
         // Define epsilon combining rule.
-        value = forceField.getString(EPSILONRULE, epsilonRule.toString());
+        value = forceField.getString("EPSILONRULE", epsilonRule.toString());
         try {
             epsilonRule = EPSILON_RULE.valueOf(toEnumForm(value));
         } catch (Exception e) {
@@ -197,7 +192,7 @@ public class VanDerWaalsForm {
         }
 
         // Define radius combining rule.
-        value = forceField.getString(RADIUSRULE, radiusRule.toString());
+        value = forceField.getString("RADIUSRULE", radiusRule.toString());
         try {
             radiusRule = RADIUS_RULE.valueOf(toEnumForm(value));
         } catch (Exception e) {
@@ -205,7 +200,7 @@ public class VanDerWaalsForm {
         }
 
         // Define radius size.
-        value = forceField.getString(RADIUSSIZE, radiusSize.toString());
+        value = forceField.getString("RADIUSSIZE", radiusSize.toString());
         try {
             radiusSize = RADIUS_SIZE.valueOf(toEnumForm(value));
         } catch (Exception e) {
@@ -213,7 +208,7 @@ public class VanDerWaalsForm {
         }
 
         // Define radius type.
-        value = forceField.getString(RADIUSTYPE, radiusType.toString());
+        value = forceField.getString("RADIUSTYPE", radiusType.toString());
         try {
             radiusType = RADIUS_TYPE.valueOf(toEnumForm(value));
         } catch (Exception e) {
@@ -245,10 +240,10 @@ public class VanDerWaalsForm {
         t1n = pow(delta1, dispersivePower);
         gamma1 = 1.0 + gamma;
 
-        scale12 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_12_SCALE, 0.0);
-        scale13 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_13_SCALE, 0.0);
-        scale14 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_14_SCALE, 1.0);
-        double scale15 = forceField.getDouble(ForceField.ForceFieldDouble.VDW_15_SCALE, 1.0);
+        scale12 = forceField.getDouble("VDW_12_SCALE", 0.0);
+        scale13 = forceField.getDouble("VDW_13_SCALE", 0.0);
+        scale14 = forceField.getDouble("VDW_14_SCALE", 1.0);
+        double scale15 = forceField.getDouble("VDW_15_SCALE", 1.0);
 
         // The convention in TINKER is a vdw-14-scale factor of 2.0 means to scale by 0.5.
         if (scale12 > 1.0) {

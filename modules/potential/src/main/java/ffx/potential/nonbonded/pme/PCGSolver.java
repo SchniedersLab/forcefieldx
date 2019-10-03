@@ -212,10 +212,10 @@ public class PCGSolver {
         pcgIterRegion2 = new PCGIterRegion2(maxThreads);
 
         // The size of the preconditioner neighbor list depends on the size of the preconditioner cutoff.
-        boolean preconditioner = forceField.getBoolean(ForceField.ForceFieldBoolean.USE_SCF_PRECONDITIONER, true);
+        boolean preconditioner = forceField.getBoolean("USE_SCF_PRECONDITIONER", true);
         if (preconditioner) {
-            preconditionerCutoff = forceField.getDouble(ForceField.ForceFieldDouble.CG_PRECONDITIONER_CUTOFF, 4.5);
-            preconditionerEwald = forceField.getDouble(ForceField.ForceFieldDouble.CG_PRECONDITIONER_EWALD, 0.0);
+            preconditionerCutoff = forceField.getDouble("CG_PRECONDITIONER_CUTOFF", 4.5);
+            preconditionerEwald = forceField.getDouble("CG_PRECONDITIONER_EWALD", 0.0);
         } else {
             preconditionerCutoff = 0.0;
         }
