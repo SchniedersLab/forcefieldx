@@ -137,7 +137,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Boolean used to signify molecular dynamics in the NPT
      * (isothermal-isobaric) ensemble.
      */
-    private boolean NPT = false;
+    private boolean constantPressure = false;
     /**
      * Double that holds the target pressure for the barostat under NPT
      * dynamics.
@@ -231,7 +231,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * setNPTDynamics.</p>
      */
     public void setNPTDynamics() {
-        NPT = true;
+        constantPressure = true;
     }
 
     /**
@@ -262,9 +262,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             case BUSSI:
             case BERENDSEN:
                 if (!integratorString.equalsIgnoreCase("LANGEVIN")) {
-                    logger.info(String.format(" Replacing %s thermostat Andersen", thermostatType));
+                    logger.info(String.format(" Replacing FFX thermostat %s with OpenMM Andersen thermostat", thermostatType));
                     forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
-                    if (NPT) {
+                    if (constantPressure) {
                         setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
                     }
                 } else {
@@ -272,7 +272,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 }
                 break;
             case ADIABATIC:
-                if (integratorString.equalsIgnoreCase("LANGEVIN") && NPT) {
+                if (integratorString.equalsIgnoreCase("LANGEVIN") && constantPressure) {
                     setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
                 }
             default:
@@ -725,6 +725,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000) == 0 && i != 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
                     logger.info(format(" Wrote dynamics restart file to %s", restartFile.getName()));
+                    if (constantPressure) {
+                        Crystal crystal = molecularAssembly.getCrystal();
+                        double currentDensity = crystal.getDensity(molecularAssembly.getTotalMass());
+                        logger.info(format(" Density %6.3f (g/cc) with unit cell %s.",
+                                currentDensity, crystal.toShortString()));
+                    }
                 } else {
                     logger.info(format(" Writing dynamics restart file to %s failed.", restartFile.getName()));
                 }

@@ -37,9 +37,9 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Objects;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 
@@ -236,7 +236,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
      */
     @Override
     public int hashCode() {
-        return Objects.hash(atomClasses);
+        return Arrays.hashCode(atomClasses);
     }
 
 }

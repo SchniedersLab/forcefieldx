@@ -60,6 +60,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.BaseFFXTest;
 import ffx.xray.parsers.CIFFilter;
 import ffx.xray.parsers.MTZFilter;
 
@@ -67,16 +68,13 @@ import ffx.xray.parsers.MTZFilter;
  * @author Timothy D. Fenn and Michael J. Schnieders
  */
 @RunWith(Parameterized.class)
-public class XRayMinimizeTest {
+public class XRayMinimizeTest extends BaseFFXTest {
 
     private static final Logger logger = Logger.getLogger(XRayMinimizeTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
-        String cernBessel = System.getProperty("cern.bessel");
-        Collection<Object[]> ret;
-        if (cernBessel == null || !cernBessel.equalsIgnoreCase("false")) {
-            ret = Arrays.asList(new Object[][]{
+        return Arrays.asList(new Object[][]{
                     {false,
                             "NSF D2 domain test",
                             "ffx/xray/structures/1NSF.pdb",
@@ -96,29 +94,6 @@ public class XRayMinimizeTest {
                             0.9336845537932159,
                             0.1319269157669047}
             });
-        } else {
-            ret = Arrays.asList(new Object[][]{
-                    {false,
-                            "NSF D2 domain test",
-                            "ffx/xray/structures/1NSF.pdb",
-                            "ffx/xray/structures/1NSF.mtz",
-                            null,
-                            25.178605682089,
-                            25.448314839595,
-                            0.8921390108139,
-                            0.1526816244814},
-                    {true,
-                            "SNARE complex",
-                            "ffx/xray/structures/1N7S.pdb",
-                            "ffx/xray/structures/1N7S.mtz",
-                            null,
-                            21.06415513383504,
-                            22.8514582653533896,
-                            0.9336851526989411,
-                            0.15388715220717386}
-            });
-        }
-        return ret;
     }
 
     private final String info;
@@ -131,7 +106,6 @@ public class XRayMinimizeTest {
     private final double rFree;
     private final double sigmaA;
     private final double sigmaW;
-    private final boolean ci;
     private final boolean ciOnly;
 
     public XRayMinimizeTest(boolean ciOnly,
@@ -144,8 +118,7 @@ public class XRayMinimizeTest {
         this.sigmaA = sigmaA;
         this.sigmaW = sigmaW;
 
-        ci = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
-        if (!ci && ciOnly) {
+        if (!ffxCI && ciOnly) {
             crystalStats = null;
             return;
         }
@@ -223,7 +196,7 @@ public class XRayMinimizeTest {
 
     @Test
     public void testLauncher() {
-        if (!ci && ciOnly) return;
+        if (!ffxCI && ciOnly) return;
         testCrystalStats();
         testScaleBulk();
         testSigmaA();
@@ -231,7 +204,7 @@ public class XRayMinimizeTest {
     }
 
     public void testCrystalStats() {
-        if (!ci && ciOnly) {
+        if (!ffxCI && ciOnly) {
             return;
         }
 

@@ -90,8 +90,6 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
         this.endKineticEnergy = endKineticEnergy;
         this.endPotentialEnergy = endPotentialEnergy;
         this.endTotalEnergy = endTotalEnergy;
-
-        ffxOpenMM = System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
     }
 
     @Before

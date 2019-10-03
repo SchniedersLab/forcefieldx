@@ -1604,7 +1604,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 case BISECTOR:
                     cross(u, v, w);
                     break;
-                case TRISECTOR:
+                case THREEFOLD:
                 case ZTHENBISECTOR:
                     id = ax[2];
                     w[0] = x[id];

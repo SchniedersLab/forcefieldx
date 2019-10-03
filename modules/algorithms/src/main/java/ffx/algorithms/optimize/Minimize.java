@@ -43,6 +43,8 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.dynamics.MolecularDynamics;
@@ -217,9 +219,12 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
     }
 
-    private static MinimizationEngine defaultEngine(Potential potentialEnergy) {
-        if (System.getProperty("minimize-engine") != null) {
-            if (System.getProperty("minimize-engine").equalsIgnoreCase("OMM")) {
+    private static MinimizationEngine defaultEngine(MolecularAssembly molecularAssembly,
+                                                    Potential potentialEnergy) {
+        CompositeConfiguration properties = molecularAssembly.getProperties();
+        String minimizeEngine = properties.getString("minimize-engine", null);
+        if (minimizeEngine != null) {
+            if (minimizeEngine.equalsIgnoreCase("OMM")) {
                 return MinimizationEngine.OPENMM;
             } else {
                 return MinimizationEngine.FFX;

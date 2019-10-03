@@ -40,7 +40,6 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Objects;
 import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -222,21 +221,11 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof OutOfPlaneBendType)) {
-            return false;
-        }
-
-        OutOfPlaneBendType outOfPlaneBendType = (OutOfPlaneBendType) other;
-        for (int i = 0; i < 4; i++) {
-            if (outOfPlaneBendType.atomClasses[i] != atomClasses[i]) {
-                return false;
-            }
-        }
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OutOfPlaneBendType outOfPlaneBendType = (OutOfPlaneBendType) o;
+        return Arrays.equals(atomClasses, outOfPlaneBendType.atomClasses);
     }
 
     /**
@@ -244,7 +233,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      */
     @Override
     public int hashCode() {
-        return Objects.hash(atomClasses);
+        return Arrays.hashCode(atomClasses);
     }
 
 

@@ -414,16 +414,11 @@ public class EnergyTest extends BaseFFXTest {
         totalEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
                 + torsionEnergy + improperTorsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy
                 + vanDerWaalsEnergy + permanentEnergy + polarizationEnergy + gkEnergy;
-
-        ffxCI = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
-        ffxOpenMM = System.getProperty("ffx.openMM","false").equalsIgnoreCase("true");
     }
 
     @Before
     public void before() {
-
         binding = new Binding();
-
         System.clearProperty("platform");
     }
 

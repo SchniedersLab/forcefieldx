@@ -53,6 +53,7 @@ import ffx.algorithms.cli.MultiDynamicsOptions
 import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
+import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.*;
 import ffx.algorithms.cli.WriteoutOptions
 import ffx.algorithms.thermodynamics.AbstractOSRW
 import ffx.crystal.CrystalPotential
@@ -117,7 +118,7 @@ class Thermodynamics extends AlgorithmsScript {
     MolecularAssembly[] topologies
 
     CrystalPotential potential
-    AbstractOSRW osrw
+    AbstractOSRW osrw = null;
 
     private Configuration additionalProperties
 
@@ -248,20 +249,33 @@ class Thermodynamics extends AlgorithmsScript {
 
         multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
 
-        osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0],
-                additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
-        if (!lamExists) {
-            osrw.setLambda(initLambda)
-        }
+        switch (thermodynamics.getAlgorithm()) {
+            // Labels are necessary so Groovy doesn't complain about anonymous code blocks (which could be closures).
+            case OST:
+                ost: {
+                    osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0],
+                            additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
+                    if (!lamExists) {
+                        osrw.setLambda(initLambda)
+                    }
 
-        // Can be either the TT-OSRW or a Barostat on top of it.
-        CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0],
-                dynamics, lambdaParticle, barostat, hisExists)
+                    // Can be either the TT-OSRW or a Barostat on top of it.
+                    CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0],
+                            dynamics, lambdaParticle, barostat, hisExists)
 
-        if (osrwOptions.mc) {
-            osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
-        } else {
-            osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
+                    if (osrwOptions.mc) {
+                        osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
+                    } else {
+                        osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
+                    }
+                }
+                break;
+            case FIXED:
+                fixed: {
+                    osrw = null;
+                    potential = barostat.checkNPT(topologies[0], potential);
+                    thermodynamics.runFixedAlchemy(topologies, potential, dynamics, writeout, dyn, algorithmListener);
+                }
         }
 
         return this
@@ -277,6 +291,10 @@ class Thermodynamics extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
+        if (osrw == null) {
+            return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+        } else {
+            return Collections.singletonList(osrw);
+        }
     }
 }

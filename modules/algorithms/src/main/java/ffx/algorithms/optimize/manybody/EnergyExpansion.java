@@ -14,6 +14,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import edu.rit.pj.WorkerTeam;
 
 import ffx.algorithms.AlgorithmListener;
@@ -124,7 +126,7 @@ public class EnergyExpansion {
     /**
      * Maximum number of 4-body energy values to compute.
      */
-    private int max4BodyCount = Integer.MAX_VALUE;
+    private int max4BodyCount;
 
     /**
      * Default value for the ommRecalculateThreshold in kcal/mol.
@@ -174,38 +176,15 @@ public class EnergyExpansion {
         this.prunePairClashes = prunePairClashes;
         this.master = master;
 
-        String quadMaxout = System.getProperty("ro-max4BodyCount");
-        if (quadMaxout != null) {
-            int value = Integer.parseInt(quadMaxout);
-            max4BodyCount = value;
-            logger.info(format(" (KEY) max4BodyCount: %d", this.max4BodyCount));
+        CompositeConfiguration properties = molecularAssembly.getProperties();
+        max4BodyCount = properties.getInt("ro-max4BodyCount", Integer.MAX_VALUE);
+        if (max4BodyCount != Integer.MAX_VALUE) {
+            logger.info(format(" Max 4Body Count: %d", max4BodyCount));
         }
-
-        String prop = System.getProperty("ro-singularityThreshold");
-        double singT = DEFAULT_SINGULARITY_THRESHOLD;
-        if (prop != null) {
-            try {
-                singT = Double.parseDouble(prop);
-            } catch (Exception ex) {
-                logger.warning(format(" Exception in parsing ro-singularityThreshold: %s", ex));
-                singT = DEFAULT_SINGULARITY_THRESHOLD;
-            }
-        }
-        singularityThreshold = singT;
-
+        singularityThreshold = properties.getDouble("ro-singularityThreshold", DEFAULT_SINGULARITY_THRESHOLD);
         potentialIsOpenMM = potential instanceof ForceFieldEnergyOpenMM;
         if (potentialIsOpenMM) {
-            prop = System.getProperty("ro-ommRecalculateThreshold");
-            double ort = DEFAULT_OMM_RECALCULATE_THRESHOLD;
-            if (prop != null) {
-                try {
-                    ort = Double.parseDouble(prop);
-                } catch (Exception ex) {
-                    logger.warning(format(" Exception in parsing ro-ommRecalculateThreshold: %s", ex));
-                    ort = DEFAULT_OMM_RECALCULATE_THRESHOLD;
-                }
-            }
-            ommRecalculateThreshold = ort;
+            ommRecalculateThreshold = properties.getDouble("ro-ommRecalculateThreshold", DEFAULT_OMM_RECALCULATE_THRESHOLD);
         } else {
             ommRecalculateThreshold = -1E200;
         }

@@ -736,6 +736,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
+        molecularAssembly.renameWaterProtons();
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
         xyz = new double[nAtoms * 3];
@@ -773,7 +774,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (vanderWaalsTerm) {
             multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
             if (multipoleTerm) {
-                polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
+                String polarizeString = forceField.getString(ForceFieldString.POLARIZATION, "NONE");
+                boolean defaultPolarizeTerm = !polarizeString.equalsIgnoreCase("NONE");
+                polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, defaultPolarizeTerm);
                 generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
             } else {
                 // If multipole electrostatics is turned off, turn off all electrostatics.

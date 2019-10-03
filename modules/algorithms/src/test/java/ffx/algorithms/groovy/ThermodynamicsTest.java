@@ -756,7 +756,6 @@ public class ThermodynamicsTest extends PJDependentTest {
      * Configuration containing the properties to be used by TT-OSRW.
      */
     Configuration algorithmConfig;
-    private final boolean ffxCI;
 
     /**
      * Free energy associated with this test, if calculated.
@@ -808,7 +807,6 @@ public class ThermodynamicsTest extends PJDependentTest {
         this.info = info;
         this.mode = mode;
         this.ciOnly = ciOnly;
-        ffxCI = Boolean.parseBoolean(System.getProperty("ffx.ci", "false"));
         doTest = (ffxCI || !ciOnly);
 
         if (doTest) {

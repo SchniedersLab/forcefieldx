@@ -83,12 +83,9 @@ public class DynamicsOpenMMRESPANVETest extends PJDependentTest {
     }
 
     public DynamicsOpenMMRESPANVETest(String info, String filename, double startingTotalEnergy) {
-
         this.info = info;
         this.filename = filename;
         this.startingTotalEnergy = startingTotalEnergy;
-
-        ffxOpenMM = System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
     }
 
     @Before

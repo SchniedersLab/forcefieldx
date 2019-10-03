@@ -44,7 +44,12 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Polymer
+import ffx.utilities.Constants;
 
+import org.apache.commons.io.FilenameUtils
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import java.util.stream.Collectors
 import java.util.stream.IntStream
 
@@ -72,6 +77,14 @@ class Solvator extends PotentialScript {
     @Option(names = ['--sFi', '--solventFile'], paramLabel = "water",
             description = 'A file containing the solvent box to be used. A default will eventually be added.')
     private String solventFileName = null;
+
+    /**
+     * --iFi or --ionFile specifies a [optional] file to read for ion replacement. Must have a complementary
+     * .ions file, with format ReferenceAtomStart ReferenceAtomEnd Concentration [Charge]. See forcefieldx/examples/nacl.ions.
+     */
+    @Option(names = ['--iFi', '--ionFile'], paramLabel = "[ions]",
+            description = "Name of the file containing ions. Must also have a .ions file (e.g. nacl.pdb must also have nacl.ions). Default: no ions.")
+    private String ionFileName = null;
 
     /**
      * -r or --rectangular uses a rectangular prism as the output rather than a cube;
@@ -256,6 +269,143 @@ class Solvator extends PotentialScript {
         }
     }
 
+    private class IonAddition {
+        // Once again, modestly bad practice by exposing these fields.
+        final double conc;
+        final boolean toNeutralize;
+        final Atom[] atoms;
+        private final int nAts;
+        final double[][] atomOffsets;
+        final double charge;
+
+        IonAddition(Atom[] atoms, double conc, boolean toNeutralize) {
+            this.atoms = Arrays.copyOf(atoms, atoms.length);
+            this.conc = conc;
+            this.toNeutralize = toNeutralize;
+            charge = Arrays.stream(atoms).mapToDouble({ it.getMultipoleType().getCharge() }).sum();
+            nAts = atoms.length;
+
+            if (nAts > 1) {
+                double[] com = new double[3];
+                atomOffsets = new double[nAts][3];
+                Arrays.fill(com, 0);
+                double sumMass = 0;
+
+                // Calculate ionic center of mass.
+                for (Atom atom : atoms) {
+                    double mass = atom.getMass();
+                    sumMass += mass;
+                    double[] xyz = new double[3];
+                    xyz = atom.getXYZ(xyz);
+
+                    for (int i = 0; i < 3; i++) {
+                        xyz[i] *= mass;
+                        com[i] += xyz[i];
+                    }
+                }
+
+                for (int i = 0; i < 3; i++) {
+                    com[i] /= sumMass;
+                }
+
+                // Calculate positions as an offset from CoM.
+                for (int i = 0; i < nAts; i++) {
+                    Atom ai = atoms[i];
+                    double[] xyz = new double[3];
+                    xyz = ai.getXYZ(xyz);
+
+                    for (int j = 0; j < 3; j++) {
+                        atomOffsets[i][j] = xyz[j] - com[j];
+                    }
+                }
+            } else {
+                atomOffsets = new double[1][3];
+                Arrays.fill(atomOffsets[0], 0.0);
+            }
+        }
+
+        /**
+         * Creates a new ion.
+         *
+         * @param com          Center of mass to place at.
+         * @param currXYZIndex XYZ index of the atom directly preceding the ones to add.
+         * @param chain        Chain to add ion to.
+         * @param resSeq       Residue number to assign to the ion.
+         * @return             Newly created ion atoms.
+         */
+        Atom[] createIon(double[] com, int currXYZIndex, char chain, int resSeq) {
+            Atom[] newIonAts = new Atom[nAts];
+            for (int i = 0; i < nAts; i++) {
+                Atom fromAtom = atoms[i];
+                double[] newXYZ = new double[3];
+                System.arraycopy(com, 0, newXYZ, 0, 3);
+                for (int j = 0 ; j < 3; j++) {
+                    newXYZ[j] += atomOffsets[i][j];
+                }
+                Atom newAtom = new Atom(++currXYZIndex, fromAtom, newXYZ, resSeq, chain, Character.toString(chain));
+                logger.fine(format(" New ion atom %s at chain %c on ion molecule %s-%d", newAtom, newAtom.getChainID(), newAtom.getResidueName(), newAtom.getResidueNumber()));
+                newAtom.setHetero(true);
+                newAtom.setResName(fromAtom.getResidueName());
+                if (newAtom.getAltLoc() == null) {
+                    newAtom.setAltLoc(' ' as char);
+                }
+                newIonAts[i] = newAtom;
+            }
+            return newIonAts;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder(format(" Ion addition with %d atoms per ion, concentration %8.2g mM, charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize));
+            for (Atom atom : atoms) {
+                sb.append("\n").append(" Includes atom ").append(atom.toString());
+            }
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Calculates the center of mass for an array of Atoms.
+     *
+     * @param atoms
+     * @return Center of mass
+     */
+    private static double[] getCOM(Atom[] atoms) {
+        double totMass = 0;
+        double[] com = new double[3];
+        double[] xyz = new double[3];
+        for (Atom atom : atoms) {
+            xyz = atom.getXYZ(xyz);
+            double mass = atom.getMass();
+            totMass += mass
+            double invTotMass = 1.0 / totMass;
+            for (int i = 0; i < 3; i++) {
+                xyz[i] -= com[i];
+                xyz[i] *= (mass * invTotMass);
+                com[i] += xyz[i];
+            }
+        }
+        return com;
+    }
+
+    /**
+     * Pops a solvent molecule off the end of the list, and returns an ion at its center of mass.
+     *
+     * @param solvent      Source of solvent molecules (last member will be removed).
+     * @param ia           Ion to replace it with.
+     * @param currXYZIndex Index of the atom directly preceding the ion to be placed.
+     * @param chain        Chain to place the ion into.
+     * @param resSeq       Residue number to assign.
+     * @return             Newly created set of ion atoms.
+     */
+    private static Atom[] swapIon(List<Atom[]> solvent, IonAddition ia, int currXYZIndex, char chain, int resSeq) {
+        int nSolv = solvent.size() - 1;
+        Atom[] lastSolvent = solvent.get(nSolv);
+        solvent.remove(nSolv);
+        double[] com = getCOM(lastSolvent);
+        return ia.createIon(com, currXYZIndex, chain, resSeq);
+    }
+
     /**
      * Execute the script.
      */
@@ -285,6 +435,17 @@ class Solvator extends PotentialScript {
         File solventFi = new File(solventFileName);
         MolecularAssembly solvent = potentialFunctions.open(solventFi);
         Atom[] baseSolventAtoms = solvent.getActiveAtomArray();
+
+        Atom[] ionAtoms = null;
+        File ionsFile = null;
+        if (ionFileName) {
+            MolecularAssembly ions = potentialFunctions.open(new File(ionFileName));
+            ionAtoms = ions.getActiveAtomArray();
+            String ionsName = FilenameUtils.removeExtension(ionFileName);
+            ionsName = ionsName + ".ions";
+            ionsFile = new File(ionsName);
+            assert ionsFile != null && ionsFile.exists();
+        }
 
         Crystal soluteCrystal = activeAssembly.getCrystal();
         Crystal solventCrystal = solvent.getCrystal();
@@ -434,6 +595,13 @@ class Solvator extends PotentialScript {
                 break;
             }
         }
+        char ionChain = ' ';
+        for (char solvChainOpt : possibleChains) {
+            if (solvChainOpt != solventChain && !soluteChains.contains(solvChainOpt)) {
+                ionChain = solvChainOpt;
+                break;
+            }
+        }
 
         // Decompose the solute into domains so solute-solvent clashes can be quickly checked.
         DomainDecomposition ddc = new DomainDecomposition(boundary, soluteAtoms, newCrystal);
@@ -443,6 +611,10 @@ class Solvator extends PotentialScript {
             logger.severe(" Could not find an unused character A-Z for the new solvent!");
         }
         logger.info(" New solvent molecules will be placed in chain ${solventChain}");
+
+        // Accumulator for new solvent molecules.
+        // Currently implemented as an ArrayList with the notion of removing from the end of the List.
+        List<Atom[]> newMolecules = new ArrayList<>();
 
         for (int ai = 0; ai < solventReplicas[0]; ai++) {
             xyzOffset[0] = ai * solventBoxVectors[0];
@@ -473,9 +645,10 @@ class Solvator extends PotentialScript {
 
                         List<Atom> parentAtoms = moli.getAtomList();
                         int nMolAtoms = parentAtoms.size();
-                        List<Atom> newAtoms = new ArrayList<>(nMolAtoms);
+                        Atom[] newAtomArray = new Atom[nMolAtoms];
 
-                        for (Atom parentAtom : parentAtoms) {
+                        for (int atI = 0; atI < nMolAtoms; atI++) {
+                            Atom parentAtom = parentAtoms.get(atI);
                             double[] newXYZ = new double[3];
                             newXYZ = parentAtom.getXYZ(newXYZ);
                             for (int j = 0; j < 3; j++) {
@@ -489,24 +662,156 @@ class Solvator extends PotentialScript {
                             if (newAtom.getAltLoc() == null) {
                                 newAtom.setAltLoc(' ' as char);
                             }
-
-                            newAtoms.add(newAtom);
+                            newAtomArray[atI] = newAtom;
                         }
 
-                        boolean overlapFound = newAtoms.stream().
+                        boolean overlapFound = Arrays.stream(newAtomArray).
                                 anyMatch({ Atom a -> ddc.checkClashes(a, boundary)});
 
                         if (overlapFound) {
-                            logger.info(format(" Skipping a copy of molecule %d for overlapping with the solute.", i));
+                            logger.fine(format(" Skipping a copy of molecule %d for overlapping with the solute.", i));
                             continue MoleculePlace;
                         }
 
-                        for (Atom newAtom : newAtoms) {
-                            activeAssembly.addMSNode(newAtom);
-                        }
+                        newMolecules.add(newAtomArray);
                         ++currResSeq;
                     }
                 }
+            }
+        }
+
+        Collections.shuffle(newMolecules);
+
+        if (ionFileName) {
+            logger.info(" Ions will be placed into chain ${ionChain}");
+            double volume = newBox[0] * newBox[1] * newBox[2];
+            // newCrystal.volume may also work.
+            // The L -> mL and M -> mM conversions cancel.
+            double ionsPermM = volume * Constants.LITERS_PER_CUBIC_ANGSTROM * Constants.AVOGADRO;
+
+            List<IonAddition> byConc = new ArrayList<>();
+            IonAddition neutAnion = null;
+            IonAddition neutCation = null;
+
+            BufferedReader br;
+            Pattern ionicPattern = Pattern.compile("^\\s*([0-9]+) +([0-9]+) +([0-9]+(?:\\.[0-9]*)?|NEUT\\S*)");
+            Pattern concPatt = Pattern.compile("^[0-9]+(?:\\.[0-9]*)?");
+            // Parse .ions file to figure out which ions need to be added.
+            try {
+                br = new BufferedReader(new FileReader(ionsFile));
+                String line = br.readLine();
+                while (line != null) {
+                    Matcher m = ionicPattern.matcher(line);
+                    if (m.matches()) {
+                        int start = Integer.parseInt(m.group(1));
+                        int end = Integer.parseInt(m.group(2));
+                        if (end < start) {
+                            throw new IllegalArgumentException(" end < start");
+                        }
+                        int nAts = (end - start) + 1;
+
+                        Atom[] atoms = new Atom[nAts];
+                        for (int i = 0; i < nAts; i++) {
+                            int atI = start + i - 1;
+                            atoms[i] = ionAtoms[atI];
+                        }
+
+                        double conc = 0;
+                        boolean toNeutralize;
+                        if (concPatt.matcher(m.group(3)).matches()) {
+                            conc = Double.parseDouble(m.group(3));
+                            toNeutralize = false;
+                        } else {
+                            toNeutralize = true;
+                        }
+                        IonAddition ia = new IonAddition(atoms, conc, toNeutralize);
+                        if (toNeutralize) {
+                            if (ia.charge > 0) {
+                                neutCation = ia;
+                            } else if (ia.charge < 0) {
+                                neutAnion = ia;
+                            } else {
+                                logger.severe(format(" Specified a neutralizing ion %s with no net charge!", ia.toString()));
+                            }
+                        } else {
+                            byConc.add(ia);
+                        }
+                    }
+                    line = br.readLine();
+                }
+            } finally {
+                br?.close();
+            }
+
+            List<Atom[]> addedIons = new ArrayList<>();
+            int ionResSeq = 0;
+
+            // Begin swapping waters for ions.
+            double initialCharge = activeAssembly.getCharge(false);
+            logger.info(" Charge before addition of ions is ${initialCharge}");
+
+            for (IonAddition ia : byConc) {
+                logger.info(ia.toString());
+                int nIons = Math.ceil(ionsPermM * ia.conc);
+                if (nIons > newMolecules.size()) {
+                    logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nIons} ions!");
+                }
+                logger.info(format(" Number of ions to place: %d\n", nIons));
+                for (int i = 0; i < nIons; i++) {
+                    Atom[] newIon = swapIon(newMolecules, ia, currXYZIndex, ionChain, ionResSeq++);
+                    currXYZIndex += newIon.length;
+                    addedIons.add(newIon);
+                }
+                initialCharge += nIons * ia.charge;
+            }
+
+            logger.info(" Charge before neutralization is ${initialCharge}")
+
+            if (initialCharge > 0) {
+                if (neutAnion == null) {
+                    logger.info(" No counter-anion specified; system will be cationic at charge ${initialCharge}");
+                } else {
+                    logger.info(" Neutralizing system with ${neutAnion.toString()}");
+                    double charge = neutAnion.charge;
+                    int nAnions = Math.round(-1.0 * (initialCharge / charge));
+                    double netCharge = initialCharge + (nAnions * charge);
+                    if (nAnions > newMolecules.size()) {
+                        logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nAnions} counter-anions!");
+                    }
+                    for (int i = 0; i < nAnions; i++) {
+                        Atom[] newIon = swapIon(newMolecules, neutAnion, currXYZIndex, ionChain, ionResSeq++);
+                        currXYZIndex += newIon.length;
+                        addedIons.add(newIon);
+                    }
+                    logger.info(format(" System neutralized to %8.4g charge with %d counter-anions", netCharge, nAnions));
+                }
+            } else if (initialCharge < 0) {
+                if (neutCation == null) {
+                    logger.info(" No counter-cation specified; system will be anionic at charge ${initialCharge}");
+                } else {
+                    logger.info(" Neutralizing system with ${neutCation.toString()}");
+                    double charge = neutCation.charge;
+                    int nCations = Math.round(-1.0 * (initialCharge / charge));
+                    double netCharge = initialCharge + (nCations * charge);
+                    if (nCations > newMolecules.size()) {
+                        logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!");
+                    }
+                    for (int i = 0; i < nCations; i++) {
+                        Atom[] newIon = swapIon(newMolecules, neutCation, currXYZIndex, ionChain, ionResSeq++);
+                        currXYZIndex += newIon.length;
+                        addedIons.add(newIon);
+                    }
+                    logger.info(format(" System neutralized to %8.4g charge with %d counter-cations", netCharge, nCations));
+                }
+            } else {
+                logger.info(" System is neutral; no neutralizing ions needed.");
+            }
+            newMolecules.addAll(addedIons);
+        }
+
+        for (Atom[] atoms : newMolecules) {
+            for (Atom atom : atoms) {
+                activeAssembly.addMSNode(atom);
             }
         }
 

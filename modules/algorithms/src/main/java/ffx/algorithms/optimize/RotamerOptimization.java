@@ -62,6 +62,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 
@@ -551,11 +552,8 @@ public class RotamerOptimization implements Terminatable {
 
         boxOpt = new BoxOptimization();
 
-        if (System.getProperty("verbose") != null) {
-            if (System.getProperty("verbose").equalsIgnoreCase("true")) {
-                verbose = true;
-            }
-        }
+        CompositeConfiguration properties = molecularAssembly.getProperties();
+        verbose = properties.getBoolean("verbose", false);
 
         // Set the default 2-body Cutoff to the van der Waals cutoff.
         ForceFieldEnergy forceFieldEnegy = molecularAssembly.getPotentialEnergy();
@@ -568,30 +566,30 @@ public class RotamerOptimization implements Terminatable {
         }
 
         // Process relevant system keys.
-        String undo = System.getProperty("ro-undo");
-        String direction = System.getProperty("ro-direction");
-        String increment = System.getProperty("ro-increment");
-        String goldstein = System.getProperty("ro-goldstein");
-        String superpositionThreshold = System.getProperty("ro-superpositionThreshold");
-        String ensembleNumber = System.getProperty("ro-ensembleNumber");
-        String ensembleEnergy = System.getProperty("ro-ensembleEnergy");
-        String ensembleBuffer = System.getProperty("ro-ensembleBuffer");
-        String threeBodyCutoffDist = System.getProperty("ro-threeBodyCutoffDist");
-        String nucleicPruningFactor = System.getProperty("ro-nucleicPruningFactor");
-        String nucleicCorrectionThreshold = System.getProperty("ro-nucleicCorrectionThreshold");
-        String minimumNumberAcceptedNARotamers = System.getProperty("ro-minimumNumberAcceptedNARotamers");
-        String singletonClashThreshold = System.getProperty("ro-singletonClashThreshold");
-        String multiResClashThreshold = System.getProperty("ro-multiResClashThreshold");
-        String pairClashThreshold = System.getProperty("ro-pairClashThreshold");
-        String multiResPairClashAddition = System.getProperty("ro-multiResPairClashAddition");
-        String boxDimensions = System.getProperty("ro-boxDimensions");
-        String computeQuads = System.getProperty("ro-compute4BodyEnergy");
-        String lazyMatrix = System.getProperty("ro-lazyMatrix");
-        String mcTemp = System.getProperty("ro-mcTemp");
-        String mcUseAll = System.getProperty("ro-mcUseAll");
-        String mcNoEnum = System.getProperty("ro-debug-mcNoEnum");
-        String addOrigRotStr = System.getProperty("ro-addOrigRot");
-        String origAtEndStr = System.getProperty("ro-origAtEnd");
+        String undo = properties.getString("ro-undo");
+        String direction = properties.getString("ro-direction");
+        String increment = properties.getString("ro-increment");
+        String goldstein = properties.getString("ro-goldstein");
+        String superpositionThreshold = properties.getString("ro-superpositionThreshold");
+        String ensembleNumber = properties.getString("ro-ensembleNumber");
+        String ensembleEnergy = properties.getString("ro-ensembleEnergy");
+        String ensembleBuffer = properties.getString("ro-ensembleBuffer");
+        String threeBodyCutoffDist = properties.getString("ro-threeBodyCutoffDist");
+        String nucleicPruningFactor = properties.getString("ro-nucleicPruningFactor");
+        String nucleicCorrectionThreshold = properties.getString("ro-nucleicCorrectionThreshold");
+        String minimumNumberAcceptedNARotamers = properties.getString("ro-minimumNumberAcceptedNARotamers");
+        String singletonClashThreshold = properties.getString("ro-singletonClashThreshold");
+        String multiResClashThreshold = properties.getString("ro-multiResClashThreshold");
+        String pairClashThreshold = properties.getString("ro-pairClashThreshold");
+        String multiResPairClashAddition = properties.getString("ro-multiResPairClashAddition");
+        String boxDimensions = properties.getString("ro-boxDimensions");
+        String computeQuads = properties.getString("ro-compute4BodyEnergy");
+        String lazyMatrix = properties.getString("ro-lazyMatrix");
+        String mcTemp = properties.getString("ro-mcTemp");
+        String mcUseAll = properties.getString("ro-mcUseAll");
+        String mcNoEnum = properties.getString("ro-debug-mcNoEnum");
+        String addOrigRotStr = properties.getString("ro-addOrigRot");
+        String origAtEndStr = properties.getString("ro-origAtEnd");
 
         if (computeQuads != null) {
             boolean value = Boolean.parseBoolean(computeQuads);
@@ -720,27 +718,25 @@ public class RotamerOptimization implements Terminatable {
             logger.info(format(" (KEY) origAtEnd: %b", value));
         }
 
-        String prop = "ro-maxRotCheckDepth";
-        String propStr = System.getProperty(prop);
+        String propStr = properties.getString("ro-maxRotCheckDepth");
         int defaultMaxRotCheckDepth = 1;
         if (propStr != null) {
             try {
                 maxRotCheckDepth = Integer.parseInt(propStr);
                 if (maxRotCheckDepth > 3 || maxRotCheckDepth < 0) {
-                    throw new IllegalArgumentException(" ro-maxRotSearchDepth must be between 0-3 inclusive!");
+                    throw new IllegalArgumentException(" ro-maxRotCheckDepth must be between 0-3 inclusive!");
                 }
             } catch (Exception ex) {
                 maxRotCheckDepth = defaultMaxRotCheckDepth;
-                logger.warning(format(" Could not parse %s value %s as valid integer; defaulting to %d", prop, propStr, maxRotCheckDepth));
+                logger.warning(format(" Could not parse %s value %s as valid integer; defaulting to %d",
+                        "ro-maxRotCheckDepth", propStr, maxRotCheckDepth));
                 logger.warning(format(" Exception: %s", ex));
             }
         } else {
             maxRotCheckDepth = defaultMaxRotCheckDepth;
         }
 
-        prop = System.getProperty("revertUnfavorable", "false");
-        revert = Boolean.parseBoolean(prop);
-
+        revert = properties.getBoolean("revertUnfavorable", false);
         allAssemblies = new ArrayList<>();
         allAssemblies.add(molecularAssembly);
         setUpRestart();
@@ -1694,11 +1690,11 @@ public class RotamerOptimization implements Terminatable {
     public double optimize() {
         double e = 0;
         try {
-            boolean ignoreNA = false;
-            String ignoreNAProp = System.getProperty("ignoreNA");
-            if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
-                logger.info("(Key) Ignoring nucleic acids.");
-                ignoreNA = true;
+
+            CompositeConfiguration properties = molecularAssembly.getProperties();
+            boolean ignoreNA = properties.getBoolean("ignoreNA", false);
+            if (ignoreNA) {
+                logger.info(" Ignoring nucleic acids.");
             }
 
             logger.info(format("\n Rotamer Library:     %s", library.getLibrary()));

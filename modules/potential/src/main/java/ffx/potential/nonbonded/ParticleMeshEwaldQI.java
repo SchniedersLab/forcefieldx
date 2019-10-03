@@ -44,6 +44,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -689,6 +690,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         //lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
         // If PME-specific lambda term not set, default to force field-wide lambda term.
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
+
+        CompositeConfiguration properties = forceField.getProperties();
+        printInducedDipoles = properties.getBoolean("pme.printInducedDipoles", false);
+        noWindowing = properties.getBoolean("pme.noWindowing", false);
 
         if (!crystal.aperiodic()) {
             off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
@@ -3745,8 +3750,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              */
             if (esvTerm) {
                 for (int i = 0; i < numESVs; i++) {
-                    esvPermRealDeriv_shared[i].getAndSet(0.0);
-                    esvInducedRealDeriv_shared[i].getAndSet(0.0);
+                    esvPermRealDeriv_shared[i].set(0.0);
+                    esvInducedRealDeriv_shared[i].set(0.0);
                 }
             }
         }
@@ -5636,7 +5641,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     case BISECTOR:
                         cross(u, v, w);
                         break;
-                    case TRISECTOR:
+                    case THREEFOLD:
                     case ZTHENBISECTOR:
                         id = ax[2];
                         w[0] = x[id];
@@ -5966,7 +5971,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 case BISECTOR:
                     cross(u, v, w);
                     break;
-                case TRISECTOR:
+                case THREEFOLD:
                 case ZTHENBISECTOR:
                     id = ax[2];
                     w[0] = x[id];

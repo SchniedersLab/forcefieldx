@@ -37,11 +37,10 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Objects;
 import static java.util.Arrays.copyOf;
-
 
 /**
  * The AngleTorsionType class defines one angle-torsion energy type.
@@ -217,19 +216,28 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     /**
      * {@inheritDoc}
      */
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof AngleTorsionType)) {
-            return false;
-        }
-        AngleTorsionType stretchTorsionType = (AngleTorsionType) other;
-        int[] c = stretchTorsionType.atomClasses;
+//    @Override
+//    public boolean equals(Object other) {
+//        if (other == this) {
+//            return true;
+//        }
+//        if (!(other instanceof AngleTorsionType)) {
+//            return false;
+//        }
+//        AngleTorsionType stretchTorsionType = (AngleTorsionType) other;
+//        int[] c = stretchTorsionType.atomClasses;
+//
+//        return (c[0] == atomClasses[0] && c[1] == atomClasses[1]
+//                && c[2] == atomClasses[2] && c[3] == atomClasses[3]);
+//    }
 
-        return (c[0] == atomClasses[0] && c[1] == atomClasses[1]
-                && c[2] == atomClasses[2] && c[3] == atomClasses[3]);
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AngleTorsionType angleTorsionType = (AngleTorsionType) o;
+        return Arrays.equals(atomClasses, angleTorsionType.atomClasses);
     }
 
     /**
@@ -237,7 +245,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
      */
     @Override
     public int hashCode() {
-        return Objects.hash(atomClasses);
+        return Arrays.hashCode(atomClasses);
     }
 
 }

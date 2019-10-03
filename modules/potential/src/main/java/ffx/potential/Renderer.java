@@ -85,12 +85,6 @@ public class Renderer extends Behavior {
     public Renderer(Bounds b, JLabel s) {
         setSchedulingBounds(b);
         statusBar = s;
-        if (System.getProperty("ffe.timer", "false").equalsIgnoreCase("true")) {
-            timer = true;
-            if (System.getProperty("ffe.timer.gc", "false").equalsIgnoreCase("true")) {
-                gc = true;
-            }
-        }
     }
 
     /**

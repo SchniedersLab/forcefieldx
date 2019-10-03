@@ -377,15 +377,10 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof PolarizeType)) {
-            return false;
-        }
-        PolarizeType polarizeType = (PolarizeType) other;
-
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PolarizeType polarizeType = (PolarizeType) o;
         return polarizeType.type == this.type;
     }
 
