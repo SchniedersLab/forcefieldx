@@ -48,6 +48,7 @@ public class Constants {
      */
     public static final double AVOGADRO = 6.02214129e23;
     public static final double LITERS_PER_CUBIC_ANGSTROM = 1E-30;
+    public static final double ATM_TO_BAR = 1.01325;
     private Constants() {
 
     }
