@@ -174,16 +174,16 @@ if [ $hasAwkSed ]; then
       CVERS="`echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//'`"
       NVFIRST="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }'`"
       NVSEC="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $2; }'`"
-      if [ $NVFIRST -gt 9 ]; then
-        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 9.2 if you wish to use CUDA-accelerated OpenMM calculations"
-      elif [ $NVFIRST -lt 9 ]; then
-        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 9.2 if you wish to use CUDA-accelerated OpenMM calculations"
-      elif [ $NVSEC -ne 2 ]; then
-        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 9.2 if you wish to use CUDA-accelerated OpenMM calculations"
+      if [ $NVFIRST -gt 10 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+      elif [ $NVFIRST -lt 10 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+      elif [ $NVSEC -ne 1 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 13 and (optionally) CUDA toolkit 9.2."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 13 and (optionally) CUDA toolkit 10.1."
 fi
 
 # For Cygwin, switch paths to Windows format before running java
@@ -195,8 +195,6 @@ if $cygwin; then
   [ -n "$REPO" ] && REPO=`cygpath --path --windows "$REPO"`
   echo " Java exec: $JAVACMD"
   echo " Classpath: $CLASSPATH"
-  # I'm not sure why this is here.
-  #EXTRA_JVM_ARGUMENTS="-Xms2G -Xmx2G -Xss1M"
 fi
 
 EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
