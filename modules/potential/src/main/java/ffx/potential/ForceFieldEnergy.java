@@ -736,6 +736,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
+        molecularAssembly.renameWaterProtons();
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
         xyz = new double[nAtoms * 3];
