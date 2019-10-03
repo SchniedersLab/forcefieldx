@@ -3090,10 +3090,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 MultipoleType multipoleType = atom.getMultipoleType();
                 PolarizeType polarType = atom.getPolarizeType();
 
-
                 // Define the frame definition.
-                int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+                int axisType;
                 switch (multipoleType.frameDefinition) {
+                    default:
+                    case NONE:
+                        axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+                        break;
                     case ZONLY:
                         axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
                         break;
@@ -3106,16 +3109,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     case ZTHENBISECTOR:
                         axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
                         break;
-                    case TRISECTOR:
+                    case THREEFOLD:
                         axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
-                        break;
-                    default:
                         break;
                 }
 
                 double useFactor = 1.0;
                 if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
-                    //if (!atoms[i].getUse()) {
                     useFactor = 0.0;
                 }
 
@@ -3128,13 +3128,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 // Load local multipole coefficients.
                 for (int j = 0; j < 3; j++) {
-                    OpenMM_DoubleArray_set(dipoles, j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
-
+                    OpenMM_DoubleArray_set(dipoles, j,
+                            multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
                 }
                 int l = 0;
                 for (int j = 0; j < 3; j++) {
                     for (int k = 0; k < 3; k++) {
-                        OpenMM_DoubleArray_set(quadrupoles, l++, multipoleType.quadrupole[j][k] * quadrupoleConversion * useFactor / 3.0);
+                        OpenMM_DoubleArray_set(quadrupoles, l++,
+                                multipoleType.quadrupole[j][k] * quadrupoleConversion * useFactor / 3.0);
                     }
                 }
 
@@ -3232,8 +3233,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     Atom ak = torsion.get1_4(ai);
                     if (ak != null) {
                         int index = ak.getIndex() - 1;
-                        if (!list12.contains(index)
-                                && !list13.contains(index)) {
+                        if (!list12.contains(index) && !list13.contains(index)) {
                             list14.add(index);
                             OpenMM_IntArray_append(covalentMap, index);
                         }
@@ -3245,9 +3245,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 for (Atom ak : ai.get1_5s()) {
                     int index = ak.getIndex() - 1;
-                    if (!list12.contains(index)
-                            && !list13.contains(index)
-                            && !list14.contains(index)) {
+                    if (!list12.contains(index) && !list13.contains(index) && !list14.contains(index)) {
                         OpenMM_IntArray_append(covalentMap, index);
                     }
                 }
@@ -3767,8 +3765,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 useFactor *= lambdaScale;
 
                 // Define the frame definition.
-                int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+                int axisType;
                 switch (multipoleType.frameDefinition) {
+                    default:
+                    case NONE:
+                        axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+                        break;
                     case ZONLY:
                         axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
                         break;
@@ -3781,10 +3783,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     case ZTHENBISECTOR:
                         axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
                         break;
-                    case TRISECTOR:
+                    case THREEFOLD:
                         axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
-                        break;
-                    default:
                         break;
                 }
 

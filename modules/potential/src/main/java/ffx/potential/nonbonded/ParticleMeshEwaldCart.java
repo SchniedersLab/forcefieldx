@@ -44,6 +44,7 @@ import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -379,6 +380,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         // If PME-specific lambda term not set, default to force field-wide lambda term.
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM,
                 forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
+
+        CompositeConfiguration properties = forceField.getProperties();
+        printInducedDipoles = properties.getBoolean("pme.printInducedDipoles", false);
+        noWindowing = properties.getBoolean("pme.noWindowing", false);
 
         ewaldParameters = new EwaldParameters();
         scaleParameters = new ScaleParameters(forceField);
@@ -1994,7 +1999,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         String key;
         // No reference atoms.
-        key = atomType.getKey() + " 0 0";
+        key = atomType.getKey();
         MultipoleType multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
             atom.setMultipoleType(multipoleType);
@@ -2021,11 +2026,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             return false;
         }
 
-        // 1 reference atom.
+        // 1 reference atom (Z-Only)
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
-            key = atomType.getKey() + " " + atom2.getAtomType().getKey() + " 0";
-            multipoleType = multipoleType = forceField.getMultipoleType(key);
+            key = atomType.getKey() + " " + atom2.getAtomType().getKey();
+            multipoleType = forceField.getMultipoleType(key);
             if (multipoleType != null) {
                 int[] multipoleReferenceAtoms = new int[1];
                 multipoleReferenceAtoms[0] = atom2.getIndex() - 1;

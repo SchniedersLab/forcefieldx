@@ -130,6 +130,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * For use with GaussVol volumes (i.e. a vdW volume), a larger solvent pressure of 0.125 is needed.
      */
     private static final double DEFAULT_SOLVENT_PRESSURE = 0.05185;
+
+    /**
+     * Original crossover in Schnieders thesis: 3.0*(surface tension/solvent pressure)
+     *
+     * Currently set to 9.0 to match Chandler et al. simulation data.
+     */
+    private static final double DEFAULT_CROSSOVER = 9.0;
+
     /**
      * Default probe radius for use with Gaussian Volumes.
      */
@@ -151,6 +159,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Cavitation solvent pressure coefficient (kcal/mol/A^3).
      */
     private final double solventPressue;
+    /**
+     * Volume to surface area cross-over point (A).
+     */
+    private final double crossOver;
     /**
      * The requested permittivity.
      */
@@ -599,10 +611,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         surfaceTension = forceField.getDouble(ForceField.ForceFieldDouble.SURFACE_TENSION, tensionDefault);
         solventPressue = forceField.getDouble(ForceField.ForceFieldDouble.SOLVENT_PRESSURE, DEFAULT_SOLVENT_PRESSURE);
+        crossOver = forceField.getDouble(ForceField.ForceFieldDouble.CROSS_OVER, DEFAULT_CROSSOVER);
 
         if (gaussVol != null) {
             gaussVol.setSurfaceTension(surfaceTension);
             gaussVol.setSolventPressure(solventPressue);
+            gaussVol.setCrossOver(crossOver);
         }
 
         initializationRegion = new InitializationRegion(threadCount);

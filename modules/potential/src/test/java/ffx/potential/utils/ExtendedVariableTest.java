@@ -63,6 +63,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField.ForceFieldName;
+import ffx.utilities.BaseFFXTest;
 import static ffx.potential.extended.ExtUtils.setProp;
 
 /**
@@ -74,7 +75,7 @@ import static ffx.potential.extended.ExtUtils.setProp;
  * @author slucore
  */
 @RunWith(Parameterized.class)
-public class ExtendedVariableTest {
+public class ExtendedVariableTest extends BaseFFXTest {
 
     private static final Logger logger = Logger.getLogger(ExtendedVariableTest.class.getName());
 
@@ -94,7 +95,6 @@ public class ExtendedVariableTest {
     private static final Polarization decompPolarComplement
             = (decompPolarState == Polarization.MUTUAL) ? Polarization.DIRECT : Polarization.MUTUAL;
 
-    private final boolean ci = Boolean.valueOf(System.getProperty("ffx.ci", "false"));
     private static boolean resultsOnly = false;
     private static final double tolerance = 1e-6;
     private static final double errorThreshold = 1e-9;
@@ -321,7 +321,7 @@ public class ExtendedVariableTest {
 
     @Test
     public void testLauncher() {
-        lambdaValuesToTest = (ci) ? ciLambdaTestPoints : stdLambdaTestPoints;
+        lambdaValuesToTest = (ffxCI) ? ciLambdaTestPoints : stdLambdaTestPoints;
         switch (test) {
             case EndStates:
                 testEndStates();
@@ -332,7 +332,7 @@ public class ExtendedVariableTest {
                 testDerivatives(setDebugParameters());
                 break;
             case Smoothness:
-                if (ci) {
+                if (ffxCI) {
                     testSmoothness();
                 }
                 break;
@@ -340,7 +340,7 @@ public class ExtendedVariableTest {
             case All:
                 testEndStates();
                 testDerivatives(setDebugParameters());
-                if (ci) {
+                if (ffxCI) {
                     testSmoothness();
                 }
                 break;

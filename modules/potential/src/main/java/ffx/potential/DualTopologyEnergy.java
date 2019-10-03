@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.ParallelRegion;
@@ -314,208 +315,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     /**
      * <p>Constructor for DualTopologyEnergy.</p>
      *
-     * @param topology1 a {@link ffx.crystal.CrystalPotential} object.
-     * @param atoms1    an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param topology2 a {@link ffx.crystal.CrystalPotential} object.
-     * @param atoms2    an array of {@link ffx.potential.bonded.Atom} objects.
-     */
-    public DualTopologyEnergy(CrystalPotential topology1, Atom[] atoms1,
-                              CrystalPotential topology2, Atom[] atoms2) {
-        this(topology1, atoms1, topology2, atoms2, 1.0);
-    }
-
-    /**
-     * <p>Constructor for DualTopologyEnergy.</p>
-     *
-     * @param topology1 a {@link ffx.crystal.CrystalPotential} object.
-     * @param atoms1    an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param topology2 a {@link ffx.crystal.CrystalPotential} object.
-     * @param atoms2    an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param lamExp    a double.
-     */
-    public DualTopologyEnergy(CrystalPotential topology1, Atom[] atoms1,
-                              CrystalPotential topology2, Atom[] atoms2, double lamExp) {
-        this(topology1, atoms1, topology2, atoms2, new PowerSwitch(1.0, lamExp));
-    }
-
-    /**
-     * <p>Constructor for DualTopologyEnergy.</p>
-     *
-     * @param topology1      a {@link ffx.crystal.CrystalPotential} object.
-     * @param atoms1         an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param topology2      a {@link ffx.crystal.CrystalPotential} object.
-     * @param atoms2         an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param switchFunction a {@link UnivariateSwitchingFunction} object.
-     */
-    public DualTopologyEnergy(CrystalPotential topology1, Atom[] atoms1,
-                              CrystalPotential topology2, Atom[] atoms2,
-                              UnivariateSwitchingFunction switchFunction) {
-        potential1 = topology1;
-        potential2 = topology2;
-        potential2.setCrystal(potential1.getCrystal());
-        lambdaInterface1 = (LambdaInterface) potential1;
-        lambdaInterface2 = (LambdaInterface) potential2;
-        this.atoms1 = atoms1;
-        this.atoms2 = atoms2;
-        nAtoms1 = atoms1.length;
-        nAtoms2 = atoms2.length;
-        forceFieldEnergy1 = null;
-        forceFieldEnergy2 = null;
-        doValenceRestraint1 = false;
-        doValenceRestraint2 = false;
-
-        if (Boolean.parseBoolean(System.getProperty("doPinSoftcore", "false"))) {
-            doUnpin = (Atom a) -> false;
-        } else {
-            doUnpin = Atom::applyLambda;
-        }
-
-        /*
-          Check that all atoms that are not undergoing alchemy are common to
-          both topologies.
-         */
-        int shared1 = 0;
-        int shared2 = 0;
-        int activeCount1 = 0;
-        int activeCount2 = 0;
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a1 = atoms1[i];
-            if (a1.isActive()) {
-                activeCount1++;
-                if (!doUnpin.test(a1)) {
-                    shared1++;
-                }
-            }
-        }
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a2 = atoms2[i];
-            if (a2.isActive()) {
-                activeCount2++;
-                if (!doUnpin.test(a2)) {
-                    shared2++;
-                }
-            }
-        }
-        nActive1 = activeCount1;
-        nActive2 = activeCount2;
-        activeAtoms1 = new Atom[activeCount1];
-        activeAtoms2 = new Atom[activeCount2];
-        int index = 0;
-        for (int i = 0; i < nAtoms1; i++) {
-            Atom a1 = atoms1[i];
-            if (a1.isActive()) {
-                activeAtoms1[index++] = a1;
-            }
-        }
-        index = 0;
-        for (int i = 0; i < nAtoms2; i++) {
-            Atom a2 = atoms2[i];
-            if (a2.isActive()) {
-                activeAtoms2[index++] = a2;
-            }
-        }
-
-        assert (shared1 == shared2);
-        nShared = shared1;
-        nSoftCore1 = nActive1 - nShared;
-        nSoftCore2 = nActive2 - nShared;
-        nTotal = nShared + nSoftCore1 + nSoftCore2;
-        nVariables = 3 * nTotal;
-
-        // Check that all Dual-Topology atoms start with identical coordinates.
-        int i1 = 0;
-        int i2 = 0;
-        for (int i = 0; i < nShared; i++) {
-            Atom a1 = atoms1[i1++];
-            while (doUnpin.test(a1)) {
-                a1 = atoms1[i1++];
-            }
-            Atom a2 = atoms2[i2++];
-            while (doUnpin.test(a2)) {
-                a2 = atoms2[i2++];
-            }
-            assert (a1.getX() == a2.getX());
-            assert (a1.getY() == a2.getY());
-            assert (a1.getZ() == a2.getZ());
-        }
-
-        // Allocate memory for coordinates and derivatives.
-        x1 = new double[nActive1 * 3];
-        x2 = new double[nActive2 * 3];
-        g1 = new double[nActive1 * 3];
-        g2 = new double[nActive2 * 3];
-        rg1 = new double[nActive1 * 3];
-        rg2 = new double[nActive2 * 3];
-        gl1 = new double[nActive1 * 3];
-        gl2 = new double[nActive2 * 3];
-        rgl1 = new double[nActive1 * 3];
-        rgl2 = new double[nActive2 * 3];
-
-        // All variables are coordinates.
-        index = 0;
-        variableTypes = new VARIABLE_TYPE[nVariables];
-        for (int i = 0; i < nTotal; i++) {
-            variableTypes[index++] = VARIABLE_TYPE.X;
-            variableTypes[index++] = VARIABLE_TYPE.Y;
-            variableTypes[index++] = VARIABLE_TYPE.Z;
-        }
-
-        // Fill the mass array.
-        int commonIndex = 0;
-        int softcoreIndex = 3 * nShared;
-        mass = new double[nVariables];
-        for (int i = 0; i < nActive1; i++) {
-            Atom a = activeAtoms1[i];
-            double m = a.getMass();
-            if (!doUnpin.test(a)) {
-                mass[commonIndex++] = m;
-                mass[commonIndex++] = m;
-                mass[commonIndex++] = m;
-            } else {
-                mass[softcoreIndex++] = m;
-                mass[softcoreIndex++] = m;
-                mass[softcoreIndex++] = m;
-            }
-        }
-        for (int i = 0; i < nActive2; i++) {
-            Atom a = activeAtoms2[i];
-            if (doUnpin.test(a)) {
-                double m = a.getMass();
-                mass[softcoreIndex++] = m;
-                mass[softcoreIndex++] = m;
-                mass[softcoreIndex++] = m;
-            }
-        }
-        region = new EnergyRegion();
-        team = new ParallelTeam(1);
-        this.switchFunction = switchFunction;
-        logger.info(format(" Dual topology using switching function %s", switchFunction));
-    }
-
-    /**
-     * <p>Constructor for DualTopologyEnergy.</p>
-     *
-     * @param topology1 a {@link ffx.potential.MolecularAssembly} object.
-     * @param topology2 a {@link ffx.potential.MolecularAssembly} object.
-     */
-    public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
-        this(topology1, topology2, 1.0);
-    }
-
-    /**
-     * <p>Constructor for DualTopologyEnergy.</p>
-     *
-     * @param topology1 a {@link ffx.potential.MolecularAssembly} object.
-     * @param topology2 a {@link ffx.potential.MolecularAssembly} object.
-     * @param lamExp    a double.
-     */
-    public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2, double lamExp) {
-        this(topology1, topology2, new PowerSwitch(1.0, lamExp));
-    }
-
-    /**
-     * <p>Constructor for DualTopologyEnergy.</p>
-     *
      * @param topology1      a {@link ffx.potential.MolecularAssembly} object.
      * @param topology2      a {@link ffx.potential.MolecularAssembly} object.
      * @param switchFunction a {@link UnivariateSwitchingFunction} object.
@@ -540,7 +339,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         this.doValenceRestraint2 = forceField2.getBoolean(
                 ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
 
-        if (Boolean.parseBoolean(System.getProperty("doPinSoftcore", "false"))) {
+        CompositeConfiguration properties = topology1.getProperties();
+        boolean doPinSoftcore = properties.getBoolean("doPinSoftcore", false);
+
+        if (doPinSoftcore) {
             doUnpin = (Atom a) -> false;
         } else {
             doUnpin = Atom::applyLambda;

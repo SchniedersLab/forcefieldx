@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
@@ -101,17 +102,16 @@ class ManyBody extends AlgorithmsScript {
             filename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        // By default, rotamer optimization should silence GK warnings, because occasionally we will have unreasonable configurations.
-        if (System.getProperty("gk-suppressWarnings") == null) {
-            System.setProperty("gk-suppressWarnings", "true")
+        CompositeConfiguration properties = activeAssembly.getProperties();
+        if (!properties.containsKey("gk-suppressWarnings")) {
+            properties.setProperty("gk-suppressWarnings", "true")
         }
 
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
 
         List<RealSpaceFile> mapFiles = realSpace.processData(filenames, assemblies)
-        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly,
-                activeAssembly.getProperties(), activeAssembly.getParallelTeam(),
-                mapFiles.toArray(new RealSpaceFile[mapFiles.size()]))
+        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+                activeAssembly.getParallelTeam(), mapFiles.toArray(new RealSpaceFile[0]))
 
         refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMinimize.RefinementMode.COORDINATES, null);
 
@@ -120,9 +120,9 @@ class ManyBody extends AlgorithmsScript {
 
         manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
-        double[] x = new double[refinementEnergy.getNumberOfVariables()];
-        x = refinementEnergy.getCoordinates(x);
-        refinementEnergy.energy(x, true);
+        double[] x = new double[refinementEnergy.getNumberOfVariables()]
+        x = refinementEnergy.getCoordinates(x)
+        refinementEnergy.energy(x, true)
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues()
         RotamerLibrary.measureRotamers(residueList, false);

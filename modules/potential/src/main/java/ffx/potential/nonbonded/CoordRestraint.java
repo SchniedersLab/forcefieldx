@@ -44,6 +44,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.potential.bonded.Atom;
@@ -81,13 +82,16 @@ public class CoordRestraint implements LambdaInterface {
     private double d2EdL2 = 0.0;
     private final double[] lambdaGradient;
     private boolean lambdaTerm;
-    private int atom1Index;
-    private int atom2Index;
-    private int atom3Index;
-    private AtomType atom1Type;
-    private AtomType atom2Type;
-    private AtomType atom3Type;
+    private final String atomIndexRestraints;
+    private final int atom1Index;
+    private final int atom2Index;
+    private final int atom3Index;
+    private final String atomTypeRestraints;
+    private final AtomType atom1Type;
+    private final AtomType atom2Type;
+    private final AtomType atom3Type;
     private boolean ignoreHydrogen = true;
+
 
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
@@ -153,6 +157,39 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[2][i] = a.getZ();
         }
 
+        CompositeConfiguration properties = forceField.getProperties();
+
+        // pdbAtomRestraints uses atom indexes to restrain specific atoms
+        atomIndexRestraints = properties.getString("pdbAtomRestraints");
+        if (atomIndexRestraints != null) {
+            String[] tokens = atomIndexRestraints.split(",");
+            // Pick up atom index for reference when looking at multiple molecules.
+            atom1Index = Integer.parseInt(tokens[0]);
+            atom2Index = Integer.parseInt(tokens[1]);
+            atom3Index = Integer.parseInt(tokens[2]);
+        } else {
+            atom1Index = -1;
+            atom2Index = -1;
+            atom3Index = -1;
+        }
+
+        /*
+          xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
+          atoms being restrained than desired since atom types are not unique to each atom.
+         */
+        atomTypeRestraints = properties.getString("xyzAtomRestraints");
+        if (atomTypeRestraints != null) {
+            String[] tokens = atomTypeRestraints.split(",");
+            // Pick up atom type for reference when looking at multiple molecules
+            atom1Type = atoms[Integer.parseInt(tokens[0])].getAtomType();
+            atom2Type = atoms[Integer.parseInt(tokens[1])].getAtomType();
+            atom3Type = atoms[Integer.parseInt(tokens[2])].getAtomType();
+        } else {
+            atom1Type = null;
+            atom2Type = null;
+            atom3Type = null;
+        }
+
         Arrays.stream(atoms).sorted(Comparator.comparingInt(Atom::getIndex)).forEach(Atom::print);
     }
 
@@ -210,31 +247,6 @@ public class CoordRestraint implements LambdaInterface {
      * @return Energy in the coordinate restraint
      */
     public double residual(boolean gradient, boolean print) {
-
-        // pdbAtomRestraints uses atom indexes to restrain specific atoms
-        String atomIndexRestraints = System.getProperty("pdbAtomRestraints");
-        if (atomIndexRestraints != null) {
-            String[] tokens = atomIndexRestraints.split(",");
-
-            // Pick up atom index for reference when looking at multiple molecules.
-            atom1Index = Integer.parseInt(tokens[0]);
-            atom2Index = Integer.parseInt(tokens[1]);
-            atom3Index = Integer.parseInt(tokens[2]);
-        }
-
-        /*
-          xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
-          atoms being restrained than desired since atom types are not unique to each atom.
-         */
-        String atomTypeRestraints = System.getProperty("xyzAtomRestraints");
-        if (atomTypeRestraints != null) {
-            String[] tokens = atomTypeRestraints.split(",");
-
-            // Pick up atom type for reference when looking at multiple molecules
-            atom1Type = atoms[Integer.parseInt(tokens[0])].getAtomType();
-            atom2Type = atoms[Integer.parseInt(tokens[1])].getAtomType();
-            atom3Type = atoms[Integer.parseInt(tokens[2])].getAtomType();
-        }
 
         if (lambdaTerm) {
             dEdL = 0.0;
@@ -355,7 +367,6 @@ public class CoordRestraint implements LambdaInterface {
             this.lambda = lambda;
 
             double lambdaWindow = 1.0;
-
             if (this.lambda <= lambdaWindow) {
                 double dldgl = 1.0 / lambdaWindow;
                 double l = dldgl * this.lambda;

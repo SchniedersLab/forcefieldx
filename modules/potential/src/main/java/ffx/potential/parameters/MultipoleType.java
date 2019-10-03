@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -76,7 +75,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public enum MultipoleFrameDefinition {
 
-        ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, TRISECTOR
+        NONE, ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, THREEFOLD,
     }
 
     /**
@@ -356,7 +355,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
 
         String key;
         // No reference atoms.
-        key = atomType.getKey() + " 0 0";
+        key = atomType.getKey();
         MultipoleType multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
             atom.setMultipoleType(multipoleType);
@@ -375,7 +374,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         // 1 reference atom.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
-            key = atomType.getKey() + " " + atom2.getAtomType().getKey() + " 0";
+            key = atomType.getKey() + " " + atom2.getAtomType().getKey();
             multipoleType = forceField.getMultipoleType(key);
             if (multipoleType != null) {
                 atom.setMultipoleType(multipoleType);
@@ -774,24 +773,30 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     private String toBohrString() {
         StringBuilder multipoleBuffer = new StringBuilder("multipole");
-        if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[0]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[1]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[2]));
-        } else if (frameDefinition == MultipoleFrameDefinition.ZTHENBISECTOR) {
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[0]));
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[1]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[2]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[3]));
-        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR) {
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[0]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[1]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[2]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[3]));
-        } else {
-            for (int i : frameAtomTypes) {
-                multipoleBuffer.append(format("  %5d", i));
-            }
+        switch (frameDefinition) {
+            case NONE:
+                multipoleBuffer.append(format("  %5d  %5s  %5s  %5s", 
+                        frameAtomTypes[0], "", "", ""));
+                break;
+            case ZONLY:
+                multipoleBuffer.append(format("  %5d  %5d  %5s  %5s", 
+                        frameAtomTypes[0], frameAtomTypes[1], "", ""));
+                break;
+            case ZTHENX:
+                multipoleBuffer.append(format("  %5d  %5d  %5d  %5s", 
+                        frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], ""));
+                break;
+            case BISECTOR:
+                multipoleBuffer.append(format("  %5d  %5d  %5d  %5s", 
+                        frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], ""));
+                break;
+            case ZTHENBISECTOR:
+                multipoleBuffer.append(format("  %5d  %5d  %5d  %5d", 
+                        frameAtomTypes[0], frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
+                break;
+            case THREEFOLD:
+                multipoleBuffer.append(format("  %5d  %5d  %5d  %5d",
+                        frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
         }
         if (frameAtomTypes.length == 3) {
             multipoleBuffer.append("       ");
@@ -818,23 +823,29 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public String toCompactBohrString() {
         StringBuilder multipoleBuffer = new StringBuilder("mpol ");
-        if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
-            multipoleBuffer.append(format("(%3d,%3d,%3d): ",
-                    frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2]));
-        } else if (frameDefinition == MultipoleFrameDefinition.ZTHENBISECTOR) {
-            multipoleBuffer.append(format("(%3d,%3d,%3d,%3d): ",
-                    frameAtomTypes[0], frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
-        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR) {
-            multipoleBuffer.append(format("(%3d,%3d,%3d,%3d): ",
-                    frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
-        } else {
-            multipoleBuffer.append("(");
-            for (int i : frameAtomTypes) {
-                multipoleBuffer.append(format("%3d,", i));
-            }
-            int comma = multipoleBuffer.lastIndexOf(",");
-            multipoleBuffer.replace(comma, comma + 1, "");
-            multipoleBuffer.append("): ");
+        switch (frameDefinition) {
+            case NONE:
+                multipoleBuffer.append(format("(%3d):", frameAtomTypes[0]));
+                break;
+            case ZONLY:
+                multipoleBuffer.append(format("(%3d,%3d):",
+                        frameAtomTypes[0], frameAtomTypes[1]));
+                break;
+            case ZTHENX:
+                multipoleBuffer.append(format("(%3d,%3d,%3d):",
+                        frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2]));
+                break;
+            case BISECTOR:
+                multipoleBuffer.append(format("(%3d,%3d,%3d):",
+                        frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2]));
+                break;
+            case ZTHENBISECTOR:
+                multipoleBuffer.append(format("(%3d,%3d,%3d,%3d):",
+                        frameAtomTypes[0], frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
+                break;
+            case THREEFOLD:
+                multipoleBuffer.append(format("(%3d,%3d,%3d,%3d):",
+                        frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
         }
         multipoleBuffer.append(format("[%6.3f / %6.3f %6.3f %6.3f / %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f]",
                 charge,
@@ -842,50 +853,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
                 quadrupole[0][0] / BOHR2,
                 quadrupole[1][0] / BOHR2, quadrupole[1][1] / BOHR2,
                 quadrupole[2][0] / BOHR2, quadrupole[2][1] / BOHR2, quadrupole[2][2] / BOHR2));
-        return multipoleBuffer.toString();
-    }
-
-    /**
-     * Nicely formatted multipole string. Dipole and qaudrupole are in units of
-     * Debye and Buckinghams, respectively.
-     *
-     * @return String
-     */
-    public String toDebyeString() {
-        StringBuilder multipoleBuffer = new StringBuilder("multipole");
-        if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[0]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[1]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[2]));
-        } else if (frameDefinition == MultipoleFrameDefinition.ZTHENBISECTOR) {
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[0]));
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[1]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[2]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[3]));
-        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR) {
-            multipoleBuffer.append(format("  %5d", frameAtomTypes[0]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[1]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[2]));
-            multipoleBuffer.append(format("  %5d", -frameAtomTypes[3]));
-        } else {
-            for (int i : frameAtomTypes) {
-                multipoleBuffer.append(format("  %5d", i));
-            }
-        }
-        if (frameAtomTypes.length == 3) {
-            multipoleBuffer.append("       ");
-        }
-        multipoleBuffer.append(format(
-                "  %7.5f \\\n"
-                        + "%11s %7.5f %7.5f %7.5f \\\n"
-                        + "%11s %7.5f \\\n"
-                        + "%11s %7.5f %7.5f \\\n"
-                        + "%11s %7.5f %7.5f %7.5f",
-                multipole[t000],
-                "", multipole[t100] * DEBYE, multipole[t010] * DEBYE, multipole[t001] * DEBYE,
-                "", multipole[t200] * BUCKINGHAM,
-                "", multipole[t110] * BUCKINGHAM, multipole[t020] * BUCKINGHAM,
-                "", multipole[t101] * BUCKINGHAM, multipole[t011] * BUCKINGHAM, multipole[t002] * BUCKINGHAM));
         return multipoleBuffer.toString();
     }
 
@@ -1009,24 +976,11 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof MultipoleType)) {
-            return false;
-        }
-        MultipoleType multipoleType = (MultipoleType) other;
-        int c[] = multipoleType.frameAtomTypes;
-        if (c.length != frameAtomTypes.length) {
-            return false;
-        }
-        for (int i = 0; i < c.length; i++) {
-            if (c[i] != this.frameAtomTypes[i]) {
-                return false;
-            }
-        }
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MultipoleType multipoleType = (MultipoleType) o;
+        return Arrays.equals(frameAtomTypes, multipoleType.frameAtomTypes);
     }
 
     /**
@@ -1034,7 +988,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     @Override
     public int hashCode() {
-        return Objects.hash(frameAtomTypes);
+        return Arrays.hashCode(frameAtomTypes);
     }
 
     /* Indices into a 1D tensor array based on compressed tensor notation. This makes multipole code easier to read. */

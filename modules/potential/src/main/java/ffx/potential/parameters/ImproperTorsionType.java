@@ -37,9 +37,9 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Objects;
 import static java.lang.Integer.parseInt;
 
 import static org.apache.commons.math3.util.FastMath.cos;
@@ -310,20 +310,11 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * @since 1.0
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof ImproperTorsionType)) {
-            return false;
-        }
-        ImproperTorsionType improperTorsionType = (ImproperTorsionType) other;
-        for (int i = 0; i < atomClasses.length; i++) {
-            if (improperTorsionType.atomClasses[i] != atomClasses[i]) {
-                return false;
-            }
-        }
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ImproperTorsionType improperTorsionType = (ImproperTorsionType) o;
+        return Arrays.equals(atomClasses, improperTorsionType.atomClasses);
     }
 
     /**
@@ -335,7 +326,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      */
     @Override
     public int hashCode() {
-        return Objects.hash(atomClasses);
+        return Arrays.hashCode(atomClasses);
     }
 
 }

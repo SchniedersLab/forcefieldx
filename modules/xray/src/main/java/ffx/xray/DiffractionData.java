@@ -101,6 +101,7 @@ public class DiffractionData implements DataContainer {
     private SplineMinimize[] splineMinimize;
     private CrystalStats[] crystalStats;
     private ParallelTeam parallelTeam;
+    private CrystalReciprocalSpace.GridMethod gridMethod;
     private boolean[] scaled;
     // Settings
     private final double fsigfCutoff;
@@ -376,11 +377,18 @@ public class DiffractionData implements DataContainer {
 
         parallelTeam = assembly[0].getParallelTeam();
 
+        String gridString = properties.getString("grid-method", "SLICE").toUpperCase();
+        try {
+            gridMethod =  CrystalReciprocalSpace.GridMethod.valueOf(gridString);
+        } catch (Exception e) {
+            gridMethod = CrystalReciprocalSpace.GridMethod.SLICE;
+        }
+
         parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
             // Atomic Scattering
             crystalReciprocalSpacesFc[i] = new CrystalReciprocalSpace(reflectionList[i], refinementModel.getTotalAtomArray(),
-                    parallelTeam, parallelTeam, false, dataFiles[i].isNeutron());
+                    parallelTeam, parallelTeam, false, dataFiles[i].isNeutron(), SolventModel.NONE, gridMethod);
             refinementData[i].setCrystalReciprocalSpaceFc(crystalReciprocalSpacesFc[i]);
             crystalReciprocalSpacesFc[i].setUse3G(use_3g);
             crystalReciprocalSpacesFc[i].setWeight(dataFiles[i].getWeight());
@@ -389,7 +397,7 @@ public class DiffractionData implements DataContainer {
 
             // Bulk Solvent Scattering
             crystalReciprocalSpacesFs[i] = new CrystalReciprocalSpace(reflectionList[i], refinementModel.getTotalAtomArray(),
-                    parallelTeam, parallelTeam, true, dataFiles[i].isNeutron(), solventmodel);
+                    parallelTeam, parallelTeam, true, dataFiles[i].isNeutron(), solventmodel, gridMethod);
             refinementData[i].setCrystalReciprocalSpaceFs(crystalReciprocalSpacesFs[i]);
             crystalReciprocalSpacesFs[i].setUse3G(use_3g);
             crystalReciprocalSpacesFs[i].setWeight(dataFiles[i].getWeight());
@@ -443,12 +451,12 @@ public class DiffractionData implements DataContainer {
         // set up FFT and run it
         for (int i = 0; i < n; i++) {
             crystalReciprocalSpacesFc[i] = new CrystalReciprocalSpace(reflectionList[i], tmprefinementmodel.getTotalAtomArray(),
-                    parallelTeam, parallelTeam, false, dataFiles[i].isNeutron());
+                    parallelTeam, parallelTeam, false, dataFiles[i].isNeutron(), SolventModel.NONE, gridMethod);
             crystalReciprocalSpacesFc[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
             refinementData[i].setCrystalReciprocalSpaceFc(crystalReciprocalSpacesFc[i]);
 
             crystalReciprocalSpacesFs[i] = new CrystalReciprocalSpace(reflectionList[i], tmprefinementmodel.getTotalAtomArray(),
-                    parallelTeam, parallelTeam, true, dataFiles[i].isNeutron(), solventModel);
+                    parallelTeam, parallelTeam, true, dataFiles[i].isNeutron(), solventModel, gridMethod);
             crystalReciprocalSpacesFs[i].setNativeEnvironmentApproximation(nativeEnvironmentApproximation);
             refinementData[i].setCrystalReciprocalSpaceFs(crystalReciprocalSpacesFs[i]);
         }

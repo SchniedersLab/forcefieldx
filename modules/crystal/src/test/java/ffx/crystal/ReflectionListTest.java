@@ -48,13 +48,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import ffx.utilities.BaseFFXTest;
+
 /**
  * Test the ReflectionList class.
  *
  * @author Timothy D. Fenn
  */
 @RunWith(Parameterized.class)
-public class ReflectionListTest {
+public class ReflectionListTest extends BaseFFXTest {
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -92,7 +94,6 @@ public class ReflectionListTest {
     private final HKL invalid;
     private final int epsilon;
     private final int allowed;
-    private final boolean ci;
     private final boolean ciOnly;
     private final ReflectionList reflectionlist;
 
@@ -109,8 +110,7 @@ public class ReflectionListTest {
         this.epsilon = epsilon;
         this.allowed = allowed;
 
-        ci = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
-        if (!ci && ciOnly) {
+        if (!ffxCI && ciOnly) {
             this.reflectionlist = null;
             return;
         }
@@ -122,7 +122,7 @@ public class ReflectionListTest {
 
     @Test
     public void testsize() {
-        if (!ci && ciOnly) {
+        if (!ffxCI && ciOnly) {
             return;
         }
 
@@ -134,7 +134,7 @@ public class ReflectionListTest {
 
     @Test
     public void testreflections() {
-        if (!ci && ciOnly) {
+        if (!ffxCI && ciOnly) {
             return;
         }
 

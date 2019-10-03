@@ -61,23 +61,26 @@ public abstract class BaseFFXTest {
     private static final Level ffxLevel;
     private static Properties properties;
 
+    public static final boolean ffxCI = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+    public static final boolean ffxOpenMM = System.getProperty("ffx.openMM","false").equalsIgnoreCase("true");
+
     static {
-        Level lev;
+        Level level;
         try {
-            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
+            level = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
         } catch (Exception ex) {
             logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
-            lev = origLevel;
+            level = origLevel;
         }
-        testLevel = lev;
+        testLevel = level;
 
         try {
-            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
+            level = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
         } catch (Exception ex) {
             logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
-            lev = origLevel;
+            level = origLevel;
         }
-        ffxLevel = lev;
+        ffxLevel = level;
     }
 
     /**

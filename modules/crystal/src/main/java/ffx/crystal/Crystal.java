@@ -620,6 +620,12 @@ public class Crystal {
         return changeUnitCellParameters(aa, bb, cc, aalpha, bbeta, ggamma);
     }
 
+    /**
+     * Compute the density of the system.
+     *
+     * @param mass The total mass of the asymmetric unit.
+     * @return The density (g/cc)
+     */
     public double getDensity(double mass) {
         int nSymm = spaceGroup.symOps.size();
         return (mass * nSymm / AVOGADRO) * (1.0e24 / volume);
