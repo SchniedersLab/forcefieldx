@@ -53,6 +53,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
+import groovy.ui.SystemOutputInterceptor;
+
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.rsq;
 import static ffx.numerics.math.VectorMath.scalar;
@@ -231,8 +233,7 @@ public class GaussVol {
     /**
      * Surface tension in kcal/mol/Ang^2.
      */
-    //private double surfaceTension = 0.08;
-    private double surfaceTension = 0.16;
+    private double surfaceTension = 0.08;
     /**
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
      * Originally 3.0*surfaceTension/solventPressure
@@ -596,12 +597,18 @@ public class GaussVol {
             addSurfaceAreaGradient(taperSA, dtaperSA, gradient);
         }
 
+        // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
+        double threeOverFourPi = 3.0/(4.0*Math.PI);
+        double radical = totalVolume[0]*threeOverFourPi;
+        double effectiveRadius = pow(radical, 1/3);
+
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format("\n Volume:              %8.3f (Ang^3)", totalVolume[0]));
             logger.fine(format(" Volume Energy:       %8.3f (kcal/mol)", volumeEnergy));
             logger.fine(format(" Surface Area:        %8.3f (Ang^2)", surfaceArea));
             logger.fine(format(" Surface Area Energy: %8.3f (kcal/mol)", surfaceAreaEnergy));
             logger.fine(format(" Volume + SA Energy:  %8.3f (kcal/mol)", cavitationEnergy));
+            logger.fine(format(" Effective Radius:    %8.3f (Ang)", effectiveRadius));
         }
 
         return cavitationEnergy;

@@ -120,7 +120,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * with a solute (ie: water will never be perfectly flat like it would be
      * during surface tension experiments with pure water)
      */
-    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.103;
+    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.080;
     /**
      * Default solvent pressure for apolar models with an explicit volume term.
      * <p>
@@ -129,7 +129,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * <p>
      * For use with GaussVol volumes (i.e. a vdW volume), a larger solvent pressure of 0.125 is needed.
      */
-    private static final double DEFAULT_SOLVENT_PRESSURE = 0.05185;
+    private static final double DEFAULT_SOLVENT_PRESSURE = 0.04800;
     /**
      * Default probe radius for use with Gaussian Volumes.
      */
