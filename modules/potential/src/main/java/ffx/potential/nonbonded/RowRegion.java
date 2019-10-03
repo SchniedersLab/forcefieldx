@@ -64,15 +64,9 @@ import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
  */
 public class RowRegion extends ParallelRegion {
 
-    /**
-     * A list of atoms.
-     */
-    Atom[] atoms;
-    Crystal crystal;
     int nAtoms;
     int nSymm;
-    int gX, gY, gZ;
-    int threadCount;
+    private int gX, gY, gZ;
     public int buff = 3;
     public boolean[][] select;
 
@@ -102,15 +96,12 @@ public class RowRegion extends ParallelRegion {
     public RowRegion(int gX, int gY, int gZ, double[] grid,
                      int nSymm, int threadCount,
                      Atom[] atoms, double[][][] coordinates) {
-
-        this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.gX = gX;
         this.gY = gY;
         this.gZ = gZ;
         gridSize = gX * gY * gZ * 2;
         this.nSymm = nSymm;
-        this.threadCount = threadCount;
         this.coordinates = coordinates;
         this.grid = grid;
         if (grid != null) {
@@ -138,7 +129,7 @@ public class RowRegion extends ParallelRegion {
      * @param gZ      a int.
      */
     public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
-        this.crystal = crystal.getUnitCell();
+        //this.crystal = crystal.getUnitCell();
         this.gX = gX;
         this.gY = gY;
         this.gZ = gZ;
@@ -182,7 +173,6 @@ public class RowRegion extends ParallelRegion {
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
     public void setAtoms(Atom[] atoms) {
-        this.atoms = atoms;
         nAtoms = atoms.length;
         select = new boolean[nSymm][nAtoms];
         for (int i = 0; i < nSymm; i++) {

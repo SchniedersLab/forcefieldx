@@ -466,6 +466,7 @@ public class CrystalReciprocalSpace {
             sb.append(format("  Form factor grid diameter:           %8.3f\n", aRad * 2));
             sb.append(format("  Grid density:                        %8.3f\n", 1.0 / gridStep));
             sb.append(format("  Grid dimensions:                (%3d,%3d,%3d)\n", fftX, fftY, fftZ));
+            sb.append(format("  Grid method:                         %8s\n", gridMethod.toString()));
             logger.info(sb.toString());
         }
 

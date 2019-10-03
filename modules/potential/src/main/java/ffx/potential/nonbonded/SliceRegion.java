@@ -68,15 +68,9 @@ public class SliceRegion extends ParallelRegion {
     public int buff = 3;
     public boolean[][] select;
 
-    /**
-     * A list of atoms.
-     */
-    Atom[] atoms;
     int nAtoms;
-    Crystal crystal;
     int nSymm;
-    int gX, gY, gZ;
-    int threadCount;
+    private int gX, gY, gZ;
 
     protected SliceLoop[] sliceLoop;
     protected double[][][] coordinates;
@@ -88,7 +82,6 @@ public class SliceRegion extends ParallelRegion {
     private double[] grid;
     private boolean rebuildList;
     private int[][] zAtListBuild;
-
 
     /**
      * <p>Constructor for SliceRegion.</p>
@@ -105,14 +98,12 @@ public class SliceRegion extends ParallelRegion {
     public SliceRegion(int gX, int gY, int gZ, double[] grid,
                        int nSymm, int threadCount,
                        Atom[] atoms, double[][][] coordinates) {
-        this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.gX = gX;
         this.gY = gY;
         this.gZ = gZ;
         gridSize = gX * gY * gZ * 2;
         this.nSymm = nSymm;
-        this.threadCount = threadCount;
         this.coordinates = coordinates;
         this.grid = grid;
         if (grid != null) {
@@ -140,7 +131,7 @@ public class SliceRegion extends ParallelRegion {
      * @param gZ      a int.
      */
     public final void setCrystal(Crystal crystal, int gX, int gY, int gZ) {
-        this.crystal = crystal.getUnitCell();
+        // this.crystal = crystal.getUnitCell();
         this.gX = gX;
         this.gY = gY;
         this.gZ = gZ;
@@ -153,7 +144,6 @@ public class SliceRegion extends ParallelRegion {
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      */
     public void setAtoms(Atom[] atoms) {
-        this.atoms = atoms;
         nAtoms = atoms.length;
         select = new boolean[nSymm][nAtoms];
         zAtListBuild = new int[nSymm][nAtoms];
