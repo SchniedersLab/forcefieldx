@@ -112,10 +112,16 @@ public class Constants {
      */
     public static final double ROOM_TEMPERATURE = 298.15;
 
+    /**
+     * Coulomb constant in units of kcal*Ang/(mol*electron^2), as derived from CODATA 2018 permittivity
+     * of free space measured at 8.8541878128*10^-12 F/m
+     */
+    public static final double ELECTRIC_CODATA_2018 = 332.063713299;
+
     // Below are constants not updated to SI standard and likely will never be updated to SI standard.
 
     /**
-     * Conversion from electron**2/Ang to kcal/mole.
+     * Coulomb constant in units of kcal*Ang/(mol*electron^2)
      *
      * Note -- this value varies slightly between force field definitions and can be set using the
      * ELECTRIC property. As such, SHOULD NOT ever be updated to SI standard.
