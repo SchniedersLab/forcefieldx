@@ -117,15 +117,6 @@ public class ForceField {
     }
 
     /**
-     * Enumerates the types of constraints that can be applied.
-     */
-    public enum ConstraintTypes {
-        BOND, // Constrain a Bond.
-        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
-        // TODO: Support dihedral constraints, lone angle constraints, etc.
-    }
-
-    /**
      * A map between a force field name and its internal parameter file.
      */
     private static final Map<ForceFieldName, URL> forceFields = new EnumMap<>(ForceFieldName.class);
@@ -175,7 +166,7 @@ public class ForceField {
     private final Map<String, VDWType> vanderWaalsTypes;
     private final Map<String, VDWType> vanderWaals14Types;
     private final Map<String, RelativeSolvationType> relativeSolvationTypes;
-    private final Map<ForceFieldType, Map> forceFieldTypes;
+    private final Map<ForceFieldType, Map<String, ? extends BaseType>> forceFieldTypes;
 
     /**
      * ForceField Constructor.
@@ -707,13 +698,13 @@ public class ForceField {
      * @param type BaseType
      */
     @SuppressWarnings("unchecked")
-    public void addForceFieldType(BaseType type) {
+    public <T extends BaseType> void addForceFieldType(T type) {
         if (type == null) {
             logger.info(" Null force field type ignored.");
             return;
         }
 
-        Map treeMap = forceFieldTypes.get(type.forceFieldType);
+        Map<String, T> treeMap = (Map<String, T>) forceFieldTypes.get(type.forceFieldType);
         if (treeMap == null) {
             logger.log(Level.INFO, " Unrecognized force field type ignored {0}", type.forceFieldType);
             type.print();
@@ -729,8 +720,7 @@ public class ForceField {
                     new Object[]{type.forceFieldType, type.key,
                             treeMap.get(type.key).toString(), type.toString()});
         }
-        Class baseTypeClass = type.getClass();
-        treeMap.put(type.key, baseTypeClass.cast(type));
+        treeMap.put(type.key, type);
     }
 
     /**
@@ -1093,52 +1083,6 @@ public class ForceField {
     }
 
     /**
-     * Check for self-consistent polarization groups.
-     */
-    public void checkPolarizationTypes() {
-        boolean change = false;
-        for (String key : polarizeTypes.keySet()) {
-            PolarizeType polarizeType = polarizeTypes.get(key);
-            int orig = Integer.parseInt(key);
-            int[] types = polarizeType.polarizationGroup;
-            if (types == null) {
-                continue;
-            }
-
-            for (int type : types) {
-                String key2 = Integer.toString(type);
-                PolarizeType polarizeType2 = polarizeTypes.get(key2);
-                if (polarizeType2 == null) {
-                    logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
-                            key, key2));
-                    continue;
-                }
-                int types2[] = polarizeType2.polarizationGroup;
-                if (types2 == null) {
-                    polarizeType2.add(orig);
-                    change = true;
-                    continue;
-                }
-                boolean found = false;
-                for (int type2 : types2) {
-                    for (int type3 : types) {
-                        if (type2 == type3) {
-                            found = true;
-                        }
-                    }
-                    if (!found) {
-                        polarizeType.add(type2);
-                        change = true;
-                    }
-                }
-            }
-        }
-        if (change) {
-            checkPolarizationTypes();
-        }
-    }
-
-    /**
      * <p>
      * log</p>
      */
@@ -1369,28 +1313,6 @@ public class ForceField {
     }
 
     /**
-     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
-     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
-     * ELEC_LAMBDATERM, or GK_LAMBDATERM.
-     *
-     * @param toSet         Property to set true if otherBooleans true.
-     * @param otherBooleans Properties that imply toSet is true.
-     */
-    private void trueImpliedBoolean(String toSet, String... otherBooleans) {
-        // Short-circuit if it's already true.
-        if (getBoolean(toSet, false)) {
-            return;
-        }
-        // Check all the other booleans that imply toSet.
-        for (String otherBool : otherBooleans) {
-            if (getBoolean(otherBool, false)) {
-                addProperty(toSet, "true");
-                logger.info(format(" Setting implied boolean %s true due to boolean %s", toSet.toString(), otherBool.toString()));
-            }
-        }
-    }
-
-    /**
      * Returns the minimum atom class value.
      *
      * @return a int.
@@ -1523,4 +1445,80 @@ public class ForceField {
         patchClassesAndTypes(typeMap, patchTypes);
     }
 
+    /**
+     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
+     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
+     * ELEC_LAMBDATERM, or GK_LAMBDATERM.
+     *
+     * @param toSet         Property to set true if otherBooleans true.
+     * @param otherBooleans Properties that imply toSet is true.
+     */
+    private void trueImpliedBoolean(String toSet, String... otherBooleans) {
+        // Short-circuit if it's already true.
+        if (getBoolean(toSet, false)) {
+            return;
+        }
+        // Check all the other booleans that imply toSet.
+        for (String otherBool : otherBooleans) {
+            if (getBoolean(otherBool, false)) {
+                addProperty(toSet, "true");
+                logger.info(format(" Setting implied boolean %s true due to boolean %s", toSet.toString(), otherBool.toString()));
+            }
+        }
+    }
+
+    /**
+     * Check for self-consistent polarization groups.
+     */
+    private void checkPolarizationTypes() {
+        boolean change = false;
+        for (String key : polarizeTypes.keySet()) {
+            PolarizeType polarizeType = polarizeTypes.get(key);
+            int orig = Integer.parseInt(key);
+            int[] types = polarizeType.polarizationGroup;
+            if (types == null) {
+                continue;
+            }
+
+            for (int type : types) {
+                String key2 = Integer.toString(type);
+                PolarizeType polarizeType2 = polarizeTypes.get(key2);
+                if (polarizeType2 == null) {
+                    logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
+                            key, key2));
+                    continue;
+                }
+                int types2[] = polarizeType2.polarizationGroup;
+                if (types2 == null) {
+                    polarizeType2.add(orig);
+                    change = true;
+                    continue;
+                }
+                boolean found = false;
+                for (int type2 : types2) {
+                    for (int type3 : types) {
+                        if (type2 == type3) {
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        polarizeType.add(type2);
+                        change = true;
+                    }
+                }
+            }
+        }
+        if (change) {
+            checkPolarizationTypes();
+        }
+    }
+
+    /**
+     * Enumerates the types of constraints that can be applied.
+     */
+    public enum ConstraintTypes {
+        BOND, // Constrain a Bond.
+        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
+        // TODO: Support dihedral constraints, lone angle constraints, etc.
+    }
 }

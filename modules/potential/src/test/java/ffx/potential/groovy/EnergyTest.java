@@ -363,8 +363,6 @@ public class EnergyTest extends BaseFFXTest {
     private Energy energy;
     private Gradient gradient;
     private LambdaGradient lambdaGradient;
-    private boolean ffxCI;
-    private boolean ffxOpenMM;
 
     public EnergyTest(String info, String filename, int nAtoms,
                       double bondEnergy, int nBonds,

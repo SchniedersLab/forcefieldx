@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Java Wrappers for the OpenMM C API Home Page</title>
-        <author email="hernan-bernabe@uiowa.edu">Hernan V. Bernabe</author>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
         <section name="Java Wrappers for the OpenMM C API">
@@ -17,7 +17,7 @@
                 they may be useful to others:
             </p>
             <p>
-                <a href="https://github.com/mjschnie/openmm-java-wrappers">Java Wrappers for the OpenMM C API</a>
+                <a href="https://github.com/SchniedersLab/jopenmm">Java Wrappers for the OpenMM C API</a>
             </p>
             <subsection name="Including the Library in a Maven project.">
                 <source>
