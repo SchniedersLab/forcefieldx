@@ -40,11 +40,9 @@ package ffx.potential.nonbonded;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -89,6 +87,7 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
+import ffx.utilities.Constants;
 import static ffx.numerics.special.Erf.erfc;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.t000;

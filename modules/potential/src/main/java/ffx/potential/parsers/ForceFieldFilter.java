@@ -593,9 +593,9 @@ public class ForceFieldFilter {
             logger.log(Level.WARNING, "Invalid ANGLE type:\n{0}", input);
         } else {
             int[] atomClasses = new int[3];
-            double forceConstant = 0.0;
-            int angles = 0;
-            double[] bondAngle = null;
+            double forceConstant;
+            int angles;
+            double[] bondAngle;
             try {
                 atomClasses[0] = parseInt(tokens[1]);
                 atomClasses[1] = parseInt(tokens[2]);
@@ -609,6 +609,7 @@ public class ForceFieldFilter {
             } catch (NumberFormatException e) {
                 String message = "Exception parsing ANGLE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
+                return null;
             }
             double[] newBondAngle = new double[angles];
             arraycopy(bondAngle, 0, newBondAngle, 0, angles);
@@ -634,9 +635,9 @@ public class ForceFieldFilter {
             logger.log(Level.WARNING, "Invalid ANGLEP type:\n{0}", input);
         } else {
             int[] atomClasses = new int[3];
-            double forceConstant = 0.0;
-            int angles = 0;
-            double[] bondAngle = null;
+            double forceConstant;
+            int angles;
+            double[] bondAngle;
             try {
                 atomClasses[0] = parseInt(tokens[1]);
                 atomClasses[1] = parseInt(tokens[2]);
@@ -650,6 +651,7 @@ public class ForceFieldFilter {
             } catch (NumberFormatException e) {
                 String message = "Exception parsing ANGLEP type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
+                return null;
             }
             double[] newBondAngle = new double[angles];
             arraycopy(bondAngle, 0, newBondAngle, 0, angles);
@@ -723,12 +725,10 @@ public class ForceFieldFilter {
                 AtomType atomType = new AtomType(type, atomClass, name,
                         environment, atomicNumber, mass, hybridization);
                 forceField.addForceFieldType(atomType);
-
                 return atomType;
             } catch (NumberFormatException e) {
                 String message = "Exception parsing CHARGE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
-
             }
         }
         return null;
@@ -1025,7 +1025,6 @@ public class ForceFieldFilter {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
-
         return null;
     }
 
