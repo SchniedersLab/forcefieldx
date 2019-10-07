@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import static java.lang.Integer.parseInt;

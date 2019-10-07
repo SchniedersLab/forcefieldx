@@ -65,6 +65,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import ffx.potential.parameters.AngleTorsionType;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BaseType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -84,6 +85,11 @@ import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 import ffx.utilities.Keyword;
+import static ffx.potential.parameters.AngleType.AngleFunction;
+import static ffx.potential.parameters.AngleType.AngleMode;
+import static ffx.potential.parameters.BondType.BondFunction;
+import static ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
+import static ffx.potential.parameters.VDWType.VDWMode;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
@@ -306,75 +312,79 @@ public class ForceFieldFilter {
                             break;
                         }
 
+                        BaseType baseType = null;
                         switch (type) {
                             case ATOM:
-                                parseAtomType(input, tokens);
+                                baseType = parseAtomType(input, tokens);
                                 break;
                             case ANGTORS:
-                                parseAngleTorsion(input, tokens);
+                                baseType = parseAngleTorsion(input, tokens);
                                 break;
                             case ANGLE:
-                                parseAngleType(input, tokens);
+                                baseType = parseAngleType(input, tokens);
                                 break;
                             case ANGLEP:
-                                parseAngleTypeInPlane(input, tokens);
+                                baseType = parseAngleTypeInPlane(input, tokens);
                                 break;
                             case BIOTYPE:
-                                parseBioType(input, tokens);
+                                baseType = parseBioType(input, tokens);
                                 break;
                             case BOND:
-                                parseBondType(input, tokens);
+                                baseType = parseBondType(input, tokens);
                                 break;
                             case CHARGE:
-                                parseChargeType(input, tokens);
+                                baseType = parseChargeType(input, tokens);
                                 break;
                             case MULTIPOLE:
-                                parseMultipoleType(input, tokens);
+                                baseType = parseMultipoleType(input, tokens);
                                 break;
                             case OPBEND:
-                                parseOutOfPlaneBendType(input, tokens);
+                                baseType = parseOutOfPlaneBendType(input, tokens);
                                 break;
                             case STRBND:
-                                parseStretchBendType(input, tokens);
+                                baseType = parseStretchBendType(input, tokens);
                                 break;
                             case PITORS:
-                                parsePiTorsionType(input, tokens);
+                                baseType = parsePiTorsionType(input, tokens);
                                 break;
                             case IMPTORS:
-                                parseImpTorsType(input, tokens);
+                                baseType = parseImpTorsType(input, tokens);
                                 break;
                             case TORSION:
-                                parseTorsion(input, tokens);
+                                baseType = parseTorsion(input, tokens);
                                 break;
                             case IMPROPER:
-                                parseImproperTorsion(input, tokens);
+                                baseType = parseImproperTorsion(input, tokens);
                                 break;
                             case STRTORS:
-                                parseStretchTorsion(input, tokens);
+                                baseType = parseStretchTorsion(input, tokens);
                                 break;
                             case TORTORS:
-                                parseTorsionTorsionType(input, tokens);
+                                baseType = parseTorsionTorsionType(input, tokens);
                                 break;
                             case UREYBRAD:
-                                parseUreyBradleyType(input, tokens);
+                                baseType = parseUreyBradleyType(input, tokens);
                                 break;
                             case VDW:
-                                parseVDWType(input, tokens);
+                                baseType = parseVDWType(input, tokens);
                                 break;
                             case VDW14:
-                                parseVDW14Type(input, tokens);
+                                baseType = parseVDW14Type(input, tokens);
                                 break;
                             case POLARIZE:
-                                parsePolarizeType(input, tokens);
+                                baseType = parsePolarizeType(input, tokens);
                                 break;
                             case RELATIVESOLV:
-                                parseRelativeSolvation(input, tokens);
+                                baseType = parseRelativeSolvation(input, tokens);
                                 break;
                             case SOLUTE:
-                                parseSolute(input, tokens);
+                                baseType = parseSolute(input, tokens);
                                 break;
                             default:
                                 logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
+                        }
+                        if (baseType != null) {
+                            forceField.addForceFieldType(baseType);
                         }
                     }
                 }
@@ -420,80 +430,84 @@ public class ForceFieldFilter {
         // }
 
         if (tokens[0].equalsIgnoreCase("")) {
-             return;
+            return;
         }
 
         try {
             ForceFieldType type = ForceFieldType.valueOf(tokens[0].toUpperCase());
+            BaseType baseType = null;
             switch (type) {
                 case ATOM:
-                    parseAtomType(input, tokens);
+                    baseType = parseAtomType(input, tokens);
                     break;
                 case ANGLE:
-                    parseAngleType(input, tokens);
+                    baseType = parseAngleType(input, tokens);
                     break;
                 case ANGLEP:
-                    parseAngleTypeInPlane(input, tokens);
+                    baseType = parseAngleTypeInPlane(input, tokens);
                     break;
                 case ANGTORS:
-                    parseAngleTorsion(input, tokens);
+                    baseType = parseAngleTorsion(input, tokens);
                     break;
                 case BIOTYPE:
-                    parseBioType(input, tokens);
+                    baseType = parseBioType(input, tokens);
                     break;
                 case BOND:
-                    parseBondType(input, tokens);
+                    baseType = parseBondType(input, tokens);
                     break;
                 case CHARGE:
-                    parseChargeType(input, tokens);
+                    baseType = parseChargeType(input, tokens);
                     break;
                 case MULTIPOLE:
-                    parseMultipoleType(input, tokens, br);
+                    baseType = parseMultipoleType(input, tokens, br);
                     break;
                 case OPBEND:
-                    parseOutOfPlaneBendType(input, tokens);
+                    baseType = parseOutOfPlaneBendType(input, tokens);
                     break;
                 case STRBND:
-                    parseStretchBendType(input, tokens);
+                    baseType = parseStretchBendType(input, tokens);
                     break;
                 case PITORS:
-                    parsePiTorsionType(input, tokens);
+                    baseType = parsePiTorsionType(input, tokens);
                     break;
                 case IMPTORS:
-                    parseImpTorsType(input, tokens);
+                    baseType = parseImpTorsType(input, tokens);
                     break;
                 case STRTORS:
-                    parseStretchTorsion(input, tokens);
+                    baseType = parseStretchTorsion(input, tokens);
                     break;
                 case TORSION:
-                    parseTorsion(input, tokens);
+                    baseType = parseTorsion(input, tokens);
                     break;
                 case IMPROPER:
-                    parseImproperTorsion(input, tokens);
+                    baseType = parseImproperTorsion(input, tokens);
                     break;
                 case TORTORS:
-                    parseTorsionTorsionType(input, tokens, br);
+                    baseType = parseTorsionTorsionType(input, tokens, br);
                     break;
                 case UREYBRAD:
-                    parseUreyBradleyType(input, tokens);
+                    baseType = parseUreyBradleyType(input, tokens);
                     break;
                 case VDW:
-                    parseVDWType(input, tokens);
+                    baseType = parseVDWType(input, tokens);
                     break;
                 case VDW14:
-                    parseVDW14Type(input, tokens);
+                    baseType = parseVDW14Type(input, tokens);
                     break;
                 case POLARIZE:
-                    parsePolarizeType(input, tokens);
+                    baseType = parsePolarizeType(input, tokens);
                     break;
                 case RELATIVESOLV:
-                    parseRelativeSolvation(input, tokens);
+                    baseType = parseRelativeSolvation(input, tokens);
                     break;
                 case SOLUTE:
-                    parseSolute(input, tokens);
+                    baseType = parseSolute(input, tokens);
                     break;
                 default:
                     logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
+            }
+            if (baseType != null) {
+                forceField.addForceFieldType(baseType);
             }
             return;
         } catch (Exception e) {
@@ -504,88 +518,25 @@ public class ForceFieldFilter {
 
         // Otherwise -- add this entry as a property.
         String key = tokens[0];
-        String value = input.replaceFirst(tokens[0],"").trim();
+        String value = input.replaceFirst(tokens[0], "").trim();
         // logger.info(" Adding " + key + ": " + value);
         forceField.addProperty(key, value);
     }
 
-//    private boolean parseKeyword(String[] tokens) {
-//        String keyword = toEnumForm(tokens[0]);
-//        try {
-//            // Parse Keywords with a String value.
-//            ForceFieldString ffString = ForceFieldString.valueOf(keyword);
-//            int len = tokens.length;
-//            if (len == 1) {
-//                forceField.addForceFieldString(ffString, null);
-//            } else if (len == 2) {
-//                forceField.addForceFieldString(ffString, tokens[1]);
-//            } else {
-//                StringBuilder stringBuilder = new StringBuilder(tokens[1]);
-//                for (int i = 2; i < len; i++) {
-//                    stringBuilder.append(" ");
-//                    stringBuilder.append(tokens[i]);
-//                }
-//                forceField.addForceFieldString(ffString, stringBuilder.toString());
-//            }
-//        } catch (Exception e) {
-//            try {
-//                // Parse Keywords with a Double value.
-//                ForceFieldDouble ffDouble = "valueOf(keyword);
-//                double value = parseDouble(tokens[1]);
-//                forceField.addDouble(ffDouble, value);
-//            } catch (Exception e2) {
-//                try {
-//                    // Parse Keywords with an Integer value.
-//                    ForceFieldInteger ffInteger = ForceFieldInteger.valueOf(keyword);
-//                    int value = parseInt(tokens[1]);
-//                    forceField.addForceFieldInteger(ffInteger, value);
-//                } catch (Exception e3) {
-//                    try {
-//                        // Parse Keywords with a Boolean value.
-//                        ForceFieldBoolean ffBoolean = ForceFieldBoolean.valueOf(keyword);
-//                        boolean value = true;
-//                        if (tokens.length > 1 && tokens[0].toUpperCase().endsWith("TERM")) {
-//
-//                            // Handle the token "ONLY" specially to shut off all other terms.
-//                            if (tokens[1].equalsIgnoreCase("ONLY")) {
-//                                for (ForceFieldBoolean term : ForceFieldBoolean.values()) {
-//                                    if (term.toString().toUpperCase().endsWith("TERM")) {
-//                                        forceField.addForceFieldBoolean(term.toString(), false);
-//                                    }
-//                                }
-//                            } else if (tokens[1].equalsIgnoreCase("NONE")) {
-//                                // Legacy support for the "NONE" token.
-//                                value = false;
-//                            } else {
-//                                value = Boolean.parseBoolean(tokens[1]);
-//                            }
-//                        }
-//                        forceField.addForceFieldBoolean(ffBoolean.toString(), value);
-//                        forceField.log(keyword);
-//                    } catch (Exception e4) {
-//                        return false;
-//                    }
-//                }
-//            }
-//        }
-//        return true;
-//    }
-
-    private void parseRelativeSolvation(String input, String[] tokens) {
+    private RelativeSolvationType parseRelativeSolvation(String input, String[] tokens) {
         if (tokens.length < 3) {
             logger.log(Level.WARNING, "Invalid RELATIVE_SOLVATION type:\n{0}", input);
-            return;
+            return null;
         }
         String resName = tokens[1];
         try {
             double relSolvValue = parseDouble(tokens[2]);
-            RelativeSolvationType rtype = new RelativeSolvationType(resName, relSolvValue);
-            forceField.addForceFieldType(rtype);
+            return new RelativeSolvationType(resName, relSolvValue);
         } catch (NumberFormatException ex) {
             String message = "Exception parsing RELATIVE_SOLVATION type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, ex);
         }
-
+        return null;
     }
 
     private AngleType parseAngleType(String input, String[] tokens) {
@@ -615,17 +566,12 @@ public class ForceFieldFilter {
             arraycopy(bondAngle, 0, newBondAngle, 0, angles);
 
             String forceFieldName = forceField.toString().toUpperCase();
-            AngleType angleType;
             if (forceFieldName.contains("OPLS") || forceFieldName.contains("CHARMM")
                     || forceFieldName.contains("AMBER")) {
-                angleType = new AngleType(atomClasses, forceConstant,
-                        newBondAngle, AngleType.AngleFunction.HARMONIC);
+                return new AngleType(atomClasses, forceConstant, newBondAngle, AngleFunction.HARMONIC);
             } else {
-                angleType = new AngleType(atomClasses, forceConstant,
-                        newBondAngle, AngleType.AngleFunction.SEXTIC);
+                return new AngleType(atomClasses, forceConstant, newBondAngle, AngleFunction.SEXTIC);
             }
-            forceField.addForceFieldType(angleType);
-            return angleType;
         }
         return null;
     }
@@ -657,17 +603,12 @@ public class ForceFieldFilter {
             arraycopy(bondAngle, 0, newBondAngle, 0, angles);
 
             String forceFieldName = forceField.toString().toUpperCase();
-            AngleType angleType;
             if (forceFieldName.contains("OPLS") || forceFieldName.contains("CHARMM")
                     || forceFieldName.contains("AMBER")) {
-                angleType = new AngleType(atomClasses, forceConstant,
-                        newBondAngle, AngleType.AngleFunction.HARMONIC, AngleType.AngleMode.IN_PLANE);
+                return new AngleType(atomClasses, forceConstant, newBondAngle, AngleFunction.HARMONIC, AngleMode.IN_PLANE);
             } else {
-                angleType = new AngleType(atomClasses, forceConstant,
-                        newBondAngle, AngleType.AngleFunction.SEXTIC, AngleType.AngleMode.IN_PLANE);
+                return new AngleType(atomClasses, forceConstant, newBondAngle, AngleFunction.SEXTIC, AngleMode.IN_PLANE);
             }
-            forceField.addForceFieldType(angleType);
-            return angleType;
         }
         return null;
     }
@@ -722,10 +663,7 @@ public class ForceFieldFilter {
                 double mass = parseDouble(tokens[index++]);
                 // Hybridization
                 int hybridization = parseInt(tokens[index]);
-                AtomType atomType = new AtomType(type, atomClass, name,
-                        environment, atomicNumber, mass, hybridization);
-                forceField.addForceFieldType(atomType);
-                return atomType;
+                return new AtomType(type, atomClass, name, environment, atomicNumber, mass, hybridization);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing CHARGE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -762,9 +700,7 @@ public class ForceFieldFilter {
                     bonds = new String[bondCount];
                     arraycopy(tokens, 1, bonds, 0, bondCount);
                 }
-                BioType bioType = new BioType(index, atomName, moleculeName, atomType, bonds);
-                forceField.addForceFieldType(bioType);
-                return bioType;
+                return new BioType(index, atomName, moleculeName, atomType, bonds);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing BIOTYPE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -784,17 +720,12 @@ public class ForceFieldFilter {
                 double forceConstant = parseDouble(tokens[3]);
                 double distance = parseDouble(tokens[4]);
                 String forceFieldName = forceField.toString().toUpperCase();
-                BondType bondType;
                 if (forceFieldName.contains("OPLS") || forceFieldName.contains("CHARMM")
                         || forceFieldName.contains("AMBER")) {
-                    bondType = new BondType(atomClasses, forceConstant,
-                            distance, BondType.BondFunction.HARMONIC);
+                    return new BondType(atomClasses, forceConstant, distance, BondFunction.HARMONIC);
                 } else {
-                    bondType = new BondType(atomClasses, forceConstant,
-                            distance, BondType.BondFunction.QUARTIC);
+                    return new BondType(atomClasses, forceConstant, distance, BondFunction.QUARTIC);
                 }
-                forceField.addForceFieldType(bondType);
-                return bondType;
             } catch (NumberFormatException e) {
                 String message = "Exception parsing BOND type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -815,15 +746,11 @@ public class ForceFieldFilter {
         } else {
             try {
                 int[] atomTypes = new int[]{parseInt(tokens[1]), 0, 0};
-                double partialCharge = parseDouble(tokens[2]);
+                double charge = parseDouble(tokens[2]);
                 double[] dipole = new double[3];
                 double[][] quadrupole = new double[3][3];
-                MultipoleType.MultipoleFrameDefinition frameDefinition
-                        = MultipoleType.MultipoleFrameDefinition.NONE;
-                MultipoleType multipoleType = new MultipoleType(partialCharge, dipole,
-                        quadrupole, atomTypes, frameDefinition, true);
-                forceField.addForceFieldType(multipoleType);
-                return multipoleType;
+                MultipoleFrameDefinition frameDefinition = MultipoleFrameDefinition.NONE;
+                return new MultipoleType(charge, dipole, quadrupole, atomTypes, frameDefinition, true);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing CHARGE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -857,24 +784,24 @@ public class ForceFieldFilter {
             // Last token is the monopole.
             double charge = parseDouble(tokens[nTokens - 1]);
 
-            MultipoleType.MultipoleFrameDefinition frameDefinition = null;
+            MultipoleFrameDefinition frameDefinition = null;
             if (nAtomTypes == 1) {
-                frameDefinition = MultipoleType.MultipoleFrameDefinition.NONE;
+                frameDefinition = MultipoleFrameDefinition.NONE;
             } else if (nAtomTypes == 2) {
-                frameDefinition = MultipoleType.MultipoleFrameDefinition.ZONLY;
+                frameDefinition = MultipoleFrameDefinition.ZONLY;
             } else if (nAtomTypes == 3) {
                 // ZTHENX or BISECTOR
                 if (atomTypes[1] < 0 || atomTypes[2] < 0) {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
+                    frameDefinition = MultipoleFrameDefinition.BISECTOR;
                 } else {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+                    frameDefinition = MultipoleFrameDefinition.ZTHENX;
                 }
             } else if (nAtomTypes == 4) {
                 // ZTHENBISECTOR or THREEFOLD
                 if (atomTypes[2] < 0 && atomTypes[3] < 0) {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR;
+                    frameDefinition = MultipoleFrameDefinition.ZTHENBISECTOR;
                     if (atomTypes[1] < 0) {
-                        frameDefinition = MultipoleType.MultipoleFrameDefinition.THREEFOLD;
+                        frameDefinition = MultipoleFrameDefinition.THREEFOLD;
                     }
                 }
             }
@@ -882,7 +809,7 @@ public class ForceFieldFilter {
             // Warn if the frame definition is ambiguous.
             if (frameDefinition == null) {
                 logger.log(Level.FINE, "Ambiguous MULTIPOLE type:\n{0}", input);
-                frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+                frameDefinition = MultipoleFrameDefinition.ZTHENX;
             }
 
             for (int i = 0; i < nAtomTypes; i++) {
@@ -928,10 +855,7 @@ public class ForceFieldFilter {
             quadrupole[0][1] = quadrupole[1][0];
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
-            MultipoleType multipoleType = new MultipoleType(charge, dipole,
-                    quadrupole, atomTypes, frameDefinition, true);
-            forceField.addForceFieldType(multipoleType);
-            return multipoleType;
+            return new MultipoleType(charge, dipole, quadrupole, atomTypes, frameDefinition, true);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
@@ -969,24 +893,24 @@ public class ForceFieldFilter {
                 atomTypes[i] = frameAtoms.get(i);
             }
 
-            MultipoleType.MultipoleFrameDefinition frameDefinition = null;
+            MultipoleFrameDefinition frameDefinition = null;
             if (nAtomTypes == 1) {
-                frameDefinition = MultipoleType.MultipoleFrameDefinition.NONE;
+                frameDefinition = MultipoleFrameDefinition.NONE;
             } else if (nAtomTypes == 2) {
-                frameDefinition = MultipoleType.MultipoleFrameDefinition.ZONLY;
+                frameDefinition = MultipoleFrameDefinition.ZONLY;
             } else if (nAtomTypes == 3) {
                 // ZTHENX or BISECTOR
                 if (atomTypes[1] < 0 || atomTypes[2] < 0) {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
+                    frameDefinition = MultipoleFrameDefinition.BISECTOR;
                 } else {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+                    frameDefinition = MultipoleFrameDefinition.ZTHENX;
                 }
             } else if (nAtomTypes == 4) {
                 // ZTHENBISECTOR or THREEFOLD
                 if (atomTypes[2] < 0 && atomTypes[3] < 0) {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR;
+                    frameDefinition = MultipoleFrameDefinition.ZTHENBISECTOR;
                     if (atomTypes[1] < 0) {
-                        frameDefinition = MultipoleType.MultipoleFrameDefinition.THREEFOLD;
+                        frameDefinition = MultipoleFrameDefinition.THREEFOLD;
                     }
                 }
             }
@@ -994,7 +918,7 @@ public class ForceFieldFilter {
             // Warn if the frame definition is ambiguous.
             if (frameDefinition == null) {
                 logger.log(Level.FINE, "Ambiguous MULTIPOLE type:\n{0}", input);
-                frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+                frameDefinition = MultipoleFrameDefinition.ZTHENX;
             }
 
             for (int i = 0; i < nAtomTypes; i++) {
@@ -1003,7 +927,7 @@ public class ForceFieldFilter {
 
             double[] dipole = new double[3];
             double[][] quadrupole = new double[3][3];
-            double c = parseDouble(tokens[nTokens - 10]);
+            double charge = parseDouble(tokens[nTokens - 10]);
             dipole[0] = parseDouble(tokens[nTokens - 9]);
             dipole[1] = parseDouble(tokens[nTokens - 8]);
             dipole[2] = parseDouble(tokens[nTokens - 7]);
@@ -1017,10 +941,7 @@ public class ForceFieldFilter {
             quadrupole[0][1] = quadrupole[1][0];
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
-            MultipoleType multipoleType = new MultipoleType(c, dipole,
-                    quadrupole, atomTypes, frameDefinition, true);
-            forceField.addForceFieldType(multipoleType);
-            return multipoleType;
+            return new MultipoleType(charge, dipole, quadrupole, atomTypes, frameDefinition, true);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
@@ -1039,9 +960,7 @@ public class ForceFieldFilter {
                 atomClasses[2] = parseInt(tokens[3]);
                 atomClasses[3] = parseInt(tokens[4]);
                 double forceConstant = parseDouble(tokens[5]);
-                OutOfPlaneBendType outOfPlaneBendType = new OutOfPlaneBendType(atomClasses, forceConstant);
-                forceField.addForceFieldType(outOfPlaneBendType);
-                return outOfPlaneBendType;
+                return new OutOfPlaneBendType(atomClasses, forceConstant);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing OPBEND type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1059,10 +978,7 @@ public class ForceFieldFilter {
                 atomClasses[0] = parseInt(tokens[1]);
                 atomClasses[1] = parseInt(tokens[2]);
                 double forceConstant = parseDouble(tokens[3]);
-                PiTorsionType piTorsionType = new PiTorsionType(atomClasses,
-                        forceConstant);
-                forceField.addForceFieldType(piTorsionType);
-                return piTorsionType;
+                return new PiTorsionType(atomClasses, forceConstant);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing PITORS type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1087,10 +1003,7 @@ public class ForceFieldFilter {
                         polarizationGroup[i - 4] = parseInt(tokens[i]);
                     }
                 }
-                PolarizeType polarizeType = new PolarizeType(atomType,
-                        polarizability, thole, polarizationGroup);
-                forceField.addForceFieldType(polarizeType);
-                return polarizeType;
+                return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing POLARIZE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1111,10 +1024,7 @@ public class ForceFieldFilter {
                 double[] forceConstants = new double[2];
                 forceConstants[0] = parseDouble(tokens[4]);
                 forceConstants[1] = parseDouble(tokens[5]);
-                StretchBendType stretchBendType = new StretchBendType(atomClasses,
-                        forceConstants);
-                forceField.addForceFieldType(stretchBendType);
-                return stretchBendType;
+                return new StretchBendType(atomClasses, forceConstants);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing STRBND type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1139,10 +1049,7 @@ public class ForceFieldFilter {
                 if (improperTorsionScale > 0.0) {
                     k = k * improperTorsionScale;
                 }
-                ImproperTorsionType improperTorsionType = new ImproperTorsionType(atomClasses,
-                        k, phase, period);
-                forceField.addForceFieldType(improperTorsionType);
-                return improperTorsionType;
+                return new ImproperTorsionType(atomClasses, k, phase, period);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing IMPTORS type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1174,10 +1081,7 @@ public class ForceFieldFilter {
                         amplitude[i] = amplitude[i] * torsionScale;
                     }
                 }
-                TorsionType torsionType = new TorsionType(atomClasses, amplitude,
-                        phase, periodicity);
-                forceField.addForceFieldType(torsionType);
-                return torsionType;
+                return new TorsionType(atomClasses, amplitude, phase, periodicity);
             } catch (NumberFormatException e) {
                 String message = "NumberFormatException parsing TORSION type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1204,12 +1108,9 @@ public class ForceFieldFilter {
                 int[] periodicity = new int[1];
                 int index = 5;
                 amplitude[0] = parseDouble(tokens[index++]);
-                phase[0] = parseDouble(tokens[index++]);
+                phase[0] = parseDouble(tokens[index]);
                 periodicity[0] = 1;
-                TorsionType torsionType = new TorsionType(atomClasses, amplitude,
-                        phase, periodicity, TorsionType.TorsionMode.IMPROPER);
-                forceField.addForceFieldType(torsionType);
-                return torsionType;
+                return new TorsionType(atomClasses, amplitude, phase, periodicity, TorsionType.TorsionMode.IMPROPER);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing IMPROPER type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1240,9 +1141,7 @@ public class ForceFieldFilter {
                 constants[7] = parseDouble(tokens[12]);
                 constants[8] = parseDouble(tokens[13]);
 
-                StretchTorsionType stretchTorsionType = new StretchTorsionType(atomClasses, constants);
-                forceField.addForceFieldType(stretchTorsionType);
-                return stretchTorsionType;
+                return new StretchTorsionType(atomClasses, constants);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing STRTORS type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1270,9 +1169,7 @@ public class ForceFieldFilter {
                 constants[4] = parseDouble(tokens[9]);
                 constants[5] = parseDouble(tokens[10]);
 
-                AngleTorsionType angleTorsionType = new AngleTorsionType(atomClasses, constants);
-                forceField.addForceFieldType(angleTorsionType);
-                return angleTorsionType;
+                return new AngleTorsionType(atomClasses, constants);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing ANGTORS type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1308,10 +1205,7 @@ public class ForceFieldFilter {
                     torsion2[i] = parseDouble(tokens[1]);
                     energy[i] = parseDouble(tokens[2]);
                 }
-                TorsionTorsionType torsionTorsionType = new TorsionTorsionType(
-                        atomClasses, gridPoints, torsion1, torsion2, energy);
-                forceField.addForceFieldType(torsionTorsionType);
-                return torsionTorsionType;
+                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
             } catch (NumberFormatException | IOException e) {
                 String message = "Exception parsing TORTORS type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1347,10 +1241,7 @@ public class ForceFieldFilter {
                     torsion2[i] = parseDouble(tokens[index++]);
                     energy[i] = parseDouble(tokens[index++]);
                 }
-                TorsionTorsionType torsionTorsionType = new TorsionTorsionType(
-                        atomClasses, gridPoints, torsion1, torsion2, energy);
-                forceField.addForceFieldType(torsionTorsionType);
-                return torsionTorsionType;
+                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing TORTORS type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1370,10 +1261,7 @@ public class ForceFieldFilter {
                 atomClasses[2] = parseInt(tokens[3]);
                 double forceConstant = parseDouble(tokens[4]);
                 double distance = parseDouble(tokens[5]);
-                UreyBradleyType ureyBradleyType = new UreyBradleyType(atomClasses,
-                        forceConstant, distance);
-                forceField.addForceFieldType(ureyBradleyType);
-                return ureyBradleyType;
+                return new UreyBradleyType(atomClasses, forceConstant, distance);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing UREYBRAD type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1401,9 +1289,7 @@ public class ForceFieldFilter {
                     double twoSix = 1.122462048309372981;
                     radius = radius * twoSix;
                 }
-                VDWType vdwType = new VDWType(atomType, radius, wellDepth, reductionFactor);
-                forceField.addForceFieldType(vdwType);
-                return vdwType;
+                return new VDWType(atomType, radius, wellDepth, reductionFactor);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing VDW type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1431,9 +1317,7 @@ public class ForceFieldFilter {
                     double twoSix = 1.122462048309372981;
                     radius = radius * twoSix;
                 }
-                VDWType vdwType = new VDWType(atomType, radius, wellDepth, reductionFactor, VDWType.VDWMode.VDW14);
-                forceField.addForceFieldType(vdwType);
-                return vdwType;
+                return new VDWType(atomType, radius, wellDepth, reductionFactor, VDWMode.VDW14);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing VDW14 type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1450,9 +1334,7 @@ public class ForceFieldFilter {
                 int atomType = parseInt(tokens[1].trim());
                 String description = tokens[2].trim();
                 double diameter = parseDouble(tokens[3].trim());
-                SoluteType soluteType = new SoluteType(atomType, description, diameter);
-                forceField.addForceFieldType(soluteType);
-                return soluteType;
+                return new SoluteType(atomType, description, diameter);
             } catch (NumberFormatException e) {
                 String message = "Exception parsing SOLUTE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
