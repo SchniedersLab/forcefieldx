@@ -631,6 +631,21 @@ public class Crystal {
         return (mass * nSymm / AVOGADRO) * (1.0e24 / volume);
     }
 
+    /**
+     * Gets the unit cell parameters in order: a, b, c, alpha, beta, gamma.
+     * @return Unit cell parameters.
+     */
+    public double[] getUnitCellParams() {
+        double[] params = new double[6];
+        params[0] = a;
+        params[1] = b;
+        params[2] = c;
+        params[0] = alpha;
+        params[1] = beta;
+        params[2] = gamma;
+        return params;
+    }
+
     public void setDensity(double dens, double mass) {
         double currentDensity = getDensity(mass);
         double scale = cbrt(currentDensity / dens);
