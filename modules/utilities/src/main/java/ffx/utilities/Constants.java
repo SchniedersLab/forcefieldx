@@ -46,7 +46,7 @@ package ffx.utilities;
 public class Constants {
 
     // SI units: kg, m, s, C, K, mol, lm
-    // Our typical units: g/mol, Angstrom, psec, elementary charges, K, mol, N/A
+    // Our typical units: g/mol, Angstrom, psec, elementary charges (+1 proton charge), K, mol, N/A
     // Below constants are the seven defining constants of SI as of May 20 2019 (BIPM).
 
     /**
@@ -60,19 +60,19 @@ public class Constants {
     /**
      * Planck constant in J*s, defining the kilogram (by defining the derived Joule)
      */
-    public static final double PLANCK_CONSTANT_SI = 6.62607015E-34;
+    public static final double PLANCK_CONSTANT_SI = 6.62607015E-34d;
     /**
      * Elementary charge in Coulombs, defining the Coulomb.
      */
-    public static final double ELEMENTARY_CHARGE_SI = 1.602176634E-19;
+    public static final double ELEMENTARY_CHARGE_SI = 1.602176634E-19d;
     /**
      * Boltzmann's constant in J/K, defining the Kelvin.
      */
-    public static final double BOLTZMANN_SI = 1.380649E-23;
+    public static final double BOLTZMANN_SI = 1.380649E-23d;
     /**
      * Avogadro's number, defining the mol.
      */
-    public static final double AVOGADRO = 6.02214076E23;
+    public static final double AVOGADRO = 6.02214076E23d;
     /**
      * Luminous efficacy in lm/W, defining the lumen.
      */
@@ -118,24 +118,25 @@ public class Constants {
      */
     public static final double ELECTRIC_CODATA_2018 = 332.063713299;
 
-    // Below are constants not updated to SI standard and likely will never be updated to SI standard.
+    // Below are constants not updated to SI standard and likely will never be updated to SI standard directly.
 
     /**
      * Coulomb constant in units of kcal*Ang/(mol*electron^2)
      *
      * Note -- this value varies slightly between force field definitions and can be set using the
-     * ELECTRIC property. As such, SHOULD NOT ever be updated to SI standard.
-     *
+     * ELECTRIC property. As such, SHOULD NOT ever be updated to SI/CODATA standards, but rather
+     * kept up-to-date with the coulomb parameter in Tinker/source/units.f. At present, the
+     * Tinker value appears to be a truncated version of the Coulomb constant derived from CODATA 2018.
      */
-    public static final double DEFAULT_ELECTRIC = 332.063709;
+    public static final double DEFAULT_ELECTRIC = 332.063713;
 
     /**
-     * Conversion from electron-Angstroms to Debyes. NOT at current SI standard.
+     * Conversion from electron-Angstroms to Debyes. NOT at current SI standard (copied from Tinker).
      */
     public static final double ELEC_ANG_TO_DEBYE = 4.80321;
 
     /**
-     * Conversion from electron-Angstroms^2 to Buckinghams. NOT at current SI standard.
+     * Conversion from electron-Angstroms^2 to Buckinghams. NOT at current SI standard (copied from Tinker).
      */
     public static final double ELEC_ANG2_TO_BUCKINGHAMS = ELEC_ANG_TO_DEBYE * ELEC_ANG_TO_DEBYE;
 

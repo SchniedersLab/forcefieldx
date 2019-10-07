@@ -105,11 +105,11 @@ public class ManyBodyTest extends PJDependentTest {
 
         // Evaluate the script.
         manyBody.run();
-        double expectedTotalPotential = -219.8836543404126;
+        double expectedTotalPotential = -219.88365885049828;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
         
-        double expectedApproximateEnergy = -211.27591296060083;
+        double expectedApproximateEnergy = -211.27591736924524;
         double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
         Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
@@ -145,11 +145,11 @@ public class ManyBodyTest extends PJDependentTest {
         // Evaluate the script.
         manyBody.run();
 
-        double expectedTotalPotential = -219.8836543404126;
+        double expectedTotalPotential = -219.88365885049828;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
         
-        double expectedApproximateEnergy = -215.73796305229135;
+        double expectedApproximateEnergy = -215.73796751249856;
         double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
         Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
@@ -189,11 +189,11 @@ public class ManyBodyTest extends PJDependentTest {
         // Evaluate the script.
         manyBody.run();
 
-        double expectedTotalPotential = -203.72294133789995;
+        double expectedTotalPotential = -203.72294574070136;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
         
-        double expectedApproximateEnergy = -194.09506556636578;
+        double expectedApproximateEnergy = -194.09506985539784;
         double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
         Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
 
@@ -242,11 +242,11 @@ public class ManyBodyTest extends PJDependentTest {
             System.out.println(Utilities.stackTraceToString(error));
         }
 
-        double expectedTotalPotential = -217.86618264654527;
+        double expectedTotalPotential = -217.86618724075134;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
-        double expectedApproximateEnergy = -260.25114435435523;
+        double expectedApproximateEnergy = -260.25114788484154;
         double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
         Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
         
@@ -292,11 +292,11 @@ public class ManyBodyTest extends PJDependentTest {
             System.out.println(Utilities.stackTraceToString(error));
         }
 
-        double expectedTotalPotential = -219.88365434;
+        double expectedTotalPotential = -219.88365885049828;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
-        double expectedApproximateEnergy = -219.12352063102995;
+        double expectedApproximateEnergy = -219.12352460035171;
         double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
         Assert.assertEquals(actualApproximateEnergy, expectedApproximateEnergy, 1E-7);
         
