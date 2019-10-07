@@ -115,15 +115,11 @@ public class XRayManyBodyTest extends PJDependentTest {
         }
 
         List<Potential> list = manyBody.getPotentials();
-        double expectedPotential = 2.8613333175581248E16;
+        double expectedPotential = 2.8613333520253544E16;
         double actualPotential = list.get(0).getTotalEnergy();
+        double tol = 1.0E-9 * expectedPotential;
 
-        /*
-          The normalized difference between actual and expected potential should be very close to 0 no matter
-          the magnitude of the potentials.
-         */
-        double differenceNorm = (expectedPotential - actualPotential) / actualPotential;
-        Assert.assertEquals(differenceNorm, 0, 1E-8);
+        Assert.assertEquals(actualPotential, expectedPotential, tol);
 
         // Delete all created directories and files.
         try {
