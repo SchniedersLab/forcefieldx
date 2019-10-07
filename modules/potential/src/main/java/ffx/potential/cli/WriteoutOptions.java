@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.cli;
+package ffx.potential.cli;
 
 import picocli.CommandLine;
 

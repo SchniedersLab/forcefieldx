@@ -46,6 +46,7 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 
+import ffx.potential.cli.WriteoutOptions;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
@@ -150,7 +151,7 @@ public class DynamicsOptions {
      * @param potential      a {@link ffx.numerics.Potential} object.
      * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
      * @param sh             a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param writeout       a {@link ffx.algorithms.cli.WriteoutOptions} object.
+     * @param writeout       a {@link WriteoutOptions} object.
      * @return a {@link MolecularDynamics} object.
      */
     public MolecularDynamics getDynamics(WriteoutOptions writeout,
