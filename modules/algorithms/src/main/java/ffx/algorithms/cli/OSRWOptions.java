@@ -40,6 +40,7 @@ package ffx.algorithms.cli;
 import java.io.File;
 import java.util.logging.Logger;
 
+import ffx.potential.cli.WriteoutOptions;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 
@@ -51,7 +52,6 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.cli.AlchemicalOptions;
 
 import picocli.CommandLine;
 
@@ -252,7 +252,7 @@ public class OSRWOptions {
      * @param topologies All MolecularAssemblys.
      * @param potential  The top-layer CrystalPotential.
      * @param dynamics   Dynamics options.
-     * @param writeOut   a {@link ffx.algorithms.cli.WriteoutOptions} object.
+     * @param writeOut   a {@link WriteoutOptions} object.
      * @param thermo     Thermodynamics options.
      * @param dyn        The .dyn dynamics restart file.
      * @param aListener  AlgorithmListener
@@ -309,7 +309,7 @@ public class OSRWOptions {
      * @param topologies     an array of {@link ffx.potential.MolecularAssembly} objects.
      * @param potential      a {@link ffx.crystal.CrystalPotential} object.
      * @param dynamics       a {@link ffx.algorithms.cli.DynamicsOptions} object.
-     * @param writeout       a {@link ffx.algorithms.cli.WriteoutOptions} object.
+     * @param writeout       a {@link WriteoutOptions} object.
      * @param thermodynamics a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param dyn            a {@link java.io.File} object.
      * @param aListener      a {@link ffx.algorithms.AlgorithmListener} object.

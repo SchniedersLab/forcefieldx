@@ -44,7 +44,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.cli.WriteoutOptions
+import ffx.potential.cli.WriteoutOptions
 import ffx.algorithms.dynamics.Barostat
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.ReplicaExchange
@@ -52,8 +52,6 @@ import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
-import ffx.potential.parameters.ForceField
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option

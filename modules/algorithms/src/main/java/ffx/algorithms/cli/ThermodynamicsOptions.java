@@ -41,6 +41,7 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.cli.WriteoutOptions;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -114,7 +115,7 @@ public class ThermodynamicsOptions {
      * @return           The MolecularDynamics object constructed.
      */
     public MolecularDynamics runFixedAlchemy(MolecularAssembly[] topologies, CrystalPotential potential,
-             DynamicsOptions dynamics, WriteoutOptions writeOut, File dyn, AlgorithmListener aListener) {
+                                             DynamicsOptions dynamics, WriteoutOptions writeOut, File dyn, AlgorithmListener aListener) {
         dynamics.init();
 
         MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(topologies[0], potential, topologies[0].getProperties(),
