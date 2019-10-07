@@ -68,11 +68,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldName;
-import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
@@ -88,7 +84,6 @@ import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 import ffx.utilities.Keyword;
-import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
@@ -271,10 +266,6 @@ public class ForceFieldFilter {
         try {
             int numConfigs = properties.getNumberOfConfigurations();
 
-            if (numConfigs > 0) {
-                logger.info(" Parsing properties from: ");
-            }
-
             /*
               Loop over the configurations starting with lowest precedence.
               This way higher precedence entries will overwrite lower
@@ -285,7 +276,7 @@ public class ForceFieldFilter {
                 if (config instanceof PropertiesConfiguration) {
                     PropertiesConfiguration propertiesConfiguration = (PropertiesConfiguration) config;
                     if (propertiesConfiguration.getHeader() != null) {
-                        logger.info("  " + propertiesConfiguration.getHeader());
+                        logger.info(" Parsing: " + propertiesConfiguration.getHeader());
                     }
                 }
 
@@ -424,8 +415,12 @@ public class ForceFieldFilter {
         String[] tokens = input.trim().split(" +");
 
         // Check for the case of no tokens or a Keyword.
-        if (parseKeyword(tokens)) {
-            return;
+        // if (parseKeyword(tokens)) {
+        //     return;
+        // }
+
+        if (tokens[0].equalsIgnoreCase("")) {
+             return;
         }
 
         try {
@@ -500,74 +495,81 @@ public class ForceFieldFilter {
                 default:
                     logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
             }
+            return;
         } catch (Exception e) {
             // Note -- this serves to skip blank lines in *.patch files but also hide an actual bug's exception
             // String message = "Exception parsing force field parametesr.\n";
             // logger.log(Level.WARNING, message, e);
         }
+
+        // Otherwise -- add this entry as a property.
+        String key = tokens[0];
+        String value = input.replaceFirst(tokens[0],"").trim();
+        // logger.info(" Adding " + key + ": " + value);
+        forceField.addProperty(key, value);
     }
 
-    private boolean parseKeyword(String[] tokens) {
-        String keyword = toEnumForm(tokens[0]);
-        try {
-            // Parse Keywords with a String value.
-            ForceFieldString ffString = ForceFieldString.valueOf(keyword);
-            int len = tokens.length;
-            if (len == 1) {
-                forceField.addForceFieldString(ffString, null);
-            } else if (len == 2) {
-                forceField.addForceFieldString(ffString, tokens[1]);
-            } else {
-                StringBuilder stringBuilder = new StringBuilder(tokens[1]);
-                for (int i = 2; i < len; i++) {
-                    stringBuilder.append(" ");
-                    stringBuilder.append(tokens[i]);
-                }
-                forceField.addForceFieldString(ffString, stringBuilder.toString());
-            }
-        } catch (Exception e) {
-            try {
-                // Parse Keywords with a Double value.
-                ForceFieldDouble ffDouble = ForceFieldDouble.valueOf(keyword);
-                double value = parseDouble(tokens[1]);
-                forceField.addForceFieldDouble(ffDouble, value);
-            } catch (Exception e2) {
-                try {
-                    // Parse Keywords with an Integer value.
-                    ForceFieldInteger ffInteger = ForceFieldInteger.valueOf(keyword);
-                    int value = parseInt(tokens[1]);
-                    forceField.addForceFieldInteger(ffInteger, value);
-                } catch (Exception e3) {
-                    try {
-                        // Parse Keywords with a Boolean value.
-                        ForceFieldBoolean ffBoolean = ForceFieldBoolean.valueOf(keyword);
-                        boolean value = true;
-                        if (tokens.length > 1 && tokens[0].toUpperCase().endsWith("TERM")) {
-
-                            // Handle the token "ONLY" specially to shut off all other terms.
-                            if (tokens[1].equalsIgnoreCase("ONLY")) {
-                                for (ForceFieldBoolean term : ForceFieldBoolean.values()) {
-                                    if (term.toString().toUpperCase().endsWith("TERM")) {
-                                        forceField.addForceFieldBoolean(term, false);
-                                    }
-                                }
-                            } else if (tokens[1].equalsIgnoreCase("NONE")) {
-                                // Legacy support for the "NONE" token.
-                                value = false;
-                            } else {
-                                value = Boolean.parseBoolean(tokens[1]);
-                            }
-                        }
-                        forceField.addForceFieldBoolean(ffBoolean, value);
-                        forceField.log(keyword);
-                    } catch (Exception e4) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
+//    private boolean parseKeyword(String[] tokens) {
+//        String keyword = toEnumForm(tokens[0]);
+//        try {
+//            // Parse Keywords with a String value.
+//            ForceFieldString ffString = ForceFieldString.valueOf(keyword);
+//            int len = tokens.length;
+//            if (len == 1) {
+//                forceField.addForceFieldString(ffString, null);
+//            } else if (len == 2) {
+//                forceField.addForceFieldString(ffString, tokens[1]);
+//            } else {
+//                StringBuilder stringBuilder = new StringBuilder(tokens[1]);
+//                for (int i = 2; i < len; i++) {
+//                    stringBuilder.append(" ");
+//                    stringBuilder.append(tokens[i]);
+//                }
+//                forceField.addForceFieldString(ffString, stringBuilder.toString());
+//            }
+//        } catch (Exception e) {
+//            try {
+//                // Parse Keywords with a Double value.
+//                ForceFieldDouble ffDouble = "valueOf(keyword);
+//                double value = parseDouble(tokens[1]);
+//                forceField.addDouble(ffDouble, value);
+//            } catch (Exception e2) {
+//                try {
+//                    // Parse Keywords with an Integer value.
+//                    ForceFieldInteger ffInteger = ForceFieldInteger.valueOf(keyword);
+//                    int value = parseInt(tokens[1]);
+//                    forceField.addForceFieldInteger(ffInteger, value);
+//                } catch (Exception e3) {
+//                    try {
+//                        // Parse Keywords with a Boolean value.
+//                        ForceFieldBoolean ffBoolean = ForceFieldBoolean.valueOf(keyword);
+//                        boolean value = true;
+//                        if (tokens.length > 1 && tokens[0].toUpperCase().endsWith("TERM")) {
+//
+//                            // Handle the token "ONLY" specially to shut off all other terms.
+//                            if (tokens[1].equalsIgnoreCase("ONLY")) {
+//                                for (ForceFieldBoolean term : ForceFieldBoolean.values()) {
+//                                    if (term.toString().toUpperCase().endsWith("TERM")) {
+//                                        forceField.addForceFieldBoolean(term.toString(), false);
+//                                    }
+//                                }
+//                            } else if (tokens[1].equalsIgnoreCase("NONE")) {
+//                                // Legacy support for the "NONE" token.
+//                                value = false;
+//                            } else {
+//                                value = Boolean.parseBoolean(tokens[1]);
+//                            }
+//                        }
+//                        forceField.addForceFieldBoolean(ffBoolean.toString(), value);
+//                        forceField.log(keyword);
+//                    } catch (Exception e4) {
+//                        return false;
+//                    }
+//                }
+//            }
+//        }
+//        return true;
+//    }
 
     private void parseRelativeSolvation(String input, String[] tokens) {
         if (tokens.length < 3) {
@@ -591,9 +593,9 @@ public class ForceFieldFilter {
             logger.log(Level.WARNING, "Invalid ANGLE type:\n{0}", input);
         } else {
             int[] atomClasses = new int[3];
-            double forceConstant = 0.0;
-            int angles = 0;
-            double[] bondAngle = null;
+            double forceConstant;
+            int angles;
+            double[] bondAngle;
             try {
                 atomClasses[0] = parseInt(tokens[1]);
                 atomClasses[1] = parseInt(tokens[2]);
@@ -607,6 +609,7 @@ public class ForceFieldFilter {
             } catch (NumberFormatException e) {
                 String message = "Exception parsing ANGLE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
+                return null;
             }
             double[] newBondAngle = new double[angles];
             arraycopy(bondAngle, 0, newBondAngle, 0, angles);
@@ -632,9 +635,9 @@ public class ForceFieldFilter {
             logger.log(Level.WARNING, "Invalid ANGLEP type:\n{0}", input);
         } else {
             int[] atomClasses = new int[3];
-            double forceConstant = 0.0;
-            int angles = 0;
-            double[] bondAngle = null;
+            double forceConstant;
+            int angles;
+            double[] bondAngle;
             try {
                 atomClasses[0] = parseInt(tokens[1]);
                 atomClasses[1] = parseInt(tokens[2]);
@@ -648,6 +651,7 @@ public class ForceFieldFilter {
             } catch (NumberFormatException e) {
                 String message = "Exception parsing ANGLEP type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
+                return null;
             }
             double[] newBondAngle = new double[angles];
             arraycopy(bondAngle, 0, newBondAngle, 0, angles);
@@ -721,12 +725,10 @@ public class ForceFieldFilter {
                 AtomType atomType = new AtomType(type, atomClass, name,
                         environment, atomicNumber, mass, hybridization);
                 forceField.addForceFieldType(atomType);
-
                 return atomType;
             } catch (NumberFormatException e) {
                 String message = "Exception parsing CHARGE type:\n" + input + "\n";
                 logger.log(Level.SEVERE, message, e);
-
             }
         }
         return null;
@@ -1023,7 +1025,6 @@ public class ForceFieldFilter {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
-
         return null;
     }
 

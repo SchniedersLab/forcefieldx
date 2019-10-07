@@ -89,180 +89,6 @@ public class ForceField {
         OPLS_AAL
     }
 
-    public enum ForceFieldString {
-        BIOMTn,
-        CAVMODEL,
-        ARRAY_REDUCTION,
-        EPSILONRULE,
-        FFT_METHOD,
-        FORCEFIELD,
-        NCSGROUP,
-        MTRIX1,
-        MTRIX2,
-        MTRIX3,
-        MODRES,
-        POLARIZATION,
-        RADIUSRULE,
-        RADIUSSIZE,
-        RADIUSTYPE,
-        REAL_SCHEDULE,
-        RECIP_SCHEDULE,
-        RELATIVE_SOLVATION,
-        SCF_PREDICTOR,
-        SCF_ALGORITHM,
-        SPACEGROUP,
-        VDWINDEX,
-        VDWTYPE,
-        VDW_SCHEDULE,
-        GK_RADIIOVERRIDE,
-        PLATFORM,
-        CONSTRAIN,
-        RATTLE, // Synonymous with CONSTRAIN, except we likely won't use RATTLE.
-        /* Only meaningful for OpenMM; Java is always double-precision */
-        PRECISION
-    }
-
-    public enum ForceFieldDouble {
-
-        /* Unit cell parameters */
-        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA,
-        /* Van der Waals' cutoff and softcoring parameters */
-        VDW_CUTOFF, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA,
-        /* Van der Waals masking rules */
-        VDW_12_SCALE, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE,
-        /* Electrostatics switch for full path non bonded force scaling using OpenMM */
-        ELEC_START,
-        /* Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. */
-        LAMBDA_START,
-        /* Polarization parameters */
-        POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
-        CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
-        /* Polarization masking rules */
-        POLAR_12_SCALE, POLAR_13_SCALE, POLAR_14_SCALE, POLAR_14_INTRA, POLAR_15_SCALE, DIRECT_11_SCALE,
-        /* Electrostatics parameters */
-        EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY, ELECTRIC,
-        /* Electrostatics masking rules */
-        MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE, MPOLE_15_SCALE, CHG_14_SCALE,
-        /* Permanent electrostatics softcoring  */
-        PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA,
-        /* Permanent electrostatics lambda window */
-        PERMANENT_LAMBDA_START, PERMANENT_LAMBDA_END,
-        /* Polarization softcoring */
-        POLARIZATION_LAMBDA_EXPONENT, POLARIZATION_LAMBDA_ALPHA,
-        /* Polarization lambda window */
-        POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END,
-        DUAL_TOPOLOGY_LAMBDA_EXPONENT,
-        /* Generalized Kirkwood dielectric and debugging */
-        GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE, GK_HYDROGEN_OVERLAPSCALE, GK_GLOBAL_RADIISCALE, GK_CUTOFF,
-        /* Miscellaneous */
-        RIGID_SCALE, RESTRAINT_K, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
-        /* Non-polar Implicit Solvent */
-        PROBE_RADIUS, SURFACE_TENSION, SOLVENT_PRESSURE, CROSS_OVER,
-        /* OpenMM finite-difference lambda step size */
-        FD_DLAMBDA,
-        /* OpenMM coefficient of friction for Langevin integrator */
-        FRICTION_COEFF,
-        /* OpenMM collision frequency for Langevin integrator */
-        COLLISION_FREQ,
-        /* Unit Conversions */
-        ANGTORUNIT, STRTORUNIT,
-        /* Cutoff used for building frozen neighbor lists */
-        NEIGHBOR_LIST_CUTOFF
-    }
-
-    public enum ForceFieldInteger {
-
-        FF_THREADS(1),
-        PME_ORDER(5),
-        PME_REAL_THREADS(1),
-        PME_GRID_X,
-        PME_GRID_Y,
-        PME_GRID_Z,
-        LIGAND_START,
-        LIGAND_STOP,
-        SCF_CYCLES,
-        SCF_PREDICTOR_ORDER,
-        CUDA_DEVICE(0),
-
-        /* Flags for bonded-term force groups. If not specified, they default to DEFAULT_BONDED_FORCE_GROUP */
-        BOND_FORCE_GROUP(0), ANGLE_FORCE_GROUP(0), TORSION_FORCE_GROUP(0), ANGLE_TORSION_FORCE_GROUP(0),
-        IMPROPER_TORSION_FORCE_GROUP(0), OUT_OF_PLANE_BEND_FORCE_GROUP(0), PI_ORBITAL_TORSION_FORCE_GROUP(0),
-        STRETCH_BEND_FORCE_GROUP(0), STRETCH_TORSION_FORCE_GROUP(0), IN_PLANE_ANGLE_FORCE_GROUP(0),
-        UREY_BRADLEY_FORCE_GROUP(0), TORSION_TORSION_FORCE_GROUP(0), BOND_RESTRAINT_FORCE_GROUP(0),
-
-        /* Flags for nonbonded-term force groups. If not specified, they default to DEFAULT_NONBONDED_FORCE_GROUP */
-        COM_RESTRAINT_FORCE_GROUP(0), COORD_RESTRAINT_FORCE_GROUP(0), GK_FORCE_GROUP(1),
-        NCS_RESTRAINT_FORCE_GROUP(0), PME_FORCE_GROUP(1), VDW_FORCE_GROUP(1);
-
-        // Describes the default value of this ForceFieldInteger.
-        private final int defaultValue;
-        // Set true if the default value is a meaningful constant value.
-        private final boolean constantDefault;
-
-        ForceFieldInteger() {
-            this(1, false);
-        }
-
-        ForceFieldInteger(int defaultValue) {
-            this(defaultValue, true);
-        }
-
-        ForceFieldInteger(int defaultValue, boolean constantDefault) {
-            this.defaultValue = defaultValue;
-            this.constantDefault = constantDefault;
-        }
-
-        /**
-         * Returns the default value of this ForceFieldInteger if it is meaningful.
-         * <p>
-         * Throws an Exception if it either does not have a meaningful default, or
-         * if the default is determined via a formula. For example, PME_GRID_X is
-         * generally determined as a function of a-axis length and PME grid spacing.
-         *
-         * @return Default value if meaningful.
-         * @throws RuntimeException If default value not meaningful.
-         */
-        public int getDefaultValue() throws RuntimeException {
-            if (constantDefault) {
-                return defaultValue;
-            } else {
-                throw new RuntimeException(format(" ForceFieldInteger %s " +
-                        "either does not have a defined default, or default is " +
-                        "determined formulaically", this.toString()));
-            }
-        }
-
-        /**
-         * Checks whether there is a meaningful, constant default.
-         *
-         * @return If meaningful constant default exists.
-         */
-        public boolean getDefaultMeaningful() {
-            return constantDefault;
-        }
-    }
-
-    public enum ForceFieldBoolean {
-
-        APERIODIC, BONDTERM, ANGLETERM, COMRESTRAINTERM, GKTERM, IMPROPERTERM,
-        OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM, STRBNDTERM,
-        TORSIONTERM, ANGTORSTERM, STRTORSTERM,
-        TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
-        RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS, REDUCE_HYDROGENS,
-        USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES,
-        LIGAND_VAPOR_ELEC, LIGAND_GK_ELEC,
-        NO_LIGAND_CONDENSED_SCF, USE_SCF_PRECONDITIONER,
-        INTERMOLECULAR_SOFTCORE, INTRAMOLECULAR_SOFTCORE,
-        LAMBDA_VALENCE_RESTRAINTS, TORSION_LAMBDATERM, RECIPTERM, NATIVE_ENVIRONMENT_APPROXIMATION,
-        CHECK_ALL_NODE_CHARGES, GK_USEFITRADII, GK_VERBOSERADII, PRINT_ON_FAILURE,
-        DISABLE_NEIGHBOR_UPDATES, ENFORCE_PBC, PME_QI,
-        /* Term-specific flags for softcoring. Any will imply LAMBDATERM is true. */
-        ELEC_LAMBDATERM, GK_LAMBDATERM, VDW_LAMBDATERM,
-        /* Flag to set Hydrogen bonds to rigid and flag to signify alchemical behavior*/
-        RIGID_HYDROGEN, RIGID_BONDS, RIGID_HYDROGEN_ANGLES, VOLUME, FD_TWO_SIDED,
-        HEAVY_HYDROGEN, HEAVY_HYDROGENS
-    }
-
     public enum ForceFieldType {
 
         KEYWORD,
@@ -288,15 +114,6 @@ public class ForceField {
         VDW,
         VDW14,
         RELATIVESOLV
-    }
-
-    /**
-     * Enumerates the types of constraints that can be applied.
-     */
-    public enum ConstraintTypes {
-        BOND, // Constrain a Bond.
-        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
-        // TODO: Support dihedral constraints, lone angle constraints, etc.
     }
 
     /**
@@ -349,7 +166,7 @@ public class ForceField {
     private final Map<String, VDWType> vanderWaalsTypes;
     private final Map<String, VDWType> vanderWaals14Types;
     private final Map<String, RelativeSolvationType> relativeSolvationTypes;
-    private final Map<ForceFieldType, Map> forceFieldTypes;
+    private final Map<ForceFieldType, Map<String, ? extends BaseType>> forceFieldTypes;
 
     /**
      * ForceField Constructor.
@@ -372,7 +189,7 @@ public class ForceField {
         bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
         bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
         chargeTypes = new TreeMap<>(new ChargeType(0, 0));
-        soluteTypes = new TreeMap<>(new SoluteType(0, "",0.0));
+        soluteTypes = new TreeMap<>(new SoluteType(0, "", 0.0));
         multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
         outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
         piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
@@ -413,9 +230,9 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.VDW14, vanderWaals14Types);
         forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
 
-        trueImpliedBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
-        trueImpliedBoolean(ForceFieldBoolean.LAMBDATERM, ForceFieldBoolean.VDW_LAMBDATERM,
-                ForceFieldBoolean.ELEC_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
+        trueImpliedBoolean("ELEC_LAMBDATERM", "GK_LAMBDATERM");
+        trueImpliedBoolean("LAMBDATERM",
+                "VDW_LAMBDATERM", "ELEC_LAMBDATERM", "GK_LAMBDATERM");
     }
 
     /**
@@ -631,7 +448,7 @@ public class ForceField {
         }
 
         // Is this a modified residue patch?
-        String modres = patch.getString(ForceFieldString.MODRES, "false");
+        String modres = patch.getString("MODRES", "false");
         if (!modres.equalsIgnoreCase("false")) {
             logger.info(" Adding modified residue patch.");
             modifiedResidue(modres);
@@ -677,20 +494,60 @@ public class ForceField {
     }
 
     /**
+     * Checks if a property was specified.
+     *
+     * @param property String to check.
+     * @return Ever specified.
+     * @throws java.lang.NullPointerException If forceFieldDouble is null.
+     */
+    public boolean hasProperty(String property) throws NullPointerException {
+        if (property == null) {
+            throw new NullPointerException("NULL keyword");
+        }
+        String key = toPropertyForm(property);
+        return properties.containsKey(key);
+    }
+
+    /**
+     * Add a force field keyword that is represented by a double.
+     *
+     * @param property Property string.
+     * @param value    double
+     */
+    public void addProperty(String property, String value) {
+        if (property == null) {
+            return;
+        }
+        String key = toPropertyForm(property);
+        try {
+            String old = getString(key);
+            if (old.equalsIgnoreCase(value)) {
+                return;
+            }
+            logger.info(format("  Existing %s  %s", key, old));
+        } catch (Exception e) {
+            // Property does not exist yet.
+        } finally {
+            properties.addProperty(key, value);
+            logger.info(format("  Added    %s  %s", key, value));
+        }
+    }
+
+    /**
      * <p>
      * getDouble</p>
      *
-     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
-     * @return a double.
+     * @param property The property to return.
+     * @return an double.
      * @throws java.lang.Exception if any.
      */
-    public double getDouble(ForceFieldDouble forceFieldDouble) throws Exception {
-        if (forceFieldDouble == null) {
-            throw new Exception("NULL keyword");
+    public double getDouble(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
         }
-        String key = toPropertyForm(forceFieldDouble.toString());
+        String key = toPropertyForm(property);
         if (!properties.containsKey(key)) {
-            throw new Exception("Undefined keyword: " + key);
+            throw new Exception("Undefined property: " + key);
         }
         return properties.getDouble(key);
     }
@@ -699,48 +556,33 @@ public class ForceField {
      * <p>
      * getDouble</p>
      *
-     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
-     * @param defaultValue     a double.
-     * @return a double.
+     * @param property      The property to return.
+     * @param defaultDouble The default to return.
+     * @return an double.
      */
-    public double getDouble(ForceFieldDouble forceFieldDouble, double defaultValue) {
+    public double getDouble(String property, Double defaultDouble) {
         try {
-            return getDouble(forceFieldDouble);
+            return getDouble(property);
         } catch (Exception e) {
-            return defaultValue;
+            return defaultDouble;
         }
-    }
-
-    /**
-     * Checks if a ForceFieldDouble was specified.
-     *
-     * @param forceFieldDouble ForceFieldDouble to check.
-     * @return Ever specified.
-     * @throws java.lang.NullPointerException If forceFieldDouble is null.
-     */
-    public boolean hasDouble(ForceFieldDouble forceFieldDouble) throws NullPointerException {
-        if (forceFieldDouble == null) {
-            throw new NullPointerException("NULL keyword");
-        }
-        String key = toPropertyForm(forceFieldDouble.toString());
-        return properties.containsKey(key);
     }
 
     /**
      * <p>
      * getInteger</p>
      *
-     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
-     * @return a int.
+     * @param property The property to return.
+     * @return an int.
      * @throws java.lang.Exception if any.
      */
-    public int getInteger(ForceFieldInteger forceFieldInteger) throws Exception {
-        if (forceFieldInteger == null) {
-            throw new Exception("NULL keyword");
+    public int getInteger(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
         }
-        String key = toPropertyForm(forceFieldInteger.toString());
+        String key = toPropertyForm(property);
         if (!properties.containsKey(key)) {
-            throw new Exception("Undefined keyword: " + key);
+            throw new Exception("Undefined property: " + key);
         }
         return properties.getInt(key);
     }
@@ -749,48 +591,48 @@ public class ForceField {
      * <p>
      * getInteger</p>
      *
-     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
-     * @param defaultValue      a int.
-     * @return a int.
+     * @param property       The property to return.
+     * @param defaultInteger The default to return.
+     * @return an int.
      */
-    public int getInteger(ForceFieldInteger forceFieldInteger, int defaultValue) {
+    public int getInteger(String property, Integer defaultInteger) {
         try {
-            return getInteger(forceFieldInteger);
+            return getInteger(property);
         } catch (Exception e) {
-            return defaultValue;
+            return defaultInteger;
         }
     }
 
     /**
      * <p>
-     * getString</p>
+     * getBoolean</p>
      *
-     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
-     * @return a {@link java.lang.String} object.
+     * @param property The property to return.
+     * @return a String.
      * @throws java.lang.Exception if any.
      */
-    public String getString(ForceFieldString forceFieldString) throws Exception {
-        if (forceFieldString == null) {
-            throw new Exception("NULL keyword");
+    public String getString(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
         }
-        String key = toPropertyForm(forceFieldString.toString());
+        String key = toPropertyForm(property);
         if (!properties.containsKey(key)) {
-            throw new Exception("Undefined keyword: " + key);
+            throw new Exception("Undefined property: " + key);
         }
         return properties.getString(key);
     }
 
     /**
      * <p>
-     * getString</p>
+     * getBoolean</p>
      *
-     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
-     * @param defaultString    a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
+     * @param property      The property to return.
+     * @param defaultString The default to return.
+     * @return a boolean.
      */
-    public String getString(ForceFieldString forceFieldString, String defaultString) {
+    public String getString(String property, String defaultString) {
         try {
-            return getString(forceFieldString);
+            return getString(property);
         } catch (Exception e) {
             return defaultString;
         }
@@ -800,17 +642,17 @@ public class ForceField {
      * <p>
      * getBoolean</p>
      *
-     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @param property The property to return.
      * @return a boolean.
      * @throws java.lang.Exception if any.
      */
-    public boolean getBoolean(ForceFieldBoolean forceFieldBoolean) throws Exception {
-        if (forceFieldBoolean == null) {
-            throw new Exception("NULL keyword");
+    public boolean getBoolean(String property) throws Exception {
+        if (property == null) {
+            throw new Exception("NULL property");
         }
-        String key = toPropertyForm(forceFieldBoolean.toString());
+        String key = toPropertyForm(property);
         if (!properties.containsKey(key)) {
-            throw new Exception("Undefined keyword: " + key);
+            throw new Exception("Undefined property: " + key);
         }
         return properties.getBoolean(key);
     }
@@ -819,67 +661,15 @@ public class ForceField {
      * <p>
      * getBoolean</p>
      *
-     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
-     * @param defaultBoolean    a {@link java.lang.Boolean} object.
+     * @param property       The property to return.
+     * @param defaultBoolean The default to return.
      * @return a boolean.
      */
-    public boolean getBoolean(ForceFieldBoolean forceFieldBoolean, Boolean defaultBoolean) {
+    public boolean getBoolean(String property, boolean defaultBoolean) {
         try {
-            return getBoolean(forceFieldBoolean);
+            return getBoolean(property);
         } catch (Exception e) {
             return defaultBoolean;
-        }
-    }
-
-    /**
-     * Add a force field keyword that is represented by a double.
-     *
-     * @param forceFieldDouble ForceFieldDouble
-     * @param value            double
-     */
-    public void addForceFieldDouble(ForceFieldDouble forceFieldDouble, double value) {
-        if (forceFieldDouble == null) {
-            return;
-        }
-        String key = toPropertyForm(forceFieldDouble.toString());
-        try {
-            double old = getDouble(forceFieldDouble);
-            if (old == value) {
-                return;
-            }
-            // properties.clearProperty(key);
-            logger.info(format("  Existing %s %8.3f", key, old));
-        } catch (Exception e) {
-            // Property does not exist yet.
-        } finally {
-            properties.addProperty(key, value);
-            logger.info(format("  Added    %s %8.3f", key, value));
-        }
-    }
-
-    /**
-     * Add a force field keyword that is represented by an int.
-     *
-     * @param forceFieldInteger ForceFieldInteger
-     * @param value             int
-     */
-    public void addForceFieldInteger(ForceFieldInteger forceFieldInteger, int value) {
-        if (forceFieldInteger == null) {
-            return;
-        }
-        String key = toPropertyForm(forceFieldInteger.toString());
-        try {
-            int old = getInteger(forceFieldInteger);
-            if (old == value) {
-                return;
-            }
-            logger.info(format("  Existing %s %d", key, old));
-            // properties.clearProperty(key);
-        } catch (Exception e) {
-            // Property does not exist yet.
-        } finally {
-            logger.info(format("  Added    %s %d", key, value));
-            properties.addProperty(key, value);
         }
     }
 
@@ -890,31 +680,7 @@ public class ForceField {
      * @return a boolean.
      */
     public static boolean isForceFieldKeyword(String keyword) {
-        keyword = keyword.toUpperCase();
-        try {
-            ForceFieldBoolean.valueOf(keyword);
-            return true;
-        } catch (Exception e) {
-            // Ignore.
-        }
-        try {
-            ForceFieldDouble.valueOf(keyword);
-            return true;
-        } catch (Exception e) {
-            // Ignore.
-        }
-        try {
-            ForceFieldInteger.valueOf(keyword);
-            return true;
-        } catch (Exception e) {
-            // Ignore.
-        }
-        try {
-            ForceFieldString.valueOf(keyword);
-            return true;
-        } catch (Exception e) {
-            // Ignore.
-        }
+        keyword = toEnumForm(keyword);
         try {
             ForceFieldType.valueOf(keyword);
             return true;
@@ -925,57 +691,6 @@ public class ForceField {
     }
 
     /**
-     * Store a force field keyword that is represented by a String.
-     *
-     * @param forceFieldString ForceFieldString
-     * @param value            String
-     */
-    public void addForceFieldString(ForceFieldString forceFieldString, String value) {
-        if (forceFieldString == null) {
-            return;
-        }
-        String key = toPropertyForm(forceFieldString.toString());
-        try {
-            String old = getString(forceFieldString);
-            if (old.equalsIgnoreCase(value)) {
-                return;
-            }
-            logger.info(format("  Existing %s %s.", key, old));
-        } catch (Exception e) {
-            // Property does not exist yet.
-        } finally {
-            properties.addProperty(key, value);
-            logger.info(format("  Added    %s %s", key, value));
-        }
-    }
-
-    /**
-     * Store a force field keyword that is represented by a Boolean.
-     *
-     * @param forceFieldBoolean ForceFieldBoolean
-     * @param value             Boolean
-     */
-    public void addForceFieldBoolean(ForceFieldBoolean forceFieldBoolean, Boolean value) {
-        if (forceFieldBoolean == null) {
-            return;
-        }
-        String key = toPropertyForm(forceFieldBoolean.toString());
-        try {
-            boolean old = getBoolean(forceFieldBoolean);
-            if (old == value) {
-                return;
-            }
-            // properties.clearProperty(key);
-            logger.info(format("  Existing %s %s", key, Boolean.toString(old)));
-        } catch (Exception e) {
-            // Property does not exist yet.
-        } finally {
-            properties.addProperty(key, value);
-            logger.info(format("  Added    %s %s", key, Boolean.toString(value)));
-        }
-    }
-
-    /**
      * Add an instance of a force field type. Force Field types are more
      * complicated than simple Strings or doubles, in that they have multiple
      * fields and may occur multiple times.
@@ -983,13 +698,13 @@ public class ForceField {
      * @param type BaseType
      */
     @SuppressWarnings("unchecked")
-    public void addForceFieldType(BaseType type) {
+    public <T extends BaseType> void addForceFieldType(T type) {
         if (type == null) {
             logger.info(" Null force field type ignored.");
             return;
         }
 
-        Map treeMap = forceFieldTypes.get(type.forceFieldType);
+        Map<String, T> treeMap = (Map<String, T>) forceFieldTypes.get(type.forceFieldType);
         if (treeMap == null) {
             logger.log(Level.INFO, " Unrecognized force field type ignored {0}", type.forceFieldType);
             type.print();
@@ -1005,8 +720,7 @@ public class ForceField {
                     new Object[]{type.forceFieldType, type.key,
                             treeMap.get(type.key).toString(), type.toString()});
         }
-        Class baseTypeClass = type.getClass();
-        treeMap.put(type.key, baseTypeClass.cast(type));
+        treeMap.put(type.key, type);
     }
 
     /**
@@ -1369,52 +1083,6 @@ public class ForceField {
     }
 
     /**
-     * Check for self-consistent polarization groups.
-     */
-    public void checkPolarizationTypes() {
-        boolean change = false;
-        for (String key : polarizeTypes.keySet()) {
-            PolarizeType polarizeType = polarizeTypes.get(key);
-            int orig = Integer.parseInt(key);
-            int[] types = polarizeType.polarizationGroup;
-            if (types == null) {
-                continue;
-            }
-
-            for (int type : types) {
-                String key2 = Integer.toString(type);
-                PolarizeType polarizeType2 = polarizeTypes.get(key2);
-                if (polarizeType2 == null) {
-                    logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
-                            key, key2));
-                    continue;
-                }
-                int types2[] = polarizeType2.polarizationGroup;
-                if (types2 == null) {
-                    polarizeType2.add(orig);
-                    change = true;
-                    continue;
-                }
-                boolean found = false;
-                for (int type2 : types2) {
-                    for (int type3 : types) {
-                        if (type2 == type3) {
-                            found = true;
-                        }
-                    }
-                    if (!found) {
-                        polarizeType.add(type2);
-                        change = true;
-                    }
-                }
-            }
-        }
-        if (change) {
-            checkPolarizationTypes();
-        }
-    }
-
-    /**
      * <p>
      * log</p>
      */
@@ -1482,7 +1150,7 @@ public class ForceField {
     public String toString() {
         String forceFieldName;
         try {
-            forceFieldName = getString(ForceFieldString.FORCEFIELD);
+            forceFieldName = getString("FORCEFIELD");
         } catch (Exception ex) {
             forceFieldName = "Unknown";
         }
@@ -1645,29 +1313,6 @@ public class ForceField {
     }
 
     /**
-     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
-     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
-     * ELEC_LAMBDATERM, or GK_LAMBDATERM.
-     *
-     * @param toSet         Boolean to set true if otherBooleans true.
-     * @param otherBooleans Booleans that imply toSet is true.
-     */
-    private void trueImpliedBoolean(ForceFieldBoolean toSet, ForceFieldBoolean... otherBooleans) {
-        // Short-circuit if it's already true.
-        if (getBoolean(toSet, false)) {
-            return;
-        }
-
-        // Check all the other booleans that imply toSet.
-        for (ForceFieldBoolean otherBool : otherBooleans) {
-            if (getBoolean(otherBool, false)) {
-                addForceFieldBoolean(toSet, true);
-                logger.info(format(" Setting implied boolean %s true due to boolean %s", toSet.toString(), otherBool.toString()));
-            }
-        }
-    }
-
-    /**
      * Returns the minimum atom class value.
      *
      * @return a int.
@@ -1800,4 +1445,80 @@ public class ForceField {
         patchClassesAndTypes(typeMap, patchTypes);
     }
 
+    /**
+     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
+     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
+     * ELEC_LAMBDATERM, or GK_LAMBDATERM.
+     *
+     * @param toSet         Property to set true if otherBooleans true.
+     * @param otherBooleans Properties that imply toSet is true.
+     */
+    private void trueImpliedBoolean(String toSet, String... otherBooleans) {
+        // Short-circuit if it's already true.
+        if (getBoolean(toSet, false)) {
+            return;
+        }
+        // Check all the other booleans that imply toSet.
+        for (String otherBool : otherBooleans) {
+            if (getBoolean(otherBool, false)) {
+                addProperty(toSet, "true");
+                logger.info(format(" Setting implied boolean %s true due to boolean %s", toSet.toString(), otherBool.toString()));
+            }
+        }
+    }
+
+    /**
+     * Check for self-consistent polarization groups.
+     */
+    private void checkPolarizationTypes() {
+        boolean change = false;
+        for (String key : polarizeTypes.keySet()) {
+            PolarizeType polarizeType = polarizeTypes.get(key);
+            int orig = Integer.parseInt(key);
+            int[] types = polarizeType.polarizationGroup;
+            if (types == null) {
+                continue;
+            }
+
+            for (int type : types) {
+                String key2 = Integer.toString(type);
+                PolarizeType polarizeType2 = polarizeTypes.get(key2);
+                if (polarizeType2 == null) {
+                    logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
+                            key, key2));
+                    continue;
+                }
+                int types2[] = polarizeType2.polarizationGroup;
+                if (types2 == null) {
+                    polarizeType2.add(orig);
+                    change = true;
+                    continue;
+                }
+                boolean found = false;
+                for (int type2 : types2) {
+                    for (int type3 : types) {
+                        if (type2 == type3) {
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        polarizeType.add(type2);
+                        change = true;
+                    }
+                }
+            }
+        }
+        if (change) {
+            checkPolarizationTypes();
+        }
+    }
+
+    /**
+     * Enumerates the types of constraints that can be applied.
+     */
+    public enum ConstraintTypes {
+        BOND, // Constrain a Bond.
+        ANGLEBONDS; // Constrain a 3-atom Angle and its two component Bonds.
+        // TODO: Support dihedral constraints, lone angle constraints, etc.
+    }
 }

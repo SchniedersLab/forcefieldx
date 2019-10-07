@@ -109,7 +109,7 @@ public class COMRestraint implements LambdaInterface {
         initialCOM = new double[3][nMolecules];
         currentCOM = new double[3][nMolecules];
 
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        lambdaTerm = forceField.getBoolean("LAMBDATERM", false);
         if (lambdaTerm) {
             lambdaGradient = new double[nAtoms * 3];
         } else {
@@ -120,7 +120,7 @@ public class COMRestraint implements LambdaInterface {
             d2LambdaPow = 0.0;
         }
         dcomdx = new double[nAtoms];
-        forceConstant = forceField.getDouble(ForceField.ForceFieldDouble.RESTRAINT_K, 10.0);
+        forceConstant = forceField.getDouble("RESTRAINT_K", 10.0);
 
         computeCOM(initialCOM, nMolecules);
 

@@ -188,10 +188,10 @@ public class GKEnergyRegion extends ParallelRegion {
                           NonPolar nonPolar, double surfaceTension, double probe) {
 
         // Set the conversion from electron**2/Ang to kcal/mole
-        electric = forceField.getDouble(ForceField.ForceFieldDouble.ELECTRIC, DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
 
         // Set the Kirkwood multipolar reaction field constants.
-        double epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON, dWater);
+        double epsilon = forceField.getDouble("GK_EPSILON", dWater);
         fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
         fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
         fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);

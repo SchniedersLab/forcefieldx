@@ -215,8 +215,6 @@ import ffx.potential.parameters.AngleType.AngleFunction;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BondType.BondFunction;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
@@ -229,12 +227,12 @@ import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.Constants;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
-import ffx.utilities.Constants;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -314,11 +312,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         setDefaultPeriodicBoxVectors();
 
         boolean aperiodic = super.getCrystal().aperiodic();
-        boolean pbcEnforced = forceField.getBoolean(ForceField.ForceFieldBoolean.ENFORCE_PBC, !aperiodic);
+        boolean pbcEnforced = forceField.getBoolean("ENFORCE_PBC", !aperiodic);
         enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
-        finiteDifferenceStepSize = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
-        twoSidedFiniteDifference = forceField.getBoolean(ForceFieldBoolean.FD_TWO_SIDED, true);
+        finiteDifferenceStepSize = forceField.getDouble("FD_DLAMBDA", 0.001);
+        twoSidedFiniteDifference = forceField.getBoolean("FD_TWO_SIDED", true);
     }
 
     /**
@@ -1258,7 +1256,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             String defaultPrecision = "mixed";
-            String precision = molecularAssembly.getForceField().getString(ForceField.ForceFieldString.PRECISION, defaultPrecision).toLowerCase();
+            String precision = molecularAssembly.getForceField().getString("PRECISION", defaultPrecision).toLowerCase();
             precision = precision.replace("-precision", "");
             switch (precision) {
                 case "double":
@@ -1275,7 +1273,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (cuda && requestedPlatform != Platform.OMM_REF) {
                 int defaultDevice = getDefaultDevice(molecularAssembly.getProperties());
                 platform = OpenMM_Platform_getPlatformByName("CUDA");
-                int deviceID = molecularAssembly.getForceField().getInteger(ForceField.ForceFieldInteger.CUDA_DEVICE, defaultDevice);
+                int deviceID = molecularAssembly.getForceField().getInteger("CUDA_DEVICE", defaultDevice);
                 String deviceIDString = Integer.toString(deviceID);
 
                 OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"), pointerForString(deviceIDString));
@@ -1321,8 +1319,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMMIntegrator(ForceField forceField, double constraintTolerance) {
             this.constraintTolerance = constraintTolerance;
 
-            frictionCoeff = forceField.getDouble(ForceFieldDouble.FRICTION_COEFF, 91.0);
-            collisionFreq = forceField.getDouble(ForceFieldDouble.COLLISION_FREQ, 0.01);
+            frictionCoeff = forceField.getDouble("FRICTION_COEFF", 91.0);
+            collisionFreq = forceField.getDouble("COLLISION_FREQ", 0.01);
         }
 
         public PointerByReference getIntegrator() {
@@ -1576,18 +1574,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 logger.severe(" Atom without mass encountered.");
             }
 
-            boolean rigidHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.RIGID_HYDROGEN, false);
+            boolean rigidHydrogen = forceField.getBoolean("RIGID_HYDROGEN", false);
 
             if (rigidHydrogen) {
                 setUpHydrogenConstraints(openMMSystem.getOpenMMSystem());
             }
 
-            boolean rigidBonds = forceField.getBoolean(ForceFieldBoolean.RIGID_BONDS, false);
+            boolean rigidBonds = forceField.getBoolean("RIGID_BONDS", false);
             if (rigidBonds) {
                 setUpBondConstraints(openMMSystem.getOpenMMSystem());
             }
 
-            boolean rigidHydrogenAngles = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGEN_ANGLES, false);
+            boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
             if (rigidHydrogenAngles) {
                 setUpHydrogenAngleConstraints(openMMSystem.getOpenMMSystem());
             }
@@ -1600,13 +1598,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             // Read alchemical information -- this needs to be done before creating forces.
-            elecLambdaTerm = forceField.getBoolean(ForceFieldBoolean.ELEC_LAMBDATERM, false);
-            vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
-            torsionLambdaTerm = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
+            elecLambdaTerm = forceField.getBoolean("ELEC_LAMBDATERM", false);
+            vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", false);
+            torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", false);
 
             lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
 
-            electrostaticLambdaPower = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
+            electrostaticLambdaPower = forceField.getDouble("PERMANENT_LAMBDA_EXPONENT", 3.0);
 
             // Add Angle Force.
             addAngleForce();
@@ -1665,7 +1663,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
 
                 // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
-                lambdaStart = forceField.getDouble(ForceFieldDouble.LAMBDA_START, 0.0);
+                lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
                 if (lambdaStart > 1.0) {
                     lambdaStart = 1.0;
                 } else if (lambdaStart < 0.0) {
@@ -1675,8 +1673,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 // Define electrostatics to turn on at a value different from 0.5.
                 if (vdwLambdaTerm && elecLambdaTerm) {
-                    electrostaticStart = forceField.getDouble(
-                            ForceFieldDouble.ELEC_START, electrostaticStart);
+                    electrostaticStart = forceField.getDouble("ELEC_START", electrostaticStart);
                     if (electrostaticStart > 1.0) {
                         electrostaticStart = 1.0;
                     } else if (electrostaticStart < 0.0) {
@@ -1950,8 +1947,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
             }
 
-            ForceField.ForceFieldInteger bondForceGroup = ForceField.ForceFieldInteger.BOND_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(bondForceGroup, bondForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaBondForce, forceGroup);
             OpenMM_System_addForce(system, amoebaBondForce);
@@ -1979,7 +1975,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 return;
             }
 
-            boolean rigidHydrogenAngles = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGEN_ANGLES, false);
+            boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
 
             PointerByReference amoebaAngleForce = OpenMM_AmoebaAngleForce_create();
             for (Angle angle : normalAngles) {
@@ -2002,8 +1998,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic(amoebaAngleForce, AngleType.sextic);
             }
 
-            ForceField.ForceFieldInteger angleForceGroup = ForceField.ForceFieldInteger.ANGLE_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(angleForceGroup, angleForceGroup.getDefaultValue());
+
+            int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaAngleForce, forceGroup);
             OpenMM_System_addForce(system, amoebaAngleForce);
@@ -2046,8 +2042,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAnglePentic(amoebaInPlaneAngleForce, AngleType.quintic);
             OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleSextic(amoebaInPlaneAngleForce, AngleType.sextic);
 
-            ForceField.ForceFieldInteger inPlaneAngleForceGroup = ForceField.ForceFieldInteger.IN_PLANE_ANGLE_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(inPlaneAngleForceGroup, inPlaneAngleForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("IN_PLANE_ANGLE_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaInPlaneAngleForce, forceGroup);
             OpenMM_System_addForce(system, amoebaInPlaneAngleForce);
@@ -2080,8 +2075,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaUreyBradleyForce,
                     UreyBradleyType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
 
-            ForceField.ForceFieldInteger ureyBradleyForceGroup = ForceField.ForceFieldInteger.UREY_BRADLEY_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(ureyBradleyForceGroup, ureyBradleyForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("UREY_BRADLEY_FORCE", 0);
 
             OpenMM_Force_setForceGroup(amoebaUreyBradleyForce, forceGroup);
             OpenMM_System_addForce(system, amoebaUreyBradleyForce);
@@ -2113,8 +2107,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
             OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
 
-            ForceField.ForceFieldInteger outOfPlaneBendForceGroup = ForceField.ForceFieldInteger.OUT_OF_PLANE_BEND_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(outOfPlaneBendForceGroup, outOfPlaneBendForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaOutOfPlaneBendForce, forceGroup);
             OpenMM_System_addForce(system, amoebaOutOfPlaneBendForce);
@@ -2146,8 +2139,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             }
 
-            ForceField.ForceFieldInteger stretchBendForceGroup = ForceField.ForceFieldInteger.STRETCH_BEND_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(stretchBendForceGroup, stretchBendForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("STRETCH_BEND_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaStretchBendForce, forceGroup);
             OpenMM_System_addForce(system, amoebaStretchBendForce);
@@ -2179,8 +2171,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             }
 
-            ForceField.ForceFieldInteger torsionForceGroup = ForceField.ForceFieldInteger.TORSION_FORCE_GROUP;
-            int fGroup = forceField.getInteger(torsionForceGroup, torsionForceGroup.getDefaultValue());
+            int fGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaTorsionForce, fGroup);
             OpenMM_System_addForce(system, amoebaTorsionForce);
@@ -2211,8 +2202,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                                 * improperTorsion.scaleFactor * improperTorsionType.k);
             }
 
-            ForceField.ForceFieldInteger improperTorsionForceGroup = ForceField.ForceFieldInteger.IMPROPER_TORSION_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(improperTorsionForceGroup, improperTorsionForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaImproperTorsionForce, forceGroup);
             OpenMM_System_addForce(system, amoebaImproperTorsionForce);
@@ -2244,8 +2234,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         OpenMM_KJPerKcal * type.forceConstant * units);
             }
 
-            ForceField.ForceFieldInteger piOrbitalTorsionForceGroup = ForceField.ForceFieldInteger.PI_ORBITAL_TORSION_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(piOrbitalTorsionForceGroup, piOrbitalTorsionForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaPiTorsionForce, forceGroup);
             OpenMM_System_addForce(system, amoebaPiTorsionForce);
@@ -2343,8 +2332,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
             OpenMM_DoubleArray_destroy(values);
 
-            ForceField.ForceFieldInteger torsionTorsionForceGroup = ForceField.ForceFieldInteger.TORSION_TORSION_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(torsionTorsionForceGroup, torsionTorsionForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("TORSION_TORSION_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(amoebaTorsionTorsionForce, forceGroup);
             OpenMM_System_addForce(system, amoebaTorsionTorsionForce);
@@ -2404,8 +2392,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_IntArray_destroy(strTorsParticles);
             }
 
-            ForceField.ForceFieldInteger stretchTorsionForceGroup = ForceField.ForceFieldInteger.STRETCH_TORSION_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(stretchTorsionForceGroup, stretchTorsionForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("STRETCH_TORSION_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(stretchTorsionForce, forceGroup);
             OpenMM_System_addForce(system, stretchTorsionForce);
@@ -2469,8 +2456,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_IntArray_destroy(atorsParticles);
             }
 
-            ForceField.ForceFieldInteger angleTorsionForceGroup = ForceField.ForceFieldInteger.ANGLE_TORSION_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(angleTorsionForceGroup, angleTorsionForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("ANGLE_TORSION_FORCE_GROUP", 0);
 
             OpenMM_Force_setForceGroup(angleTorsionForce, forceGroup);
             OpenMM_System_addForce(system, angleTorsionForce);
@@ -2616,12 +2602,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeNonBondedForce, OpenMM_False);
 
-            ForceField.ForceFieldInteger vdwForceGroup = ForceField.ForceFieldInteger.VDW_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(vdwForceGroup, vdwForceGroup.getDefaultValue());
-
-            ForceField.ForceFieldInteger pmeForceGroup = ForceField.ForceFieldInteger.PME_FORCE_GROUP;
-            int pmeGroup = forceField.getInteger(pmeForceGroup, pmeForceGroup.getDefaultValue());
-
+            int forceGroup = forceField.getInteger("VDW_FORCE_GROUP", 1);
+            int pmeGroup = forceField.getInteger("PME_FORCE_GROUP", 1);
             if (forceGroup != pmeGroup) {
                 logger.severe(String.format(" ERROR: VDW-FORCE-GROUP is %d while PME-FORCE-GROUP is %d. "
                         + "This is invalid for fixed-charge force fields with combined nonbonded forces.", forceGroup, pmeGroup));
@@ -2759,8 +2741,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // Add energy parameter derivative
             // OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(fixedChargeSoftcore, "vdw_lambda");
 
-            ForceField.ForceFieldInteger vdwForceGroup = ForceField.ForceFieldInteger.VDW_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(vdwForceGroup, vdwForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("VDW_FORCE_GROUP", 1);
 
             OpenMM_Force_setForceGroup(fixedChargeSoftcore, forceGroup);
             OpenMM_System_addForce(system, fixedChargeSoftcore);
@@ -2937,9 +2918,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             double cut = gk.getCutoff();
             OpenMM_CustomGBForce_setCutoffDistance(customGBForce, cut);
 
-            ForceField.ForceFieldInteger gkForceGroup = ForceField.ForceFieldInteger.GK_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(gkForceGroup, gkForceGroup.getDefaultValue());
-
+            int forceGroup = forceField.getInteger("GK_FORCE_GROUP", 1);
             OpenMM_Force_setForceGroup(customGBForce, forceGroup);
             OpenMM_System_addForce(system, customGBForce);
 
@@ -3018,10 +2997,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_AmoebaVdwForce_setParticleExclusions(amoebaVDWForce, i, exclusions);
                 OpenMM_IntArray_resize(exclusions, 0);
             }
-
             OpenMM_IntArray_destroy(exclusions);
-            ForceField.ForceFieldInteger vdwForceGroup = ForceField.ForceFieldInteger.VDW_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(vdwForceGroup, vdwForceGroup.getDefaultValue());
+
+            int forceGroup = forceField.getInteger("VDW_FORCE_GROUP", 1);
             OpenMM_Force_setForceGroup(amoebaVDWForce, forceGroup);
             OpenMM_System_addForce(system, amoebaVDWForce);
 
@@ -3054,7 +3032,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     polarScale = 0.0;
                 }
             } else {
-                String algorithm = forceField.getString(ForceField.ForceFieldString.SCF_ALGORITHM, "CG");
+                String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
                 try {
                     algorithm = algorithm.replaceAll("-", "_").toUpperCase();
                     scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.valueOf(algorithm);
@@ -3265,9 +3243,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             OpenMM_IntArray_destroy(covalentMap);
 
-            ForceField.ForceFieldInteger pmeForceGroup = ForceField.ForceFieldInteger.PME_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(pmeForceGroup, pmeForceGroup.getDefaultValue());
-
+            int forceGroup = forceField.getInteger("PME_FORCE_GROUP", 1);
             OpenMM_Force_setForceGroup(amoebaMultipoleForce, forceGroup);
             OpenMM_System_addForce(system, amoebaMultipoleForce);
 
@@ -3325,11 +3301,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     break;
             }
 
-            ForceField.ForceFieldInteger gkForceGroup = ForceField.ForceFieldInteger.GK_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(gkForceGroup, gkForceGroup.getDefaultValue());
-
+            int forceGroup = forceField.getInteger("GK_FORCE_GROUP", 1);
             OpenMM_Force_setForceGroup(amoebaGeneralizedKirkwoodForce, forceGroup);
             OpenMM_System_addForce(system, amoebaGeneralizedKirkwoodForce);
+
             logger.log(Level.INFO, format("  Generalized Kirkwood force \t\t%d", forceGroup));
 
             switch (nonpolar) {
@@ -3388,8 +3363,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_AmoebaWcaDispersionForce_setSlevy(amoebaWcaDispersionForce, slevy);
             OpenMM_AmoebaWcaDispersionForce_setShctd(amoebaWcaDispersionForce, shctd);
 
-            ForceField.ForceFieldInteger gkForceGroup = ForceField.ForceFieldInteger.GK_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(gkForceGroup, gkForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("GK_FORCE_GROUP", 1);
 
             OpenMM_Force_setForceGroup(amoebaWcaDispersionForce, forceGroup);
             OpenMM_System_addForce(system, amoebaWcaDispersionForce);
@@ -3406,8 +3380,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         private void addHarmonicRestraintForce() {
             int nRestraints = getCoordRestraints().size();
 
-            ForceField.ForceFieldInteger coordRestraintForceGroup = ForceField.ForceFieldInteger.COORD_RESTRAINT_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(coordRestraintForceGroup, coordRestraintForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("COORD_RESTRAINT_FORCE_GROUP", 0);
 
             for (CoordRestraint coordRestraint : getCoordRestraints()) {
                 double forceConstant = coordRestraint.getForceConstant();
@@ -3456,8 +3429,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 return;
             }
 
-            ForceField.ForceFieldInteger bondRestraintForceGroup = ForceField.ForceFieldInteger.BOND_RESTRAINT_FORCE_GROUP;
-            int forceGroup = forceField.getInteger(bondRestraintForceGroup, bondRestraintForceGroup.getDefaultValue());
+            int forceGroup = forceField.getInteger("BOND_RESTRAINT_FORCE_GROUP", 0);
 
             // OpenMM's HarmonicBondForce class uses k, not 1/2*k as does FFX.
             double kParameterConversion = BondType.units * 2.0 * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);

@@ -59,6 +59,7 @@ import static java.util.Arrays.sort;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
@@ -115,9 +116,6 @@ import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
@@ -701,9 +699,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean relativeSolvationTerm;
     private double relativeSolvationEnergy;
     private Platform platform = Platform.FFX;
-
     private final List<Constraint> constraints;
-
 
     /**
      * <p>
@@ -748,36 +744,35 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         // Enforce that the number of threads be less than or equal to the number of atoms.
-        /*int nThreads = ParallelTeam.getDefaultThreadCount();
-        nThreads = nAtoms < nThreads ? nAtoms : nThreads;*/
-        int nThreads = nAtoms < numThreads ? nAtoms : numThreads;
+        int nThreads = min(nAtoms, numThreads);
         parallelTeam = new ParallelTeam(nThreads);
 
         ForceField forceField = molecularAssembly.getForceField();
+        CompositeConfiguration properties = forceField.getProperties();
         String name = forceField.toString().toUpperCase();
 
         logger.info(format(" Constructing Force Field %s", name));
         logger.info(format("\n SMP threads:                        %10d", nThreads));
 
-        bondTerm = forceField.getBoolean(ForceFieldBoolean.BONDTERM, true);
-        angleTerm = forceField.getBoolean(ForceFieldBoolean.ANGLETERM, true);
-        stretchBendTerm = forceField.getBoolean(ForceFieldBoolean.STRBNDTERM, true);
-        ureyBradleyTerm = forceField.getBoolean(ForceFieldBoolean.UREYTERM, true);
-        outOfPlaneBendTerm = forceField.getBoolean(ForceFieldBoolean.OPBENDTERM, true);
-        torsionTerm = forceField.getBoolean(ForceFieldBoolean.TORSIONTERM, true);
-        stretchTorsionTerm = forceField.getBoolean(ForceFieldBoolean.STRTORSTERM, true);
-        angleTorsionTerm = forceField.getBoolean(ForceFieldBoolean.ANGTORSTERM, true);
-        piOrbitalTorsionTerm = forceField.getBoolean(ForceFieldBoolean.PITORSTERM, true);
-        torsionTorsionTerm = forceField.getBoolean(ForceFieldBoolean.TORTORTERM, true);
-        improperTorsionTerm = forceField.getBoolean(ForceFieldBoolean.IMPROPERTERM, true);
-        vanderWaalsTerm = forceField.getBoolean(ForceFieldBoolean.VDWTERM, true);
+        bondTerm = forceField.getBoolean("BONDTERM", true);
+        angleTerm = forceField.getBoolean("ANGLETERM", true);
+        stretchBendTerm = forceField.getBoolean("STRBNDTERM", true);
+        ureyBradleyTerm = forceField.getBoolean("UREYTERM", true);
+        outOfPlaneBendTerm = forceField.getBoolean("OPBENDTERM", true);
+        torsionTerm = forceField.getBoolean("TORSIONTERM", true);
+        stretchTorsionTerm = forceField.getBoolean("STRTORSTERM", true);
+        angleTorsionTerm = forceField.getBoolean("ANGTORSTERM", true);
+        piOrbitalTorsionTerm = forceField.getBoolean("PITORSTERM", true);
+        torsionTorsionTerm = forceField.getBoolean("TORTORTERM", true);
+        improperTorsionTerm = forceField.getBoolean("IMPROPERTERM", true);
+        vanderWaalsTerm = forceField.getBoolean("VDWTERM", true);
         if (vanderWaalsTerm) {
-            multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
+            multipoleTerm = forceField.getBoolean("MPOLETERM", true);
             if (multipoleTerm) {
-                String polarizeString = forceField.getString(ForceFieldString.POLARIZATION, "NONE");
+                String polarizeString = forceField.getString("POLARIZATION", "NONE");
                 boolean defaultPolarizeTerm = !polarizeString.equalsIgnoreCase("NONE");
-                polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, defaultPolarizeTerm);
-                generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+                polarizationTerm = forceField.getBoolean("POLARIZETERM", defaultPolarizeTerm);
+                generalizedKirkwoodTerm = forceField.getBoolean("GKTERM", false);
             } else {
                 // If multipole electrostatics is turned off, turn off all electrostatics.
                 polarizationTerm = false;
@@ -790,11 +785,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             generalizedKirkwoodTerm = false;
         }
         restraintBondTerm = false;
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
-        restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
-        comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
-        lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.TORSION_LAMBDATERM, false);
-        printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, false);
+        lambdaTerm = forceField.getBoolean("LAMBDATERM", false);
+        restrainTerm = forceField.getBoolean("RESTRAINTERM", false);
+        comTerm = forceField.getBoolean("COMRESTRAINTERM", false);
+        lambdaTorsions = forceField.getBoolean("TORSION_LAMBDATERM", false);
+        printOnFailure = forceField.getBoolean("PRINT_ON_FAILURE", false);
 
         // For RESPA
         bondTermOrig = bondTerm;
@@ -822,21 +817,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         double a, b, c, alpha, beta, gamma;
         boolean aperiodic;
         try {
-            a = forceField.getDouble(ForceFieldDouble.A_AXIS);
+            a = forceField.getDouble("A_AXIS");
             aperiodic = false;
-            b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
-            c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
-            alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
-            beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
-            gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-            spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P 1");
-
+            b = forceField.getDouble("B_AXIS", a);
+            c = forceField.getDouble("C_AXIS", a);
+            alpha = forceField.getDouble("ALPHA", 90.0);
+            beta = forceField.getDouble("BETA", 90.0);
+            gamma = forceField.getDouble("GAMMA", 90.0);
+            spacegroup = forceField.getString("SPACEGROUP", "P 1");
             if (a == 1.0 && b == 1.0 && c == 1.0) {
                 String message = " A-, B-, and C-axis values equal to 1.0.";
                 logger.info(message);
                 throw new Exception(message);
             }
-
         } catch (Exception e) {
             logger.info(" The system will be treated as aperiodic.");
             aperiodic = true;
@@ -855,7 +848,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
 
             // Turn off reciprocal space calculations.
-            forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, 0.0);
+            forceField.addProperty("EWALD_ALPHA", "0.0");
 
             // Specify some dummy values for the crystal.
             spacegroup = "P1";
@@ -876,9 +869,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             double maxDim = max(max(unitCell.a, unitCell.b), unitCell.c);
             defaultVdwCut = (maxDim * 0.5) - (buff + 1.0);
         }
-        double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, defaultVdwCut);
+        double vdwOff = forceField.getDouble("VDW_CUTOFF", defaultVdwCut);
         double ewaldOff = aperiodic ? ParticleMeshEwald.APERIODIC_DEFAULT_EWALD_CUTOFF : ParticleMeshEwald.PERIODIC_DEFAULT_EWALD_CUTOFF;
-        ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, ewaldOff);
+        ewaldOff = forceField.getDouble("EWALD_CUTOFF", ewaldOff);
         if (ewaldOff > vdwOff) {
             vdwOff = ewaldOff;
         }
@@ -897,9 +890,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         double nlistCutoff = vdwOff;
         // Check for a frozen neighbor list.
-        boolean disabledNeighborUpdates = forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+        boolean disabledNeighborUpdates = forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false);
         if (disabledNeighborUpdates) {
-            nlistCutoff = forceField.getDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF, vdwOff);
+            nlistCutoff = forceField.getDouble("NEIGHBOR_LIST_CUTOFF", vdwOff);
             logger.info(format(" Neighbor list updates disabled; interactions will " +
                     "only be calculated between atoms that started the simulation " +
                     "within a radius of %9.3g Angstroms of each other", nlistCutoff));
@@ -907,8 +900,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 logger.severe(format(" Specified a neighbor-list cutoff %10.4g < max(PME, vdW) cutoff %10.4g !", nlistCutoff, vdwOff));
             }
         } else {
-            nlistCutoff = Math.max(forceField.getDouble(ForceFieldDouble.GK_CUTOFF, 0), nlistCutoff);
-            if (forceField.hasDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF)) {
+            nlistCutoff = Math.max(forceField.getDouble("GK_CUTOFF", 0.0), nlistCutoff);
+            if (forceField.hasProperty("NEIGHBOR_LIST_CUTOFF")) {
                 logger.severe(" Specified a neighbor list cutoff for a non-frozen neighbor list!");
             }
         }
@@ -927,18 +920,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         if (!unitCell.aperiodic() && unitCell.spaceGroup.number == 1) {
-            ncsTerm = forceField.getBoolean(ForceFieldBoolean.NCSTERM, false);
+            ncsTerm = forceField.getBoolean("NCSTERM", false);
             ncsTermOrig = ncsTerm;
         } else {
             ncsTerm = false;
             ncsTermOrig = false;
         }
 
-        rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
-        rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
+        rigidHydrogens = forceField.getBoolean("RIGID_HYDROGENS", false);
+        rigidScale = forceField.getDouble("RIGID_SCALE", 10.0);
 
         nRelativeSolvations = 0;
-        String relSolvLibrary = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
+        String relSolvLibrary = forceField.getString("RELATIVE_SOLVATION", "NONE").toUpperCase();
         SolvationLibrary library = SolvationLibrary.valueOf(relSolvLibrary);
         if (library == SolvationLibrary.AUTO) {
             if (generalizedKirkwoodTerm && name.toUpperCase().contains("OPLS")) {
@@ -958,7 +951,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             relativeSolvation = null;
         }
 
-        boolean checkAllNodeCharges = forceField.getBoolean(ForceFieldBoolean.CHECK_ALL_NODE_CHARGES, false);
+        boolean checkAllNodeCharges = forceField.getBoolean("CHECK_ALL_NODE_CHARGES", false);
 
         if (rigidScale <= 1.0) {
             rigidScale = 1.0;
@@ -1071,7 +1064,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             outOfPlaneBends = null;
         }
 
-        double torsionScale = forceField.getDouble(ForceFieldDouble.TORSION_SCALE, 1.0);
+        double torsionScale = forceField.getDouble("TORSION_SCALE", 1.0);
         if (torsionScale != 1.0) {
             forceField.setTorsionScale(torsionScale);
         }
@@ -1187,7 +1180,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 form = ELEC_FORM.PAM;
             }
 
-            boolean pmeQI = forceField.getBoolean(ForceFieldBoolean.PME_QI, false);
+            boolean pmeQI = forceField.getBoolean("PME_QI", false);
 
             if (pmeQI) {
                 particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecule, forceField, crystal,
@@ -1203,7 +1196,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         if (ncsTerm) {
-            String sg = forceField.getString(ForceFieldString.NCSGROUP, "P 1");
+            String sg = forceField.getString("NCSGROUP", "P 1");
             Crystal ncsCrystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
             ncsRestraint = new NCSRestraint(atoms, forceField, ncsCrystal);
         } else {
@@ -1238,7 +1231,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         bondedRegion = new BondedRegion();
 
-        maxDebugGradient = forceField.getDouble(ForceFieldDouble.MAX_DEBUG_GRADIENT, Double.POSITIVE_INFINITY);
+        maxDebugGradient = forceField.getDouble("MAX_DEBUG_GRADIENT", Double.POSITIVE_INFINITY);
 
         molecularAssembly.setPotential(this);
 
@@ -1312,7 +1305,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
         }
 
-        String constraintStrings = forceField.getString(ForceFieldString.CONSTRAIN, forceField.getString(ForceFieldString.RATTLE, null));
+        String constraintStrings = forceField.getString("CONSTRAIN",
+                forceField.getString("RATTLE", null));
         if (constraintStrings != null) {
             constraints = new ArrayList<>();
             logger.info(format(" Experimental: parsing constraints option %s", constraintStrings));
@@ -1438,7 +1432,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints, int numThreads) {
         ForceField ffield = assembly.getForceField();
-        String platformString = toEnumForm(ffield.getString(ForceFieldString.PLATFORM, "FFX"));
+        String platformString = toEnumForm(ffield.getString("PLATFORM", "FFX"));
         try {
             Platform platform = Platform.valueOf(platformString);
             switch (platform) {
@@ -2941,7 +2935,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             printOnFailure = onFail;
         } else {
             try {
-                molecularAssembly.getForceField().getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE);
+                molecularAssembly.getForceField().getBoolean("PRINT_ON_FAILURE");
                 /*
                   If the call was successful, the property was explicitly set
                   somewhere and should be kept. If an exception was thrown, the
@@ -2992,14 +2986,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     /**
      * <p>
      * setRestraintBond</p>
-
-     * @param a1            a {@link ffx.potential.bonded.Atom} object.
-     * @param a2            a {@link ffx.potential.bonded.Atom} object.
-     * @param distance      a double.
-     * @param forceConstant the force constant in kcal/mole.
-     * @param flatBottom    Radius of a flat-bottom potential in Angstroms.
-     * @param lamStart      At what lambda does the restraint begin to take effect?
-     * @param lamEnd        At what lambda does the restraint hit full strength?
+     *
+     * @param a1                a {@link ffx.potential.bonded.Atom} object.
+     * @param a2                a {@link ffx.potential.bonded.Atom} object.
+     * @param distance          a double.
+     * @param forceConstant     the force constant in kcal/mole.
+     * @param flatBottom        Radius of a flat-bottom potential in Angstroms.
+     * @param lamStart          At what lambda does the restraint begin to take effect?
+     * @param lamEnd            At what lambda does the restraint hit full strength?
      * @param switchingFunction Switching function to use as a lambda dependence.
      */
     private void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom,
@@ -4050,7 +4044,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
             ForceField forceField = molecularAssembly.getForceField();
 
-            String value = forceField.getString(ForceFieldString.ARRAY_REDUCTION, "MULTI");
+            String value = forceField.getString("ARRAY_REDUCTION", "MULTI");
             try {
                 atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
             } catch (Exception e) {

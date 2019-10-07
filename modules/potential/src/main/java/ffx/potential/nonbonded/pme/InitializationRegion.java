@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -195,10 +196,10 @@ public class InitializationRegion extends ParallelRegion {
     public InitializationRegion(int maxThreads, ForceField forceField) {
         initializationLoop = new InitializationLoop[maxThreads];
         rotateMultipolesLoop = new RotateMultipolesLoop[maxThreads];
-        useCharges = forceField.getBoolean(ForceField.ForceFieldBoolean.USE_CHARGES, true);
-        useDipoles = forceField.getBoolean(ForceField.ForceFieldBoolean.USE_DIPOLES, true);
-        useQuadrupoles = forceField.getBoolean(ForceField.ForceFieldBoolean.USE_QUADRUPOLES, true);
-        rotateMultipoles = forceField.getBoolean(ForceField.ForceFieldBoolean.ROTATE_MULTIPOLES, true);
+        useCharges = forceField.getBoolean("USE_CHARGES", true);
+        useDipoles = forceField.getBoolean("USE_DIPOLES", true);
+        useQuadrupoles = forceField.getBoolean("USE_QUADRUPOLES", true);
+        rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
     }
 
     public void init(boolean lambdaTerm, boolean gradient, double lambdaScaleMultipoles,
@@ -306,16 +307,12 @@ public class InitializationRegion extends ParallelRegion {
                 y[i] = atom.getY();
                 z[i] = atom.getZ();
                 use[i] = atom.getUse();
-
-                    /*
-                      Real space Ewald is cutoff at ~7 A, compared to ~12 A for
-                      vdW, so the number of neighbors is much more compact. A
-                      specific list for real space Ewald is filled during
-                      computation of the permanent real space field that
-                      includes only evaluated interactions. Subsequent real
-                      space loops, especially the SCF, then do not spend time
-                      evaluating pairwise distances outside the cutoff.
-                     */
+                /*
+                 Real space Ewald is cutoff at ~7 A, compared to ~12 A for vdW,
+                 so the number of neighbors is much more compact. A specific list for real space Ewald is filled during
+                 computation of the permanent real space field that includes only evaluated interactions. Subsequent real
+                 space loops, especially the SCF, then do not spend time evaluating pairwise distances outside the cutoff.
+                */
                 int size = neighborLists[0][i].length;
                 if (vaporLists != null) {
                     size = max(size, vaporLists[0][i].length);
@@ -362,7 +359,6 @@ public class InitializationRegion extends ParallelRegion {
         private final double[][] tempQuadrupole = new double[3][3];
         private final double[] dipole = new double[3];
         private final double[][] quadrupole = new double[3][3];
-        private double chargeScale, dipoleScale, quadrupoleScale, polarizabilityScale;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -382,10 +378,10 @@ public class InitializationRegion extends ParallelRegion {
                 final double[] z = coordinates[iSymm][2];
                 for (int ii = lb; ii <= ub; ii++) {
                     Atom atom = atoms[ii];
-                    chargeScale = 1.0;
-                    dipoleScale = 1.0;
-                    quadrupoleScale = 1.0;
-                    polarizabilityScale = 1.0;
+                    double chargeScale = 1.0;
+                    double dipoleScale = 1.0;
+                    double quadrupoleScale = 1.0;
+                    double polarizabilityScale = 1.0;
                     if (atom.applyLambda()) {
                         chargeScale = lambdaScaleMultipoles;
                         dipoleScale = lambdaScaleMultipoles;
@@ -420,7 +416,7 @@ public class InitializationRegion extends ParallelRegion {
                                 quadrupole[i][j] = 0.0;
                             }
                         }
-                        if (referenceSites == null || referenceSites.length < 2) {
+                        if (frame[ii] == MultipoleFrameDefinition.NONE) {
                             out[t000] = in[0] * chargeScale * elecScale;
                             out[t100] = 0.0;
                             out[t010] = 0.0;
@@ -435,9 +431,75 @@ public class InitializationRegion extends ParallelRegion {
                             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
                             continue;
                         }
+
+                        // Use the identity matrix as the default rotation matrix
+                        rotmat[0][0] = 1.0;
+                        rotmat[1][0] = 0.0;
+                        rotmat[2][0] = 0.0;
+                        rotmat[0][2] = 0.0;
+                        rotmat[1][2] = 0.0;
+                        rotmat[2][2] = 1.0;
                         switch (frame[ii]) {
-                            case BISECTOR:
+                            // Z-only frame rotation matrix elements for Z- and X-axes.
+                            case ZONLY:
+                                // Z-Axis
                                 int index = referenceSites[0];
+                                zAxis[0] = x[index];
+                                zAxis[1] = y[index];
+                                zAxis[2] = z[index];
+                                diff(zAxis, localOrigin, zAxis);
+                                norm(zAxis, zAxis);
+                                rotmat[0][2] = zAxis[0];
+                                rotmat[1][2] = zAxis[1];
+                                rotmat[2][2] = zAxis[2];
+                                // X-Axis: initially assume its along the global X-axis.
+                                xAxis[0] = 1.0;
+                                xAxis[1] = 0.0;
+                                xAxis[2] = 0.0;
+                                // If the Z-axis is close to the global X-axisassume a X-axis along the global Y-axis.
+                                double dot = rotmat[0][2];
+                                if (abs(dot) > 0.866) {
+                                    xAxis[0] = 0.0;
+                                    xAxis[1] = 1.0;
+                                    dot = rotmat[1][2];
+                                }
+                                scalar(zAxis, dot, zAxis);
+                                diff(xAxis, zAxis, xAxis);
+                                norm(xAxis, xAxis);
+                                rotmat[0][0] = xAxis[0];
+                                rotmat[1][0] = xAxis[1];
+                                rotmat[2][0] = xAxis[2];
+                                break;
+                            // Z-then-X frame rotation matrix elements for Z- and X-axes.
+                            case ZTHENX:
+                                // Z-Axis
+                                index = referenceSites[0];
+                                zAxis[0] = x[index];
+                                zAxis[1] = y[index];
+                                zAxis[2] = z[index];
+                                diff(zAxis, localOrigin, zAxis);
+                                norm(zAxis, zAxis);
+                                rotmat[0][2] = zAxis[0];
+                                rotmat[1][2] = zAxis[1];
+                                rotmat[2][2] = zAxis[2];
+                                // X-Axis
+                                index = referenceSites[1];
+                                xAxis[0] = x[index];
+                                xAxis[1] = y[index];
+                                xAxis[2] = z[index];
+                                diff(xAxis, localOrigin, xAxis);
+                                dot = dot(xAxis, zAxis);
+                                scalar(zAxis, dot, zAxis);
+                                diff(xAxis, zAxis, xAxis);
+                                norm(xAxis, xAxis);
+                                rotmat[0][0] = xAxis[0];
+                                rotmat[1][0] = xAxis[1];
+                                rotmat[2][0] = xAxis[2];
+                                break;
+                            // Bisector frame rotation matrix elements for Z- and X-axes.
+                            case BISECTOR:
+                                // Z-Axis
+                                index = referenceSites[0];
                                 zAxis[0] = x[index];
                                 zAxis[1] = y[index];
                                 zAxis[2] = z[index];
@@ -454,7 +516,8 @@ public class InitializationRegion extends ParallelRegion {
                                 rotmat[0][2] = zAxis[0];
                                 rotmat[1][2] = zAxis[1];
                                 rotmat[2][2] = zAxis[2];
-                                double dot = dot(xAxis, zAxis);
+                                // X-axis
+                                dot = dot(xAxis, zAxis);
                                 scalar(zAxis, dot, zAxis);
                                 diff(xAxis, zAxis, xAxis);
                                 norm(xAxis, xAxis);
@@ -462,28 +525,31 @@ public class InitializationRegion extends ParallelRegion {
                                 rotmat[1][0] = xAxis[1];
                                 rotmat[2][0] = xAxis[2];
                                 break;
+                            // Z-then-Bisector frame rotation matrix elements for Z- and X-axes.
                             case ZTHENBISECTOR:
+                                // Z-Axis
                                 index = referenceSites[0];
                                 zAxis[0] = x[index];
                                 zAxis[1] = y[index];
                                 zAxis[2] = z[index];
-                                index = referenceSites[1];
-                                xAxis[0] = x[index];
-                                xAxis[1] = y[index];
-                                xAxis[2] = z[index];
-                                index = referenceSites[2];
-                                yAxis[0] = x[index];
-                                yAxis[1] = y[index];
-                                yAxis[2] = z[index];
                                 diff(zAxis, localOrigin, zAxis);
                                 norm(zAxis, zAxis);
                                 rotmat[0][2] = zAxis[0];
                                 rotmat[1][2] = zAxis[1];
                                 rotmat[2][2] = zAxis[2];
+                                index = referenceSites[1];
+                                xAxis[0] = x[index];
+                                xAxis[1] = y[index];
+                                xAxis[2] = z[index];
                                 diff(xAxis, localOrigin, xAxis);
                                 norm(xAxis, xAxis);
+                                index = referenceSites[2];
+                                yAxis[0] = x[index];
+                                yAxis[1] = y[index];
+                                yAxis[2] = z[index];
                                 diff(yAxis, localOrigin, yAxis);
                                 norm(yAxis, yAxis);
+                                // Sum the normalized vectors to the bisector atoms.
                                 sum(xAxis, yAxis, xAxis);
                                 norm(xAxis, xAxis);
                                 dot = dot(xAxis, zAxis);
@@ -494,22 +560,34 @@ public class InitializationRegion extends ParallelRegion {
                                 rotmat[1][0] = xAxis[1];
                                 rotmat[2][0] = xAxis[2];
                                 break;
-                            case ZTHENX:
-                            default:
+                            // 3-Fold frame rotation matrix elements for Z- and X-axes.
+                            case THREEFOLD:
+                                // Z-Axis
                                 index = referenceSites[0];
                                 zAxis[0] = x[index];
                                 zAxis[1] = y[index];
                                 zAxis[2] = z[index];
+                                diff(zAxis, localOrigin, zAxis);
+                                norm(zAxis, zAxis);
                                 index = referenceSites[1];
                                 xAxis[0] = x[index];
                                 xAxis[1] = y[index];
                                 xAxis[2] = z[index];
-                                diff(zAxis, localOrigin, zAxis);
+                                diff(xAxis, localOrigin, xAxis);
+                                norm(xAxis, xAxis);
+                                index = referenceSites[2];
+                                yAxis[0] = x[index];
+                                yAxis[1] = y[index];
+                                yAxis[2] = z[index];
+                                diff(yAxis, localOrigin, yAxis);
+                                norm(yAxis, yAxis);
+                                sum(zAxis, xAxis, zAxis);
+                                sum(zAxis, yAxis, zAxis);
                                 norm(zAxis, zAxis);
                                 rotmat[0][2] = zAxis[0];
                                 rotmat[1][2] = zAxis[1];
                                 rotmat[2][2] = zAxis[2];
-                                diff(xAxis, localOrigin, xAxis);
+                                // X-Axis
                                 dot = dot(xAxis, zAxis);
                                 scalar(zAxis, dot, zAxis);
                                 diff(xAxis, zAxis, xAxis);
@@ -517,8 +595,9 @@ public class InitializationRegion extends ParallelRegion {
                                 rotmat[0][0] = xAxis[0];
                                 rotmat[1][0] = xAxis[1];
                                 rotmat[2][0] = xAxis[2];
+                                break;
                         }
-                        // Finally the Y elements.
+                        // Find the Y-Axis from the X-Axis and Z-Axis.
                         rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
                         rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
                         rotmat[2][1] = rotmat[1][0] * rotmat[0][2] - rotmat[0][0] * rotmat[1][2];

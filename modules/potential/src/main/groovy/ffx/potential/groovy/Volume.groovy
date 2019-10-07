@@ -164,11 +164,17 @@ class Volume extends PotentialScript {
         logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
         //gaussVol.printTree()
 
+        // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
+        double threeOverFourPi = 3.0/(4.0*Math.PI)
+        double radical = gaussVol.getVolume()*threeOverFourPi
+        double effectiveRadius = pow(radical, 1/3)
+
         logger.info(format("\n Volume:              %8.3f (Ang^3)", gaussVol.getVolume()))
         logger.info(format(" Volume Energy:       %8.3f (kcal/mol)", gaussVol.getVolumeEnergy()))
         logger.info(format(" Surface Area:        %8.3f (Ang^2)", gaussVol.getSurfaceArea()))
         logger.info(format(" Surface Area Energy: %8.3f (kcal/mol)", gaussVol.getSurfaceAreaEnergy()))
         logger.info(format(" Volume + SA Energy:  %8.3f (kcal/mol)", gaussVol.getEnergy()))
+        logger.info(format(" Effective Radius:    %8.3f (Ang)", effectiveRadius))
 
         // Set JUnit testing variables based on output volume and surface area
         totalVolume = gaussVol.getVolume()

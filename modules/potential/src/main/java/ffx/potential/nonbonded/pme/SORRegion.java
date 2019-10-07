@@ -112,7 +112,7 @@ public class SORRegion extends ParallelRegion {
         sorLoop = new SORLoop[nt];
         sharedEps = new SharedDouble();
         sharedEpsCR = new SharedDouble();
-        polsor = forceField.getDouble(ForceField.ForceFieldDouble.POLAR_SOR, 0.70);
+        polsor = forceField.getDouble("POLAR_SOR", 0.70);
     }
 
     public double getEps() {

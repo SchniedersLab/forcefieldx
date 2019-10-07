@@ -76,7 +76,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
-
 import static ffx.numerics.math.VectorMath.cross;
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.dot;
@@ -295,16 +294,16 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
 
     public RealSpaceEnergyRegion(int nt, ForceField forceField, ELEC_FORM elecForm, boolean lambdaTerm) {
         maxThreads = nt;
-        electric = forceField.getDouble(ForceField.ForceFieldDouble.ELECTRIC, Constants.DEFAULT_ELECTRIC);
+        electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
         sharedInteractions = new SharedInteger();
         realSpaceEnergyLoop = new RealSpaceEnergyLoop[nt];
 
         // Flag to indicate application of an intermolecular softcore potential.
         if (lambdaTerm) {
             intermolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+                    "INTERMOLECULAR_SOFTCORE", false);
             intramolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+                    "INTRAMOLECULAR_SOFTCORE", false);
         } else {
             intermolecularSoftcore = false;
             intramolecularSoftcore = false;
@@ -568,7 +567,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         private double[] maskingd_local;
         private final double[] dx_local;
         private final double[][] rot_local;
-        private final double[][] work;
+        private final Torque torques;
         private int threadID;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -577,8 +576,8 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         RealSpaceEnergyLoop() {
             super();
             dx_local = new double[3];
-            work = new double[15][3];
             rot_local = new double[3][3];
+            torques = new Torque();
         }
 
         private void init() {
@@ -622,6 +621,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 dUdL = 0.0;
                 d2UdL2 = 0.0;
             }
+            torques.init(axisAtom, frame, coordinates);
         }
 
         @Override
@@ -650,11 +650,24 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 realSpaceChunk(lb, ub);
                 if (gradient) {
                     // Turn symmetry mate torques into gradients
-                    torque(iSymm, txk_local, tyk_local, tzk_local,
-                            gxk_local, gyk_local, gzk_local,
-                            work[0], work[1], work[2], work[3], work[4],
-                            work[5], work[6], work[7], work[8], work[9],
-                            work[10], work[11], work[12], work[13], work[14]);
+                    double[] trq = new double[3];
+                    for (int i = 0; i < nAtoms; i++) {
+                        double[][] g = new double[4][3];
+                        int[] frameIndex = {-1,-1,-1,-1};
+                        trq[0] = txk_local[i];
+                        trq[1] = tyk_local[i];
+                        trq[2] = tzk_local[i];
+                        torques.torque(i, iSymm, trq, frameIndex, g);
+                        for (int j = 0; j<4; j++) {
+                            int index = frameIndex[j];
+                            if (index >= 0) {
+                                double[] gj = g[j];
+                                gxk_local[index] += gj[0];
+                                gyk_local[index] += gj[1];
+                                gzk_local[index] += gj[2];
+                            }
+                        }
+                    }
                     // Rotate symmetry mate gradients
                     if (iSymm != 0) {
                         crystal.applyTransSymRot(nAtoms,
@@ -669,11 +682,24 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 }
                 if (lambdaTerm) {
                     // Turn symmetry mate torques into gradients
-                    torque(iSymm, ltxk_local, ltyk_local, ltzk_local,
-                            lxk_local, lyk_local, lzk_local,
-                            work[0], work[1], work[2], work[3], work[4],
-                            work[5], work[6], work[7], work[8], work[9],
-                            work[10], work[11], work[12], work[13], work[14]);
+                    double[] trq = new double[3];
+                    for (int i = 0; i < nAtoms; i++) {
+                        double[][] g = new double[4][3];
+                        int[] frameIndex = {-1,-1,-1,-1};
+                        trq[0] = ltxk_local[i];
+                        trq[1] = ltyk_local[i];
+                        trq[2] = ltzk_local[i];
+                        torques.torque(i, iSymm, trq, frameIndex, g);
+                        for (int j = 0; j<4; j++) {
+                            int index = frameIndex[j];
+                            if (index >= 0) {
+                                double[] gj = g[j];
+                                lxk_local[index] += gj[0];
+                                lyk_local[index] += gj[1];
+                                lzk_local[index] += gj[2];
+                            }
+                        }
+                    }
                     // Rotate symmetry mate gradients
                     if (iSymm != 0) {
                         crystal.applyTransSymRot(nAtoms, lxk_local, lyk_local, lzk_local,
@@ -1568,190 +1594,4 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         }
     }
 
-    private void torque(int iSymm, double[] tx, double[] ty, double[] tz, double[] gx, double[] gy, double[] gz,
-                        double[] origin, double u[],
-                        double[] v, double[] w, double[] uv, double[] uw,
-                        double[] vw, double[] ur, double[] us, double[] vs,
-                        double[] ws, double[] t1, double[] t2, double[] r, double[] s) {
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            final int[] ax = axisAtom[i];
-            // Ions, for example, have no torque.
-            if (ax == null || ax.length < 2) {
-                continue;
-            }
-            final int ia = ax[0];
-            final int ib = i;
-            final int ic = ax[1];
-            int id = 0;
-            double[] x = coordinates[iSymm][0];
-            double[] y = coordinates[iSymm][1];
-            double[] z = coordinates[iSymm][2];
-            origin[0] = x[ib];
-            origin[1] = y[ib];
-            origin[2] = z[ib];
-            u[0] = x[ia];
-            u[1] = y[ia];
-            u[2] = z[ia];
-            v[0] = x[ic];
-            v[1] = y[ic];
-            v[2] = z[ic];
-            // Construct the three rotation axes for the local frame
-            diff(u, origin, u);
-            diff(v, origin, v);
-            switch (frame[i]) {
-                default:
-                case ZTHENX:
-                case BISECTOR:
-                    cross(u, v, w);
-                    break;
-                case THREEFOLD:
-                case ZTHENBISECTOR:
-                    id = ax[2];
-                    w[0] = x[id];
-                    w[1] = y[id];
-                    w[2] = z[id];
-                    diff(w, origin, w);
-            }
-
-            double ru = r(u);
-            double rv = r(v);
-            double rw = r(w);
-            scalar(u, 1.0 / ru, u);
-            scalar(v, 1.0 / rv, v);
-            scalar(w, 1.0 / rw, w);
-            // Find the perpendicular and angle for each pair of axes.
-            cross(v, u, uv);
-            cross(w, u, uw);
-            cross(w, v, vw);
-            double ruv = r(uv);
-            double ruw = r(uw);
-            double rvw = r(vw);
-            scalar(uv, 1.0 / ruv, uv);
-            scalar(uw, 1.0 / ruw, uw);
-            scalar(vw, 1.0 / rvw, vw);
-            // Compute the sine of the angle between the rotation axes.
-            double uvcos = dot(u, v);
-            double uvsin = sqrt(1.0 - uvcos * uvcos);
-            //double uwcos = dot(u, w);
-            //double uwsin = sqrt(1.0 - uwcos * uwcos);
-            //double vwcos = dot(v, w);
-            //double vwsin = sqrt(1.0 - vwcos * vwcos);
-            /*
-             * Negative of dot product of torque with unit vectors gives result
-             * of infinitesimal rotation along these vectors.
-             */
-            double dphidu = -(tx[i] * u[0] + ty[i] * u[1] + tz[i] * u[2]);
-            double dphidv = -(tx[i] * v[0] + ty[i] * v[1] + tz[i] * v[2]);
-            double dphidw = -(tx[i] * w[0] + ty[i] * w[1] + tz[i] * w[2]);
-            switch (frame[i]) {
-                case ZTHENBISECTOR:
-                    // Build some additional axes needed for the Z-then-Bisector method
-                    sum(v, w, r);
-                    cross(u, r, s);
-                    double rr = r(r);
-                    double rs = r(s);
-                    scalar(r, 1.0 / rr, r);
-                    scalar(s, 1.0 / rs, s);
-                    // Find the perpendicular and angle for each pair of axes.
-                    cross(r, u, ur);
-                    cross(s, u, us);
-                    cross(s, v, vs);
-                    cross(s, w, ws);
-                    double rur = r(ur);
-                    double rus = r(us);
-                    double rvs = r(vs);
-                    double rws = r(ws);
-                    scalar(ur, 1.0 / rur, ur);
-                    scalar(us, 1.0 / rus, us);
-                    scalar(vs, 1.0 / rvs, vs);
-                    scalar(ws, 1.0 / rws, ws);
-                    // Compute the sine of the angle between the rotation axes
-                    double urcos = dot(u, r);
-                    double ursin = sqrt(1.0 - urcos * urcos);
-                    //double uscos = dot(u, s);
-                    //double ussin = sqrt(1.0 - uscos * uscos);
-                    double vscos = dot(v, s);
-                    double vssin = sqrt(1.0 - vscos * vscos);
-                    double wscos = dot(w, s);
-                    double wssin = sqrt(1.0 - wscos * wscos);
-                    // Compute the projection of v and w onto the ru-plane
-                    scalar(s, -vscos, t1);
-                    scalar(s, -wscos, t2);
-                    sum(v, t1, t1);
-                    sum(w, t2, t2);
-                    double rt1 = r(t1);
-                    double rt2 = r(t2);
-                    scalar(t1, 1.0 / rt1, t1);
-                    scalar(t2, 1.0 / rt2, t2);
-                    double ut1cos = dot(u, t1);
-                    double ut1sin = sqrt(1.0 - ut1cos * ut1cos);
-                    double ut2cos = dot(u, t2);
-                    double ut2sin = sqrt(1.0 - ut2cos * ut2cos);
-                    double dphidr = -(tx[i] * r[0] + ty[i] * r[1] + tz[i] * r[2]);
-                    double dphids = -(tx[i] * s[0] + ty[i] * s[1] + tz[i] * s[2]);
-                    for (int j = 0; j < 3; j++) {
-                        double du = ur[j] * dphidr / (ru * ursin) + us[j] * dphids / ru;
-                        double dv = (vssin * s[j] - vscos * t1[j]) * dphidu / (rv * (ut1sin + ut2sin));
-                        double dw = (wssin * s[j] - wscos * t2[j]) * dphidu / (rw * (ut1sin + ut2sin));
-                        u[j] = du;
-                        v[j] = dv;
-                        w[j] = dw;
-                        r[j] = -du - dv - dw;
-                    }
-                    gx[ia] += u[0];
-                    gy[ia] += u[1];
-                    gz[ia] += u[2];
-                    gx[ic] += v[0];
-                    gy[ic] += v[1];
-                    gz[ic] += v[2];
-                    gx[id] += w[0];
-                    gy[id] += w[1];
-                    gz[id] += w[2];
-                    gx[ib] += r[0];
-                    gy[ib] += r[1];
-                    gz[ib] += r[2];
-                    break;
-                case ZTHENX:
-                    for (int j = 0; j < 3; j++) {
-                        double du = uv[j] * dphidv / (ru * uvsin) + uw[j] * dphidw / ru;
-                        double dv = -uv[j] * dphidu / (rv * uvsin);
-                        u[j] = du;
-                        v[j] = dv;
-                        w[j] = -du - dv;
-                    }
-                    gx[ia] += u[0];
-                    gy[ia] += u[1];
-                    gz[ia] += u[2];
-                    gx[ic] += v[0];
-                    gy[ic] += v[1];
-                    gz[ic] += v[2];
-                    gx[ib] += w[0];
-                    gy[ib] += w[1];
-                    gz[ib] += w[2];
-                    break;
-                case BISECTOR:
-                    for (int j = 0; j < 3; j++) {
-                        double du = uv[j] * dphidv / (ru * uvsin) + 0.5 * uw[j] * dphidw / ru;
-                        double dv = -uv[j] * dphidu / (rv * uvsin) + 0.5 * vw[j] * dphidw / rv;
-                        u[j] = du;
-                        v[j] = dv;
-                        w[j] = -du - dv;
-                    }
-                    gx[ia] += u[0];
-                    gy[ia] += u[1];
-                    gz[ia] += u[2];
-                    gx[ic] += v[0];
-                    gy[ic] += v[1];
-                    gz[ic] += v[2];
-                    gx[ib] += w[0];
-                    gy[ib] += w[1];
-                    gz[ib] += w[2];
-                    break;
-                default:
-                    String message = "Fatal exception: Unknown frame definition: " + frame[i] + "\n";
-                    logger.log(Level.SEVERE, message);
-            }
-        }
-    }
 }

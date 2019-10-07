@@ -838,6 +838,7 @@
                             <generateXml>true</generateXml>
                             <excludes>
                                 <exclude>edu/**/*.java</exclude>
+                                <exclude>ffx/ui/**/*.java</exclude>
                             </excludes>
                             <includesTestSourceRoots>false</includesTestSourceRoots>
                         </configuration>
@@ -1129,8 +1130,8 @@
         <!-- Specify versions of Dependencies to Use -->
         <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
-        <commons-collections4.version>4.3</commons-collections4.version>
-        <commons-configuration2.version>2.4</commons-configuration2.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
+        <commons-configuration2.version>2.6</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
@@ -1141,13 +1142,13 @@
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
         <jcuda.version>10.1.0</jcuda.version>
         <junit.version>4.12</junit.version>
-        <jopenmm.version>7.4.0</jopenmm.version>
+        <jopenmm.version>7.5.0</jopenmm.version>
         <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
-        <biojava.version>5.2.1</biojava.version>
+        <biojava.version>5.3.0</biojava.version>
         <cdk.version>2.0</cdk.version>
-        <clustering.version>1.1.0</clustering.version>
-        <fastutil.version>8.2.1</fastutil.version>
+        <clustering.version>1.2.0</clustering.version>
+        <fastutil.version>8.3.0</fastutil.version>
         <picocli.version>4.0.1</picocli.version>
         <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
         <tensorflow.version>1.12.0</tensorflow.version>
@@ -1157,7 +1158,7 @@
         <deploy.version>3.0.0-M1</deploy.version>
         <install.version>3.0.0-M1</install.version>
         <resources.version>3.1.0</resources.version>
-        <site.version>3.7.1</site.version>
+        <site.version>3.8.2</site.version>
         <surefire.version>3.0.0-M3</surefire.version>
         <!-- Maven Packaging Tools Plugin Versions -->
         <jar.version>3.1.2</jar.version>

@@ -83,10 +83,9 @@ public class SoluteRadii {
 
 
     public static void logRadiiSource(ForceField forceField) {
-        String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
-                ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
+        String forcefieldName = forceField.getString("FORCEFIELD", ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
         forcefieldName = forcefieldName.replaceAll("_", "-");
-        if (forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true)) {
+        if (forceField.getBoolean("GK_USEFITRADII", true)) {
             if (forcefieldName.equalsIgnoreCase("AMOEBA-2009")) {
                 logger.info(format("   Radii:                  %20s", forcefieldName.toUpperCase()));
             } else if (forcefieldName.equalsIgnoreCase("AMOEBA-2014")) {

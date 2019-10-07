@@ -2,30 +2,30 @@
 
 ################################################################################
 # Title: Force Field X.
-#
+# 
 # Description: Force Field X - Software for Molecular Biophysics.
-#
+# 
 # Copyright: Copyright (c) Michael J. Schnieders 2001-2019.
-#
+# 
 # This file is part of Force Field X.
-#
+# 
 # Force Field X is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 3 as published by
 # the Free Software Foundation.
-#
+# 
 # Force Field X is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 # details.
-#
+# 
 # You should have received a copy of the GNU General Public License along with
 # Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
 # Place, Suite 330, Boston, MA 02111-1307 USA
-#
+# 
 # Linking this library statically or dynamically with other modules is making a
 # combined work based on this library. Thus, the terms and conditions of the
 # GNU General Public License cover the whole combination.
-#
+# 
 # As a special exception, the copyright holders of this library give you
 # permission to link this library with independent modules to produce an
 # executable, regardless of the license terms of these independent modules, and
@@ -106,9 +106,13 @@ then
   REPO="$BASEDIR"
 fi
 
-CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
+if [ "$CLASSPATH_PREFIX" != "" ]; then
+    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
+else
+    CLASSPATH="$BASEDIR/bin/ffx-all.jar"
+fi
+JLP=modules/numerics/src/main/java/ffx/numerics/fft
 
-# These flags for for JDK 8.
 JVM_MEM="4G"
 if [ ! -z "$FFX_MEMORY" ]; then
   JVM_MEM="$FFX_MEMORY"
@@ -164,11 +168,23 @@ if [ $hasAwkSed ]; then
     if [ $USE_EXPTL_FLAGS ]; then
         EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
     fi
+
+    CVERS="`nvcc --version`"
+    if [ ! -z "$CVERS" ]; then
+      CVERS="`echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//'`"
+      NVFIRST="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }'`"
+      NVSEC="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $2; }'`"
+      if [ $NVFIRST -gt 10 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+      elif [ $NVFIRST -lt 10 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+      elif [ $NVSEC -ne 1 ]; then
+        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+      fi
+    fi
 else
-    echo " The JRE version could not be autodetected. Please use JDK 1.8 through JDK 13."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 1.8 through JDK 13 and (optionally) CUDA toolkit 10.1."
 fi
-
-
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
@@ -177,7 +193,11 @@ if $cygwin; then
   [ -n "$HOME" ] && HOME=`cygpath --path --windows "$HOME"`
   [ -n "$BASEDIR" ] && BASEDIR=`cygpath --path --windows "$BASEDIR"`
   [ -n "$REPO" ] && REPO=`cygpath --path --windows "$REPO"`
+  echo " Java exec: $JAVACMD"
+  echo " Classpath: $CLASSPATH"
 fi
+
+EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 
 if $darwin; then
  exec "$JAVACMD" $JAVA_OPTS \
@@ -204,3 +224,4 @@ else
   ffx.Main \
   "$@"
 fi
+

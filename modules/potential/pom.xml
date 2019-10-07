@@ -116,7 +116,7 @@
             <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
-            <groupId>java3d</groupId>
+            <groupId>org.jogamp.java3d</groupId>
             <artifactId>j3dcore</artifactId>
             <type>jar</type>
             <version>${java3d.version}</version>

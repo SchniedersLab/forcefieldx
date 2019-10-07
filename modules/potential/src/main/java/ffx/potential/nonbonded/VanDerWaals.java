@@ -72,11 +72,9 @@ import ffx.potential.bonded.Torsion;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADMIN;
-import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
@@ -303,16 +301,16 @@ public class VanDerWaals implements MaskingInterface,
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
         vdwForm = new VanDerWaalsForm(forceField);
-        reducedHydrogens = forceField.getBoolean(ForceField.ForceFieldBoolean.REDUCE_HYDROGENS, true);
+        reducedHydrogens = forceField.getBoolean("REDUCE_HYDROGENS", true);
 
         // Lambda parameters.
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.VDW_LAMBDATERM,
-                forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
+        lambdaTerm = forceField.getBoolean("VDW_LAMBDATERM",
+                forceField.getBoolean("LAMBDATERM", false));
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
-            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.25);
-            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 3.0);
+            vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.25);
+            vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 3.0);
             if (vdwLambdaAlpha < 0.0) {
                 logger.warning(format(" Invalid value %8.3g for vdw-lambda-alpha; must be greater than or equal to 0. Resetting to 0.25.", vdwLambdaAlpha));
                 vdwLambdaAlpha = 0.25;
@@ -322,9 +320,9 @@ public class VanDerWaals implements MaskingInterface,
                 vdwLambdaExponent = 3.0;
             }
             intermolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+                    "INTERMOLECULAR_SOFTCORE", false);
             intramolecularSoftcore = forceField.getBoolean(
-                    ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+                    "INTRAMOLECULAR_SOFTCORE", false);
         } else {
             shareddEdL = null;
             sharedd2EdL2 = null;
@@ -334,7 +332,7 @@ public class VanDerWaals implements MaskingInterface,
         threadCount = parallelTeam.getThreadCount();
         sharedInteractions = new SharedInteger();
         sharedEnergy = new SharedDouble();
-        doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
+        doLongRangeCorrection = forceField.getBoolean("VDWLRTERM", false);
         vanDerWaalsRegion = new VanDerWaalsRegion();
         initializationTime = new long[threadCount];
         vdwTime = new long[threadCount];
@@ -342,7 +340,7 @@ public class VanDerWaals implements MaskingInterface,
 
         // Define how force arrays will be accumulated.
         atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
-        String value = forceField.getString(ARRAY_REDUCTION, "MULTI");
+        String value = forceField.getString("ARRAY_REDUCTION", "MULTI");
         try {
             atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
         } catch (Exception e) {
@@ -369,7 +367,7 @@ public class VanDerWaals implements MaskingInterface,
         buildNeighborList(atoms);
 
         // Then, optionally, prevent that neighbor list from ever updating.
-        neighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
+        neighborList.setDisableUpdates(forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false));
 
         logger.info("\n  Van der Waals");
         logger.info(format("   Switch Start:                         %6.3f (A)", vdwTaper));
@@ -509,7 +507,7 @@ public class VanDerWaals implements MaskingInterface,
                 logger.severe(ai.toString());
                 continue;   // Severe no longer guarantees program crash.
             }
-            String vdwIndex = forceField.getString(ForceField.ForceFieldString.VDWINDEX, "Class");
+            String vdwIndex = forceField.getString("VDWINDEX", "Class");
             if (vdwIndex.equalsIgnoreCase("Type")) {
                 atomClass[i] = atomType.type;
             } else {
@@ -1101,8 +1099,8 @@ public class VanDerWaals implements MaskingInterface,
         numESVs = esvSystem.size();
 
         // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
-        vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
-        vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
+        vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.05);
+        vdwLambdaExponent = forceField.getDouble("VDW_LAMBDA_EXPONENT", 1.0);
         if (vdwLambdaExponent != 1.0) {
             logger.warning(format("ESVs are compatible only with a vdwLambdaExponent of unity!"
                     + " (found %g, resetting to 1.0)", vdwLambdaExponent));
@@ -1115,9 +1113,9 @@ public class VanDerWaals implements MaskingInterface,
             vdwLambdaExponent = 1.0;
         }
         intermolecularSoftcore = forceField.getBoolean(
-                ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
+                "INTERMOLECULAR_SOFTCORE", false);
         intramolecularSoftcore = forceField.getBoolean(
-                ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
+                "INTRAMOLECULAR_SOFTCORE", false);
 
         previousAtoms = atoms;
         Atom[] atomsExt = esvSystem.getExtendedAtoms();

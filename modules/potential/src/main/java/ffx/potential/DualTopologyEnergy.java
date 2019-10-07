@@ -333,11 +333,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         nAtoms2 = atoms2.length;
 
         ForceField forceField1 = topology1.getForceField();
-        this.doValenceRestraint1 = forceField1.getBoolean(
-                ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
+        this.doValenceRestraint1 = forceField1.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
         ForceField forceField2 = topology2.getForceField();
-        this.doValenceRestraint2 = forceField2.getBoolean(
-                ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
+        this.doValenceRestraint2 = forceField2.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
 
         CompositeConfiguration properties = topology1.getProperties();
         boolean doPinSoftcore = properties.getBoolean("doPinSoftcore", false);
