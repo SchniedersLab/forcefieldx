@@ -54,7 +54,7 @@ import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.*;
-import ffx.algorithms.cli.WriteoutOptions
+import ffx.potential.cli.WriteoutOptions
 import ffx.algorithms.thermodynamics.AbstractOSRW
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
@@ -62,8 +62,6 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
-import ffx.potential.parameters.ForceField
-
 import picocli.CommandLine
 
 /**
