@@ -106,6 +106,14 @@ class Thermodynamics extends AlgorithmsScript {
     private ThermodynamicsOptions thermodynamics
 
     /**
+     * -r or --rectangular uses a rectangular prism as the output rather than a cube;
+     * this reduces overall box size, but is not recommended for simulations long enough to see solute rotation.
+     */
+    @CommandLine.Option(names = ['-v', '--verbose'],
+            description = "Log additional information (primarily for MC-OSRW).")
+    private boolean verbose = false;
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @CommandLine.Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
@@ -261,7 +269,7 @@ class Thermodynamics extends AlgorithmsScript {
                             dynamics, lambdaParticle, barostat, hisExists)
 
                     if (osrwOptions.mc) {
-                        osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
+                        osrwOptions.beginMCOSRW(osrw, topologies, dynamics, thermodynamics, verbose);
                     } else {
                         osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
                     }

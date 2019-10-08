@@ -135,7 +135,7 @@ public class MDMove implements MCMove {
         }
 
         molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
-        molecularDynamics.setQuiet(true);
+        molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
     }
 
     /**
@@ -164,7 +164,16 @@ public class MDMove implements MCMove {
      */
     @Override
     public void move() {
+        move(MolecularDynamics.VerbosityLevel.QUIET);
+    }
 
+    /**
+     * Performs an MDMove.
+     * @param verbosityLevel How verbose to be.
+     */
+    public void move(MolecularDynamics.VerbosityLevel verbosityLevel) {
+        MolecularDynamics.VerbosityLevel origLevel = molecularDynamics.getVerbosityLevel();
+        molecularDynamics.setVerbosityLevel(verbosityLevel);
         mdMoveCounter++;
 
         boolean initVelocities = true;
@@ -187,6 +196,7 @@ public class MDMove implements MCMove {
             logger.fine(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
                     normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
         }
+        molecularDynamics.setVerbosityLevel(origLevel);
     }
     
     public void setMDIntervalSteps(int intervalSteps){

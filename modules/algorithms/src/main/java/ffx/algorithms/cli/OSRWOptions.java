@@ -307,21 +307,17 @@ public class OSRWOptions {
      *
      * @param ttOSRW         a {@link TransitionTemperedOSRW} object.
      * @param topologies     an array of {@link ffx.potential.MolecularAssembly} objects.
-     * @param potential      a {@link ffx.crystal.CrystalPotential} object.
      * @param dynamics       a {@link ffx.algorithms.cli.DynamicsOptions} object.
-     * @param writeout       a {@link WriteoutOptions} object.
      * @param thermodynamics a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
-     * @param dyn            a {@link java.io.File} object.
-     * @param aListener      a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param verbose        Whether to print out additional information about MC-OSRW.
      */
-    public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
-                            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermodynamics,
-                            File dyn, AlgorithmListener aListener) {
+    public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies,
+                            DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose) {
 
         dynamics.init();
 
         MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
-                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator);
+                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose);
 
         int nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
