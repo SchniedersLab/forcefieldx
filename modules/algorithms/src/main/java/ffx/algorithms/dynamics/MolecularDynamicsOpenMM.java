@@ -262,13 +262,13 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             case BUSSI:
             case BERENDSEN:
                 if (!integratorString.equalsIgnoreCase("LANGEVIN")) {
-                    logger.info(String.format(" Replacing FFX thermostat %s with OpenMM Andersen thermostat", thermostatType));
+                    logger.log(basicLogging, String.format(" Replacing FFX thermostat %s with OpenMM Andersen thermostat", thermostatType));
                     forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
                     if (constantPressure) {
                         setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
                     }
                 } else {
-                    logger.info(" Langevin/Stochastic dynamics already has temperature control, will not be adding thermostat!");
+                    logger.log(basicLogging, " Langevin/Stochastic dynamics already has temperature control, will not be adding thermostat!");
                 }
                 break;
             case ADIABATIC:
@@ -334,7 +334,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     logger.log(Level.WARNING, message);
                     done = true;
                 } else {
-                    logger.info(" Continuing from " + dyn.getAbsolutePath());
+                    logger.log(basicLogging, " Continuing from " + dyn.getAbsolutePath());
                     forceFieldEnergyOpenMM.setCrystal(crystal);
                     // Load positions into the main FFX data structure, move into primary unit cell, then load to OpenMM.
                     Atom[] atoms = molecularAssembly.getAtomArray();
@@ -364,10 +364,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                         int randomSeed = random.nextInt();
                         long ommSetVelTime = -System.nanoTime();
                         OpenMM_Context_setVelocitiesToTemperature(context, targetTemperature, randomSeed);
-                        logger.info(format(" OpenMM set velocities to target temperature %f with random seed %d",
+                        logger.log(intermediateLogging, format(" OpenMM set velocities to target temperature %f with random seed %d",
                                 targetTemperature, randomSeed));
                         ommSetVelTime += System.nanoTime();
-                        logger.info(format(" Set velocites with OpenMM in %6.3f", ommSetVelTime * NS2SEC));
+                        logger.log(intermediateLogging, format(" Set velocites with OpenMM in %6.3f", ommSetVelTime * NS2SEC));
                         setVelocities = false;
                     } else {
                         getThermostat().setQuiet(true);
@@ -384,9 +384,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                             atom.setVelocity(vel);
                         }
                         ffxSetVelTime += System.nanoTime();
-                        if (logger.isLoggable(Level.FINE)) {
-                            logger.fine(String.format(" Set velocities with FFX in %6.3f", ffxSetVelTime * NS2SEC));
-                        }
+                        logger.fine(String.format(" Set velocities with FFX in %6.3f", ffxSetVelTime * NS2SEC));
                     }
                 }
             }
@@ -395,9 +393,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             setOpenMMState(setPositions, setVelocities);
             setPosVel += System.nanoTime();
 
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Set positions and velocities in %6.3f seconds", setPosVel * NS2SEC));
-            }
+            logger.fine(String.format(" Set positions and velocities in %6.3f seconds", setPosVel * NS2SEC));
 
             // Call to retrieve the starting kinetic energy for the system.
             long retrieveEnergyTime = -System.nanoTime();
@@ -408,9 +404,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
             retrieveEnergyTime += System.nanoTime();
 
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Retrieved energies in %6.3f seconds", retrieveEnergyTime * NS2SEC));
-            }
+            logger.fine(String.format(" Retrieved energies in %6.3f seconds", retrieveEnergyTime * NS2SEC));
 
             startingKineticEnergy = currentKineticEnergy;
         }
@@ -444,9 +438,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
         initTime += System.nanoTime();
 
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("\n Initialized system in %6.3f sec.", initTime * NS2SEC));
-        }
+        logger.fine(String.format("\n Initialized system in %6.3f sec.", initTime * NS2SEC));
 
         storeState();
 
@@ -470,9 +462,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             long takeStepsTime = -System.nanoTime();
             takeOpenMMSteps(intervalSteps);
             takeStepsTime += System.nanoTime();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format("\n Took steps in %6.3f", takeStepsTime * NS2SEC));
-            }
+            logger.fine(String.format("\n Took steps in %6.3f", takeStepsTime * NS2SEC));
 
             // Update the total step count.
             i += intervalSteps;
@@ -482,9 +472,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             updateFromOpenMM(i, running);
             secondUpdateTime += System.nanoTime();
 
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format("\n Update finished in %6.3f", secondUpdateTime * NS2SEC));
-            }
+            logger.fine(String.format("\n Update finished in %6.3f", secondUpdateTime * NS2SEC));
             update = false;
         }
     }
@@ -685,16 +673,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         if (running) {
             if (i == 0) {
-                logger.info(format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
-                logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
-                logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
+                logger.log(basicLogging, format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
+                logger.log(basicLogging, format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
+                logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f",
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
                 startingKineticEnergy = currentKineticEnergy;
                 startingTotalEnergy = currentTotalEnergy;
             } else if (i % printFrequency == 0) {
                 double simTime = i * dt * 1.0e-3;
                 time += System.nanoTime();
-                logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
+                logger.log(basicLogging, format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
                         simTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
 
@@ -707,13 +695,13 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 for (AssemblyInfo ai : assemblies) {
                     if (ai.archiveFile != null && !saveSnapshotAsPDB) {
                         if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                            logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                            logger.log(basicLogging, String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
                         } else {
                             logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
                         }
                     } else if (saveSnapshotAsPDB) {
                         if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                            logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                            logger.log(basicLogging, String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
                         } else {
                             logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
                         }
@@ -724,7 +712,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             // Write out restart files every saveRestartFileFrequency steps.
             if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000) == 0 && i != 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.info(format(" Wrote dynamics restart file to %s", restartFile.getName()));
+                    logger.log(basicLogging, format(" Wrote dynamics restart file to %s", restartFile.getName()));
                     if (constantPressure) {
                         Crystal crystal = molecularAssembly.getCrystal();
                         double currentDensity = crystal.getDensity(molecularAssembly.getTotalMass());
