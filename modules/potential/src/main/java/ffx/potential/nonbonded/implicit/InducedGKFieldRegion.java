@@ -52,6 +52,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.utilities.Constants.dWater;
 
 /**
@@ -112,7 +113,7 @@ public class InducedGKFieldRegion extends ParallelRegion {
     /**
      * Empirical constant that controls the GK cross-term.
      */
-    private static final double gkc = 2.455;
+    private final double gkc;
     /**
      * Kirkwood dipole reaction field constant.
      */
@@ -128,6 +129,8 @@ public class InducedGKFieldRegion extends ParallelRegion {
         double epsilon = forceField.getDouble("GK_EPSILON", dWater);
         fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
         fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
+
+        gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 
         inducedGKFieldLoop = new InducedGKFieldLoop[nt];
         for (int i = 0; i < nt; i++) {

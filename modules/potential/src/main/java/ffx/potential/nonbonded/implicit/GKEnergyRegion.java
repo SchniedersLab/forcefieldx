@@ -58,6 +58,7 @@ import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -167,7 +168,7 @@ public class GKEnergyRegion extends ParallelRegion {
     /**
      * Empirical constant that controls the GK cross-term.
      */
-    private static final double gkc = 2.455;
+    private final double gkc;
     /**
      * Kirkwood monopole reaction field constant.
      */
@@ -189,6 +190,8 @@ public class GKEnergyRegion extends ParallelRegion {
 
         // Set the conversion from electron**2/Ang to kcal/mole
         electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
+
+        gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 
         // Set the Kirkwood multipolar reaction field constants.
         double epsilon = forceField.getDouble("GK_EPSILON", dWater);

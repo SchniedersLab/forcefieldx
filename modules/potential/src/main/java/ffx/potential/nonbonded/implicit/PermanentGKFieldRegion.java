@@ -52,6 +52,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t002;
@@ -113,7 +114,7 @@ public class PermanentGKFieldRegion extends ParallelRegion {
     /**
      * Empirical constant that controls the GK cross-term.
      */
-    private static final double gkc = 2.455;
+    private final double gkc;
     /**
      * Kirkwood monopole reaction field constant.
      */
@@ -135,6 +136,8 @@ public class PermanentGKFieldRegion extends ParallelRegion {
         fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
         fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
         fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
+
+        gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 
         permanentGKFieldLoop = new PermanentGKFieldLoop[nt];
         for (int i = 0; i < nt; i++) {
