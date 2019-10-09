@@ -40,12 +40,18 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 
-import ffx.potential.parameters.ForceField.ForceFieldType;
+import static ffx.potential.parameters.ForceField.ForceFieldType.ANGLE;
+import static ffx.potential.parameters.ForceField.ForceFieldType.ANGLEP;
 
 /**
  * The AngleType class defines one harmonic angle bend energy term.
@@ -54,6 +60,11 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  * @since 1.0
  */
 public final class AngleType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the AngleType class.
+     */
+    private static final Logger logger = Logger.getLogger(AngleType.class.getName());
 
     /**
      * Angle function types include harmonic or sextic.
@@ -105,30 +116,24 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     public final double[] angle;
     /**
-     * The angle function in use.
-     */
-    public final AngleFunction angleFunction;
-    /**
      * The angle mode in use.
      */
-    public AngleMode angleMode;
+    public final AngleMode angleMode;
+    /**
+     * The angle function in use.
+     */
+    public AngleFunction angleFunction;
+
 
     /**
-     * <p>
-     * Constructor for normal AngleType.</p>
+     * The default AngleType constructor defines use of the Sextic AngleFunction.
      *
      * @param atomClasses   an array of int.
      * @param forceConstant a double.
      * @param angle         an array of double.
-     * @param angleFunction the AngleFunction to apply.
      */
-    public AngleType(int[] atomClasses, double forceConstant, double[] angle, AngleFunction angleFunction) {
-        super(ForceFieldType.ANGLE, sortKey(atomClasses));
-        this.atomClasses = atomClasses;
-        this.forceConstant = forceConstant;
-        this.angle = angle;
-        this.angleFunction = angleFunction;
-        this.angleMode = AngleMode.NORMAL;
+    public AngleType(int[] atomClasses, double forceConstant, double[] angle) {
+        this(atomClasses, forceConstant, angle, AngleMode.NORMAL);
     }
 
     /**
@@ -138,15 +143,42 @@ public final class AngleType extends BaseType implements Comparator<String> {
      * @param atomClasses   an array of int.
      * @param forceConstant a double.
      * @param angle         an array of double.
-     * @param angleFunction the AngleFunction to apply.
+     * @param angleMode     the AngleMode to apply.
+     */
+    public AngleType(int[] atomClasses, double forceConstant, double[] angle, AngleMode angleMode) {
+        this(atomClasses, forceConstant, angle, angleMode, AngleFunction.SEXTIC);
+    }
+
+    /**
+     * <p>
+     * Constructor for In-Plane AngleType.</p>
+     *
+     * @param atomClasses   an array of int.
+     * @param forceConstant a double.
+     * @param angle         an array of double.
+     * @param angleMode     the AngleMode to apply.
+     * @param angleFunction the AngleFunction to use.
      */
     public AngleType(int[] atomClasses, double forceConstant, double[] angle,
-                     AngleFunction angleFunction, AngleMode angleMode) {
-        this(atomClasses, forceConstant, angle, angleFunction);
+                     AngleMode angleMode, AngleFunction angleFunction) {
+        super(ANGLE, sortKey(atomClasses));
+        this.atomClasses = atomClasses;
+        this.forceConstant = forceConstant;
+        this.angle = angle;
+        this.angleMode = angleMode;
+        this.angleFunction = angleFunction;
         if (angleMode == AngleMode.IN_PLANE) {
-            this.angleMode = angleMode;
-            this.forceFieldType = ForceFieldType.ANGLEP;
+            forceFieldType = ANGLEP;
         }
+    }
+
+    /**
+     * Set the AngleFunction.
+     *
+     * @param angleFunction the AngleFunction.
+     */
+    public void setAngleFunction(AngleFunction angleFunction) {
+        this.angleFunction = angleFunction;
     }
 
     /**
@@ -192,7 +224,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
                     }
                 }
             }
-            return new AngleType(newClasses, forceConstant, angle, angleFunction);
+            return new AngleType(newClasses, forceConstant, angle, angleMode, angleFunction);
         }
 
         return null;
@@ -229,6 +261,10 @@ public final class AngleType extends BaseType implements Comparator<String> {
         if (angleType1 == null || angleType2 == null || atomClasses == null) {
             return null;
         }
+        AngleMode angleMode = angleType1.angleMode;
+        if (angleMode != angleType2.angleMode) {
+            return null;
+        }
         AngleFunction angleFunction = angleType1.angleFunction;
         if (angleFunction != angleType2.angleFunction) {
             return null;
@@ -243,7 +279,81 @@ public final class AngleType extends BaseType implements Comparator<String> {
             angle[i] = (angleType1.angle[i] + angleType2.angle[i]) / 2.0;
         }
 
-        return new AngleType(atomClasses, forceConstant, angle, angleFunction);
+        return new AngleType(atomClasses, forceConstant, angle, angleMode, angleFunction);
+    }
+
+    /**
+     * Construct an AngleType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an AngleType instance.
+     */
+    public static AngleType parse(String input, String[] tokens) {
+        if (tokens.length < 6) {
+            logger.log(Level.WARNING, "Invalid ANGLE type:\n{0}", input);
+        } else {
+            int[] atomClasses = new int[3];
+            double forceConstant;
+            int angles;
+            double[] bondAngle;
+            try {
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                forceConstant = parseDouble(tokens[4]);
+                angles = tokens.length - 5;
+                bondAngle = new double[angles];
+                for (int i = 0; i < angles; i++) {
+                    bondAngle[i] = parseDouble(tokens[5 + i]);
+                }
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing ANGLE type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+                return null;
+            }
+            double[] newBondAngle = new double[angles];
+            arraycopy(bondAngle, 0, newBondAngle, 0, angles);
+            return new AngleType(atomClasses, forceConstant, newBondAngle);
+        }
+        return null;
+    }
+
+    /**
+     * Construct an In-Plane AngleType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an AngleType instance.
+     */
+    public static AngleType parseInPlane(String input, String[] tokens) {
+        if (tokens.length < 6) {
+            logger.log(Level.WARNING, "Invalid ANGLEP type:\n{0}", input);
+        } else {
+            int[] atomClasses = new int[3];
+            double forceConstant;
+            int angles;
+            double[] bondAngle;
+            try {
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                forceConstant = parseDouble(tokens[4]);
+                angles = tokens.length - 5;
+                bondAngle = new double[angles];
+                for (int i = 0; i < angles; i++) {
+                    bondAngle[i] = parseDouble(tokens[5 + i]);
+                }
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing ANGLEP type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+                return null;
+            }
+            double[] newBondAngle = new double[angles];
+            arraycopy(bondAngle, 0, newBondAngle, 0, angles);
+            return new AngleType(atomClasses, forceConstant, newBondAngle, AngleMode.IN_PLANE);
+        }
+        return null;
     }
 
     /**

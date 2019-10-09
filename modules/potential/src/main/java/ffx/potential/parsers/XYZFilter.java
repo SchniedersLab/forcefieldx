@@ -308,7 +308,7 @@ public class XYZFilter extends SystemFilter {
     public int countNumModels() {
         File xyzFile = activeMolecularAssembly.getFile();
         int nAtoms = activeMolecularAssembly.getAtomArray().length;
-        Pattern crystInfoPattern = Pattern.compile("^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){3} *$");
+        Pattern crystInfoPattern = Pattern.compile("^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
 
         try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
             String line = br.readLine();

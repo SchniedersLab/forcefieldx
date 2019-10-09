@@ -37,12 +37,16 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
+import java.io.BufferedReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -58,8 +62,7 @@ import static ffx.numerics.math.VectorMath.dot;
 import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
-import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
-import static ffx.utilities.Constants.ELEC_ANG2_TO_BUCKINGHAMS;
+import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
 
 /**
  * The MultipoleType class defines a multipole in its local frame.
@@ -79,6 +82,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
 
         NONE, ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, THREEFOLD,
     }
+
     /**
      * Conversion from Bohr to Angstroms
      */
@@ -132,7 +136,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public MultipoleType(double[] multipole, int[] frameAtomTypes,
                          MultipoleFrameDefinition frameDefinition, boolean convertFromBohr) {
-        super(ForceField.ForceFieldType.MULTIPOLE, frameAtomTypes);
+        super(MULTIPOLE, frameAtomTypes);
         this.multipole = (convertFromBohr) ? bohrToElectronAngstroms(multipole) : multipole;
         this.frameAtomTypes = frameAtomTypes;
         this.frameDefinition = frameDefinition;
@@ -154,7 +158,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public MultipoleType(double charge, double[] dipole, double[][] quadrupole,
                          int[] frameAtomTypes, MultipoleFrameDefinition frameDefinition, boolean convertFromBohr) {
-        super(ForceField.ForceFieldType.MULTIPOLE, frameAtomTypes);
+        super(MULTIPOLE, frameAtomTypes);
         this.charge = charge;
         if (convertFromBohr) {
             this.multipole = bohrToElectronAngstroms(pack(charge, dipole, quadrupole));
@@ -768,23 +772,23 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         StringBuilder multipoleBuffer = new StringBuilder("multipole");
         switch (frameDefinition) {
             case NONE:
-                multipoleBuffer.append(format("  %5d  %5s  %5s  %5s", 
+                multipoleBuffer.append(format("  %5d  %5s  %5s  %5s",
                         frameAtomTypes[0], "", "", ""));
                 break;
             case ZONLY:
-                multipoleBuffer.append(format("  %5d  %5d  %5s  %5s", 
+                multipoleBuffer.append(format("  %5d  %5d  %5s  %5s",
                         frameAtomTypes[0], frameAtomTypes[1], "", ""));
                 break;
             case ZTHENX:
-                multipoleBuffer.append(format("  %5d  %5d  %5d  %5s", 
+                multipoleBuffer.append(format("  %5d  %5d  %5d  %5s",
                         frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], ""));
                 break;
             case BISECTOR:
-                multipoleBuffer.append(format("  %5d  %5d  %5d  %5s", 
+                multipoleBuffer.append(format("  %5d  %5d  %5d  %5s",
                         frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], ""));
                 break;
             case ZTHENBISECTOR:
-                multipoleBuffer.append(format("  %5d  %5d  %5d  %5d", 
+                multipoleBuffer.append(format("  %5d  %5d  %5d  %5d",
                         frameAtomTypes[0], frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
                 break;
             case THREEFOLD:
@@ -907,7 +911,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
         for (MultipoleType type : types) {
             if (type.frameDefinition != types[0].frameDefinition) {
-                logger.warning(String.format("Multipole frame definition mismatch during weighting:\n\t%s->%s,\n\t%s->%s",
+                logger.warning(format("Multipole frame definition mismatch during weighting:\n\t%s->%s,\n\t%s->%s",
                         types[0].toString(), types[0].frameDefinition.toString(),
                         type.toString(), type.frameDefinition.toString()));
                 throw new IllegalArgumentException();
@@ -922,6 +926,232 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             }
         }
         return weightedMultipole;
+    }
+
+    /**
+     * Map charge parameters to a Multipole instance.
+     *
+     * @param input  Input string.
+     * @param tokens Input string tokens.
+     * @return a MultipoleType instance
+     */
+    public static MultipoleType parseChargeType(String input, String[] tokens) {
+        if (tokens.length < 3) {
+            logger.log(Level.WARNING, "Invalid CHARGE type:\n{0}", input);
+        } else {
+            try {
+                int[] atomTypes = new int[]{parseInt(tokens[1]), 0, 0};
+                double charge = parseDouble(tokens[2]);
+                double[] dipole = new double[3];
+                double[][] quadrupole = new double[3][3];
+                MultipoleFrameDefinition frameDefinition = MultipoleFrameDefinition.NONE;
+                return new MultipoleType(charge, dipole, quadrupole, atomTypes, frameDefinition, true);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing CHARGE type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parse a single line multipole.
+     *
+     * @param input  Input String.
+     * @param tokens Input tokens.
+     * @param br     A BufferedReader instance.
+     * @return a MultipoleType instance.
+     * @since 1.0
+     */
+    public static MultipoleType parse(String input, String[] tokens, BufferedReader br) {
+        if (tokens == null || tokens.length < 3 || tokens.length > 6) {
+            logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
+            return null;
+        }
+
+        try {
+            int nTokens = tokens.length;
+            ArrayList<Integer> frameAtoms = new ArrayList<>();
+            // Loop over integer tokens (i.e. except for the initial 'multipole' keyword and final charge value).
+            for (int i = 1; i < nTokens - 1; i++) {
+                int frameType = parseInt(tokens[i]);
+                // Ignore atom types of '0'.
+                if (frameType != 0) {
+                    frameAtoms.add(frameType);
+                }
+            }
+            int nAtomTypes = frameAtoms.size();
+            int[] atomTypes = new int[nAtomTypes];
+            for (int i = 0; i < nAtomTypes; i++) {
+                atomTypes[i] = frameAtoms.get(i);
+            }
+            // Last token is the monopole.
+            double charge = parseDouble(tokens[nTokens - 1]);
+
+            MultipoleFrameDefinition frameDefinition = null;
+            if (nAtomTypes == 1) {
+                frameDefinition = MultipoleFrameDefinition.NONE;
+            } else if (nAtomTypes == 2) {
+                frameDefinition = MultipoleFrameDefinition.ZONLY;
+            } else if (nAtomTypes == 3) {
+                // ZTHENX or BISECTOR
+                if (atomTypes[1] < 0 || atomTypes[2] < 0) {
+                    frameDefinition = MultipoleFrameDefinition.BISECTOR;
+                } else {
+                    frameDefinition = MultipoleFrameDefinition.ZTHENX;
+                }
+            } else if (nAtomTypes == 4) {
+                // ZTHENBISECTOR or THREEFOLD
+                if (atomTypes[2] < 0 && atomTypes[3] < 0) {
+                    frameDefinition = MultipoleFrameDefinition.ZTHENBISECTOR;
+                    if (atomTypes[1] < 0) {
+                        frameDefinition = MultipoleFrameDefinition.THREEFOLD;
+                    }
+                }
+            }
+
+            // Warn if the frame definition is ambiguous.
+            if (frameDefinition == null) {
+                logger.log(Level.FINE, "Ambiguous MULTIPOLE type:\n{0}", input);
+                frameDefinition = MultipoleFrameDefinition.ZTHENX;
+            }
+
+            for (int i = 0; i < nAtomTypes; i++) {
+                atomTypes[i] = abs(atomTypes[i]);
+            }
+
+            input = br.readLine().split("#")[0];
+            tokens = input.trim().split(" +");
+            if (tokens.length != 3) {
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
+                return null;
+            }
+            double[] dipole = new double[3];
+            dipole[0] = parseDouble(tokens[0]);
+            dipole[1] = parseDouble(tokens[1]);
+            dipole[2] = parseDouble(tokens[2]);
+            input = br.readLine().split("#")[0];
+            tokens = input.trim().split(" +");
+            if (tokens.length != 1) {
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
+                return null;
+            }
+            double[][] quadrupole = new double[3][3];
+            quadrupole[0][0] = parseDouble(tokens[0]);
+            input = br.readLine().split("#")[0];
+            tokens = input.trim().split(" +");
+            if (tokens.length != 2) {
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
+                return null;
+            }
+            quadrupole[1][0] = parseDouble(tokens[0]);
+            quadrupole[1][1] = parseDouble(tokens[1]);
+            input = br.readLine().split("#")[0];
+            tokens = input.trim().split(" +");
+            if (tokens.length != 3) {
+                logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
+                return null;
+            }
+            quadrupole[2][0] = parseDouble(tokens[0]);
+            quadrupole[2][1] = parseDouble(tokens[1]);
+            quadrupole[2][2] = parseDouble(tokens[2]);
+            // Fill in symmetric components.
+            quadrupole[0][1] = quadrupole[1][0];
+            quadrupole[0][2] = quadrupole[2][0];
+            quadrupole[1][2] = quadrupole[2][1];
+            return new MultipoleType(charge, dipole, quadrupole, atomTypes, frameDefinition, true);
+        } catch (Exception e) {
+            String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+        return null;
+    }
+
+    /**
+     * Parse a single line multipole.
+     *
+     * @param input  Input String.
+     * @param tokens Input tokens.
+     * @return a MultipoleType instance.
+     * @since 1.0
+     */
+    public static MultipoleType parse(String input, String[] tokens) {
+        if (tokens == null || tokens.length < 12 || tokens.length > 15) {
+            logger.log(Level.WARNING, "Invalid MULTIPOLE type:\n{0}", input);
+            return null;
+        }
+
+        try {
+            int nTokens = tokens.length;
+            ArrayList<Integer> frameAtoms = new ArrayList<>();
+            // Loop over integer tokens (i.e. except for the initial 'multipole' keyword and final 10 multipole values).
+            for (int i = 1; i < nTokens - 10; i++) {
+                int frameType = parseInt(tokens[i]);
+                // Ignore atom types of '0'.
+                if (frameType != 0) {
+                    frameAtoms.add(frameType);
+                }
+            }
+            int nAtomTypes = frameAtoms.size();
+            int[] atomTypes = new int[nAtomTypes];
+            for (int i = 0; i < nAtomTypes; i++) {
+                atomTypes[i] = frameAtoms.get(i);
+            }
+
+            MultipoleFrameDefinition frameDefinition = null;
+            if (nAtomTypes == 1) {
+                frameDefinition = MultipoleFrameDefinition.NONE;
+            } else if (nAtomTypes == 2) {
+                frameDefinition = MultipoleFrameDefinition.ZONLY;
+            } else if (nAtomTypes == 3) {
+                // ZTHENX or BISECTOR
+                if (atomTypes[1] < 0 || atomTypes[2] < 0) {
+                    frameDefinition = MultipoleFrameDefinition.BISECTOR;
+                } else {
+                    frameDefinition = MultipoleFrameDefinition.ZTHENX;
+                }
+            } else if (nAtomTypes == 4) {
+                // ZTHENBISECTOR or THREEFOLD
+                if (atomTypes[2] < 0 && atomTypes[3] < 0) {
+                    frameDefinition = MultipoleFrameDefinition.ZTHENBISECTOR;
+                    if (atomTypes[1] < 0) {
+                        frameDefinition = MultipoleFrameDefinition.THREEFOLD;
+                    }
+                }
+            }
+
+            // Warn if the frame definition is ambiguous.
+            if (frameDefinition == null) {
+                logger.log(Level.FINE, "Ambiguous MULTIPOLE type:\n{0}", input);
+                frameDefinition = MultipoleFrameDefinition.ZTHENX;
+            }
+
+            for (int i = 0; i < nAtomTypes; i++) {
+                atomTypes[i] = abs(atomTypes[i]);
+            }
+
+            double[] dipole = new double[3];
+            double[][] quadrupole = new double[3][3];
+            double charge = parseDouble(tokens[nTokens - 10]);
+            dipole[0] = parseDouble(tokens[nTokens - 9]);
+            dipole[1] = parseDouble(tokens[nTokens - 8]);
+            dipole[2] = parseDouble(tokens[nTokens - 7]);
+            quadrupole[0][0] = parseDouble(tokens[nTokens - 6]);
+            quadrupole[1][0] = parseDouble(tokens[nTokens - 5]);
+            quadrupole[1][1] = parseDouble(tokens[nTokens - 4]);
+            quadrupole[2][0] = parseDouble(tokens[nTokens - 3]);
+            quadrupole[2][1] = parseDouble(tokens[nTokens - 2]);
+            quadrupole[2][2] = parseDouble(tokens[nTokens - 1]);
+            // Fill in symmetric components.
+            quadrupole[0][1] = quadrupole[1][0];
+            quadrupole[0][2] = quadrupole[2][0];
+            quadrupole[1][2] = quadrupole[2][1];
+            return new MultipoleType(charge, dipole, quadrupole, atomTypes, frameDefinition, true);
+        } catch (Exception e) {
+            String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+        return null;
     }
 
     /**
@@ -947,8 +1177,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         int[] c1 = new int[len];
         int[] c2 = new int[len];
         for (int i = 0; i < len; i++) {
-            c1[i] = abs(Integer.parseInt(keys1[i]));
-            c2[i] = abs(Integer.parseInt(keys2[i]));
+            c1[i] = abs(parseInt(keys1[i]));
+            c2[i] = abs(parseInt(keys2[i]));
             if (c1[i] < c2[i]) {
                 return -1;
             } else if (c1[i] > c2[i]) {

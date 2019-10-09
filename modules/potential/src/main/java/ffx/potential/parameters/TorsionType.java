@@ -40,12 +40,19 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.IMPROPER;
+import static ffx.potential.parameters.ForceField.ForceFieldType.TORSION;
 
 /**
  * The TorsionType class defines a torsional angle.
@@ -54,6 +61,8 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  * @since 1.0
  */
 public final class TorsionType extends BaseType implements Comparator<String> {
+
+    private static final Logger logger = Logger.getLogger(TorsionType.class.getName());
 
     /**
      * Torsion modes include Normal or In-Plane
@@ -94,7 +103,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * The torsion mode in use.
      */
-    private TorsionMode torsionMode;
+    private final TorsionMode torsionMode;
 
     /**
      * TorsionType Constructor.
@@ -105,7 +114,21 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * @param periodicity Periodicity of the Fourier series.
      */
     public TorsionType(int[] atomClasses, double[] amplitude, double[] phase, int[] periodicity) {
-        super(ForceField.ForceFieldType.TORSION, sortKey(atomClasses));
+        this(atomClasses, amplitude, phase, periodicity, TorsionMode.NORMAL);
+    }
+
+    /**
+     * TorsionType Constructor.
+     *
+     * @param atomClasses Atom classes.
+     * @param amplitude   Amplitudes of the Fourier series.
+     * @param phase       Phases of the Fourier series in degrees.
+     * @param periodicity Periodicity of the Fourier series.
+     * @param torsionMode Define the TorsionMode for this TorsionType.
+     */
+    public TorsionType(int[] atomClasses, double[] amplitude, double[] phase, int[] periodicity,
+                       TorsionMode torsionMode) {
+        super(TORSION, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         int max = 1;
         for (int i1 : periodicity) {
@@ -135,22 +158,10 @@ public final class TorsionType extends BaseType implements Comparator<String> {
             cosine[i] = cos(angle);
             sine[i] = sin(angle);
         }
-        torsionMode = TorsionMode.NORMAL;
-    }
 
-    /**
-     * TorsionType Constructor.
-     *
-     * @param atomClasses Atom classes.
-     * @param amplitude   Amplitudes of the Fourier series.
-     * @param phase       Phases of the Fourier series in degrees.
-     * @param periodicity Periodicity of the Fourier series.
-     */
-    public TorsionType(int[] atomClasses, double[] amplitude, double[] phase, int[] periodicity, TorsionMode torsionMode) {
-        this(atomClasses, amplitude, phase, periodicity);
+        this.torsionMode = torsionMode;
         if (torsionMode == TorsionMode.IMPROPER) {
-            this.torsionMode = torsionMode;
-            forceFieldType = ForceField.ForceFieldType.IMPROPER;
+            forceFieldType = IMPROPER;
         }
     }
 
@@ -287,6 +298,78 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Construct a TorsionType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a TorsionType instance.
+     */
+    public static TorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 5) {
+            logger.log(Level.WARNING, "Invalid TORSION type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                int terms = (tokens.length - 5) / 3;
+                double[] amplitude = new double[terms];
+                double[] phase = new double[terms];
+                int[] periodicity = new int[terms];
+                int index = 5;
+                for (int i = 0; i < terms; i++) {
+                    amplitude[i] = parseDouble(tokens[index++]);
+                    phase[i] = parseDouble(tokens[index++]);
+                    periodicity[i] = parseInt(tokens[index++]);
+                }
+                return new TorsionType(atomClasses, amplitude, phase, periodicity);
+            } catch (NumberFormatException e) {
+                String message = "NumberFormatException parsing TORSION type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            } catch (Exception e) {
+                String message = "Exception parsing TORSION type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Construct a TorsionType with TorsionMode.IMPROPER from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a TorsionType instance.
+     */
+    public static TorsionType parseImproper(String input, String[] tokens) {
+        if (tokens.length < 5) {
+            logger.log(Level.WARNING, "Invalid IMPROPER type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double[] amplitude = new double[1];
+                double[] phase = new double[1];
+                int[] periodicity = new int[1];
+                int index = 5;
+                amplitude[0] = parseDouble(tokens[index++]);
+                phase[0] = parseDouble(tokens[index]);
+                periodicity[0] = 1;
+                return new TorsionType(atomClasses, amplitude, phase, periodicity, TorsionMode.IMPROPER);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing IMPROPER type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Torsion angle.
@@ -339,8 +422,8 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         int[] c2 = new int[4];
 
         for (int i = 0; i < 4; i++) {
-            c1[i] = Integer.parseInt(keys1[i]);
-            c2[i] = Integer.parseInt(keys2[i]);
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
         }
 
         if (c1[1] < c2[1]) {

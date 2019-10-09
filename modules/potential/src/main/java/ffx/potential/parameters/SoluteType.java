@@ -39,8 +39,14 @@ package ffx.potential.parameters;
 
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import static ffx.potential.parameters.ForceField.ForceFieldType.SOLUTE;
 
 /**
  * The SoluteType class defines one implicit solvent radius.
@@ -49,6 +55,11 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  * @since 1.0
  */
 public final class SoluteType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the SoluteType class.
+     */
+    private static final Logger logger = Logger.getLogger(SoluteType.class.getName());
 
     /**
      * Atom class for this solute type.
@@ -68,11 +79,11 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     /**
      * <p>Constructor for SoluteType.</p>
      *
-     * @param atomClass    a int.
-     * @param diameter a double.
+     * @param atomClass a int.
+     * @param diameter  a double.
      */
     public SoluteType(int atomClass, String description, double diameter) {
-        super(ForceFieldType.SOLUTE, Integer.toString(atomClass));
+        super(SOLUTE, Integer.toString(atomClass));
         this.atomClass = atomClass;
         this.diameter = diameter;
         this.description = description;
@@ -90,13 +101,37 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Construct a SoluteType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a SoluteType instance.
+     */
+    public static SoluteType parse(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid SOLUTE type:\n{0}", input);
+        } else {
+            try {
+                int atomType = parseInt(tokens[1].trim());
+                String description = tokens[2].trim();
+                double diameter = parseDouble(tokens[3].trim());
+                return new SoluteType(atomType, description, diameter);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing SOLUTE type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted bond stretch string.
      */
     @Override
     public String toString() {
-        return String.format("solute  %4d  %30s  %7.5f", atomClass, description, diameter);
+        return format("solute  %4d  %30s  %7.5f", atomClass, description, diameter);
     }
 
     /**
@@ -104,9 +139,8 @@ public final class SoluteType extends BaseType implements Comparator<String> {
      */
     @Override
     public int compare(String key1, String key2) {
-        int type1 = Integer.parseInt(key1);
-        int type2 = Integer.parseInt(key2);
-
+        int type1 = parseInt(key1);
+        int type2 = parseInt(key2);
         return Integer.compare(type1, type2);
     }
 
@@ -114,15 +148,11 @@ public final class SoluteType extends BaseType implements Comparator<String> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof SoluteType)) {
-            return false;
-        }
-        SoluteType otherType = (SoluteType) other;
-        return (otherType.atomClass == this.atomClass);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SoluteType soluteType = (SoluteType) o;
+        return soluteType.atomClass == this.atomClass;
     }
 
     /**

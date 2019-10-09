@@ -39,6 +39,12 @@ package ffx.potential.parameters;
 
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.RELATIVESOLV;
 
 /**
  * A BaseType for relative solvation energies (intended for nonstandard amino
@@ -49,6 +55,11 @@ import java.util.Objects;
  * @since 1.0
  */
 public class RelativeSolvationType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the RelativeSolvationType class.
+     */
+    private static final Logger logger = Logger.getLogger(RelativeSolvationType.class.getName());
 
     /**
      * The residue name;
@@ -66,7 +77,7 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
      * @param solvEnergy a double.
      */
     public RelativeSolvationType(String resname, double solvEnergy) {
-        super(ForceField.ForceFieldType.RELATIVESOLV, resname);
+        super(RELATIVESOLV, resname);
         this.resName = resname;
         this.solvEnergy = solvEnergy;
     }
@@ -90,14 +101,51 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
     }
 
     /**
+     * Construct a RelativeSolvationType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a RelativeSolvationType instance.
+     */
+    public static RelativeSolvationType parse(String input, String[] tokens) {
+        if (tokens.length < 3) {
+            logger.log(Level.WARNING, "Invalid RELATIVE_SOLVATION type:\n{0}", input);
+            return null;
+        }
+        String resName = tokens[1];
+        try {
+            double relSolvValue = parseDouble(tokens[2]);
+            return new RelativeSolvationType(resName, relSolvValue);
+        } catch (NumberFormatException ex) {
+            String message = "Exception parsing RELATIVE_SOLVATION type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, ex);
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return format("relative solvation %10s %8.5f", resName, solvEnergy);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compare(String o1, String o2) {
+        return o1.compareTo(o2);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public boolean equals(Object o) {
         if (o instanceof RelativeSolvationType) {
-            if (((RelativeSolvationType) o).getResName().equals(resName)) {
-                return true;
-            }
+            return ((RelativeSolvationType) o).getResName().equals(resName);
         }
         return false;
     }
@@ -110,19 +158,4 @@ public class RelativeSolvationType extends BaseType implements Comparator<String
         return Objects.hash(resName);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String toString() {
-        return String.format("relative solvation %10s %8.5f", resName, solvEnergy);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int compare(String o1, String o2) {
-        return o1.compareTo(o2);
-    }
 }

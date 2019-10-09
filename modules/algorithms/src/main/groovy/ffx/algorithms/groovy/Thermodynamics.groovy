@@ -54,7 +54,7 @@ import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.*;
-import ffx.algorithms.cli.WriteoutOptions
+import ffx.potential.cli.WriteoutOptions
 import ffx.algorithms.thermodynamics.AbstractOSRW
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
@@ -62,8 +62,6 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
-import ffx.potential.parameters.ForceField
-
 import picocli.CommandLine
 
 /**
@@ -106,6 +104,14 @@ class Thermodynamics extends AlgorithmsScript {
 
     @CommandLine.Mixin
     private ThermodynamicsOptions thermodynamics
+
+    /**
+     * -r or --rectangular uses a rectangular prism as the output rather than a cube;
+     * this reduces overall box size, but is not recommended for simulations long enough to see solute rotation.
+     */
+    @CommandLine.Option(names = ['-v', '--verbose'],
+            description = "Log additional information (primarily for MC-OSRW).")
+    private boolean verbose = false;
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -263,7 +269,7 @@ class Thermodynamics extends AlgorithmsScript {
                             dynamics, lambdaParticle, barostat, hisExists)
 
                     if (osrwOptions.mc) {
-                        osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
+                        osrwOptions.beginMCOSRW(osrw, topologies, dynamics, thermodynamics, verbose);
                     } else {
                         osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
                     }

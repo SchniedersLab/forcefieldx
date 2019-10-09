@@ -40,7 +40,13 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.UREYBRAD;
 
 /**
  * The UreyBradleyType class defines one harmonic UreyBradley cross term.
@@ -49,6 +55,11 @@ import static java.lang.String.format;
  * @since 1.0
  */
 public final class UreyBradleyType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the UreyBradleyType class.
+     */
+    private static final Logger logger = Logger.getLogger(UreyBradleyType.class.getName());
 
     /**
      * Convert bond stretch energy to kcal/mole.
@@ -82,9 +93,8 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
      * @param forceConstant Force constant (Kcal/mole/angstroms^2).
      * @param distance      Equilibrium 1-3 separation (Angstroms).
      */
-    public UreyBradleyType(int[] atomClasses, double forceConstant,
-                           double distance) {
-        super(ForceField.ForceFieldType.UREYBRAD, sortKey(atomClasses));
+    public UreyBradleyType(int[] atomClasses, double forceConstant, double distance) {
+        super(UREYBRAD, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.distance = distance;
@@ -171,6 +181,33 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     }
 
     /**
+     * Construct a UreyBradleyType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a UreyBradleyType instance.
+     */
+    public static UreyBradleyType parse(String input, String[] tokens) {
+        if (tokens.length < 5) {
+            logger.log(Level.WARNING, "Invalid UREYBRAD type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[3];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                double forceConstant = parseDouble(tokens[4]);
+                double distance = parseDouble(tokens[5]);
+                return new UreyBradleyType(atomClasses, forceConstant, distance);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing UREYBRAD type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Urey-Bradley string.
@@ -191,8 +228,8 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
         int[] c1 = new int[3];
         int[] c2 = new int[3];
         for (int i = 0; i < 3; i++) {
-            c1[i] = Integer.parseInt(keys1[i]);
-            c2[i] = Integer.parseInt(keys2[i]);
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
         }
         if (c1[1] < c2[1]) {
             return -1;

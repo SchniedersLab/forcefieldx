@@ -109,6 +109,14 @@ class Solvator extends PotentialScript {
     private double boundary = 2.5;
 
     /**
+     * --abc or --boxLengths lets you use specified unit cell vectors instead of manual calculation from solute size
+     * and boundary. This is useful when attempting to match unit cell size with a larger system.
+     */
+    @Option(names = ['--abc', '--boxLengths'], paramLabel = "byBoundary",
+            description = "Use specified comma-separated unit cell vectors rather than attempting to auto-calculate them.")
+    private String manualBox = null;
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -258,6 +266,18 @@ class Solvator extends PotentialScript {
             int i = (int) (xyz[0] / domainLength);
             int j = (int) (xyz[1] / domainLength);
             int k = (int) (xyz[2] / domainLength);
+            if (i >= nX) {
+                logger.fine(format(" Atom %s violates the X boundary at %12.7g Angstroms", a.toString(), xyz[0]));
+                i = 0;
+            }
+            if (j >= nY) {
+                logger.fine(format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[1]));
+                j = 0;
+            }
+            if (k >= nZ) {
+                logger.fine(format(" Atom %s violates the Y boundary at %12.7g Angstroms", a.toString(), xyz[2]));
+                k = 0;
+            }
 
             return Arrays.stream(withAdjacent[i][j][k]).
                     anyMatch({ Atom s ->
@@ -432,14 +452,13 @@ class Solvator extends PotentialScript {
         ForceFieldEnergy soluteEnergy = activeAssembly.getPotentialEnergy()
         Atom[] soluteAtoms = activeAssembly.getAtomArray()
 
-        File solventFi = new File(solventFileName);
-        MolecularAssembly solvent = potentialFunctions.open(solventFi);
+        MolecularAssembly solvent = potentialFunctions.open(solventFileName);
         Atom[] baseSolventAtoms = solvent.getActiveAtomArray();
 
         Atom[] ionAtoms = null;
         File ionsFile = null;
         if (ionFileName) {
-            MolecularAssembly ions = potentialFunctions.open(new File(ionFileName));
+            MolecularAssembly ions = potentialFunctions.open(ionFileName);
             ionAtoms = ions.getActiveAtomArray();
             String ionsName = FilenameUtils.removeExtension(ionFileName);
             ionsName = ionsName + ".ions";
@@ -496,25 +515,42 @@ class Solvator extends PotentialScript {
         logger.fine(format(" Original CoM: %s", Arrays.toString(origCoM)));
 
         double[] newBox = new double[3];
-        if (rectangular) {
-            newBox = Arrays.stream(soluteBoundingBox).map({it + (2.0 * padding)}).toArray();
-        } else {
-            double soluteLinearSize = IntStream.range(0, nSolute - 1).parallel().mapToDouble({int i ->
-                double[] xyzi = soluteCoordinates[i];
-                return IntStream.range(i + 1, nSolute).mapToDouble({int j ->
-                    double[] xyzj = soluteCoordinates[j];
-                    double dist2 = 0;
-                    for (int k = 0; k < 3; k++) {
-                        double dx = xyzi[k] - xyzj[k];
-                        dx *= dx;
-                        dist2 += dx;
+        if (manualBox != null) {
+            String[] toks = manualBox.split(",");
+            if (toks.length == 1) {
+                double len = Double.parseDouble(manualBox);
+                Arrays.fill(newBox, len);
+            }  else if (toks.length == 3) {
+                for (int i = 0; i < 3; i++) {
+                    newBox[i] = Double.parseDouble(toks[i]);
+                    if (newBox[i] <= 0) {
+                        logger.severe(" Specified a box length of less than zero!");
                     }
-                    return dist2;
+                }
+            } else {
+                logger.severe(" The manualBox option requires either 1 box length, or 3 comma-separated values.");
+            }
+        } else {
+            if (rectangular) {
+                newBox = Arrays.stream(soluteBoundingBox).map({ it + (2.0 * padding) }).toArray();
+            } else {
+                double soluteLinearSize = IntStream.range(0, nSolute - 1).parallel().mapToDouble({ int i ->
+                    double[] xyzi = soluteCoordinates[i];
+                    return IntStream.range(i + 1, nSolute).mapToDouble({ int j ->
+                        double[] xyzj = soluteCoordinates[j];
+                        double dist2 = 0;
+                        for (int k = 0; k < 3; k++) {
+                            double dx = xyzi[k] - xyzj[k];
+                            dx *= dx;
+                            dist2 += dx;
+                        }
+                        return dist2;
+                    }).max().getAsDouble();
                 }).max().getAsDouble();
-            }).max().getAsDouble();
-            soluteLinearSize = Math.sqrt(soluteLinearSize);
-            soluteLinearSize += (2.0 * padding);
-            Arrays.fill(newBox, soluteLinearSize);
+                soluteLinearSize = Math.sqrt(soluteLinearSize);
+                soluteLinearSize += (2.0 * padding);
+                Arrays.fill(newBox, soluteLinearSize);
+            }
         }
 
         logger.info(format(" Molecule will be solvated in a periodic box of size %10.4g, %10.4g, %10.4g", newBox[0], newBox[1], newBox[2]));
@@ -611,6 +647,10 @@ class Solvator extends PotentialScript {
             logger.severe(" Could not find an unused character A-Z for the new solvent!");
         }
         logger.info(" New solvent molecules will be placed in chain ${solventChain}");
+        if (ionChain == ' '.charAt(0)) {
+            logger.severe(" Could not find an unused character A-Z for the new solvent!");
+        }
+        logger.info(" New ions will be placed in chain ${ionChain}");
 
         // Accumulator for new solvent molecules.
         // Currently implemented as an ArrayList with the notion of removing from the end of the List.

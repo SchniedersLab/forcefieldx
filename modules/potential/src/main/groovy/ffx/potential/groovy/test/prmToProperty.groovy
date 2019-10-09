@@ -48,10 +48,6 @@ import ffx.utilities.Keyword
 // Create the command line parser.
 def cli = new CliBuilder(usage: ' ffxc test.prmToProperty <prm> [prm] ...');
 cli.h(longOpt: 'help', 'Print this help message.');
-cli.i(longOpt: 'improper', args: 1, argName: '1.0', 'Scale Improper Torsions');
-cli.r(longOpt: 'radii', args: 1, argName: 'false', 'Convert vdW Radii values to Diameters');
-cli.s(longOpt: 'sigma', args: 1, argName: 'false', 'Convert vdW Sigma values to R-Min');
-cli.t(longOpt: 'torsion', args: 1, argName: '1.0', 'Scale Torsions');
 
 def options = cli.parse(args);
 
@@ -65,26 +61,6 @@ String xyzname = arguments.get(0);
 CompositeConfiguration properties = Keyword.loadProperties(null);
 properties.setProperty("parameters", xyzname);
 ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-
-if (options.i) {
-    improperTorsionScale = Double.parseDouble(options.i);
-    forceFieldFilter.setImproperTorsionScale(improperTorsionScale);
-}
-
-if (options.r) {
-    convertRadiusToDiameter = Boolean.parseBoolean(options.r);
-    forceFieldFilter.setConvertRadiusToDiameter(convertRadiusToDiameter);
-}
-
-if (options.s) {
-    convertSigmaToRMin = Boolean.parseBoolean(options.s);
-    forceFieldFilter.setConvertSigmaToRMin(convertSigmaToRMin);
-}
-
-if (options.t) {
-    torsionScale = Double.parseDouble(options.t);
-    forceFieldFilter.setTorsionScale(torsionScale);
-}
 
 ForceField forceField = forceFieldFilter.parse();
 

@@ -40,7 +40,13 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.PITORS;
 
 /**
  * The PiTorsionType class defines a Pi-Torsion energy term.
@@ -49,6 +55,11 @@ import static java.lang.String.format;
  * @since 1.0
  */
 public final class PiTorsionType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the PiTorsionType class.
+     */
+    private static final Logger logger = Logger.getLogger(PiTorsionType.class.getName());
 
     /**
      * Convert Pi-Torsion energy to kcal/mole.
@@ -70,7 +81,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
      * @param forceConstant double
      */
     public PiTorsionType(int[] atomClasses, double forceConstant) {
-        super(ForceField.ForceFieldType.PITORS, sortKey(atomClasses));
+        super(PITORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
     }
@@ -174,6 +185,31 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     }
 
     /**
+     * Construct a PiTorsionType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a PiTorsionType instance.
+     */
+    public static PiTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid PITORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[2];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                double forceConstant = parseDouble(tokens[3]);
+                return new PiTorsionType(atomClasses, forceConstant);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing PITORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Pi-Torsion type.
@@ -192,8 +228,8 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         String[] keys2 = s2.split(" ");
 
         for (int i = 0; i < 2; i++) {
-            int c1 = Integer.parseInt(keys1[i]);
-            int c2 = Integer.parseInt(keys2[i]);
+            int c1 = parseInt(keys1[i]);
+            int c2 = parseInt(keys2[i]);
             if (c1 < c2) {
                 return -1;
             } else if (c1 > c2) {

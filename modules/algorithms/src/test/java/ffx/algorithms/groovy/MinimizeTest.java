@@ -105,11 +105,10 @@ public class MinimizeTest extends PJDependentTest {
 
         // Evaluate the script.
         minimize.run();
-        double expectedTotalPotential = -277.62004110;
-
+        double expectedTotalPotential = -277.6200456888939;
 
         double actualTotalPotential = minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
+        Assert.assertEquals( expectedTotalPotential, actualTotalPotential, 1E-8);
 
         // Delete all created directories and files.
         try {
@@ -139,11 +138,10 @@ public class MinimizeTest extends PJDependentTest {
 
         // Evaluate the script.
         minimize.run();
-        double expectedTotalPotential = -262.73461486;
-
+        double expectedTotalPotential = -262.7346193607451;
 
         double actualTotalPotential = minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
+        Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);
 
         // Delete all created directories and files.
         try {
