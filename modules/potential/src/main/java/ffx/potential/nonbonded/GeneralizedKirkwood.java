@@ -126,14 +126,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * For use with GaussVol volumes (i.e. a vdW volume), a larger solvent pressure of 0.125 is needed.
      */
     private static final double DEFAULT_SOLVENT_PRESSURE = 0.04800;
-
     /**
      * Original crossover in Schnieders thesis: 3.0*(surface tension/solvent pressure)
      * <p>
      * Currently set to 9.0 to match Chandler et al. simulation data.
      */
     private static final double DEFAULT_CROSSOVER = 9.0;
-
     /**
      * Default probe radius for use with Gaussian Volumes.
      */
@@ -142,7 +140,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Default dielectric offset
      **/
     private static final double DEFAULT_DIELECTRIC_OFFSET = 0.09;
-
+    /**
+     * Default constant for the Generalized Kirkwood cross-term.
+     */
+    public static final double DEFAULT_GKC = 2.455;
     /**
      * Empirical scaling of the Bondi radii.
      */
