@@ -38,7 +38,10 @@
 package ffx.potential.parameters;
 
 import java.util.Comparator;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
 
 /**
  * The ChargeType class defines a partial atomic charge type.
@@ -64,7 +67,7 @@ public final class ChargeType extends BaseType implements Comparator<String> {
      * @param charge   double
      */
     public ChargeType(int atomType, double charge) {
-        super(ForceField.ForceFieldType.CHARGE, "" + atomType);
+        super(CHARGE, "" + atomType);
         this.atomType = atomType;
         this.charge = charge;
     }
@@ -93,7 +96,6 @@ public final class ChargeType extends BaseType implements Comparator<String> {
             return null;
         }
         double charge = (chargeType1.charge + chargeType2.charge) / 2.0;
-
         return new ChargeType(atomType, charge);
     }
 
@@ -112,9 +114,8 @@ public final class ChargeType extends BaseType implements Comparator<String> {
      */
     @Override
     public int compare(String s1, String s2) {
-        int t1 = Integer.parseInt(s1);
-        int t2 = Integer.parseInt(s2);
-
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
         return Integer.compare(t1, t2);
     }
 

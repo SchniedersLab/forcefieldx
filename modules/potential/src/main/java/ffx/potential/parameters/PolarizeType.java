@@ -44,13 +44,17 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import static ffx.potential.parameters.ForceField.ForceFieldType.POLARIZE;
 
 /**
  * The PolarizeType class defines an isotropic atomic polarizability.
@@ -94,7 +98,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      */
     public PolarizeType(int atomType, double polarizability, double thole,
                         int[] polarizationGroup) {
-        super(ForceField.ForceFieldType.POLARIZE, Integer.toString(atomType));
+        super(POLARIZE, Integer.toString(atomType));
         this.type = atomType;
         this.thole = thole;
         this.polarizability = polarizability;
@@ -345,6 +349,38 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Construct a PolarizeType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a PolarizeType instance.
+     */
+    public static PolarizeType parse(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid POLARIZE type:\n{0}", input);
+        } else {
+            try {
+                int atomType = parseInt(tokens[1]);
+                double polarizability = parseDouble(tokens[2]);
+                double thole = parseDouble(tokens[3]);
+                int entries = tokens.length - 4;
+                int[] polarizationGroup = null;
+                if (entries > 0) {
+                    polarizationGroup = new int[entries];
+                    for (int i = 4; i < tokens.length; i++) {
+                        polarizationGroup[i - 4] = parseInt(tokens[i]);
+                    }
+                }
+                return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing POLARIZE type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted polarization type.
@@ -366,10 +402,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      */
     @Override
     public int compare(String s1, String s2) {
-
-        int t1 = Integer.parseInt(s1);
-        int t2 = Integer.parseInt(s2);
-
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
         return Integer.compare(t1, t2);
     }
 

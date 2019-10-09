@@ -40,8 +40,14 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.STRTORS;
 
 /**
  * The StretchTorsionType class defines one stretch-torsion energy type.
@@ -50,6 +56,11 @@ import static java.util.Arrays.copyOf;
  * @since 1.0
  */
 public final class StretchTorsionType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the StretchTorsionType class.
+     */
+    private static final Logger logger = Logger.getLogger(StretchTorsionType.class.getName());
 
     /**
      * Atom classes for this stretch-torsion type.
@@ -72,7 +83,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
      */
     public StretchTorsionType(int[] atomClasses, double[] forceConstants) {
         // Pass the key from sorted classes to the super constructor.
-        super(ForceField.ForceFieldType.STRTORS, sortKey(atomClasses));
+        super(STRTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstants = forceConstants;
     }
@@ -162,6 +173,42 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
     }
 
     /**
+     * Construct an StretchTorsionType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an StretchTorsionType instance.
+     */
+    public static StretchTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 13) {
+            logger.log(Level.WARNING, "Invalid STRTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double[] constants = new double[9];
+                constants[0] = parseDouble(tokens[5]);
+                constants[1] = parseDouble(tokens[6]);
+                constants[2] = parseDouble(tokens[7]);
+                constants[3] = parseDouble(tokens[8]);
+                constants[4] = parseDouble(tokens[9]);
+                constants[5] = parseDouble(tokens[10]);
+                constants[6] = parseDouble(tokens[11]);
+                constants[7] = parseDouble(tokens[12]);
+                constants[8] = parseDouble(tokens[13]);
+                return new StretchTorsionType(atomClasses, constants);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing STRTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Stretch-Torsion string.
@@ -188,8 +235,8 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
         int[] c2 = new int[4];
 
         for (int i = 0; i < 4; i++) {
-            c1[i] = Integer.parseInt(keys1[i]);
-            c2[i] = Integer.parseInt(keys2[i]);
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
         }
 
         if (c1[1] < c2[1]) {
@@ -217,18 +264,11 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof StretchTorsionType)) {
-            return false;
-        }
-        StretchTorsionType stretchTorsionType = (StretchTorsionType) other;
-        int[] c = stretchTorsionType.atomClasses;
-
-        return (c[0] == atomClasses[0] && c[1] == atomClasses[1]
-                && c[2] == atomClasses[2] && c[3] == atomClasses[3]);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StretchTorsionType stretchTorsionType = (StretchTorsionType) o;
+        return Arrays.equals(atomClasses, stretchTorsionType.atomClasses);
     }
 
     /**

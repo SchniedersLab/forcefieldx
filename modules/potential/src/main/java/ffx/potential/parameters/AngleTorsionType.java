@@ -40,7 +40,14 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.ANGTORS;
 
 /**
  * The AngleTorsionType class defines one angle-torsion energy type.
@@ -49,6 +56,11 @@ import static java.util.Arrays.copyOf;
  * @since 1.0
  */
 public final class AngleTorsionType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the AngleTorsionType class.
+     */
+    private static final Logger logger = Logger.getLogger(AngleTorsionType.class.getName());
 
     /**
      * Atom classes for this stretch-torsion type.
@@ -70,10 +82,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
      * @param forceConstants Force constants.
      */
     public AngleTorsionType(int[] atomClasses, double[] forceConstants) {
-
-        // Pass the key from sorted classes to the super constructor.
-        super(ForceField.ForceFieldType.ANGTORS, sortKey(atomClasses));
-
+        super(ANGTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstants = forceConstants;
     }
@@ -164,13 +173,46 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     }
 
     /**
+     * Construct an AngleTorsionType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an AngleTorsionType instance.
+     */
+    public static AngleTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 10) {
+            logger.log(Level.WARNING, "Invalid ANGTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double[] constants = new double[6];
+                constants[0] = parseDouble(tokens[5]);
+                constants[1] = parseDouble(tokens[6]);
+                constants[2] = parseDouble(tokens[7]);
+                constants[3] = parseDouble(tokens[8]);
+                constants[4] = parseDouble(tokens[9]);
+                constants[5] = parseDouble(tokens[10]);
+                return new AngleTorsionType(atomClasses, constants);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing ANGTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted Angle-Torsion string.
      */
     @Override
     public String toString() {
-        return String.format("angtors  %5d  %5d  %5d  %5d  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
+        return format("angtors  %5d  %5d  %5d  %5d  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
                 atomClasses[0], atomClasses[1], atomClasses[2], atomClasses[3],
                 forceConstants[0], forceConstants[1], forceConstants[2], forceConstants[3], forceConstants[4], forceConstants[5]);
     }
@@ -188,8 +230,8 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
         int[] c2 = new int[4];
 
         for (int i = 0; i < 4; i++) {
-            c1[i] = Integer.parseInt(keys1[i]);
-            c2[i] = Integer.parseInt(keys2[i]);
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
         }
 
         if (c1[1] < c2[1]) {
@@ -216,22 +258,6 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     /**
      * {@inheritDoc}
      */
-//    @Override
-//    public boolean equals(Object other) {
-//        if (other == this) {
-//            return true;
-//        }
-//        if (!(other instanceof AngleTorsionType)) {
-//            return false;
-//        }
-//        AngleTorsionType stretchTorsionType = (AngleTorsionType) other;
-//        int[] c = stretchTorsionType.atomClasses;
-//
-//        return (c[0] == atomClasses[0] && c[1] == atomClasses[1]
-//                && c[2] == atomClasses[2] && c[3] == atomClasses[3]);
-//    }
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

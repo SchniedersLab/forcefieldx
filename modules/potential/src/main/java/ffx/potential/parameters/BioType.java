@@ -39,7 +39,13 @@ package ffx.potential.parameters;
 
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.BIOTYPE;
 
 /**
  * The BioType class maps PDB identifiers to atom types.
@@ -48,6 +54,11 @@ import static java.lang.String.format;
  * @since 1.0
  */
 public final class BioType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the BioType class.
+     */
+    private static final Logger logger = Logger.getLogger(BioType.class.getName());
 
     /**
      * The index of this BioType.
@@ -80,7 +91,7 @@ public final class BioType extends BaseType implements Comparator<String> {
      * @param bonds        an array of {@link java.lang.String} objects.
      */
     public BioType(int index, String atomName, String moleculeName, int atomType, String[] bonds) {
-        super(ForceField.ForceFieldType.BIOTYPE, Integer.toString(index));
+        super(BIOTYPE, Integer.toString(index));
         this.index = index;
         this.atomName = atomName;
         if (moleculeName != null) {
@@ -106,6 +117,50 @@ public final class BioType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Construct an BioType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an BioType instance.
+     */
+    public static BioType parse(String input, String[] tokens) {
+        if (tokens.length < 5) {
+            logger.log(Level.WARNING, "Invalid BIOTYPE type:\n{0}", input);
+        } else {
+            try {
+                int index = parseInt(tokens[1]);
+                String atomName = tokens[2];
+                // The "residue" string may contain spaces,
+                // and is therefore surrounded in quotes located at "first" and
+                // "last".
+                int first = input.indexOf("\"");
+                int last = input.lastIndexOf("\"");
+                if (first >= last) {
+                    logger.log(Level.WARNING, "Invalid BIOTYPE type:\n{0}", input);
+                    return null;
+                }
+                // Environment
+                String moleculeName = input.substring(first, last + 1).intern();
+                // Shrink the tokens array to only include entries
+                // after the environment field.
+                tokens = input.substring(last + 1).trim().split(" +");
+                int atomType = parseInt(tokens[0]);
+                int bondCount = tokens.length - 1;
+                String[] bonds = null;
+                if (bondCount > 0) {
+                    bonds = new String[bondCount];
+                    arraycopy(tokens, 1, bonds, 0, bondCount);
+                }
+                return new BioType(index, atomName, moleculeName, atomType, bonds);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing BIOTYPE type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted biotype.
@@ -127,10 +182,8 @@ public final class BioType extends BaseType implements Comparator<String> {
      */
     @Override
     public int compare(String s1, String s2) {
-
-        int t1 = Integer.parseInt(s1);
-        int t2 = Integer.parseInt(s2);
-
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
         return Integer.compare(t1, t2);
     }
 
@@ -138,15 +191,10 @@ public final class BioType extends BaseType implements Comparator<String> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof BioType)) {
-            return false;
-        }
-        BioType bioType = (BioType) other;
-
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BioType bioType = (BioType) o;
         return bioType.index == this.index;
     }
 

@@ -40,9 +40,15 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.PI;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.STRBND;
 
 /**
  * The StretchBendType class defines one out-of-plane angle bending energy type.
@@ -51,6 +57,8 @@ import static org.apache.commons.math3.util.FastMath.PI;
  * @since 1.0
  */
 public final class StretchBendType extends BaseType implements Comparator<String> {
+
+    private static final Logger logger = Logger.getLogger(StretchBendType.class.getName());
 
     /**
      * Constant <code>units=PI / 180.0</code>
@@ -72,21 +80,16 @@ public final class StretchBendType extends BaseType implements Comparator<String
      * @param forceConstants double[]
      */
     public StretchBendType(int[] atomClasses, double[] forceConstants) {
-        // Pass the key from sorted classes to the super constructor.
-        super(ForceField.ForceFieldType.STRBND, sortKey(copyOf(atomClasses, 3)));
-
+        super(STRBND, sortKey(copyOf(atomClasses, 3)));
         // Sort the atom classes and force constants in tandem.
         if (atomClasses[0] > atomClasses[2]) {
             int temp = atomClasses[0];
             double f = forceConstants[0];
-
             atomClasses[0] = atomClasses[2];
             forceConstants[0] = forceConstants[1];
-
             atomClasses[2] = temp;
             forceConstants[1] = f;
         }
-
         this.atomClasses = atomClasses;
         this.forceConstants = forceConstants;
     }
@@ -154,9 +157,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
             int temp = c[0];
             c[0] = c[2];
             c[2] = temp;
-
         }
-
         return c[0] + " " + c[1] + " " + c[2];
     }
 
@@ -177,12 +178,40 @@ public final class StretchBendType extends BaseType implements Comparator<String
         if (len != stretchBendType2.forceConstants.length) {
             return null;
         }
-        double forceConstants[] = new double[len];
+        double[] forceConstants = new double[len];
         for (int i = 0; i < len; i++) {
             forceConstants[i] = (stretchBendType1.forceConstants[i]
                     + stretchBendType2.forceConstants[i]) / 2.0;
         }
         return new StretchBendType(atomClasses, forceConstants);
+    }
+
+    /**
+     * Construct a StretchBendType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a StretchBendType instance.
+     */
+    public static StretchBendType parse(String input, String[] tokens) {
+        if (tokens.length < 6) {
+            logger.log(Level.WARNING, "Invalid STRBND type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[3];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                double[] forceConstants = new double[2];
+                forceConstants[0] = parseDouble(tokens[4]);
+                forceConstants[1] = parseDouble(tokens[5]);
+                return new StretchBendType(atomClasses, forceConstants);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing STRBND type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**
@@ -207,8 +236,8 @@ public final class StretchBendType extends BaseType implements Comparator<String
         int[] c1 = new int[3];
         int[] c2 = new int[3];
         for (int i = 0; i < 3; i++) {
-            c1[i] = Integer.parseInt(keys1[i]);
-            c2[i] = Integer.parseInt(keys2[i]);
+            c1[i] = parseInt(keys1[i]);
+            c2[i] = parseInt(keys2[i]);
         }
         if (c1[1] < c2[1]) {
             return -1;

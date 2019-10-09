@@ -39,6 +39,13 @@ package ffx.potential.parameters;
 
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.ATOM;
 
 /**
  * The AtomType class represents one molecular mechanics atom type.
@@ -47,6 +54,11 @@ import java.util.Objects;
  * @since 1.0
  */
 public final class AtomType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the AngleType class.
+     */
+    private static final Logger logger = Logger.getLogger(AtomType.class.getName());
 
     /**
      * Atom type.
@@ -92,7 +104,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
      */
     public AtomType(int type, int atomClass, String name, String environment,
                     int atomicNumber, double atomicWeight, int valence) {
-        super(ForceField.ForceFieldType.ATOM, Integer.toString(type));
+        super(ATOM, Integer.toString(type));
         this.type = type;
         this.atomClass = atomClass;
         this.name = name;
@@ -116,6 +128,72 @@ public final class AtomType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Construct an AtomType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an AtomType instance.
+     */
+    public static AtomType parse(String input, String[] tokens) {
+        if (tokens.length < 7) {
+            logger.log(Level.WARNING, "Invalid ATOM type:\n{0}", input);
+        } else {
+            try {
+                int index = 1;
+                // Atom Type
+                int type = parseInt(tokens[index++]);
+                // Atom Class
+                int atomClass;
+                // The following try/catch is a nasty hack to check for one of the
+                // the following two cases:
+                //
+                // NUMBER TYPE CLASS IDENTIFIER ... (example is OPLSAA)
+                // vs.
+                // NUMBER TYPE IDENTIFIER ... (example is OPLSUA)
+                //
+                // If there is no atom class, a harmless exception will be caught
+                // and the atomClass field will remain equal to null.
+                try {
+                    atomClass = parseInt(tokens[index]);
+                    // If the parseInt succeeds, this force field has atom classes.
+                    index++;
+                } catch (NumberFormatException e) {
+                    // Some force fields do not use atom classes.
+                    atomClass = -1;
+                }
+                // Name
+                String name = tokens[index].intern();
+                // The "environment" string may contain spaces,
+                // and is therefore surrounded in quotes located at "first" and
+                // "last".
+                int first = input.indexOf("\"");
+                int last = input.lastIndexOf("\"");
+                if (first >= last) {
+                    logger.log(Level.WARNING, "Invalid ATOM type:\n{0}", input);
+                    return null;
+                }
+                // Environment
+                String environment = input.substring(first, last + 1).intern();
+                // Shrink the tokens array to only include entries
+                // after the environment field.
+                tokens = input.substring(last + 1).trim().split(" +");
+                index = 0;
+                // Atomic Number
+                int atomicNumber = parseInt(tokens[index++]);
+                // Atomic Mass
+                double mass = parseDouble(tokens[index++]);
+                // Hybridization
+                int hybridization = parseInt(tokens[index]);
+                return new AtomType(type, atomClass, name, environment, atomicNumber, mass, hybridization);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing CHARGE type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted atom type string.
@@ -124,10 +202,10 @@ public final class AtomType extends BaseType implements Comparator<String> {
     public String toString() {
         String s;
         if (atomClass >= 0) {
-            s = String.format("atom  %5d  %5d  %-4s  %-25s  %3d  %8.4f  %d",
+            s = format("atom  %5d  %5d  %-4s  %-25s  %3d  %8.4f  %d",
                     type, atomClass, name, environment, atomicNumber, atomicWeight, valence);
         } else {
-            s = String.format("atom  %5d  %-4s  %-25s  %3d  %8.4f  %d", type,
+            s = format("atom  %5d  %-4s  %-25s  %3d  %8.4f  %d", type,
                     name, environment, atomicNumber, atomicWeight, valence);
         }
         return s;
@@ -138,10 +216,8 @@ public final class AtomType extends BaseType implements Comparator<String> {
      */
     @Override
     public int compare(String s1, String s2) {
-
-        int t1 = Integer.parseInt(s1);
-        int t2 = Integer.parseInt(s2);
-
+        int t1 = parseInt(s1);
+        int t2 = parseInt(s2);
         return Integer.compare(t1, t2);
     }
 
@@ -149,15 +225,10 @@ public final class AtomType extends BaseType implements Comparator<String> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if (!(other instanceof AtomType)) {
-            return false;
-        }
-        AtomType atomType = (AtomType) other;
-
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AtomType atomType = (AtomType) o;
         return atomType.type == this.type;
     }
 

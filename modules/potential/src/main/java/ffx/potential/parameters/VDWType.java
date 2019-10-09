@@ -39,9 +39,15 @@ package ffx.potential.parameters;
 
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.StrictMath.abs;
 import static java.lang.String.format;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.VDW;
+import static ffx.potential.parameters.ForceField.ForceFieldType.VDW14;
 
 /**
  * The VDWType class defines a van der Waals type.
@@ -51,6 +57,8 @@ import static java.lang.String.format;
  */
 public final class VDWType extends BaseType implements Comparator<String> {
 
+    private static final Logger logger = Logger.getLogger(VDWType.class.getName());
+
     /**
      * Torsion modes include Normal or In-Plane
      */
@@ -58,7 +66,6 @@ public final class VDWType extends BaseType implements Comparator<String> {
 
         NORMAL, VDW14
     }
-
 
     /**
      * The atom class that uses this van der Waals parameter.
@@ -92,14 +99,8 @@ public final class VDWType extends BaseType implements Comparator<String> {
      * @param wellDepth       The minimum energy of the vdw function (kcal/mol).
      * @param reductionFactor Reduction factor for evaluating van der Waals pairs.
      */
-    public VDWType(int atomClass, double radius, double wellDepth,
-                   double reductionFactor) {
-        super(ForceField.ForceFieldType.VDW, Integer.toString(atomClass));
-        this.atomClass = atomClass;
-        this.radius = radius;
-        this.wellDepth = abs(wellDepth);
-        this.reductionFactor = reductionFactor;
-        this.vdwMode = VDWMode.NORMAL;
+    public VDWType(int atomClass, double radius, double wellDepth, double reductionFactor) {
+        this(atomClass, radius, wellDepth, reductionFactor, VDWMode.NORMAL);
     }
 
     /**
@@ -110,13 +111,17 @@ public final class VDWType extends BaseType implements Comparator<String> {
      * @param radius          The radius of the minimum well depth energy (angstroms).
      * @param wellDepth       The minimum energy of the vdw function (kcal/mol).
      * @param reductionFactor Reduction factor for evaluating van der Waals pairs.
+     * @param vdwMode         The VDWMode to use.
      */
-    public VDWType(int atomClass, double radius, double wellDepth,
-                   double reductionFactor, VDWMode vdwMode) {
-        this(atomClass, radius, wellDepth, reductionFactor);
+    public VDWType(int atomClass, double radius, double wellDepth, double reductionFactor, VDWMode vdwMode) {
+        super(VDW, Integer.toString(atomClass));
+        this.atomClass = atomClass;
+        this.radius = radius;
+        this.wellDepth = abs(wellDepth);
+        this.reductionFactor = reductionFactor;
+        this.vdwMode = vdwMode;
         if (vdwMode == VDWMode.VDW14) {
-            this.vdwMode = vdwMode;
-            forceFieldType = ForceField.ForceFieldType.VDW14;
+            forceFieldType = VDW14;
         }
     }
 
@@ -149,6 +154,62 @@ public final class VDWType extends BaseType implements Comparator<String> {
         double reductionFactor = (vdwType1.reductionFactor + vdwType2.reductionFactor) / 2.0;
 
         return new VDWType(atomClass, radius, wellDepth, reductionFactor);
+    }
+
+    /**
+     * Construct a VDWType from multiple input lines.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a VDWType instance.
+     */
+    public static VDWType parse(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid VDW type:\n{0}", input);
+        } else {
+            try {
+                int atomType = parseInt(tokens[1]);
+                double radius = parseDouble(tokens[2]);
+                double wellDepth = parseDouble(tokens[3]);
+                double reductionFactor = -1.0;
+                if (tokens.length == 5) {
+                    reductionFactor = parseDouble(tokens[4]);
+                }
+                return new VDWType(atomType, radius, wellDepth, reductionFactor);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing VDW type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Construct a 1-4 VDWType from multiple input lines.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a VDWType instance.
+     */
+    public static VDWType parseVDW14(String input, String[] tokens) {
+        if (tokens.length < 4) {
+            logger.log(Level.WARNING, "Invalid VDW type:\n{0}", input);
+        } else {
+            try {
+                int atomType = parseInt(tokens[1]);
+                double radius = parseDouble(tokens[2]);
+                double wellDepth = parseDouble(tokens[3]);
+                double reductionFactor = -1.0;
+                if (tokens.length == 5) {
+                    reductionFactor = parseDouble(tokens[4]);
+                }
+                return new VDWType(atomType, radius, wellDepth, reductionFactor, VDWMode.VDW14);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing VDW14 type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**

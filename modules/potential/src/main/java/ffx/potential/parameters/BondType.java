@@ -40,8 +40,12 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 
-import ffx.potential.parameters.ForceField.ForceFieldType;
+import static ffx.potential.parameters.ForceField.ForceFieldType.BOND;
 
 /**
  * The BondType class defines one harmonic bond stretch energy term.
@@ -50,6 +54,11 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  * @since 1.0
  */
 public final class BondType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the BondType class.
+     */
+    private static final Logger logger = Logger.getLogger(BondType.class.getName());
 
     /**
      * Describes the function used by the bond.
@@ -153,7 +162,18 @@ public final class BondType extends BaseType implements Comparator<String> {
     /**
      * The function used by the bond: harmonic or quartic with flat-bottom variants.
      */
-    public final BondFunction bondFunction;
+    public BondFunction bondFunction;
+
+    /**
+     * The default BondType constructor defines use of the Quartic BondFunction.
+     *
+     * @param atomClasses   int[]
+     * @param forceConstant double
+     * @param distance      double
+     */
+    public BondType(int[] atomClasses, double forceConstant, double distance) {
+        this(atomClasses, forceConstant, distance, BondFunction.QUARTIC, 0.0);
+    }
 
     /**
      * BondType constructor.
@@ -177,13 +197,17 @@ public final class BondType extends BaseType implements Comparator<String> {
      * @param flatBottomRadius a double.
      */
     public BondType(int[] atomClasses, double forceConstant, double distance, BondFunction bondFunction, double flatBottomRadius) {
-        super(ForceFieldType.BOND, sortKey(atomClasses));
+        super(BOND, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.distance = distance;
         this.bondFunction = bondFunction;
         this.flatBottomRadius = flatBottomRadius;
         assert (flatBottomRadius == 0 || bondFunction == BondFunction.FLAT_BOTTOM_HARMONIC);
+    }
+
+    public void setBondFunction(BondFunction bondFunction) {
+        this.bondFunction = bondFunction;
     }
 
     /**
@@ -280,6 +304,32 @@ public final class BondType extends BaseType implements Comparator<String> {
         double distance = (bondType1.distance + bondType2.distance) / 2.0;
 
         return new BondType(atomClasses, forceConstant, distance, bondFunction);
+    }
+
+    /**
+     * Construct a BondType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a BondType instance.
+     */
+    public static BondType parse(String input, String[] tokens) {
+        if (tokens.length < 5) {
+            logger.log(Level.WARNING, "Invalid BOND type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[2];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                double forceConstant = parseDouble(tokens[3]);
+                double distance = parseDouble(tokens[4]);
+                return new BondType(atomClasses, forceConstant, distance);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing BOND type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**

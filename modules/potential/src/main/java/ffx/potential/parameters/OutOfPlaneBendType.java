@@ -40,10 +40,16 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.OPBEND;
 
 /**
  * The OutOfPlaneBendType class defines one Allinger style out-of-plane angle
@@ -53,6 +59,11 @@ import static org.apache.commons.math3.util.FastMath.pow;
  * @since 1.0
  */
 public final class OutOfPlaneBendType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the OutOfPlaneBendType class.
+     */
+    private static final Logger logger = Logger.getLogger(OutOfPlaneBendType.class.getName());
 
     /**
      * Cubic coefficient in out-of-plane angle bending potential.
@@ -95,7 +106,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      * @param forceConstant double
      */
     public OutOfPlaneBendType(int[] atomClasses, double forceConstant) {
-        super(ForceField.ForceFieldType.OPBEND, sortKey(atomClasses));
+        super(OPBEND, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
     }
@@ -186,6 +197,33 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     }
 
     /**
+     * Construct an OutOfPlaneBendType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an OutOfPlaneBendType instance.
+     */
+    public static OutOfPlaneBendType parse(String input, String[] tokens) {
+        if (tokens.length < 6) {
+            logger.log(Level.WARNING, "Invalid OPBEND type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double forceConstant = parseDouble(tokens[5]);
+                return new OutOfPlaneBendType(atomClasses, forceConstant);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing OPBEND type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted out-of-plane angle bending string.
@@ -206,8 +244,8 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         String[] keys2 = s2.split(" ");
 
         for (int i = 0; i < 4; i++) {
-            int c1 = Integer.parseInt(keys1[i]);
-            int c2 = Integer.parseInt(keys2[i]);
+            int c1 = parseInt(keys1[i]);
+            int c2 = parseInt(keys2[i]);
             if (c1 < c2) {
                 return -1;
             } else if (c1 > c2) {
