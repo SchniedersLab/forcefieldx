@@ -118,8 +118,8 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
      * Builds a composite switch in .
      *
      * @param primary   Primary switch to obey exactly from lbPrimary to ubPrimary.
-     * @param start     Switch to interpolate from 0 to primary between 0 and lbPrimary.
-     * @param end       Switch to interpolate from primary to 1.0 between ubPrimary and 1.
+     * @param start     Switch to interpolate from 0 to primary between 0 and lbPrimary; assumed to internally function from 0-1.
+     * @param end       Switch to interpolate from primary to 1.0 between ubPrimary and 1; assumed to internally function from 0-1.
      * @param lbPrimary Value at which primary should begin to be obeyed exactly.
      * @param ubPrimary Value at which primary should stop being obeyed exactly.
      */
@@ -127,6 +127,17 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
         this(primary, start, end, lbPrimary, ubPrimary, 0, 1);
     }
 
+    /**
+     * Builds a composite switch in .
+     *
+     * @param primary   Primary switch to obey exactly from lbPrimary to ubPrimary.
+     * @param start     Switch to interpolate from 0 to primary between 0 and lbPrimary; assumed to internally function from 0-1.
+     * @param end       Switch to interpolate from primary to 1.0 between ubPrimary and 1; assumed to internally function from 0-1.
+     * @param lbPrimary Value at which primary should begin to be obeyed exactly.
+     * @param ubPrimary Value at which primary should stop being obeyed exactly.
+     * @oaram lb        Overall lower bound of the CompositeSwitch.
+     * @param ub        Overall upper bound of the CompositeSwitch.
+     */
     public CompositeSwitch(UnivariateSwitchingFunction primary, UnivariateSwitchingFunction start, UnivariateSwitchingFunction end, double lbPrimary, double ubPrimary, double lb, double ub) {
         if (lbPrimary > ubPrimary) {
             throw new IllegalArgumentException(String.format(" Lower primary bound %10.4g was greater than upper primary bound %10.4g", lbPrimary, ubPrimary));
