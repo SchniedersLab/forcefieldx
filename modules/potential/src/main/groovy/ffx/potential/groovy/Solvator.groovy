@@ -647,6 +647,10 @@ class Solvator extends PotentialScript {
             logger.severe(" Could not find an unused character A-Z for the new solvent!");
         }
         logger.info(" New solvent molecules will be placed in chain ${solventChain}");
+        if (ionChain == ' '.charAt(0)) {
+            logger.severe(" Could not find an unused character A-Z for the new solvent!");
+        }
+        logger.info(" New ions will be placed in chain ${ionChain}");
 
         // Accumulator for new solvent molecules.
         // Currently implemented as an ArrayList with the notion of removing from the end of the List.

@@ -141,9 +141,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     private double totalSimTime = 0.0;
     /**
-     * Flag to reduce logging.
+     * Indicates how verbose MD should be.
      */
-    private boolean quiet = false;
+    protected VerbosityLevel verbosityLevel = VerbosityLevel.VERBOSE;
+    /**
+     * Log some of the more frequent messages at this level. Always at or below basicLogging.
+     */
+    protected Level intermediateLogging = Level.INFO;
+    /**
+     * Log basic information at this level. Always at or above intermediateLogging.
+     */
+    protected Level basicLogging = Level.INFO;
     /**
      * Dynamics restart file.
      */
@@ -523,14 +531,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
         this.esvSystem = esvSystem;
     }
 
-    /**
-     * <p>
-     * Setter for the field <code>quiet</code>.</p>
-     *
-     * @param quiet a boolean.
-     */
-    public void setQuiet(boolean quiet) {
-        this.quiet = quiet;
+    public VerbosityLevel getVerbosityLevel() {
+        return verbosityLevel;
+    }
+
+    public void setVerbosityLevel(VerbosityLevel level) {
+        verbosityLevel = level;
+        switch (level) {
+            case SILENT: {
+                intermediateLogging = Level.FINE;
+                basicLogging = Level.FINE;
+            }
+            break;
+            case QUIET: {
+                intermediateLogging = Level.FINE;
+                basicLogging = Level.INFO;
+            }
+            break;
+            case VERBOSE:
+            default: {
+                intermediateLogging = Level.INFO;
+                basicLogging = Level.INFO;
+            }
+            break;
+        }
     }
 
     /**
@@ -766,7 +790,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param temperature Temperature of simulation
      */
     public void redynamic(final int nSteps, final double temperature) {
-        quiet = true;
+        if (!verbosityLevel.isQuiet()) {
+            setVerbosityLevel(VerbosityLevel.QUIET);
+        }
 
         this.nSteps = nSteps;
         totalSimTime = 0.0;
@@ -839,21 +865,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         if (integrator instanceof Stochastic) {
             if (constantPressure) {
-                logger.info("\n Stochastic dynamics in the NPT ensemble");
+                logger.log(basicLogging,"\n Stochastic dynamics in the NPT ensemble");
             } else {
-                logger.info("\n Stochastic dynamics in the NVT ensemble");
+                logger.log(basicLogging,"\n Stochastic dynamics in the NVT ensemble");
             }
         } else if (!(thermostat instanceof Adiabatic)) {
             if (constantPressure) {
-                logger.info("\n Molecular dynamics in the NPT ensemble");
+                logger.log(basicLogging,"\n Molecular dynamics in the NPT ensemble");
             } else {
-                logger.info("\n Molecular dynamics in the NVT ensemble");
+                logger.log(basicLogging,"\n Molecular dynamics in the NVT ensemble");
             }
         } else {
             if (constantPressure) {
                 logger.severe("\n NPT Molecular dynamics requires a thermostat");
             } else {
-                logger.info("\n Molecular dynamics in the NVE ensemble");
+                logger.log(basicLogging,"\n Molecular dynamics in the NVE ensemble");
             }
         }
 
@@ -866,7 +892,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.info(" Continuing from " + dyn.getAbsolutePath());
         }
 
-        if (!quiet) {
+        if (!verbosityLevel.isQuiet) {
             logger.info(format(" Number of steps:     %8d", nSteps));
             logger.info(format(" Time step:           %8.3f (fsec)", timeStep));
             logger.info(format(" Print interval:      %8.3f (psec)", printInterval));
@@ -891,7 +917,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.log(Level.WARNING, message, e);
             }
         }
-        if (!quiet) {
+        if (!verbosityLevel.isQuiet) {
             logger.info(" Done with an MD round.");
         }
     }
@@ -930,6 +956,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         // Set the target temperature.
         thermostat.setTargetTemperature(targetTemperature);
+        boolean quiet = verbosityLevel.isQuiet();
         thermostat.setQuiet(quiet);
         if (integrator instanceof Stochastic) {
             Stochastic stochastic = (Stochastic) integrator;
@@ -1004,9 +1031,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         startingTotalEnergy = currentTotalEnergy;
 
         initialized = true;
-        logger.info(format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
-        logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
-        logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
+        logger.log(basicLogging, format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
+        logger.log(basicLogging, format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
+        logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f",
                 "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
 
         // Store the initialized state.
@@ -1093,7 +1120,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             if (step % printFrequency == 0) {
                 // Original print statement
                 time = System.nanoTime() - time;
-                logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
+                logger.log(basicLogging, format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
                         totalSimTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
                 time = System.nanoTime();
@@ -1108,7 +1135,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 //  time = System.nanoTime();
             }
             if (step % printEsvFrequency == 0 && esvSystem != null) {
-                logger.info(format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
+                logger.log(basicLogging, format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
             }
 
             // Write out snapshots in selected format every saveSnapshotFrequency steps.
@@ -1116,13 +1143,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 for (AssemblyInfo ai : assemblies) {
                     if (ai.archiveFile != null && !saveSnapshotAsPDB) {
                         if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                            logger.info(format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                            logger.log(basicLogging, format(" Appended snap shot to %s", ai.archiveFile.getName()));
                         } else {
                             logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
                         }
                     } else if (saveSnapshotAsPDB) {
                         if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                            logger.info(format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                            logger.log(basicLogging, format(" Wrote PDB file to %s", ai.pdbFile.getName()));
                         } else {
                             logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
                         }
@@ -1133,9 +1160,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             // Write out restart files every saveRestartFileFrequency steps.
             if (saveRestartFileFrequency > 0 && step % saveRestartFileFrequency == 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.info(" Wrote dynamics restart file to " + restartFile.getName());
+                    logger.log(basicLogging, " Wrote dynamics restart file to " + restartFile.getName());
                 } else {
-                    logger.info(" Writing dynamics restart file to " + restartFile.getName() + " failed");
+                    logger.log(basicLogging, " Writing dynamics restart file to " + restartFile.getName() + " failed");
                 }
             }
 
@@ -1163,7 +1190,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         // Log normal completion.
         if (!terminate) {
-            logger.info(format(" Completed %8d time steps\n", nSteps));
+            logger.log(basicLogging, format(" Completed %8d time steps\n", nSteps));
         }
 
         // Reset the done and terminate flags.
@@ -1631,4 +1658,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
     }
 
+    public enum VerbosityLevel {
+        VERBOSE(false), QUIET(true), SILENT(true);
+
+        private boolean isQuiet;
+
+        VerbosityLevel(boolean isQuiet) {
+            this.isQuiet = isQuiet;
+        }
+
+        public boolean isQuiet() {
+            return isQuiet;
+        }
+    }
 }
