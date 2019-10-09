@@ -37,15 +37,22 @@
 //******************************************************************************
 package ffx.potential.parameters;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.sort;
 
 import static org.apache.commons.math3.util.FastMath.abs;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.TORTORS;
 
 /**
  * The TorsionTorsionType class defines a Torsion-Torsion spline.
@@ -114,7 +121,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      */
     public TorsionTorsionType(int[] atomClasses, int[] gridPoints,
                               double[] torsion1, double[] torsion2, double[] energy) {
-        super(ForceField.ForceFieldType.TORTORS, sortKey(atomClasses));
+        super(TORTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         nx = gridPoints[0];
         ny = gridPoints[1];
@@ -585,6 +592,93 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
 
     /**
+     * Construct a TorsionTorsionType from multiple input lines.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @param br     a BufferedReader instance.
+     * @return a TorsionTorsionType instance.
+     */
+    public static TorsionTorsionType parse(String input, String[] tokens, BufferedReader br) {
+        if (tokens.length < 8) {
+            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[5];
+                for (int i = 0; i < 5; i++) {
+                    atomClasses[i] = parseInt(tokens[i + 1]);
+                }
+                int[] gridPoints = new int[2];
+                gridPoints[0] = parseInt(tokens[6]);
+                gridPoints[1] = parseInt(tokens[7]);
+                int points = gridPoints[0] * gridPoints[1];
+                double[] torsion1 = new double[points];
+                double[] torsion2 = new double[points];
+                double[] energy = new double[points];
+                for (int i = 0; i < points; i++) {
+                    input = br.readLine();
+                    tokens = input.trim().split(" +");
+                    if (tokens.length != 3) {
+                        logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+                        return null;
+                    }
+                    torsion1[i] = parseDouble(tokens[0]);
+                    torsion2[i] = parseDouble(tokens[1]);
+                    energy[i] = parseDouble(tokens[2]);
+                }
+                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
+            } catch (NumberFormatException | IOException e) {
+                String message = "Exception parsing TORTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Construct a TorsionTorsionType from a single input line.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return a TorsionTorsionType instance.
+     */
+    public static TorsionTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 8) {
+            logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[5];
+                for (int i = 0; i < 5; i++) {
+                    atomClasses[i] = parseInt(tokens[i + 1]);
+                }
+                int[] gridPoints = new int[2];
+                gridPoints[0] = parseInt(tokens[6]);
+                gridPoints[1] = parseInt(tokens[7]);
+                int points = gridPoints[0] * gridPoints[1];
+                int numTokens = points * 3 + 8;
+                if (tokens.length < numTokens) {
+                    logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
+                    return null;
+                }
+                double[] torsion1 = new double[points];
+                double[] torsion2 = new double[points];
+                double[] energy = new double[points];
+                int index = 8;
+                for (int i = 0; i < points; i++) {
+                    torsion1[i] = parseDouble(tokens[index++]);
+                    torsion2[i] = parseDouble(tokens[index++]);
+                    energy[i] = parseDouble(tokens[index++]);
+                }
+                return new TorsionTorsionType(atomClasses, gridPoints, torsion1, torsion2, energy);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing TORTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Nicely formatted torsion-torsion type.
@@ -593,14 +687,14 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     public String toString() {
         StringBuilder tortorBuffer = new StringBuilder("tortors");
         for (int i : atomClasses) {
-            tortorBuffer.append(String.format("  %5d", i));
+            tortorBuffer.append(format("  %5d", i));
         }
-        tortorBuffer.append(String.format("  %2d  %2d", gridPoints[0],
+        tortorBuffer.append(format("  %2d  %2d", gridPoints[0],
                 gridPoints[1]));
         for (int i = 0; i < energy.length; i++) {
             int nxi = i % nx;
             int nyi = i / ny;
-            tortorBuffer.append(String.format(" \\\n  % 6.1f  % 6.1f  % 8.5f",
+            tortorBuffer.append(format(" \\\n  % 6.1f  % 6.1f  % 8.5f",
                     tx[nxi], ty[nyi], energy[i]));
         }
         return tortorBuffer.toString();
@@ -613,8 +707,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     public int compare(String key1, String key2) {
         String[] keys1 = key1.split(" ");
         String[] keys2 = key2.split(" ");
-        int c1 = Integer.parseInt(keys1[2]);
-        int c2 = Integer.parseInt(keys2[2]);
+        int c1 = parseInt(keys1[2]);
+        int c2 = parseInt(keys2[2]);
         if (c1 < c2) {
             return -1;
         } else if (c1 > c2) {

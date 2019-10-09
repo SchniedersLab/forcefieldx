@@ -40,11 +40,16 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
+
+import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
 
 /**
  * The ImproperTorsionType class defines an improper torsion.
@@ -53,6 +58,11 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  * @since 1.0
  */
 public final class ImproperTorsionType extends BaseType implements Comparator<String> {
+
+    /**
+     * A Logger for the ImproperTorsionType class.
+     */
+    private static final Logger logger = Logger.getLogger(ImproperTorsionType.class.getName());
 
     /**
      * Atom classes that for this Improper Torsion angle.
@@ -88,7 +98,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
      * @param periodicity The periodicity.
      */
     public ImproperTorsionType(int[] atomClasses, double k, double phase, int periodicity) {
-        super(ForceField.ForceFieldType.IMPTORS, sortKey(atomClasses));
+        super(IMPTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         double symm = 1.0;
         this.periodicity = periodicity;
@@ -241,6 +251,35 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
         double phase = (improperTorsionType1.phase + improperTorsionType2.phase) / 2.0;
 
         return new ImproperTorsionType(atomClasses, forceConstant, phase, periodicity);
+    }
+
+    /**
+     * Construct an ImproperTorsionType from an input string.
+     *
+     * @param input  The overall input String.
+     * @param tokens The input String tokenized.
+     * @return an ImproperTorsionType instance.
+     */
+    public static ImproperTorsionType parse(String input, String[] tokens) {
+        if (tokens.length < 8) {
+            logger.log(Level.WARNING, "Invalid IMPTORS type:\n{0}", input);
+        } else {
+            try {
+                int[] atomClasses = new int[4];
+                atomClasses[0] = parseInt(tokens[1]);
+                atomClasses[1] = parseInt(tokens[2]);
+                atomClasses[2] = parseInt(tokens[3]);
+                atomClasses[3] = parseInt(tokens[4]);
+                double k = parseDouble(tokens[5]);
+                double phase = parseDouble(tokens[6]);
+                int period = parseInt(tokens[7]);
+                return new ImproperTorsionType(atomClasses, k, phase, period);
+            } catch (NumberFormatException e) {
+                String message = "Exception parsing IMPTORS type:\n" + input + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        return null;
     }
 
     /**

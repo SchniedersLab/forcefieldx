@@ -509,7 +509,7 @@ public class ForceField {
     }
 
     /**
-     * Add a force field keyword that is represented by a double.
+     * Add a property from a external parameter file.
      *
      * @param property Property string.
      * @param value    double
@@ -519,18 +519,19 @@ public class ForceField {
             return;
         }
         String key = toPropertyForm(property);
-        try {
-            String old = getString(key);
-            if (old.equalsIgnoreCase(value)) {
-                return;
-            }
-            logger.info(format("  Existing %s  %s", key, old));
-        } catch (Exception e) {
-            // Property does not exist yet.
-        } finally {
-            properties.addProperty(key, value);
-            logger.info(format("  Added    %s  %s", key, value));
-        }
+//        try {
+//            String old = getString(key);
+//            if (old.equalsIgnoreCase(value)) {
+//                return;
+//            }
+//            logger.info(format("  Existing %s  %s", key, old));
+//        } catch (Exception e) {
+//            // Property does not exist yet.
+//        } finally {
+//            properties.addProperty(key, value);
+//            logger.info(format("  Added    %s  %s", key, value));
+//        }
+        properties.addProperty(key, value);
     }
 
     /**
@@ -1060,6 +1061,29 @@ public class ForceField {
         }
         for (PiTorsionType type : piTorsionTypes.values()) {
             type.setScaleFactor(scaleFactor);
+        }
+    }
+
+    /**
+     * The AngleFunction in use by this ForceField.
+     * @param angleFunction The AngleFunction to use.
+     */
+    public void setAngleFunction(AngleType.AngleFunction angleFunction) {
+        for (AngleType angleType : anglepTypes.values()) {
+            angleType.setAngleFunction(angleFunction);
+        }
+        for (AngleType angleType : angleTypes.values()) {
+            angleType.setAngleFunction(angleFunction);
+        }
+    }
+
+    /**
+     * The BondFunction in use by this ForceField.
+     * @param bondFunction The BondFunction to use.
+     */
+    public void setBondFunction(BondType.BondFunction bondFunction) {
+        for (BondType bondType : bondTypes.values()) {
+            bondType.setBondFunction(bondFunction);
         }
     }
 
