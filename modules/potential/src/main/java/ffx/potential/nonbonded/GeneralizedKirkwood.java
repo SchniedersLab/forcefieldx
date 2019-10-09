@@ -142,7 +142,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Default dielectric offset
      **/
     private static final double DEFAULT_DIELECTRIC_OFFSET = 0.09;
-
+    /**
+     * Default constant for the Generalized Kirkwood cross-term.
+     */
+    public static final double DEFAULT_GKC = 2.455;
     /**
      * Empirical scaling of the Bondi radii.
      */
