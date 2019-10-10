@@ -38,18 +38,18 @@
 package ffx.potential.parsers;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
+import ffx.potential.bonded.Polymer;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.potential.MolecularAssembly;
@@ -616,6 +616,31 @@ public abstract class SystemFilter {
         }
     }
 
+    private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks, int tokOffset) {
+        return parseAtomicRanges(mola, Arrays.copyOfRange(toks, tokOffset, toks.length));
+    }
+
+    private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks) {
+        Atom[] atoms = mola.getAtomArray();
+        return Arrays.stream(toks).
+                parallel().
+                flatMap((String tok) -> {
+                    if (tok.equalsIgnoreCase("HEAVY")) {
+                        return Arrays.stream(mola.getChains()).
+                                flatMap((Polymer poly) ->  poly.getAtomList().stream().filter(Atom::isHeavy));
+                    } else if (tok.matches("^[0-9]+$")) {
+                        return Stream.of(atoms[Integer.parseInt(tok) - 1]);
+                    } else if (tok.matches("^[0-9]+-[0-9]+")) {
+                        String[] subtoks = tok.split("-");
+                        int first = Integer.parseInt(subtoks[0]) - 1;
+                        int last = Integer.parseInt(subtoks[1]) - 1;
+                        return IntStream.rangeClosed(first, last).mapToObj((int i) -> atoms[i]);
+                    } else {
+                        return Arrays.stream(atoms).filter((Atom a) -> a.getName().equals(tok));
+                    }
+                }).collect(Collectors.toSet());
+    }
+
     /**
      * Automatically sets atom-specific flags, particularly nouse and inactive,
      * and apply harmonic restraints. Intended to be called at the end of
@@ -688,32 +713,8 @@ public abstract class SystemFilter {
             }
             logger.info(format(" Adding lambda-disabled coordinate restraint "
                     + "with force constant %10.4f kcal/mol/A", forceconst));
-            Set<Atom> restraintAtoms = new HashSet<>();
-
-            for (int i = 1; i < toks.length; i++) {
-                try {
-                    int[] restrRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
-                    logger.info(format(" Adding atoms %d-%d to restraint",
-                            restrRange[0] + 1, restrRange[1] + 1));
-                    for (int j = restrRange[0]; j <= restrRange[1]; j++) {
-                        restraintAtoms.add(molaAtoms[j]);
-                    }
-                } catch (IllegalArgumentException ex) {
-                    boolean atomFound = false;
-                    for (Atom atom : molaAtoms) {
-                        if (atom.getName().equalsIgnoreCase(toks[i])) {
-                            atomFound = true;
-                            restraintAtoms.add(atom);
-                        }
-                    }
-                    if (atomFound) {
-                        logger.info(format(" Added atoms with name %s to restraint", toks[i]));
-                    } else {
-                        logger.log(Level.INFO, ex.getLocalizedMessage());
-                    }
-                }
-            }
-            if (!restraintAtoms.isEmpty()) {
+            Set<Atom> restraintAtoms = parseAtomicRanges(activeMolecularAssembly, toks, 1);
+            if (!(restraintAtoms == null || restraintAtoms.isEmpty())) {
                 Atom[] ats = restraintAtoms.toArray(new Atom[restraintAtoms.size()]);
                 coordRestraints.add(new CoordRestraint(ats, forceField, false, forceconst));
             } else {
