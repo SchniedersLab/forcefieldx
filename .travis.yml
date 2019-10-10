@@ -9,17 +9,13 @@ matrix:
     - os: linux
       jdk: oraclejdk11
     - os: linux
-      jdk: oraclejdk12
+      jdk: oraclejdk13
     - os: linux
       jdk: openjdk8
     - os: linux
-      jdk: openjdk9
-    - os: linux
-      jdk: openjdk10
-    - os: linux
       jdk: openjdk11
     - os: linux
-      jdk: openjdk12
+      jdk: openjdk13
     - os: osx
       osx_image: xcode8.3
     - os: osx
@@ -42,5 +38,4 @@ notifications:
     on_failure: always
 
 script: mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=FINE
-
 
