@@ -134,7 +134,7 @@ class SaveAsPDB extends PotentialScript {
 
         //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
         if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter) && numModels>1) {
-            saveFilter.setModelNumbering(true, 1)
+            saveFilter.setModelNumbering(1)
             try {
                 while (openFilter.readNext(false)) {
                     saveFile.append("ENDMDL\n")

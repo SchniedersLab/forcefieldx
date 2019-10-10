@@ -376,7 +376,8 @@ class Solvator extends PotentialScript {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(format(" Ion addition with %d atoms per ion, concentration %8.2g mM, charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize));
+            StringBuilder sb = new StringBuilder(format(" Ion addition with %d atoms per ion, concentration %10.3g mM, " +
+                    "charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize));
             for (Atom atom : atoms) {
                 sb.append("\n").append(" Includes atom ").append(atom.toString());
             }
@@ -849,15 +850,22 @@ class Solvator extends PotentialScript {
             newMolecules.addAll(addedIons);
         }
 
+        logger.info(" Adding solvent and ion atoms to system...");
+        long time = -System.nanoTime();
         for (Atom[] atoms : newMolecules) {
             for (Atom atom : atoms) {
                 atom.setHetero(true);
                 activeAssembly.addMSNode(atom);
             }
         }
+        time += System.nanoTime();
+        logger.info(format(" Solvent and ions added in %12.4g sec", time * Constants.NS2SEC));
 
         String solvatedName = activeAssembly.getFile().getName().replaceFirst(~/\.[^.]+$/, ".pdb");
+        time = -System.nanoTime();
         potentialFunctions.saveAsPDB(activeAssembly, new File(solvatedName));
+        time += System.nanoTime();
+        logger.info(format(" Structure written to disc in %12.4g sec", time * Constants.NS2SEC));
 
         return this
     }
