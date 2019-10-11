@@ -41,8 +41,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.numerics.Potential;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
 /**
  * Respa performs multiple time step molecular dynamics using the reversible
@@ -129,7 +129,7 @@ public class Respa extends Integrator {
         potential.setEnergyTermState(Potential.STATE.FAST);
         halfStepEnergy = potential.energyAndGradient(x, gradient);
         for (int i = 0; i < nVariables; i++) {
-            aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
+            aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
         }
 
         // Complete the inner RESPA loop.
@@ -149,7 +149,7 @@ public class Respa extends Integrator {
                   Use Newton's second law to get fast-evolving accelerations.
                   Update fast-evolving velocities using the Verlet recursion.
                  */
-                aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
+                aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
                 v[i] += aPrevious[i] * halfInnerTimeStep;
             }
         }
@@ -166,7 +166,7 @@ public class Respa extends Integrator {
     @Override
     public void postForce(double[] gradient) {
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
             v[i] += a[i] * dt_2;
         }
     }

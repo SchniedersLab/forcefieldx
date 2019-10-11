@@ -113,7 +113,6 @@ public class ForceFieldFilter {
      */
     private final CompositeConfiguration properties;
 
-
     /**
      * <p>
      * Constructor for ForceFieldFilter.</p>
@@ -465,10 +464,14 @@ public class ForceFieldFilter {
         }
 
         // Otherwise -- add this entry as a property.
-        String key = tokens[0];
-        String value = input.replaceFirst(tokens[0], "").trim();
-        // logger.info(" Adding " + key + ": " + value);
-        forceField.addProperty(key, value);
+        try {
+            String key = tokens[0];
+            String value = input.replaceFirst(tokens[0], "").trim();
+            forceField.addProperty(key, value);
+        } catch (Exception e) {
+            logger.info(" Ignored line: " + input);
+        }
+
     }
 
     /**

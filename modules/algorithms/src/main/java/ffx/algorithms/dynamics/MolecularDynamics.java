@@ -83,6 +83,9 @@ import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.NS2SEC;
+
 /**
  * Run NVE, NVT, or NPT molecular dynamics.
  *
@@ -143,19 +146,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Indicates how verbose MD should be.
      */
-    protected VerbosityLevel verbosityLevel = VerbosityLevel.VERBOSE;
+    private VerbosityLevel verbosityLevel = VerbosityLevel.VERBOSE;
     /**
      * Log some of the more frequent messages at this level. Always at or below basicLogging.
      */
-    protected Level intermediateLogging = Level.INFO;
+    Level intermediateLogging = Level.INFO;
     /**
      * Log basic information at this level. Always at or above intermediateLogging.
      */
-    protected Level basicLogging = Level.INFO;
+    Level basicLogging = Level.INFO;
     /**
      * Dynamics restart file.
      */
-    protected File restartFile = null;
+    File restartFile = null;
     /**
      * Flag to indicate loading of restart file.
      */
@@ -167,7 +170,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Flag to indicate dynamics has been initialized.
      */
-    protected boolean initialized = false;
+    boolean initialized = false;
     /**
      * Flag to indicate a run has finished.
      */
@@ -265,10 +268,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     protected String fileType = "XYZ";
     /**
-     * Constant <code>NS2SEC=1e-9</code>
-     */
-    static final double NS2SEC = 1e-9;
-    /**
      * Keep some old coordinate snapshots around.
      */
     private int numSnapshotsToKeep;
@@ -280,14 +279,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * MC notification flag.
      */
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
-
     /**
      * Monte Carlo notification enumeration.
      */
     public enum MonteCarloNotification {
         NEVER, EACH_STEP, AFTER_DYNAMICS
     }
-
     /**
      * ESV System.
      */
@@ -1012,7 +1009,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
 
             for (int i = 0; i < numberOfVariables; i++) {
-                a[i] = -Thermostat.convert * gradient[i] / mass[i];
+                a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
             }
 
             if (aPrevious != null) {

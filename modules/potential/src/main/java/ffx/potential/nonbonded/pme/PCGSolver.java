@@ -387,7 +387,7 @@ public class PCGSolver {
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(
-                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * TO_SECONDS));
+                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * Constants.NS2SEC));
             }
 
             // If the RMS Debye change increases, fail the SCF process.
@@ -414,9 +414,9 @@ public class PCGSolver {
             }
         }
         if (print) {
-            sb.append(format(" Direct:                  %7.4f\n", TO_SECONDS * directTime));
+            sb.append(format(" Direct:                  %7.4f\n", Constants.NS2SEC * directTime));
             startTime = System.nanoTime() - startTime;
-            sb.append(format(" Total:                   %7.4f", startTime * TO_SECONDS));
+            sb.append(format(" Total:                   %7.4f", startTime * Constants.NS2SEC));
             logger.info(sb.toString());
         }
 
@@ -1248,6 +1248,4 @@ public class PCGSolver {
             }
         }
     }
-
-    private static final double TO_SECONDS = 1.0e-9;
 }
