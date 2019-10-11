@@ -38,7 +38,7 @@
 package ffx.algorithms.dynamics.integrators;
 
 import ffx.numerics.Potential;
-import static ffx.algorithms.dynamics.thermostats.Thermostat.convert;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
 /**
  * Integrate Newton's equations of motion using a Beeman multistep recursion
@@ -94,7 +94,7 @@ public class BetterBeeman extends Integrator {
     public void postForce(double[] gradient) {
         copyAccelerationToPrevious();
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -convert * gradient[i] / mass[i];
+            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
         }
     }

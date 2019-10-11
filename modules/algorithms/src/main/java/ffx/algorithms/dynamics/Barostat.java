@@ -43,6 +43,7 @@ import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -51,6 +52,8 @@ import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import static ffx.utilities.Constants.AVOGADRO;
+import static ffx.utilities.Constants.PRESCON;
 
 /**
  * The Barostat class maintains constant pressure using random trial moves in
@@ -69,28 +72,15 @@ public class Barostat implements CrystalPotential {
      */
     private static final double kB = 1.98720415e-3;
     /**
-     * Conversion from kcal/mol/Ang^3 to Atm.
+     * Ideal gas constant * temperature (kcal/mol).
      */
-    private static final double PRESCON = 6.85684112e4;
-    /**
-     * Avogadro's number.
-     */
-    private static final double AVOGADRO = 6.02214129e23;
-    /**
-     * Sampling temperature (K).
-     */
-    private final double temperature = 298.15;
+    private double kT;
     /**
      * Sampling pressure (atm)
      */
     private double pressure = 1.0;
     /**
-     * Ideal gas constant * temperature (kcal/mol).
-     */
-    private final double kT = temperature * kB;
-    /**
-     * Flag to turn the Barostat on or off. If false, MC moves will not be
-     * tried.
+     * Flag to turn the Barostat on or off. If false, MC moves will not be tried.
      */
     private boolean active = true;
     /**
@@ -102,22 +92,9 @@ public class Barostat implements CrystalPotential {
      */
     private double maxAngleMove = 0.5;
     /**
-     * A carbon atom cannot fit into a unit cell without interfacial radii
-     * greater than ~1.2 Angstroms.
-     */
-    private final double minInterfacialRadius = 1.2;
-    /**
      * MolecularAssembly being simulated.
      */
     private final MolecularAssembly molecularAssembly;
-    /**
-     * Atoms in the system.
-     */
-    private final Atom[] atoms;
-    /**
-     * Number of atoms.
-     */
-    private final int nAtoms;
     /**
      * Mass of the system.
      */
@@ -195,10 +172,6 @@ public class Barostat implements CrystalPotential {
      */
     private double densityMean2 = 0;
     /**
-     * Standard deviation for density.
-     */
-    private double densitySD = 0;
-    /**
      * Current lattice parameters.
      */
     private double a = 0;
@@ -225,16 +198,6 @@ public class Barostat implements CrystalPotential {
     private double alphaMean2 = 0;
     private double betaMean2 = 0;
     private double gammaMean2 = 0;
-    /**
-     * Standard deviation of lattice parameters.
-     */
-    private double aSD = 0;
-    private double bSD = 0;
-    private double cSD = 0;
-    private double alphaSD = 0;
-    private double betaSD = 0;
-    private double gammaSD = 0;
-    private final int printFrequency = 1000;
     private double minDensity = 0.75;
     // NNQQ Peptide has a density of 1.4.
     private double maxDensity = 1.60;
@@ -243,19 +206,33 @@ public class Barostat implements CrystalPotential {
     /**
      * Initialize the Barostat.
      *
-     * @param molecularAssembly The molecular assembly to apply the MC barostat
-     *                          to.
+     * @param molecularAssembly The molecular assembly to apply the MC barostat to.
      * @param potential         a {@link ffx.crystal.CrystalPotential} object.
      */
     public Barostat(MolecularAssembly molecularAssembly, CrystalPotential potential) {
+        this(molecularAssembly, potential, 298.15);
+    }
+
+    /**
+     * Initialize the Barostat.
+     *
+     * @param molecularAssembly The molecular assembly to apply the MC barostat to.
+     * @param potential         a {@link ffx.crystal.CrystalPotential} object.
+     * @param temperature       The Metropolis Monte Carlo temperature (Kelvin).
+     */
+    public Barostat(MolecularAssembly molecularAssembly, CrystalPotential potential, double temperature) {
 
         this.molecularAssembly = molecularAssembly;
         this.potential = potential;
+        this.kT = temperature * kB;
+
         crystal = potential.getCrystal();
         unitCell = crystal.getUnitCell();
         spaceGroup = unitCell.spaceGroup;
-        atoms = molecularAssembly.getAtomArray();
-        nAtoms = atoms.length;
+        // Atoms in the system.
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        // Number of atoms.
+        int nAtoms = atoms.length;
         nSymm = spaceGroup.getNumberOfSymOps();
         mass = molecularAssembly.getMass();
         x = new double[3 * nAtoms];
@@ -266,6 +243,15 @@ public class Barostat implements CrystalPotential {
             logger.info(String.format(" There is %d molecule.", nMolecules));
         }
 
+    }
+
+    /**
+     * Set the Metropolis Monte Carlo temperature.
+     *
+     * @param temperature Temperature (Kelvin).
+     */
+    public void setTemperature(double temperature) {
+        this.kT = temperature * kB;
     }
 
     /**
@@ -344,9 +330,7 @@ public class Barostat implements CrystalPotential {
                 break;
         }
 
-        /**
-         * Enforce minimum & maximum density constraints.
-         */
+        // Enforce minimum & maximum density constraints.
         double den = density();
         if (den < minDensity || den > maxDensity) {
             if (logger.isLoggable(Level.FINE)) {
@@ -359,9 +343,10 @@ public class Barostat implements CrystalPotential {
             return currentE;
         }
 
-        /**
-         * Enforce minimum interfacial radii of 1.2 Angstroms.
-         */
+
+        // A carbon atom cannot fit into a unit cell without interfacial radii greater than ~1.2 Angstroms.
+        double minInterfacialRadius = 1.2;
+        // Enforce minimum interfacial radii of 1.2 Angstroms.
         if (unitCell.interfacialRadiusA < minInterfacialRadius
                 || unitCell.interfacialRadiusB < minInterfacialRadius
                 || unitCell.interfacialRadiusC < minInterfacialRadius) {
@@ -378,10 +363,8 @@ public class Barostat implements CrystalPotential {
             return currentE;
         }
 
-        /**
-         * Apply the boundary condition for the proposed move. If the move is
-         * rejected, then the previous boundary conditions must be restored.
-         */
+        // Apply the boundary condition for the proposed move. If the move is
+        // rejected, then the previous boundary conditions must be restored.
         potential.setCrystal(crystal);
 
         // Update atomic coordinates to maintain molecular fractional centers of mass.
@@ -403,7 +386,7 @@ public class Barostat implements CrystalPotential {
         // double dV = 0.0;
 
         // Compute the volume entropy
-        double dS = -nMolecules * kT * Math.log(newV / currentV);
+        double dS = -nMolecules * kT * log(newV / currentV);
         //double dS = 0.0;
 
         // Add up the contributions
@@ -653,11 +636,8 @@ public class Barostat implements CrystalPotential {
      */
     public void setDensity(double density) {
         molecularAssembly.computeFractionalCoordinates();
-
         crystal.setDensity(density, mass);
-
         potential.setCrystal(crystal);
-
         molecularAssembly.moveToFractionalCoordinates();
     }
 
@@ -848,15 +828,13 @@ public class Barostat implements CrystalPotential {
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
-        /**
-         * Calculate the energy and gradient as usual.
-         */
+
+        // Calculate the energy and gradient as usual.
         double energy = potential.energyAndGradient(x, g);
-        /**
-         * Apply the barostat during computation of slowly varying forces.
-         */
+
+        // Apply the barostat during computation of slowly varying forces.
         if (active && state != STATE.FAST) {
-            if (Math.random() < (1.0 / meanBarostatInterval)) {
+            if (random() < (1.0 / meanBarostatInterval)) {
 
                 // Attempt to change the unit cell parameters.
                 moveAccepted = false;
@@ -866,10 +844,8 @@ public class Barostat implements CrystalPotential {
                 // Collect Statistics.
                 collectStats();
 
-                /**
-                 * If a move was accepted, then re-calculate the gradient so
-                 * that it's consistent with the current unit cell parameters.
-                 */
+                // If a move was accepted, then re-calculate the gradient so
+                // that it's consistent with the current unit cell parameters.
                 if (moveAccepted) {
                     energy = potential.energyAndGradient(x, g);
                 }
@@ -895,11 +871,12 @@ public class Barostat implements CrystalPotential {
         alphaMean2 += alpha * alpha;
         betaMean2 += beta * beta;
         gammaMean2 += gamma * gamma;
+        int printFrequency = 1000;
         if (barostatCount % printFrequency == 0) {
             densityMean = densityMean / printFrequency;
             densityMean2 = densityMean2 / printFrequency;
-            densitySD = sqrt(densityMean2 - densityMean * densityMean);
-            logger.info(String.format(" Density: %5.3f +/- %5.3f", densityMean, densitySD));
+            double densitySD = sqrt(densityMean2 - densityMean * densityMean);
+            logger.info(format(" Density: %5.3f +/- %5.3f", densityMean, densitySD));
             aMean = aMean / printFrequency;
             bMean = bMean / printFrequency;
             cMean = cMean / printFrequency;
@@ -912,14 +889,13 @@ public class Barostat implements CrystalPotential {
             alphaMean2 = alphaMean2 / printFrequency;
             betaMean2 = betaMean2 / printFrequency;
             gammaMean2 = gammaMean2 / printFrequency;
-            aSD = sqrt(aMean2 - aMean * aMean);
-            bSD = sqrt(bMean2 - bMean * bMean);
-            cSD = sqrt(cMean2 - cMean * cMean);
-            alphaSD = sqrt(alphaMean2 - alphaMean * alphaMean);
-            betaSD = sqrt(betaMean2 - betaMean * betaMean);
-            gammaSD = sqrt(gammaMean2 - gammaMean * gammaMean);
-            logger.info(String.format(
-                    " Lattice a: %4.2f +/-%4.2f b: %4.2f +/-%4.2f c: %4.2f +/-%4.2f alpha: %5.2f +/-%3.2f beta: %5.2f +/-%3.2f gamma: %5.2f +/-%3.2f",
+            double aSD = sqrt(aMean2 - aMean * aMean);
+            double bSD = sqrt(bMean2 - bMean * bMean);
+            double cSD = sqrt(cMean2 - cMean * cMean);
+            double alphaSD = sqrt(alphaMean2 - alphaMean * alphaMean);
+            double betaSD = sqrt(betaMean2 - betaMean * betaMean);
+            double gammaSD = sqrt(gammaMean2 - gammaMean * gammaMean);
+            logger.info(format(" Lattice a: %4.2f +/-%4.2f b: %4.2f +/-%4.2f c: %4.2f +/-%4.2f alpha: %5.2f +/-%3.2f beta: %5.2f +/-%3.2f gamma: %5.2f +/-%3.2f",
                     aMean, aSD, bMean, bSD, cMean, cSD, alphaMean, alphaSD, betaMean, betaSD, gammaMean, gammaSD));
             densityMean = 0;
             densityMean2 = 0;

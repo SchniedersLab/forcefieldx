@@ -49,7 +49,7 @@ import edu.rit.pj.Comm;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.dynamics.thermostats.Thermostat;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
 
 /**
@@ -87,21 +87,20 @@ public class ReplicaExchange implements Terminatable {
      * system). Currently the array is of size [number of Processes][2].
      * <p>
      */
-    private final double parameters[][];
-    private double myParameters[];
+    private final double[][] parameters;
+    private double[] myParameters;
     /**
      * Each parameter array is wrapped inside a Parallel Java DoubleBuf for the
      * All-Gather communication calls.
      */
-    private final DoubleBuf parametersBuf[];
+    private final DoubleBuf[] parametersBuf;
     private DoubleBuf myParametersBuf;
 
-    private int temp2Rank[];
-    private int rank2Temp[];
-    private double temperatures[];
+    private int[] temp2Rank;
+    private int[] rank2Temp;
+    private double[] temperatures;
     private double lowTemperature;
-
-    private int acceptedCount[];
+    private int[] acceptedCount;
 
     /**
      * ReplicaExchange constructor.
@@ -117,10 +116,7 @@ public class ReplicaExchange implements Terminatable {
         this.algorithmListener = listener;
         this.lowTemperature = temperature;
 
-        /**
-         * Set up the Replica Exchange communication variables for Parallel Java
-         * communication between nodes.
-         */
+        // Set up the Replica Exchange communication variables for Parallel Java communication between nodes.
         world = Comm.world();
         numProc = world.size();
         rank = world.rank();
@@ -143,10 +139,8 @@ public class ReplicaExchange implements Terminatable {
             parametersBuf[i] = DoubleBuf.buffer(parameters[i]);
         }
 
-        /**
-         * A convenience reference to the parameters of this process are updated
-         * during communication calls.
-         */
+        // A convenience reference to the parameters of this process are updated
+         // during communication calls.
         myParameters = parameters[rank];
         myParametersBuf = parametersBuf[rank];
     }
@@ -156,7 +150,7 @@ public class ReplicaExchange implements Terminatable {
      *
      * @param temperatures an array of {@link double} objects.
      */
-    public void setTemperatures(double temperatures[]) {
+    public void setTemperatures(double[] temperatures) {
         assert (temperatures.length == nReplicas);
         this.temperatures = temperatures;
     }
@@ -188,14 +182,11 @@ public class ReplicaExchange implements Terminatable {
         done = false;
         terminate = false;
         for (int i = 0; i < cycles; i++) {
-            /**
-             * Check for termination request.
-             */
+            // Check for termination request.
             if (terminate) {
                 done = true;
                 break;
             }
-
             dynamic(nSteps, timeStep, printInterval, saveInterval);
             logger.info(String.format(" Applying exchange condition for cycle %d.", i));
             exchange(i);
@@ -213,40 +204,30 @@ public class ReplicaExchange implements Terminatable {
 
             double tempA = parameters[i1][0];
             double tempB = parameters[i2][0];
-            double betaA = Thermostat.convert / (tempA * kB);
-            double betaB = Thermostat.convert / (tempB * kB);
+            double betaA = KCAL_TO_GRAM_ANG2_PER_PS2 / (tempA * kB);
+            double betaB = KCAL_TO_GRAM_ANG2_PER_PS2 / (tempB * kB);
             double energyA = parameters[i1][1];
             double energyB = parameters[i2][1];
-            /**
-             * Compute the change in energy over kT (E/kT) for the Metropolis
-             * criteria.
-             */
+
+            // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
             double deltaE = (energyA - energyB) * (betaB - betaA);
 
-            /**
-             * If the Metropolis criteria is satisfied, do the switch.
-             */
+            // If the Metropolis criteria is satisfied, do the switch.
             if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
                 acceptedCount[i]++;
 
-                /**
-                 * Swap temperature and energy values.
-                 */
+                // Swap temperature and energy values.
                 parameters[i1][0] = tempB;
                 parameters[i2][0] = tempA;
 
                 parameters[i1][1] = energyB;
                 parameters[i2][1] = energyA;
 
-                /**
-                 * Map temperatures to process ranks.
-                 */
+                // Map temperatures to process ranks.
                 temp2Rank[i] = i2;
                 temp2Rank[i + 1] = i1;
 
-                /**
-                 * Map ranks to temperatures.
-                 */
+                // Map ranks to temperatures.
                 rank2Temp[i1] = i + 1;
                 rank2Temp[i2] = i;
 
@@ -265,31 +246,24 @@ public class ReplicaExchange implements Terminatable {
      * Blocking dynamic steps: when this method returns each replica has
      * completed the requested number of steps.
      *
-     * @param nSteps
-     * @param timeStep
-     * @param printInterval
-     * @param saveInterval
+     * @param nSteps        the number of time steps.
+     * @param timeStep      the time step.
+     * @param printInterval the number of steps between loggging updates.
+     * @param saveInterval  the number of steps between saving snapshots.
      */
-    private void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                         final double saveInterval) {
+    private void dynamic(final int nSteps, final double timeStep, final double printInterval, final double saveInterval) {
 
         int i = rank2Temp[rank];
 
-        /**
-         * Start this processes MolecularDynamics instance sampling.
-         */
+        // Start this processes MolecularDynamics instance sampling.
         boolean initVelocities = true;
         replica.dynamic(nSteps, timeStep, printInterval, saveInterval, temperatures[i], initVelocities, null);
 
-        /**
-         * Update this ranks' parameter array to be consistent with the dynamics.
-         */
+        // Update this ranks' parameter array to be consistent with the dynamics.
         myParameters[0] = temperatures[i];
         myParameters[1] = replica.currentPotentialEnergy;
 
-        /**
-         * Gather all parameters from the other processes.
-         */
+        // Gather all parameters from the other processes.
         try {
             world.allGather(myParametersBuf, parametersBuf);
         } catch (IOException ex) {

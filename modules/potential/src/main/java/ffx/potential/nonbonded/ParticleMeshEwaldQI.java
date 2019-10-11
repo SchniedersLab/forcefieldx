@@ -113,6 +113,7 @@ import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
 import static ffx.potential.parameters.MultipoleType.zeroD;
 import static ffx.potential.parameters.MultipoleType.zeroM;
+import static ffx.utilities.Constants.NS2SEC;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -623,7 +624,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     private long realSpacePermTimeTotal, realSpaceTimeTotal, realSpaceScfTimeTotal;
     private long bornRadiiTotal, gkEnergyTotal;
     private ELEC_FORM elecForm = ELEC_FORM.PAM;
-    private static final double TO_SECONDS = 1.0e-9;
     private static final double TO_MS = 1.0e-6;
     private int recycledTensors;
 
@@ -1467,7 +1467,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     }
 
     private void printRealSpaceTimings() {
-        double total = (realSpacePermTimeTotal + realSpaceScfTimeTotal + realSpaceTimeTotal) * TO_SECONDS;
+        double total = (realSpacePermTimeTotal + realSpaceScfTimeTotal + realSpaceTimeTotal) * NS2SEC;
 
         logger.info(String.format("\n Real Space: %7.4f (sec)", total));
         logger.info("           Electric Field");
@@ -1484,8 +1484,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         for (int i = 0; i < maxThreads; i++) {
             int count = realSpaceEnergyRegion.realSpaceEnergyLoops[i].getCount();
             logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %10d", i,
-                    realSpacePermTimes[i] * TO_SECONDS, realSpaceScfTimes[i] * TO_SECONDS,
-                    realSpaceTimes[i] * TO_SECONDS, count));
+                    realSpacePermTimes[i] * NS2SEC, realSpaceScfTimes[i] * NS2SEC,
+                    realSpaceTimes[i] * NS2SEC, count));
             minPerm = min(realSpacePermTimes[i], minPerm);
             maxPerm = max(realSpacePermTimes[i], maxPerm);
             minSCF = min(realSpaceScfTimes[i], minSCF);
@@ -1497,17 +1497,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
         int inter = realSpaceEnergyRegion.getInteractions();
         logger.info(String.format(" Min      %7.4f %7.4f %7.4f %10d",
-                minPerm * TO_SECONDS, minSCF * TO_SECONDS,
-                minEnergy * TO_SECONDS, minCount));
+                minPerm * NS2SEC, minSCF * NS2SEC,
+                minEnergy * NS2SEC, minCount));
         logger.info(String.format(" Max      %7.4f %7.4f %7.4f %10d",
-                maxPerm * TO_SECONDS, maxSCF * TO_SECONDS,
-                maxEnergy * TO_SECONDS, maxCount));
+                maxPerm * NS2SEC, maxSCF * NS2SEC,
+                maxEnergy * NS2SEC, maxCount));
         logger.info(String.format(" Delta    %7.4f %7.4f %7.4f %10d",
-                (maxPerm - minPerm) * TO_SECONDS, (maxSCF - minSCF) * TO_SECONDS,
-                (maxEnergy - minEnergy) * TO_SECONDS, (maxCount - minCount)));
+                (maxPerm - minPerm) * NS2SEC, (maxSCF - minSCF) * NS2SEC,
+                (maxEnergy - minEnergy) * NS2SEC, (maxCount - minCount)));
         logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %10d",
-                realSpacePermTimeTotal * TO_SECONDS, realSpaceScfTimeTotal * TO_SECONDS,
-                realSpaceTimeTotal * TO_SECONDS, inter));
+                realSpacePermTimeTotal * NS2SEC, realSpaceScfTimeTotal * NS2SEC,
+                realSpaceTimeTotal * NS2SEC, inter));
     }
 
     /**
@@ -2152,7 +2152,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(
-                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * TO_SECONDS));
+                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * NS2SEC));
             }
             /**
              * If the RMS Debye change increases, fail the SCF process.
@@ -2185,10 +2185,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
 
         if (print) {
             sb.append(format(" Direct:                  %7.4f\n",
-                    TO_SECONDS * directTime));
+                    NS2SEC * directTime));
             startTime = System.nanoTime() - startTime;
             sb.append(format(" Total:                   %7.4f",
-                    startTime * TO_SECONDS));
+                    startTime * NS2SEC));
             logger.info(sb.toString());
         }
         return completedSCFCycles;
@@ -6699,7 +6699,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(
-                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * TO_SECONDS));
+                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * NS2SEC));
             }
             /**
              * If the RMS Debye change increases, fail the SCF process.
@@ -6731,10 +6731,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
         if (print) {
             sb.append(format(" Direct:                  %7.4f\n",
-                    TO_SECONDS * directTime));
+                    NS2SEC * directTime));
             startTime = System.nanoTime() - startTime;
             sb.append(format(" Total:                   %7.4f",
-                    startTime * TO_SECONDS));
+                    startTime * NS2SEC));
             logger.info(sb.toString());
         }
 
