@@ -890,7 +890,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         initializationRegion.executeWith(parallelTeam);
 
         // Initialize GeneralizedKirkwood.
-        if (generalizedKirkwoodTerm) {
+        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
             generalizedKirkwood.init();
         }
 
