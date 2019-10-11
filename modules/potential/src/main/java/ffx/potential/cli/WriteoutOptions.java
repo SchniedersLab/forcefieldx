@@ -37,7 +37,11 @@
 //******************************************************************************
 package ffx.potential.cli;
 
+import ffx.potential.MolecularAssembly;
+import ffx.potential.utils.PotentialsFunctions;
 import picocli.CommandLine;
+
+import java.io.File;
 
 /**
  * Represents command line options for scripts that periodically write out structures.
@@ -62,5 +66,29 @@ public class WriteoutOptions {
      */
     public String getFileType() {
         return fileType;
+    }
+
+    /**
+     * Saves a single-snapshot file to either .xyz or .pdb, depending on the value of fileType.
+     * @param baseFileName Basic file name without extension.
+     * @param pFuncts      A PotentialFunctions object.
+     * @param ma           MolecularAssembly to save.
+     * @return             File written to.
+     */
+    public File saveFile(String baseFileName, PotentialsFunctions pFuncts, MolecularAssembly ma) {
+        String outFileName = baseFileName;
+        File outFile;
+        if (fileType.equalsIgnoreCase("XYZ")) {
+            outFileName = outFileName + ".xyz";
+            outFile = pFuncts.versionFile(new File(outFileName));
+
+            pFuncts.saveAsXYZ(ma, outFile);
+        } else {
+            outFileName = outFileName + ".pdb";
+            outFile = pFuncts.versionFile(new File(outFileName));
+
+            pFuncts.saveAsPDB(ma, outFile);
+        }
+        return outFile;
     }
 }
