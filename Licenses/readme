@@ -40,3 +40,5 @@ MRJ Toolkit Stubs: License could not be found.
 
 guava-license.txt: Apache 2.0 license: covers Guava (Google core utils for Java).
 
+quickhull3d-license.txt: BSD 2.0 license: covers use of the QuickHull3D package.
+
