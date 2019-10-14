@@ -156,6 +156,11 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.quickhull3d</groupId>
+            <artifactId>quickhull3d</artifactId>
+            <version>${quickhull3D.version}</version>
+        </dependency>
         <!-- dependency>
             <groupId>org.tensorflow</groupId>
             <artifactId>libtensorflow</artifactId>
