@@ -100,6 +100,7 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
+import static ffx.utilities.Constants.NS2SEC;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -889,7 +890,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         initializationRegion.executeWith(parallelTeam);
 
         // Initialize GeneralizedKirkwood.
-        if (generalizedKirkwoodTerm) {
+        if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
             generalizedKirkwood.init();
         }
 
@@ -1680,7 +1681,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             cycleTime += System.nanoTime();
             if (print) {
                 sb.append(format(
-                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * TO_SECONDS));
+                        " %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * NS2SEC));
             }
 
             // If the RMS Debye change increases, fail the SCF process.
@@ -1708,10 +1709,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
         if (print) {
             sb.append(format(" Direct:                  %7.4f\n",
-                    TO_SECONDS * directTime));
+                    NS2SEC * directTime));
             startTime = System.nanoTime() - startTime;
             sb.append(format(" Total:                   %7.4f",
-                    startTime * TO_SECONDS));
+                    startTime * NS2SEC));
             logger.info(sb.toString());
         }
         return completedSCFCycles;
@@ -3282,7 +3283,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         public void printRealSpaceTimings() {
-            double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * TO_SECONDS;
+            double total = (realSpacePermTotal + realSpaceSCFTotal + realSpaceEnergyTotal) * NS2SEC;
             logger.info(format("\n Real Space: %7.4f (sec)", total));
             logger.info("           Electric Field");
             logger.info(" Thread    Direct  SCF     Energy     Counts");
@@ -3298,8 +3299,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             for (int i = 0; i < maxThreads; i++) {
                 int count = realSpaceEnergyRegion.getCount(i);
                 logger.info(format("    %3d   %7.4f %7.4f %7.4f %10d", i,
-                        realSpacePermTime[i] * TO_SECONDS, realSpaceSCFTime[i] * TO_SECONDS,
-                        realSpaceEnergyTime[i] * TO_SECONDS, count));
+                        realSpacePermTime[i] * NS2SEC, realSpaceSCFTime[i] * NS2SEC,
+                        realSpaceEnergyTime[i] * NS2SEC, count));
                 minPerm = min(realSpacePermTime[i], minPerm);
                 maxPerm = max(realSpacePermTime[i], maxPerm);
                 minSCF = min(realSpaceSCFTime[i], minSCF);
@@ -3310,17 +3311,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 maxCount = max(count, maxCount);
             }
             logger.info(format(" Min      %7.4f %7.4f %7.4f %10d",
-                    minPerm * TO_SECONDS, minSCF * TO_SECONDS,
-                    minEnergy * TO_SECONDS, minCount));
+                    minPerm * NS2SEC, minSCF * NS2SEC,
+                    minEnergy * NS2SEC, minCount));
             logger.info(format(" Max      %7.4f %7.4f %7.4f %10d",
-                    maxPerm * TO_SECONDS, maxSCF * TO_SECONDS,
-                    maxEnergy * TO_SECONDS, maxCount));
+                    maxPerm * NS2SEC, maxSCF * NS2SEC,
+                    maxEnergy * NS2SEC, maxCount));
             logger.info(format(" Delta    %7.4f %7.4f %7.4f %10d",
-                    (maxPerm - minPerm) * TO_SECONDS, (maxSCF - minSCF) * TO_SECONDS,
-                    (maxEnergy - minEnergy) * TO_SECONDS, (maxCount - minCount)));
+                    (maxPerm - minPerm) * NS2SEC, (maxSCF - minSCF) * NS2SEC,
+                    (maxEnergy - minEnergy) * NS2SEC, (maxCount - minCount)));
             logger.info(format(" Actual   %7.4f %7.4f %7.4f %10d",
-                    realSpacePermTotal * TO_SECONDS, realSpaceSCFTotal * TO_SECONDS,
-                    realSpaceEnergyTotal * TO_SECONDS, realSpaceEnergyRegion.getInteractions()));
+                    realSpacePermTotal * NS2SEC, realSpaceSCFTotal * NS2SEC,
+                    realSpaceEnergyTotal * NS2SEC, realSpaceEnergyRegion.getInteractions()));
         }
     }
 
@@ -3332,5 +3333,4 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * The sqrt of PI.
      */
     private static final double SQRT_PI = sqrt(Math.PI);
-    private static final double TO_SECONDS = 1.0e-9;
 }

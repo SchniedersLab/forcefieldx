@@ -46,8 +46,9 @@ import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.numerics.Potential.VARIABLE_TYPE;
 import ffx.numerics.Constraint;
+import ffx.numerics.Potential.VARIABLE_TYPE;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
 
 /**
@@ -78,10 +79,6 @@ public abstract class Thermostat {
             return ThermostatEnum.BERENDSEN;
         }
     }
-    /**
-     * Conversion from kcal/mole to g*Ang**2/ps**2.
-     */
-    public static final double convert = 4.1840e2;
 
     /**
      * The identity of this Thermostat.
@@ -296,7 +293,7 @@ public abstract class Thermostat {
             sb.append(format(" Number of variables:          %7d\n", nVariables));
             sb.append(format(" Number of degrees of freedom: %7d\n", dof));
             sb.append(format(" Kinetic Energy:               %7.2f\n", currentKineticEnergy));
-            sb.append(format(" kT per degree of freedom:     %7.2f\n", convert * currentKineticEnergy / (dof * kT)));
+            sb.append(format(" kT per degree of freedom:     %7.2f\n", KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (dof * kT)));
             logger.log(level, sb.toString());
         }
     }
@@ -570,7 +567,7 @@ public abstract class Thermostat {
             e += mass[i] * v2;
         }
         currentTemperature = e / (kB * dof);
-        e *= 0.5 / convert;
+        e *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2;
         currentKineticEnergy = e;
     }
 

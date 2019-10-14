@@ -63,6 +63,8 @@ import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.scalar;
 import static ffx.numerics.math.VectorMath.sum;
 import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
+import static ffx.utilities.Constants.BOHR;
+import static ffx.utilities.Constants.BOHR2;
 
 /**
  * The MultipoleType class defines a multipole in its local frame.
@@ -83,14 +85,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         NONE, ZONLY, ZTHENX, BISECTOR, ZTHENBISECTOR, THREEFOLD,
     }
 
-    /**
-     * Conversion from Bohr to Angstroms
-     */
-    private static final double BOHR = 0.52917720859;
-    /**
-     * Conversion from Bohr^2 to Angstroms^2
-     */
-    private static final double BOHR2 = BOHR * BOHR;
     /**
      * Constant <code>zeroM</code>
      */
@@ -250,8 +244,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
 
         // Look for a MultipoleType that contain a mapped atom class.
         for (AtomType newType : typeMap.keySet()) {
-            for (int i = 0; i < len; i++) {
-                if (frameAtomTypes[i] == newType.type || frameAtomTypes[i] == 0) {
+            for (int frameAtomType : frameAtomTypes) {
+                if (frameAtomType == newType.type || frameAtomType == 0) {
                     count++;
                 }
             }
@@ -259,7 +253,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
 
         // If found, create a new MultipoleType that bridges to known classes.
         if (count > 0 && count < len) {
-            int newFrame[] = Arrays.copyOf(frameAtomTypes, len);
+            int[] newFrame = Arrays.copyOf(frameAtomTypes, len);
             for (AtomType newType : typeMap.keySet()) {
                 for (int i = 0; i < len; i++) {
                     if (frameAtomTypes[i] == newType.type) {

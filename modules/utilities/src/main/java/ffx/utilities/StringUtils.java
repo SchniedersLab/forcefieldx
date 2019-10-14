@@ -48,9 +48,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -62,6 +60,76 @@ import org.apache.commons.math3.util.FastMath;
  * @author Michael Schnieders
  */
 public class StringUtils {
+    private static final Set<String> waterNames;
+    private static final Set<String> ionNames;
+    
+    static {
+        // If this ever becomes performance-critical, consider swapping for TreeSet, which likely has a smaller pre-factor.
+        Set<String> wNames = new HashSet<>(Arrays.asList("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4"));
+        waterNames = Collections.unmodifiableSet(wNames);
+        // This set is large enough that HashSet probably out-performs TreeSet.
+        Set<String> iNames = new HashSet<>();
+        
+        List<String> monoCats = Arrays.asList("NA", "K", "LI", "RB", "CS", "FR", "AG", "AU");
+        for (String mCat : monoCats) {
+            iNames.add(mCat);
+            iNames.add(mCat + "+");
+            iNames.add(mCat + "1");
+            iNames.add(mCat + "1+");
+        }
+        
+        List<String> diCats = Arrays.asList("BE", "MG", "CA", "SR", "BA", "RA", "CU", "FE", "MN", "ZN");
+        for (String diCat : diCats) {
+            iNames.add(diCat);
+            iNames.add(diCat + "++");
+            iNames.add(diCat + "2");
+            iNames.add(diCat + "2+");
+        }
+        
+        List<String> monoAns = Arrays.asList("F", "CL", "BR", "I", "AT");
+        for (String mAnion : monoAns) {
+            iNames.add(mAnion);
+            iNames.add(mAnion + "-");
+            iNames.add(mAnion + "1");
+            iNames.add(mAnion + "1-");
+        }
+
+        ionNames = Collections.unmodifiableSet(iNames);
+    }
+
+    /**
+     * Checks if a String matches a known water name.
+     * @param name String to check.
+     * @return     If it is a water name.
+     */
+    public static boolean looksLikeWater(String name) {
+        return waterNames.contains(name.toUpperCase());
+    }
+
+    /**
+     * Checks if a String matches a known monoatomic ion name.
+     * @param name String to check.
+     * @return     If it is the name of a monoatomic ion.
+     */
+    public static boolean looksLikeIon(String name) {
+        return ionNames.contains(name.toUpperCase());
+    }
+
+    /**
+     * Returns a List of recognized water names (defensive copy).
+     * @return List of water names.
+     */
+    public static List<String> getWaterNames() {
+        return new ArrayList<>(waterNames);
+    }
+
+    /**
+     * Returns a List of recognized ion names (defensive copy).
+     * @return List of ion names.
+     */
+    public static List<String> getIonNames() {
+        return new ArrayList<>(ionNames);
+    }
 
     /**
      * Creates a writer for text to a Gzip file.
@@ -285,5 +353,4 @@ public class StringUtils {
         allRanges.add(new int[]{rangeStart, rangeEnd});
         return allRanges;
     }
-
 }

@@ -222,7 +222,7 @@ class LambdaGradient extends PotentialScript {
 
         // Scan intermediate lambda values.
         if (lambdaScan) {
-            for (int i = 1; i <= 8; i++) {
+            for (int i = 1; i <= 9; i++) {
                 lambda = i * 0.1;
                 linter.setLambda(lambda)
                 double e = potential.energyAndGradient(x, gradient)

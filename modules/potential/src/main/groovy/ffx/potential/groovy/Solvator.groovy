@@ -113,7 +113,7 @@ class Solvator extends PotentialScript {
      * and boundary. This is useful when attempting to match unit cell size with a larger system.
      */
     @Option(names = ['--abc', '--boxLengths'], paramLabel = "byBoundary",
-            description = "Use specified comma-separated unit cell vectors rather than attempting to auto-calculate them.")
+            description = "Supply comma-separated box lengths (a-axis,b-axis,c-axis) rather than calculating them.")
     private String manualBox = null;
 
     /**
@@ -832,7 +832,7 @@ class Solvator extends PotentialScript {
                 } else {
                     logger.info(" Neutralizing system with ${neutCation.toString()}");
                     double charge = neutCation.charge;
-                    int nCations = Math.round(-1.0 * (initialCharge / charge));
+                    int nCations = (int) Math.round(-1.0 * (initialCharge / charge));
                     double netCharge = initialCharge + (nCations * charge);
                     if (nCations > newMolecules.size()) {
                         logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!");
@@ -854,6 +854,7 @@ class Solvator extends PotentialScript {
         long time = -System.nanoTime();
         for (Atom[] atoms : newMolecules) {
             for (Atom atom : atoms) {
+                atom.setHetero(true);
                 activeAssembly.addMSNode(atom);
             }
         }

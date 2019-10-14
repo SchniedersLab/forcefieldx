@@ -96,6 +96,10 @@ public class Constants {
      * Boltzmann/ideal gas constant in units of g*Ang^2/(mol*psec^2*K).
      */
     public static final double kB = BOLTZMANN_SI * KG_TO_GRAMS * METERS_TO_ANG * METERS_TO_ANG * AVOGADRO / (SEC_TO_PSEC * SEC_TO_PSEC);
+    /**
+     * Conversion from kcal/mol/Ang^3 to Atm.
+     */
+    public static final double PRESCON = 6.85684112e4;
 
     /**
      * Permittivity of water at STP.
@@ -139,6 +143,18 @@ public class Constants {
      * Conversion from electron-Angstroms^2 to Buckinghams. NOT at current SI standard (copied from Tinker).
      */
     public static final double ELEC_ANG2_TO_BUCKINGHAMS = ELEC_ANG_TO_DEBYE * ELEC_ANG_TO_DEBYE;
+    /**
+     * Conversion from kcal/mole to g*Ang**2/ps**2.
+     */
+    public static final double KCAL_TO_GRAM_ANG2_PER_PS2 = 4.1840e2;
+    /**
+     * Conversion from Bohr to Angstroms
+     */
+    public static final double BOHR = 0.52917720859;
+    /**
+     * Conversion from Bohr^2 to Angstroms^2
+     */
+    public static final double BOHR2 = BOHR * BOHR;
 
     // Library class: make the default constructor private to ensure it's never constructed.
     private Constants() {
