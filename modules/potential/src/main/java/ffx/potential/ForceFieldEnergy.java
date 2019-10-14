@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
@@ -57,8 +56,6 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
-import ffx.numerics.math.VectorMath;
 import ffx.potential.utils.ConvexHullOps;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -125,9 +122,6 @@ import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import static ffx.potential.parameters.ForceField.toEnumForm;
-
-import com.github.quickhull3d.QuickHull3D;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * Compute the potential energy and derivatives of a molecular system
