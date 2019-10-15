@@ -2479,7 +2479,7 @@ public final class PDBFilter extends SystemFilter {
             for (MSNode m : ions) {
                 Molecule ion = (Molecule) m;
                 String name = ion.getResidueName().toUpperCase();
-                HetAtoms hetatm = HetAtoms.valueOf(name);
+                HetAtoms hetatm = HetAtoms.parse(name);
                 Atom atom = ion.getAtomList().get(0);
                 if (ion.getAtomList().size() != 1) {
                     logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
@@ -5254,7 +5254,18 @@ public final class PDBFilter extends SystemFilter {
         H2O,
         WAT,
         ZN,
-        ZN2
+        ZN2;
+
+        /**
+         * Slightly more robust parsing function that ignores case and trailing numbers, -, and +
+         *
+         * @param str String to parse
+         * @return    Corresponding HetAtoms value.
+         */
+        public static HetAtoms parse(String str) {
+            String hName = str.toUpperCase().replaceFirst("[0-9+\\-]+$", "");
+            return valueOf(hName);
+        }
     }
 
 }
