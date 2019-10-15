@@ -43,6 +43,7 @@ import ffx.numerics.math.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Constants;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -107,6 +108,7 @@ public class ConvexHullOps {
         assert nVerts > 1;
         double[] vertPoints = new double[3*nVerts];
         qh.getVertices(vertPoints);
+        // TODO: Determine why it is that this works without calling the square root of dist2.
         double maxDist = IntStream.range(0, nVerts).
                 parallel().
                 mapToDouble((int i) -> {
@@ -122,6 +124,7 @@ public class ConvexHullOps {
                     return mij;
                 }).
                 max().getAsDouble();
+        maxDist = FastMath.sqrt(maxDist);
         time += System.nanoTime();
         if (time > 1E9) {
             logger.warning(String.format(" Required %12.6g sec to find max distance on a convex hull." +
