@@ -86,6 +86,9 @@ public class ConvexHullOps {
      */
     public static QuickHull3D constructHull(Atom[] atoms) {
         int nAts = atoms.length;
+        if (nAts < 4) {
+            throw new IllegalArgumentException(String.format(" 3D convex hull ill-defined for less than 4 points, found %d", nAts));
+        }
         double[] xyz = new double[nAts * 3];
         for (int i = 0; i < nAts; i++) {
             Atom at = atoms[i];
@@ -105,7 +108,9 @@ public class ConvexHullOps {
     public static double maxDist(QuickHull3D qh) {
         long time = -System.nanoTime();
         int nVerts = qh.getNumVertices();
-        assert nVerts > 1;
+        if (nVerts < 2) {
+            return 0;
+        }
         double[] vertPoints = new double[3*nVerts];
         qh.getVertices(vertPoints);
         double maxDist = IntStream.range(0, nVerts).
