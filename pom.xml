@@ -1189,6 +1189,7 @@
         <properties.version>1.0.0</properties.version>
         <!-- Clover Plugin -->
         <clover.version>4.3.1</clover.version>
+        <quickhull3D.version>1.0.0</quickhull3D.version>
     </properties>
     <dependencies>
         <dependency>

@@ -48,6 +48,7 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
+import ffx.potential.parameters.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BranchGroup;
@@ -68,10 +69,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.MultipoleType;
-import ffx.potential.parameters.PolarizeType;
-import ffx.potential.parameters.VDWType;
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -940,10 +937,25 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @throws IllegalStateException If the atom does not have a known multipole type.
      */
     public double getCharge() throws IllegalStateException {
+        return getCharge(null);
+    }
+
+    /**
+     * Gets the partial atomic charge.
+     *
+     * @param ff If multipole type has not yet been assigned, search this force field.
+     * @return   partial atomic charge
+     * @throws IllegalStateException If a multipole type could not be found and ff is null.
+     */
+    public double getCharge(ForceField ff) {
         if (multipoleType != null) {
             return multipoleType.getCharge();
+        } else if (ff != null) {
+            String key = atomType.getKey();
+            return ff.getMultipoleType(key).getCharge();
+        } else {
+            throw new IllegalStateException(String.format(" Atom %s does not yet have an assigned multipole type!", toString()));
         }
-        throw new IllegalStateException(String.format(" Atom %s does not yet have an assigned multipole type!", toString()));
     }
 
     /**

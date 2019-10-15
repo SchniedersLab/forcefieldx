@@ -69,7 +69,8 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
-import static ffx.algorithms.dynamics.thermostats.Thermostat.convert;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.NS2SEC;
 import static ffx.utilities.Constants.kB;
 
 /**
@@ -590,7 +591,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         currentPotentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
         currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
-        currentTemperature = 2.0 * currentKineticEnergy * convert / (kB * dof);
+        currentTemperature = 2.0 * currentKineticEnergy * KCAL_TO_GRAM_ANG2_PER_PS2 / (kB * dof);
 
         OpenMM_State_destroy(state);
     }
@@ -607,7 +608,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         currentPotentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
         currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
-        currentTemperature = 2.0 * currentKineticEnergy * convert / (kB * dof);
+        currentTemperature = 2.0 * currentKineticEnergy * KCAL_TO_GRAM_ANG2_PER_PS2 / (kB * dof);
 
         PointerByReference positions = OpenMM_State_getPositions(state);
         forceFieldEnergyOpenMM.getOpenMMPositions(positions, numParticles * 3, x);

@@ -37,11 +37,15 @@
 //******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.numerics.Potential;
 import ffx.numerics.Constraint;
+import ffx.utilities.Constants;
 
 import java.util.Arrays;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
 /**
  * Integrate Newton's equations of motion using a Velocity Verlet multistep
@@ -77,9 +81,9 @@ public class VelocityVerlet extends Integrator {
     public void preForce(Potential potential) {
         if (useConstraints) {
             if (xPrior == null) {
-                xPrior = Arrays.copyOf(x, nVariables);
+                xPrior = copyOf(x, nVariables);
             } else {
-                System.arraycopy(x, 0, xPrior, 0, nVariables);
+                arraycopy(x, 0, xPrior, 0, nVariables);
             }
         }
         for (int i = 0; i < nVariables; i++) {
@@ -105,7 +109,7 @@ public class VelocityVerlet extends Integrator {
     public void postForce(double[] gradient) {
         copyAccelerationToPrevious();
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
             v[i] = v[i] + a[i] * dt_2;
         }
         constraints.forEach((Constraint c) -> c.applyConstraintToVelocities(x, v, mass, constraintTolerance));

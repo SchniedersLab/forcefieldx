@@ -48,9 +48,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -62,6 +60,99 @@ import org.apache.commons.math3.util.FastMath;
  * @author Michael Schnieders
  */
 public class StringUtils {
+    private static final Set<String> waterNames =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL")));
+    public static final String STANDARD_WATER_NAME = "HOH";
+    private static final Map<String, String> ionNames;
+    
+    static {
+        Map<String, String> ions = new HashMap<>();
+
+        List<String> monoCats = Arrays.asList("NA", "K", "LI", "RB", "CS", "FR", "AG", "AU");
+        for (String mCat : monoCats) {
+            ions.put(mCat, mCat);
+            ions.put(mCat + "+", mCat);
+            ions.put(mCat + "1", mCat);
+            ions.put(mCat + "1+", mCat);
+            ions.put(mCat + "+1", mCat);
+        }
+
+        // TODO: Finalize treatment of transition metals like Mn and Zn which may occur in other oxidation states.
+        List<String> diCats = Arrays.asList("BE", "MG", "CA", "SR", "BA", "RA", "MN", "ZN");
+        for (String diCat : diCats) {
+            ions.put(diCat, diCat);
+            ions.put(diCat + "+", diCat);
+            ions.put(diCat + "2", diCat);
+            ions.put(diCat + "2+", diCat);
+            ions.put(diCat + "+2", diCat);
+            ions.put(diCat + "++", diCat);
+        }
+
+        List<String> monoAns = Arrays.asList("F", "CL", "BR", "I", "AT");
+        for (String monoAn : monoAns) {
+            ions.put(monoAn, monoAn);
+            ions.put(monoAn + "-", monoAn);
+            ions.put(monoAn + "1", monoAn);
+            ions.put(monoAn + "1-", monoAn);
+            ions.put(monoAn + "-1", monoAn);
+        }
+
+        ionNames = Collections.unmodifiableMap(ions);
+    }
+
+    /**
+     * Checks if a String matches a known water name.
+     * @param name String to check.
+     * @return     If it is a water name.
+     */
+    public static boolean looksLikeWater(String name) {
+        return waterNames.contains(name.toUpperCase());
+    }
+
+    /**
+     * Checks if a String matches a known monoatomic ion name.
+     * @param name String to check.
+     * @return     If it is the name of a monoatomic ion.
+     */
+    public static boolean looksLikeIon(String name) {
+        return ionNames.containsKey(name.toUpperCase());
+    }
+
+    /**
+     * Returns a List of recognized water names (defensive copy).
+     * @return List of water names.
+     */
+    public static List<String> getWaterNames() {
+        return new ArrayList<>(waterNames);
+    }
+
+    /**
+     * Returns a Map from recognized ion names to standard ion names.
+     * @return Map from ion names to standardized ion names.
+     */
+    public static Map<String, String> getIonNames() {
+        return new HashMap<>(ionNames);
+    }
+
+    /**
+     * Checks if a String looks like a water. Returns either a standardized
+     * water name, or null if it doesn't look like water.
+     * @param name String to check.
+     * @return     Standard water name (matches) or null (no match).
+     */
+    public static String tryParseWater(String name) {
+        return waterNames.contains(name.toUpperCase()) ? STANDARD_WATER_NAME : null;
+    }
+
+    /**
+     * Checks if a String looks like a known ion. Returns either its standardized
+     * name, or null if it doesn't look like an ion.
+     * @param name String to check.
+     * @return     Standard ion name (matches) or null (no match).
+     */
+    public static String tryParseIon(String name) {
+        return ionNames.getOrDefault(name.toUpperCase(), null);
+    }
 
     /**
      * Creates a writer for text to a Gzip file.
@@ -285,5 +376,4 @@ public class StringUtils {
         allRanges.add(new int[]{rangeStart, rangeEnd});
         return allRanges;
     }
-
 }

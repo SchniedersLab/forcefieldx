@@ -167,18 +167,7 @@ class Density extends PotentialScript {
                     if (doPrint) {
                         cryst.setDensity(densStats.mean, totMass);
                         String outFileName = FilenameUtils.removeExtension(fname);
-
-                        if (writeout.fileType.equalsIgnoreCase("XYZ")) {
-                            outFileName = outFileName + ".xyz";
-                            File outFile = potentialFunctions.versionFile(new File(outFileName));
-
-                            potentialFunctions.saveAsXYZ(ma, outFile);
-                        } else {
-                            outFileName = outFileName + ".pdb";
-                            File outFile = potentialFunctions.versionFile(new File(outFileName));
-
-                            potentialFunctions.saveAsPDB(ma, outFile);
-                        }
+                        writeout.saveFile(outFileName, potentialFunctions, ma);
                     }
                 }
             } finally {

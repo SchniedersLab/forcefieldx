@@ -42,9 +42,9 @@ import java.util.Random;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.numerics.Potential;
-import ffx.utilities.Constants;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.kB;
 
 /**
  * Stochastic dynamics time step via a velocity Verlet integration algorithm.
@@ -223,7 +223,7 @@ public class Stochastic extends Integrator {
                             + 1877509.0 * fdt7 / 105696460800.0);
                 }
                 // Compute random terms to thermostat the nonzero friction case.
-                double ktm = Constants.kB * temperature / m;
+                double ktm = kB * temperature / m;
                 double psig = sqrt(ktm * pterm) / friction;
                 double vsig = sqrt(ktm * vterm);
                 double rhoc = sqrt(1.0 - rho * rho);
@@ -250,7 +250,7 @@ public class Stochastic extends Integrator {
     public void postForce(double[] gradient) {
         copyAccelerationToPrevious();
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
             v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
         }
     }

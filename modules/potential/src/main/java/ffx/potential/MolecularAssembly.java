@@ -55,6 +55,7 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
+import ffx.utilities.StringUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BoundingSphere;
@@ -1617,23 +1618,26 @@ public class MolecularAssembly extends MSGroup {
         }
 
         if (create) {
+            boolean isWater = false;
+            boolean isIon = false;
+            if (StringUtils.looksLikeWater(resName)) {
+                resName = StringUtils.STANDARD_WATER_NAME;
+                isWater = true;
+            } else if (StringUtils.looksLikeIon(resName)) {
+                resName = StringUtils.tryParseIon(resName);
+                isIon = true;
+            }
+            atom.setResName(resName);
             m = new Molecule(resName, resNum, chainID, segID);
             m.addMSNode(atom);
             if (resName == null) {
                 logger.warning(format(" Attempting to create a molecule %s with a null name on atom %s! Defaulting to creating a generic Molecule.", m, atom));
                 molecules.add(m);
                 moleculeHashMap.put(key, m);
-            } else if (resName.equalsIgnoreCase("DOD")
-                    || resName.equalsIgnoreCase("HOH")
-                    || resName.equalsIgnoreCase("WAT")) {
+            } else if (isWater) {
                 water.add(m);
                 waterHashMap.put(key, m);
-                // NA, K, MG, MG2, CA, CA2, CL
-            } else if (resName.equalsIgnoreCase("NA") || resName.equalsIgnoreCase("K")
-                    || resName.equalsIgnoreCase("MG") || resName.equalsIgnoreCase("MG2")
-                    || resName.equalsIgnoreCase("CA") || resName.equalsIgnoreCase("CA2")
-                    || resName.equalsIgnoreCase("CL") || resName.equalsIgnoreCase("BR")
-                    || resName.equalsIgnoreCase("ZN") || resName.equalsIgnoreCase("ZN2")) {
+            } else if (isIon) {
                 ions.add(m);
                 ionHashMap.put(key, m);
             } else {

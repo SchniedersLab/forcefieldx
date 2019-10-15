@@ -56,6 +56,8 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 
+import ffx.potential.utils.ConvexHullOps;
+import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -834,6 +836,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             logger.info(" The system will be treated as aperiodic.");
             aperiodic = true;
 
+            long convTime = -System.nanoTime();
             double maxr = 10.0;
             for (int i = 0; i < nAtoms - 1; i++) {
                 Atom ai = atoms[i];
@@ -846,6 +849,20 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     maxr = max(r, maxr);
                 }
             }
+            convTime += System.nanoTime();
+            if (nAtoms > 10) {
+                long hullTime = -System.nanoTime();
+                double maxC = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
+                maxC = Math.max(10.0, maxC);
+                hullTime += System.nanoTime();
+                double diff = maxr - maxC;
+                if (Math.abs(diff) > 1.0E-5) {
+                    logger.warning(String.format(" Max particle-particle distance by convex hull %12.6g " +
+                            "disagrees with max distance by brute-force loop %12.6g: difference %12.6g!", maxC, maxr, diff));
+                }
+                logger.fine(String.format(" Time for convex hull calculation: %12.6g sec. By O(n^2) " +
+                        "loop: %12.6g sec.", hullTime * Constants.NS2SEC, convTime * Constants.NS2SEC));
+            } // At N < 4, the 3D convex hull may not even be defined properly, nevermind be more efficient.
 
             // Turn off reciprocal space calculations.
             forceField.addProperty("EWALD_ALPHA", "0.0");

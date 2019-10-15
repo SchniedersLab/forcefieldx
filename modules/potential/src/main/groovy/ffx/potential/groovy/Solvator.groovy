@@ -113,7 +113,7 @@ class Solvator extends PotentialScript {
      * and boundary. This is useful when attempting to match unit cell size with a larger system.
      */
     @Option(names = ['--abc', '--boxLengths'], paramLabel = "byBoundary",
-            description = "Use specified comma-separated unit cell vectors rather than attempting to auto-calculate them.")
+            description = "Supply comma-separated box lengths (a-axis,b-axis,c-axis) rather than calculating them.")
     private String manualBox = null;
 
     /**
@@ -376,7 +376,8 @@ class Solvator extends PotentialScript {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(format(" Ion addition with %d atoms per ion, concentration %8.2g mM, charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize));
+            StringBuilder sb = new StringBuilder(format(" Ion addition with %d atoms per ion, concentration %10.3g mM, " +
+                    "charge %6.2f, used to neutralize %b", atoms.length, conc, charge, toNeutralize));
             for (Atom atom : atoms) {
                 sb.append("\n").append(" Includes atom ").append(atom.toString());
             }
@@ -831,7 +832,7 @@ class Solvator extends PotentialScript {
                 } else {
                     logger.info(" Neutralizing system with ${neutCation.toString()}");
                     double charge = neutCation.charge;
-                    int nCations = Math.round(-1.0 * (initialCharge / charge));
+                    int nCations = (int) Math.round(-1.0 * (initialCharge / charge));
                     double netCharge = initialCharge + (nCations * charge);
                     if (nCations > newMolecules.size()) {
                         logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!");
@@ -849,14 +850,22 @@ class Solvator extends PotentialScript {
             newMolecules.addAll(addedIons);
         }
 
+        logger.info(" Adding solvent and ion atoms to system...");
+        long time = -System.nanoTime();
         for (Atom[] atoms : newMolecules) {
             for (Atom atom : atoms) {
+                atom.setHetero(true);
                 activeAssembly.addMSNode(atom);
             }
         }
+        time += System.nanoTime();
+        logger.info(format(" Solvent and ions added in %12.4g sec", time * Constants.NS2SEC));
 
         String solvatedName = activeAssembly.getFile().getName().replaceFirst(~/\.[^.]+$/, ".pdb");
+        time = -System.nanoTime();
         potentialFunctions.saveAsPDB(activeAssembly, new File(solvatedName));
+        time += System.nanoTime();
+        logger.info(format(" Structure written to disc in %12.4g sec", time * Constants.NS2SEC));
 
         return this
     }

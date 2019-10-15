@@ -54,7 +54,7 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import static ffx.algorithms.dynamics.thermostats.Thermostat.convert;
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.kB;
 import static ffx.numerics.math.VectorMath.b2u;
 import static ffx.numerics.math.VectorMath.determinant3;
@@ -70,7 +70,7 @@ import static ffx.numerics.math.VectorMath.u2b;
 public class XRayEnergy implements LambdaInterface, CrystalPotential {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
-    private static final double kBkcal = kB / convert;
+    private static final double kBkcal = kB / KCAL_TO_GRAM_ANG2_PER_PS2;
     private static final double eightPI2 = 8.0 * PI * PI;
     private static final double eightPI23 = eightPI2 * eightPI2 * eightPI2;
 
