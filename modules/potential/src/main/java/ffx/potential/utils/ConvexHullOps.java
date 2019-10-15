@@ -108,7 +108,6 @@ public class ConvexHullOps {
         assert nVerts > 1;
         double[] vertPoints = new double[3*nVerts];
         qh.getVertices(vertPoints);
-        // TODO: Determine why it is that this works without calling the square root of dist2.
         double maxDist = IntStream.range(0, nVerts).
                 parallel().
                 mapToDouble((int i) -> {
