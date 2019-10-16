@@ -43,6 +43,7 @@ import ffx.numerics.math.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Constants;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -85,6 +86,9 @@ public class ConvexHullOps {
      */
     public static QuickHull3D constructHull(Atom[] atoms) {
         int nAts = atoms.length;
+        if (nAts < 4) {
+            throw new IllegalArgumentException(String.format(" 3D convex hull ill-defined for less than 4 points, found %d", nAts));
+        }
         double[] xyz = new double[nAts * 3];
         for (int i = 0; i < nAts; i++) {
             Atom at = atoms[i];
@@ -104,7 +108,9 @@ public class ConvexHullOps {
     public static double maxDist(QuickHull3D qh) {
         long time = -System.nanoTime();
         int nVerts = qh.getNumVertices();
-        assert nVerts > 1;
+        if (nVerts < 2) {
+            return 0;
+        }
         double[] vertPoints = new double[3*nVerts];
         qh.getVertices(vertPoints);
         double maxDist = IntStream.range(0, nVerts).
@@ -122,6 +128,7 @@ public class ConvexHullOps {
                     return mij;
                 }).
                 max().getAsDouble();
+        maxDist = FastMath.sqrt(maxDist);
         time += System.nanoTime();
         if (time > 1E9) {
             logger.warning(String.format(" Required %12.6g sec to find max distance on a convex hull." +

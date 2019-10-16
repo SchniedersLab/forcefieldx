@@ -850,17 +850,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 }
             }
             convTime += System.nanoTime();
-            long hullTime = -System.nanoTime();
-            double maxC = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
-            maxC = Math.max(10.0, maxC);
-            hullTime += System.nanoTime();
-            double diff = maxr - maxC;
-            if (Math.abs(diff) > 1.0E-5) {
-                logger.warning(String.format(" Max particle-particle distance by convex hull %12.6g " +
-                        "disagrees with max distance by brute-force loop %12.6g: difference %12.6g!", maxC, maxr, diff));
-            }
-            logger.fine(String.format(" Time for convex hull calculation: %12.6g sec. By O(n^2) " +
-                    "loop: %12.6g sec.", hullTime * Constants.NS2SEC, convTime * Constants.NS2SEC));
+            if (nAtoms > 10) {
+                long hullTime = -System.nanoTime();
+                double maxC = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
+                maxC = Math.max(10.0, maxC);
+                hullTime += System.nanoTime();
+                double diff = maxr - maxC;
+                if (Math.abs(diff) > 1.0E-5) {
+                    logger.warning(String.format(" Max particle-particle distance by convex hull %12.6g " +
+                            "disagrees with max distance by brute-force loop %12.6g: difference %12.6g!", maxC, maxr, diff));
+                }
+                logger.fine(String.format(" Time for convex hull calculation: %12.6g sec. By O(n^2) " +
+                        "loop: %12.6g sec.", hullTime * Constants.NS2SEC, convTime * Constants.NS2SEC));
+            } // At N < 4, the 3D convex hull may not even be defined properly, nevermind be more efficient.
 
             // Turn off reciprocal space calculations.
             forceField.addProperty("EWALD_ALPHA", "0.0");
