@@ -41,8 +41,8 @@ public class VolumeTest {
         // Evaluate the script.
         volume.run();
 
-        org.junit.Assert.assertEquals(253.86, volume.totalVolume, 0.001);
-        org.junit.Assert.assertEquals(202.187, volume.totalSurfaceArea, 0.001);
+        org.junit.Assert.assertEquals(253.864, volume.totalVolume, 0.01);
+        org.junit.Assert.assertEquals(202.187, volume.totalSurfaceArea, 0.01);
 
     }
 
