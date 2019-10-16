@@ -152,5 +152,7 @@ class EnergyOpenMM extends PotentialScript {
             Level toPrint = (rmse > 1E-8) ? Level.INFO : Level.FINE;
             logger.log(toPrint, format(" Active atom %d dG RMSE: %14.8g kcal/mol/A", i, rmse));
         }
+        
+        return this;
     }
 }
