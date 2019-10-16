@@ -447,7 +447,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param numberOfVariables a int.
      */
     public void setOpenMMPositions(double[] x, int numberOfVariables) {
-        openMMContext.setOpenMMCoordinates(x, numberOfVariables);
+        int nOMMVar = atoms.length * 3;
+        int xOffset = 0;
+        if (numberOfVariables != nOMMVar) {
+            double[] newX = new double[nOMMVar];
+            for (int i = 0; i < atoms.length; i++) {
+                int i3 = 3*i;
+                if (atoms[i].isActive()) {
+                    System.arraycopy(x, xOffset, newX, i3, 3);
+                    xOffset += 3;
+                } else {
+                    double[] currXYZ = new double[3];
+                    currXYZ = atoms[i].getXYZ(currXYZ);
+                    System.arraycopy(currXYZ, 0, newX, i3, 3);
+                }
+            }
+            x = newX;
+        }
+        openMMContext.setOpenMMCoordinates(x, nOMMVar);
     }
 
     /**
