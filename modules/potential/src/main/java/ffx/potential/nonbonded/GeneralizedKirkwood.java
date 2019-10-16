@@ -137,7 +137,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Default probe radius for use with Gaussian Volumes.
      */
-    private static final double DEFAULT_GAUSSVOL_PROBE = 1.2;
+    private static final double DEFAULT_GAUSSVOL_PROBE = 1.0;
     /**
      * Default dielectric offset
      **/
