@@ -3,6 +3,7 @@ package ffx.potential.groovy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import ffx.potential.groovy.Volume;
 
 import groovy.lang.Binding;
 
@@ -40,8 +41,8 @@ public class VolumeTest {
         // Evaluate the script.
         volume.run();
 
-        org.junit.Assert.assertEquals(256.46, volume.totalVolume, 0.001);
-        org.junit.Assert.assertEquals(255.072, volume.totalSurfaceArea, 0.001);
+        org.junit.Assert.assertEquals(253.864, volume.totalVolume, 0.01);
+        org.junit.Assert.assertEquals(202.187, volume.totalSurfaceArea, 0.01);
 
     }
 
@@ -56,8 +57,8 @@ public class VolumeTest {
         // Evaluate the script
         volume.run();
 
-        org.junit.Assert.assertEquals(368.282, volume.totalVolume, 0.001);
-        org.junit.Assert.assertEquals(336.589, volume.totalSurfaceArea, 0.001);
+        org.junit.Assert.assertEquals(365.686, volume.totalVolume, 0.001);
+        org.junit.Assert.assertEquals(283.704, volume.totalSurfaceArea, 0.001);
 
     }
 
