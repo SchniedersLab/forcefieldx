@@ -173,6 +173,12 @@ public class GaussVol {
      * Maximum depth that the tree reaches
      */
     private int maximumDepth = 0;
+
+    /**
+     * Total number of overlaps in overlap tree
+     */
+    private int totalNumberOfOverlaps = 0;
+
     /**
      * Surface area (Ang^2).
      */
@@ -385,6 +391,13 @@ public class GaussVol {
     public int getMaximumDepth() {
         return maximumDepth;
     }
+
+    /**
+     * Return the total number of overlaps in the tree
+     *
+     * @return totalNumberOfOverlaps
+     */
+    public int getTotalNumberOfOverlaps() {return totalNumberOfOverlaps;}
 
     /**
      * Set the isHydrogen flag.
@@ -1062,6 +1075,7 @@ public class GaussVol {
                 int start_slot = addChildren(root, children_overlaps);
                 for (int ichild = start_slot; ichild < start_slot + noverlaps; ichild++) {
                     computeAndAddChildrenR(ichild);
+                    totalNumberOfOverlaps++;
                 }
             }
         }
@@ -1078,6 +1092,7 @@ public class GaussVol {
             initOverlapTree(pos, radii, volumes, gammas, ishydrogen);
             for (int slot = 1; slot <= nAtoms; slot++) {
                 computeAndAddChildrenR(slot);
+                totalNumberOfOverlaps++;
             }
         }
 
