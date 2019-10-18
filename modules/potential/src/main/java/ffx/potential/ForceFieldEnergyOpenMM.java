@@ -397,6 +397,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param targetTemp Target temperature in Kelvins.
      */
     public void addAndersenThermostat(double targetTemp) {
+        /*
+         * Citation:
+         * Andersen, H. C., Molecular dynamics simulations at constant pressure and/or temperature. The Journal of Chemical Physics 1980, 72 (4), 2384-2393.
+         */
         addAndersenThermostat(targetTemp, openMMContext.openMMIntegrator.collisionFreq);
 
     }
@@ -3075,6 +3079,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 switch (scfAlgorithm) {
                     case EPT:
+                        /*
+                         * Citation:
+                         * Simmonett, A. C.;  Pickard, F. C. t.;  Shao, Y.;  Cheatham, T. E., 3rd; Brooks, B. R., Efficient treatment of induced dipoles. The Journal of chemical physics 2015, 143 (7), 074115-074115.
+                         */
                         OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Extrapolated);
                         PointerByReference exptCoefficients = OpenMM_DoubleArray_create(4);
                         OpenMM_DoubleArray_set(exptCoefficients, 0, -0.154);
