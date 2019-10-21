@@ -891,7 +891,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
             double newFreeEnergy = updateFLambda(false, false);
             assert (origDeltaG == newFreeEnergy);
-
         }
         if (dEdLambda < minFLambda) {
             logger.info(format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
