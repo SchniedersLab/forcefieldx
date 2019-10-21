@@ -1,0 +1,9 @@
+# 200 mM Na+
+1 1 200
+# 200 mM Cl-
+2 2 200
+
+# Na+ or Cl- to neutralize.
+1 1 NEUT
+2 2 NEUT
+

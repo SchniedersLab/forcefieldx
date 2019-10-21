@@ -1,0 +1,5 @@
+REMARK 999 Example ions file for the solvator tool (coupled with nacl.ions).
+HETATM    1  NA  NA  A   1       0.100   0.000   0.000  1.00  1.00          NA+1
+HETATM    2  CL  CL  A   2       2.474   0.000   0.000  1.00  1.00          CL-1
+END
+
