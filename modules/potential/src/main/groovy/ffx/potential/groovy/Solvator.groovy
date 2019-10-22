@@ -47,13 +47,13 @@ import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Polymer
 import ffx.potential.utils.ConvexHullOps
 import ffx.utilities.Constants
+
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils
 
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors
-import java.util.stream.IntStream
 
 import static java.lang.String.format
 
@@ -464,7 +464,6 @@ class Solvator extends PotentialScript {
 
         MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            logger.info(new File(".").getCanonicalPath());
             assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {

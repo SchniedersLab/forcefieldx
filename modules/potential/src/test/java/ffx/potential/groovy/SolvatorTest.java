@@ -300,8 +300,6 @@ public class SolvatorTest extends BaseFFXTest {
             argList.add(k);
             argList.add(v);
         });
-        //argList.add(soluteFile);
-        //argList.add(copiedFile.getPath());
         argList.add(copiedFiles.get(0).getPath());
         return argList.toArray(new String[argList.size()]);
     }
@@ -322,13 +320,6 @@ public class SolvatorTest extends BaseFFXTest {
              BufferedReader writtenReader = new BufferedReader(new FileReader(written))) {
             boolean same = IOUtils.contentEqualsIgnoreEOL(expectedReader, writtenReader);
             assertTrue(" File written by test did not match the expected file!", same);
-            /*String line = expectedReader.readLine();
-            while (line != null) {
-                String writtenLine = writtenReader.readLine();
-                assertEquals(String.format(" Line mismatch between expected:\n%s\nreceived:\n%s", line, writtenLine), line, writtenLine);
-                line = expectedReader.readLine();
-            }
-            assertNull("Additional line found in written file!", writtenReader.readLine());*/
         } catch (IOException ex) {
             fail(String.format(" Exception %s in attempting to compare expected file %s to written file %s", ex.toString(), solvatedTestFile, written.toString()));
         }
