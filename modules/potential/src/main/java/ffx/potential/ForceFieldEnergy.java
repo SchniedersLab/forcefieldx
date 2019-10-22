@@ -704,6 +704,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private final List<Constraint> constraints;
 
     /**
+     * 2.0 times the neighbor list cutoff.
+     */
+    private final double cutOff2;
+
+    /**
      * <p>
      * Constructor for ForceFieldEnergy.</p>
      *
@@ -924,11 +929,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         cutoffPlusBuffer = nlistCutoff + buff;
+        cutOff2 = 2.0 * cutoffPlusBuffer;
         unitCell = configureNCS(forceField, unitCell);
 
         // If necessary, create a ReplicatesCrystal.
         if (!aperiodic) {
-            double cutOff2 = 2.0 * cutoffPlusBuffer;
             this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
             logger.info(format("\n Density:                                %6.3f (g/cc)", crystal.getDensity(molecularAssembly.getMass())));
             logger.info(crystal.toString());
@@ -3125,16 +3130,30 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public void setCrystal(Crystal crystal) {
-        this.crystal = crystal;
+        setCrystal(crystal, false);
+    }
+
+    /**
+     * Set the boundary conditions for this calculation.
+     *
+     * @param crystal             Crystal to set.
+     * @param checkReplicatesCell Check if a replicates cell must be created.
+     */
+    public void setCrystal(Crystal crystal, boolean checkReplicatesCell) {
+        if (checkReplicatesCell) {
+            this.crystal = ReplicatesCrystal.replicatesCrystalFactory(crystal.getUnitCell(), cutOff2);
+        } else {
+            this.crystal = crystal;
+        }
         /*
           Update VanDerWaals first, in case the NeighborList needs to be
           re-allocated to include a larger number of replicated cells.
          */
         if (vanderWaalsTerm) {
-            vanderWaals.setCrystal(crystal);
+            vanderWaals.setCrystal(this.crystal);
         }
         if (multipoleTerm) {
-            particleMeshEwald.setCrystal(crystal);
+            particleMeshEwald.setCrystal(this.crystal);
         }
     }
 

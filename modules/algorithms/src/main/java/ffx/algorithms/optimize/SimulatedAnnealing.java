@@ -140,11 +140,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
                               ThermostatEnum requestedThermostat,
                               IntegratorEnum requestedIntegrator) {
 
-        molecularDynamics = new MolecularDynamics(assembly,
-                potentialEnergy, properties,
-                listener,
-                requestedThermostat,
-                requestedIntegrator);
+        // TODO: Ensure this works as intended.
+        molecularDynamics = MolecularDynamics.dynamicsFactory(assembly, potentialEnergy,
+                properties, listener, requestedThermostat, requestedIntegrator);
         done = true;
     }
 

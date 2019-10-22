@@ -39,19 +39,21 @@ package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.crystal.ReplicatesCrystal
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Polymer
-import ffx.utilities.Constants;
+import ffx.potential.utils.ConvexHullOps
+import ffx.utilities.Constants
 
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils
 
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors
-import java.util.stream.IntStream
 
 import static java.lang.String.format
 
@@ -116,6 +118,10 @@ class Solvator extends PotentialScript {
             description = "Supply comma-separated box lengths (a-axis,b-axis,c-axis) rather than calculating them.")
     private String manualBox = null;
 
+    @Option(names = ['-s', '--randomSeed'], paramLabel = "auto",
+            description = "Specify a random seed for ion placement.")
+    private String seedString = null;
+
     /**
      * The final argument(s) should be one or more filenames.
      */
@@ -124,6 +130,21 @@ class Solvator extends PotentialScript {
     List<String> filenames = null
 
     private File baseDir = null
+
+    private MolecularAssembly solute;
+    private MolecularAssembly solvent;
+    private MolecularAssembly ions;
+    private File createdFile;
+
+    private Configuration additionalProperties
+
+    /**
+     * Currently does nothing.
+     * @param additionalProps Ignored.
+     */
+    void setProperties(Configuration additionalProps) {
+        this.additionalProperties = additionalProps
+    }
 
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir
@@ -450,16 +471,17 @@ class Solvator extends PotentialScript {
             return this
         }
 
+        solute = activeAssembly;
         ForceFieldEnergy soluteEnergy = activeAssembly.getPotentialEnergy()
         Atom[] soluteAtoms = activeAssembly.getAtomArray()
 
-        MolecularAssembly solvent = potentialFunctions.open(solventFileName);
+        solvent = potentialFunctions.open(solventFileName);
         Atom[] baseSolventAtoms = solvent.getActiveAtomArray();
 
         Atom[] ionAtoms = null;
         File ionsFile = null;
         if (ionFileName) {
-            MolecularAssembly ions = potentialFunctions.open(ionFileName);
+            ions = potentialFunctions.open(ionFileName);
             ionAtoms = ions.getActiveAtomArray();
             String ionsName = FilenameUtils.removeExtension(ionFileName);
             ionsName = ionsName + ".ions";
@@ -535,20 +557,7 @@ class Solvator extends PotentialScript {
             if (rectangular) {
                 newBox = Arrays.stream(soluteBoundingBox).map({ it + (2.0 * padding) }).toArray();
             } else {
-                double soluteLinearSize = IntStream.range(0, nSolute - 1).parallel().mapToDouble({ int i ->
-                    double[] xyzi = soluteCoordinates[i];
-                    return IntStream.range(i + 1, nSolute).mapToDouble({ int j ->
-                        double[] xyzj = soluteCoordinates[j];
-                        double dist2 = 0;
-                        for (int k = 0; k < 3; k++) {
-                            double dx = xyzi[k] - xyzj[k];
-                            dx *= dx;
-                            dist2 += dx;
-                        }
-                        return dist2;
-                    }).max().getAsDouble();
-                }).max().getAsDouble();
-                soluteLinearSize = Math.sqrt(soluteLinearSize);
+                double soluteLinearSize = ConvexHullOps.maxDist(soluteAtoms);
                 soluteLinearSize += (2.0 * padding);
                 Arrays.fill(newBox, soluteLinearSize);
             }
@@ -591,7 +600,7 @@ class Solvator extends PotentialScript {
         }
 
         Crystal newCrystal = new Crystal(newBox[0], newBox[1], newBox[2], 90, 90, 90, "P1");
-        soluteEnergy.setCrystal(newCrystal);
+        soluteEnergy.setCrystal(newCrystal, true);
 
         List<MSNode> bondedNodes = solvent.getAllBondedEntities();
         MSNode[] solventEntities = bondedNodes.toArray(new MSNode[bondedNodes.size()]);
@@ -721,7 +730,13 @@ class Solvator extends PotentialScript {
             }
         }
 
-        Collections.shuffle(newMolecules);
+        Random random;
+        if (seedString == null) {
+            random = new Random();
+        } else {
+            random = new Random(Long.parseLong(seedString));
+        }
+        Collections.shuffle(newMolecules, random);
 
         if (ionFileName) {
             logger.info(" Ions will be placed into chain ${ionChain}");
@@ -860,13 +875,37 @@ class Solvator extends PotentialScript {
         }
         time += System.nanoTime();
         logger.info(format(" Solvent and ions added in %12.4g sec", time * Constants.NS2SEC));
-
-        String solvatedName = activeAssembly.getFile().getName().replaceFirst(~/\.[^.]+$/, ".pdb");
         time = -System.nanoTime();
-        potentialFunctions.saveAsPDB(activeAssembly, new File(solvatedName));
+
+        String solvatedName = activeAssembly.getFile().getPath().replaceFirst(~/\.[^.]+$/, ".pdb");
+        createdFile = new File(solvatedName);
+        potentialFunctions.saveAsPDB(activeAssembly, createdFile);
         time += System.nanoTime();
         logger.info(format(" Structure written to disc in %12.4g sec", time * Constants.NS2SEC));
 
         return this
+    }
+
+    /**
+     * Gets the File of the solvated structure.
+     * @return The file which was written.
+     */
+    public File getWrittenFile() {
+        return createdFile;
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        List<Potential> pots = new ArrayList<>(3);
+        if (ions != null) {
+            pots.add(ions.getPotentialEnergy());
+        }
+        if (solvent != null) {
+            pots.add(solvent.getPotentialEnergy());
+        }
+        if (solute != null) {
+            pots.add(solute.getPotentialEnergy());
+        }
+        return pots;
     }
 }

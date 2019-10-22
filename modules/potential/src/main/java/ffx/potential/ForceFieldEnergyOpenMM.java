@@ -431,6 +431,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Evaluates energy and gradients with both OpenMM and reference potential,
+     * and returns the difference in energies.
+     *
+     * @param x       Coordinate array.
+     * @param gOMM    To be filled with OpenMM-calculated gradients.
+     * @param gFFX    To be filled with FFX-calculated gradients.
+     * @param verbose Whether to be verbose.
+     * @return        Difference in energies.
+     */
+    public double energyAndGradientVsFFX(double[] x, double[] gOMM, double[] gFFX, boolean verbose) {
+        double ffxE = super.energyAndGradient(x, gFFX, verbose);
+        double thisE = energyAndGradient(x, gOMM, verbose);
+        return ffxE - thisE;
+    }
+
+    /**
      * Evaluates energy explicitly using the Java implementation backing this
      * ForceFieldEnergyOpenMM.
      *

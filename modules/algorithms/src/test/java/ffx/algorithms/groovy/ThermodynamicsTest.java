@@ -987,7 +987,7 @@ public class ThermodynamicsTest extends PJDependentTest {
     }
 
     @After
-    public void after() throws IOException {
+    public void after() {
         if (doTest) {
             // Clean up the temporary directory if it exists.
             if (tempDir != null && tempDir.exists()) {
