@@ -1722,7 +1722,7 @@ public class MolecularAssembly extends MSGroup {
             double charge = 0;
             boolean isNonstandard = false;
             for (Atom atom : node.getAtomList()) {
-                charge += atom.getMultipoleType().getCharge();
+                charge += atom.getCharge(forceField);
                 if (atom.isModRes()) {
                     isNonstandard = true;
                 }
