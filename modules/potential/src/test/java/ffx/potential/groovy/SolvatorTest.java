@@ -75,12 +75,34 @@ public class SolvatorTest extends BaseFFXTest {
                         new String[]{}, new String[]{}, new String[]{"-h"}
                 },
                 {
-                    "Acetamide Pure Water Solvation",
+                        "Aspartate Pure Water Solvation",
                         SolvatorTestMode.SOLVATE,
                         "ffx/potential/structures/capAsp.xyz",
                         "ffx/potential/structures/capAsp.pureWater.pdb",
                         "ffx/potential/structures/watertiny.xyz",
                         null,
+                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Aspartate Neutralizing NaCl (+200 mM) Solvation",
+                        SolvatorTestMode.SOLVATE,
+                        "ffx/potential/structures/capAsp.xyz",
+                        "ffx/potential/structures/capAsp.neutNaCl.pdb",
+                        "ffx/potential/structures/watertiny.xyz",
+                        "ffx/potential/structures/nacl.pdb",
+                        new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
+                        new String[]{},
+                        new String[]{}
+                },
+                {
+                        "Aspartate Charged NaCl (200 mM) Solvation",
+                        SolvatorTestMode.SOLVATE,
+                        "ffx/potential/structures/capAsp.xyz",
+                        "ffx/potential/structures/capAsp.chargedNaCl.pdb",
+                        "ffx/potential/structures/watertiny.xyz",
+                        "ffx/potential/structures/naclCharged.pdb",
                         new String[]{"-b", "2.5", "-p", "8.0", "-s", "42"},
                         new String[]{},
                         new String[]{}
@@ -141,7 +163,7 @@ public class SolvatorTest extends BaseFFXTest {
             tempDir.mkdir();
             logger.fine(String.format(" Running test %s in directory %s", info, tempDir));
 
-            String[] copiedExtensions = new String[]{"key", "properties"};
+            String[] copiedExtensions = new String[]{"key", "properties", "ions"};
             String[] filesUsed;
             if (ionFileName == null) {
                 filesUsed = new String[]{soluteFile, solventFileName};

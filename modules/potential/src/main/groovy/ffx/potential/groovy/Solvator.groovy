@@ -601,7 +601,7 @@ class Solvator extends PotentialScript {
         }
 
         Crystal newCrystal = new Crystal(newBox[0], newBox[1], newBox[2], 90, 90, 90, "P1");
-        soluteEnergy.setCrystal(newCrystal);
+        soluteEnergy.setCrystal(newCrystal, true);
 
         List<MSNode> bondedNodes = solvent.getAllBondedEntities();
         MSNode[] solventEntities = bondedNodes.toArray(new MSNode[bondedNodes.size()]);
