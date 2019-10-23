@@ -206,7 +206,7 @@ public class GaussVol {
      * Original value from Schnieders thesis work: 0.0327
      * Value based on testing with Schnieders thesis test set, Sept 2019: 0.11337
      */
-    private double solventPressure = 0.04420;
+    private double solventPressure = 0.07047;
     /**
      * Volume offset in Ang^3
      * Set based on comparison of FFX Volumes for small alkanes (methane-decane)
@@ -215,7 +215,7 @@ public class GaussVol {
      */
     //private double volumeOffsetVdwToSEV = 30.744;
     //private double volumeOffsetVdwToSEV = 0.0;
-    private double volumeOffsetVdwToSEV = 28.148;
+    private double volumeOffsetVdwToSEV = 30.639;
     /**
      * Surface Area offset in Ang^2
      * Set based on comparison of FFX Surface Areas for small alkanes (methane-decane)
@@ -840,7 +840,7 @@ public class GaussVol {
          */
         int nAtoms;
         /**
-         * The root is at index 0, atoms are at 1..natoms+1
+         * The root is at index 0, atoms are at 1..natoms
          */
         ArrayList<GaussianOverlap> overlaps;
 
