@@ -101,6 +101,37 @@ public class ConvexHullOps {
     }
 
     /**
+     * Maximum pairwise distance between atoms in an array. Uses either
+     * the convex hull method (> 10 atoms), or a brute-force loop (<= 10 atoms).
+     *
+     * @param atoms Atoms to check max pairwise distance for.
+     * @return      Max pairwise distance in Angstroms, or 0 (0 or 1 atoms given).
+     */
+    public static double maxDist(Atom[] atoms) {
+        int nAts = atoms.length;
+        if (nAts < 2) {
+            return 0;
+        } else if (nAts > 10) {
+            return maxDist(constructHull(atoms));
+        } else {
+            double maxDist = 0;
+            for (int i = 0; i < nAts - 1; i++) {
+                Atom atI = atoms[i];
+                double[] xyzI = new double[3];
+                xyzI = atI.getXYZ(xyzI);
+                for (int j = i+1; j < nAts; j++) {
+                    Atom atJ = atoms[j];
+                    double[] xyzJ = new double[3];
+                    xyzJ = atJ.getXYZ(xyzJ);
+                    double dist = VectorMath.dist2(xyzI, xyzJ);
+                    maxDist = (dist > maxDist) ? dist : maxDist;
+                }
+            }
+            return Math.sqrt(maxDist);
+        }
+    }
+
+    /**
      * Find the maximum pairwise distance between vertex points on a convex hull.
      * @param qh A QuickHull3D object.
      * @return   Maximum vertex-vertex distance.

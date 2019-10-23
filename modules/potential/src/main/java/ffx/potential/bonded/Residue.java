@@ -37,10 +37,7 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.System.arraycopy;
@@ -65,7 +62,7 @@ import ffx.potential.parameters.ForceField;
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class Residue extends MSGroup {
+public class Residue extends MSGroup implements Comparable<Residue> {
 
     private static final Logger logger = Logger.getLogger(Residue.class.getName());
 
@@ -227,6 +224,15 @@ public class Residue extends MSGroup {
      * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
      */
     private double[] O3sNorthCoords, O3sSouthCoords, C1sCoords, O4sCoords, C4sCoords;
+
+    /**
+     * Compare residues first on seg ID, then residue number, then residue type, then name.
+     */
+    private static final Comparator<Residue> resComparator =
+            Comparator.comparing(Residue::getSegID).
+            thenComparingInt(Residue::getResidueNumber).
+            thenComparing(Residue::getResidueType).
+            thenComparing(Residue::getName);
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -1053,6 +1059,14 @@ public class Residue extends MSGroup {
                 Objects.equals(getResidueNumber(), residue.getResidueNumber()) &&
                 residueType == residue.residueType &&
                 Objects.equals(getName(), residue.getName());
+    }
+
+    @Override
+    public int compareTo(Residue o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return resComparator.compare(this, o);
     }
 
     /**

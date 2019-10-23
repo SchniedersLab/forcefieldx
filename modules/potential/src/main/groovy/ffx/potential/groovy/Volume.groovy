@@ -162,7 +162,10 @@ class Volume extends PotentialScript {
         GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen)
         gaussVol.computeVolumeAndSA(positions)
         logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
-        //gaussVol.printTree()
+        if(verbose){
+            gaussVol.printTree()
+        }
+        logger.info(format("\n Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
 
         // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
         double threeOverFourPi = 3.0/(4.0*Math.PI)

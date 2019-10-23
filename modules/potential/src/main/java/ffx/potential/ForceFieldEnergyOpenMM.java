@@ -397,6 +397,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param targetTemp Target temperature in Kelvins.
      */
     public void addAndersenThermostat(double targetTemp) {
+        /*
+         * Citation:
+         * Andersen, H. C., Molecular dynamics simulations at constant pressure and/or temperature. The Journal of Chemical Physics 1980, 72 (4), 2384-2393.
+         */
         addAndersenThermostat(targetTemp, openMMContext.openMMIntegrator.collisionFreq);
 
     }
@@ -427,6 +431,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Evaluates energy and gradients with both OpenMM and reference potential,
+     * and returns the difference in energies.
+     *
+     * @param x       Coordinate array.
+     * @param gOMM    To be filled with OpenMM-calculated gradients.
+     * @param gFFX    To be filled with FFX-calculated gradients.
+     * @param verbose Whether to be verbose.
+     * @return        Difference in energies.
+     */
+    public double energyAndGradientVsFFX(double[] x, double[] gOMM, double[] gFFX, boolean verbose) {
+        double ffxE = super.energyAndGradient(x, gFFX, verbose);
+        double thisE = energyAndGradient(x, gOMM, verbose);
+        return ffxE - thisE;
+    }
+
+    /**
      * Evaluates energy explicitly using the Java implementation backing this
      * ForceFieldEnergyOpenMM.
      *
@@ -447,7 +467,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param numberOfVariables a int.
      */
     public void setOpenMMPositions(double[] x, int numberOfVariables) {
-        openMMContext.setOpenMMCoordinates(x, numberOfVariables);
+        int nOMMVar = atoms.length * 3;
+        int xOffset = 0;
+        if (numberOfVariables != nOMMVar) {
+            double[] newX = new double[nOMMVar];
+            for (int i = 0; i < atoms.length; i++) {
+                int i3 = 3*i;
+                if (atoms[i].isActive()) {
+                    System.arraycopy(x, xOffset, newX, i3, 3);
+                    xOffset += 3;
+                } else {
+                    double[] currXYZ = new double[3];
+                    currXYZ = atoms[i].getXYZ(currXYZ);
+                    System.arraycopy(currXYZ, 0, newX, i3, 3);
+                }
+            }
+            x = newX;
+        }
+        openMMContext.setOpenMMCoordinates(x, nOMMVar);
     }
 
     /**
@@ -3042,6 +3079,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 switch (scfAlgorithm) {
                     case EPT:
+                        /*
+                         * Citation:
+                         * Simmonett, A. C.;  Pickard, F. C. t.;  Shao, Y.;  Cheatham, T. E., 3rd; Brooks, B. R., Efficient treatment of induced dipoles. The Journal of chemical physics 2015, 143 (7), 074115-074115.
+                         */
                         OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Extrapolated);
                         PointerByReference exptCoefficients = OpenMM_DoubleArray_create(4);
                         OpenMM_DoubleArray_set(exptCoefficients, 0, -0.154);
