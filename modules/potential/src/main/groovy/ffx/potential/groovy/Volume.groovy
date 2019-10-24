@@ -149,7 +149,8 @@ class Volume extends PotentialScript {
             if (includeHydrogen) {
                 isHydrogen[index] = false
             }
-            radii[index] = atom.getVDWType().radius / 2.0// * rminToSigma
+            // TODO: determine effects of using rmin vs sigma for larger nt's
+            radii[index] = atom.getVDWType().radius / 2.0 * rminToSigma
             radii[index] += probe
             volume[index] = fourThirdsPI * pow(radii[index], 3)
             positions[index][0] = atom.getX()

@@ -29,7 +29,7 @@ public class Octree {
      * Critical (maximum allowed+1) number of points allowed in any one cell:
      * If a cell contains nCritical points, it needs to be split
      */
-    private int nCritical = 0;
+    private int nCritical = 10;
     /**
      * List of particles
      */
@@ -52,16 +52,24 @@ public class Octree {
     private double theta = 0.5;
 
     /**
-     * Constructor
+     * Default Constructor
      */
     public Octree(){
     }
 
-    public void addChild(int octant, int p, ArrayList<OctreeCell> cells, int numCritical){
-        OctreeCell tempCell = new OctreeCell(numCritical);
+    /**
+     * Constructor allowing specification of nCritical
+     * @param nCritical
+     */
+    public Octree(int nCritical){
+        this.nCritical = nCritical;
+    }
+
+    public void addChild(int octant, int p){
+        OctreeCell tempCell = new OctreeCell(nCritical);
 
         // Create new cell
-        // TODO: should this be passed in or the "this" value from the particular Octree?
+        // TODO: should the cells array be passed in or the "this" value from the particular Octree?
         cells.add(tempCell);
 
         // Last element of cells list is new child, c
@@ -76,10 +84,10 @@ public class Octree {
         // Establish mutual reference in cells list
         cells.get(c).setParentIndex(p);
         cells.get(c).setChildren(octant,c);
-        cells.get(c).setNumChildren(cells.get(p).getNumChildren() | (1 << octant));
+        cells.get(c).setnChild(cells.get(p).getnChild() | (1 << octant));
     }
 
-    public void splitCell(ArrayList<OctreeParticle> particles, int p, ArrayList<OctreeCell> cells, int nCritical){
+    public void splitCell(ArrayList<OctreeParticle> particles, int p){
         for (int i = 0; i < nCritical; i++){
             int octX = 0;
             int octY = 0;
@@ -93,9 +101,9 @@ public class Octree {
             octant = octX + (octY << 1) + (octZ << 2);
 
             // If there's not a child cell in the particle's octant, create one
-            boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1 << octant));
+            boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << octant));
             if(noChildInOctant){
-                addChild(octant,p,cells,nCritical);
+                addChild(octant,p);
             }
 
             // Reallocate the particle in the child cell
@@ -105,14 +113,14 @@ public class Octree {
 
             // Check if child cell reaches nCritical - split recursively if so
             if(cells.get(c).getNumLeaves() >= nCritical){
-                splitCell(particles,c,cells,nCritical);
+                splitCell(particles,c);
             }
 
         }
     }
 
-    public ArrayList<OctreeCell> buildTree(ArrayList<OctreeParticle> particles, OctreeCell root, int nCritical){
-        ArrayList<OctreeCell> cells = new ArrayList<>();
+    public ArrayList<OctreeCell> buildTree(ArrayList<OctreeParticle> particles, OctreeCell root){
+        //ArrayList<OctreeCell> cells = new ArrayList<>();
 
         // Set root cell
         cells.add(root);
@@ -129,17 +137,17 @@ public class Octree {
                 int octY = 0;
                 int octZ = 0;
 
-                if(particles.get(i).getX() > cells.get(p).getX()){octX = 1;}
-                if(particles.get(i).getY() > cells.get(p).getY()){octY = 1;}
-                if(particles.get(i).getZ() > cells.get(p).getZ()){octZ = 1;}
+                if(particles.get(i).getX() > cells.get(current).getX()){octX = 1;}
+                if(particles.get(i).getY() > cells.get(current).getY()){octY = 1;}
+                if(particles.get(i).getZ() > cells.get(current).getZ()){octZ = 1;}
 
                 // Find particle's octant - should be an integer from 0 to 7
                 octant = octX + (octY << 1) + (octZ << 2);
 
                 // If there's not a child cell in the particle's octant, create one
-                boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1 << octant));
+                boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(current).getnChild() & (1 << octant));
                 if(noChildInOctant){
-                    addChild(octant,p,cells,nCritical);
+                    addChild(octant,current);
                 }
 
                 current = cells.get(current).getChildAtIndex(octant);
@@ -151,19 +159,19 @@ public class Octree {
 
             // Check whether to split cell
             if(cells.get(current).getNumLeaves() >= nCritical){
-                splitCell(particles,current,cells,nCritical);
+                splitCell(particles,current);
             }
         }
 
         return cells;
     }
 
-    public void getMultipole(ArrayList<OctreeParticle> particles,int p,ArrayList<OctreeCell> cells,int[] leaves,int nCritical){
+    public void getMultipole(ArrayList<OctreeParticle> particles,int p,ArrayList<OctreeCell> cells,ArrayList<Integer> leaves){
         // If the current cell is not a leaf cell, traverse down
         if(cells.get(p).getNumLeaves() >= nCritical){
             for(int c = 0; c < 8; c++){
-                if(BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1 << c))){
-                    getMultipole(particles,cells.get(p).getChildAtIndex(c),cells,leaves,nCritical);
+                if(BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << c))){
+                    getMultipole(particles,cells.get(p).getChildAtIndex(c),cells,leaves);
                 }
             }
         } else{ // Otherwise, cell p is a leaf cell
@@ -195,13 +203,12 @@ public class Octree {
                 cells.get(p).addToMultipole(calculatedMultipole);
 
                 // TODO: decide if leaves should be an array or ArrayList and adjust accordingly
-                // leaves.add(p)
+                leaves.add(p);
             }
         }
-
     }
 
-    public void M2M(int p, int c, ArrayList<OctreeCell> cells){
+    public void M2M(int p, int c){
         double dx = cells.get(p).getX()-cells.get(c).getX();
         double dy = cells.get(p).getY()-cells.get(c).getY();
         double dz = cells.get(p).getZ()-cells.get(c).getZ();
@@ -238,8 +245,8 @@ public class Octree {
 
     public void upwardSweep(ArrayList<OctreeCell> cells){
         for(int c = cells.size(); c > 0;c++){
-            p = cells.get(c).getParentIndex();
-            M2M(p,c,cells);
+            int p = cells.get(c).getParentIndex();
+            M2M(p,c);
         }
     }
 
@@ -254,20 +261,26 @@ public class Octree {
         }
     }
 
-    public void evalAtTarget(ArrayList<OctreeParticle> particles, int p, int i, ArrayList<OctreeCell> cells, int nCritical, double theta){
+    public double distance(double[] array, OctreePoint point){
+        return Math.sqrt(Math.pow((array[0]-point.getX()),2)
+                +Math.pow((array[1]-point.getY()),2)
+                +Math.pow((array[2]-point.getZ()),2));
+    }
+
+    public void evalAtTarget(ArrayList<OctreeParticle> particles, int p, int i, double theta){
 
         // Non-leaf cell
         if(cells.get(p).getNumLeaves() >= nCritical){
 
             // Loop through p's child cells (8 octants)
             for(int oct = 0; oct < 8; oct++){
-                if(BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1<<oct))){
+                if(BooleanUtils.toBoolean(cells.get(p).getnChild() & (1<<oct))){
                     int c = cells.get(p).getChildAtIndex(oct);
-                    double r = 0.0;//particles.get(i).distance(cells.get(c));
+                    double r = particles.get(i).distance(cells.get(c));
 
                     // Near field child cell
                     if(cells.get(c).getR() > theta*r){
-                        evalAtTarget(particles,c,i,cells,nCritical,theta);
+                        evalAtTarget(particles,c,i,theta);
                     } else{ // Far field child cell
                         double dx = particles.get(i).getX()-cells.get(c).getX();
                         double dy = particles.get(i).getY()-cells.get(c).getY();

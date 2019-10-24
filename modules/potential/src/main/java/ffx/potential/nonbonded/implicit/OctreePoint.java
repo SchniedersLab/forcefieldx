@@ -47,8 +47,14 @@ public class OctreePoint {
 
     public double distance(OctreePoint other){
         return Math.sqrt(Math.pow((this.x - other.x),2)
-                +Math.pow((this.y - other.y),2)
-                +Math.pow((this.z-other.z),2));
+                + Math.pow((this.y - other.y),2)
+                + Math.pow((this.z-other.z),2));
+    }
+
+    public double distance(OctreeCell other){
+        return Math.sqrt(Math.pow((this.x - other.getX()),2)
+                + Math.pow((this.y - other.getY()),2)
+                + Math.pow((this.z - other.getZ()),2));
     }
 
     public double getX(){ return this.x; }

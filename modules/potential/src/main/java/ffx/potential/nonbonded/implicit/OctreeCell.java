@@ -1,5 +1,7 @@
 package ffx.potential.nonbonded.implicit;
 
+import java.util.ArrayList;
+
 public class OctreeCell {
 
     /**
@@ -8,17 +10,17 @@ public class OctreeCell {
      */
     private int nCritical;
     /**
-     * Number of leaves
+     * Number of leaves in a cell
      */
     private int numLeaves = 0;
     /**
      * Array of leaf indices
      */
-    private int[] leaves = new int[nCritical];
+    private ArrayList<Integer> leaves = new ArrayList<>();
     /**
-     * Number of children
+     * Integer whose last 8 bits keep track of the empty child cells
      */
-    private int numChildren = 0;
+    private int nChild = 0;
     /**
      * Array of child indices, length 8
      */
@@ -107,22 +109,22 @@ public class OctreeCell {
         return children[octant];
     }
 
-    public int getNumChildren(){
-        return this.numChildren;
+    public int getnChild(){
+        return this.nChild;
     }
 
-    public void setNumChildren(int num){
-        this.numChildren = num;
+    public void setnChild(int num){
+        this.nChild = num;
     }
 
     public int getNumLeaves(){ return this.numLeaves; }
     public void setNumLeaves(int num){ this.numLeaves = num; }
 
     public void setLeaf(int index, int leaf){
-        this.leaves[index] = leaf;
+        this.leaves.set(index,leaf);
     }
     public int getLeavesValueAtIndex(int index){
-        return this.leaves[index];
+        return this.leaves.get(index);
     }
 
     public double[] getMultipole(){
