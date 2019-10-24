@@ -4926,7 +4926,7 @@ public final class PDBFilter extends SystemFilter {
                     final double[] xyzOP1 = OP1.getXYZ(new double[3]);
                     double dihedral = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzOP1);
                     double twoPiOver3 = 2.0 * Math.PI / 3.0;
-                    double target = Crystal.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
+                    double target = VectorMath.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
                     List<Atom> otherO = bondedO.stream().
                             filter(o -> o != OP1).
                             sorted(Comparator.comparingDouble((Atom o) -> {
@@ -4934,7 +4934,7 @@ public final class PDBFilter extends SystemFilter {
                                 double dihedO = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
                                 double diff = dihedO - target;
                                 double twoPi = 2 * Math.PI;
-                                diff = Crystal.modToRange(diff, 0, twoPi);
+                                diff = VectorMath.modToRange(diff, 0, twoPi);
                                 diff = diff < Math.PI ? diff : twoPi - diff;
                                 return diff;
                             })).collect(Collectors.toList());
@@ -4953,7 +4953,7 @@ public final class PDBFilter extends SystemFilter {
                     final double[] xyzNextO3s = nextO3s.getXYZ(new double[3]);
                     double dihedral = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzNextO3s);
                     double twoPiOver3 = 2.0 * Math.PI / 3.0;
-                    double target = Crystal.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
+                    double target = VectorMath.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
                     List<Atom> otherO = bondedO.stream().
                             filter(o -> o != nextO3s).
                             sorted(Comparator.comparingDouble((Atom o) -> {
@@ -4961,7 +4961,7 @@ public final class PDBFilter extends SystemFilter {
                                 double dihedO = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
                                 double diff = dihedO - target;
                                 double twoPi = 2 * Math.PI;
-                                diff = Crystal.modToRange(diff, 0, twoPi);
+                                diff = VectorMath.modToRange(diff, 0, twoPi);
                                 diff = diff < Math.PI ? diff : twoPi - diff;
                                 return diff;
                             })).collect(Collectors.toList());
