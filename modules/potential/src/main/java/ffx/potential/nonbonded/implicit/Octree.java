@@ -1,395 +1,310 @@
-//******************************************************************************
-//
-// Title:       Force Field X.
-// Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
-//
-// This file is part of Force Field X.
-//
-// Force Field X is free software; you can redistribute it and/or modify it
-// under the terms of the GNU General Public License version 3 as published by
-// the Free Software Foundation.
-//
-// Force Field X is distributed in the hope that it will be useful, but WITHOUT
-// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-// details.
-//
-// You should have received a copy of the GNU General Public License along with
-// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
-// Place, Suite 330, Boston, MA 02111-1307 USA
-//
-// Linking this library statically or dynamically with other modules is making a
-// combined work based on this library. Thus, the terms and conditions of the
-// GNU General Public License cover the whole combination.
-//
-// As a special exception, the copyright holders of this library give you
-// permission to link this library with independent modules to produce an
-// executable, regardless of the license terms of these independent modules, and
-// to copy and distribute the resulting executable under terms of your choice,
-// provided that you also meet, for each linked independent module, the terms
-// and conditions of the license of that module. An independent module is a
-// module which is not derived from or based on this library. If you modify this
-// library, you may extend this exception to your version of the library, but
-// you are not obligated to do so. If you do not wish to do so, delete this
-// exception statement from your version.
-//
-//******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.apache.commons.lang3.BooleanUtils;
+
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
-import static java.lang.String.format;
 
-import org.jogamp.vecmath.Point3d;
-
-import ffx.potential.bonded.Atom;
-
-/**
- * <p>Initial implementation of an Octree decomposition.</p>
- *
- * @author Stephen D. LuCore
- * @since 1.0
- */
 public class Octree {
 
     private static final Logger logger = Logger.getLogger(Octree.class.getName());
-    private static boolean warnedAboutSplit = false;
-    private static boolean leaveStraddlersInParent = false;
-
-    private static int maxAtomsPerVolume = 20;
-    private static int maxTreeDepth = 10;
-
-    private int depth;
-    private Octree[] children;
-    private List<Atom> contents = new ArrayList<>();
-    private Point3d corner;
-    private double edgeLength;
 
     /**
-     * <p>Constructor for Octree.</p>
-     *
-     * @param depth      a int.
-     * @param corner     a {@link org.jogamp.vecmath.Point3d} object.
-     * @param edgeLength a double.
+     * Reference to one of the eight divisions in 3D
      */
-    public Octree(int depth, Point3d corner, double edgeLength) {
-        this.depth = depth;
-        this.corner = corner;
-        this.edgeLength = edgeLength;
+    private int octant = 0;
+    /**
+     * List of cells
+     */
+    private ArrayList<OctreeCell> cells = new ArrayList<>();
+    /**
+     * Index of parent cell in cells list
+     */
+    private int p = 0;
+    /**
+     * Index of child cell in cells list
+     */
+    private int c = 0;
+    /**
+     * Critical (maximum allowed+1) number of points allowed in any one cell:
+     * If a cell contains nCritical points, it needs to be split
+     */
+    private int nCritical = 0;
+    /**
+     * List of particles
+     */
+    private ArrayList<OctreeParticle> particles = new ArrayList<>();
+    /**
+     * Root cell
+     */
+    private OctreeCell root;
+    /**
+     * List of all leaf cells
+     */
+    private ArrayList<OctreeCell> leaves = new ArrayList<>();
+    /**
+     * Index of target particle
+     */
+    private int targetIndex = 0;
+    /**
+     * Tolerance parameter
+     */
+    private double theta = 0.5;
+
+    /**
+     * Constructor
+     */
+    public Octree(){
     }
 
-    /**
-     * <p>debugPrintStats.</p>
-     *
-     * @param writePartitionFile a boolean.
-     * @param partFile           a {@link java.io.File} object.
-     */
-    public void debugPrintStats(boolean writePartitionFile, File partFile) {
-        List<Octree> nodes = new ArrayList<>();
-        List<Octree> leaves = new ArrayList<>();
-        debugFindNodes(nodes);
-        int maxDepth = 0;
-        int minContents = Integer.MAX_VALUE, maxContents = 0;
-        double minEdgeLength = Double.MAX_VALUE, maxEdgeLength = 0;
-        double minConc = Double.MAX_VALUE, maxConc = 0;
-        for (Octree node : nodes) {
-            if (node.getChildren() == null) {
-                leaves.add(node);
-                int nodeContents = node.getContents().size();
-                double nodeEdge = node.getEdgeLength();
-                double nodeVolume = Math.pow(nodeEdge, 3);
-                double nodeConc = nodeContents / nodeVolume;
-                maxDepth = (node.getDepth() > maxDepth) ? node.getDepth() : maxDepth;
-                minContents = (nodeContents < minContents) ? nodeContents : minContents;
-                maxContents = (nodeContents > maxContents) ? nodeContents : maxContents;
-                minEdgeLength = (nodeEdge < minEdgeLength) ? nodeEdge : minEdgeLength;
-                maxEdgeLength = (nodeEdge > maxEdgeLength) ? nodeEdge : maxEdgeLength;
-                minConc = (nodeConc < minConc) ? nodeConc : minConc;
-                maxConc = (nodeConc > maxConc) ? nodeConc : maxConc;
+    public void addChild(int octant, int p, ArrayList<OctreeCell> cells, int numCritical){
+        OctreeCell tempCell = new OctreeCell(numCritical);
+
+        // Create new cell
+        // TODO: should this be passed in or the "this" value from the particular Octree?
+        cells.add(tempCell);
+
+        // Last element of cells list is new child, c
+        c = cells.size() - 1;
+
+        // Geometric reference between parent and child
+        cells.get(c).setR((cells.get(p).getR())*0.5);
+        cells.get(c).setX((cells.get(p).getX())*((octant & 1)*2-1));
+        cells.get(c).setY((cells.get(p).getY())*((octant & 2)-1));
+        cells.get(c).setZ((cells.get(p).getZ())*((octant & 4)/2-1));
+
+        // Establish mutual reference in cells list
+        cells.get(c).setParentIndex(p);
+        cells.get(c).setChildren(octant,c);
+        cells.get(c).setNumChildren(cells.get(p).getNumChildren() | (1 << octant));
+    }
+
+    public void splitCell(ArrayList<OctreeParticle> particles, int p, ArrayList<OctreeCell> cells, int nCritical){
+        for (int i = 0; i < nCritical; i++){
+            int octX = 0;
+            int octY = 0;
+            int octZ = 0;
+
+            if(particles.get(i).getX() > cells.get(p).getX()){octX = 1;}
+            if(particles.get(i).getY() > cells.get(p).getY()){octY = 1;}
+            if(particles.get(i).getZ() > cells.get(p).getZ()){octZ = 1;}
+
+            // Find particle's octant - should be an integer from 0 to 7
+            octant = octX + (octY << 1) + (octZ << 2);
+
+            // If there's not a child cell in the particle's octant, create one
+            boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1 << octant));
+            if(noChildInOctant){
+                addChild(octant,p,cells,nCritical);
             }
+
+            // Reallocate the particle in the child cell
+            c = cells.get(p).getChildAtIndex(octant);
+            cells.get(c).setLeaf(cells.get(c).getNumLeaves(),1);
+            cells.get(c).setNumLeaves(cells.get(c).getNumLeaves() + 1);
+
+            // Check if child cell reaches nCritical - split recursively if so
+            if(cells.get(c).getNumLeaves() >= nCritical){
+                splitCell(particles,c,cells,nCritical);
+            }
+
         }
-        logger.info(" Octree Leaf Stats:");
-        logger.info(format("    Max Depth:        %10d", maxDepth));
-        logger.info(format("    Min/Max Atoms:    %10d", minContents));
-        logger.info(format("                      %10d", maxContents));
-        logger.info(format("    Min/Max Volume:   %10.2g", Math.pow(minEdgeLength, 3)));
-        logger.info(format("                      %10.2g", Math.pow(maxEdgeLength, 3)));
-        logger.info(format("    Min/Max Conc:     %10.2g", minConc));
-        logger.info(format("                      %10.2g", maxConc));
-        logger.info(" ");
-        if (writePartitionFile) {
-            try {
-                logger.info(format(" Writing atom partition file to %s", partFile.getName()));
-                BufferedWriter bw = new BufferedWriter(new FileWriter(partFile));
-                int i = 1;
-                for (Octree leaf : leaves) {
-                    Point3d p = leaf.getCorner();
-                    bw.write(format("Leaf %d:  (%6.2f, %6.2f, %6.2f) x %6.2f\n",
-                            i++, p.x, p.y, p.z, leaf.getEdgeLength()));
-                    for (Atom atom : leaf.getContents()) {
-                        bw.write(format("  %s\n", atom.toString()));
-                    }
+    }
+
+    public ArrayList<OctreeCell> buildTree(ArrayList<OctreeParticle> particles, OctreeCell root, int nCritical){
+        ArrayList<OctreeCell> cells = new ArrayList<>();
+
+        // Set root cell
+        cells.add(root);
+
+        // Build tree
+        int n = particles.size();
+
+        for(int i = 0; i < n; i++){
+            int current = 0;
+
+            while(cells.get(current).getNumLeaves() >= nCritical){
+                cells.get(current).setNumLeaves(cells.get(current).getNumLeaves() + 1);
+                int octX = 0;
+                int octY = 0;
+                int octZ = 0;
+
+                if(particles.get(i).getX() > cells.get(p).getX()){octX = 1;}
+                if(particles.get(i).getY() > cells.get(p).getY()){octY = 1;}
+                if(particles.get(i).getZ() > cells.get(p).getZ()){octZ = 1;}
+
+                // Find particle's octant - should be an integer from 0 to 7
+                octant = octX + (octY << 1) + (octZ << 2);
+
+                // If there's not a child cell in the particle's octant, create one
+                boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1 << octant));
+                if(noChildInOctant){
+                    addChild(octant,p,cells,nCritical);
                 }
-                bw.flush();
-                bw.close();
-            } catch (IOException ex) {
-                logger.warning("Exception writing atom partition file.");
+
+                current = cells.get(current).getChildAtIndex(octant);
+            }
+
+            // Allocate the particle in the leaf cell
+            cells.get(current).setLeaf(cells.get(current).getNumLeaves(),i);
+            cells.get(current).setNumLeaves(cells.get(current).getNumLeaves() + 1);
+
+            // Check whether to split cell
+            if(cells.get(current).getNumLeaves() >= nCritical){
+                splitCell(particles,current,cells,nCritical);
             }
         }
+
+        return cells;
     }
 
-    private void debugFindNodes(List<Octree> nodes) {
-        nodes.add(this);
-        if (children != null) {
-            for (Octree child : children) {
-                child.debugFindNodes(nodes);
-            }
-        }
-    }
-
-    /**
-     * <p>addAtoms.</p>
-     *
-     * @param atoms a {@link java.util.List} object.
-     */
-    public void addAtoms(List<Atom> atoms) {
-        for (Atom atom : atoms) {
-            addAtom(atom);
-        }
-    }
-
-    /**
-     * <p>Setter for the field <code>maxAtomsPerVolume</code>.</p>
-     *
-     * @param max a int.
-     */
-    public void setMaxAtomsPerVolume(int max) {
-        maxAtomsPerVolume = max;
-    }
-
-    /**
-     * <p>Setter for the field <code>maxTreeDepth</code>.</p>
-     *
-     * @param max a int.
-     */
-    public void setMaxTreeDepth(int max) {
-        maxTreeDepth = max;
-    }
-
-    /**
-     * <p>Setter for the field <code>leaveStraddlersInParent</code>.</p>
-     *
-     * @param set a boolean.
-     */
-    public void setLeaveStraddlersInParent(boolean set) {
-        leaveStraddlersInParent = set;
-    }
-
-    private void split() {
-        double sel = edgeLength / 2;
-        double x = corner.x;    // for Java3d 1.3 compatibility, use corner.getX() in 1.5+
-        double y = corner.y;
-        double z = corner.z;
-        children = new Octree[8];
-        children[0] = new Octree(depth + 1,
-                new Point3d(x, y, z), sel);
-        children[1] = new Octree(depth + 1,
-                new Point3d(x + sel, y, z), sel);
-        children[2] = new Octree(depth + 1,
-                new Point3d(x, y + sel, z), sel);
-        children[3] = new Octree(depth + 1,
-                new Point3d(x, y, z + sel), sel);
-        children[4] = new Octree(depth + 1,
-                new Point3d(x + sel, y + sel, z), sel);
-        children[5] = new Octree(depth + 1,
-                new Point3d(x + sel, y, z + sel), sel);
-        children[6] = new Octree(depth + 1,
-                new Point3d(x, y + sel, z + sel), sel);
-        children[7] = new Octree(depth + 1,
-                new Point3d(x + sel, y + sel, z + sel), sel);
-    }
-
-    private void addAtom(Atom atom) {
-        if (children != null) {
-            if (leaveStraddlersInParent) {
-                int index = findAtomIndex(atom);
-                if (index != -1) {
-                    children[index].addAtom(atom);
-                    return;
+    public void getMultipole(ArrayList<OctreeParticle> particles,int p,ArrayList<OctreeCell> cells,int[] leaves,int nCritical){
+        // If the current cell is not a leaf cell, traverse down
+        if(cells.get(p).getNumLeaves() >= nCritical){
+            for(int c = 0; c < 8; c++){
+                if(BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1 << c))){
+                    getMultipole(particles,cells.get(p).getChildAtIndex(c),cells,leaves,nCritical);
                 }
-            } else {
-                boolean indices[] = partitionAtom(atom);
-                for (int i = 0; i < 8; i++) {
-                    if (indices[i]) {
-                        children[i].addAtom(atom);
-                    }
-                }
-                return;
+            }
+        } else{ // Otherwise, cell p is a leaf cell
+            // Loop in leaf particles, do P2M
+            for(int i = 0; i < cells.get(p).getNumLeaves();i++){
+                int l = cells.get(p).getLeavesValueAtIndex(i);
+                double dx = cells.get(p).getX()-particles.get(l).getX();
+                double dy = cells.get(p).getY()-particles.get(l).getY();
+                double dz = cells.get(p).getZ()-particles.get(l).getZ();
+
+                // Calculate Multipole and fill array
+                double charge = particles.get(l).getCharge();
+                double[] calculatedMultipole = new double[10];
+                // Monopole (charge)
+                calculatedMultipole[0] = charge;
+                // Dipole
+                calculatedMultipole[1] = dx * charge;
+                calculatedMultipole[2] = dy * charge;
+                calculatedMultipole[3] = dz * charge;
+                // Quadropole
+                calculatedMultipole[4] = (Math.pow(dx,2)*0.5)*charge;
+                calculatedMultipole[5] = (Math.pow(dy,2)*0.5)*charge;
+                calculatedMultipole[6] = (Math.pow(dz,2)*0.5)*charge;
+                calculatedMultipole[7] = ((dx*dy)*0.5)*charge;
+                calculatedMultipole[8] = ((dy*dz)*0.5)*charge;
+                calculatedMultipole[9] = ((dz*dx)*0.5)*charge;
+
+                // Set Multipole
+                cells.get(p).addToMultipole(calculatedMultipole);
+
+                // TODO: decide if leaves should be an array or ArrayList and adjust accordingly
+                // leaves.add(p)
             }
         }
-        contents.add(atom);
-        if (contents.size() > maxAtomsPerVolume && depth < maxTreeDepth) {
-            if (children != null) {
-                if (!warnedAboutSplit) {
-                    logger.warning("Octree couldn't split due to straddlers; maxAtomsPerVolume may be violated.");
-                    warnedAboutSplit = true;
+
+    }
+
+    public void M2M(int p, int c, ArrayList<OctreeCell> cells){
+        double dx = cells.get(p).getX()-cells.get(c).getX();
+        double dy = cells.get(p).getY()-cells.get(c).getY();
+        double dz = cells.get(p).getZ()-cells.get(c).getZ();
+
+        double[] Dxyz = new double[]{dx, dy, dz};
+        double[] Dyzx = new double[]{dy, dz, dx};
+
+        cells.get(p).addToMultipole(cells.get(c).getMultipole());
+
+        double[] currentChildMultipole = cells.get(c).getMultipole();
+
+        // Additional Multipole Terms
+        double[] additionalMultipoleTerms = new double[10];
+        // Added to charge
+        additionalMultipoleTerms[0] = 0;
+        // Added to Dipole
+        additionalMultipoleTerms[1] = currentChildMultipole[0]*Dxyz[0];
+        additionalMultipoleTerms[2] = currentChildMultipole[0]*Dxyz[1];
+        additionalMultipoleTerms[3] = currentChildMultipole[0]*Dxyz[2];
+        // Added to Quadropole
+        additionalMultipoleTerms[4] = currentChildMultipole[1]*Dxyz[0]+0.5*currentChildMultipole[0]*Math.pow(Dxyz[0],2);
+        additionalMultipoleTerms[5] = currentChildMultipole[2]*Dxyz[1]+0.5*currentChildMultipole[0]*Math.pow(Dxyz[1],2);
+        additionalMultipoleTerms[6] = currentChildMultipole[3]*Dxyz[2]+0.5*currentChildMultipole[0]*Math.pow(Dxyz[2],2);
+
+        additionalMultipoleTerms[7]=0.5*currentChildMultipole[2]*Dyzx[0]+0.5*currentChildMultipole[1]*Dxyz[0]+
+                0.5*currentChildMultipole[0]*Dxyz[0]*Dyzx[0];
+        additionalMultipoleTerms[8]=0.5*currentChildMultipole[3]*Dyzx[1]+0.5*currentChildMultipole[2]*Dxyz[1]+
+                0.5*currentChildMultipole[0]*Dxyz[1]*Dyzx[1];
+        additionalMultipoleTerms[9]=0.5*currentChildMultipole[1]*Dyzx[2]+0.5*currentChildMultipole[3]*Dxyz[2]+
+                0.5*currentChildMultipole[0]*Dxyz[2]*Dyzx[2];
+
+        cells.get(p).addToMultipole(additionalMultipoleTerms);
+    }
+
+    public void upwardSweep(ArrayList<OctreeCell> cells){
+        for(int c = cells.size(); c > 0;c++){
+            p = cells.get(c).getParentIndex();
+            M2M(p,c,cells);
+        }
+    }
+
+    public void directSum(ArrayList<OctreeParticle> particles){
+        for(int i = 0; i < particles.size();i++){
+            for(int j = 0; j < particles.size();j++){
+                if(j!=i){
+                    double r = particles.get(i).distance(particles.get(j));
+                    particles.get(j).setPhi(particles.get(j).getCharge()/r);
                 }
-                return;
             }
-            split();
-            for (int i = 0; i < contents.size(); ) {    // NOTE: intentional lack of auto-increment
-                if (leaveStraddlersInParent) {
-                    int index = findAtomIndex(contents.get(i));
-                    if (index != -1) {
-                        children[index].addAtom(contents.remove(i));
-                    } else {
-                        i++;
-                    }
-                } else {
-                    boolean[] indices = partitionAtom(contents.get(i));
-                    Atom current = contents.remove(i);
-                    for (int j = 0; j < 8; j++) {
-                        if (indices[j]) {
-                            children[j].addAtom(current);
+        }
+    }
+
+    public void evalAtTarget(ArrayList<OctreeParticle> particles, int p, int i, ArrayList<OctreeCell> cells, int nCritical, double theta){
+
+        // Non-leaf cell
+        if(cells.get(p).getNumLeaves() >= nCritical){
+
+            // Loop through p's child cells (8 octants)
+            for(int oct = 0; oct < 8; oct++){
+                if(BooleanUtils.toBoolean(cells.get(p).getNumChildren() & (1<<oct))){
+                    int c = cells.get(p).getChildAtIndex(oct);
+                    double r = 0.0;//particles.get(i).distance(cells.get(c));
+
+                    // Near field child cell
+                    if(cells.get(c).getR() > theta*r){
+                        evalAtTarget(particles,c,i,cells,nCritical,theta);
+                    } else{ // Far field child cell
+                        double dx = particles.get(i).getX()-cells.get(c).getX();
+                        double dy = particles.get(i).getY()-cells.get(c).getY();
+                        double dz = particles.get(i).getZ()-cells.get(c).getZ();
+                        double r3 = Math.pow(r,3);
+                        double r5 = r3*Math.pow(r,2);
+
+                        // Calculate the weight from each multipole
+                        double[] weight = new double[10];
+                        weight[0] = 1/r;
+                        weight[1] = -dx/r3;
+                        weight[2] = -dy/r3;
+                        weight[3] = -dz/r3;
+                        weight[4] = (3*Math.pow(dx,2))/r5 - (1/r3);
+                        weight[5] = (3*Math.pow(dy,2))/r5 - (1/r3);
+                        weight[6] = (3*Math.pow(dz,2))/r5 - (1/r3);
+                        weight[7] = 3*dx*dy/r5;
+                        weight[8] = 3*dy*dz/r5;
+                        weight[9] = 3*dz*dx/r5;
+
+                        // Calculate dot product of multipole array and weight array
+                        double dotProduct = 0.0;
+                        for(int d = 0; d < weight.length; d++){
+                            double[] multipoleArray = cells.get(c).getMultipole();
+                            dotProduct = dotProduct+multipoleArray[d]*weight[d];
                         }
+
+                        particles.get(i).setPhi(dotProduct);
+                    }
+                } else{ // Leaf Cell
+                    // Loop in twig cell's particles
+                    for(int j = 0; j < cells.get(p).getNumLeaves(); j++){
+                        //OctreeParticle source = particles.get(cells.get(p).getLea)
                     }
                 }
             }
         }
-    }
-
-    /**
-     * Finds the index of the single child octree to which this atom belongs;
-     * returns -1 for straddlers.
-     *
-     * @param atom query atom
-     * @return index of children[] octree inside which this atom fits completely
-     */
-    private int findAtomIndex(Atom atom) {
-        int index = -1;
-        boolean b[] = partitionAtom(atom);
-        for (int i = 0; i < 8; i++) {
-            if (b[i]) {
-                if (index != -1) {
-                    return -1;
-                }
-                index = i;
-            }
-        }
-        return index;
-    }
-
-    /**
-     * Finds the indices of the children octrees to which this atom belongs
-     * (wholly or partially).
-     *
-     * @param atom query atom
-     * @return boolean array such that if (b[i] == true) then children[i]
-     * touches this atom
-     */
-    private boolean[] partitionAtom(Atom atom) {
-        boolean b[] = new boolean[8];
-        for (int i = 0; i < 8; i++) {
-            b[i] = true;
-        }
-        double midX = corner.x + (edgeLength / 2);  // for Java3d 1.3 compatibility, use corner.getX() in 1.5+
-        double midY = corner.y + (edgeLength / 2);
-        double midZ = corner.z + (edgeLength / 2);
-        double vdwr = atom.getVDWR();
-        double atomX = atom.getX();
-        double atomY = atom.getY();
-        double atomZ = atom.getZ();
-        boolean leftSide = (atomX + vdwr < midX);
-        boolean rightSide = (atomX - vdwr > midX);
-        boolean topSide = (atomY + vdwr < midY);
-        boolean botSide = (atomY - vdwr > midY);
-        boolean frontSide = (atomZ + vdwr < midZ);
-        boolean backSide = (atomZ - vdwr > midZ);
-        if (leftSide) {
-            b[1] = false;
-            b[4] = false;
-            b[5] = false;
-            b[7] = false;
-        } else if (rightSide) {
-            b[0] = false;
-            b[2] = false;
-            b[3] = false;
-            b[6] = false;
-        }
-        if (topSide) {
-            b[2] = false;
-            b[4] = false;
-            b[6] = false;
-            b[7] = false;
-        } else if (botSide) {
-            b[0] = false;
-            b[1] = false;
-            b[3] = false;
-            b[5] = false;
-        }
-        if (frontSide) {
-            b[3] = false;
-            b[5] = false;
-            b[6] = false;
-            b[7] = false;
-        } else if (backSide) {
-            b[0] = false;
-            b[1] = false;
-            b[2] = false;
-            b[4] = false;
-        }
-        return b;
-    }
-
-    /**
-     * <p>Getter for the field <code>depth</code>.</p>
-     *
-     * @return a int.
-     */
-    public int getDepth() {
-        return depth;
-    }
-
-    /**
-     * <p>Getter for the field <code>children</code>.</p>
-     *
-     * @return an array of {@link Octree} objects.
-     */
-    public Octree[] getChildren() {
-        return children;
-    }
-
-    /**
-     * <p>Getter for the field <code>contents</code>.</p>
-     *
-     * @return a {@link java.util.List} object.
-     */
-    public List<Atom> getContents() {
-        return contents;
-    }
-
-    /**
-     * <p>Getter for the field <code>corner</code>.</p>
-     *
-     * @return a {@link org.jogamp.vecmath.Point3d} object.
-     */
-    public Point3d getCorner() {
-        return corner;
-    }
-
-    /**
-     * <p>Getter for the field <code>edgeLength</code>.</p>
-     *
-     * @return a double.
-     */
-    private double getEdgeLength() {
-        return edgeLength;
     }
 
 }
