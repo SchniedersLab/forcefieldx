@@ -6,6 +6,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+/**
+ * Octree method based on Fast Multipole Method (FMM) tutorial from the Barba Group:
+ * https://github.com/barbagroup/FMM_tutorial
+ */
 public class Octree {
 
     private static final Logger logger = Logger.getLogger(Octree.class.getName());

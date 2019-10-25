@@ -2,6 +2,11 @@ package ffx.potential.nonbonded.implicit;
 
 import java.util.ArrayList;
 
+/**
+ * OctreeCell:
+ * Object class for Octree method based on Fast Multipole Method (FMM) tutorial from the Barba Group:
+ * https://github.com/barbagroup/FMM_tutorial
+ */
 public class OctreeCell {
 
     /**

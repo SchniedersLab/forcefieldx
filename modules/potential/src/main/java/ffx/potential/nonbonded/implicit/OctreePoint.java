@@ -2,6 +2,11 @@ package ffx.potential.nonbonded.implicit;
 
 import java.util.logging.Logger;
 
+/**
+ * OctreePoint:
+ * Object class for Octree method based on Fast Multipole Method (FMM) tutorial from the Barba Group:
+ * https://github.com/barbagroup/FMM_tutorial
+ */
 public class OctreePoint {
 
     private static final Logger logger = Logger.getLogger(OctreePoint.class.getName());
