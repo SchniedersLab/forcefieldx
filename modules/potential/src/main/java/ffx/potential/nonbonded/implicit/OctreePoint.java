@@ -4,7 +4,7 @@ import java.util.logging.Logger;
 
 /**
  * OctreePoint:
- * Object class for Octree method based on Fast Multipole Method (FMM) tutorial from the Barba Group:
+ * Object class for Octree method presented in the Fast Multipole Method (FMM) tutorial from the Barba Group:
  * https://github.com/barbagroup/FMM_tutorial
  */
 public class OctreePoint {

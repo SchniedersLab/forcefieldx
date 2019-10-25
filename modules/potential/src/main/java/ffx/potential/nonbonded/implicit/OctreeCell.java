@@ -4,14 +4,14 @@ import java.util.ArrayList;
 
 /**
  * OctreeCell:
- * Object class for Octree method based on Fast Multipole Method (FMM) tutorial from the Barba Group:
+ * Object class for Octree method presented in the Fast Multipole Method (FMM) tutorial from the Barba Group:
  * https://github.com/barbagroup/FMM_tutorial
  */
 public class OctreeCell {
 
     /**
-     * Critical (maximum allowed+1) number of points allowed in any one cell:
-     * If a cell contains nCritical points, it needs to be split
+     * Critical (maximum allowed) number of points allowed in any one cell:
+     * If a cell already contains nCritical points, it needs to be split
      */
     private int nCritical;
     /**

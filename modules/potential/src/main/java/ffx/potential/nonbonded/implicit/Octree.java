@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * Octree method based on Fast Multipole Method (FMM) tutorial from the Barba Group:
+ * Octree method presented in the Fast Multipole Method (FMM) tutorial from the Barba Group:
  * https://github.com/barbagroup/FMM_tutorial
  */
 public class Octree {
@@ -19,8 +19,8 @@ public class Octree {
      */
     private ArrayList<OctreeCell> cells = new ArrayList<>();
     /**
-     * Critical (maximum allowed+1) number of points allowed in any one cell:
-     * If a cell contains nCritical points, it needs to be split
+     * Critical (maximum allowed) number of points allowed in any one cell:
+     * If a cell already contains nCritical points, it needs to be split
      */
     private int nCritical = 10;
     /**
@@ -84,7 +84,7 @@ public class Octree {
         cells.get(c).setR((cells.get(p).getR())*0.5);
         cells.get(c).setX((cells.get(p).getX())*((octant & 1)*2-1));
         cells.get(c).setY((cells.get(p).getY())*((octant & 2)-1));
-        cells.get(c).setZ((cells.get(p).getZ())*((octant & 4)/2-1));
+        cells.get(c).setZ((cells.get(p).getZ())*((octant & 4)*0.5-1));
 
         // Establish mutual reference in cells list
         cells.get(c).setParentIndex(p);
@@ -125,9 +125,10 @@ public class Octree {
     }
 
     public void buildTree(OctreeCell root){
-        //ArrayList<OctreeCell> cells = new ArrayList<>();
+        // (Re)Initialize cells to an empty array list
+        cells = new ArrayList<>();
 
-        // Set root cell
+        // Set root cell - add it to the cells array list
         cells.add(root);
 
         // Build tree
@@ -249,7 +250,7 @@ public class Octree {
     }
 
     public void upwardSweep(){
-        for(int c = cells.size(); c > 0;c++){
+        for(int c = (cells.size()-1); c > 0;c--){
             int p = cells.get(c).getParentIndex();
             M2M(p,c);
         }

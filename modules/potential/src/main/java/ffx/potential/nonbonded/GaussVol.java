@@ -212,7 +212,7 @@ public class GaussVol {
      * Original value from Schnieders thesis work: 0.0327
      * Value based on testing with Schnieders thesis test set, Sept 2019: 0.11337
      */
-    private double solventPressure = 0.07047;
+    private double solventPressure = 0.06962;
     /**
      * Volume offset in Ang^3
      * Set based on comparison of FFX Volumes for small alkanes (methane-decane)
