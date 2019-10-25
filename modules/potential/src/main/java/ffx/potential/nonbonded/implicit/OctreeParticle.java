@@ -20,7 +20,7 @@ public class OctreeParticle extends OctreePoint{
         super(coords, domain);
 
         setCharge(q);
-        setPhi(phi);
+        addToPhi(phi);
     }
 
     @Override
@@ -36,7 +36,7 @@ public class OctreeParticle extends OctreePoint{
         this.q = q;
     }
 
-    public void setPhi(double phi){
+    public void addToPhi(double phi){
         this.phi += phi;
     }
 }

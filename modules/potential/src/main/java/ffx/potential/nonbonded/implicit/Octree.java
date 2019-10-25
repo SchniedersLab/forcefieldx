@@ -2,6 +2,7 @@ package ffx.potential.nonbonded.implicit;
 
 import org.apache.commons.lang3.BooleanUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -10,21 +11,9 @@ public class Octree {
     private static final Logger logger = Logger.getLogger(Octree.class.getName());
 
     /**
-     * Reference to one of the eight divisions in 3D
-     */
-    private int octant = 0;
-    /**
      * List of cells
      */
     private ArrayList<OctreeCell> cells = new ArrayList<>();
-    /**
-     * Index of parent cell in cells list
-     */
-    private int p = 0;
-    /**
-     * Index of child cell in cells list
-     */
-    private int c = 0;
     /**
      * Critical (maximum allowed+1) number of points allowed in any one cell:
      * If a cell contains nCritical points, it needs to be split
@@ -35,34 +24,46 @@ public class Octree {
      */
     private ArrayList<OctreeParticle> particles = new ArrayList<>();
     /**
-     * Root cell
-     */
-    private OctreeCell root;
-    /**
      * List of all leaf cells
      */
     private ArrayList<OctreeCell> leaves = new ArrayList<>();
-    /**
-     * Index of target particle
-     */
-    private int targetIndex = 0;
     /**
      * Tolerance parameter
      */
     private double theta = 0.5;
 
     /**
-     * Default Constructor
+     * Default constructor: only need to pass in a list of particles
+     * nCritical and theta set to defaults
+     * @param particles ArrayList of type OctreeParticles of all particles to be used in tree
      */
-    public Octree(){
+    public Octree(ArrayList<OctreeParticle> particles) {
+        this.particles = particles;
+        this.nCritical = 10;
+        this.theta = 0.5;
     }
 
     /**
-     * Constructor allowing specification of nCritical
-     * @param nCritical
+     * Constructor allowing the specification of nCritical, default theta value
+     * @param nCritical Critical number of particles; cells must split when they reach nCritical
+     * @param particles ArrayList of type OctreeParticles of all particles to be used in tree
      */
-    public Octree(int nCritical){
+    public Octree(int nCritical,ArrayList<OctreeParticle> particles){
         this.nCritical = nCritical;
+        this.particles = particles;
+        this.theta = 0.5;
+    }
+
+    /**
+     * Constructor allowing the specification of nCritical and theta
+     * @param nCritical Critical number of particles; cells must split when they reach nCritical
+     * @param particles ArrayList of type OctreeParticles of all particles to be used in tree
+     * @param theta Specifies near field vs far field
+     */
+    public Octree(int nCritical,ArrayList<OctreeParticle> particles,double theta){
+        this.nCritical = nCritical;
+        this.particles = particles;
+        this.theta = theta;
     }
 
     public void addChild(int octant, int p){
@@ -73,7 +74,7 @@ public class Octree {
         cells.add(tempCell);
 
         // Last element of cells list is new child, c
-        c = cells.size() - 1;
+        int c = cells.size() - 1;
 
         // Geometric reference between parent and child
         cells.get(c).setR((cells.get(p).getR())*0.5);
@@ -87,7 +88,7 @@ public class Octree {
         cells.get(c).setnChild(cells.get(p).getnChild() | (1 << octant));
     }
 
-    public void splitCell(ArrayList<OctreeParticle> particles, int p){
+    private void splitCell(int p){
         for (int i = 0; i < nCritical; i++){
             int octX = 0;
             int octY = 0;
@@ -98,7 +99,7 @@ public class Octree {
             if(particles.get(i).getZ() > cells.get(p).getZ()){octZ = 1;}
 
             // Find particle's octant - should be an integer from 0 to 7
-            octant = octX + (octY << 1) + (octZ << 2);
+            int octant = octX + (octY << 1) + (octZ << 2);
 
             // If there's not a child cell in the particle's octant, create one
             boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << octant));
@@ -107,19 +108,19 @@ public class Octree {
             }
 
             // Reallocate the particle in the child cell
-            c = cells.get(p).getChildAtIndex(octant);
+            int c = cells.get(p).getChildAtIndex(octant);
             cells.get(c).setLeaf(cells.get(c).getNumLeaves(),1);
             cells.get(c).setNumLeaves(cells.get(c).getNumLeaves() + 1);
 
             // Check if child cell reaches nCritical - split recursively if so
             if(cells.get(c).getNumLeaves() >= nCritical){
-                splitCell(particles,c);
+                splitCell(c);
             }
 
         }
     }
 
-    public ArrayList<OctreeCell> buildTree(ArrayList<OctreeParticle> particles, OctreeCell root){
+    public void buildTree(OctreeCell root){
         //ArrayList<OctreeCell> cells = new ArrayList<>();
 
         // Set root cell
@@ -142,7 +143,7 @@ public class Octree {
                 if(particles.get(i).getZ() > cells.get(current).getZ()){octZ = 1;}
 
                 // Find particle's octant - should be an integer from 0 to 7
-                octant = octX + (octY << 1) + (octZ << 2);
+                int octant = octX + (octY << 1) + (octZ << 2);
 
                 // If there's not a child cell in the particle's octant, create one
                 boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(current).getnChild() & (1 << octant));
@@ -159,19 +160,19 @@ public class Octree {
 
             // Check whether to split cell
             if(cells.get(current).getNumLeaves() >= nCritical){
-                splitCell(particles,current);
+                splitCell(current);
             }
         }
 
-        return cells;
+        //return cells;
     }
 
-    public void getMultipole(ArrayList<OctreeParticle> particles,int p,ArrayList<OctreeCell> cells,ArrayList<Integer> leaves){
+    private void getMultipole(int p,ArrayList<Integer> leaves){
         // If the current cell is not a leaf cell, traverse down
         if(cells.get(p).getNumLeaves() >= nCritical){
             for(int c = 0; c < 8; c++){
                 if(BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << c))){
-                    getMultipole(particles,cells.get(p).getChildAtIndex(c),cells,leaves);
+                    getMultipole(cells.get(p).getChildAtIndex(c),leaves);
                 }
             }
         } else{ // Otherwise, cell p is a leaf cell
@@ -208,7 +209,7 @@ public class Octree {
         }
     }
 
-    public void M2M(int p, int c){
+    private void M2M(int p, int c){
         double dx = cells.get(p).getX()-cells.get(c).getX();
         double dy = cells.get(p).getY()-cells.get(c).getY();
         double dz = cells.get(p).getZ()-cells.get(c).getZ();
@@ -243,21 +244,25 @@ public class Octree {
         cells.get(p).addToMultipole(additionalMultipoleTerms);
     }
 
-    public void upwardSweep(ArrayList<OctreeCell> cells){
+    public void upwardSweep(){
         for(int c = cells.size(); c > 0;c++){
             int p = cells.get(c).getParentIndex();
             M2M(p,c);
         }
     }
 
-    public void directSum(ArrayList<OctreeParticle> particles){
+    public void directSum(){
         for(int i = 0; i < particles.size();i++){
             for(int j = 0; j < particles.size();j++){
                 if(j!=i){
                     double r = particles.get(i).distance(particles.get(j));
-                    particles.get(j).setPhi(particles.get(j).getCharge()/r);
+                    particles.get(j).addToPhi(particles.get(j).getCharge()/r);
                 }
             }
+        }
+        // Reset potential for all particles
+        for(int i = 0; i < particles.size(); i++){
+            particles.get(i).addToPhi(0);
         }
     }
 
@@ -267,7 +272,12 @@ public class Octree {
                 +Math.pow((array[2]-point.getZ()),2));
     }
 
-    public void evalAtTarget(ArrayList<OctreeParticle> particles, int p, int i, double theta){
+    /**
+     * Evaluate potential at one target
+     * @param p Index of parent cell
+     * @param i Index of target particle
+     */
+    private void evalAtTarget(int p, int i){
 
         // Non-leaf cell
         if(cells.get(p).getNumLeaves() >= nCritical){
@@ -280,7 +290,7 @@ public class Octree {
 
                     // Near field child cell
                     if(cells.get(c).getR() > theta*r){
-                        evalAtTarget(particles,c,i,theta);
+                        evalAtTarget(c,i);
                     } else{ // Far field child cell
                         double dx = particles.get(i).getX()-cells.get(c).getX();
                         double dy = particles.get(i).getY()-cells.get(c).getY();
@@ -308,16 +318,42 @@ public class Octree {
                             dotProduct = dotProduct+multipoleArray[d]*weight[d];
                         }
 
-                        particles.get(i).setPhi(dotProduct);
+                        particles.get(i).addToPhi(dotProduct);
                     }
                 } else{ // Leaf Cell
                     // Loop in twig cell's particles
                     for(int j = 0; j < cells.get(p).getNumLeaves(); j++){
-                        //OctreeParticle source = particles.get(cells.get(p).getLea)
+                        OctreeParticle source = particles.get(cells.get(p).getLeavesValueAtIndex(j));
+                        double r = particles.get(i).distance(source);
+                        if(r != 0){
+                            particles.get(i).addToPhi(source.getCharge()/r);
+                        }
                     }
                 }
             }
         }
     }
+
+    /**
+     * Evaluate potential at all target points
+     */
+    public void evalPotnetial(){
+        for(int i = 0; i < particles.size(); i++){
+            evalAtTarget(0,i);
+        }
+    }
+
+    public void l2Error(double[] phiDirect, double[] phiTree){
+        double errorSumNum = 0.0;
+        double errorSumDenom = 0.0;
+        for(int i = 0; i < phiDirect.length; i++){
+            errorSumNum = errorSumNum + Math.pow((phiDirect[i] - phiTree[i]),2);
+            errorSumDenom = errorSumDenom + Math.pow(phiDirect[i],2);
+        }
+        double error = Math.sqrt(errorSumNum/errorSumDenom);
+        logger.info("L2 Norm Error: "+error);
+    }
+
+    public void readParticle(File file){}
 
 }
