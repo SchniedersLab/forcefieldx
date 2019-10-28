@@ -237,12 +237,7 @@ public class Barostat implements CrystalPotential {
         mass = molecularAssembly.getMass();
         x = new double[3 * nAtoms];
         nMolecules = molecularAssembly.fractionalCount();
-        if (nMolecules > 1) {
-            logger.info(String.format(" There are %d molecules.", nMolecules));
-        } else {
-            logger.info(String.format(" There is %d molecule.", nMolecules));
-        }
-
+        logger.info(String.format(" There are %d molecules.", nMolecules));
     }
 
     /**
@@ -270,6 +265,15 @@ public class Barostat implements CrystalPotential {
      */
     public void setMeanBarostatInterval(int meanBarostatInterval) {
         this.meanBarostatInterval = meanBarostatInterval;
+    }
+
+    /**
+     * Returns the mean number of steps between barostat applications.
+     *
+     * @return Mean steps between barostat applications.
+     */
+    public int getMeanBarostatInterval() {
+        return meanBarostatInterval;
     }
 
     /**
@@ -315,6 +319,14 @@ public class Barostat implements CrystalPotential {
      */
     public void setPressure(double pressure) {
         this.pressure = pressure;
+    }
+
+    /**
+     * Gets the pressure of this Barostat in atm.
+     * @return Pressure in atm.
+     */
+    public double getPressure() {
+        return pressure;
     }
 
     private double mcStep(double currentE, double currentV) {
@@ -968,6 +980,15 @@ public class Barostat implements CrystalPotential {
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return potential.getVariableTypes();
+    }
+
+    /**
+     * Get the Potential this Barostat is wrapped around.
+     *
+     * @return A CrystalPotential this Barostat acts on.
+     */
+    public CrystalPotential getUnderlyingPotential() {
+        return potential;
     }
 
     /**
