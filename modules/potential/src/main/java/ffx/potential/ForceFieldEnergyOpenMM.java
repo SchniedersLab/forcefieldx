@@ -402,7 +402,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * Andersen, H. C., Molecular dynamics simulations at constant pressure and/or temperature. The Journal of Chemical Physics 1980, 72 (4), 2384-2393.
          */
         addAndersenThermostat(targetTemp, openMMContext.openMMIntegrator.collisionFreq);
-
     }
 
     /**
@@ -513,6 +512,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public double[] getOpenMMPositions(PointerByReference positions, int numberOfVariables, double[] x) {
         return openMMContext.getOpenMMPositions(positions, numberOfVariables, x);
+    }
+
+    public void getOpenMMVelocities(PointerByReference velocities, int numberOfVariables, double[] v) {
+        openMMContext.getOpenMMVelocities(velocities, numberOfVariables, v);
+    }
+
+    public void getOpenMMAccelerations(PointerByReference accelerations, int numberOfVariables, double[] m, double[] a) {
+        openMMContext.getOpenMMAccelerations(accelerations, numberOfVariables, m, a);
     }
 
     /**
@@ -1005,7 +1012,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * @param v                 an array of {@link double} objects.
          * @return an array of {@link double} objects.
          */
-        public double[] getOpenMMVelocities(PointerByReference velocities, int numberOfVariables, double[] v) {
+        double[] getOpenMMVelocities(PointerByReference velocities, int numberOfVariables, double[] v) {
             assert numberOfVariables == getNumberOfVariables();
             if (v == null || v.length < numberOfVariables) {
                 v = new double[numberOfVariables];
@@ -1037,7 +1044,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * @param a                 an array of {@link double} objects.
          * @return an array of {@link double} objects.
          */
-        public double[] getOpenMMAccelerations(PointerByReference forces, int numberOfVariables, double[] mass, double[] a) {
+        double[] getOpenMMAccelerations(PointerByReference forces, int numberOfVariables, double[] mass, double[] a) {
             assert numberOfVariables == getNumberOfVariables();
             if (a == null || a.length < numberOfVariables) {
                 a = new double[numberOfVariables];
@@ -1046,9 +1053,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             for (int i = 0; i < nAtoms; i++) {
                 int offset = i * 3;
                 OpenMM_Vec3 acc = OpenMM_Vec3Array_get(forces, i);
-                a[offset] = (acc.x * 10.0) / mass[i];
-                a[offset + 1] = (acc.y * 10.0) / mass[i + 1];
-                a[offset + 2] = (acc.z * 10.0) / mass[i + 2];
+                a[offset] = (acc.x * OpenMM_AngstromsPerNm) / mass[i];
+                a[offset + 1] = (acc.y * OpenMM_AngstromsPerNm) / mass[i + 1];
+                a[offset + 2] = (acc.z * OpenMM_AngstromsPerNm) / mass[i + 2];
                 Atom atom = atoms[i];
                 double[] acceleration = {a[offset], a[offset + 1], a[offset + 2]};
                 atom.setAcceleration(acceleration);
@@ -1067,17 +1074,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         /**
          * createContext takes in a parameters to determine which integrator the
          * user requested during the start up of the simulation. A switch statement
-         * is used with Strings as the variable to determine between Lengevin,
+         * is used with Strings as the variable to determine between Langevin,
          * Brownian, Custom, Compound and Verlet integrator
          *
          * @param integratorString a {@link java.lang.String} object.
-         * @param timeStep         a double.
+         * @param timestep         Timestep in psec.
          * @param temperature      a double.
          */
-        void createContext(String integratorString, double timeStep, double temperature) {
-
+        void createContext(String integratorString, double timestep, double temperature) {
             this.integratorString = integratorString;
-            this.timeStep = timeStep;
+            this.timeStep = timestep;
             this.temperature = temperature;
 
             if (context != null) {
@@ -1085,7 +1091,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 context = null;
             }
 
-            PointerByReference integrator = openMMIntegrator.createIntegrator(integratorString, timeStep, temperature);
+            PointerByReference integrator = openMMIntegrator.createIntegrator(integratorString, this.timeStep, temperature);
 
             // Set lambda to 1.0 when creating a context to avoid OpenMM compiling out any terms.
             double currentLambda = lambda;
@@ -1124,8 +1130,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             getOpenMMPositions(positions, numParticles * 3, x);
             OpenMM_State_destroy(state);
 
-            logger.info(format(" Context created (integrator=%s, time step=%6.2f, temperature=%6.2f).\n",
-                    integratorString, timeStep, temperature));
+            logger.info(format(" Context created (integrator=%s, time step=%6.2f fsec, temperature=%6.2f K).\n",
+                    integratorString, this.timeStep * Constants.PSEC_TO_FSEC, temperature));
         }
 
         void destroyContext() {
@@ -1914,10 +1920,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (ommThermostat == null) {
                 ommThermostat = OpenMM_AndersenThermostat_create(targetTemp, collisionFreq);
                 OpenMM_System_addForce(system, ommThermostat);
-                openMMContext.reinitContext();
                 logger.info(format(" Added an Andersen thermostat at %6.2fK and collision frequency %6.2f.", targetTemp, collisionFreq));
             } else {
-                logger.info(" Attempted to add a second thermostat to an OpenMM force field!");
+                OpenMM_AndersenThermostat_setDefaultTemperature(ommThermostat, targetTemp);
+                OpenMM_AndersenThermostat_setDefaultCollisionFrequency(ommThermostat, collisionFreq);
+                logger.info(format(" Updated existing Andersen thermostat at %6.2fK and collision frequency %6.2f.", targetTemp, collisionFreq));
             }
         }
 

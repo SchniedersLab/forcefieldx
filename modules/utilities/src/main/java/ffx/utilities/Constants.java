@@ -86,7 +86,7 @@ public class Constants {
     public static final double METERS_TO_ANG = 1E10;
     public static final double SEC_TO_PSEC = 1E12;
     public static final double KG_TO_GRAMS = 1000;
-    public static final double PSEC_TO_FSEC = 0.001;
+    public static final double PSEC_TO_FSEC = 1000;
 
     // Other constants
     /**
