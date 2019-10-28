@@ -56,7 +56,7 @@ import picocli.CommandLine.Parameters
 
 @Command(description = " Run dynamics on a system using OpenMM.", name = "ffxc DynamicsOpenMM")
 class DynamicsOpenMM extends AlgorithmsScript {
-
+    // TODO: Deprecate this script and merge MD-OMM functionality into Dynamics.
 
     @Mixin
     DynamicsOptions dynamics;
@@ -67,12 +67,6 @@ class DynamicsOpenMM extends AlgorithmsScript {
     @Mixin
     WriteoutOptions writeout;
 
-    /**
-     * -z or --trajSteps Number of steps for each OpenMM MD cycle.
-     */
-    @Option(names = ['-z', '--trajSteps'], paramLabel = '100',
-            description = 'Number of steps for each OpenMM MD cycle.')
-    int trajSteps = 100
     /**
      * --cf or --friction Specifies what the coefficient of friction is to be used with Langevin and Brownian integrators
      */
@@ -170,7 +164,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
             forceFieldEnergyOpenMM.setCollisionFreq(collisionFreq)
             molDynOpenMM.setRestartFrequency(dynamics.checkpoint)
             molDynOpenMM.setFileType(writeout.getFileType())
-            molDynOpenMM.setIntervalSteps(trajSteps)
+            molDynOpenMM.setIntervalSteps(dynamics.trajSteps)
             boolean initVelocities = true
             if (barostatOpt.pressure > 0) {
                 logger.info(" Pressure > 0")
