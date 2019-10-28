@@ -35,15 +35,13 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.optimize;
+package ffx.algorithms.optimize.anneal;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.IntFunction;
-import java.util.function.IntToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,12 +54,12 @@ import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * Run NVT molecular dynamics at a series of temperatures to optimize a structure.
  *
  * @author Michael J. Schnieders
+ * @author Jacob M. Litman
  * @since 1.0
  */
 public class SimulatedAnnealing implements Runnable, Terminatable {
@@ -72,33 +70,25 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      */
     private final MolecularDynamics molecularDynamics;
     /**
-     * High temperature annealing limit.
+     * Schedule for annealing.
      */
-    private double highTemperature;
-    /**
-     * Low temperature annealing limit.
-     */
-    private double lowTemperature;
-    /**
-     * Number of annealing windows.
-     */
-    private int annealingSteps;
-    /**
-     * Flag to indicate a temperature ladder was provided.
-     */
-    private boolean targetTemperaturesPresent = false;
-    /**
-     * Array of target simulated annealing target temperatures.
-     */
-    private double[] targetTemperatures;
+    private final AnnealingSchedule schedule;
     /**
      * Number of MD steps per annealing window.
      */
-    private int mdSteps;
+    private final int mdSteps;
     /**
      * Integration time step.
      */
-    private double timeStep;
+    private final double timeStep;
+    /**
+     * Whether to reinitialize velocities at the start of each timestep.
+     */
+    private final boolean reinitV;
+    /**
+     * Minimum length of a window in psec.
+     */
+    private final double minSimLength;
     /**
      * Interval to print updates to the screen.
      */
@@ -106,19 +96,16 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     /**
      * Flag to indicate the algorithm is done.
      */
-    private boolean done;
+    private boolean done = true;
     /**
-     * Flag to indicate the UI has requested th algorithm terminate.
+     * Flag to indicate the UI has requested the algorithm terminate.
      */
     private boolean terminate;
     /**
      * Number of MD steps per OpenMM cycle (assuming OpenMM is used!).
      */
     private double trajSteps = 1;
-    /**
-     * Picoseconds in between writing checkpoint files.
-     */
-    private double restartFrequency = 10.0;
+    private double saveFrequency = 0.1;
     /**
      * Restart file.
      */
@@ -134,35 +121,37 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * @param listener            The algorithm listener is a callback to UI.
      * @param requestedThermostat The requested thermostat.
      * @param requestedIntegrator The requested integrator.
+     * @param schedule            Schedule of temperatures to simulate at.
+     * @param mdSteps             Steps per SA window.
+     * @param timeStep            Timestep for MD in psec.
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
                               Potential potentialEnergy,
                               CompositeConfiguration properties,
                               AlgorithmListener listener,
                               ThermostatEnum requestedThermostat,
-                              IntegratorEnum requestedIntegrator) {
+                              IntegratorEnum requestedIntegrator,
+                              AnnealingSchedule schedule,
+                              int mdSteps,
+                              double timeStep,
+                              boolean reinitVelocities,
+                              File dynFile) {
 
         molecularDynamics = MolecularDynamics.dynamicsFactory(assembly, potentialEnergy,
                 properties, listener, requestedThermostat, requestedIntegrator);
-        done = true;
+        this.schedule = schedule;
+        this.mdSteps = mdSteps;
+        this.timeStep = timeStep;
+        this.reinitV = reinitVelocities;
+        minSimLength = mdSteps * schedule.minWindowLength() * timeStep;
+        this.dynFile = dynFile;
     }
 
     /**
      * <p>
      * anneal</p>
-     *
-     * @param highTemperature High temperature annealing limit.
-     * @param lowTemperature  Low temperature annealing limit.
-     * @param annealingSteps  The number of annealing steps.
-     * @param totalSteps      The number of MD steps.
-     * @param timeStep        The MD time step (fsec).
      */
-    public void anneal(double highTemperature,
-                       double lowTemperature,
-                       int annealingSteps,
-                       int totalSteps,
-                       double timeStep) {
-
+    public void anneal() {
         // Return if already running; Could happen if two threads call anneal
         // on the same SimulatedAnnealing instance.
         if (!done) {
@@ -170,44 +159,14 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
             return;
         }
         done = false;
-        logger.info(" Simulated annealing starting up");
-
-        setAnnealingSteps(annealingSteps);
-        setHighTemperature(highTemperature);
-        setLowTemperature(lowTemperature);
-        setMdSteps(totalSteps);
-        setTimeStep(timeStep);
-        begin();
-    }
-
-    /**
-     * <p>annealToTargetValues.</p>
-     *
-     * @param targetTemperatures The array of annealing temperatures.
-     * @param mdSteps            The number of MD steps.
-     * @param timeStep           The MD time step (fsec).
-     */
-    public void annealToTargetValues(double[] targetTemperatures,
-                                     int mdSteps,
-                                     double timeStep) {
-        if (targetTemperatures == null) {
-            anneal(400, 100, 10, mdSteps, timeStep);
-            return;
-        }
-        targetTemperaturesPresent = true;
-        this.targetTemperatures = targetTemperatures;
-        this.annealingSteps = targetTemperatures.length;
-        this.highTemperature = targetTemperatures[0];
-        this.lowTemperature = targetTemperatures[annealingSteps - 1];
-        setMdSteps(mdSteps);
-        setTimeStep(timeStep);
+        logger.info(" Beginning simulated annealing");
         begin();
     }
 
     private void begin() {
-        logger.info(String.format(" Initial temperature:    %8.3f (Kelvin)", highTemperature));
-        logger.info(String.format(" Final temperature:      %8.3f (Kelvin)", lowTemperature));
-        logger.info(String.format(" Annealing steps:        %8d", annealingSteps));
+        logger.info(String.format(" Initial temperature:    %8.3f (Kelvin)", schedule.getHighTemp()));
+        logger.info(String.format(" Final temperature:      %8.3f (Kelvin)", schedule.getLowTemp()));
+        logger.info(String.format(" Annealing steps:        %8d", schedule.getNumWindows()));
         logger.info(String.format(" MD steps/temperature:   %8d", mdSteps));
         logger.info(String.format(" MD time step:           %8.3f (fs)", timeStep));
 
@@ -236,106 +195,33 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         done = false;
         terminate = false;
 
-        if (mdSteps < trajSteps) {
-            logger.warning(String.format(" Number of MD steps per annealing cycle %d was less than steps per OpenMM MD cycle %d! Setting steps per MD cycle to %d", mdSteps, trajSteps, mdSteps));
-            setTrajectorySteps(mdSteps);
+        double minMdSteps = mdSteps * schedule.minWindowLength();
+        if (minMdSteps < trajSteps) {
+            logger.warning(String.format(" Minimum umber of MD steps per annealing cycle %d was less than steps per OpenMM MD cycle %d! Setting steps per MD cycle to %d", minMdSteps, trajSteps, minMdSteps));
+            setTrajectorySteps((int) minMdSteps);
         }
 
-        if (!targetTemperaturesPresent) {
-            double dt = (highTemperature - lowTemperature) / (annealingSteps - 1);
-            for (int i = 0; i < annealingSteps; i++) {
-                double temperature = highTemperature - dt * i;
-                molecularDynamics.dynamic(mdSteps, timeStep, printInterval, restartFrequency,
-                        temperature, true, dynFile);
-                if (dynFile == null) {
-                    dynFile = molecularDynamics.getDynFile();
-                }
-                if (terminate) {
-                    logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
-                    break;
-                }
+        int nWindows = schedule.getNumWindows();
+        boolean forceFirstReinit = (dynFile == null);
+
+        for (int i = 0; i < nWindows; i++) {
+            double temperature = schedule.getTemperature(i);
+            molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveFrequency, temperature, (reinitV || forceFirstReinit), dynFile);
+            if (dynFile == null) {
+                dynFile = molecularDynamics.getDynFile();
             }
-        } else {
-            for (double temperature : targetTemperatures) {
-                molecularDynamics.dynamic(mdSteps, timeStep, printInterval, restartFrequency,
-                        temperature, true, dynFile);
-                if (dynFile == null) {
-                    dynFile = molecularDynamics.getDynFile();
-                }
-                if (terminate) {
-                    logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
-                    break;
-                }
+            forceFirstReinit = false;
+            if (terminate) {
+                logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
+                break;
             }
         }
         if (!terminate) {
-            logger.info(String.format(" Completed %8d annealing steps\n", annealingSteps));
+            logger.info(String.format(" Completed %8d annealing steps\n", nWindows));
         }
 
         done = true;
         terminate = false;
-    }
-
-    /**
-     * Set the low temperature annealing limit.
-     *
-     * @param highTemperature The low temperature limit (K).
-     */
-    public void setHighTemperature(double highTemperature) {
-        if (highTemperature < 0) {
-            highTemperature = 400.0;
-        }
-        this.highTemperature = highTemperature;
-    }
-
-    /**
-     * Set the low temperature annealing limit.
-     *
-     * @param lowTemperature The low temperature limit (K).
-     */
-    public void setLowTemperature(double lowTemperature) {
-        if (annealingSteps == 1) {
-            lowTemperature = highTemperature;
-        } else if (lowTemperature < 0.0 || lowTemperature > highTemperature) {
-            lowTemperature = 100;
-        }
-        this.lowTemperature = lowTemperature;
-    }
-
-    /**
-     * Set the number of annealing steps.
-     *
-     * @param annealingSteps The number of annealing steps.
-     */
-    public void setAnnealingSteps(int annealingSteps) {
-        if (annealingSteps <= 0) {
-            annealingSteps = 1;
-        }
-        this.annealingSteps = annealingSteps;
-    }
-
-    /**
-     * Set the MD time step.
-     *
-     * @param timeStep The time step (fsec).
-     */
-    public void setTimeStep(double timeStep) {
-        if (timeStep <= 0) {
-            timeStep = 1.0;
-        }
-        this.timeStep = timeStep;
-    }
-
-    /**
-     * Set the number of MD steps.
-     *
-     * @param mdSteps THe number of MD steps.
-     */
-    public void setMdSteps(int mdSteps) {
-        if (mdSteps <= 0) {
-            mdSteps = 100;
-        }
-        this.mdSteps = mdSteps;
     }
 
     /**
@@ -347,19 +233,12 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     /**
-     * Method to set the Restart Frequency.
+     * Sets the frequency of writing to the trajectory file.
      *
-     * @param restartFrequency the time between writing restart files.
-     * @throws java.lang.IllegalArgumentException If restart frequency is not a
-     *                                            positive number
+     * @param save Frequency (psec^-1) to write out the trajectory.
      */
-    public void setRestartFrequency(double restartFrequency) throws IllegalArgumentException {
-        if (Double.isFinite(restartFrequency) && restartFrequency > 0) {
-            this.restartFrequency = restartFrequency;
-            molecularDynamics.setRestartFrequency(restartFrequency);
-        } else {
-            throw new IllegalArgumentException(String.format(" Restart frequency must be positive finite, was %10.4g", restartFrequency));
-        }
+    public void setSaveFrequency(double save) {
+        this.saveFrequency = save;
     }
 
     /**
@@ -369,6 +248,21 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      */
     public void setPrintInterval(double printInterval) {
         this.printInterval = printInterval;
+    }
+
+    /**
+     * Method to set the Restart Frequency.
+     *
+     * @param restart the time between writing restart files.
+     * @throws java.lang.IllegalArgumentException If restart frequency is not a
+     *                                            positive number
+     */
+    public void setRestartFrequency(double restart) throws IllegalArgumentException {
+        if (Double.isFinite(restart) && restart > 0) {
+            molecularDynamics.setRestartFrequency(restart);
+        } else {
+            throw new IllegalArgumentException(String.format(" Restart frequency must be positive finite, was %10.4g", restart));
+        }
     }
 
     /**
@@ -422,5 +316,54 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      */
     public double getTemperature() {
         return molecularDynamics.getTemperature();
+    }
+
+    /**
+     * Functional interface corresponding to constructors of non-composite AnnealingSchedules.
+     */
+    private interface ScheduleConstructor {
+        AnnealingSchedule asConstruct(int nWindows, double tLow, double tHigh);
+    }
+
+    /**
+     * Represents non-composite AnnealingSchedules known (i.e. not FlatEndAnnealSchedule).
+     */
+    public enum Schedules {
+        EXP(ExpAnnealSchedule::new, "EXP", "EXPONENTIAL"), LINEAR(LinearAnnealSchedule::new, "LINEAR");
+
+        private final ScheduleConstructor sc;
+        private final Set<String> aliases;
+
+        Schedules(ScheduleConstructor sc, String... names) {
+            this.sc = sc;
+            aliases = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(names)));
+        }
+
+        /**
+         * Creates an AnnealingSchedule corresponding to this enum and provided values.
+         * @param nWindows Number of annealing windows.
+         * @param tLow     Final temperature.
+         * @param tHigh    Starting temperature.
+         * @return         An AnnealingSchedule.
+         */
+        public AnnealingSchedule generate(int nWindows, double tLow, double tHigh) {
+            return sc.asConstruct(nWindows, tLow, tHigh);
+        }
+
+        /**
+         * Attempt to parse a String to a Schedules in a case-insensitive, alias-recognizing fashion.
+         *
+         * @param name Name of a schedule.
+         * @return     A Schedules enum.
+         */
+        public static Schedules parse(String name) {
+            name = name.toUpperCase();
+            for (Schedules s : values()) {
+                if (s.aliases.contains(name)) {
+                    return s;
+                }
+            }
+            return valueOf(name);
+        }
     }
 }

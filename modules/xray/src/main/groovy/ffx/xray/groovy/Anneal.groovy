@@ -38,12 +38,9 @@
 package ffx.xray.groovy
 
 import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.optimize.SimulatedAnnealing
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.xray.DiffractionData
@@ -129,7 +126,8 @@ class Anneal extends AlgorithmsScript {
 
         refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
 
-        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy, properties,
+        // TODO: Re-implement as less of a buggy mess.
+        /*SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy, properties,
                 algorithmListener, dynamicsOptions.thermostat, dynamicsOptions.integrator)
 
         simulatedAnnealing.anneal(annealOptions.upper, annealOptions.low, annealOptions.windows,
@@ -141,7 +139,7 @@ class Anneal extends AlgorithmsScript {
         algorithmFunctions.energy(assemblies[0])
 
         diffractionData.writeModel(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb")
-        diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")
+        diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")*/
 
         return this
     }

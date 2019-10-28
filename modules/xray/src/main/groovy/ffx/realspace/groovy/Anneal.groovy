@@ -37,12 +37,10 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
-import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.optimize.SimulatedAnnealing
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.realspace.RealSpaceData
@@ -114,7 +112,9 @@ class Anneal extends AlgorithmsScript {
         algorithmFunctions.energy(assemblies[0])
 
         refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
-        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy,
+
+        // TODO: Re-implement as less of a buggy mess.
+        /*SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy,
                 activeAssembly.getProperties(), algorithmListener,
                 dynamicsOptions.thermostat, dynamicsOptions.integrator)
 
@@ -125,7 +125,7 @@ class Anneal extends AlgorithmsScript {
         String suffix = "_anneal"
 
         algorithmFunctions.energy(assemblies[0])
-        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
+        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))*/
 
         return this
     }
