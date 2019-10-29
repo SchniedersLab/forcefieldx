@@ -659,7 +659,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                     final int[] list = lists[i];
                     counts[i] = 0;
                     preCounts[i] = 0;
-                    final int[] ewald = ewalds[i];
+                    int[] ewald = ewalds[i];
                     int[] preList = preLists[i];
                     for (int k : list) {
                         if (!use[k]) {
@@ -681,6 +681,12 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                         final double r2 = crystal.image(dx_local);
                         if (r2 <= off2) {
                             count++;
+                            // Store a short neighbor list for the SCF.
+                            if (ewald.length <= counts[i]) {
+                                int len = ewald.length;
+                                ewalds[i] = copyOf(ewald, len + 10);
+                                ewald = ewalds[i];
+                            }
                             ewald[counts[i]++] = k;
                             final double xr = dx_local[0];
                             final double yr = dx_local[1];
@@ -848,8 +854,8 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                         final int[] list = lists[i];
                         counts[i] = 0;
                         preCounts[i] = 0;
-                        final int[] ewald = ewalds[i];
-                        final int[] preList = preLists[i];
+                        int[] ewald = ewalds[i];
+                        int[] preList = preLists[i];
                         for (int k : list) {
                             if (!use[k]) {
                                 continue;
@@ -863,6 +869,12 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                             final double r2 = crystal.image(dx_local);
                             if (r2 <= off2) {
                                 count++;
+                                // Store a short neighbor list for the SCF.
+                                if (ewald.length <= counts[i]) {
+                                    int len = ewald.length;
+                                    ewalds[i] = copyOf(ewald, len + 10);
+                                    ewald = ewalds[i];
+                                }
                                 ewald[counts[i]++] = k;
                                 double selfScale = 1.0;
                                 if (i == k) {
@@ -886,6 +898,11 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                                 final double qkyz = multipolek[t011] * oneThird;
                                 final double r = sqrt(r2);
                                 if (r < preconditionerCutoff) {
+                                    if (preList.length <= preCounts[i]) {
+                                        int len = preList.length;
+                                        preLists[i] = copyOf(preList, len + 10);
+                                        preList = preLists[i];
+                                    }
                                     preList[preCounts[i]++] = k;
                                 }
 
