@@ -107,8 +107,7 @@ public class OSRW extends AbstractOSRW {
      *
      * @param lambdaInterface   defines Lambda and dU/dL.
      * @param potential         defines the Potential energy.
-     * @param lambdaFile        contains the current Lambda particle position and
-     *                          velocity.
+     * @param lambdaFile        contains the current Lambda particle position and velocity.
      * @param histogramFile     contains the Lambda and dU/dL histogram.
      * @param properties        defines System properties.
      * @param temperature       the simulation temperature.
@@ -116,8 +115,7 @@ public class OSRW extends AbstractOSRW {
      * @param printInterval     number of steps between logging updates.
      * @param saveInterval      number of steps between restart file updates.
      * @param asynchronous      set to true if walkers run asynchronously.
-     * @param algorithmListener the AlgorithmListener to be notified of
-     *                          progress.
+     * @param algorithmListener the AlgorithmListener to be notified of progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
                 File lambdaFile, File histogramFile, CompositeConfiguration properties,
@@ -134,8 +132,7 @@ public class OSRW extends AbstractOSRW {
      *
      * @param lambdaInterface   defines Lambda and dU/dL.
      * @param potential         defines the Potential energy.
-     * @param lambdaFile        contains the current Lambda particle position and
-     *                          velocity.
+     * @param lambdaFile        contains the current Lambda particle position and velocity.
      * @param histogramFile     contains the Lambda and dU/dL histogram.
      * @param properties        defines System properties.
      * @param temperature       the simulation temperature.
@@ -144,8 +141,7 @@ public class OSRW extends AbstractOSRW {
      * @param saveInterval      number of steps between restart file updates.
      * @param asynchronous      set to true if walkers run asynchronously.
      * @param resetNumSteps     whether to reset energy counts to 0
-     * @param algorithmListener the AlgorithmListener to be notified of
-     *                          progress.
+     * @param algorithmListener the AlgorithmListener to be notified of progress.
      */
     public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
                 File lambdaFile, File histogramFile, CompositeConfiguration properties,
@@ -966,6 +962,25 @@ public class OSRW extends AbstractOSRW {
             }
         }
         return sum;
+    }
+
+    /**
+     * <p>evaluateHistogram.</p>
+     *
+     * @param lambda the lambda value.
+     * @param dUdL   the dU/dL value.
+     * @return The value of the Histogram.
+     */
+    @Override
+    protected double evaluateHistogram(double lambda, double dUdL) {
+        int lambdaBin = binForLambda(lambda);
+        int dUdLBin = binForFLambda(dUdL);
+        try {
+            return recursionKernel[lambdaBin][dUdLBin];
+        } catch (Exception e) {
+            // Catch an index out of bounds exception.
+            return 0.0;
+        }
     }
 
     @Override

@@ -151,6 +151,10 @@ class Minimizer extends AlgorithmsScript {
 
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
+        if (topologies.length == 1) {
+            alchemical.setActiveAtoms(topologies[0]);
+        }
+
         /**
          * Configure the potential to test.
          */
@@ -161,6 +165,8 @@ class Minimizer extends AlgorithmsScript {
 
         LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
         linter?.setLambda(lambda)
+
+
 
         SystemFilter systemFilter = algorithmFunctions.getFilter()
 

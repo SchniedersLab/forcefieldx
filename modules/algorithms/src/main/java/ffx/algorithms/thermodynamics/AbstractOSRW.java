@@ -42,7 +42,6 @@ import java.util.Random;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -56,7 +55,6 @@ import edu.rit.pj.cluster.JobBackend;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.Barostat;
-import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
@@ -65,6 +63,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.utilities.Constants;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -579,6 +578,15 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * @return The value of the recursion kernel.
      */
     protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
+
+    /**
+     * <p>evaluateHistogram.</p>
+     *
+     * @param lambda the lambda value.
+     * @param dUdL   the dU/dL value.
+     * @return The value of the Histogram.
+     */
+    protected abstract double evaluateHistogram(double lambda, double dUdL);
 
     /**
      * Update the 1D Bias based on the recursion kernel.

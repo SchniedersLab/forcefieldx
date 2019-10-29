@@ -69,47 +69,61 @@ public class OSRWOptions {
     private static final Logger logger = Logger.getLogger(OSRWOptions.class.getName());
 
     /**
-     * -c or --count sets the number of time steps between OSRW counts.
+     * -c or --count Sets the number of time steps between OSRW counts.
      */
-    @CommandLine.Option(names = {"-C", "--count"}, paramLabel = "10", description = "Time steps between MD-OSRW counts.")
+    @CommandLine.Option(names = {"-C", "--count"}, paramLabel = "10",
+            description = "Time steps between MD Orthogonal Space counts.")
     private int countFreq = 10;
 
     /**
      * --bM or --biasMag sets the initial Gaussian bias magnitude in kcal/mol.
      */
-    @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05", description = "OSRW Gaussian bias magnitude (kcal/mol).")
+    @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05",
+            description = "Orthogonal Space Gaussian bias magnitude (kcal/mol).")
     private double biasMag = 0.05;
 
     /**
      * --tp or --temperingParam sets the Dama et al tempering rate parameter, in
      * multiples of kBT.
      */
-    @CommandLine.Option(names = {"--tp", "--temperingParam"}, paramLabel = "8.0", description = "Dama et al tempering rate parameter in multiples of kBT")
-    private double temperParam = 8.0;
+    @CommandLine.Option(names = {"--tp", "--temperingParam"}, paramLabel = "4.0",
+            description = "Tempering rate parameter in multiples of kBT")
+    private double temperParam = 4.0;
 
     /**
-     * --mc or --monteCarlo sets the Monte Carlo scheme for OSRW.
+     * --mc or --monteCarlo sets the Monte Carlo scheme for Orthogonal Space Tempering.
      */
-    @CommandLine.Option(names = {"--mc", "monteCarlo"}, description = "Monte Carlo OSRW")
+    @CommandLine.Option(names = {"--mc", "--monteCarlo"},
+            description = "Specify use of Monte Carlo OST")
     private boolean mc = false;
 
     /**
-     * --mcmD or --mcTraj sets the number of steps to take for each MD
-     * trajectory for MCOSRW.
+     * --mcHW or --monteCarloHardWall sets the Monte Carlo scheme to use a hard wall that rejects any sample
+     * (Lambda, dU/dL) located in an empty histogram bin.
      */
-    @CommandLine.Option(names = {"--mcMD", "--mcTraj"}, paramLabel = "100", description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OSRW")
+    @CommandLine.Option(names = {"--mcHW", "--monteCarloHardWall"},
+            description = "Monte Carlo OST hard wall constraint.")
+    private boolean mcHW = false;
+
+    /**
+     * --mcmD or --mcTraj Sets the number of steps to take for each MD trajectory for MCOSRW.
+     */
+    @CommandLine.Option(names = {"--mcMD", "--mcTraj"}, paramLabel = "100",
+            description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OSRW")
     private int mcMD = 100;
 
     /**
-     * --mcL or --mcLambdaStd sets the standard deviation for lambda.
+     * --mcL or --mcLambdaStd Sets the standard deviation for lambda moves.
      */
-    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.01", description = "Standard deviation for lambda move.")
+    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.01",
+            description = "Standard deviation for lambda move.")
     private double mcL = 0.01;
 
     /**
-     * --ts or --twoStep Sample MC-OSRW using separate lambda and MD moves.
+     * --ts or --twoStep MC Orthogonal Space sampling using separate lambda and MD moves.
      */
-    @CommandLine.Option(names = {"--ts", "--twoStep"}, description = "Sample MC-OSRW using separate lambda and MD moves.")
+    @CommandLine.Option(names = {"--ts", "--twoStep"},
+            description = "MC Orthogonal Space sampling using separate lambda and MD moves.")
     private boolean ts = false;
 
     /**
@@ -318,6 +332,8 @@ public class OSRWOptions {
 
         MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
                 topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose);
+
+        mcOSRW.setHardWallConstraint(mcHW);
 
         int nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
