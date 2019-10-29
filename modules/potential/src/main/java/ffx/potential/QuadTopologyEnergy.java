@@ -52,6 +52,7 @@ import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
+import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.utils.EnergyException;
 
@@ -727,6 +728,16 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     public DualTopologyEnergy getDualTopB() {
         return dualTopB;
+    }
+
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        List<Potential> under = new ArrayList<>(6);
+        under.add(dualTopA);
+        under.add(dualTopB);
+        under.addAll(dualTopA.getUnderlyingPotentials());
+        under.addAll(dualTopB.getUnderlyingPotentials());
+        return under;
     }
 
     /**

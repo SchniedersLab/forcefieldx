@@ -37,13 +37,16 @@
 //******************************************************************************
 package ffx.potential;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import ffx.numerics.Potential;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -1201,6 +1204,16 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     public void setPrintOnFailure(boolean onFail, boolean override) {
         forceFieldEnergy1.setPrintOnFailure(onFail, override);
         forceFieldEnergy2.setPrintOnFailure(onFail, override);
+    }
+
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        List<Potential> under = new ArrayList<>(2);
+        under.add(forceFieldEnergy1);
+        under.add(forceFieldEnergy2);
+        under.addAll(forceFieldEnergy1.getUnderlyingPotentials());
+        under.addAll(forceFieldEnergy2.getUnderlyingPotentials());
+        return under;
     }
 
     /**

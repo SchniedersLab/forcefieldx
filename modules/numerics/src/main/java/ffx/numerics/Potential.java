@@ -294,4 +294,14 @@ public interface Potential {
     default List<Constraint> getConstraints() {
         return Collections.emptyList();
     }
+
+    /**
+     * Returns a List of Potentials this Potential depends on with a recursive search,
+     * excluding the top level of this call. May not be implemented for all Potentials.
+     *
+     * @return By default, an empty list.
+     */
+    default List<Potential> getUnderlyingPotentials() {
+        return Collections.emptyList();
+    }
 }

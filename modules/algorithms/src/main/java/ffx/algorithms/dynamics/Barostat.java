@@ -37,6 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.dynamics;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -50,6 +53,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
+import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import static ffx.utilities.Constants.AVOGADRO;
@@ -982,13 +986,12 @@ public class Barostat implements CrystalPotential {
         return potential.getVariableTypes();
     }
 
-    /**
-     * Get the Potential this Barostat is wrapped around.
-     *
-     * @return A CrystalPotential this Barostat acts on.
-     */
-    public CrystalPotential getUnderlyingPotential() {
-        return potential;
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        List<Potential> underlying = new ArrayList<>();
+        underlying.add(potential);
+        underlying.addAll(potential.getUnderlyingPotentials());
+        return underlying;
     }
 
     /**
