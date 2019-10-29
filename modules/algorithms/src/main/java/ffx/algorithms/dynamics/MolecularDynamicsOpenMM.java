@@ -359,7 +359,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             intervalSteps = numSteps;
         }
 
-        preRunOps();
+        try {
+            preRunOps();
+        } catch (IllegalStateException ise) {
+            return;
+        }
         initializeEnergies();
         postInitEnergies(); // Not over-ridden.
         mainLoop(numSteps);

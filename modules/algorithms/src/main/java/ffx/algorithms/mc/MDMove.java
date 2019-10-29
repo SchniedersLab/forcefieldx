@@ -134,7 +134,7 @@ public class MDMove implements MCMove {
             dyn = null;
         }
 
-        molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
+        //molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
     }
