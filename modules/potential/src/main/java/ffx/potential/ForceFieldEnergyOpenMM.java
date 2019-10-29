@@ -549,6 +549,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Describes the Context this is running with.
+     *
+     * @return String describing the context.
+     */
+    public String describeContext() {
+        return openMMContext.toString();
+    }
+
+    /**
      * Sets the finite-difference step size used for getdEdL.
      *
      * @param finiteDifferenceStepSize FD step size.
@@ -971,9 +980,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          */
         private String integratorString = "VERLET";
         /**
-         * Time step (default = 1.0 fsec).
+         * Time step (default = 0.001 psec).
          */
-        private double timeStep = 1.0;
+        private double timeStep = 0.001;
         /**
          * Temperature (default = 298.15).
          */
@@ -1335,6 +1344,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 logger.info(" Platform: AMOEBA CPU Reference");
             }
         }
+
+        @Override
+        public String toString() {
+            return String.format(" OpenMM context with integrator %s, timestep %9.3g fsec, temperature %9.3g K, constraintTolerance %9.3g", integratorString, timeStep, temperature, constraintTolerance);
+        }
     }
 
     /**
@@ -1371,13 +1385,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         PointerByReference createIntegrator(String integratorString, double timeStep, double temperature) {
-            double dt = timeStep * 1.0e-3;
+            double dt = timeStep;
             switch (integratorString) {
                 case "LANGEVIN":
                     createLangevinIntegrator(temperature, frictionCoeff, dt);
                     break;
                 case "RESPA":
-                    // Read in the inner time step in fsec, then convert to psec.
+                    // Read in the inner time step in psec.
                     int in = molecularAssembly.getProperties().getInt("respa-dt", 4);
                     if (in < 2) {
                         in = 2;

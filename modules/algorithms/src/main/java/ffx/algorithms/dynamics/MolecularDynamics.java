@@ -50,6 +50,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import ffx.potential.ForceFieldEnergyOpenMM;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -343,8 +344,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
                                                     DynamicsEngine engine) {
         switch (engine) {
             case OPENMM:
-                return new MolecularDynamicsOpenMM(assembly,
-                        potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+                // TODO: Replace this with calls to the leaves of a proper tree structure.
+                // Unfortunately, neither Java, nor Apache Commons, nor Guava has an arbitrary tree implementing Collection.
+                // Nor does javax.swing have a quick "get me the leaves" method that I was able to find.
+                boolean ommLeaves = (potentialEnergy instanceof ForceFieldEnergyOpenMM ||
+                        potentialEnergy.getUnderlyingPotentials().stream().anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM));
+                if (ommLeaves) {
+                    return new MolecularDynamicsOpenMM(assembly,
+                            potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+                } else {
+                    throw new IllegalArgumentException(format(" Requested OpenMM engine %s, but at least one leaf of the potential %s is not an OpenMM force field!", engine, potentialEnergy));
+                }
             case FFX:
             default:
                 return new MolecularDynamics(assembly,
@@ -579,6 +589,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
         thermostat.setNumberOfVariables(numberOfVariables, x, v, mass,
                 potential.getVariableTypes(), true);
         integrator.setNumberOfVariables(numberOfVariables, x, v, a, aPrevious, mass);
+    }
+
+    /**
+     * Not meaningful for FFX dynamics (no need to obtain velocities/accelerations from
+     * a different program, especially one running on a GPU). Is a no-op.
+     *
+     * @param obtainVA Not meaningful for this implementation.
+     */
+    public void setObtainVelAcc(boolean obtainVA) {
+        // Not meaningful for FFX dynamics.
     }
 
     /**

@@ -132,7 +132,7 @@ public class DynamicsOptions {
 
     @CommandLine.Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
             description = "Use FFX or OpenMM to integrate dynamics.")
-    private String engineString = "FFX";
+    private String engineString = null;
 
     /**
      * -z or --trajSteps Number of steps for each OpenMM MD cycle.
@@ -144,11 +144,6 @@ public class DynamicsOptions {
     private static final Logger logger = Logger.getLogger(DynamicsOptions.class.getName());
 
     /**
-     * By default, use the FFX built-in integration machinery.
-     */
-    private static final MolecularDynamics.DynamicsEngine DEFAULT_ENGINE = MolecularDynamics.DynamicsEngine.FFX;
-
-    /**
      * Thermostat.
      */
     public ThermostatEnum thermostat;
@@ -158,7 +153,7 @@ public class DynamicsOptions {
      */
     public IntegratorEnum integrator;
 
-    private MolecularDynamics.DynamicsEngine engine = DEFAULT_ENGINE;
+    private MolecularDynamics.DynamicsEngine engine = null;
 
     /**
      * Parse the thermostat and integrator.
@@ -166,11 +161,13 @@ public class DynamicsOptions {
     public void init() {
         thermostat = Thermostat.parseThermostat(thermostatString);
         integrator = Integrator.parseIntegrator(integratorString);
-        try {
-            engine = MolecularDynamics.DynamicsEngine.valueOf(engineString);
-        } catch (Exception ex) {
-            logger.warning(String.format(" Could not parse %s as a valid dynamics engine! Defaulting to %s", engineString, DEFAULT_ENGINE));
-            engine = DEFAULT_ENGINE;
+        if (engineString != null) {
+            try {
+                engine = MolecularDynamics.DynamicsEngine.valueOf(engineString.toUpperCase());
+            } catch (Exception ex) {
+                logger.warning(String.format(" Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.", engineString));
+                engine = null;
+            }
         }
     }
 
@@ -187,10 +184,15 @@ public class DynamicsOptions {
                                          Potential potential,
                                          MolecularAssembly activeAssembly,
                                          AlgorithmListener sh) {
-        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(activeAssembly,
-                potential, activeAssembly.getProperties(), sh, thermostat, integrator, engine);
+        MolecularDynamics molDyn;
+        if (engine == null) {
+            molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, activeAssembly.getProperties(), sh, thermostat, integrator);
+        } else {
+            molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, activeAssembly.getProperties(), sh, thermostat, integrator, engine);
+        }
         molDyn.setFileType(writeout.getFileType());
         molDyn.setRestartFrequency(write);
+        molDyn.setIntervalSteps(trajSteps);
 
         return molDyn;
     }

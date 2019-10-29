@@ -38,9 +38,11 @@
 package ffx.algorithms.dynamics;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static edu.uiowa.jopenmm.OpenMMLibrary.*;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.*;
@@ -59,7 +61,6 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
@@ -130,7 +131,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Method to run on update for obtaining variables. Will either grab
      * everything (default) or energies + positions (MC-OST).
      */
-    private Runnable obtainVariables = this::getOpenMMStateVariables;
+    private Runnable obtainVariables = this::getAllOpenMMVariables;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -151,13 +152,30 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         // Initialization specific to MolecularDynamicsOpenMM
         running = false;
-        if (potential instanceof Barostat) {
-            // TODO: NPT stuff.
-            barostat = (Barostat) potential;
-            barostat.setActive(false);
-            this.forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) barostat.getUnderlyingPotential();
+        List<Potential> potentialStack = new ArrayList<>(potential.getUnderlyingPotentials());
+        potentialStack.add(potential);
+
+        List<ForceFieldEnergyOpenMM> feOMM = potentialStack.stream().
+                filter((Potential p) -> p instanceof ForceFieldEnergyOpenMM).
+                map((Potential p) -> (ForceFieldEnergyOpenMM) p).
+                collect(Collectors.toList());
+        if (feOMM.size() != 1) {
+            logger.severe(String.format(" Attempting to create a MolecularDynamicsOpenMM with %d OpenMM force field energies: this presently only allows one!", feOMM.size()));
+        }
+        forceFieldEnergyOpenMM = feOMM.get(0);
+
+        List<Barostat> barostats = potentialStack.stream().
+                filter((Potential p) -> p instanceof Barostat).
+                map((Potential p) -> (Barostat) p).
+                collect(Collectors.toList());
+        if (barostats.isEmpty()) {
+            constantPressure = false;
+        } else if (barostats.size() > 1) {
+            logger.severe(String.format(" Attempting to create a MolecularDynamicsOpenMM with %d barostats: this presently only allows 0-1!", barostats.size()));
         } else {
-            this.forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potential;
+            barostat = barostats.get(0);
+            barostat.setActive(false);
+            // TODO: NPT stuff.
         }
 
         numParticles = forceFieldEnergyOpenMM.getNumParticles();
@@ -178,9 +196,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         }
     }
 
+    /**
+     * Sets whether or not to obtain all variables (velocities, gradients) from OpenMM,
+     * or just positions and energies.
+     *
+     * @param obtainVA If true, obtain all variables from OpenMM each update.
+     */
+    @Override
     public void setObtainVelAcc(boolean obtainVA) {
         // TODO: Make this more generic by letting it obtain any weird combination of variables.
-        obtainVariables = obtainVA ? this::getOpenMMStateVariables : this::getOpenMMEnergiesAndPositions;
+        obtainVariables = obtainVA ? this::getAllOpenMMVariables : this::getOpenMMEnergiesAndPositions;
     }
 
     /**
@@ -475,7 +500,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     /**
      * Get OpenMM energies, positions, velocities, and accelerations.
      */
-    private void getOpenMMStateVariables() {
+    private void getAllOpenMMVariables() {
         context = forceFieldEnergyOpenMM.getContext();
         int infoMask = OpenMM_State_Positions + OpenMM_State_Energy + OpenMM_State_Velocities + OpenMM_State_Forces;
         PointerByReference state = OpenMM_Context_getState(context, infoMask, forceFieldEnergyOpenMM.enforcePBC);
