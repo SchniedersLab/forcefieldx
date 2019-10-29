@@ -969,7 +969,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Performs basic pre-MD operations such as loading the restart file.
      */
-    void preRunOps() {
+    void preRunOps() throws IllegalStateException {
         done = false;
         terminate = false;
 
@@ -993,7 +993,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     String message = " Could not load the restart file - dynamics terminated.";
                     logger.log(Level.WARNING, message);
                     done = true;
-                    return;
+                    throw new IllegalStateException(message);
                 } else {
                     molecularAssembly.getPotentialEnergy().setCrystal(crystal);
                 }
@@ -1237,7 +1237,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     @Override
     public void run() {
-        preRunOps();
+        try {
+            preRunOps();
+        } catch (IllegalStateException ise) {
+            return;
+        }
         initializeEnergies();
         postInitEnergies();
         mainLoop();

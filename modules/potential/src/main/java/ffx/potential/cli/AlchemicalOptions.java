@@ -64,8 +64,9 @@ public class AlchemicalOptions {
      */
     public static final Logger logger = Logger.getLogger(AlchemicalOptions.class.getName());
 
-    // A regular expression used to parse ranges of atoms.
     /**
+     * A regular expression used to parse ranges of atoms.
+     *
      * Constant <code>rangeregex</code>
      */
     public static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
@@ -138,7 +139,7 @@ public class AlchemicalOptions {
             int nAtoms = atoms.length;
             if (actFinal > actStart && actStart > 0 && actFinal <= nAtoms) {
                 // Make all atoms inactive.
-                for (int i = 0; i <= nAtoms; i++) {
+                for (int i = 1; i <= nAtoms; i++) {
                     Atom ai = atoms[i - 1];
                     ai.setActive(false);
                 }
