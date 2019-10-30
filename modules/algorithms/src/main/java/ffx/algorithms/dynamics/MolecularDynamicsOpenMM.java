@@ -128,6 +128,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private boolean update = false;
     /**
+     * Obtain all variables with each update (i.e. include velocities, gradients).
+     */
+    private boolean getAllVars = true;
+    /**
      * Method to run on update for obtaining variables. Will either grab
      * everything (default) or energies + positions (MC-OST).
      */
@@ -175,7 +179,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         } else {
             barostat = barostats.get(0);
             barostat.setActive(false);
-            // TODO: NPT stuff.
         }
 
         numParticles = forceFieldEnergyOpenMM.getNumParticles();
@@ -205,7 +208,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public void setObtainVelAcc(boolean obtainVA) {
         // TODO: Make this more generic by letting it obtain any weird combination of variables.
+        getAllVars = obtainVA;
         obtainVariables = obtainVA ? this::getAllOpenMMVariables : this::getOpenMMEnergiesAndPositions;
+    }
+
+    @Override
+    public void writeRestart() {
+        if (!getAllVars) {
+            getAllOpenMMVariables();
+        }
+        super.writeRestart();
     }
 
     /**

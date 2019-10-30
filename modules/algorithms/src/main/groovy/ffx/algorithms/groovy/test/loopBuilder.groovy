@@ -475,6 +475,7 @@ if (runMCLoop){
 
 
 if (runSimulatedAnnealing) {
+    logger.severe(" Script must be re-factored for new simulated annealing API (and likely also to new Groovy script style!)")
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");

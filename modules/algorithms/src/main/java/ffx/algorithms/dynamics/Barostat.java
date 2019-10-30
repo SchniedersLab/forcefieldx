@@ -54,6 +54,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import static ffx.utilities.Constants.AVOGADRO;
@@ -837,6 +838,10 @@ public class Barostat implements CrystalPotential {
      */
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 
     /**

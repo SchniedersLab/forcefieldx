@@ -132,16 +132,9 @@ class Anneal extends AlgorithmsScript {
 
         String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
-        String ext = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName)
 
-        if (ext.toUpperCase().contains("XYZ")) {
-            File saveFile = new File(dirName + fileName + ".xyz");
-            algorithmFunctions.saveAsXYZ(activeAssembly, saveFile);
-        } else {
-            File saveFile = new File(dirName + fileName + ".pdb");
-            algorithmFunctions.saveAsPDB(activeAssembly, saveFile);
-        }
+        writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
 
         return this
     }
