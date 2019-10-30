@@ -37,20 +37,18 @@
 //******************************************************************************
 package ffx.xray.groovy
 
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing
+import ffx.potential.cli.WriteoutOptions
 import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.optimize.SimulatedAnnealing
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -69,16 +67,23 @@ class Anneal extends AlgorithmsScript {
     XrayOptions xrayOptions
 
     @Mixin
-    DynamicsOptions dynamicsOptions
+    DynamicsOptions dynamics
 
     @Mixin
-    AnnealOptions annealOptions
+    WriteoutOptions writeout;
+
+    @Mixin
+    AnnealOptions anneal
 
     /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
+
+    private SimulatedAnnealing simulatedAnnealing = null;
+
+    private Potential potential;
     private RefinementEnergy refinementEnergy;
 
     @Override
@@ -88,60 +93,63 @@ class Anneal extends AlgorithmsScript {
             return this
         }
 
-        dynamicsOptions.init()
-        xrayOptions.init()
+        dynamics.init()
+        // Added vs. regular Anneal script.
+        xrayOptions.init();
 
-        String modelfilename
-        MolecularAssembly[] assemblies
+        String modelFilename
+        MolecularAssembly[] assemblies;
         if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.openAll(filenames.get(0))
+            assemblies = algorithmFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return this
-        } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath();
+            return
         }
 
-        logger.info("\n Running xray.Timer on " + modelfilename)
+        modelFilename = activeAssembly.getFile().getAbsolutePath();
 
-        // Load parsed X-ray properties.
-        CompositeConfiguration properties = assemblies[0].getProperties()
-        xrayOptions.setProperties(parseResult, properties)
+        logger.info("\n Running simulated annealing on X-ray target including " + modelFilename + "\n")
 
+        // Restart File
+        File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+        if (!dyn.exists()) {
+            dyn = null
+        }
 
-        logger.info("\n Running simulated annealing on " + modelfilename)
+        // Differs between regular Anneal and x-ray Anneal.
+        CompositeConfiguration properties = activeAssembly.getProperties();
+        DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult);
+        potential = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions);
+        simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
+                potential, properties,
+                algorithmListener, dyn);
 
-        // suffix to append to output data
-        String suffix = "_anneal"
+        simulatedAnnealing.setPrintInterval(dynamics.report);
+        simulatedAnnealing.setSaveFrequency(dynamics.write);
+        simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
+        simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps);
 
-        // Set up diffraction data (can be multiple files)
-        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-
-        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
-                xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
-        diffractionData.scaleBulkFit()
-        diffractionData.printStats()
-
-        algorithmFunctions.energy(assemblies[0])
-
-        refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
-
-        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy, properties,
-                algorithmListener, dynamicsOptions.thermostat, dynamicsOptions.integrator)
-
-        simulatedAnnealing.anneal(annealOptions.upper, annealOptions.low, annealOptions.windows,
-                dynamicsOptions.steps, dynamicsOptions.dt)
+        simulatedAnnealing.anneal();
 
         diffractionData.scaleBulkFit()
         diffractionData.printStats()
 
-        algorithmFunctions.energy(assemblies[0])
+        double[] x = new double[potential.getNumberOfVariables()];
+        x = potential.getCoordinates(x);
+        potential.energy(x, true)
 
-        diffractionData.writeModel(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb")
-        diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")
+        diffractionData.writeData(FilenameUtils.removeExtension(modelFilename) + ".mtz")
+
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+
+        String dirName = saveDir.toString() + File.separator
+        String fileName = FilenameUtils.getName(modelFilename)
+        fileName = FilenameUtils.removeExtension(fileName)
+
+        writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
 
         return this
     }

@@ -41,8 +41,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import ffx.algorithms.AlgorithmFunctions;
 import ffx.potential.MolecularAssembly;
+import ffx.realspace.RealSpaceData;
 import ffx.realspace.parsers.RealSpaceFile;
+import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.cli.DataRefinementOptions;
 
@@ -120,5 +123,25 @@ public class RealSpaceOptions extends DataRefinementOptions {
 
 
         return mapfiles;
+    }
+
+    /**
+     * Process input from opened molecular assemblies to a RefinementEnergy
+     * @param filenames          All filenames included in the real-space data.
+     * @param assemblies         All molecular assemblies included in the real-space data.
+     * @param activeAssembly     An "active" assembly which is primary (or sole assembly).
+     * @param algorithmFunctions An AlgorithmFunctions object.
+     * @return                   An assembled RefinementEnergy with real-space energy.
+     */
+    public RefinementEnergy toRealSpaceEnergy(List<String> filenames, MolecularAssembly[] assemblies,
+                                              MolecularAssembly activeAssembly, AlgorithmFunctions algorithmFunctions) {
+        List<RealSpaceFile> mapfiles = processData(filenames, assemblies);
+
+        RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
+
+        algorithmFunctions.energy(assemblies[0]);
+
+        return new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
     }
 }

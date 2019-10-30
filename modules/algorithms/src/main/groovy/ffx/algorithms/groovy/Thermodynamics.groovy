@@ -295,11 +295,16 @@ class Thermodynamics extends AlgorithmsScript {
     }
 
     @Override
-    List<Potential> getPotentials() {
+    public List<Potential> getPotentials() {
         if (osrw == null) {
             return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
         } else {
             return Collections.singletonList(osrw);
         }
+    }
+
+    @Override
+    public boolean destroyPotentials() {
+        return getPotentials().stream().allMatch({ it.destroy(); });
     }
 }

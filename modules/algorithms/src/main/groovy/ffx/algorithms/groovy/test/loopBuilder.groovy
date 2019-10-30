@@ -50,7 +50,7 @@ import ffx.algorithms.dynamics.integrators.IntegratorEnum
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MCLoop
 import ffx.algorithms.optimize.RotamerOptimization
-import ffx.algorithms.optimize.SimulatedAnnealing
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.algorithms.thermodynamics.OSRW
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.numerics.Potential
@@ -475,6 +475,7 @@ if (runMCLoop){
 
 
 if (runSimulatedAnnealing) {
+    logger.severe(" Script must be re-factored for new simulated annealing API (and likely also to new Groovy script style!)")
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");

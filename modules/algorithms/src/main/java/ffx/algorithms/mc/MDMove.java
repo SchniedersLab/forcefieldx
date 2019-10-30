@@ -127,15 +127,8 @@ public class MDMove implements MCMove {
             printInterval = mdSteps * timeStep;
         }
 
-
-        String name = assembly.getFile().getAbsolutePath();
-        File dyn = new File(FilenameUtils.removeExtension(name) + ".dyn");
-        if (!dyn.exists()) {
-            dyn = null;
-        }
-
-        molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
+        molecularDynamics.setObtainVelAcc(false);
     }
 
     /**
@@ -176,8 +169,7 @@ public class MDMove implements MCMove {
         molecularDynamics.setVerbosityLevel(verbosityLevel);
         mdMoveCounter++;
 
-        boolean initVelocities = true;
-        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
+        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
         energyChange = molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
@@ -261,5 +253,4 @@ public class MDMove implements MCMove {
     public void writeLambdaThresholdRestart(double lambda, double lambdaWriteOut) {
         molecularDynamics.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
     }
-
 }
