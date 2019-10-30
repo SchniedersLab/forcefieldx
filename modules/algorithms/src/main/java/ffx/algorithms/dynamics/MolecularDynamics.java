@@ -1319,6 +1319,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Returns the associated dynamics file.
+     * @return
+     */
+    public File getDynFile() {
+        return restartFile;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -1562,7 +1570,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param intervalSteps
      */
     public void setIntervalSteps(int intervalSteps) {
-
+        // Not meaningful for FFX MD.
     }
 
     /**

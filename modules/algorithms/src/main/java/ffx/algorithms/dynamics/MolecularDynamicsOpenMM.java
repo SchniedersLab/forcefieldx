@@ -408,6 +408,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             logger.fine(String.format(" Retrieved energies in %6.3f seconds", retrieveEnergyTime * NS2SEC));
 
             startingKineticEnergy = currentKineticEnergy;
+
+            initialized = true;
         }
 
         saveSnapshotAsPDB = true;
@@ -434,6 +436,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     @Override
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
+
+        /*logger.info(String.format(" MDOMM.dynamic called with: %d nSteps, %g ts, %g printInt, %g saveInt, %g temp, %b initVel, %s file",
+                numSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn));*/
 
         long initTime = -System.nanoTime();
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);

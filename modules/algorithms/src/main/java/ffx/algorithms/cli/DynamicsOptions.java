@@ -128,6 +128,13 @@ public class DynamicsOptions {
     private double checkpoint = 1.0;
 
     /**
+     * -z or --trajSteps Number of steps for each OpenMM MD cycle.
+     */
+    @CommandLine.Option(names = {"-z", "--trajSteps"}, paramLabel = "100",
+            description = "Number of steps per MD cycle (OpenMM only).")
+    int trajSteps = 100;
+
+    /**
      * Thermostat.
      */
     public ThermostatEnum thermostat;

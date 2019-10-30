@@ -48,7 +48,7 @@ import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MCLoop
-import ffx.algorithms.optimize.SimulatedAnnealing
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.algorithms.thermodynamics.OSRW
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.numerics.Potential
