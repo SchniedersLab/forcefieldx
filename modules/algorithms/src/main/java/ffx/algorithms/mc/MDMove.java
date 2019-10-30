@@ -37,14 +37,12 @@
 //******************************************************************************
 package ffx.algorithms.mc;
 
-import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
