@@ -303,6 +303,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private final boolean verboseDynamicsState;
 
     /**
+     * By default, wait 25000 ns (25 us) in between polling the dynamics thread.
+     */
+    private static final int DEFAULT_DYNAMICS_SLEEP_TIME = 25000;
+
+    /**
+     * Wait this many nanoseconds in between polling the dynamics thread.
+     */
+    private final int dynSleepTime;
+
+    /**
      * Method that determines whether a dynamics is done by the java
      * implementation native to ffx or the OpenMM implementation
      *
@@ -408,6 +418,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             constantPressure = true;
             barostat = (Barostat) potentialEnergy;
         }
+
+        dynSleepTime = properties.getInt("dynamics-sleep-nanos", DEFAULT_DYNAMICS_SLEEP_TIME);
+        logger.info(" Dyn sleep time: " + dynSleepTime);
 
         assemblies.get(0).compositeConfiguration = properties;
         mass = potentialEnergy.getMass();
@@ -930,7 +943,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         synchronized (this) {
             try {
                 while (dynamicThread.isAlive()) {
-                    wait(100);
+                    wait(0, dynSleepTime);
                 }
             } catch (InterruptedException e) {
                 String message = " Molecular dynamics interrupted.";
