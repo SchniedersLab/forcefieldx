@@ -351,8 +351,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             return;
         }
 
-        logger.info(String.format(" MDOMM.dynamic called with: %d nSteps, %g ts, %g printInt, %g saveInt, %g temp, %b initVel, %s file",
-                numSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn));
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
 
         if (intervalSteps == 0 || intervalSteps > numSteps) {

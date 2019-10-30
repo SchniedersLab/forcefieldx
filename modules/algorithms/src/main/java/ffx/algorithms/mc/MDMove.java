@@ -127,14 +127,6 @@ public class MDMove implements MCMove {
             printInterval = mdSteps * timeStep;
         }
 
-
-        String name = assembly.getFile().getAbsolutePath();
-        File dyn = new File(FilenameUtils.removeExtension(name) + ".dyn");
-        if (!dyn.exists()) {
-            dyn = null;
-        }
-
-        //molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
     }
