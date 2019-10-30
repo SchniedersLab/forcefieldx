@@ -51,6 +51,7 @@ import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
 import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.groovy.Dynamics;
 
 import groovy.lang.Binding;
 
@@ -69,7 +70,7 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
     private boolean ffxOpenMM;
 
     private Binding binding;
-    private DynamicsOpenMM dynamics;
+    private Dynamics dynamics;
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -95,7 +96,7 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
     @Before
     public void before() {
         binding = new Binding();
-        dynamics = new DynamicsOpenMM();
+        dynamics = new Dynamics();
         dynamics.setBinding(binding);
     }
 
@@ -119,13 +120,13 @@ public class DynamicsOpenMMStochasticTest extends PJDependentTest {
         }
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/", "--mdE", "OpenMM" + filename};
         binding.setVariable("args", args);
 
         // Evaluate script
         dynamics.run();
 
-        MolecularDynamicsOpenMM molDynOpenMM = dynamics.getMolecularDynamics();
+        MolecularDynamicsOpenMM molDynOpenMM = (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
 
         // Assert that the end energies are within the threshold for the dynamics trajectory.
         assertEquals(info + "End kinetic energy for OpenMM Langevin(Stochastic) integrator",

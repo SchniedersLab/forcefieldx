@@ -130,6 +130,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * MC-OSRW.
      */
     private boolean equilibration = false;
+
     /**
      * Controls the effect of verbose by logging at FINE vs. INFO.
      */

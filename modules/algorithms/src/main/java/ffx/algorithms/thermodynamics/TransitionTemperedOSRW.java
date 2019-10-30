@@ -567,7 +567,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
             potential.setEnergyTermState(Potential.STATE.BOTH);
 
+            boolean origBaroActive = true;
             if (barostat != null) {
+                origBaroActive = barostat.isActive();
                 barostat.setActive(false);
             }
 
@@ -610,7 +612,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
             // Reset the Barostat
             if (barostat != null) {
-                barostat.setActive(true);
+                barostat.setActive(origBaroActive);
             }
 
             // Revert to the coordinates and gradient prior to optimization.

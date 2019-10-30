@@ -55,6 +55,7 @@ import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.PJDependentTest;
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
+import ffx.algorithms.groovy.Anneal;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
