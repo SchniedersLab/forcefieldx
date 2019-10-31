@@ -179,6 +179,25 @@ public class AnnealOptions {
                     minWindowSteps, maxWindowSteps, perWindowSteps, (int) (perWindowSteps * schedule.totalWindowLength())));
         }
 
+        if (nWindows < 201) {
+            StringBuilder sb = new StringBuilder("\n Simulated annealing windows [index,MD steps, temperature (K)]:\n [");
+            for (int i = 0; i < nWindows; i++) {
+                double len = schedule.windowLength(i);
+                double temp = schedule.getTemperature(i);
+                sb.append(String.format("[%d,%d,%10.4g]", (i+1), (int) (len * perWindowSteps), temp));
+                if (i == nWindows - 1) {
+                    sb.append("]\n");
+                } else if (i % 10 == 9) {
+                    sb.append("\n");
+                } else {
+                    sb.append(",");
+                }
+            }
+            logger.info(sb.toString());
+        } else {
+            logger.info(" Skipping printout of window lengths/temperatures (max printout at 200 windows)");
+        }
+
         return new SimulatedAnnealing(mola, potential, props, alist, dynOpts.thermostat,
                 dynOpts.integrator, schedule, perWindowSteps, dynOpts.dt, reinitV, dynFile);
     }
