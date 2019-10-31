@@ -41,7 +41,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
 
-import ffx.algorithms.thermodynamics.AbstractOSRW;
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
 
 /**
  * Define an MC move to update lambda.
@@ -56,33 +56,25 @@ public class LambdaMove implements MCMove {
      * Current value of lambda, which always refreshed from the OSRW instance.
      */
     private double currentLambda;
-
     /**
      * Apply the Lambda move to an OSRW instance.
      */
-    private final AbstractOSRW osrw;
-
+    private final TransitionTemperedOSRW osrw;
     /**
      * Random number generator.
      */
     private Random random;
-
     /**
      * Lambda move standard deviation.
      */
     private double stdDev = 0.1;
 
     /**
-     * Starting lambda value.
-     */
-    // private double lambdaStart = 0.0;
-
-    /**
      * <p>Constructor for LambdaMove.</p>
      *
-     * @param osrw a {@link AbstractOSRW} object.
+     * @param osrw a {@link TransitionTemperedOSRW} object.
      */
-    public LambdaMove(AbstractOSRW osrw) {
+    public LambdaMove(TransitionTemperedOSRW osrw) {
         this.osrw = osrw;
         random = new Random();
     }
@@ -91,9 +83,9 @@ public class LambdaMove implements MCMove {
      * <p>Constructor for LambdaMove.</p>
      *
      * @param randomSeed Random seed to use.
-     * @param osrw       OSRW instance.
+     * @param osrw       TransitionTemperedOSRW instance.
      */
-    public LambdaMove(int randomSeed, AbstractOSRW osrw) {
+    public LambdaMove(int randomSeed, TransitionTemperedOSRW osrw) {
         this.osrw = osrw;
         random = new Random(randomSeed);
     }

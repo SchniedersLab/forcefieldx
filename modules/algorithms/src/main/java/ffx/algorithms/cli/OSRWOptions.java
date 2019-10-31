@@ -174,7 +174,8 @@ public class OSRWOptions {
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                 MolecularAssembly firstAssembly, DynamicsOptions dynamics,
                                                 MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
-        return constructOSRW(potential, lambdaRestart, histogramRestart, firstAssembly, null, dynamics, mdo, thermo, aListener);
+        return constructOSRW(potential, lambdaRestart, histogramRestart,
+                firstAssembly, null, dynamics, mdo, thermo, aListener);
     }
 
     /**
@@ -211,6 +212,7 @@ public class OSRWOptions {
         TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
         ttOSRW.checkRecursionKernelSize();
+        ttOSRW.setHardWallConstraint(mcHW);
 
         // Do NOT run applyOSRWOptions here, because that can mutate the TT-OSRW to a Barostat.
         return ttOSRW;
@@ -242,21 +244,6 @@ public class OSRWOptions {
             ttOSRW.setOptimization(true, firstAssembly);
         }
         return barostat.checkNPT(firstAssembly, ttOSRW);
-    }
-
-    /**
-     * <p>
-     * applyOSRWOptions.</p>
-     *
-     * @param ttOSRW          a {@link TransitionTemperedOSRW} object.
-     * @param histogramExists a boolean.
-     */
-    public void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
-        ttOSRW.setTemperingParameter(temperParam);
-        if (!histogramExists) {
-            ttOSRW.setCountInterval(countFreq);
-            ttOSRW.setBiasMagnitude(biasMag);
-        }
     }
 
     /**
@@ -327,25 +314,26 @@ public class OSRWOptions {
      */
     public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies,
                             DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose) {
-
         dynamics.init();
 
         MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
                 topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose);
 
-        mcOSRW.setHardWallConstraint(mcHW);
-
         int nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
-            logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
+            logger.info("\n Beginning MC Transition-Tempered OSRW equilibration.");
             mcOSRW.setEquilibration(true);
             mcOSRW.setMDMoveParameters(nEquil, mcMD, dynamics.dt, mcMDE);
-            mcOSRW.sampleTwoStep();
+            if (ts) {
+                mcOSRW.sampleTwoStep();
+            } else {
+                mcOSRW.sampleOneStep();
+            }
             mcOSRW.setEquilibration(false);
-            logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
+            logger.info("\n Finished MC Transition-Tempered OSRW equilibration.");
         }
 
-        logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
+        logger.info("\n Beginning MC Transition-Tempered OSRW sampling.");
         mcOSRW.setLambdaStdDev(mcL);
         mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt, mcMDE);
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
@@ -355,6 +343,21 @@ public class OSRWOptions {
             mcOSRW.sampleTwoStep();
         } else {
             mcOSRW.sampleOneStep();
+        }
+    }
+
+    /**
+     * <p>
+     * applyOSRWOptions.</p>
+     *
+     * @param ttOSRW          a {@link TransitionTemperedOSRW} object.
+     * @param histogramExists a boolean.
+     */
+    private void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
+        ttOSRW.setTemperingParameter(temperParam);
+        if (!histogramExists) {
+            ttOSRW.setCountInterval(countFreq);
+            ttOSRW.setBiasMagnitude(biasMag);
         }
     }
 

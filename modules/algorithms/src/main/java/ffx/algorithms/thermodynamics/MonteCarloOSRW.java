@@ -104,7 +104,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
     /**
      * OSRW object used to retrieve OSRW energy throughout the simulation.
      */
-    private final AbstractOSRW osrw;
+    private final TransitionTemperedOSRW osrw;
     /**
      * MDMove object for completing MC-OSRW molecular dynamics moves.
      */
@@ -139,17 +139,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * How verbose MD should be.
      */
     private final MolecularDynamics.VerbosityLevel mdVerbosityLevel;
-    /**
-     * If this flag is true, (lambda, dU/dL) samples that have no weight in the Histogram are rejected.
-     */
-    private boolean hardWallConstraint = false;
 
     /**
      * <p>
      * Constructor for MonteCarloOSRW.</p>
      *
      * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param osrw                a {@link AbstractOSRW} object.
+     * @param osrw                a {@link TransitionTemperedOSRW} object.
      * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly} object.
      * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
@@ -157,7 +153,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      * @param verbose             A verbosity flag to print additional information with each MC-OST step.
      */
-    public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
+    public MonteCarloOSRW(Potential potentialEnergy, TransitionTemperedOSRW osrw,
                           MolecularAssembly molecularAssembly, CompositeConfiguration properties,
                           AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator, boolean verbose) {
         this.potential = potentialEnergy;
@@ -179,13 +175,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
         // Changing the value of lambda will be handled by this class, as well as adding the time dependent bias.
         osrw.setPropagateLambda(false);
 
-    }
-
-    /**
-     * If this flag is true, (lambda, dU/dL) samples that have no weight in the Histogram are rejected.
-     */
-    public void setHardWallConstraint(boolean hardWallConstraint) {
-        this.hardWallConstraint = hardWallConstraint;
     }
 
     /**
@@ -360,7 +349,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 continue;
             }
 
-            if (insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
+            if (osrw.insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
                     evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                 // Accept MD move.
                 acceptMD++;
@@ -407,7 +396,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.log(verboseLoggingLevel, format("  Proposed OSRW     %12.3f at L=%5.3f.", proposedOSRWEnergy, proposedLambda));
                 logger.log(verboseLoggingLevel, format("  MC Energy change: %12.3f (kcal/mol).", proposedOSRWEnergy - currentOSRWEnergy));
 
-                if (insideHardWallConstraint(proposedLambda, proposeddUdL) &&
+                if (osrw.insideHardWallConstraint(proposedLambda, proposeddUdL) &&
                         evaluateMove(currentOSRWEnergy, proposedOSRWEnergy)) {
                     acceptLambda++;
                     double percent = (acceptLambda * 100.0) / (imove + 1);
@@ -452,22 +441,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             totalMoveTime += nanoTime();
             logger.info(format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
         }
-    }
-
-    /**
-     * If the dUdLHardWall flag is set to true, this method will
-     * return false if the (lambda, dU/dL) sample is has not been seen.
-     *
-     * @param lambda The proposed lambda value.
-     * @param dUdL   The proposed dU/dL value.
-     * @return Returns false only if the dUdLHardWall flag is true, and the (lambda, dU/dL) sample has not been seen.
-     */
-    private boolean insideHardWallConstraint(double lambda, double dUdL) {
-        if (hardWallConstraint) {
-            double weight = osrw.evaluateHistogram(lambda, dUdL);
-            return weight > 0.0;
-        }
-        return true;
     }
 
     /**
@@ -588,7 +561,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             }
 
             if (equilibration) {
-                if (insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
+                if (osrw.insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
                         evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                     // Accept MD.
                     acceptMD++;
@@ -607,7 +580,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                     mdMove.revertMove();
                 }
             } else {
-                if (insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
+                if (osrw.insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
                         evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                     acceptMCOSRW++;
                     double percent = (acceptMCOSRW * 100.0) / (imove + 1);
