@@ -51,7 +51,7 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MCLoop
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing
-import ffx.algorithms.thermodynamics.OSRW
+
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -111,9 +111,6 @@ boolean runOSRW = true;
 // Monte Carlo with KIC
 boolean runMCLoop = false;
 
-// Transition Tempered OSRW
-boolean runTTOSRW = false;
-
 // Local minimization mode
 boolean localMin = false;
 
@@ -135,7 +132,6 @@ cli.w(longOpt: 'write', args: 1, argName: '100.0', 'Interval to write out coordi
 cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
 cli.g(longOpt: 'bias', args: 1, argName: '0.01', 'Gaussian bias magnitude (kcal/mol).');
 cli.osrw(longOpt: 'OSRW', 'Run OSRW.');
-cli.tt(longOpt: 'ttOSRW', 'Run Transition Tempered OSRW');
 cli.sa(longOpt: 'simulated annealing', 'Run simulated annealing.');
 cli.rot(longOpt: 'rotamer', 'Run rotamer optimization.');
 cli.mc(longOpt: 'MC Loop', 'Run Monte Carlo KIC');
@@ -230,11 +226,6 @@ if (options.sa) {
 // Run Rotamer Optimization
 if (options.rot) {
     runRotamer = true;
-}
-
-// Run Transition Tempered OSRW
-if (options.tt) {
-    runTTOSRW = true;
 }
 
 // Default
@@ -414,14 +405,8 @@ if (runOSRW) {
 
     boolean asynchronous = true;
 
-    Potential osrw;
-    if (runTTOSRW) {
-        osrw = new TransitionTemperedOSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+    Potential osrw = new TransitionTemperedOSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
                 (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
-    } else {
-        osrw = new OSRW(forceFieldEnergy, forceFieldEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-                (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
-    }
 
     osrw.setLambda(lambda);
     osrw.setThetaMass(1.0e-19);

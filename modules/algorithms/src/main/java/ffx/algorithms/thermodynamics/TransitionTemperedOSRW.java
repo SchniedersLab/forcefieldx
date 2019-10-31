@@ -45,6 +45,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -53,14 +54,21 @@ import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
+import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
+import edu.rit.pj.Comm;
 
 import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.dynamics.Barostat;
 import ffx.algorithms.optimize.Minimize;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
@@ -69,9 +77,14 @@ import ffx.numerics.integrate.DataSet;
 import ffx.numerics.integrate.DoublesDataSet;
 import ffx.numerics.integrate.Integrate1DNumeric;
 import ffx.numerics.integrate.Integrate1DNumeric.IntegrationType;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
+import ffx.utilities.Constants;
 import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
 import static ffx.utilities.Constants.R;
 
@@ -86,10 +99,337 @@ import static ffx.utilities.Constants.R;
  * @author Michael J. Schnieders, James Dama, Wei Yang and Pengyu Ren
  * @since 1.0
  */
-public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterface {
+public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(TransitionTemperedOSRW.class.getName());
 
+    /**
+     * The MolecularAssembly being simulated.
+     */
+    protected MolecularAssembly molecularAssembly;
+    /**
+     * A potential energy that implements the LambdaInterface.
+     */
+    private final LambdaInterface lambdaInterface;
+    /**
+     * The potential energy of the system.
+     */
+    protected final CrystalPotential potential;
+    /**
+     * Reference to the Barostat in use; if present this must be turned off
+     * during optimization.
+     */
+    protected final Barostat barostat;
+    /**
+     * The AlgorithmListener is called each time a count is added.
+     */
+    protected final AlgorithmListener algorithmListener;
+    /**
+     * Number of variables.
+     */
+    protected final int nVariables;
+    /**
+     * Each walker has a unique lambda restart file.
+     */
+    private final File lambdaFile;
+    /**
+     * Each walker reads the same histogram restart file. Only the walker of
+     * rank 0 writes the histogram restart file.
+     */
+    private final File histogramFile;
+    /**
+     * State variable lambda ranges from 0.0 .. 1.0.
+     */
+    protected double lambda;
+    /**
+     * Flag to indicate that the Lambda particle should be propagated.
+     */
+    private boolean propagateLambda = true;
+    /**
+     * Number of times the OSRW biasing potential has been evaluated with the
+     * "propagateLambda" flag true.
+     */
+    int energyCount;
+    /**
+     * Number of times a Gaussian has been added.
+     */
+    private int biasCount = 0;
+    /**
+     * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
+     * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
+     * <p>
+     * With this scheme, the maximum of biasing Gaussians is at the edges.
+     * <p>
+     * The default lambdaBins = 201.
+     */
+    int lambdaBins;
+    /**
+     * It is useful to have an odd number of bins, so that there is a bin from
+     * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
+     * thermodynamic integration goes to zero.
+     * <p>
+     * Otherwise a contribution of zero from a L bin can only result from equal
+     * sampling of the ranges -dFL to 0 and 0 to dFL.
+     * <p>
+     * The default FLambdaBins = 401.
+     */
+    int FLambdaBins;
+    /**
+     * Parallel Java world communicator.
+     */
+    protected final Comm world;
+    /**
+     * Number of processes.
+     */
+    private final int numProc;
+    /**
+     * Rank of this process.
+     */
+    protected final int rank;
+    /**
+     * When evaluating the biasing potential, contributions from Gaussians
+     * centered on bins more the "biasCutoff" away will be neglected.
+     * <p>
+     * The default biasCutoff = 5.
+     */
+    int biasCutoff;
+    /**
+     * Width of the lambda bin.
+     * <p>
+     * The default dL = (1.0 / (lambdaBins - 1).
+     */
+    protected double dL;
+    /**
+     * Half the width of a lambda bin.
+     */
+    double dL_2;
+    /**
+     * The width of the FLambda bin.
+     * <p>
+     * The default dFL = 2.0 (kcal/mol).
+     */
+    double dFL;
+    /**
+     * Half the width of the F_lambda bin.
+     */
+    double dFL_2;
+    /**
+     * The minimum value of the first lambda bin.
+     * <p>
+     * minLambda = -dL_2.
+     */
+    private double minLambda;
+    /**
+     * The minimum value of the first F_lambda bin.
+     * <p>
+     * minFLambda = -(dFL * FLambdaBins) / 2.0.
+     */
+    double minFLambda;
+    /**
+     * The maximum value of the last F_lambda bin.
+     * <p>
+     * maxFLambda = minFLambda + FLambdaBins * dFL.
+     */
+    private double maxFLambda;
+    /**
+     * Force Field Potential Energy (i.e. with no bias terms added).
+     */
+    protected double forceFieldEnergy;
+    /**
+     * Partial derivative of the force field energy with respect to lambda.
+     */
+    private double dForceFieldEnergydL;
+    /**
+     * OSRW Bias energy.
+     */
+    private double biasEnergy;
+    /**
+     * Total partial derivative of the potential (U) being sampled
+     * with respect to lambda.
+     */
+    private double dUdLambda;
+    /**
+     * Second partial derivative of the potential being sampled with respect to lambda.
+     */
+    private double d2UdL2;
+    /**
+     * Mixed second partial derivative with respect to coordinates and lambda.
+     */
+    private double[] dUdXdL;
+    /**
+     * Magnitude of each hill (not including tempering).
+     * <p>
+     * The default biasMag = 0.05 (kcal/mol).
+     */
+    double biasMag;
+    /**
+     * 1D PMF with respect to lambda F(L).
+     */
+    double[] FLambda;
+    /**
+     * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
+     */
+    private double gLdEdL = 0.0;
+    /**
+     * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
+     */
+    double thetaFriction = 1.0e-19;
+    /**
+     * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
+     */
+    double thetaMass = 1.0e-18;
+    double halfThetaVelocity = 0.0;
+    /**
+     * Time step in picoseconds.
+     */
+    protected final double dt;
+    /**
+     * Temperature in Kelvin.
+     * <p>
+     * The default is 298.15.
+     */
+    protected double temperature;
+    /**
+     * Interval between adding a count to the Recursion kernel in steps.
+     * <p>
+     * The default countInterval = 10.
+     */
+    int countInterval = 10;
+    /**
+     * Interval between printing information on the lambda particle in steps.
+     * <p>
+     * The default printFrequency = 100.
+     */
+    private int printFrequency;
+    /**
+     * Once the lambda reset value is reached, Transition-Tempered OSRW
+     * statistics are reset.
+     */
+    final double lambdaResetValue = 0.99;
+    /**
+     * Flag set to false once Transition-Tempered OSRW statistics are reset at
+     * lambdaResetValue.
+     */
+    boolean resetStatistics = false;
+    /**
+     * Flag to turn on OSRW optimization.
+     * <p>
+     * The default osrwOptimization = false.
+     */
+    private boolean osrwOptimization = false;
+    /**
+     * Holds the lowest potential-energy parameters for loopBuilder runs from
+     * all visits to lambda &gt; osrwOptimizationLambdaCutoff.
+     */
+    private double[] osrwOptimumCoords;
+    /**
+     * The lowest energy found via optimizations.
+     * <p>
+     * The osrwOptimum is initially set to Double.MAX_VALUE.
+     */
+    private double osrwOptimum = Double.MAX_VALUE;
+    /**
+     * OSRW optimization only runs if Lambda is greater than the osrwOptimizationLambdaCutoff.
+     * <p>
+     * The default osrwOptimizationLambdaCutoff = 0.8.
+     */
+    private double osrwOptimizationLambdaCutoff = 0.8;
+    /**
+     * The OSRW optimization frequency.
+     */
+    private int osrwOptimizationFrequency = 10000;
+    /**
+     * The OSRW optimization convergence criteria.
+     * <p>
+     * The default osrwOptimizationEps = 0.1.
+     */
+    private double osrwOptimizationEps = 0.1;
+    /**
+     * The OSRW optimization tolerance.
+     */
+    private double osrwOptimizationTolerance = 1.0e-8;
+    /**
+     * The OSRW optimization energy window.
+     */
+    private double osrwOptimizationEnergyWindow = 2.0;
+    /**
+     * File instance used for saving optimized structures.
+     */
+    private File osrwOptimizationFile;
+    /**
+     * SystemFilter used to save optimized structures.
+     */
+    private SystemFilter osrwOptimizationFilter;
+    /**
+     * Interval between how often the 1D histogram is printed to screen versus
+     * silently updated in background.
+     * <p>
+     * The fLambdaPrintInterval is 25.
+     */
+    private final int fLambdaPrintInterval = 25;
+    /**
+     * A count of FLambdaUpdates.
+     */
+    private int fLambdaUpdates = 0;
+    /**
+     * Interval between writing an OSRW restart file in steps.
+     * <p>
+     * The default saveFrequency = 1000.
+     */
+    int saveFrequency;
+    /**
+     * Print detailed energy information.
+     */
+    protected final boolean print = false;
+    /**
+     * Total system energy.
+     */
+    private double totalEnergy;
+    /**
+     * Save the previous free energy, in order to limit logging to time points
+     * where the free energy has changed.
+     */
+    private double previousFreeEnergy = 0.0;
+    /**
+     * Are FAST varying energy terms being computed, SLOW varying energy terms,
+     * or BOTH. OSRW is not active when only FAST varying energy terms are being
+     * propagated.
+     */
+    protected Potential.STATE state = Potential.STATE.BOTH;
+    /**
+     * Flag to indicate if OSRW should send and receive counts between processes
+     * synchronously or asynchronously. The latter can be faster by ~40% because
+     * simulation with Lambda &gt; 0.75 must compute two condensed phase
+     * self-consistent fields to interpolate polarization.
+     */
+    private final boolean asynchronous;
+    /**
+     * Write out structures only for lambda values greater than or equal to this threshold.
+     */
+    double lambdaWriteOut = 0.0;
+    /**
+     * Should the 1D OSRW bias be included in the target function.
+     */
+    private boolean include1DBias;
+    /**
+     * Map lambda to a periodic variable theta.
+     *
+     * <code>theta = asin(sqrt(lambda))</code>
+     *
+     * <code>lambda = sin^2 (theta).</code>
+     */
+    private double theta;
+    private final Random stochasticRandom;
+    /**
+     * Random force conversion to kcal/mol/A;
+     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
+     */
+    private static final double randomConvert = sqrt(4.184) / 10e9;
+    /**
+     * randomConvert squared.
+     * Units: Joule per calorie / (nanometer per meter)^2
+     */
+    private static final double randomConvert2 = randomConvert * randomConvert;
     /**
      * The recursion kernel stores the weight of each [lambda][Flambda] bin.
      */
@@ -141,6 +481,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * The default temperOffset = 1.0 kcal/mol.
      */
     private double temperOffset;
+    /**
+     * If this flag is true, (lambda, dU/dL) samples that have no weight in the Histogram are rejected.
+     */
+    private boolean hardWallConstraint = false;
     /**
      * If the recursion kernel becomes too large or too small for some combinations of (Lambda, dU/dL),
      * then its statistical weight = exp(kernel * beta) will cannot be represented by a double value.
@@ -217,8 +561,87 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                                   double temperature, double dt, double printInterval,
                                   double saveInterval, boolean asynchronous, boolean resetNumSteps,
                                   AlgorithmListener algorithmListener) {
-        super(lambdaInterface, potential, lambdaFile, histogramFile, properties,
-                temperature, dt, printInterval, saveInterval, asynchronous, algorithmListener);
+
+        this.lambdaInterface = lambdaInterface;
+        this.potential = potential;
+        this.lambdaFile = lambdaFile;
+        this.histogramFile = histogramFile;
+        this.temperature = temperature;
+        this.asynchronous = asynchronous;
+        this.algorithmListener = algorithmListener;
+        nVariables = potential.getNumberOfVariables();
+
+        if (potential instanceof Barostat) {
+            barostat = (Barostat) potential;
+        } else {
+            barostat = null;
+        }
+
+        // Convert the time step to picoseconds.
+        this.dt = dt * 0.001;
+
+        // Convert the print interval to a print frequency.
+        printFrequency = 100;
+        if (printInterval >= this.dt) {
+            printFrequency = (int) (printInterval / this.dt);
+        }
+
+        // Convert the save interval to a save frequency.
+        saveFrequency = 1000;
+        if (saveInterval >= this.dt) {
+            saveFrequency = (int) (saveInterval / this.dt);
+        }
+
+        biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
+        biasMag = properties.getDouble("bias-gaussian-mag", 0.05);
+        dL = properties.getDouble("lambda-bin-width", 0.005);
+        dFL = properties.getDouble("flambda-bin-width", 2.0);
+
+        // Require modest sampling of the lambda path.
+        if (dL > 0.1) {
+            dL = 0.1;
+        }
+
+        /*
+          Many lambda bin widths do not evenly divide into 1.0; here we correct
+          for this by computing an integer number of bins, then re-setting the
+          lambda variable appropriately. Note that we also choose to have an
+          odd number of lambda bins, so that the centers of the first and last
+          bin are at 0 and 1.
+         */
+        lambdaBins = (int) (1.0 / dL);
+        if (lambdaBins % 2 == 0) {
+            lambdaBins++;
+        }
+
+        /*
+          The initial number of FLambda bins does not really matter, since a
+          larger number is automatically allocated as needed. The center of the
+          central bin is at 0.
+         */
+        FLambdaBins = 101;
+        minFLambda = -(dFL * FLambdaBins) / 2.0;
+
+        energyCount = -1;
+
+        dL = 1.0 / (lambdaBins - 1);
+        dL_2 = dL / 2.0;
+        minLambda = -dL_2;
+        dFL_2 = dFL / 2.0;
+        maxFLambda = minFLambda + FLambdaBins * dFL;
+        FLambda = new double[lambdaBins];
+        dUdXdL = new double[nVariables];
+        stochasticRandom = new Random();
+
+        /*
+          Set up the multi-walker communication variables for Parallel Java
+          communication between nodes.
+         */
+        world = Comm.world();
+        numProc = world.size();
+        rank = world.rank();
+
+        include1DBias = properties.getBoolean("osrw-1D-bias", true);
 
         deltaT = temperingFactor * R * this.temperature;
 
@@ -294,6 +717,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (readHistogramRestart) {
             updateFLambda(true, false);
         }
+
+        // Log parameters.
+        logger.info("\n Orthogonal Space Random Walk Parameters");
+        logger.info(format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
+        logger.info(format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
+        logger.info(format("  Print Interval:                 %6.3f psec", printInterval));
+        logger.info(format("  Save Interval:                  %6.3f psec", saveInterval));
+        logger.info(format("  Include 1D OSRW Bias:           %6b", include1DBias));
     }
 
     /**
@@ -351,7 +782,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * Set the value of a recursion kernel bin.
+     * Add to the value of a recursion kernel bin.
      *
      * @param lambdaBin  The lambda bin.
      * @param fLambdaBin The dU/dL bin.
@@ -394,14 +825,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * {@inheritDoc}
+     * Compute the force field + bias energy.
      */
     public double energy(double[] x) {
 
         forceFieldEnergy = potential.energy(x);
 
         // OSRW is propagated with the slowly varying terms.
-        if (state == STATE.FAST) {
+        if (state == Potential.STATE.FAST) {
             return forceFieldEnergy;
         }
 
@@ -417,6 +848,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         double dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
         double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        int kernelCount = 0;
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int lcenter = lambdaBin + iL;
             double deltaL = lambda - (lcenter * dL);
@@ -443,7 +875,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 }
                 double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                 double deltaFL2 = deltaFL * deltaFL;
-                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double rc = recursionKernel[lcount][FLcenter];
+                if (rc > 0.0) {
+                    kernelCount++;
+                } else {
+                    continue;
+                }
+                double weight = mirrorFactor * rc;
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
@@ -451,6 +889,18 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;
             }
+        }
+
+        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
+        if (hardWallConstraint && kernelCount > 0) {
+            if (hardWallConstraint && propagateLambda) {
+                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
+            }
+            int maxCount = (2 * biasCutoff + 1);
+            maxCount *= maxCount;
+            double upweightFactor = (double) maxCount / (double) kernelCount;
+            dGdLambda *= upweightFactor;
+            dGdFLambda *= upweightFactor;
         }
 
         // Lambda gradient due to recursion kernel G(L, F_L).
@@ -466,10 +916,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (print) {
             logger.info(format(" Bias Energy        %16.8f", biasEnergy));
             logger.info(format(" %s %16.8f  (Kcal/mole)", "OSRW Potential    ", forceFieldEnergy + biasEnergy));
-        }
-
-        if (mcRestart) {
-            energyCount++;
         }
 
         if (propagateLambda) {
@@ -500,15 +946,22 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return totalEnergy;
     }
 
-    public double computeBiasEnergy(double currentLambda, double currentdUdL) {
+    /**
+     * Compute the Bias energy at (currentLambda, currentdUdL).
+     *
+     * @param currentLambda The value of lambda.
+     * @param currentdUdL   The value of dU/dL.
+     * @return The bias energy.
+     */
+    double computeBiasEnergy(double currentLambda, double currentdUdL) {
 
         int lambdaBin = binForLambda(currentLambda);
         int FLambdaBin = binForFLambda(currentdUdL);
 
-        double gLdEdL = 0.0;
-
+        double bias2D = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
         double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        int kernelCount = 0;
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int lcenter = lambdaBin + iL;
             double deltaL = currentLambda - (lcenter * dL);
@@ -537,7 +990,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 double currentFL = minFLambda + FLcenter * dFL + dFL_2;
                 double deltaFL = currentdUdL - currentFL;
                 double deltaFL2 = deltaFL * deltaFL;
-                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double rc = recursionKernel[lcount][FLcenter];
+                if (rc > 0.0) {
+                    kernelCount++;
+                } else {
+                    continue;
+                }
+                double weight = mirrorFactor * rc;
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
@@ -545,8 +1004,16 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 // logger.info(format("(L=%6.4f FL=%8.2f) L=%6.4f Bin=%3d; FL=%8.3f Bin=%6d; Bias: %8.6f",
                 //        currentLambda, currentdUdL, lcenter * dL, lcount, currentFL, FLcenter, bias));
 
-                gLdEdL += bias;
+                bias2D += bias;
             }
+        }
+
+        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
+        if (hardWallConstraint && kernelCount > 0) {
+            int maxCount = (2 * biasCutoff + 1);
+            maxCount *= maxCount;
+            double upweightFactor = (double) maxCount / (double) kernelCount;
+            bias2D *= upweightFactor;
         }
 
         // Compute the energy for the recursion slave at F(L) using interpolation.
@@ -555,9 +1022,16 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             bias1D = current1DBiasEnergy(currentLambda, false);
         }
 
-        return bias1D + gLdEdL;
+        return bias1D + bias2D;
     }
 
+    /**
+     * Run a local optimization beginning at the given coordinates.
+     *
+     * @param e        Current energy before optimization.
+     * @param x        Current coordinates.
+     * @param gradient Work array to store the gradient.
+     */
     private void optimization(double e, double[] x, double[] gradient) {
         if (energyCount % osrwOptimizationFrequency == 0) {
             logger.info(format(" OSRW Minimization (Step %d)", energyCount));
@@ -716,6 +1190,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return val;
     }
 
+    /**
+     * Update a local array of current lambda values for each walker.
+     *
+     * @param rank   Walker rank.
+     * @param lambda Walker's current lambda value.
+     */
     void setCurrentLambdaforRank(int rank, double lambda) {
         currentLambdaValues[rank] = lambda;
     }
@@ -798,12 +1278,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
      * Evaluate the bias at [cLambda, cF_lambda]
      */
-    @Override
-    protected double evaluateKernel(int cLambda, int cF_Lambda) {
+    private double evaluateKernel(int cLambda, int cF_Lambda) {
         // Compute the value of L and FL for the center of the current bin.
         double vL = cLambda * dL;
         double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
@@ -817,6 +1294,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         double invFLs2 = 0.5 / FLs2;
 
         double sum = 0.0;
+        int kernelCount = 0;
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int Lcenter = cLambda + iL;
             double deltaL = vL - Lcenter * dL;
@@ -849,13 +1327,29 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 }
                 double deltaFL = vFL - (minFLambda + FLcenter * dFL + dFL_2);
                 double deltaFL2 = deltaFL * deltaFL;
-                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double rc = recursionKernel[lcount][FLcenter];
+                if (rc > 0.0) {
+                    kernelCount++;
+                } else {
+                    continue;
+                }
+                double weight = mirrorFactor * rc;
                 if (weight > 0) {
-                    double e = weight * biasMag * L2exp
-                            * exp(-deltaFL2 * invFLs2);
+                    double e = weight * biasMag * L2exp * exp(-deltaFL2 * invFLs2);
                     sum += e;
                 }
             }
+        }
+
+        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
+        if (hardWallConstraint && kernelCount > 0) {
+            if (hardWallConstraint && propagateLambda) {
+                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
+            }
+            int maxCount = (2 * biasCutoff + 1);
+            maxCount *= maxCount;
+            double upweightFactor = (double) maxCount / (double) kernelCount;
+            sum *= upweightFactor;
         }
 
         return sum;
@@ -868,8 +1362,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * @param dUdL   the dU/dL value.
      * @return The value of the Histogram.
      */
-    @Override
-    protected double evaluateHistogram(double lambda, double dUdL) {
+    double evaluateHistogram(double lambda, double dUdL) {
         int lambdaBin = binForLambda(lambda);
         int dUdLBin = binForFLambda(dUdL);
         try {
@@ -881,12 +1374,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
      * If necessary, allocate more space.
      */
-    @Override
-    protected void checkRecursionKernelSize(double dEdLambda) {
+    void checkRecursionKernelSize(double dEdLambda) {
         if (dEdLambda > maxFLambda) {
             logger.info(format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
@@ -945,11 +1435,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
      * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
      */
-    @Override
     public double updateFLambda(boolean print, boolean save) {
         double freeEnergy = 0.0;
         double minFL = Double.MAX_VALUE;
@@ -1105,11 +1592,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dUdLambda);
 
+        // First derivative of the 2D bias with respect to Lambda.
+        double dGdLambda = 0.0;
+        // First derivative of the 2D bias with respect to  dU/dL.
+        double dGdFLambda = 0.0;
         // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
-        dGdLambda = 0.0;
-        dGdFLambda = 0.0;
         double ls2 = (2.0 * dL) * (2.0 * dL);
         double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        int kernelCount = 0;
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int lcenter = lambdaBin + iL;
             double deltaL = lambda - (lcenter * dL);
@@ -1137,7 +1627,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 }
                 double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                 double deltaFL2 = deltaFL * deltaFL;
-                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double rc = recursionKernel[lcount][FLcenter];
+                if (rc > 0.0) {
+                    kernelCount++;
+                } else {
+                    continue;
+                }
+                double weight = mirrorFactor * rc;
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
@@ -1145,6 +1641,18 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;
             }
+        }
+
+        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
+        if (hardWallConstraint && kernelCount > 0) {
+            if (hardWallConstraint && propagateLambda) {
+                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
+            }
+            int maxCount = (2 * biasCutoff + 1);
+            maxCount *= maxCount;
+            double upweightFactor = (double) maxCount / (double) kernelCount;
+            dGdLambda *= upweightFactor;
+            dGdFLambda *= upweightFactor;
         }
 
         // Lambda gradient due to recursion kernel G(L, F_L).
@@ -1168,10 +1676,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.info(format(" %s %16.8f", "Bias Energy       ", biasEnergy));
             logger.info(format(" %s %16.8f  %s",
                     "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
-        }
-
-        if (mcRestart) {
-            energyCount++;
         }
 
         if (propagateLambda) {
@@ -1203,11 +1707,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * {@inheritDoc}
+     * Add a Gaussian hill to the Histogram at (lambda, dEdU).
      */
-    @Override
-    public void addBias(double dEdU, double[] x, double[] gradient) {
-
+    void addBias(double dEdU, double[] x, double[] gradient) {
         if (asynchronous) {
             asynchronousSend(lambda, dEdU);
         } else {
@@ -1219,7 +1721,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         // Update F(L)
         fLambdaUpdates++;
         boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-        totalFreeEnergy = updateFLambda(printFLambda, false);
+        updateFLambda(printFLambda, false);
 
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
             if (gradient == null) {
@@ -1228,18 +1730,16 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             optimization(forceFieldEnergy, x, gradient);
         }
 
-        if (mcRestart) {
-            return;
-        }
-
         // Write out restart files.
         if (energyCount > 0 && energyCount % saveFrequency == 0) {
             writeRestart();
         }
     }
 
-    @Override
-    public void writeRestart() {
+    /**
+     * Write histogram and lambda restart files.
+     */
+    void writeRestart() {
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
         }
@@ -1277,6 +1777,532 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             logger.log(Level.INFO, Utilities.stackTraceToString(ex));
             logger.log(Level.SEVERE, message, ex);
         }
+    }
+
+    /**
+     * Set a threshold to control writing of coordinate snapshots.
+     *
+     * @param lambdaWriteOut
+     */
+    void setLambdaWriteOut(double lambdaWriteOut) {
+        this.lambdaWriteOut = lambdaWriteOut;
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Set lambda write out threshold to %6.3f lambda", lambdaWriteOut));
+        }
+    }
+
+    /**
+     * <p>checkRecursionKernelSize.</p>
+     */
+    public void checkRecursionKernelSize() {
+        double[] x = new double[nVariables];
+        x = potential.getCoordinates(x);
+        double[] g = new double[nVariables];
+        potential.energyAndGradient(x, g, false);
+        double dudl = lambdaInterface.getdEdL();
+        checkRecursionKernelSize(dudl);
+    }
+
+    /**
+     * Indicate if the Lambda extended system particle should be propagated using Langevin dynamics.
+     *
+     * @param propagateLambda If true, Lambda will be propagated using Langevin dynamics.
+     */
+    public void setPropagateLambda(boolean propagateLambda) {
+        this.propagateLambda = propagateLambda;
+    }
+
+    /**
+     * Propagate Lambda using Langevin dynamics.
+     */
+    private void langevin() {
+        // Compute the random force pre-factor (kcal/mol * psec^-2).
+        double rt2 = 2.0 * Constants.R * temperature * thetaFriction / dt;
+
+        // Compute the random force.
+        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
+
+        // Compute dEdL (kcal/mol).
+        double dEdL = -dUdLambda * sin(2.0 * theta);
+
+        // Update halfThetaVelocity (ps-1).
+        halfThetaVelocity =
+                (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
+                        + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
+                        / (2.0 * thetaMass + thetaFriction * dt);
+
+        // Update theta.
+        theta = theta + dt * halfThetaVelocity;
+
+        // Maintain theta in the interval PI to -PI.
+        if (theta > PI) {
+            theta -= 2.0 * PI;
+        } else if (theta <= -PI) {
+            theta += 2.0 * PI;
+        }
+
+        // Compute the sin(theta).
+        double sinTheta = sin(theta);
+
+        // Compute lambda as sin(theta)^2.
+        lambda = sinTheta * sinTheta;
+        lambdaInterface.setLambda(lambda);
+    }
+
+    /**
+     * <p>binForLambda.</p>
+     *
+     * @param lambda a double.
+     * @return a int.
+     */
+    int binForLambda(double lambda) {
+        int lambdaBin = (int) floor((lambda - minLambda) / dL);
+        if (lambdaBin < 0) {
+            lambdaBin = 0;
+        }
+        if (lambdaBin >= lambdaBins) {
+            lambdaBin = lambdaBins - 1;
+        }
+        return lambdaBin;
+    }
+
+    /**
+     * <p>binForFLambda.</p>
+     *
+     * @param dEdLambda a double.
+     * @return a int.
+     */
+    int binForFLambda(double dEdLambda) {
+        int FLambdaBin = (int) floor((dEdLambda - minFLambda) / dFL);
+        if (FLambdaBin == FLambdaBins) {
+            FLambdaBin = FLambdaBins - 1;
+        }
+        assert (FLambdaBin < FLambdaBins);
+        assert (FLambdaBin >= 0);
+        return FLambdaBin;
+    }
+
+    /**
+     * <p>getForceFielddEdL.</p>
+     *
+     * @return a double.
+     */
+    double getForceFielddEdL() {
+        return dForceFieldEnergydL;
+    }
+
+    /**
+     * <p>getTotaldEdLambda.</p>
+     *
+     * @return a double.
+     */
+    public double getTotaldEdLambda() {
+        return dUdLambda;
+    }
+
+    /**
+     * <p>Getter for the field <code>forceFieldEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getForceFieldEnergy() {
+        return forceFieldEnergy;
+    }
+
+    /**
+     * <p>Getter for the field <code>biasEnergy</code>.</p>
+     *
+     * @return a double.
+     */
+    double getBiasEnergy() {
+        return biasEnergy;
+    }
+
+    /**
+     * <p>getPotentialEnergy.</p>
+     *
+     * @return a {@link ffx.numerics.Potential} object.
+     */
+    public Potential getPotentialEnergy() {
+        return potential;
+    }
+
+    /**
+     * This calculates the 1D OSRW bias and its derivative with respect to Lambda.
+     * <p>
+     * See Equation 8 in http://doi.org/10.1021/ct300035u.
+     *
+     * @return a double.
+     */
+    private double current1DBiasEnergy(double currentLambda, boolean gradient) {
+        if (!include1DBias) {
+            return 0.0;
+        }
+        double biasEnergy = 0.0;
+        for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
+            int iL1 = iL0 + 1;
+
+            // Find bin centers and values for interpolation / extrapolation points.
+            double L0 = iL0 * dL;
+            double L1 = L0 + dL;
+            double FL0 = FLambda[iL0];
+            double FL1 = FLambda[iL1];
+            double deltaFL = FL1 - FL0;
+            /*
+              If the lambda is less than or equal to the upper limit, this is
+              the final interval. Set the upper limit to L, compute the partial
+              derivative and break.
+             */
+            boolean done = false;
+            if (currentLambda <= L1) {
+                done = true;
+                L1 = currentLambda;
+            }
+
+            // Upper limit - lower limit of the integral of the extrapolation / interpolation.
+            biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / dL);
+            biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / dL);
+            if (done) {
+                // Compute the gradient d F(L) / dL at L.
+                if (gradient) {
+                    dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
+                }
+                break;
+            }
+        }
+        return -biasEnergy;
+    }
+
+    /**
+     * <p>evaluate2DPMF.</p>
+     *
+     * @return A StringBuffer with 2D Bias PMF.
+     */
+    public StringBuffer evaluate2DPMF() {
+        StringBuffer sb = new StringBuffer();
+        for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+            double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+            sb.append(format(" %16.8f", currentFL));
+            for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                double bias = -evaluateKernel(lambdaBin, fLambdaBin);
+                sb.append(format(" %16.8f", bias));
+            }
+            sb.append("\n");
+        }
+        return sb;
+    }
+
+    /**
+     * <p>evaluateTotalPMF.</p>
+     *
+     * @return A StringBuffer the total 2D PMF.
+     */
+    public StringBuffer evaluateTotalPMF() {
+        StringBuffer sb = new StringBuffer();
+        for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+
+            double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+            sb.append(format(" %16.8f", currentFL));
+
+            for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                lambda = lambdaBin * dL + dL_2;
+                double bias1D = -current1DBiasEnergy(lambda, false);
+                double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
+                sb.append(format(" %16.8f", totalBias));
+            }
+            sb.append("\n");
+        }
+        return sb;
+    }
+
+    /**
+     * <p>Setter for the field <code>lambda</code>.</p>
+     *
+     * @param lambda a double.
+     */
+    public void setLambda(double lambda) {
+        lambdaInterface.setLambda(lambda);
+        this.lambda = lambda;
+        theta = asin(sqrt(lambda));
+    }
+
+    /**
+     * <p>Getter for the field <code>lambda</code>.</p>
+     *
+     * @return a double.
+     */
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     * <p>Getter for the field <code>lambdaInterface</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.LambdaInterface} object.
+     */
+    public LambdaInterface getLambdaInterface() {
+        return lambdaInterface;
+    }
+
+    /**
+     * <p>Setter for the field <code>thetaMass</code>.</p>
+     *
+     * @param thetaMass a double.
+     */
+    public void setThetaMass(double thetaMass) {
+        this.thetaMass = thetaMass;
+    }
+
+    /**
+     * <p>setThetaFrication.</p>
+     *
+     * @param thetaFriction a double.
+     */
+    public void setThetaFrication(double thetaFriction) {
+        this.thetaFriction = thetaFriction;
+    }
+
+    /**
+     * Set the OSRW count interval. Every 'countInterval' steps the
+     * recursionKernel will be incremented based on the current value of the
+     * lambda state variable and the derivative of the energy with respect to
+     * lambda (dU/dL).
+     *
+     * @param countInterval Molecular dynamics steps between counts.
+     */
+    public void setCountInterval(int countInterval) {
+        if (countInterval > 0) {
+            this.countInterval = countInterval;
+        } else {
+            logger.info(" OSRW count interval must be greater than 0.");
+        }
+    }
+
+    /**
+     * <p>getOSRWOptimumEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getOSRWOptimumEnergy() {
+        if (osrwOptimum == Double.MAX_VALUE) {
+            logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
+        }
+        return osrwOptimum;
+    }
+
+    /**
+     * <p>getOSRWOptimumCoordinates.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
+    public double[] getOSRWOptimumCoordinates() {
+        if (osrwOptimum < Double.MAX_VALUE) {
+            return osrwOptimumCoords;
+        } else {
+            logger.info("Lambda optimization cutoff was not reached. Try increasing the number of timesteps.");
+            return null;
+        }
+    }
+
+    public void setMolecularAssembly(MolecularAssembly molecularAssembly) {
+        this.molecularAssembly = molecularAssembly;
+    }
+
+    /**
+     * <p>setOptimization.</p>
+     *
+     * @param osrwOptimization  a boolean.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     */
+    public void setOptimization(boolean osrwOptimization, MolecularAssembly molecularAssembly) {
+        this.osrwOptimization = osrwOptimization;
+        this.molecularAssembly = molecularAssembly;
+        File file = this.molecularAssembly.getFile();
+
+        String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
+        String ext = FilenameUtils.getExtension(file.getAbsolutePath());
+
+        if (osrwOptimizationFilter == null) {
+            if (ext.toUpperCase().contains("XYZ")) {
+                osrwOptimizationFile = new File(fileName + "_opt.xyz");
+                osrwOptimizationFilter = new XYZFilter(osrwOptimizationFile, this.molecularAssembly, null, null);
+            } else {
+                osrwOptimizationFile = new File(fileName + "_opt.pdb");
+                osrwOptimizationFilter = new PDBFilter(osrwOptimizationFile, this.molecularAssembly, null, null);
+            }
+        }
+    }
+
+    /**
+     * Returns the number of energy evaluations performed by this ttOSRW,
+     * including those picked up in the lambda file.
+     *
+     * @return Number of energy steps taken by this walker.
+     */
+    public int getEnergyCount() {
+        return energyCount;
+    }
+
+    /**
+     * If this flag is true, (lambda, dU/dL) Monte Carlo samples that have no weight in the Histogram are rejected.
+     */
+    public void setHardWallConstraint(boolean hardWallConstraint) {
+        this.hardWallConstraint = hardWallConstraint;
+    }
+
+    /**
+     * If the dUdLHardWall flag is set to true, this method will
+     * return false if the (lambda, dU/dL) sample is has not been seen.
+     *
+     * @param lambda The proposed lambda value.
+     * @param dUdL   The proposed dU/dL value.
+     * @return Returns false only if the dUdLHardWall flag is true, and the (lambda, dU/dL) sample has not been seen.
+     */
+    public boolean insideHardWallConstraint(double lambda, double dUdL) {
+        if (hardWallConstraint) {
+            double weight = evaluateHistogram(lambda, dUdL);
+            return weight > 0.0;
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setScaling(double[] scaling) {
+        potential.setScaling(scaling);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getScaling() {
+        return potential.getScaling();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] doubles) {
+        return potential.getCoordinates(doubles);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getMass() {
+        return potential.getMass();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a reference to each variables type.
+     */
+    @Override
+    public Potential.VARIABLE_TYPE[] getVariableTypes() {
+        return potential.getVariableTypes();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getTotalEnergy() {
+        return totalEnergy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getNumberOfVariables() {
+        return potential.getNumberOfVariables();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnergyTermState(Potential.STATE state) {
+        this.state = state;
+        potential.setEnergyTermState(state);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Potential.STATE getEnergyTermState() {
+        return state;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setVelocity(double[] velocity) {
+        potential.setVelocity(velocity);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setAcceleration(double[] acceleration) {
+        potential.setAcceleration(acceleration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+        potential.setPreviousAcceleration(previousAcceleration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        return potential.getVelocity(velocity);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        return potential.getAcceleration(acceleration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return potential.getPreviousAcceleration(previousAcceleration);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCrystal(Crystal crystal) {
+        potential.setCrystal(crystal);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Crystal getCrystal() {
+        return potential.getCrystal();
     }
 
     /**
@@ -1333,14 +2359,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     @Override
     public boolean dEdLZeroAtEnds() {
         return false;
-    }
-
-    @Override
-    public void setLambdaWriteOut(double lambdaWriteOut) {
-        this.lambdaWriteOut = lambdaWriteOut;
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(format(" Set lambda write out threshold to %6.3f lambda", lambdaWriteOut));
-        }
     }
 
 }

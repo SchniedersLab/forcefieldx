@@ -53,15 +53,17 @@ import ffx.algorithms.cli.MultiDynamicsOptions
 import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
-import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.*;
-import ffx.potential.cli.WriteoutOptions
-import ffx.algorithms.thermodynamics.AbstractOSRW
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
+import ffx.potential.cli.WriteoutOptions
+import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED
+import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.OST
+
 import picocli.CommandLine
 
 /**
@@ -122,10 +124,8 @@ class Thermodynamics extends AlgorithmsScript {
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
-
     CrystalPotential potential
-    AbstractOSRW osrw = null;
-
+    TransitionTemperedOSRW osrw = null;
     private Configuration additionalProperties
 
     /**
@@ -255,9 +255,10 @@ class Thermodynamics extends AlgorithmsScript {
         multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
 
         switch (thermodynamics.getAlgorithm()) {
-            // Labels are necessary so Groovy doesn't complain about anonymous code blocks (which could be closures).
+        // Labels are necessary so Groovy doesn't complain about anonymous code blocks (which could be closures).
             case OST:
-                ost: {
+                ost:
+                {
                     osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0],
                             additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
                     if (!lamExists) {
@@ -276,7 +277,8 @@ class Thermodynamics extends AlgorithmsScript {
                 }
                 break;
             case FIXED:
-                fixed: {
+                fixed:
+                {
                     osrw = null;
                     potential = barostat.checkNPT(topologies[0], potential);
                     thermodynamics.runFixedAlchemy(topologies, potential, dynamics, writeout, dyn, algorithmListener);
@@ -286,7 +288,7 @@ class Thermodynamics extends AlgorithmsScript {
         return this
     }
 
-    AbstractOSRW getOSRW() {
+    TransitionTemperedOSRW getOSRW() {
         return osrw
     }
 
@@ -295,7 +297,7 @@ class Thermodynamics extends AlgorithmsScript {
     }
 
     @Override
-    public List<Potential> getPotentials() {
+    List<Potential> getPotentials() {
         if (osrw == null) {
             return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
         } else {
@@ -304,7 +306,7 @@ class Thermodynamics extends AlgorithmsScript {
     }
 
     @Override
-    public boolean destroyPotentials() {
-        return getPotentials().stream().allMatch({ it.destroy(); });
+    boolean destroyPotentials() {
+        return getPotentials().stream().allMatch({ it.destroy() })
     }
 }
