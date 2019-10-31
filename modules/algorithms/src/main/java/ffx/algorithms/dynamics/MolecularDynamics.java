@@ -420,7 +420,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         dynSleepTime = properties.getInt("dynamics-sleep-nanos", DEFAULT_DYNAMICS_SLEEP_TIME);
-        logger.info(" Dyn sleep time: " + dynSleepTime);
 
         assemblies.get(0).compositeConfiguration = properties;
         mass = potentialEnergy.getMass();
