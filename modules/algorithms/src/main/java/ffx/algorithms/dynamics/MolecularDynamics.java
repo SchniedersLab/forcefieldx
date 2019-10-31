@@ -278,7 +278,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Circular FIFO queues will simply discard old elements.
      */
-    private CircularFifoQueue<DynamicsState> lastSnapshots;
+    private CircularFifoQueue<CoordinateSnapshot> lastSnapshots;
     /**
      * MC notification flag.
      */
@@ -1282,7 +1282,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         double deltaPE = currentPotentialEnergy - priorPE;
 
-        DynamicsState currState = new DynamicsState();
+        CoordinateSnapshot currState = new CoordinateSnapshot();
         currState.storeState();
         lastSnapshots.add(currState);
 
@@ -1316,7 +1316,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 timeString);
 
         for (int is = 0; is < numSnaps; is++) {
-            DynamicsState oldState = lastSnapshots.poll();
+            CoordinateSnapshot oldState = lastSnapshots.poll();
             if (oldState != null) {
                 oldState.revertState();
             }
@@ -1455,6 +1455,33 @@ public class MolecularDynamics implements Runnable, Terminatable {
             throw new Exception();
         }
         dynamicsState.revertState();
+    }
+
+    /**
+     * More limited version of a DynamicsState, storing only coordinates.
+     * TODO: Make DynamicsState more flexible and let it store any combination of variables.
+     */
+    protected class CoordinateSnapshot {
+        final double[] xBak;
+
+        CoordinateSnapshot() {
+            xBak = new double[numberOfVariables];
+        }
+
+        void storeState() {
+            arraycopy(x, 0, xBak, 0, numberOfVariables);
+        }
+
+        void revertState() {
+            arraycopy(xBak, 0, x, 0, numberOfVariables);
+            Atom[] atoms = molecularAssembly.getActiveAtomArray();
+            for (int i = 0; i < atoms.length; i++) {
+                int i3 = 3*i;
+                double[] newXYZ = new double[3];
+                arraycopy(xBak, i3, newXYZ, 0, 3);
+                atoms[i].setXYZ(newXYZ);
+            }
+        }
     }
 
     protected class DynamicsState {

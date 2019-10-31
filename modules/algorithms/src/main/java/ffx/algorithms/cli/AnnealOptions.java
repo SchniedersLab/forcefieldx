@@ -104,6 +104,11 @@ public class AnnealOptions {
             description = "High temperature limit (Kelvin).")
     double upper = 1000.0;
 
+    /**
+     * --rv or --reinitVelocities forces simulated annealing to re-initialize velocities
+     * to the new temperature at each annealing step, rather than letting the thermostat
+     * shift temperature downwards.
+     */
     @Option(names = {"--rv", "--reinitVelocities"}, paramLabel = "false",
             description = "Re-initialize velocities before each round of annealing.")
     boolean reinitV = false;
@@ -161,9 +166,18 @@ public class AnnealOptions {
             ++perWindowSteps;
         }
 
-        logger.info(String.format(" Each of %d simulated annealing windows will have %d " +
-                "steps each for a total annealing duration of %d timesteps",
-                schedule.getNumWindows(), perWindowSteps, perWindowSteps * schedule.getNumWindows()));
+        int minWindowSteps = (int) (perWindowSteps * schedule.minWindowLength());
+        int maxWindowSteps = (int) (perWindowSteps * schedule.maxWindowLength());
+        int nWindows = schedule.getNumWindows();
+
+        if (minWindowSteps == maxWindowSteps && minWindowSteps == perWindowSteps) {
+            logger.info(String.format(" Each of %d simulated annealing windows will have %d steps each, for a " +
+                    "total duration of %d timesteps", nWindows, perWindowSteps, perWindowSteps * nWindows));
+        } else {
+            logger.info(String.format(" Each of %d simulated annealing windows will have %d-%d steps each, " +
+                    "with a \"normal\" length of %d steps, for a total duration of %d timesteps", nWindows,
+                    minWindowSteps, maxWindowSteps, perWindowSteps, (int) (perWindowSteps * schedule.totalWindowLength())));
+        }
 
         return new SimulatedAnnealing(mola, potential, props, alist, dynOpts.thermostat,
                 dynOpts.integrator, schedule, perWindowSteps, dynOpts.dt, reinitV, dynFile);
