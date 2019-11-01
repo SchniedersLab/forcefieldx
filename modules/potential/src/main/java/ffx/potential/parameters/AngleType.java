@@ -124,7 +124,6 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     public AngleFunction angleFunction;
 
-
     /**
      * The default AngleType constructor defines use of the Sextic AngleFunction.
      *

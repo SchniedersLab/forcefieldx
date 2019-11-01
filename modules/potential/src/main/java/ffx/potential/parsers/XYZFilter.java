@@ -102,8 +102,7 @@ public class XYZFilter extends SystemFilter {
      * @param file       a {@link java.io.File} object.
      * @param system     a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public XYZFilter(File file, MolecularAssembly system,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -211,18 +210,21 @@ public class XYZFilter extends SystemFilter {
             if (br.ready()) {
                 // Read past blank lines between archive files
                 data = br.readLine().trim();
-                while (data.equals("")) {
+                while (data.equals("") && br.ready()) {
                     data = br.readLine().trim();
                 }
-                tokens = data.split(" +", 2);
-                if (tokens.length > 0) {
-                    try {
-                        int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
-                        if (archiveNumberOfAtoms == numberOfAtoms) {
-                            setType(FileType.ARC);
+                // Note that data could be null here if
+                if (data != null) {
+                    tokens = data.split(" +", 2);
+                    if (tokens.length > 0) {
+                        try {
+                            int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
+                            if (archiveNumberOfAtoms == numberOfAtoms) {
+                                setType(FileType.ARC);
+                            }
+                        } catch (NumberFormatException e) {
+                            //
                         }
-                    } catch (NumberFormatException e) {
-                        //
                     }
                 }
             }
