@@ -51,7 +51,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
@@ -395,7 +394,7 @@ public class XYZFilter extends SystemFilter {
             }
 
             if (print) {
-                logger.info(format(" Attempting to read snapshot %d.", snapShot));
+                logger.info(format("\n Attempting to read snapshot %d.", snapShot));
             }
             try {
                 int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
@@ -764,7 +763,6 @@ public class XYZFilter extends SystemFilter {
             if (crystal != null) {
                 crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
             }
-
         }
         return true;
     }

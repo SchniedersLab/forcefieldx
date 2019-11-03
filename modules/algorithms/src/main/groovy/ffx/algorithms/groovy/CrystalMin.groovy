@@ -138,41 +138,7 @@ class CrystalMin extends AlgorithmsScript {
             }
         }
 
-        CrystalMinimize crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
-        crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
-        double energy = crystalMinimize.getEnergy()
-
-        double tolerance = 1.0e-10
-
-        // Complete rounds of coordinate and lattice optimization.
-        if (coords) {
-            Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-            while (true) {
-                // Complete a round of coordinate optimization.
-                minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
-                double newEnergy = minimize.getEnergy()
-                double status = minimize.getStatus()
-                if (status != 0) {
-                    break
-                }
-                if (abs(newEnergy - energy) <= tolerance) {
-                    break
-                }
-                energy = newEnergy
-
-                // Complete a round of lattice optimization.
-                crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
-                newEnergy = crystalMinimize.getEnergy()
-                status = crystalMinimize.getStatus()
-                if (status != 0) {
-                    break
-                }
-                if (abs(newEnergy - energy) <= tolerance) {
-                    break
-                }
-                energy = newEnergy
-            }
-        }
+        runMinimize()
 
         if (tensor) {
             crystalMinimize.printTensor()
@@ -214,10 +180,10 @@ class CrystalMin extends AlgorithmsScript {
             while (systemFilter.readNext()) {
                 if (systemFilter instanceof PDBFilter) {
                     saveFile.append("ENDMDL\n")
-                    crystalMinimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                    runMinimize()
                     writeFilter.writeFile(saveFile, true, false, false)
                 } else if(systemFilter instanceof XYZFilter){
-                    crystalMinimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+                    runMinimize()
                     writeFilter.writeFile(saveFile, true)
                 }
             }
@@ -227,6 +193,45 @@ class CrystalMin extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    void runMinimize() {
+        CrystalMinimize crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
+        crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+        double energy = crystalMinimize.getEnergy()
+
+        double tolerance = 1.0e-10
+
+        // Complete rounds of coordinate and lattice optimization.
+        if (coords) {
+            ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+            Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+            while (true) {
+                // Complete a round of coordinate optimization.
+                minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+                double newEnergy = minimize.getEnergy()
+                int status = minimize.getStatus()
+                if (status != 0) {
+                    break
+                }
+                if (abs(newEnergy - energy) <= tolerance) {
+                    break
+                }
+                energy = newEnergy
+
+                // Complete a round of lattice optimization.
+                crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+                newEnergy = crystalMinimize.getEnergy()
+                status = crystalMinimize.getStatus()
+                if (status != 0) {
+                    break
+                }
+                if (abs(newEnergy - energy) <= tolerance) {
+                    break
+                }
+                energy = newEnergy
+            }
+        }
     }
 
     @Override

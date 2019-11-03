@@ -45,7 +45,9 @@ import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.algorithms.optimize.Minimize
+import ffx.crystal.Crystal
 import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
@@ -236,6 +238,9 @@ class Minimizer extends AlgorithmsScript {
 
             if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
                 while (systemFilter.readNext()) {
+                    Crystal crystal = activeAssembly.getCrystal()
+                    ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+                    forceFieldEnergy.setCrystal(crystal)
                     if (systemFilter instanceof PDBFilter) {
                         saveFile.append("ENDMDL\n")
                         minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())

@@ -323,13 +323,13 @@ public class Minimize implements OptimizationListener, Terminatable {
 
         switch (status) {
             case 0:
-                logger.info(format("\n Optimization achieved convergence criteria: %8.5f\n", rmsGradient));
+                logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
                 break;
             case 1:
-                logger.info(format("\n Optimization terminated at step %d.\n", nSteps));
+                logger.info(format("\n Optimization terminated at step %d.", nSteps));
                 break;
             default:
-                logger.warning("\n Optimization failed.\n");
+                logger.warning("\n Optimization failed.");
         }
 
         potential.setScaling(null);
@@ -399,7 +399,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         this.energy = energy;
 
         if (iteration == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
         }
         if (lineSearchResult == null) {

@@ -44,6 +44,7 @@ import com.google.common.collect.MinMaxPriorityQueue
 
 import org.apache.commons.io.FilenameUtils
 
+import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
@@ -224,6 +225,8 @@ class Energy extends PotentialScript {
 
             while (systemFilter.readNext()) {
                 index++
+                Crystal crystal = activeAssembly.getCrystal()
+                forceFieldEnergy.setCrystal(crystal)
                 forceFieldEnergy.getCoordinates(x)
                 if (verbose) {
                     logger.info(format(" Snapshot %4d", index));
