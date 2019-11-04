@@ -420,7 +420,7 @@ public class LBFGS {
     private static void log(int iter, int nfun, double grms, double xrms,
                             double f, double df, double angle, LineSearchResult info) {
         if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
             logger.info(" QN Iter    F Value      G RMS     F Move    X Move    Angle  FG Call  Comment\n");
         }
         if (info == null) {

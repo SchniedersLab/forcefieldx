@@ -69,47 +69,61 @@ public class OSRWOptions {
     private static final Logger logger = Logger.getLogger(OSRWOptions.class.getName());
 
     /**
-     * -c or --count sets the number of time steps between OSRW counts.
+     * -c or --count Sets the number of time steps between OSRW counts.
      */
-    @CommandLine.Option(names = {"-C", "--count"}, paramLabel = "10", description = "Time steps between MD-OSRW counts.")
+    @CommandLine.Option(names = {"-C", "--count"}, paramLabel = "10",
+            description = "Time steps between MD Orthogonal Space counts.")
     private int countFreq = 10;
 
     /**
      * --bM or --biasMag sets the initial Gaussian bias magnitude in kcal/mol.
      */
-    @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05", description = "OSRW Gaussian bias magnitude (kcal/mol).")
+    @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05",
+            description = "Orthogonal Space Gaussian bias magnitude (kcal/mol).")
     private double biasMag = 0.05;
 
     /**
      * --tp or --temperingParam sets the Dama et al tempering rate parameter, in
      * multiples of kBT.
      */
-    @CommandLine.Option(names = {"--tp", "--temperingParam"}, paramLabel = "8.0", description = "Dama et al tempering rate parameter in multiples of kBT")
-    private double temperParam = 8.0;
+    @CommandLine.Option(names = {"--tp", "--temperingParam"}, paramLabel = "4.0",
+            description = "Tempering rate parameter in multiples of kBT")
+    private double temperParam = 4.0;
 
     /**
-     * --mc or --monteCarlo sets the Monte Carlo scheme for OSRW.
+     * --mc or --monteCarlo sets the Monte Carlo scheme for Orthogonal Space Tempering.
      */
-    @CommandLine.Option(names = {"--mc", "monteCarlo"}, description = "Monte Carlo OSRW")
+    @CommandLine.Option(names = {"--mc", "--monteCarlo"},
+            description = "Specify use of Monte Carlo OST")
     private boolean mc = false;
 
     /**
-     * --mcmD or --mcTraj sets the number of steps to take for each MD
-     * trajectory for MCOSRW.
+     * --mcHW or --monteCarloHardWall sets the Monte Carlo scheme to use a hard wall that rejects any sample
+     * (Lambda, dU/dL) located in an empty histogram bin.
      */
-    @CommandLine.Option(names = {"--mcMD", "--mcTraj"}, paramLabel = "100", description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OSRW")
+    @CommandLine.Option(names = {"--mcHW", "--monteCarloHardWall"},
+            description = "Monte Carlo OST hard wall constraint.")
+    private boolean mcHW = false;
+
+    /**
+     * --mcmD or --mcTraj Sets the number of steps to take for each MD trajectory for MCOSRW.
+     */
+    @CommandLine.Option(names = {"--mcMD", "--mcTraj"}, paramLabel = "100",
+            description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OSRW")
     private int mcMD = 100;
 
     /**
-     * --mcL or --mcLambdaStd sets the standard deviation for lambda.
+     * --mcL or --mcLambdaStd Sets the standard deviation for lambda moves.
      */
-    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.01", description = "Standard deviation for lambda move.")
+    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.01",
+            description = "Standard deviation for lambda move.")
     private double mcL = 0.01;
 
     /**
-     * --ts or --twoStep Sample MC-OSRW using separate lambda and MD moves.
+     * --ts or --twoStep MC Orthogonal Space sampling using separate lambda and MD moves.
      */
-    @CommandLine.Option(names = {"--ts", "--twoStep"}, description = "Sample MC-OSRW using separate lambda and MD moves.")
+    @CommandLine.Option(names = {"--ts", "--twoStep"},
+            description = "MC Orthogonal Space sampling using separate lambda and MD moves.")
     private boolean ts = false;
 
     /**
@@ -160,7 +174,8 @@ public class OSRWOptions {
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                 MolecularAssembly firstAssembly, DynamicsOptions dynamics,
                                                 MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
-        return constructOSRW(potential, lambdaRestart, histogramRestart, firstAssembly, null, dynamics, mdo, thermo, aListener);
+        return constructOSRW(potential, lambdaRestart, histogramRestart,
+                firstAssembly, null, dynamics, mdo, thermo, aListener);
     }
 
     /**
@@ -197,6 +212,7 @@ public class OSRWOptions {
         TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
         ttOSRW.checkRecursionKernelSize();
+        ttOSRW.setHardWallConstraint(mcHW);
 
         // Do NOT run applyOSRWOptions here, because that can mutate the TT-OSRW to a Barostat.
         return ttOSRW;
@@ -228,21 +244,6 @@ public class OSRWOptions {
             ttOSRW.setOptimization(true, firstAssembly);
         }
         return barostat.checkNPT(firstAssembly, ttOSRW);
-    }
-
-    /**
-     * <p>
-     * applyOSRWOptions.</p>
-     *
-     * @param ttOSRW          a {@link TransitionTemperedOSRW} object.
-     * @param histogramExists a boolean.
-     */
-    public void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
-        ttOSRW.setTemperingParameter(temperParam);
-        if (!histogramExists) {
-            ttOSRW.setCountInterval(countFreq);
-            ttOSRW.setBiasMagnitude(biasMag);
-        }
     }
 
     /**
@@ -313,7 +314,6 @@ public class OSRWOptions {
      */
     public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies,
                             DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose) {
-
         dynamics.init();
 
         MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
@@ -321,15 +321,19 @@ public class OSRWOptions {
 
         int nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
-            logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
+            logger.info("\n Beginning MC Transition-Tempered OSRW equilibration.");
             mcOSRW.setEquilibration(true);
             mcOSRW.setMDMoveParameters(nEquil, mcMD, dynamics.dt, mcMDE);
-            mcOSRW.sampleTwoStep();
+            if (ts) {
+                mcOSRW.sampleTwoStep();
+            } else {
+                mcOSRW.sampleOneStep();
+            }
             mcOSRW.setEquilibration(false);
-            logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
+            logger.info("\n Finished MC Transition-Tempered OSRW equilibration.");
         }
 
-        logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
+        logger.info("\n Beginning MC Transition-Tempered OSRW sampling.");
         mcOSRW.setLambdaStdDev(mcL);
         mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt, mcMDE);
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
@@ -339,6 +343,21 @@ public class OSRWOptions {
             mcOSRW.sampleTwoStep();
         } else {
             mcOSRW.sampleOneStep();
+        }
+    }
+
+    /**
+     * <p>
+     * applyOSRWOptions.</p>
+     *
+     * @param ttOSRW          a {@link TransitionTemperedOSRW} object.
+     * @param histogramExists a boolean.
+     */
+    private void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
+        ttOSRW.setTemperingParameter(temperParam);
+        if (!histogramExists) {
+            ttOSRW.setCountInterval(countFreq);
+            ttOSRW.setBiasMagnitude(biasMag);
         }
     }
 

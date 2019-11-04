@@ -35,80 +35,52 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.numerics.switching;
-
-import ffx.numerics.func1d.UnivariateDiffFunction;
+package ffx.numerics.func1d;
 
 /**
- * A UnivariateSwitchingFunction describes a function of a single value (often
- * lambda), where f(lb) = 0, f(ub) = 1, and df(x)/dx &gt;= 0 for all x lb-ub.
- * <p>
- * Additionally, its often useful for switching functions to have zero first and second derivatives
- * at the lower and upper bound.
- * <p>
- * A number of methods exist to check for various properties of a switching
- * function; these will often be implemented as simple return-boolean methods.
+ * A UnivariateDiffFunction describes a function of a single value (often
+ * lambda). Generally, it should be at least twice differentiable.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
-public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
+public interface UnivariateDiffFunction {
 
     /**
-     * Gets the zero bound, where f(x) becomes zero.
+     * Value at a point
      *
-     * @return Zero bound
+     * @param x a double.
+     * @return f(x)
+     * @throws java.lang.IllegalArgumentException If f(x) is undefined at x.
      */
-    double getZeroBound();
+    double valueAt(double x) throws IllegalArgumentException;
 
     /**
-     * Gets the one bound, where f(x) becomes one.
+     * First derivative at a point.
      *
-     * @return One bound
+     * @param x a double.
+     * @return f'(x)
+     * @throws java.lang.IllegalArgumentException If f'(x) is undefined at x.
      */
-    double getOneBound();
+    double firstDerivative(double x) throws IllegalArgumentException;
 
     /**
-     * Remains 0 below the lower bound, and 1 above the upper bound (i.e.
-     * a multiplicative switch).
+     * Second derivative at a point.
      *
-     * @return df(x)/dx is zero outside range lb-ub.
+     * @param x a double.
+     * @return f''(x)
+     * @throws java.lang.IllegalArgumentException If f''(x) is undefined at x.
      */
-    boolean constantOutsideBounds();
+    double secondDerivative(double x) throws IllegalArgumentException;
 
     /**
-     * Remains in the range 0-1 outside the bounds. Implied to be true if
-     * constantOutsideBounds is true.
+     * N'th order derivative at a point. Should be relatively optional for any
+     * order above 2.
      *
-     * @return min(f ( x)) = 0 and max(f(x)) = 1.
+     * @param x     a double.
+     * @param order Derivative order (&gt;= 1)
+     * @return d^nf(x)/dx^n
+     * @throws java.lang.IllegalArgumentException If derivative undefined at x.
      */
-    boolean validOutsideBounds();
-
-    /**
-     * Returns the highest-order, guaranteed-zero derivative at the zero bound.
-     *
-     * @return a int.
-     */
-    default int highestOrderZeroDerivativeAtZeroBound() {
-        return getHighestOrderZeroDerivative();
-    }
-
-    /**
-     * The highest-order derivative that is zero at the bounds.
-     *
-     * @return Maximum order zero derivative at bounds.
-     */
-    int getHighestOrderZeroDerivative();
-
-    /**
-     * True if f(lb + delta) + f(ub - delta) = 1 for all delta between 0 and
-     * (ub - lb). For example, a power switch with beta 1 is symmetric to unity,
-     * as f(l) + f(1-l) = 1, but beta 2 produces a non-unity result, where
-     * f(0.5) + f(0.5) = 0.5.
-     *
-     * @return If symmetry produces unity result.
-     */
-    boolean symmetricToUnity();
-
-    // Note: implementations should have a well-defined toString() method!
+    double nthDerivative(double x, int order) throws IllegalArgumentException;
 }

@@ -37,6 +37,9 @@
 //******************************************************************************
 package ffx.algorithms.dynamics;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -50,6 +53,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
+import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import static ffx.utilities.Constants.AVOGADRO;
@@ -237,12 +242,7 @@ public class Barostat implements CrystalPotential {
         mass = molecularAssembly.getMass();
         x = new double[3 * nAtoms];
         nMolecules = molecularAssembly.fractionalCount();
-        if (nMolecules > 1) {
-            logger.info(String.format(" There are %d molecules.", nMolecules));
-        } else {
-            logger.info(String.format(" There is %d molecule.", nMolecules));
-        }
-
+        logger.info(String.format(" There are %d molecules.", nMolecules));
     }
 
     /**
@@ -270,6 +270,15 @@ public class Barostat implements CrystalPotential {
      */
     public void setMeanBarostatInterval(int meanBarostatInterval) {
         this.meanBarostatInterval = meanBarostatInterval;
+    }
+
+    /**
+     * Returns the mean number of steps between barostat applications.
+     *
+     * @return Mean steps between barostat applications.
+     */
+    public int getMeanBarostatInterval() {
+        return meanBarostatInterval;
     }
 
     /**
@@ -315,6 +324,14 @@ public class Barostat implements CrystalPotential {
      */
     public void setPressure(double pressure) {
         this.pressure = pressure;
+    }
+
+    /**
+     * Gets the pressure of this Barostat in atm.
+     * @return Pressure in atm.
+     */
+    public double getPressure() {
+        return pressure;
     }
 
     private double mcStep(double currentE, double currentV) {
@@ -823,6 +840,10 @@ public class Barostat implements CrystalPotential {
         this.active = active;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -968,6 +989,14 @@ public class Barostat implements CrystalPotential {
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return potential.getVariableTypes();
+    }
+
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        List<Potential> underlying = new ArrayList<>();
+        underlying.add(potential);
+        underlying.addAll(potential.getUnderlyingPotentials());
+        return underlying;
     }
 
     /**

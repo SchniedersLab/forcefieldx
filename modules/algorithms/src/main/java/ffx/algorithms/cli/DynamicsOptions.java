@@ -50,6 +50,8 @@ import ffx.potential.cli.WriteoutOptions;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
+import java.util.logging.Logger;
+
 /**
  * Represents command line options for scripts that calculate thermodynamics.
  *
@@ -124,8 +126,22 @@ public class DynamicsOptions {
     /**
      * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
      */
-    @CommandLine.Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0", description = "Interval to write out restart files (.dyn, .his, etc).")
+    @CommandLine.Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0",
+            description = "Interval to write out restart files (.dyn, .his, etc).")
     private double checkpoint = 1.0;
+
+    @CommandLine.Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
+            description = "Use FFX or OpenMM to integrate dynamics.")
+    private String engineString = null;
+
+    /**
+     * -z or --trajSteps Number of steps for each OpenMM MD cycle.
+     */
+    @CommandLine.Option(names = {"-z", "--trajSteps"}, paramLabel = "100",
+            description = "Number of steps per MD cycle (--mdE = OpenMM only).")
+    int trajSteps = 100;
+
+    private static final Logger logger = Logger.getLogger(DynamicsOptions.class.getName());
 
     /**
      * Thermostat.
@@ -137,12 +153,22 @@ public class DynamicsOptions {
      */
     public IntegratorEnum integrator;
 
+    private MolecularDynamics.DynamicsEngine engine = null;
+
     /**
      * Parse the thermostat and integrator.
      */
     public void init() {
         thermostat = Thermostat.parseThermostat(thermostatString);
         integrator = Integrator.parseIntegrator(integratorString);
+        if (engineString != null) {
+            try {
+                engine = MolecularDynamics.DynamicsEngine.valueOf(engineString.toUpperCase());
+            } catch (Exception ex) {
+                logger.warning(String.format(" Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.", engineString));
+                engine = null;
+            }
+        }
     }
 
     /**
@@ -158,11 +184,15 @@ public class DynamicsOptions {
                                          Potential potential,
                                          MolecularAssembly activeAssembly,
                                          AlgorithmListener sh) {
-
-        MolecularDynamics molDyn = new MolecularDynamics(activeAssembly, potential,
-                activeAssembly.getProperties(), sh, thermostat, integrator);
+        MolecularDynamics molDyn;
+        if (engine == null) {
+            molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, activeAssembly.getProperties(), sh, thermostat, integrator);
+        } else {
+            molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, activeAssembly.getProperties(), sh, thermostat, integrator, engine);
+        }
         molDyn.setFileType(writeout.getFileType());
         molDyn.setRestartFrequency(write);
+        molDyn.setIntervalSteps(trajSteps);
 
         return molDyn;
     }

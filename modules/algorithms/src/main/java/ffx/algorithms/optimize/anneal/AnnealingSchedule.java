@@ -35,80 +35,63 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.numerics.switching;
-
-import ffx.numerics.func1d.UnivariateDiffFunction;
+package ffx.algorithms.optimize.anneal;
 
 /**
- * A UnivariateSwitchingFunction describes a function of a single value (often
- * lambda), where f(lb) = 0, f(ub) = 1, and df(x)/dx &gt;= 0 for all x lb-ub.
- * <p>
- * Additionally, its often useful for switching functions to have zero first and second derivatives
- * at the lower and upper bound.
- * <p>
- * A number of methods exist to check for various properties of a switching
- * function; these will often be implemented as simple return-boolean methods.
+ * Temperature schedule for simulated annealing
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
+ * @since 1.0
  */
-public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
+public interface AnnealingSchedule {
+    /**
+     * Get the temperature for annealing step i.
+     * @param i An annealing step [0-nWindows)
+     * @return  Associated temperature.
+     */
+    double getTemperature(int i);
 
     /**
-     * Gets the zero bound, where f(x) becomes zero.
-     *
-     * @return Zero bound
+     * Get all temperatures this schedule specifies.
+     * @return An array of temperatures specified.
      */
-    double getZeroBound();
+    double[] getTemperatures();
 
     /**
-     * Gets the one bound, where f(x) becomes one.
-     *
-     * @return One bound
+     * Gets the number of annealing windows (including repeat windows).
+     * @return Number of annealing windows.
      */
-    double getOneBound();
+    int getNumWindows();
 
     /**
-     * Remains 0 below the lower bound, and 1 above the upper bound (i.e.
-     * a multiplicative switch).
-     *
-     * @return df(x)/dx is zero outside range lb-ub.
+     * Gets the starting temperature.
+     * @return Starting temperature in Kelvin.
      */
-    boolean constantOutsideBounds();
+    double getHighTemp();
 
     /**
-     * Remains in the range 0-1 outside the bounds. Implied to be true if
-     * constantOutsideBounds is true.
-     *
-     * @return min(f ( x)) = 0 and max(f(x)) = 1.
+     * Gets the final temperature.
+     * @return Final temperature in Kelvin.
      */
-    boolean validOutsideBounds();
+    double getLowTemp();
 
     /**
-     * Returns the highest-order, guaranteed-zero derivative at the zero bound.
-     *
-     * @return a int.
+     * Get the relative size of a window (normalized to the number of MD steps in a "regular" window).
+     * @param window Window to check.
+     * @return       Normalized length of the window.
      */
-    default int highestOrderZeroDerivativeAtZeroBound() {
-        return getHighestOrderZeroDerivative();
-    }
+    double windowLength(int window);
 
     /**
-     * The highest-order derivative that is zero at the bounds.
-     *
-     * @return Maximum order zero derivative at bounds.
+     * Returns the shortest window to be used (normalized to the number of MD steps in a "regular" window).
+     * @return Minimum normalized window length.
      */
-    int getHighestOrderZeroDerivative();
+    double minWindowLength();
 
     /**
-     * True if f(lb + delta) + f(ub - delta) = 1 for all delta between 0 and
-     * (ub - lb). For example, a power switch with beta 1 is symmetric to unity,
-     * as f(l) + f(1-l) = 1, but beta 2 produces a non-unity result, where
-     * f(0.5) + f(0.5) = 0.5.
-     *
-     * @return If symmetry produces unity result.
+     * Returns the sum of window lengths to be used (normalized to the number of MD steps in a "regular" window).
+     * @return Total normalized window length.
      */
-    boolean symmetricToUnity();
-
-    // Note: implementations should have a well-defined toString() method!
+    double totalWindowLength();
 }

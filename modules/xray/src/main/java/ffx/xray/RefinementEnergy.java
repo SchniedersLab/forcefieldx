@@ -42,6 +42,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
@@ -49,6 +52,7 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -1071,5 +1075,14 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     @Override
     public boolean destroy() {
         return dataEnergy.destroy();
+    }
+
+    @Override
+    public List<Potential> getUnderlyingPotentials() {
+        Stream<Potential> directPEs = Arrays.stream(molecularAssemblies).map(MolecularAssembly::getPotentialEnergy);
+        Stream<Potential> allPEs = Arrays.stream(molecularAssemblies).map(MolecularAssembly::getPotentialEnergy).
+                map(Potential::getUnderlyingPotentials).
+                flatMap(List::stream);
+        return Stream.concat(directPEs, allPEs).collect(Collectors.toList());
     }
 }

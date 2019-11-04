@@ -37,14 +37,15 @@
 //******************************************************************************
 package ffx.algorithms.groovy
 
+import ffx.numerics.Potential
+import ffx.potential.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.optimize.SimulatedAnnealing
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.potential.MolecularAssembly
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -65,6 +66,9 @@ class Anneal extends AlgorithmsScript {
     @Mixin
     AnnealOptions anneal
 
+    @Mixin
+    WriteoutOptions writeout;
+
     /**
      * One or more filenames.
      */
@@ -74,10 +78,10 @@ class Anneal extends AlgorithmsScript {
 
     private SimulatedAnnealing simulatedAnnealing = null;
 
-    private File baseDir = null
+    private Potential potential;
 
     void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+        this.saveDir = baseDir;
     }
 
     @Override
@@ -93,42 +97,59 @@ class Anneal extends AlgorithmsScript {
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
-            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return
-        } else {
-            modelFilename = activeAssembly.getFile().getAbsolutePath();
         }
+
+        modelFilename = activeAssembly.getFile().getAbsolutePath();
 
         logger.info("\n Running simulated annealing on " + modelFilename + "\n")
 
-        simulatedAnnealing = new SimulatedAnnealing(activeAssembly,
+        // Restart File
+        File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+        if (!dyn.exists()) {
+            dyn = null
+        }
+
+        potential = activeAssembly.getPotentialEnergy();
+
+        simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
                 activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
-                algorithmListener, dynamics.thermostat, dynamics.integrator)
+                algorithmListener, dyn);
 
-        simulatedAnnealing.anneal(anneal.upper, anneal.low, anneal.windows, dynamics.steps, dynamics.dt)
+        simulatedAnnealing.setPrintInterval(dynamics.report);
+        simulatedAnnealing.setSaveFrequency(dynamics.write);
+        simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
+        simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps);
 
-        File saveDir = baseDir
+
+        simulatedAnnealing.anneal();
+
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
 
+        String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
-        String ext = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName)
 
-        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+        writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
 
-        if (ext.toUpperCase().contains("XYZ")) {
-            algorithmFunctions.saveAsXYZ(activeAssembly, new File(dirName + fileName + ".xyz"))
-        } else {
-            algorithmFunctions.saveAsPDB(activeAssembly, new File(dirName + fileName + ".pdb"))
-        }
         return this
     }
 
     SimulatedAnnealing getAnnealing() {
         return simulatedAnnealing
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
+    }
+
+    @Override
+    public boolean destroyPotentials() {
+        return getPotentials().stream().allMatch({ it.destroy(); });
     }
 }

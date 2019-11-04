@@ -48,8 +48,8 @@ import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MCLoop
-import ffx.algorithms.optimize.SimulatedAnnealing
-import ffx.algorithms.thermodynamics.OSRW
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing
+
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -448,16 +448,9 @@ if (runOSRW) {
     energy();
 
     boolean asynchronous = true;
-    Potential osrw;
-    if (runTTOSRW) {
-        osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy,
+    Potential osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy,
                 lambdaRestart, histogramRestart, active.getProperties(),
                 (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
-    } else {
-        osrw = new OSRW(refinementEnergy, refinementEnergy,
-                lambdaRestart, histogramRestart, active.getProperties(),
-                (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
-    }
     osrw.setLambda(lambda);
     osrw.setThetaMass(5.0e-19);
     osrw.setOptimization(true, active);
@@ -488,6 +481,7 @@ if (runOSRW) {
 }
 
 if (runSimulatedAnnealing) {
+    logger.severe(" Script must be re-factored for new simulated annealing API (and likely also to new Groovy script style!)")
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");

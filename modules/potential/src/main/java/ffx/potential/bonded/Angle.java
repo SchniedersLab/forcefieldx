@@ -78,7 +78,6 @@ public class Angle extends BondedTerm {
      * Force field parameters to compute the angle bending energy.
      */
     public AngleType angleType;
-
     /**
      * Number of hydrogens on the central atom that are not part of this Angle.
      */

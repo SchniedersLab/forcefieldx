@@ -876,4 +876,39 @@ public final class VectorMath {
     public static double u2b(double u) {
         return u * eightpi2;
     }
+
+    /**
+     * This is an atypical mod function used by crystallography methods.
+     *
+     * <p>
+     * mod</p>
+     *
+     * @param a Value to mod.
+     * @param b Value to mod by.
+     * @return Positive a % b.
+     */
+    public static double mod(double a, double b) {
+        double res = a % b;
+        if (res < 0.0) {
+            res += b;
+        }
+        return res;
+    }
+
+    /**
+     * Atypical mod function used to move a value into the range lb &lt;= value &lt; ub,
+     * assuming the domain is periodic with a period of (ub - lb).
+     *
+     * @param value      Value to move between bounds.
+     * @param lowerBound lb
+     * @param upperBound ub
+     * @return Periodic copy of value, in range lb &lt;= value &lt; ub.
+     */
+    public static double modToRange(double value, double lowerBound, double upperBound) {
+        value -= lowerBound;
+        double range = upperBound - lowerBound;
+        value = mod(value, range);
+        value += lowerBound;
+        return value;
+    }
 }

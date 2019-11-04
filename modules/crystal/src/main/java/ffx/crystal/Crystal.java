@@ -44,6 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import ffx.numerics.math.VectorMath;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
@@ -1600,23 +1601,6 @@ public class Crystal {
     }
 
     /**
-     * Atypical mod function used to move a value into the range lb &lt;= value &lt; ub,
-     * assuming the domain is periodic with a period of (ub - lb).
-     *
-     * @param value      Value to move between bounds.
-     * @param lowerBound lb
-     * @param upperBound ub
-     * @return Periodic copy of value, in range lb &lt;= value &lt; ub.
-     */
-    public static double modToRange(double value, double lowerBound, double upperBound) {
-        value -= lowerBound;
-        double range = upperBound - lowerBound;
-        value = mod(value, range);
-        value += lowerBound;
-        return value;
-    }
-
-    /**
      * This is an atypical mod function used by crystallography methods.
      *
      * <p>
@@ -1627,11 +1611,7 @@ public class Crystal {
      * @return Positive a % b.
      */
     public static double mod(double a, double b) {
-        double res = a % b;
-        if (res < 0.0) {
-            res += b;
-        }
-        return res;
+        return VectorMath.mod(a, b);
     }
 
     /**

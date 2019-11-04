@@ -67,7 +67,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import ffx.algorithms.misc.PJDependentTest;
-import ffx.algorithms.thermodynamics.AbstractOSRW;
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
@@ -1069,8 +1068,8 @@ public class ThermodynamicsTest extends PJDependentTest {
     private void testFreeEnergy() {
         assembleThermo();
         thermo.run();
-        AbstractOSRW osrw = thermo.getOSRW();
-        double delG = osrw.lastFreeEnergy();
+        TransitionTemperedOSRW osrw = thermo.getOSRW();
+        double delG = osrw.updateFLambda(false,false);
         assertEquals(String.format(" Test %s: not within tolerance %12.5g", info, feTol), freeEnergy, delG, feTol);
     }
 
@@ -1080,7 +1079,7 @@ public class ThermodynamicsTest extends PJDependentTest {
     private void testStaticGradients() {
         assembleThermo();
         thermo.run();
-        AbstractOSRW osrw = thermo.getOSRW();
+        TransitionTemperedOSRW osrw = thermo.getOSRW();
         osrw.setPropagateLambda(false);
         CrystalPotential under = thermo.getPotential();
         int nVars = osrw.getNumberOfVariables();

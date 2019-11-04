@@ -43,6 +43,9 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
+import ffx.algorithms.AlgorithmFunctions;
+import ffx.xray.DiffractionData;
+import ffx.xray.RefinementEnergy;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -355,5 +358,46 @@ public class XrayOptions extends DataRefinementOptions {
         }
 
         return diffractionfiles;
+    }
+
+    /**
+     * Process input from opened molecular assemblies to a DiffractionData.
+     *
+     * @param filenames          All filenames included in the diffraction data.
+     * @param assemblies         All molecular assemblies included in the diffraction data.
+     * @param parseResult        A ParseResult option from a Groovy script.
+     *
+     * @return                   An assembled DiffractionData
+     */
+    public DiffractionData getDiffractionData(List<String> filenames, MolecularAssembly[] assemblies, ParseResult parseResult) {
+        // Load parsed X-ray properties.
+        CompositeConfiguration properties = assemblies[0].getProperties();
+        setProperties(parseResult, properties);
+
+        // Set up diffraction data (can be multiple files)
+        List<DiffractionFile> diffractionFiles = processData(filenames, assemblies);
+
+        return new DiffractionData(assemblies, properties,
+                solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]));
+    }
+
+    /**
+     * Process input from opened molecular assemblies and diffraction data to a RefinementEnergy.
+     *
+     * @param diffractionData    Diffraction data.
+     * @param assemblies         All molecular assemblies included in the diffraction data.
+     * @param algorithmFunctions An AlgorithmFunctions object.
+     *
+     * @return                   An assembled RefinementEnergy with X-ray energy.
+     */
+    public RefinementEnergy toXrayEnergy(DiffractionData diffractionData, MolecularAssembly[] assemblies,
+                                         AlgorithmFunctions algorithmFunctions) {
+
+        diffractionData.scaleBulkFit();
+        diffractionData.printStats();
+
+        algorithmFunctions.energy(assemblies[0]);
+
+        return new RefinementEnergy(diffractionData, refinementMode);
     }
 }

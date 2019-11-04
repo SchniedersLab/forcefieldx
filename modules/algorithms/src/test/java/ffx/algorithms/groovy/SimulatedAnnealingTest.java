@@ -42,7 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -54,16 +54,19 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.PJDependentTest;
-import ffx.algorithms.optimize.SimulatedAnnealing;
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing;
+import ffx.algorithms.groovy.Anneal;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
 
 /**
- * @author hbernabe
+ * @author Hernan Bernabe
  */
 @RunWith(Parameterized.class)
 public class SimulatedAnnealingTest extends PJDependentTest {
+
+    //private static final Logger logger = Logger.getLogger(SimulatedAnnealingTest.class.getName());
 
     private String info;
     private String filename;
@@ -71,12 +74,10 @@ public class SimulatedAnnealingTest extends PJDependentTest {
     private double endPotentialEnergy;
     private double endTotalEnergy;
     private double endTemperature;
-    private double tolerance = 1.0;
+    private static final double tolerance = 0.01;
 
     private Binding binding;
     private Anneal anneal;
-
-    private static final Logger logger = Logger.getLogger(SimulatedAnnealingTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -84,10 +85,10 @@ public class SimulatedAnnealingTest extends PJDependentTest {
                 {
                         "Acetamide with Stochastic integrator for Simulated Annealing Test", //info
                         "ffx/algorithms/structures/acetamide_annealing.xyz", //filename
-                        3.2227, // endKineticEnergy
-                        -29.5661, // endPotentialEnergy
-                        -26.3434, // endTotalEnergy
-                        120.13 // endTemperature
+                        2.7348819613719866, // endKineticEnergy
+                        -30.16220415900207, // endPotentialEnergy
+                        -27.427322197630094, // endTotalEnergy
+                        101.94414998339263 // endTemperature
                 }
 
         });
@@ -120,33 +121,33 @@ public class SimulatedAnnealingTest extends PJDependentTest {
     public void testSimulatedAnnealing() {
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "50", "-i", "Stochastic", "-r", "0.001", "--tl", "100", "--tu", "1000", "-W", "5", "src/main/java/" + filename};
+        String[] args = {"-n", "200", "-i", "STOCHASTIC", "-r", "0.001", "--tl", "100", "--tu", "400", "--tmS", "EXP", "-W", "10", "-w", "100", "-k", "100", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
         Path path = null;
         try {
-            path = Files.createTempDirectory("SaveAsPDB");
+            path = Files.createTempDirectory("SimulatedAnnealingTest");
             anneal.setBaseDir(path.toFile());
+
+            anneal.run();
+
+            SimulatedAnnealing simulatedAnnealing = anneal.getAnnealing();
+
+            // Assert that end energies are within the tolerance for the dynamics trajectory
+            assertEquals(info + " Final kinetic energy", endKineticEnergy, simulatedAnnealing.getKineticEnergy(), tolerance);
+            assertEquals(info + " Final potential energy", endPotentialEnergy, simulatedAnnealing.getPotentialEnergy(), tolerance);
+            assertEquals(info + " Final total energy", endTotalEnergy, simulatedAnnealing.getTotalEnergy(), tolerance);
+            assertEquals(info + " Final temperature", endTemperature, simulatedAnnealing.getTemperature(), tolerance);
         } catch (IOException e) {
             Assert.fail(" Could not create a temporary directory.");
-        }
-
-        anneal.run();
-
-        SimulatedAnnealing simulatedAnnealing = anneal.getAnnealing();
-
-        // Assert that end energies are within the tolerance for the dynamics trajectory
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, simulatedAnnealing.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, simulatedAnnealing.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", endTotalEnergy, simulatedAnnealing.getTotalEnergy(), tolerance);
-        assertEquals(info + " Final temperature", endTemperature, simulatedAnnealing.getTemperature(), tolerance);
-
-        // Delate all created space grouop directories.
-        try {
-            DirectoryUtils.deleteDirectoryTree(path);
-        } catch (IOException e) {
-            System.out.println(e.toString());
-            Assert.fail(" Exception deleting files created by SaveAsPDB.");
+        } finally {
+            // Delete all created directories.
+            try {
+                DirectoryUtils.deleteDirectoryTree(path);
+            } catch (IOException e) {
+                System.out.println(e.toString());
+                Assert.fail(" Exception deleting files created by SimulatedAnnealingTest.");
+            }
         }
     }
 

@@ -37,20 +37,17 @@
 //******************************************************************************
 package ffx.realspace.groovy
 
-import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.optimize.SimulatedAnnealing
+import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
-import ffx.realspace.RealSpaceData
+import ffx.potential.cli.WriteoutOptions
 import ffx.realspace.cli.RealSpaceOptions
-import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize.RefinementMode
-
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -69,16 +66,23 @@ class Anneal extends AlgorithmsScript {
     RealSpaceOptions realSpaceOptions
 
     @Mixin
-    DynamicsOptions dynamicsOptions
+    DynamicsOptions dynamics
 
     @Mixin
-    AnnealOptions annealOptions
+    WriteoutOptions writeout;
+
+    @Mixin
+    AnnealOptions anneal
 
     /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
+
+    private SimulatedAnnealing simulatedAnnealing = null;
+
+    private Potential potential;
     private RefinementEnergy refinementEnergy;
 
     @Override
@@ -88,44 +92,51 @@ class Anneal extends AlgorithmsScript {
             return this
         }
 
-        dynamicsOptions.init()
+        dynamics.init()
 
-        String modelfilename
-        MolecularAssembly[] assemblies
+        String modelFilename
+        MolecularAssembly[] assemblies;
         if (filenames != null && filenames.size() > 0) {
             assemblies = algorithmFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return
-        } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath()
-            assemblies = { activeAssembly };
         }
 
-        logger.info("\n Running simulated annealing on " + modelfilename)
+        modelFilename = activeAssembly.getFile().getAbsolutePath();
 
-        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+        logger.info("\n Running simulated annealing on on real-space target including " + modelFilename + "\n")
 
-        RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
+        // Restart File
+        File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+        if (!dyn.exists()) {
+            dyn = null
+        }
 
-        algorithmFunctions.energy(assemblies[0])
+        // Primary difference between realspace.Anneal and regular Anneal is this line.
+        potential = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, activeAssembly, algorithmFunctions);
 
-        refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
-        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy,
-                activeAssembly.getProperties(), algorithmListener,
-                dynamicsOptions.thermostat, dynamicsOptions.integrator)
+        simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
+                potential, activeAssembly.getProperties(),
+                algorithmListener, dyn);
 
-        simulatedAnnealing.anneal(annealOptions.upper, annealOptions.low, annealOptions.windows,
-                dynamicsOptions.steps, dynamicsOptions.dt)
+        simulatedAnnealing.setPrintInterval(dynamics.report);
+        simulatedAnnealing.setSaveFrequency(dynamics.write);
+        simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
+        simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps);
 
-        // suffix to append to output data
-        String suffix = "_anneal"
+        simulatedAnnealing.anneal();
 
-        algorithmFunctions.energy(assemblies[0])
-        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+
+        String dirName = saveDir.toString() + File.separator
+        String fileName = FilenameUtils.getName(modelFilename)
+        fileName = FilenameUtils.removeExtension(fileName)
+
+        writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly);
 
         return this
     }

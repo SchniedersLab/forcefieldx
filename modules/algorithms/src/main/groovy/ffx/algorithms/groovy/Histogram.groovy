@@ -40,8 +40,6 @@ package ffx.algorithms.groovy
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.thermodynamics.AbstractOSRW
-import ffx.algorithms.thermodynamics.OSRW
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -52,7 +50,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
- * The Histogram script prints out a (TT-)OSRW histogram from a *.his file.
+ * The Histogram script prints out a Orthogonal Space histogram from a *.his file.
  * <br>
  * Usage:
  * <br>
@@ -69,19 +67,12 @@ class Histogram extends AlgorithmsScript {
     boolean pmf = false
 
     /**
-     * -u or --untempered Histogram for untempered OSRW.
-     */
-    @Option(names = ['-u', '--untempered'], paramLabel = 'false',
-            description = 'Histogram for untempered OSRW.')
-    boolean untempered = false
-
-    /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
     private List<String> filenames
 
-    private AbstractOSRW abstractOSRW
+    private TransitionTemperedOSRW osrw
     private File saveDir = null
 
     @Override
@@ -128,61 +119,35 @@ class Histogram extends AlgorithmsScript {
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
-        String dirName = saveDir.toString() + File.separator
 
-        if (!untempered) {
-            TransitionTemperedOSRW osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
-                    activeAssembly.getProperties(), temperature, timeStep, printInterval,
-                    saveInterval, asynchronous, algorithmListener)
-            if (pmf) {
-                osrw.setMolecularAssembly(activeAssembly)
-                osrw.updateFLambda(false, true)
+        osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+                activeAssembly.getProperties(), temperature, timeStep, printInterval,
+                saveInterval, asynchronous, algorithmListener)
 
-                StringBuffer sb = osrw.evaluateTotalPMF()
-                String file = dirName + "pmf.txt"
-                logger.info(" Writing " + file)
-                FileWriter fileWriter = new FileWriter(file)
-                fileWriter.write(sb.toString())
-                fileWriter.close()
+        if (pmf) {
+            osrw.setMolecularAssembly(activeAssembly)
+            osrw.updateFLambda(false, true)
+            StringBuffer sb = osrw.evaluateTotalPMF()
 
-                sb = osrw.evaluate2DPMF()
-                file = dirName + "pmf.2D.txt"
-                logger.info(" Writing " + file)
-                fileWriter = new FileWriter(file)
-                fileWriter.write(sb.toString())
-                fileWriter.close()
-            }
-            abstractOSRW = osrw
-        } else {
-            OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
-                    activeAssembly.getProperties(), temperature, timeStep, printInterval,
-                    saveInterval, asynchronous, algorithmListener)
-            if (pmf) {
-                osrw.setMolecularAssembly(activeAssembly)
-                osrw.updateFLambda(false, true)
+            String dirName = saveDir.toString() + File.separator
+            String file = dirName + "pmf.txt"
+            logger.info(" Writing " + file)
+            FileWriter fileWriter = new FileWriter(file)
+            fileWriter.write(sb.toString())
+            fileWriter.close()
 
-                StringBuffer sb = osrw.evaluateTotalPMF()
-                String file = dirName + "pmf.txt"
-                logger.info(" Writing " + file)
-                FileWriter fileWriter = new FileWriter(file)
-                fileWriter.write(sb.toString())
-                fileWriter.close()
-
-                sb = osrw.evaluate2DPMF()
-                file = dirName + "pmf.2D.txt"
-                logger.info(" Writing " + file)
-                fileWriter = new FileWriter(file)
-                fileWriter.write(sb.toString())
-                fileWriter.close()
-            }
-            abstractOSRW = osrw
+            sb = osrw.evaluate2DPMF()
+            file = dirName + "pmf.2D.txt"
+            logger.info(" Writing " + file)
+            fileWriter = new FileWriter(file)
+            fileWriter.write(sb.toString())
+            fileWriter.close()
         }
-
         return this
     }
 
     @Override
     List<Potential> getPotentials() {
-        return abstractOSRW == null ? Collections.emptyList() : Collections.singletonList(abstractOSRW)
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
     }
 }

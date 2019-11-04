@@ -51,6 +51,7 @@ import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
 import ffx.algorithms.misc.PJDependentTest;
+import ffx.algorithms.groovy.Dynamics;
 
 import groovy.lang.Binding;
 
@@ -67,7 +68,7 @@ public class DynamicsOpenMMRESPANVETest extends PJDependentTest {
     private boolean ffxOpenMM;
 
     private Binding binding;
-    private DynamicsOpenMM dynamics;
+    private Dynamics dynamics;
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -79,7 +80,6 @@ public class DynamicsOpenMMRESPANVETest extends PJDependentTest {
                 }
 
         });
-
     }
 
     public DynamicsOpenMMRESPANVETest(String info, String filename, double startingTotalEnergy) {
@@ -91,7 +91,7 @@ public class DynamicsOpenMMRESPANVETest extends PJDependentTest {
     @Before
     public void before() {
         binding = new Binding();
-        dynamics = new DynamicsOpenMM();
+        dynamics = new Dynamics();
         dynamics.setBinding(binding);
     }
 
@@ -109,19 +109,18 @@ public class DynamicsOpenMMRESPANVETest extends PJDependentTest {
 
     @Test
     public void testDynamicsOpenMMRESPANVE() {
-
         if (!ffxOpenMM) {
             return;
         }
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "--mdE", "OpenMM", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
         // Evaluate script.
         dynamics.run();
 
-        MolecularDynamicsOpenMM molDyn = dynamics.getMolecularDynamics();
+        MolecularDynamicsOpenMM molDyn = (MolecularDynamicsOpenMM) dynamics.getMolecularDynamics();
 
         // Assert that the end total energy is within the threshold for the dynamics trajectory.
         assertEquals(info + "End total energy for OpenMM RESPA integrator under the NVE ensemble", startingTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
