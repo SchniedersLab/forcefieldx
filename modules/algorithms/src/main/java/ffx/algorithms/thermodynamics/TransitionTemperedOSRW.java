@@ -892,16 +892,16 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         }
 
         // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-        if (hardWallConstraint && kernelCount > 0) {
-            if (hardWallConstraint && propagateLambda) {
-                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
-            }
-            int maxCount = (2 * biasCutoff + 1);
-            maxCount *= maxCount;
-            double upweightFactor = (double) maxCount / (double) kernelCount;
-            dGdLambda *= upweightFactor;
-            dGdFLambda *= upweightFactor;
-        }
+//        if (hardWallConstraint && kernelCount > 0) {
+//            if (hardWallConstraint && propagateLambda) {
+//                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
+//            }
+//            int maxCount = (2 * biasCutoff + 1);
+//            maxCount *= maxCount;
+//            double upweightFactor = (double) maxCount / (double) kernelCount;
+//            dGdLambda *= upweightFactor;
+//            dGdFLambda *= upweightFactor;
+//        }
 
         // Lambda gradient due to recursion kernel G(L, F_L).
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
@@ -1009,12 +1009,12 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         }
 
         // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-        if (hardWallConstraint && kernelCount > 0) {
-            int maxCount = (2 * biasCutoff + 1);
-            maxCount *= maxCount;
-            double upweightFactor = (double) maxCount / (double) kernelCount;
-            bias2D *= upweightFactor;
-        }
+//        if (hardWallConstraint && kernelCount > 0) {
+//            int maxCount = (2 * biasCutoff + 1);
+//            maxCount *= maxCount;
+//            double upweightFactor = (double) maxCount / (double) kernelCount;
+//            bias2D *= upweightFactor;
+//        }
 
         // Compute the energy for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
@@ -1342,15 +1342,15 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         }
 
         // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-        if (hardWallConstraint && kernelCount > 0) {
-            if (hardWallConstraint && propagateLambda) {
-                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
-            }
-            int maxCount = (2 * biasCutoff + 1);
-            maxCount *= maxCount;
-            double upweightFactor = (double) maxCount / (double) kernelCount;
-            sum *= upweightFactor;
-        }
+//        if (hardWallConstraint && kernelCount > 0) {
+//            if (hardWallConstraint && propagateLambda) {
+//                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
+//            }
+//            int maxCount = (2 * biasCutoff + 1);
+//            maxCount *= maxCount;
+//            double upweightFactor = (double) maxCount / (double) kernelCount;
+//            sum *= upweightFactor;
+//        }
 
         return sum;
     }
@@ -1644,16 +1644,16 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         }
 
         // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-        if (hardWallConstraint && kernelCount > 0) {
-            if (hardWallConstraint && propagateLambda) {
-                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
-            }
-            int maxCount = (2 * biasCutoff + 1);
-            maxCount *= maxCount;
-            double upweightFactor = (double) maxCount / (double) kernelCount;
-            dGdLambda *= upweightFactor;
-            dGdFLambda *= upweightFactor;
-        }
+//        if (hardWallConstraint && kernelCount > 0) {
+//            if (hardWallConstraint && propagateLambda) {
+//                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
+//            }
+//            int maxCount = (2 * biasCutoff + 1);
+//            maxCount *= maxCount;
+//            double upweightFactor = (double) maxCount / (double) kernelCount;
+//            dGdLambda *= upweightFactor;
+//            dGdFLambda *= upweightFactor;
+//        }
 
         // Lambda gradient due to recursion kernel G(L, F_L).
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;

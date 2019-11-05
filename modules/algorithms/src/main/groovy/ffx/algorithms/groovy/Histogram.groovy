@@ -65,7 +65,7 @@ class Histogram extends AlgorithmsScript {
     @Option(names = ['-p', '--pmf'], paramLabel = 'false',
             description = 'Save the bias histogram to a file.')
     boolean pmf = false
-    
+
     /**
      * One or more filenames.
      */

@@ -51,7 +51,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
@@ -102,8 +101,7 @@ public class XYZFilter extends SystemFilter {
      * @param file       a {@link java.io.File} object.
      * @param system     a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a
-     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public XYZFilter(File file, MolecularAssembly system,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -211,18 +209,21 @@ public class XYZFilter extends SystemFilter {
             if (br.ready()) {
                 // Read past blank lines between archive files
                 data = br.readLine().trim();
-                while (data.equals("")) {
+                while (data.equals("") && br.ready()) {
                     data = br.readLine().trim();
                 }
-                tokens = data.split(" +", 2);
-                if (tokens.length > 0) {
-                    try {
-                        int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
-                        if (archiveNumberOfAtoms == numberOfAtoms) {
-                            setType(FileType.ARC);
+                // Note that data could be null here if
+                if (data != null) {
+                    tokens = data.split(" +", 2);
+                    if (tokens.length > 0) {
+                        try {
+                            int archiveNumberOfAtoms = Integer.parseInt(tokens[0]);
+                            if (archiveNumberOfAtoms == numberOfAtoms) {
+                                setType(FileType.ARC);
+                            }
+                        } catch (NumberFormatException e) {
+                            //
                         }
-                    } catch (NumberFormatException e) {
-                        //
                     }
                 }
             }
@@ -393,7 +394,7 @@ public class XYZFilter extends SystemFilter {
             }
 
             if (print) {
-                logger.info(format(" Attempting to read snapshot %d.", snapShot));
+                logger.info(format("\n Attempting to read snapshot %d.", snapShot));
             }
             try {
                 int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
@@ -762,7 +763,6 @@ public class XYZFilter extends SystemFilter {
             if (crystal != null) {
                 crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
             }
-
         }
         return true;
     }

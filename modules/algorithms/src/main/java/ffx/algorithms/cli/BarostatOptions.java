@@ -39,7 +39,7 @@ package ffx.algorithms.cli;
 
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
+import static java.lang.String.format;
 
 import ffx.algorithms.dynamics.Barostat;
 import ffx.crystal.CrystalPotential;
@@ -59,36 +59,69 @@ public class BarostatOptions {
     private static final Logger logger = Logger.getLogger(BarostatOptions.class.getName());
 
     /**
+     * Default maximum density constraint on the barostat that prevents reduction in unit cell
+     * (particularly at or near vapor states).
+     */
+    public static final double DEFAULT_MAX_DENSITY = 1.6;
+    /**
+     * Default "tin box" constraint on the barostat that prevents expansion of the unit cell
+     * (particularly at or near vapor states).
+     */
+    public static final double DEFAULT_MIN_DENSITY = 0.75;
+    /**
+     * Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms.
+     */
+    public static final double DEFAULT_MAX_SIDE_MOVE = 0.25;
+    /**
+     * Default width of proposed crystal angle moves (uniformly distributed) in degrees.
+     */
+    public static final double DEFAULT_MAX_ANGLE_MOVE = 0.5;
+    /**
+     * Default mean number of MD steps (Poisson distribution) between barostat move proposals.
+     */
+    public static final int DEFAULT_BAROSTAT_INTERVAL = 10;
+
+    /**
      * -p or --npt Specify use of a MC Barostat at the given pressure (default 0 = constant volume).
      */
     @Option(names = {"-p", "--npt"}, paramLabel = "0",
             description = "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
-    double pressure = 0;
+    private double pressure = 0;
 
     /**
-     * Sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
+     * --maxD or --maxDensity Specify the maximum density accepted by the MC Barostat (g/cc).
      */
-    double minDensity = 0.75;
+    @Option(names = {"--maxD", " --maxDensity"}, paramLabel = "1.6",
+            description = "Specify the maximum density accepted by the MC Barostat (g/cc).")
+    private double maxD = DEFAULT_MAX_DENSITY;
 
     /**
-     * Sets a maximum density on the barostat, preventing under-expansion of the box.
+     * --minD or --minDensity Specify the minimum density accepted by the MC Barostat (g/cc).
      */
-    double maxDensity = 1.6;
+    @Option(names = {"--minD", " --minDensity"}, paramLabel = "0.75",
+            description = "Specify the minimum density accepted by the MC Barostat (g/cc).")
+    private double minD = DEFAULT_MIN_DENSITY;
 
     /**
-     * Sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
+     * --maxSM or --maxSideMove Sets the width of proposed unit cell side length moves (uniformly distributed) in Angstroms.
      */
-    double maxSideMove = 0.25;
+    @Option(names = {"--maxSM", "--maxSideMove"}, paramLabel = "0.75",
+            description = "Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms.")
+    private double maxSM = DEFAULT_MAX_SIDE_MOVE;
 
     /**
-     * Sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
+     * --maxAM or --maxAngleMove Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.
      */
-    double maxAngleMove = 0.5;
+    @Option(names = {"--maxAM", "--maxAngleMove"}, paramLabel = "0.5",
+            description = "Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.")
+    private double maxAM = DEFAULT_MAX_ANGLE_MOVE;
 
     /**
-     * Sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
+     * --barInt or --meanBarostatInterval Sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
      */
-    int meanInterval = 10;
+    @Option(names = {"--barInt", "--meanBarostatInterval"}, paramLabel = "10",
+            description = "Sets the mean number of MD steps between barostat move proposals.")
+    private int barInt = DEFAULT_BAROSTAT_INTERVAL;
 
     /**
      * If pressure has been set &gt; 0, creates a Barostat around a CrystalPotential, else
@@ -114,33 +147,23 @@ public class BarostatOptions {
      * @return An NPT potential.
      * @throws IllegalArgumentException If this BarostatOptions has pressure &lt;= 0.
      */
-    public Barostat createBarostat(MolecularAssembly assembly,
-                                   CrystalPotential crystalPotential) throws IllegalArgumentException {
+    public Barostat createBarostat(MolecularAssembly assembly, CrystalPotential crystalPotential) throws IllegalArgumentException {
         if (pressure > 0) {
-
-            CompositeConfiguration properties = assembly.getProperties();
-
-            minDensity = properties.getDouble("minDensity", 0.75);
-            maxDensity = properties.getDouble("maxDensity", 1.6);
-            maxSideMove = properties.getDouble("maxSideMove", 0.25);
-            maxAngleMove = properties.getDouble("maxAngleMove", 0.5);
-            meanInterval = properties.getInt("meanInterval", 10);
-
             Barostat barostat = new Barostat(assembly, crystalPotential);
             barostat.setPressure(pressure);
-            barostat.setMaxDensity(maxDensity);
-            barostat.setMinDensity(minDensity);
+            barostat.setMaxDensity(maxD);
+            barostat.setMinDensity(minD);
             double dens = barostat.density();
-            if (dens < minDensity) {
-                logger.info(String.format(" Barostat: initial density %9.4g < minimum density %9.4g, resetting to minimum density", dens, minDensity));
-                barostat.setDensity(minDensity);
-            } else if (dens > maxDensity) {
-                logger.info(String.format(" Barostat: initial density %9.4g > maximum density %9.4g, resetting to maximum density", dens, minDensity));
-                barostat.setDensity(maxDensity);
+            if (dens < minD) {
+                logger.info(format(" Barostat: initial density %9.4g < minimum density %9.4g, resetting to minimum density", dens, minD));
+                barostat.setDensity(minD);
+            } else if (dens > maxD) {
+                logger.info(format(" Barostat: initial density %9.4g > maximum density %9.4g, resetting to maximum density", dens, maxD));
+                barostat.setDensity(maxD);
             }
-            barostat.setMaxSideMove(maxSideMove);
-            barostat.setMaxAngleMove(maxAngleMove);
-            barostat.setMeanBarostatInterval(meanInterval);
+            barostat.setMaxSideMove(maxSM);
+            barostat.setMaxAngleMove(maxAM);
+            barostat.setMeanBarostatInterval(barInt);
             return barostat;
         } else {
             throw new IllegalArgumentException(" Pressure is <= 0; cannot create a Barostat!");

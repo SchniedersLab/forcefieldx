@@ -1161,20 +1161,20 @@
         <site.version>3.8.2</site.version>
         <surefire.version>3.0.0-M3</surefire.version>
         <!-- Maven Packaging Tools Plugin Versions -->
-        <jar.version>3.1.2</jar.version>
+        <jar.version>3.2.0</jar.version>
         <shade.version>3.2.1</shade.version>
-        <source.version>3.1.0</source.version>
+        <source.version>3.2.0</source.version>
         <!-- Maven Reporting Plugin Versions -->
         <changes.version>2.12.1</changes.version>
         <checkstyle.version>3.1.0</checkstyle.version>
-        <javadoc.version>3.1.0</javadoc.version>
+        <javadoc.version>3.1.1</javadoc.version>
         <jxr.version>3.0.0</jxr.version>
         <linkcheck.version>1.2</linkcheck.version>
         <pmd.version>3.12.0</pmd.version>
         <project-info-reports.version>3.0.0</project-info-reports.version>
         <!-- Maven Tools Plugin Versions -->
         <antrun.version>1.8</antrun.version>
-        <assembly.version>3.1.1</assembly.version>
+        <assembly.version>3.2.0</assembly.version>
         <dependency.version>3.1.1</dependency.version>
         <enforcer.version>3.0.0-M2</enforcer.version>
         <jarsigner.version>3.0.0</jarsigner.version>
