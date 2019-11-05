@@ -660,8 +660,8 @@ public abstract class SystemFilter {
             for (String tok : toks) {
                 try {
                     int[] nouseRange = parseAtNumArg("restraint", tok, nmolaAtoms);
-                    logger.info(format(" Setting atoms %d-%d to not be used",
-                            nouseRange[0] + 1, nouseRange[1] + 1));
+                    logger.info(format(" Setting atoms %d-%d (%s-%s) to not be used",
+                            nouseRange[0] + 1, nouseRange[1] + 1, molaAtoms[nouseRange[0]], molaAtoms[nouseRange[1]]));
                     for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
                         molaAtoms[j].setUse(false);
                     }
@@ -686,8 +686,8 @@ public abstract class SystemFilter {
         for (String inactiveKey : inactiveKeys) {
             try {
                 int[] inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
-                logger.log(Level.INFO, format(" Atoms %d-%d set to be not "
-                        + "active", inactiveRange[0] + 1, inactiveRange[1] + 1));
+                logger.log(Level.INFO, format(" Atoms %d-%d (%s-%s) set to be not "
+                        + "active", inactiveRange[0] + 1, inactiveRange[1] + 1, molaAtoms[inactiveRange[0]], molaAtoms[inactiveRange[1]]));
                 for (int i = inactiveRange[0]; i <= inactiveRange[1]; i++) {
                     molaAtoms[i].setActive(false);
                 }
@@ -733,8 +733,8 @@ public abstract class SystemFilter {
             for (int i = 1; i < toks.length; i++) {
                 try {
                     int[] restrRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
-                    logger.info(format(" Adding atoms %d-%d to restraint",
-                            restrRange[0] + 1, restrRange[1] + 1));
+                    logger.info(format(" Adding atoms %d-%d (%s-%s) to restraint",
+                            restrRange[0] + 1, restrRange[1] + 1, molaAtoms[restrRange[0]], molaAtoms[restrRange[1]]));
                     for (int j = restrRange[0]; j <= restrRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
@@ -842,7 +842,7 @@ public abstract class SystemFilter {
                         molaAtoms[i].setElectrostatics(false);
                     }
                     logger.log(Level.INFO, format(" Disabled electrostatics "
-                            + "for atoms %d-%d", noERange[0] + 1, noERange[1] + 1));
+                            + "for atoms %d-%d (%s-%s)", noERange[0] + 1, noERange[1] + 1, molaAtoms[noERange[0]], molaAtoms[noERange[1]]));
                 } catch (IllegalArgumentException ex) {
                     boolean atomFound = false;
                     for (Atom atom : molaAtoms) {
