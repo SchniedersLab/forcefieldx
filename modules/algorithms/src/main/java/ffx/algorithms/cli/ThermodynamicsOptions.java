@@ -118,8 +118,7 @@ public class ThermodynamicsOptions {
                                              DynamicsOptions dynamics, WriteoutOptions writeOut, File dyn, AlgorithmListener aListener) {
         dynamics.init();
 
-        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(topologies[0], potential, topologies[0].getProperties(),
-                aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
+        MolecularDynamics molDyn = dynamics.getDynamics(writeOut, potential, topologies[0], aListener);
         for (int i = 1; i < topologies.length; i++) {
             molDyn.addAssembly(topologies[i], topologies[i].getProperties());
         }
