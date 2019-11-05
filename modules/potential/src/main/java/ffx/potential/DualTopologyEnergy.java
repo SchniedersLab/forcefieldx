@@ -455,10 +455,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             }
 
         }
+        commonIndex = 0;
         for (int i = 0; i < nActive2; i++) {
             Atom a = activeAtoms2[i];
-            if (doUnpin.test(a)) {
-                double m = a.getMass();
+            double m = a.getMass();
+            if (!doUnpin.test(a)) {
+                for (int j = 0; j < 3; j++) {
+                    double massCommon = mass[commonIndex];
+                    massCommon = Math.max(massCommon, m);
+                    mass[commonIndex++] = massCommon;
+                }
+            } else {
                 mass[softcoreIndex++] = m;
                 mass[softcoreIndex++] = m;
                 mass[softcoreIndex++] = m;
