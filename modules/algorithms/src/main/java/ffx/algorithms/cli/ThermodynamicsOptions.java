@@ -131,6 +131,7 @@ public class ThermodynamicsOptions {
             logger.info(" Beginning equilibration");
             runDynamics(molDyn, nEquil, dynamics, writeOut, true, dyn);
             logger.info(" Beginning fixed-lambda alchemical sampling");
+            initVelocities = false;
         } else {
             logger.info(" Beginning fixed-lambda alchemical sampling without equilibration");
             if (!resetNumSteps) {
@@ -141,9 +142,10 @@ public class ThermodynamicsOptions {
                     initVelocities = false;
                 }*/
                 // Temporary workaround for being unable to pick up preexisting steps.
-                initVelocities = false;
+                initVelocities = true;
             }
         }
+
         if (nSteps > 0) {
             runDynamics(molDyn, nSteps, dynamics, writeOut, initVelocities, dyn);
         } else {
