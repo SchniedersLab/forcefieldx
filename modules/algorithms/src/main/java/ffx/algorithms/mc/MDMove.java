@@ -101,6 +101,10 @@ public class MDMove implements MCMove {
      * Net energy drift over all moves.
      */
     private double energyDriftNet;
+    /**
+     * Potential to operate on.
+     */
+    private final Potential potential;
 
 
     /**
@@ -116,7 +120,7 @@ public class MDMove implements MCMove {
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
                   CompositeConfiguration properties, AlgorithmListener listener,
                   ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
-
+        this.potential = potentialEnergy;
         molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
 
@@ -180,7 +184,8 @@ public class MDMove implements MCMove {
 
             double dt = molecularDynamics.getTimeStep();
             int intervalSteps = molecularDynamics.getIntervalSteps();
-            int nAtoms = molecularDynamics.getNumAtoms();
+            int nAtoms = potential.getNumberOfVariables() / 3;
+            // TODO: Determine if the *1000 factor is an old artifact of MolecularDynamicsOpenMM being the one thing which (used to) store dt in fsec.
             double normalizedEnergyDriftNet = (energyDriftAverageNet / (dt * intervalSteps * nAtoms)) * 1000;
             double normalizedEnergyDriftAbs = (energyDriftAverageAbs / (dt * intervalSteps * nAtoms)) * 1000;
             logger.fine(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",

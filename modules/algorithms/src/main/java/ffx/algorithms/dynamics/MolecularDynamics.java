@@ -1682,16 +1682,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>
-     * getNumAtoms.</p>
-     *
-     * @return a int.
-     */
-    public int getNumAtoms() {
-        return 1;
-    }
-
-    /**
      * Write out restart files.
      */
     public void writeRestart() {
