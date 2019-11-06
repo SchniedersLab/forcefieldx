@@ -231,7 +231,20 @@ class Thermodynamics extends AlgorithmsScript {
 
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
-        StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ")
+        StringBuilder sb = new StringBuilder("\n Running ");
+        switch (thermodynamics.getAlgorithm()) {
+            case OST:
+                ostAlg: {
+                    sb.append("Transition-Tempered Orthogonal Space Random Walk");
+                }
+                break;
+            case FIXED:
+                fixedAlg: {
+                    sb.append("Fixed-Lambda Sampling at Lambda ").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
+                }
+        }
+        sb.append(" for ");
+
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
         LambdaInterface linter = (LambdaInterface) potential
         logger.info(sb.toString())
