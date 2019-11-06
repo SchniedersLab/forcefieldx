@@ -90,6 +90,12 @@ public interface AnnealingSchedule {
     double minWindowLength();
 
     /**
+     * Returns the longest window to be used (normalized to the number of MD steps in a "regular" window).
+     * @return Maximum normalized window length.
+     */
+    double maxWindowLength();
+
+    /**
      * Returns the sum of window lengths to be used (normalized to the number of MD steps in a "regular" window).
      * @return Total normalized window length.
      */

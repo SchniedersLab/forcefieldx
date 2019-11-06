@@ -118,8 +118,7 @@ public class ThermodynamicsOptions {
                                              DynamicsOptions dynamics, WriteoutOptions writeOut, File dyn, AlgorithmListener aListener) {
         dynamics.init();
 
-        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(topologies[0], potential, topologies[0].getProperties(),
-                aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
+        MolecularDynamics molDyn = dynamics.getDynamics(writeOut, potential, topologies[0], aListener);
         for (int i = 1; i < topologies.length; i++) {
             molDyn.addAssembly(topologies[i], topologies[i].getProperties());
         }
@@ -132,6 +131,7 @@ public class ThermodynamicsOptions {
             logger.info(" Beginning equilibration");
             runDynamics(molDyn, nEquil, dynamics, writeOut, true, dyn);
             logger.info(" Beginning fixed-lambda alchemical sampling");
+            initVelocities = false;
         } else {
             logger.info(" Beginning fixed-lambda alchemical sampling without equilibration");
             if (!resetNumSteps) {
@@ -142,9 +142,10 @@ public class ThermodynamicsOptions {
                     initVelocities = false;
                 }*/
                 // Temporary workaround for being unable to pick up preexisting steps.
-                initVelocities = false;
+                initVelocities = true;
             }
         }
+
         if (nSteps > 0) {
             runDynamics(molDyn, nSteps, dynamics, writeOut, initVelocities, dyn);
         } else {

@@ -104,7 +104,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     /**
      * Number of MD steps per OpenMM cycle (assuming OpenMM is used!).
      */
-    private double trajSteps = 1;
+    private int trajSteps = 1;
     private double saveFrequency = 0.1;
     /**
      * Restart file.
@@ -195,10 +195,10 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         done = false;
         terminate = false;
 
-        double minMdSteps = mdSteps * schedule.minWindowLength();
+        int minMdSteps = (int) (mdSteps * schedule.minWindowLength());
         if (minMdSteps < trajSteps) {
-            logger.warning(String.format(" Minimum umber of MD steps per annealing cycle %d was less than steps per OpenMM MD cycle %d! Setting steps per MD cycle to %d", minMdSteps, trajSteps, minMdSteps));
-            setTrajectorySteps((int) minMdSteps);
+            logger.warning(String.format(" Minimum number of MD steps per annealing cycle %d was less than steps per OpenMM MD cycle %d! Setting steps per MD cycle to %d", minMdSteps, trajSteps, minMdSteps));
+            setTrajectorySteps(minMdSteps);
         }
 
         int nWindows = schedule.getNumWindows();
@@ -206,7 +206,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
         for (int i = 0; i < nWindows; i++) {
             double temperature = schedule.getTemperature(i);
-            molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveFrequency, temperature, (reinitV || forceFirstReinit), dynFile);
+            int nSteps = (int) (schedule.windowLength(i) * mdSteps);
+            logger.info(String.format(" Annealing window %d: %d steps at %9.4g K", (i+1), nSteps, temperature));
+            molecularDynamics.dynamic(nSteps, timeStep, printInterval, saveFrequency, temperature, (reinitV || forceFirstReinit), dynFile);
             if (dynFile == null) {
                 dynFile = molecularDynamics.getDynFile();
             }

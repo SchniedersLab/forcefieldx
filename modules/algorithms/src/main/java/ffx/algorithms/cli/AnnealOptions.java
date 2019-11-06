@@ -104,6 +104,11 @@ public class AnnealOptions {
             description = "High temperature limit (Kelvin).")
     double upper = 1000.0;
 
+    /**
+     * --rv or --reinitVelocities forces simulated annealing to re-initialize velocities
+     * to the new temperature at each annealing step, rather than letting the thermostat
+     * shift temperature downwards.
+     */
     @Option(names = {"--rv", "--reinitVelocities"}, paramLabel = "false",
             description = "Re-initialize velocities before each round of annealing.")
     boolean reinitV = false;
@@ -161,9 +166,37 @@ public class AnnealOptions {
             ++perWindowSteps;
         }
 
-        logger.info(String.format(" Each of %d simulated annealing windows will have %d " +
-                "steps each for a total annealing duration of %d timesteps",
-                schedule.getNumWindows(), perWindowSteps, perWindowSteps * schedule.getNumWindows()));
+        int minWindowSteps = (int) (perWindowSteps * schedule.minWindowLength());
+        int maxWindowSteps = (int) (perWindowSteps * schedule.maxWindowLength());
+        int nWindows = schedule.getNumWindows();
+
+        if (minWindowSteps == maxWindowSteps && minWindowSteps == perWindowSteps) {
+            logger.info(String.format(" Each of %d simulated annealing windows will have %d steps each, for a " +
+                    "total duration of %d timesteps", nWindows, perWindowSteps, perWindowSteps * nWindows));
+        } else {
+            logger.info(String.format(" Each of %d simulated annealing windows will have %d-%d steps each, " +
+                    "with a \"normal\" length of %d steps, for a total duration of %d timesteps", nWindows,
+                    minWindowSteps, maxWindowSteps, perWindowSteps, (int) (perWindowSteps * schedule.totalWindowLength())));
+        }
+
+        if (nWindows < 201) {
+            StringBuilder sb = new StringBuilder("\n Simulated annealing windows [index,MD steps, temperature (K)]:\n [");
+            for (int i = 0; i < nWindows; i++) {
+                double len = schedule.windowLength(i);
+                double temp = schedule.getTemperature(i);
+                sb.append(String.format("[%d,%d,%10.4g]", (i+1), (int) (len * perWindowSteps), temp));
+                if (i == nWindows - 1) {
+                    sb.append("]\n");
+                } else if (i % 10 == 9) {
+                    sb.append("\n");
+                } else {
+                    sb.append(",");
+                }
+            }
+            logger.info(sb.toString());
+        } else {
+            logger.info(" Skipping printout of window lengths/temperatures (max printout at 200 windows)");
+        }
 
         return new SimulatedAnnealing(mola, potential, props, alist, dynOpts.thermostat,
                 dynOpts.integrator, schedule, perWindowSteps, dynOpts.dt, reinitV, dynFile);

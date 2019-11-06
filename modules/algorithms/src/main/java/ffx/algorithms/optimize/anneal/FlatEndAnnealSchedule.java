@@ -153,7 +153,19 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
 
     @Override
     public double minWindowLength() {
-        return Math.min(Math.min(lenBefore, lenAfter), middle.minWindowLength());
+        double len = middle.minWindowLength();
+        if (useAfter) {
+            len = Math.min(len, lenAfter);
+        }
+        if (useBefore) {
+            len = Math.min(len, lenBefore);
+        }
+        return len;
+    }
+
+    @Override
+    public double maxWindowLength() {
+        return Math.max(Math.max(lenBefore, lenAfter), middle.maxWindowLength());
     }
 
     @Override
