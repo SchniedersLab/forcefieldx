@@ -42,6 +42,8 @@ import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
+
 /**
  * Read in the TT-OSRW Histogram.
  *
@@ -73,33 +75,32 @@ class HistogramReader extends BufferedReader {
      */
     void readHistogramFile() {
         try {
-            transitionTemperedOSRW.temperature = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.thetaMass = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.biasMag = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
-            transitionTemperedOSRW.countInterval = Integer.parseInt(readLine().split(" +")[1]);
-
-            transitionTemperedOSRW.lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-            transitionTemperedOSRW.FLambda = new double[transitionTemperedOSRW.lambdaBins];
-            transitionTemperedOSRW.dL = 1.0 / (transitionTemperedOSRW.lambdaBins - 1);
-            transitionTemperedOSRW.dL_2 = transitionTemperedOSRW.dL / 2.0;
-
-            transitionTemperedOSRW.FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-            transitionTemperedOSRW.minFLambda = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.dFL = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.dFL_2 = transitionTemperedOSRW.dFL / 2.0;
+            Histogram histogram = transitionTemperedOSRW.getHistogram();
+            histogram.temperature = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.thetaMass = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.biasMag = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
+            histogram.countInterval = Integer.parseInt(readLine().split(" +")[1]);
+            histogram.lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+            histogram.FLambda = new double[histogram.lambdaBins];
+            histogram.dL = 1.0 / (histogram.lambdaBins - 1);
+            histogram.dL_2 = histogram.dL / 2.0;
+            histogram.FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+            histogram.minFLambda = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.dFL = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.dFL_2 = histogram.dFL / 2.0;
 
             int flag = Integer.parseInt(readLine().split(" +")[1]);
             transitionTemperedOSRW.setTempering(flag != 0);
 
             // Allocate memory for the recursion kernel.
-            transitionTemperedOSRW.allocateRecursionKernel();
+            histogram.allocateRecursionKernel();
 
-            for (int i = 0; i < transitionTemperedOSRW.lambdaBins; i++) {
+            for (int i = 0; i < histogram.lambdaBins; i++) {
                 String[] counts = readLine().split(" +");
-                for (int j = 0; j < transitionTemperedOSRW.FLambdaBins; j++) {
-                    transitionTemperedOSRW.setRecursionKernelValue(i, j, Double.parseDouble(counts[j]));
+                for (int j = 0; j < histogram.FLambdaBins; j++) {
+                    histogram.setRecursionKernelValue(i, j, Double.parseDouble(counts[j]));
                 }
             }
         } catch (Exception e) {

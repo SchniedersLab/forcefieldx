@@ -48,6 +48,7 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.thermodynamics.MonteCarloOSRW;
 import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
@@ -211,7 +212,8 @@ public class OSRWOptions {
         boolean resetNSteps = thermo.getResetNumSteps();
         TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
-        ttOSRW.checkRecursionKernelSize();
+        Histogram histogram = ttOSRW.getHistogram();
+        histogram.checkRecursionKernelSize();
         ttOSRW.setHardWallConstraint(mcHW);
 
         // Do NOT run applyOSRWOptions here, because that can mutate the TT-OSRW to a Barostat.

@@ -40,6 +40,8 @@ package ffx.algorithms.thermodynamics;
 import java.io.PrintWriter;
 import java.io.Writer;
 
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
+
 /**
  * Write out the current value of Lambda, its velocity and the number of counts.
  *
@@ -68,8 +70,9 @@ class LambdaWriter extends PrintWriter {
      * Write the Lambda restart file.
      */
     void writeLambdaFile() {
+        Histogram histogram = transitionTemperedOSRW.getHistogram();
         printf("Lambda          %15.8f\n", transitionTemperedOSRW.lambda);
-        printf("Lambda-Velocity %15.8e\n", transitionTemperedOSRW.halfThetaVelocity);
+        printf("Lambda-Velocity %15.8e\n", histogram.halfThetaVelocity);
         printf("Steps-Taken     %15d\n", transitionTemperedOSRW.energyCount);
     }
 }

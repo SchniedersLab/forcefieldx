@@ -43,6 +43,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
+
 /**
  * Read in the current value of Lambda, its velocity and the number of counts.
  *
@@ -76,8 +78,9 @@ class LambdaReader extends BufferedReader {
      */
     void readLambdaFile(boolean resetEnergyCount) {
         try {
+            Histogram histogram = transitionTemperedOSRW.getHistogram();
             transitionTemperedOSRW.lambda = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
             transitionTemperedOSRW.setLambda(transitionTemperedOSRW.lambda);
         } catch (Exception e) {
             String message = " Invalid OSRW Lambda file.";

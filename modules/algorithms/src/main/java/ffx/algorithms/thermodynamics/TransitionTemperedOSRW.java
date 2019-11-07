@@ -138,42 +138,9 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      */
     private final File histogramFile;
     /**
-     * State variable lambda ranges from 0.0 .. 1.0.
+     * Contains counts for the OST bias.
      */
-    protected double lambda;
-    /**
-     * Flag to indicate that the Lambda particle should be propagated.
-     */
-    private boolean propagateLambda = true;
-    /**
-     * Number of times the OSRW biasing potential has been evaluated with the
-     * "propagateLambda" flag true.
-     */
-    int energyCount;
-    /**
-     * Number of times a Gaussian has been added.
-     */
-    private int biasCount = 0;
-    /**
-     * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
-     * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
-     * <p>
-     * With this scheme, the maximum of biasing Gaussians is at the edges.
-     * <p>
-     * The default lambdaBins = 201.
-     */
-    int lambdaBins;
-    /**
-     * It is useful to have an odd number of bins, so that there is a bin from
-     * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
-     * thermodynamic integration goes to zero.
-     * <p>
-     * Otherwise a contribution of zero from a L bin can only result from equal
-     * sampling of the ranges -dFL to 0 and 0 to dFL.
-     * <p>
-     * The default FLambdaBins = 401.
-     */
-    int FLambdaBins;
+    private final Histogram histogram;
     /**
      * Parallel Java world communicator.
      */
@@ -187,50 +154,18 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      */
     protected final int rank;
     /**
-     * When evaluating the biasing potential, contributions from Gaussians
-     * centered on bins more the "biasCutoff" away will be neglected.
-     * <p>
-     * The default biasCutoff = 5.
+     * State variable lambda ranges from 0.0 .. 1.0.
      */
-    int biasCutoff;
+    protected double lambda;
     /**
-     * Width of the lambda bin.
-     * <p>
-     * The default dL = (1.0 / (lambdaBins - 1).
+     * Flag to indicate that the Lambda particle should be propagated.
      */
-    protected double dL;
+    private boolean propagateLambda = true;
     /**
-     * Half the width of a lambda bin.
+     * Number of times the OSRW biasing potential has been evaluated with the
+     * "propagateLambda" flag true.
      */
-    double dL_2;
-    /**
-     * The width of the FLambda bin.
-     * <p>
-     * The default dFL = 2.0 (kcal/mol).
-     */
-    double dFL;
-    /**
-     * Half the width of the F_lambda bin.
-     */
-    double dFL_2;
-    /**
-     * The minimum value of the first lambda bin.
-     * <p>
-     * minLambda = -dL_2.
-     */
-    private double minLambda;
-    /**
-     * The minimum value of the first F_lambda bin.
-     * <p>
-     * minFLambda = -(dFL * FLambdaBins) / 2.0.
-     */
-    double minFLambda;
-    /**
-     * The maximum value of the last F_lambda bin.
-     * <p>
-     * maxFLambda = minFLambda + FLambdaBins * dFL.
-     */
-    private double maxFLambda;
+    int energyCount;
     /**
      * Force Field Potential Energy (i.e. with no bias terms added).
      */
@@ -257,44 +192,14 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      */
     private double[] dUdXdL;
     /**
-     * Magnitude of each hill (not including tempering).
-     * <p>
-     * The default biasMag = 0.05 (kcal/mol).
-     */
-    double biasMag;
-    /**
-     * 1D PMF with respect to lambda F(L).
-     */
-    double[] FLambda;
-    /**
      * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
      */
     private double gLdEdL = 0.0;
-    /**
-     * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
-     */
-    double thetaFriction = 1.0e-19;
-    /**
-     * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
-     */
-    double thetaMass = 1.0e-18;
-    double halfThetaVelocity = 0.0;
+
     /**
      * Time step in picoseconds.
      */
     protected final double dt;
-    /**
-     * Temperature in Kelvin.
-     * <p>
-     * The default is 298.15.
-     */
-    protected double temperature;
-    /**
-     * Interval between adding a count to the Recursion kernel in steps.
-     * <p>
-     * The default countInterval = 10.
-     */
-    int countInterval = 10;
     /**
      * Interval between printing information on the lambda particle in steps.
      * <p>
@@ -411,29 +316,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      * Should the 1D OSRW bias be included in the target function.
      */
     private boolean include1DBias;
-    /**
-     * Map lambda to a periodic variable theta.
-     *
-     * <code>theta = asin(sqrt(lambda))</code>
-     *
-     * <code>lambda = sin^2 (theta).</code>
-     */
-    private double theta;
-    private final Random stochasticRandom;
-    /**
-     * Random force conversion to kcal/mol/A;
-     * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
-     */
-    private static final double randomConvert = sqrt(4.184) / 10e9;
-    /**
-     * randomConvert squared.
-     * Units: Joule per calorie / (nanometer per meter)^2
-     */
-    private static final double randomConvert2 = randomConvert * randomConvert;
-    /**
-     * The recursion kernel stores the weight of each [lambda][Flambda] bin.
-     */
-    private double[][] recursionKernel;
+
     /**
      * The integration algorithm used for thermodynamic integration.
      */
@@ -566,7 +449,6 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         this.potential = potential;
         this.lambdaFile = lambdaFile;
         this.histogramFile = histogramFile;
-        this.temperature = temperature;
         this.asynchronous = asynchronous;
         this.algorithmListener = algorithmListener;
         nVariables = potential.getNumberOfVariables();
@@ -592,46 +474,11 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
             saveFrequency = (int) (saveInterval / this.dt);
         }
 
-        biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        biasMag = properties.getDouble("bias-gaussian-mag", 0.05);
-        dL = properties.getDouble("lambda-bin-width", 0.005);
-        dFL = properties.getDouble("flambda-bin-width", 2.0);
-
-        // Require modest sampling of the lambda path.
-        if (dL > 0.1) {
-            dL = 0.1;
-        }
-
-        /*
-          Many lambda bin widths do not evenly divide into 1.0; here we correct
-          for this by computing an integer number of bins, then re-setting the
-          lambda variable appropriately. Note that we also choose to have an
-          odd number of lambda bins, so that the centers of the first and last
-          bin are at 0 and 1.
-         */
-        lambdaBins = (int) (1.0 / dL);
-        if (lambdaBins % 2 == 0) {
-            lambdaBins++;
-        }
-
-        /*
-          The initial number of FLambda bins does not really matter, since a
-          larger number is automatically allocated as needed. The center of the
-          central bin is at 0.
-         */
-        FLambdaBins = 101;
-        minFLambda = -(dFL * FLambdaBins) / 2.0;
+        histogram = new Histogram(properties, temperature);
 
         energyCount = -1;
 
-        dL = 1.0 / (lambdaBins - 1);
-        dL_2 = dL / 2.0;
-        minLambda = -dL_2;
-        dFL_2 = dFL / 2.0;
-        maxFLambda = minFLambda + FLambdaBins * dFL;
-        FLambda = new double[lambdaBins];
         dUdXdL = new double[nVariables];
-        stochasticRandom = new Random();
 
         /*
           Set up the multi-walker communication variables for Parallel Java
@@ -643,13 +490,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
 
         include1DBias = properties.getBoolean("osrw-1D-bias", true);
 
-        deltaT = temperingFactor * R * this.temperature;
-
-        // Allocate space for the recursion kernel that stores weights.
-        recursionKernel = new double[lambdaBins][FLambdaBins];
-
-        // Allocate space to regularize kernel values.
-        kernelValues = new double[FLambdaBins];
+        deltaT = temperingFactor * R * temperature;
 
         // Load the OSRW histogram restart file if it exists.
         boolean readHistogramRestart = false;
@@ -696,7 +537,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
             receiveThread = null;
         }
 
-        double defaultOffset = 20.0 * biasMag;
+        double defaultOffset = 20.0 * histogram.biasMag;
         temperOffset = properties.getDouble("ttosrw-temperOffset", defaultOffset);
         if (temperOffset < 0.0) {
             temperOffset = 0.0;
@@ -715,16 +556,20 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
 
         // Update and print out the recursion slave.
         if (readHistogramRestart) {
-            updateFLambda(true, false);
+            histogram.updateFLambda(true, false);
         }
 
         // Log parameters.
         logger.info("\n Orthogonal Space Random Walk Parameters");
-        logger.info(format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
-        logger.info(format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
+        logger.info(format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", histogram.biasMag));
+        logger.info(format("  Gaussian Bias Cutoff:           %6d bins", histogram.biasCutoff));
         logger.info(format("  Print Interval:                 %6.3f psec", printInterval));
         logger.info(format("  Save Interval:                  %6.3f psec", saveInterval));
         logger.info(format("  Include 1D OSRW Bias:           %6b", include1DBias));
+    }
+
+    public Histogram getHistogram() {
+        return histogram;
     }
 
     /**
@@ -735,7 +580,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     public void setTemperingParameter(double temper) {
         temperingFactor = temper;
         if (temperingFactor > 0.0) {
-            deltaT = temperingFactor * R * temperature;
+            deltaT = temperingFactor * R * histogram.temperature;
         } else {
             deltaT = Double.MAX_VALUE;
         }
@@ -760,53 +605,12 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     }
 
     /**
-     * Return the value of a recursion kernel bin.
-     *
-     * @param lambdaBin  The lambda bin.
-     * @param fLambdaBin The dU/dL bin.
-     * @return The value of the bin.
-     */
-    double getRecursionKernelValue(int lambdaBin, int fLambdaBin) {
-        return recursionKernel[lambdaBin][fLambdaBin];
-    }
-
-    /**
-     * Set the value of a recursion kernel bin.
-     *
-     * @param lambdaBin  The lambda bin.
-     * @param fLambdaBin The dU/dL bin.
-     * @param value      The value of the bin.
-     */
-    void setRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
-        recursionKernel[lambdaBin][fLambdaBin] = value;
-    }
-
-    /**
-     * Add to the value of a recursion kernel bin.
-     *
-     * @param lambdaBin  The lambda bin.
-     * @param fLambdaBin The dU/dL bin.
-     * @param value      The value of the bin.
-     */
-    void addToRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
-        recursionKernel[lambdaBin][fLambdaBin] += value;
-    }
-
-    /**
-     * Allocate memory for the recursion kernel.
-     */
-    void allocateRecursionKernel() {
-        recursionKernel = new double[lambdaBins][FLambdaBins];
-        kernelValues = new double[FLambdaBins];
-    }
-
-    /**
      * Set the OSRW Gaussian biasing potential magnitude (kcal/mol).
      *
      * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
      */
     public void setBiasMagnitude(double biasMag) {
-        this.biasMag = biasMag;
+        histogram.biasMag = biasMag;
         logger.info(format("\n  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
 
         double defaultOffset = 20.0 * biasMag;
@@ -836,80 +640,71 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
             return forceFieldEnergy;
         }
 
-        gLdEdL = 0.0;
         dUdLambda = lambdaInterface.getdEdL();
         d2UdL2 = lambdaInterface.getd2EdL2();
-        int lambdaBin = binForLambda(lambda);
-        int FLambdaBin = binForFLambda(dUdLambda);
+        int lambdaBin = histogram.binForLambda(lambda);
         dForceFieldEnergydL = dUdLambda;
 
         // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
-        double dGdLambda = 0.0;
-        double dGdFLambda = 0.0;
-        double ls2 = (2.0 * dL) * (2.0 * dL);
-        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-        int kernelCount = 0;
-        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int lcenter = lambdaBin + iL;
-            double deltaL = lambda - (lcenter * dL);
-            double deltaL2 = deltaL * deltaL;
-            // Mirror conditions for recursion kernel counts.
-            int lcount = lcenter;
-            double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == lambdaBins - 1) {
-                mirrorFactor = 2.0;
-            } else if (lcount < 0) {
-                lcount = -lcount;
-            } else if (lcount > lambdaBins - 1) {
-                // Number of bins past the last bin
-                lcount -= (lambdaBins - 1);
-                // Mirror bin
-                lcount = lambdaBins - 1 - lcount;
-            }
-            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                int FLcenter = FLambdaBin + iFL;
 
-                // If either of the following FL edge conditions are true, then there are no counts and we continue.
-                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                    continue;
-                }
-                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
-                double deltaFL2 = deltaFL * deltaFL;
-                double rc = recursionKernel[lcount][FLcenter];
-                if (rc > 0.0) {
-                    kernelCount++;
-                } else {
-                    continue;
-                }
-                double weight = mirrorFactor * rc;
-                double bias = weight * biasMag
-                        * exp(-deltaL2 / (2.0 * ls2))
-                        * exp(-deltaFL2 / (2.0 * FLs2));
-                gLdEdL += bias;
-                dGdLambda -= deltaL / ls2 * bias;
-                dGdFLambda -= deltaFL / FLs2 * bias;
-            }
-        }
-
-        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-//        if (hardWallConstraint && kernelCount > 0) {
-//            if (hardWallConstraint && propagateLambda) {
-//                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
-//            }
-//            int maxCount = (2 * biasCutoff + 1);
-//            maxCount *= maxCount;
-//            double upweightFactor = (double) maxCount / (double) kernelCount;
-//            dGdLambda *= upweightFactor;
-//            dGdFLambda *= upweightFactor;
-//        }
-
-        // Lambda gradient due to recursion kernel G(L, F_L).
+        double[] chainRule = new double[2];
+        gLdEdL = histogram.computeBiasEnergyAndGradient(lambda, dUdLambda, chainRule);
+        double dGdLambda = chainRule[0];
+        double dGdFLambda = chainRule[1];
         dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
+
+//        gLdEdL = 0.0;
+//        double dGdLambda = 0.0;
+//        double dGdFLambda = 0.0;
+//        double ls2 = (2.0 * dL) * (2.0 * dL);
+//        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+//        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+//            int lcenter = lambdaBin + iL;
+//            double deltaL = lambda - (lcenter * dL);
+//            double deltaL2 = deltaL * deltaL;
+//            // Mirror conditions for recursion kernel counts.
+//            int lcount = lcenter;
+//            double mirrorFactor = 1.0;
+//            if (lcount == 0 || lcount == lambdaBins - 1) {
+//                mirrorFactor = 2.0;
+//            } else if (lcount < 0) {
+//                lcount = -lcount;
+//            } else if (lcount > lambdaBins - 1) {
+//                // Number of bins past the last bin
+//                lcount -= (lambdaBins - 1);
+//                // Mirror bin
+//                lcount = lambdaBins - 1 - lcount;
+//            }
+//            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+//                int FLcenter = FLambdaBin + iFL;
+//
+//                // If either of the following FL edge conditions are true, then there are no counts and we continue.
+//                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+//                    continue;
+//                }
+//                double rc = recursionKernel[lcount][FLcenter];
+//                if (rc <= 0.0) {
+//                    continue;
+//                }
+//                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+//                double deltaFL2 = deltaFL * deltaFL;
+//                double weight = mirrorFactor * rc;
+//                double bias = weight * biasMag
+//                        * exp(-deltaL2 / (2.0 * ls2))
+//                        * exp(-deltaFL2 / (2.0 * FLs2));
+//                gLdEdL += bias;
+//                dGdLambda -= deltaL / ls2 * bias;
+//                dGdFLambda -= deltaFL / FLs2 * bias;
+//            }
+//        }
+//
+//        // Lambda gradient due to recursion kernel G(L, F_L).
+//      dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
         // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
         if (include1DBias) {
-            bias1D = current1DBiasEnergy(lambda, true);
+            bias1D = histogram.current1DBiasEnergy(lambda, true);
         }
         biasEnergy = bias1D + gLdEdL;
 
@@ -924,105 +719,26 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
             // Log the current Lambda state.
             if (energyCount % printFrequency == 0) {
                 double dBdL = dUdLambda - dForceFieldEnergydL;
-                if (lambdaBins < 1000) {
+                if (histogram.lambdaBins < 1000) {
                     logger.info(format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, histogram.halfThetaVelocity));
                 } else {
                     logger.info(format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, histogram.halfThetaVelocity));
                 }
             }
 
             // Metadynamics grid counts (every 'countInterval' steps).
-            if (energyCount % countInterval == 0) {
-                addBias(dForceFieldEnergydL, x, null);
+            if (energyCount % histogram.countInterval == 0) {
+                histogram.addBias(dForceFieldEnergydL, x, null);
             }
 
-            langevin();
+            histogram.langevin();
         }
 
         totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
-    }
-
-    /**
-     * Compute the Bias energy at (currentLambda, currentdUdL).
-     *
-     * @param currentLambda The value of lambda.
-     * @param currentdUdL   The value of dU/dL.
-     * @return The bias energy.
-     */
-    double computeBiasEnergy(double currentLambda, double currentdUdL) {
-
-        int lambdaBin = binForLambda(currentLambda);
-        int FLambdaBin = binForFLambda(currentdUdL);
-
-        double bias2D = 0.0;
-        double ls2 = (2.0 * dL) * (2.0 * dL);
-        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-        int kernelCount = 0;
-        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int lcenter = lambdaBin + iL;
-            double deltaL = currentLambda - (lcenter * dL);
-            double deltaL2 = deltaL * deltaL;
-            // Mirror conditions for recursion kernel counts.
-            int lcount = lcenter;
-            double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == lambdaBins - 1) {
-                mirrorFactor = 2.0;
-            } else if (lcount < 0) {
-                lcount = -lcount;
-            } else if (lcount > lambdaBins - 1) {
-                // Number of bins past the last bin
-                lcount -= (lambdaBins - 1);
-                // Mirror bin
-                lcount = lambdaBins - 1 - lcount;
-            }
-            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                int FLcenter = FLambdaBin + iFL;
-
-                // If either of the following FL edge conditions are true,
-                // then there are no counts and we continue.
-                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                    continue;
-                }
-                double currentFL = minFLambda + FLcenter * dFL + dFL_2;
-                double deltaFL = currentdUdL - currentFL;
-                double deltaFL2 = deltaFL * deltaFL;
-                double rc = recursionKernel[lcount][FLcenter];
-                if (rc > 0.0) {
-                    kernelCount++;
-                } else {
-                    continue;
-                }
-                double weight = mirrorFactor * rc;
-                double bias = weight * biasMag
-                        * exp(-deltaL2 / (2.0 * ls2))
-                        * exp(-deltaFL2 / (2.0 * FLs2));
-
-                // logger.info(format("(L=%6.4f FL=%8.2f) L=%6.4f Bin=%3d; FL=%8.3f Bin=%6d; Bias: %8.6f",
-                //        currentLambda, currentdUdL, lcenter * dL, lcount, currentFL, FLcenter, bias));
-
-                bias2D += bias;
-            }
-        }
-
-        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-//        if (hardWallConstraint && kernelCount > 0) {
-//            int maxCount = (2 * biasCutoff + 1);
-//            maxCount *= maxCount;
-//            double upweightFactor = (double) maxCount / (double) kernelCount;
-//            bias2D *= upweightFactor;
-//        }
-
-        // Compute the energy for the recursion slave at F(L) using interpolation.
-        double bias1D = 0.0;
-        if (include1DBias) {
-            bias1D = current1DBiasEnergy(currentLambda, false);
-        }
-
-        return bias1D + bias2D;
     }
 
     /**
@@ -1100,97 +816,6 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     }
 
     /**
-     * Evaluate the kernel across dU/dL values at given value of lambda. The largest kernel value V
-     * is used to define an offset (-V), which is added to all to kernel values. Then,
-     * the largest kernel value is zero, and will result in a statistical weight of 1.
-     * <p>
-     * The offset avoids the recursion kernel becoming too large for some combinations of (Lambda, dU/dL).
-     * This can result in its statistical weight = exp(kernel * beta)
-     * exceeding the maximum representable double value.
-     *
-     * @param lambda Value of Lambda to evaluate the kernal for.
-     * @param llFL   Lower FLambda bin.
-     * @param ulFL   Upper FLambda bin.
-     * @return the applied offset.
-     */
-    private double evaluateKernelforLambda(int lambda, int llFL, int ulFL) {
-        double maxKernel = Double.MIN_VALUE;
-        for (int jFL = llFL; jFL <= ulFL; jFL++) {
-            double value = evaluateKernel(lambda, jFL);
-            kernelValues[jFL] = value;
-            if (value > maxKernel) {
-                maxKernel = value;
-            }
-        }
-        double offset = -maxKernel;
-        for (int jFL = llFL; jFL <= ulFL; jFL++) {
-            kernelValues[jFL] += offset;
-        }
-        return offset;
-    }
-
-    /**
-     * Integrates dUdL over lambda using more sophisticated techniques than midpoint rectangular integration.
-     * <p>
-     * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids
-     *
-     * @param dUdLs dUdL at the midpoint of each bin.
-     * @param type  Integration type to use.
-     * @return Current delta-G estimate.
-     */
-    private double integrateNumeric(double[] dUdLs, IntegrationType type) {
-        // Integrate between the second bin midpoint and the second-to-last bin midpoint.
-        double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0 - dL, (lambdaBins - 2), false);
-        double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
-        DataSet dSet = new DoublesDataSet(midLams, midVals, false);
-
-        double val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
-
-        double dL_4 = dL_2 * 0.5;
-
-        // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
-        double val0 = 0;
-        double val1 = 0;
-
-        // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
-        if (!lambdaInterface.dEdLZeroAtEnds()) {
-            double recipSlopeLen = 1.0 / (dL * 0.75);
-
-            double slope = dUdLs[0] - dUdLs[1];
-            slope *= recipSlopeLen;
-            val0 = dUdLs[0] + (slope * dL_4);
-
-            slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
-            slope *= recipSlopeLen;
-            val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
-            logger.fine(format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
-        }
-
-        // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
-        val += trapezoid(0, dL_4, val0, dUdLs[0]);
-        val += trapezoid(dL_4, dL, dUdLs[0], dUdLs[1]);
-        val += trapezoid(1.0 - dL, 1.0 - dL_4, dUdLs[lambdaBins - 2], dUdLs[lambdaBins - 1]);
-        val += trapezoid(1.0 - dL_4, 1.0, dUdLs[lambdaBins - 1], val1);
-
-        return val;
-    }
-
-    /**
-     * Integrates a trapezoid.
-     *
-     * @param x0  First x point
-     * @param x1  Second x point
-     * @param fX1 First f(x) point
-     * @param fX2 Second f(x) point
-     * @return The area under a trapezoid.
-     */
-    private double trapezoid(double x0, double x1, double fX1, double fX2) {
-        double val = 0.5 * (fX1 + fX2);
-        val *= (x1 - x0);
-        return val;
-    }
-
-    /**
      * Update a local array of current lambda values for each walker.
      *
      * @param rank   Walker rank.
@@ -1229,14 +854,14 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         }
 
         // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
-        checkRecursionKernelSize(minRequired);
-        checkRecursionKernelSize(maxRequired);
+        histogram.checkRecursionKernelSize(minRequired);
+        histogram.checkRecursionKernelSize(maxRequired);
 
         // Increment the Recursion Kernel based on the input of each walker.
         for (int i = 0; i < numProc; i++) {
             currentLambdaValues[i] = recursionWeights[i][0];
-            int walkerLambda = binForLambda(recursionWeights[i][0]);
-            int walkerFLambda = binForFLambda(recursionWeights[i][1]);
+            int walkerLambda = histogram.binForLambda(recursionWeights[i][0]);
+            int walkerFLambda = histogram.binForFLambda(recursionWeights[i][1]);
             double weight = recursionWeights[i][2];
 
             // If the weight is less than 1.0, then a walker has activated tempering.
@@ -1246,12 +871,12 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
             }
 
             if (resetStatistics && recursionWeights[i][0] > lambdaResetValue) {
-                recursionKernel = new double[lambdaBins][FLambdaBins];
+                histogram.allocateRecursionKernel();
                 resetStatistics = false;
                 logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionWeights[i][0]));
             }
 
-            recursionKernel[walkerLambda][walkerFLambda] += weight;
+            histogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight);
         }
     }
 
@@ -1278,300 +903,6 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     }
 
     /**
-     * Evaluate the bias at [cLambda, cF_lambda]
-     */
-    private double evaluateKernel(int cLambda, int cF_Lambda) {
-        // Compute the value of L and FL for the center of the current bin.
-        double vL = cLambda * dL;
-        double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
-
-        // Set the variances for the Gaussian bias.
-        double Ls2 = 2.0 * dL * 2.0 * dL;
-        double FLs2 = 2.0 * dFL * 2.0 * dFL;
-
-        // Variances are only used when dividing by twice their value, so pre-compute!
-        double invLs2 = 0.5 / Ls2;
-        double invFLs2 = 0.5 / FLs2;
-
-        double sum = 0.0;
-        int kernelCount = 0;
-        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int Lcenter = cLambda + iL;
-            double deltaL = vL - Lcenter * dL;
-            double deltaL2 = deltaL * deltaL;
-
-            // Pre-compute the lambda-width exponent.
-            double L2exp = exp(-deltaL2 * invLs2);
-
-            // Mirror condition for Lambda counts.
-            int lcount = Lcenter;
-            double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == lambdaBins - 1) {
-                // The width of the first and last bins is dLambda_2,
-                // so the mirror condition is to double their counts.
-                mirrorFactor = 2.0;
-            } else if (lcount < 0) {
-                lcount = -lcount;
-            } else if (lcount > lambdaBins - 1) {
-                // number of bins past the last bin.
-                lcount -= (lambdaBins - 1);
-                // mirror bin
-                lcount = lambdaBins - 1 - lcount;
-            }
-
-            for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
-                int FLcenter = cF_Lambda + jFL;
-                // For FLambda outside the count matrix the weight is 0 so we continue.
-                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                    continue;
-                }
-                double deltaFL = vFL - (minFLambda + FLcenter * dFL + dFL_2);
-                double deltaFL2 = deltaFL * deltaFL;
-                double rc = recursionKernel[lcount][FLcenter];
-                if (rc > 0.0) {
-                    kernelCount++;
-                } else {
-                    continue;
-                }
-                double weight = mirrorFactor * rc;
-                if (weight > 0) {
-                    double e = weight * biasMag * L2exp * exp(-deltaFL2 * invFLs2);
-                    sum += e;
-                }
-            }
-        }
-
-        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-//        if (hardWallConstraint && kernelCount > 0) {
-//            if (hardWallConstraint && propagateLambda) {
-//                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
-//            }
-//            int maxCount = (2 * biasCutoff + 1);
-//            maxCount *= maxCount;
-//            double upweightFactor = (double) maxCount / (double) kernelCount;
-//            sum *= upweightFactor;
-//        }
-
-        return sum;
-    }
-
-    /**
-     * <p>evaluateHistogram.</p>
-     *
-     * @param lambda the lambda value.
-     * @param dUdL   the dU/dL value.
-     * @return The value of the Histogram.
-     */
-    double evaluateHistogram(double lambda, double dUdL) {
-        int lambdaBin = binForLambda(lambda);
-        int dUdLBin = binForFLambda(dUdL);
-        try {
-            return recursionKernel[lambdaBin][dUdLBin];
-        } catch (Exception e) {
-            // Catch an index out of bounds exception.
-            return 0.0;
-        }
-    }
-
-    /**
-     * If necessary, allocate more space.
-     */
-    void checkRecursionKernelSize(double dEdLambda) {
-        if (dEdLambda > maxFLambda) {
-            logger.info(format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
-                    dEdLambda, maxFLambda));
-
-            double origDeltaG = updateFLambda(false, false);
-
-            int newFLambdaBins = FLambdaBins;
-            while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
-                newFLambdaBins += 100;
-            }
-            double[][] newRecursionKernel = new double[lambdaBins][newFLambdaBins];
-
-            // We have added bins above the indeces of the current counts just copy them into the new array.
-            for (int i = 0; i < lambdaBins; i++) {
-                arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
-            }
-            recursionKernel = newRecursionKernel;
-            FLambdaBins = newFLambdaBins;
-            kernelValues = new double[FLambdaBins];
-            maxFLambda = minFLambda + dFL * FLambdaBins;
-            logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n",
-                    minFLambda, maxFLambda, FLambdaBins));
-
-            double newFreeEnergy = updateFLambda(false, false);
-            assert (origDeltaG == newFreeEnergy);
-        }
-        if (dEdLambda < minFLambda) {
-            logger.info(format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
-                    dEdLambda, minFLambda));
-
-            double origDeltaG = updateFLambda(false, false);
-
-            int offset = 100;
-            while (dEdLambda < minFLambda - offset * dFL) {
-                offset += 100;
-            }
-            int newFLambdaBins = FLambdaBins + offset;
-            double[][] newRecursionKernel = new double[lambdaBins][newFLambdaBins];
-
-            // We have added bins below the current counts,
-            // so their indeces must be increased by: offset = newFLBins - FLBins
-            for (int i = 0; i < lambdaBins; i++) {
-                arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
-            }
-            recursionKernel = newRecursionKernel;
-            minFLambda = minFLambda - offset * dFL;
-            FLambdaBins = newFLambdaBins;
-            kernelValues = new double[FLambdaBins];
-
-            logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n",
-                    minFLambda, maxFLambda, FLambdaBins));
-
-            double newFreeEnergy = updateFLambda(false, false);
-            assert (origDeltaG == newFreeEnergy);
-        }
-    }
-
-    /**
-     * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
-     */
-    public double updateFLambda(boolean print, boolean save) {
-        double freeEnergy = 0.0;
-        double minFL = Double.MAX_VALUE;
-
-        // Total histogram weight.
-        double totalWeight = 0;
-        double beta = 1.0 / (R * temperature);
-        StringBuilder stringBuilder = new StringBuilder();
-
-        for (int iL = 0; iL < lambdaBins; iL++) {
-            int ulFL = -1;
-            int llFL = -1;
-
-            // Find the smallest FL bin.
-            for (int jFL = 0; jFL < FLambdaBins; jFL++) {
-                double count = recursionKernel[iL][jFL];
-                if (count > 0) {
-                    llFL = jFL;
-                    break;
-                }
-            }
-
-            // Find the largest FL bin.
-            for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
-                double count = recursionKernel[iL][jFL];
-                if (count > 0) {
-                    ulFL = jFL;
-                    break;
-                }
-            }
-
-            double lambdaCount = 0;
-            // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
-            double lla = 0.0;
-            double ula = 0.0;
-            double maxBias = 0;
-            if (llFL == -1 || ulFL == -1) {
-                FLambda[iL] = 0.0;
-                minFL = 0.0;
-            } else {
-                double ensembleAverageFLambda = 0.0;
-                double partitionFunction = 0.0;
-
-                // Evaluate and regularize all kernel values for this value of lambda.
-                double offset = evaluateKernelforLambda(iL, llFL, ulFL);
-
-                for (int jFL = llFL; jFL <= ulFL; jFL++) {
-                    double kernel = kernelValues[jFL];
-
-                    if (kernel - offset > maxBias) {
-                        maxBias = kernel - offset;
-                    }
-
-                    double weight = exp(kernel * beta);
-                    partitionFunction += weight;
-
-                    double currentFLambda = minFLambda + jFL * dFL + dFL_2;
-                    ensembleAverageFLambda += currentFLambda * weight;
-                    lambdaCount += recursionKernel[iL][jFL];
-                }
-                if (minFL > maxBias) {
-                    minFL = maxBias;
-                }
-                FLambda[iL] = ensembleAverageFLambda / partitionFunction;
-                lla = minFLambda + llFL * dFL;
-                ula = minFLambda + (ulFL + 1) * dFL;
-            }
-
-            // The first and last lambda bins are half size.
-            double delta = dL;
-            if (iL == 0 || iL == lambdaBins - 1) {
-                delta = dL_2;
-            }
-            double deltaFreeEnergy = FLambda[iL] * delta;
-            freeEnergy += deltaFreeEnergy;
-            totalWeight += lambdaCount;
-
-            if (print || save) {
-                double llL = iL * dL - dL_2;
-                double ulL = llL + dL;
-                if (llL < 0.0) {
-                    llL = 0.0;
-                }
-                if (ulL > 1.0) {
-                    ulL = 1.0;
-                }
-
-                double midLambda = (llL + ulL) / 2.0;
-                double bias1D = current1DBiasEnergy(midLambda, false);
-                double bias2D = computeBiasEnergy(midLambda, FLambda[iL]) - bias1D;
-
-                stringBuilder.append(format(" %6.2e %7.5f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n",
-                        lambdaCount, midLambda, lla, ula, FLambda[iL], bias1D, bias2D, bias1D + bias2D,
-                        freeEnergy, bias1D + bias2D + freeEnergy));
-            }
-        }
-
-        if (tempering) {
-            double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
-            temperingWeight = exp(temperEnergy / deltaT);
-        }
-
-        freeEnergy = integrateNumeric(FLambda, integrationType);
-
-        if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
-            logger.info("  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
-            logger.info(stringBuilder.toString());
-            logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-                    freeEnergy, totalWeight, temperingWeight, biasCount));
-            logger.info(format(" Minimum Bias %8.3f", minFL));
-            previousFreeEnergy = freeEnergy;
-        } else if (!save && (print || biasCount % printFrequency == 0)) {
-            logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-                    freeEnergy, totalWeight, temperingWeight, biasCount));
-        }
-
-        if (save) {
-            String modelFilename = molecularAssembly.getFile().getAbsolutePath();
-            File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
-            String dirName = saveDir.toString() + File.separator;
-            String fileName = dirName + "histogram.txt";
-            try {
-                logger.info(" Writing " + fileName);
-                PrintWriter printWriter = new PrintWriter(new File(fileName));
-                printWriter.write(stringBuilder.toString());
-                printWriter.close();
-            } catch (Exception e) {
-                logger.info(format(" Failed to write %s.", fileName));
-            }
-        }
-
-        return freeEnergy;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -1587,72 +918,61 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         gLdEdL = 0.0;
         dForceFieldEnergydL = lambdaInterface.getdEdL();
         dUdLambda = dForceFieldEnergydL;
-
         d2UdL2 = lambdaInterface.getd2EdL2();
-        int lambdaBin = binForLambda(lambda);
-        int FLambdaBin = binForFLambda(dUdLambda);
 
-        // First derivative of the 2D bias with respect to Lambda.
-        double dGdLambda = 0.0;
-        // First derivative of the 2D bias with respect to  dU/dL.
-        double dGdFLambda = 0.0;
-        // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
-        double ls2 = (2.0 * dL) * (2.0 * dL);
-        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-        int kernelCount = 0;
-        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int lcenter = lambdaBin + iL;
-            double deltaL = lambda - (lcenter * dL);
-            double deltaL2 = deltaL * deltaL;
-            // Mirror conditions for recursion kernel counts.
-            int lcount = lcenter;
-            double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == lambdaBins - 1) {
-                mirrorFactor = 2.0;
-            } else if (lcount < 0) {
-                lcount = -lcount;
-            } else if (lcount > lambdaBins - 1) {
-                // Number of bins past the last bin
-                lcount -= (lambdaBins - 1);
-                // Mirror bin
-                lcount = lambdaBins - 1 - lcount;
-            }
-            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                int FLcenter = FLambdaBin + iFL;
+        double[] chainRule = new double[2];
+        gLdEdL = histogram.computeBiasEnergyAndGradient(lambda, dUdLambda, chainRule);
+        double dGdLambda = chainRule[0];
+        double dGdFLambda = chainRule[1];
 
-                // If either of the following FL edge conditions are true,
-                // then there are no counts and we continue.
-                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                    continue;
-                }
-                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
-                double deltaFL2 = deltaFL * deltaFL;
-                double rc = recursionKernel[lcount][FLcenter];
-                if (rc > 0.0) {
-                    kernelCount++;
-                } else {
-                    continue;
-                }
-                double weight = mirrorFactor * rc;
-                double bias = weight * biasMag
-                        * exp(-deltaL2 / (2.0 * ls2))
-                        * exp(-deltaFL2 / (2.0 * FLs2));
-                gLdEdL += bias;
-                dGdLambda -= deltaL / ls2 * bias;
-                dGdFLambda -= deltaFL / FLs2 * bias;
-            }
-        }
-
-        // Up-weight the 2D bias to account for bins outside the Wall who have no weight.
-//        if (hardWallConstraint && kernelCount > 0) {
-//            if (hardWallConstraint && propagateLambda) {
-//                logger.severe(" The Hard Wall constraint is not supported for MD-OST.");
+//        int lambdaBin = binForLambda(lambda);
+//        int FLambdaBin = binForFLambda(dUdLambda);
+//        // First derivative of the 2D bias with respect to Lambda.
+//        double dGdLambda = 0.0;
+//        // First derivative of the 2D bias with respect to  dU/dL.
+//        double dGdFLambda = 0.0;
+//        // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
+//        double ls2 = (2.0 * dL) * (2.0 * dL);
+//        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+//        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+//            int lcenter = lambdaBin + iL;
+//            double deltaL = lambda - (lcenter * dL);
+//            double deltaL2 = deltaL * deltaL;
+//            // Mirror conditions for recursion kernel counts.
+//            int lcount = lcenter;
+//            double mirrorFactor = 1.0;
+//            if (lcount == 0 || lcount == lambdaBins - 1) {
+//                mirrorFactor = 2.0;
+//            } else if (lcount < 0) {
+//                lcount = -lcount;
+//            } else if (lcount > lambdaBins - 1) {
+//                // Number of bins past the last bin
+//                lcount -= (lambdaBins - 1);
+//                // Mirror bin
+//                lcount = lambdaBins - 1 - lcount;
 //            }
-//            int maxCount = (2 * biasCutoff + 1);
-//            maxCount *= maxCount;
-//            double upweightFactor = (double) maxCount / (double) kernelCount;
-//            dGdLambda *= upweightFactor;
-//            dGdFLambda *= upweightFactor;
+//            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+//                int FLcenter = FLambdaBin + iFL;
+//
+//                // If either of the following FL edge conditions are true,
+//                // then there are no counts and we continue.
+//                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+//                    continue;
+//                }
+//                double rc = recursionKernel[lcount][FLcenter];
+//                if (rc <= 0.0) {
+//                    continue;
+//                }
+//                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+//                double deltaFL2 = deltaFL * deltaFL;
+//                double weight = mirrorFactor * rc;
+//                double bias = weight * biasMag
+//                        * exp(-deltaL2 / (2.0 * ls2))
+//                        * exp(-deltaFL2 / (2.0 * FLs2));
+//                gLdEdL += bias;
+//                dGdLambda -= deltaL / ls2 * bias;
+//                dGdFLambda -= deltaFL / FLs2 * bias;
+//            }
 //        }
 
         // Lambda gradient due to recursion kernel G(L, F_L).
@@ -1668,7 +988,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
         // Compute the energy and gradient for the recursion slave at F(L) using interpolation.
         double bias1D = 0.0;
         if (include1DBias) {
-            bias1D = current1DBiasEnergy(lambda, true);
+            bias1D = histogram.current1DBiasEnergy(lambda, true);
         }
         biasEnergy = bias1D + gLdEdL;
 
@@ -1684,56 +1004,27 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
             // Log the current Lambda state.
             if (energyCount % printFrequency == 0) {
                 double dBdL = dUdLambda - dForceFieldEnergydL;
-                if (lambdaBins < 1000) {
+                int lambdaBin = histogram.binForLambda(lambda);
+                if (histogram.lambdaBins < 1000) {
                     logger.info(format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, histogram.halfThetaVelocity));
                 } else {
                     logger.info(format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, histogram.halfThetaVelocity));
                 }
             }
 
             // Metadynamics grid counts (every 'countInterval' steps).
-            if (energyCount % countInterval == 0) {
-                addBias(dForceFieldEnergydL, x, gradient);
+            if (energyCount % histogram.countInterval == 0) {
+                histogram.addBias(dForceFieldEnergydL, x, gradient);
             }
 
-            langevin();
+            histogram.langevin();
         }
 
         totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
-    }
-
-    /**
-     * Add a Gaussian hill to the Histogram at (lambda, dEdU).
-     */
-    void addBias(double dEdU, double[] x, double[] gradient) {
-        if (asynchronous) {
-            asynchronousSend(lambda, dEdU);
-        } else {
-            synchronousSend(lambda, dEdU);
-        }
-
-        biasCount++;
-
-        // Update F(L)
-        fLambdaUpdates++;
-        boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-        updateFLambda(printFLambda, false);
-
-        if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-            if (gradient == null) {
-                gradient = new double[x.length];
-            }
-            optimization(forceFieldEnergy, x, gradient);
-        }
-
-        // Write out restart files.
-        if (energyCount > 0 && energyCount % saveFrequency == 0) {
-            writeRestart();
-        }
     }
 
     /**
@@ -1792,94 +1083,12 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     }
 
     /**
-     * <p>checkRecursionKernelSize.</p>
-     */
-    public void checkRecursionKernelSize() {
-        double[] x = new double[nVariables];
-        x = potential.getCoordinates(x);
-        double[] g = new double[nVariables];
-        potential.energyAndGradient(x, g, false);
-        double dudl = lambdaInterface.getdEdL();
-        checkRecursionKernelSize(dudl);
-    }
-
-    /**
      * Indicate if the Lambda extended system particle should be propagated using Langevin dynamics.
      *
      * @param propagateLambda If true, Lambda will be propagated using Langevin dynamics.
      */
     public void setPropagateLambda(boolean propagateLambda) {
         this.propagateLambda = propagateLambda;
-    }
-
-    /**
-     * Propagate Lambda using Langevin dynamics.
-     */
-    private void langevin() {
-        // Compute the random force pre-factor (kcal/mol * psec^-2).
-        double rt2 = 2.0 * Constants.R * temperature * thetaFriction / dt;
-
-        // Compute the random force.
-        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
-
-        // Compute dEdL (kcal/mol).
-        double dEdL = -dUdLambda * sin(2.0 * theta);
-
-        // Update halfThetaVelocity (ps-1).
-        halfThetaVelocity =
-                (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
-                        + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
-                        / (2.0 * thetaMass + thetaFriction * dt);
-
-        // Update theta.
-        theta = theta + dt * halfThetaVelocity;
-
-        // Maintain theta in the interval PI to -PI.
-        if (theta > PI) {
-            theta -= 2.0 * PI;
-        } else if (theta <= -PI) {
-            theta += 2.0 * PI;
-        }
-
-        // Compute the sin(theta).
-        double sinTheta = sin(theta);
-
-        // Compute lambda as sin(theta)^2.
-        lambda = sinTheta * sinTheta;
-        lambdaInterface.setLambda(lambda);
-    }
-
-    /**
-     * <p>binForLambda.</p>
-     *
-     * @param lambda a double.
-     * @return a int.
-     */
-    int binForLambda(double lambda) {
-        int lambdaBin = (int) floor((lambda - minLambda) / dL);
-        if (lambdaBin < 0) {
-            lambdaBin = 0;
-        }
-        if (lambdaBin >= lambdaBins) {
-            lambdaBin = lambdaBins - 1;
-        }
-        return lambdaBin;
-    }
-
-    /**
-     * <p>binForFLambda.</p>
-     *
-     * @param dEdLambda a double.
-     * @return a int.
-     */
-    int binForFLambda(double dEdLambda) {
-        int FLambdaBin = (int) floor((dEdLambda - minFLambda) / dFL);
-        if (FLambdaBin == FLambdaBins) {
-            FLambdaBin = FLambdaBins - 1;
-        }
-        assert (FLambdaBin < FLambdaBins);
-        assert (FLambdaBin >= 0);
-        return FLambdaBin;
     }
 
     /**
@@ -1928,94 +1137,6 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     }
 
     /**
-     * This calculates the 1D OSRW bias and its derivative with respect to Lambda.
-     * <p>
-     * See Equation 8 in http://doi.org/10.1021/ct300035u.
-     *
-     * @return a double.
-     */
-    private double current1DBiasEnergy(double currentLambda, boolean gradient) {
-        if (!include1DBias) {
-            return 0.0;
-        }
-        double biasEnergy = 0.0;
-        for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
-            int iL1 = iL0 + 1;
-
-            // Find bin centers and values for interpolation / extrapolation points.
-            double L0 = iL0 * dL;
-            double L1 = L0 + dL;
-            double FL0 = FLambda[iL0];
-            double FL1 = FLambda[iL1];
-            double deltaFL = FL1 - FL0;
-            /*
-              If the lambda is less than or equal to the upper limit, this is
-              the final interval. Set the upper limit to L, compute the partial
-              derivative and break.
-             */
-            boolean done = false;
-            if (currentLambda <= L1) {
-                done = true;
-                L1 = currentLambda;
-            }
-
-            // Upper limit - lower limit of the integral of the extrapolation / interpolation.
-            biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / dL);
-            biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / dL);
-            if (done) {
-                // Compute the gradient d F(L) / dL at L.
-                if (gradient) {
-                    dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
-                }
-                break;
-            }
-        }
-        return -biasEnergy;
-    }
-
-    /**
-     * <p>evaluate2DPMF.</p>
-     *
-     * @return A StringBuffer with 2D Bias PMF.
-     */
-    public StringBuffer evaluate2DPMF() {
-        StringBuffer sb = new StringBuffer();
-        for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
-            double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
-            sb.append(format(" %16.8f", currentFL));
-            for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-                double bias = -evaluateKernel(lambdaBin, fLambdaBin);
-                sb.append(format(" %16.8f", bias));
-            }
-            sb.append("\n");
-        }
-        return sb;
-    }
-
-    /**
-     * <p>evaluateTotalPMF.</p>
-     *
-     * @return A StringBuffer the total 2D PMF.
-     */
-    public StringBuffer evaluateTotalPMF() {
-        StringBuffer sb = new StringBuffer();
-        for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
-
-            double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
-            sb.append(format(" %16.8f", currentFL));
-
-            for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-                lambda = lambdaBin * dL + dL_2;
-                double bias1D = -current1DBiasEnergy(lambda, false);
-                double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
-                sb.append(format(" %16.8f", totalBias));
-            }
-            sb.append("\n");
-        }
-        return sb;
-    }
-
-    /**
      * <p>Setter for the field <code>lambda</code>.</p>
      *
      * @param lambda a double.
@@ -2023,7 +1144,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     public void setLambda(double lambda) {
         lambdaInterface.setLambda(lambda);
         this.lambda = lambda;
-        theta = asin(sqrt(lambda));
+        histogram.theta = asin(sqrt(lambda));
     }
 
     /**
@@ -2050,7 +1171,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      * @param thetaMass a double.
      */
     public void setThetaMass(double thetaMass) {
-        this.thetaMass = thetaMass;
+        histogram.thetaMass = thetaMass;
     }
 
     /**
@@ -2059,7 +1180,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      * @param thetaFriction a double.
      */
     public void setThetaFrication(double thetaFriction) {
-        this.thetaFriction = thetaFriction;
+        histogram.thetaFriction = thetaFriction;
     }
 
     /**
@@ -2072,7 +1193,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      */
     public void setCountInterval(int countInterval) {
         if (countInterval > 0) {
-            this.countInterval = countInterval;
+            histogram.countInterval = countInterval;
         } else {
             logger.info(" OSRW count interval must be greater than 0.");
         }
@@ -2160,7 +1281,7 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
      */
     public boolean insideHardWallConstraint(double lambda, double dUdL) {
         if (hardWallConstraint) {
-            double weight = evaluateHistogram(lambda, dUdL);
+            double weight = histogram.evaluateHistogram(lambda, dUdL);
             return weight > 0.0;
         }
         return true;
@@ -2359,6 +1480,924 @@ public class TransitionTemperedOSRW implements CrystalPotential, LambdaInterface
     @Override
     public boolean dEdLZeroAtEnds() {
         return false;
+    }
+
+    public class Histogram {
+
+        /**
+         * Reasonable thetaFriction is ~60 per picosecond (1.0e-12).
+         */
+        double thetaFriction = 1.0e-19;
+        /**
+         * Reasonable thetaMass is ~100 a.m.u. (100 a.m.u is 1.6605e-22 grams).
+         */
+        double thetaMass = 1.0e-18;
+        double halfThetaVelocity = 0.0;
+        /**
+         * Map lambda to a periodic variable theta.
+         *
+         * <code>theta = asin(sqrt(lambda))</code>
+         *
+         * <code>lambda = sin^2 (theta).</code>
+         */
+        private double theta;
+        /**
+         * Interval between adding a count to the Recursion kernel in steps.
+         * <p>
+         * The default countInterval = 10.
+         */
+        int countInterval = 10;
+        /**
+         * Temperature in Kelvin.
+         * <p>
+         * The default is 298.15.
+         */
+        protected double temperature;
+        /**
+         * When evaluating the biasing potential, contributions from Gaussians
+         * centered on bins more the "biasCutoff" away will be neglected.
+         * <p>
+         * The default biasCutoff = 5.
+         */
+        int biasCutoff;
+        /**
+         * Width of the lambda bin.
+         * <p>
+         * The default dL = (1.0 / (lambdaBins - 1).
+         */
+        double dL;
+        /**
+         * Half the width of a lambda bin.
+         */
+        double dL_2;
+        /**
+         * The width of the FLambda bin.
+         * <p>
+         * The default dFL = 2.0 (kcal/mol).
+         */
+        double dFL;
+        /**
+         * Half the width of the F_lambda bin.
+         */
+        double dFL_2;
+        /**
+         * The minimum value of the first lambda bin.
+         * <p>
+         * minLambda = -dL_2.
+         */
+        private double minLambda;
+        /**
+         * The minimum value of the first F_lambda bin.
+         * <p>
+         * minFLambda = -(dFL * FLambdaBins) / 2.0.
+         */
+        double minFLambda;
+        /**
+         * The maximum value of the last F_lambda bin.
+         * <p>
+         * maxFLambda = minFLambda + FLambdaBins * dFL.
+         */
+        private double maxFLambda;
+        /**
+         * Number of times a Gaussian has been added.
+         */
+        private int biasCount = 0;
+        /**
+         * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
+         * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
+         * <p>
+         * With this scheme, the maximum of biasing Gaussians is at the edges.
+         * <p>
+         * The default lambdaBins = 201.
+         */
+        int lambdaBins;
+        /**
+         * It is useful to have an odd number of bins, so that there is a bin from
+         * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
+         * thermodynamic integration goes to zero.
+         * <p>
+         * Otherwise a contribution of zero from a L bin can only result from equal
+         * sampling of the ranges -dFL to 0 and 0 to dFL.
+         * <p>
+         * The default FLambdaBins = 401.
+         */
+        int FLambdaBins;
+        /**
+         * Magnitude of each hill (not including tempering).
+         * <p>
+         * The default biasMag = 0.05 (kcal/mol).
+         */
+        double biasMag;
+        /**
+         * 1D PMF with respect to lambda F(L).
+         */
+        double[] FLambda;
+        /**
+         * The recursion kernel stores the weight of each [lambda][Flambda] bin.
+         */
+        private double[][] recursionKernel;
+
+        /**
+         * Random force conversion to kcal/mol/A;
+         * Units: Sqrt (4.184 Joule per calorie) / (nanometers per meter)
+         */
+        private final double randomConvert = sqrt(4.184) / 10e9;
+        /**
+         * randomConvert squared.
+         * Units: Joule per calorie / (nanometer per meter)^2
+         */
+        private final double randomConvert2 = randomConvert * randomConvert;
+        /**
+         * Random variable for stochastic lambda particle generation.
+         */
+        private final Random stochasticRandom;
+
+
+        Histogram(CompositeConfiguration properties, double temperature) {
+            this.temperature = temperature;
+            biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
+            biasMag = properties.getDouble("bias-gaussian-mag", 0.05);
+            dL = properties.getDouble("lambda-bin-width", 0.005);
+            dFL = properties.getDouble("flambda-bin-width", 2.0);
+
+            // Require modest sampling of the lambda path.
+            if (dL > 0.1) {
+                dL = 0.1;
+            }
+
+        /*
+          Many lambda bin widths do not evenly divide into 1.0; here we correct
+          for this by computing an integer number of bins, then re-setting the
+          lambda variable appropriately. Note that we also choose to have an
+          odd number of lambda bins, so that the centers of the first and last
+          bin are at 0 and 1.
+         */
+            lambdaBins = (int) (1.0 / dL);
+            if (lambdaBins % 2 == 0) {
+                lambdaBins++;
+            }
+
+        /*
+          The initial number of FLambda bins does not really matter, since a
+          larger number is automatically allocated as needed. The center of the
+          central bin is at 0.
+         */
+            FLambdaBins = 101;
+            minFLambda = -(dFL * FLambdaBins) / 2.0;
+
+            dL = 1.0 / (lambdaBins - 1);
+            dL_2 = dL / 2.0;
+            minLambda = -dL_2;
+            dFL_2 = dFL / 2.0;
+            maxFLambda = minFLambda + FLambdaBins * dFL;
+            FLambda = new double[lambdaBins];
+
+            // Allocate space for the recursion kernel that stores weights.
+            recursionKernel = new double[lambdaBins][FLambdaBins];
+
+            // Allocate space to regularize kernel values.
+            kernelValues = new double[FLambdaBins];
+
+            stochasticRandom = new Random();
+        }
+
+        /**
+         * <p>binForLambda.</p>
+         *
+         * @param lambda a double.
+         * @return a int.
+         */
+        int binForLambda(double lambda) {
+            int lambdaBin = (int) floor((lambda - minLambda) / dL);
+            if (lambdaBin < 0) {
+                lambdaBin = 0;
+            }
+            if (lambdaBin >= lambdaBins) {
+                lambdaBin = lambdaBins - 1;
+            }
+            return lambdaBin;
+        }
+
+        /**
+         * <p>binForFLambda.</p>
+         *
+         * @param dEdLambda a double.
+         * @return a int.
+         */
+        int binForFLambda(double dEdLambda) {
+            int FLambdaBin = (int) floor((dEdLambda - minFLambda) / dFL);
+            if (FLambdaBin == FLambdaBins) {
+                FLambdaBin = FLambdaBins - 1;
+            }
+            assert (FLambdaBin < FLambdaBins);
+            assert (FLambdaBin >= 0);
+            return FLambdaBin;
+        }
+
+        /**
+         * Return the value of a recursion kernel bin.
+         *
+         * @param lambdaBin  The lambda bin.
+         * @param fLambdaBin The dU/dL bin.
+         * @return The value of the bin.
+         */
+        double getRecursionKernelValue(int lambdaBin, int fLambdaBin) {
+            return recursionKernel[lambdaBin][fLambdaBin];
+        }
+
+        /**
+         * Set the value of a recursion kernel bin.
+         *
+         * @param lambdaBin  The lambda bin.
+         * @param fLambdaBin The dU/dL bin.
+         * @param value      The value of the bin.
+         */
+        void setRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
+            recursionKernel[lambdaBin][fLambdaBin] = value;
+        }
+
+        /**
+         * Add to the value of a recursion kernel bin.
+         *
+         * @param lambdaBin  The lambda bin.
+         * @param fLambdaBin The dU/dL bin.
+         * @param value      The value of the bin.
+         */
+        void addToRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
+            recursionKernel[lambdaBin][fLambdaBin] += value;
+        }
+
+        /**
+         * Allocate memory for the recursion kernel.
+         */
+        void allocateRecursionKernel() {
+            recursionKernel = new double[lambdaBins][FLambdaBins];
+            kernelValues = new double[FLambdaBins];
+        }
+
+        /**
+         * Integrates dUdL over lambda using more sophisticated techniques than midpoint rectangular integration.
+         * <p>
+         * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids
+         *
+         * @param dUdLs dUdL at the midpoint of each bin.
+         * @param type  Integration type to use.
+         * @return Current delta-G estimate.
+         */
+        private double integrateNumeric(double[] dUdLs, IntegrationType type) {
+            // Integrate between the second bin midpoint and the second-to-last bin midpoint.
+            double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0 - dL, (lambdaBins - 2), false);
+            double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
+            DataSet dSet = new DoublesDataSet(midLams, midVals, false);
+
+            double val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
+
+            double dL_4 = dL_2 * 0.5;
+
+            // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
+            double val0 = 0;
+            double val1 = 0;
+
+            // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
+            if (!lambdaInterface.dEdLZeroAtEnds()) {
+                double recipSlopeLen = 1.0 / (dL * 0.75);
+
+                double slope = dUdLs[0] - dUdLs[1];
+                slope *= recipSlopeLen;
+                val0 = dUdLs[0] + (slope * dL_4);
+
+                slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
+                slope *= recipSlopeLen;
+                val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
+                logger.fine(format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
+            }
+
+            // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
+            val += trapezoid(0, dL_4, val0, dUdLs[0]);
+            val += trapezoid(dL_4, dL, dUdLs[0], dUdLs[1]);
+            val += trapezoid(1.0 - dL, 1.0 - dL_4, dUdLs[lambdaBins - 2], dUdLs[lambdaBins - 1]);
+            val += trapezoid(1.0 - dL_4, 1.0, dUdLs[lambdaBins - 1], val1);
+
+            return val;
+        }
+
+        /**
+         * Integrates a trapezoid.
+         *
+         * @param x0  First x point
+         * @param x1  Second x point
+         * @param fX1 First f(x) point
+         * @param fX2 Second f(x) point
+         * @return The area under a trapezoid.
+         */
+        private double trapezoid(double x0, double x1, double fX1, double fX2) {
+            double val = 0.5 * (fX1 + fX2);
+            val *= (x1 - x0);
+            return val;
+        }
+
+        /**
+         * Evaluate the kernel across dU/dL values at given value of lambda. The largest kernel value V
+         * is used to define an offset (-V), which is added to all to kernel values. Then,
+         * the largest kernel value is zero, and will result in a statistical weight of 1.
+         * <p>
+         * The offset avoids the recursion kernel becoming too large for some combinations of (Lambda, dU/dL).
+         * This can result in its statistical weight = exp(kernel * beta)
+         * exceeding the maximum representable double value.
+         *
+         * @param lambda Value of Lambda to evaluate the kernal for.
+         * @param llFL   Lower FLambda bin.
+         * @param ulFL   Upper FLambda bin.
+         * @return the applied offset.
+         */
+        private double evaluateKernelforLambda(int lambda, int llFL, int ulFL) {
+            double maxKernel = Double.MIN_VALUE;
+            for (int jFL = llFL; jFL <= ulFL; jFL++) {
+                double value = evaluateKernel(lambda, jFL);
+                kernelValues[jFL] = value;
+                if (value > maxKernel) {
+                    maxKernel = value;
+                }
+            }
+            double offset = -maxKernel;
+            for (int jFL = llFL; jFL <= ulFL; jFL++) {
+                kernelValues[jFL] += offset;
+            }
+            return offset;
+        }
+
+        /**
+         * Evaluate the bias at [cLambda, cF_lambda]
+         */
+        private double evaluateKernel(int cLambda, int cF_Lambda) {
+            // Compute the value of L and FL for the center of the current bin.
+            double vL = cLambda * dL;
+            double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
+
+            // Set the variances for the Gaussian bias.
+            double Ls2 = 2.0 * dL * 2.0 * dL;
+            double FLs2 = 2.0 * dFL * 2.0 * dFL;
+
+            // Variances are only used when dividing by twice their value, so pre-compute!
+            double invLs2 = 0.5 / Ls2;
+            double invFLs2 = 0.5 / FLs2;
+
+            double sum = 0.0;
+            for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+                int Lcenter = cLambda + iL;
+                double deltaL = vL - Lcenter * dL;
+                double deltaL2 = deltaL * deltaL;
+
+                // Pre-compute the lambda-width exponent.
+                double L2exp = exp(-deltaL2 * invLs2);
+
+                // Mirror condition for Lambda counts.
+                int lcount = Lcenter;
+                double mirrorFactor = 1.0;
+                if (lcount == 0 || lcount == lambdaBins - 1) {
+                    // The width of the first and last bins is dLambda_2,
+                    // so the mirror condition is to double their counts.
+                    mirrorFactor = 2.0;
+                } else if (lcount < 0) {
+                    lcount = -lcount;
+                } else if (lcount > lambdaBins - 1) {
+                    // number of bins past the last bin.
+                    lcount -= (lambdaBins - 1);
+                    // mirror bin
+                    lcount = lambdaBins - 1 - lcount;
+                }
+
+                for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
+                    int FLcenter = cF_Lambda + jFL;
+                    // For FLambda outside the count matrix the weight is 0 so we continue.
+                    if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                        continue;
+                    }
+                    double rc = recursionKernel[lcount][FLcenter];
+                    if (rc <= 0.0) {
+                        continue;
+                    }
+                    double deltaFL = vFL - (minFLambda + FLcenter * dFL + dFL_2);
+                    double deltaFL2 = deltaFL * deltaFL;
+                    double weight = mirrorFactor * rc;
+                    if (weight > 0) {
+                        double e = weight * biasMag * L2exp * exp(-deltaFL2 * invFLs2);
+                        sum += e;
+                    }
+                }
+            }
+            return sum;
+        }
+
+        /**
+         * Compute the Bias energy at (currentLambda, currentdUdL).
+         *
+         * @param currentLambda The value of lambda.
+         * @param currentdUdL   The value of dU/dL.
+         * @return The bias energy.
+         */
+        double computeBiasEnergy(double currentLambda, double currentdUdL) {
+
+            int lambdaBin = binForLambda(currentLambda);
+            int FLambdaBin = binForFLambda(currentdUdL);
+
+            double bias2D = 0.0;
+            double ls2 = (2.0 * dL) * (2.0 * dL);
+            double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+            for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+                int lcenter = lambdaBin + iL;
+                double deltaL = currentLambda - (lcenter * dL);
+                double deltaL2 = deltaL * deltaL;
+                // Mirror conditions for recursion kernel counts.
+                int lcount = lcenter;
+                double mirrorFactor = 1.0;
+                if (lcount == 0 || lcount == lambdaBins - 1) {
+                    mirrorFactor = 2.0;
+                } else if (lcount < 0) {
+                    lcount = -lcount;
+                } else if (lcount > lambdaBins - 1) {
+                    // Number of bins past the last bin
+                    lcount -= (lambdaBins - 1);
+                    // Mirror bin
+                    lcount = lambdaBins - 1 - lcount;
+                }
+                for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                    int FLcenter = FLambdaBin + iFL;
+
+                    // If either of the following FL edge conditions are true,
+                    // then there are no counts and we continue.
+                    if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                        continue;
+                    }
+                    double rc = recursionKernel[lcount][FLcenter];
+                    if (rc <= 0.0) {
+                        continue;
+                    }
+                    double currentFL = minFLambda + FLcenter * dFL + dFL_2;
+                    double deltaFL = currentdUdL - currentFL;
+                    double deltaFL2 = deltaFL * deltaFL;
+                    double weight = mirrorFactor * rc;
+                    double bias = weight * biasMag
+                            * exp(-deltaL2 / (2.0 * ls2))
+                            * exp(-deltaFL2 / (2.0 * FLs2));
+
+                    // logger.info(format("(L=%6.4f FL=%8.2f) L=%6.4f Bin=%3d; FL=%8.3f Bin=%6d; Bias: %8.6f",
+                    //        currentLambda, currentdUdL, lcenter * dL, lcount, currentFL, FLcenter, bias));
+
+                    bias2D += bias;
+                }
+            }
+
+            // Compute the energy for the recursion slave at F(L) using interpolation.
+            double bias1D = 0.0;
+            if (include1DBias) {
+                bias1D = current1DBiasEnergy(currentLambda, false);
+            }
+
+            return bias1D + bias2D;
+        }
+
+        double computeBiasEnergyAndGradient(double currentLambda, double currentdUdLambda, double[] chainRule) {
+            // Calculate recursion kernel G(L, F_L) and its derivatives with respect to L and F_L.
+            double gLdEdL = 0.0;
+            double dGdLambda = 0.0;
+            double dGdFLambda = 0.0;
+
+            int lambdaBin = binForLambda(currentLambda);
+            int FLambdaBin = binForFLambda(currentdUdLambda);
+
+            double ls2 = (2.0 * dL) * (2.0 * dL);
+            double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+            for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+                int lcenter = lambdaBin + iL;
+                // double deltaL = lambda - (lcenter * dL);
+                double deltaL = currentLambda - (lcenter * dL);
+                double deltaL2 = deltaL * deltaL;
+                // Mirror conditions for recursion kernel counts.
+                int lcount = lcenter;
+                double mirrorFactor = 1.0;
+                if (lcount == 0 || lcount == lambdaBins - 1) {
+                    mirrorFactor = 2.0;
+                } else if (lcount < 0) {
+                    lcount = -lcount;
+                } else if (lcount > lambdaBins - 1) {
+                    // Number of bins past the last bin
+                    lcount -= (lambdaBins - 1);
+                    // Mirror bin
+                    lcount = lambdaBins - 1 - lcount;
+                }
+                for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                    int FLcenter = FLambdaBin + iFL;
+
+                    // If either of the following FL edge conditions are true, then there are no counts and we continue.
+                    if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                        continue;
+                    }
+                    double rc = recursionKernel[lcount][FLcenter];
+                    if (rc <= 0.0) {
+                        continue;
+                    }
+                    // double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                    double deltaFL = currentdUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                    double deltaFL2 = deltaFL * deltaFL;
+                    double weight = mirrorFactor * rc;
+                    double bias = weight * biasMag
+                            * exp(-deltaL2 / (2.0 * ls2))
+                            * exp(-deltaFL2 / (2.0 * FLs2));
+                    gLdEdL += bias;
+                    dGdLambda -= deltaL / ls2 * bias;
+                    dGdFLambda -= deltaFL / FLs2 * bias;
+                }
+            }
+
+            chainRule[0] = dGdLambda;
+            chainRule[1] = dGdFLambda;
+            return gLdEdL;
+        }
+
+        /**
+         * This calculates the 1D OSRW bias and its derivative with respect to Lambda.
+         * <p>
+         * See Equation 8 in http://doi.org/10.1021/ct300035u.
+         *
+         * @return a double.
+         */
+        private double current1DBiasEnergy(double currentLambda, boolean gradient) {
+            if (!include1DBias) {
+                return 0.0;
+            }
+            double biasEnergy = 0.0;
+            for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
+                int iL1 = iL0 + 1;
+
+                // Find bin centers and values for interpolation / extrapolation points.
+                double L0 = iL0 * dL;
+                double L1 = L0 + dL;
+                double FL0 = FLambda[iL0];
+                double FL1 = FLambda[iL1];
+                double deltaFL = FL1 - FL0;
+            /*
+              If the lambda is less than or equal to the upper limit, this is
+              the final interval. Set the upper limit to L, compute the partial
+              derivative and break.
+             */
+                boolean done = false;
+                if (currentLambda <= L1) {
+                    done = true;
+                    L1 = currentLambda;
+                }
+
+                // Upper limit - lower limit of the integral of the extrapolation / interpolation.
+                biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / dL);
+                biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / dL);
+                if (done) {
+                    // Compute the gradient d F(L) / dL at L.
+                    if (gradient) {
+                        dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
+                    }
+                    break;
+                }
+            }
+            return -biasEnergy;
+        }
+
+        /**
+         * <p>evaluate2DPMF.</p>
+         *
+         * @return A StringBuffer with 2D Bias PMF.
+         */
+        public StringBuffer evaluate2DPMF() {
+            StringBuffer sb = new StringBuffer();
+            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+                double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+                sb.append(format(" %16.8f", currentFL));
+                for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                    double bias = -evaluateKernel(lambdaBin, fLambdaBin);
+                    sb.append(format(" %16.8f", bias));
+                }
+                sb.append("\n");
+            }
+            return sb;
+        }
+
+        /**
+         * <p>evaluateTotalPMF.</p>
+         *
+         * @return A StringBuffer the total 2D PMF.
+         */
+        public StringBuffer evaluateTotalPMF() {
+            StringBuffer sb = new StringBuffer();
+            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+
+                double currentFL = minFLambda + fLambdaBin * dFL + dFL_2;
+                sb.append(format(" %16.8f", currentFL));
+
+                for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+                    lambda = lambdaBin * dL + dL_2;
+                    double bias1D = -current1DBiasEnergy(lambda, false);
+                    double totalBias = bias1D - evaluateKernel(lambdaBin, fLambdaBin);
+                    sb.append(format(" %16.8f", totalBias));
+                }
+                sb.append("\n");
+            }
+            return sb;
+        }
+
+        /**
+         * <p>evaluateHistogram.</p>
+         *
+         * @param lambda the lambda value.
+         * @param dUdL   the dU/dL value.
+         * @return The value of the Histogram.
+         */
+        double evaluateHistogram(double lambda, double dUdL) {
+            int lambdaBin = binForLambda(lambda);
+            int dUdLBin = binForFLambda(dUdL);
+            try {
+                return recursionKernel[lambdaBin][dUdLBin];
+            } catch (Exception e) {
+                // Catch an index out of bounds exception.
+                return 0.0;
+            }
+        }
+
+        /**
+         * If necessary, allocate more space.
+         */
+        void checkRecursionKernelSize(double dEdLambda) {
+            if (dEdLambda > maxFLambda) {
+                logger.info(format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
+                        dEdLambda, maxFLambda));
+
+                double origDeltaG = updateFLambda(false, false);
+
+                int newFLambdaBins = FLambdaBins;
+                while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
+                    newFLambdaBins += 100;
+                }
+                double[][] newRecursionKernel = new double[lambdaBins][newFLambdaBins];
+
+                // We have added bins above the indeces of the current counts just copy them into the new array.
+                for (int i = 0; i < lambdaBins; i++) {
+                    arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
+                }
+                recursionKernel = newRecursionKernel;
+                FLambdaBins = newFLambdaBins;
+                kernelValues = new double[FLambdaBins];
+                maxFLambda = minFLambda + dFL * FLambdaBins;
+                logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n",
+                        minFLambda, maxFLambda, FLambdaBins));
+
+                double newFreeEnergy = updateFLambda(false, false);
+                assert (origDeltaG == newFreeEnergy);
+            }
+            if (dEdLambda < minFLambda) {
+                logger.info(format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
+                        dEdLambda, minFLambda));
+
+                double origDeltaG = updateFLambda(false, false);
+
+                int offset = 100;
+                while (dEdLambda < minFLambda - offset * dFL) {
+                    offset += 100;
+                }
+                int newFLambdaBins = FLambdaBins + offset;
+                double[][] newRecursionKernel = new double[lambdaBins][newFLambdaBins];
+
+                // We have added bins below the current counts,
+                // so their indeces must be increased by: offset = newFLBins - FLBins
+                for (int i = 0; i < lambdaBins; i++) {
+                    arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
+                }
+                recursionKernel = newRecursionKernel;
+                minFLambda = minFLambda - offset * dFL;
+                FLambdaBins = newFLambdaBins;
+                kernelValues = new double[FLambdaBins];
+
+                logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n",
+                        minFLambda, maxFLambda, FLambdaBins));
+
+                double newFreeEnergy = updateFLambda(false, false);
+                assert (origDeltaG == newFreeEnergy);
+            }
+        }
+
+        /**
+         * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
+         */
+        public double updateFLambda(boolean print, boolean save) {
+            double freeEnergy = 0.0;
+            double minFL = Double.MAX_VALUE;
+
+            // Total histogram weight.
+            double totalWeight = 0;
+            double beta = 1.0 / (R * temperature);
+            StringBuilder stringBuilder = new StringBuilder();
+
+            for (int iL = 0; iL < lambdaBins; iL++) {
+                int ulFL = -1;
+                int llFL = -1;
+
+                // Find the smallest FL bin.
+                for (int jFL = 0; jFL < FLambdaBins; jFL++) {
+                    double count = recursionKernel[iL][jFL];
+                    if (count > 0) {
+                        llFL = jFL;
+                        break;
+                    }
+                }
+
+                // Find the largest FL bin.
+                for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
+                    double count = recursionKernel[iL][jFL];
+                    if (count > 0) {
+                        ulFL = jFL;
+                        break;
+                    }
+                }
+
+                double lambdaCount = 0;
+                // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
+                double lla = 0.0;
+                double ula = 0.0;
+                double maxBias = 0;
+                if (llFL == -1 || ulFL == -1) {
+                    FLambda[iL] = 0.0;
+                    minFL = 0.0;
+                } else {
+                    double ensembleAverageFLambda = 0.0;
+                    double partitionFunction = 0.0;
+
+                    // Evaluate and regularize all kernel values for this value of lambda.
+                    double offset = evaluateKernelforLambda(iL, llFL, ulFL);
+
+                    for (int jFL = llFL; jFL <= ulFL; jFL++) {
+                        double kernel = kernelValues[jFL];
+
+                        if (kernel - offset > maxBias) {
+                            maxBias = kernel - offset;
+                        }
+
+                        double weight = exp(kernel * beta);
+                        partitionFunction += weight;
+
+                        double currentFLambda = minFLambda + jFL * dFL + dFL_2;
+                        ensembleAverageFLambda += currentFLambda * weight;
+                        lambdaCount += recursionKernel[iL][jFL];
+                    }
+                    if (minFL > maxBias) {
+                        minFL = maxBias;
+                    }
+                    FLambda[iL] = ensembleAverageFLambda / partitionFunction;
+                    lla = minFLambda + llFL * dFL;
+                    ula = minFLambda + (ulFL + 1) * dFL;
+                }
+
+                // The first and last lambda bins are half size.
+                double delta = dL;
+                if (iL == 0 || iL == lambdaBins - 1) {
+                    delta = dL_2;
+                }
+                double deltaFreeEnergy = FLambda[iL] * delta;
+                freeEnergy += deltaFreeEnergy;
+                totalWeight += lambdaCount;
+
+                if (print || save) {
+                    double llL = iL * dL - dL_2;
+                    double ulL = llL + dL;
+                    if (llL < 0.0) {
+                        llL = 0.0;
+                    }
+                    if (ulL > 1.0) {
+                        ulL = 1.0;
+                    }
+
+                    double midLambda = (llL + ulL) / 2.0;
+                    double bias1D = current1DBiasEnergy(midLambda, false);
+                    double bias2D = computeBiasEnergy(midLambda, FLambda[iL]) - bias1D;
+
+                    stringBuilder.append(format(" %6.2e %7.5f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n",
+                            lambdaCount, midLambda, lla, ula, FLambda[iL], bias1D, bias2D, bias1D + bias2D,
+                            freeEnergy, bias1D + bias2D + freeEnergy));
+                }
+            }
+
+            if (tempering) {
+                double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
+                temperingWeight = exp(temperEnergy / deltaT);
+            }
+
+            freeEnergy = integrateNumeric(FLambda, integrationType);
+
+            if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
+                logger.info("  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
+                logger.info(stringBuilder.toString());
+                logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                        freeEnergy, totalWeight, temperingWeight, biasCount));
+                logger.info(format(" Minimum Bias %8.3f", minFL));
+                previousFreeEnergy = freeEnergy;
+            } else if (!save && (print || biasCount % printFrequency == 0)) {
+                logger.info(format(" The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+                        freeEnergy, totalWeight, temperingWeight, biasCount));
+            }
+
+            if (save) {
+                String modelFilename = molecularAssembly.getFile().getAbsolutePath();
+                File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
+                String dirName = saveDir.toString() + File.separator;
+                String fileName = dirName + "histogram.txt";
+                try {
+                    logger.info(" Writing " + fileName);
+                    PrintWriter printWriter = new PrintWriter(new File(fileName));
+                    printWriter.write(stringBuilder.toString());
+                    printWriter.close();
+                } catch (Exception e) {
+                    logger.info(format(" Failed to write %s.", fileName));
+                }
+            }
+
+            return freeEnergy;
+        }
+
+        /**
+         * Add a Gaussian hill to the Histogram at (lambda, dEdU).
+         */
+        void addBias(double dEdU, double[] x, double[] gradient) {
+            if (asynchronous) {
+                asynchronousSend(lambda, dEdU);
+            } else {
+                synchronousSend(lambda, dEdU);
+            }
+
+            biasCount++;
+
+            // Update F(L)
+            fLambdaUpdates++;
+            boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
+            updateFLambda(printFLambda, false);
+
+            if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
+                if (gradient == null) {
+                    gradient = new double[x.length];
+                }
+                optimization(forceFieldEnergy, x, gradient);
+            }
+
+            // Write out restart files.
+            if (energyCount > 0 && energyCount % saveFrequency == 0) {
+                writeRestart();
+            }
+        }
+
+        /**
+         * <p>checkRecursionKernelSize.</p>
+         */
+        public void checkRecursionKernelSize() {
+            double[] x = new double[nVariables];
+            x = potential.getCoordinates(x);
+            double[] g = new double[nVariables];
+            potential.energyAndGradient(x, g, false);
+            double dudl = lambdaInterface.getdEdL();
+            checkRecursionKernelSize(dudl);
+        }
+
+        /**
+         * Propagate Lambda using Langevin dynamics.
+         */
+        private void langevin() {
+            // Compute the random force pre-factor (kcal/mol * psec^-2).
+            double rt2 = 2.0 * Constants.R * histogram.temperature * thetaFriction / dt;
+
+            // Compute the random force.
+            double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
+
+            // Compute dEdL (kcal/mol).
+            double dEdL = -dUdLambda * sin(2.0 * theta);
+
+            // Update halfThetaVelocity (ps-1).
+            halfThetaVelocity =
+                    (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
+                            + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
+                            / (2.0 * thetaMass + thetaFriction * dt);
+
+            // Update theta.
+            theta = theta + dt * halfThetaVelocity;
+
+            // Maintain theta in the interval PI to -PI.
+            if (theta > PI) {
+                theta -= 2.0 * PI;
+            } else if (theta <= -PI) {
+                theta += 2.0 * PI;
+            }
+
+            // Compute the sin(theta).
+            double sinTheta = sin(theta);
+
+            // Compute lambda as sin(theta)^2.
+            lambda = sinTheta * sinTheta;
+            lambdaInterface.setLambda(lambda);
+        }
+
     }
 
 }

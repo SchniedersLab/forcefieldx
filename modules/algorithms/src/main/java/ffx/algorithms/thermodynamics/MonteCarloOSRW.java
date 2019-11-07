@@ -53,6 +53,7 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.mc.LambdaMove;
 import ffx.algorithms.mc.MDMove;
+import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.EnergyException;
@@ -417,12 +418,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.log(verboseLoggingLevel, format("  Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
 
                 // Update time dependent bias.
-                osrw.addBias(currentdUdL, currentCoordinates, null);
+                Histogram histogram = osrw.getHistogram();
+                histogram.addBias(currentdUdL, currentCoordinates, null);
 
                 logger.log(verboseLoggingLevel, format("  Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
                 // Compute the updated OSRW bias.
-                currentBiasEnergy = osrw.computeBiasEnergy(lambda, currentdUdL);
+                currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
@@ -600,12 +602,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 }
 
                 // Update time-dependent bias.
-                osrw.addBias(currentdUdL, currentCoordinates, null);
+                Histogram histogram = osrw.getHistogram();
+                histogram.addBias(currentdUdL, currentCoordinates, null);
 
                 logger.fine(format(" Added Bias at [ L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
                 // Compute the updated OSRW bias.
-                currentBiasEnergy = osrw.computeBiasEnergy(lambda, currentdUdL);
+                currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
 
                 // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
                 currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;

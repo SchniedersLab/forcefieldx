@@ -106,10 +106,10 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.72657211363139;
+        double expectedPotentialEnergy = -32.7350173210033;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
+        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy,1E-6);
 
         // Delete all created directories and files.
         try {
@@ -140,10 +140,10 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.63130548449286;
+        double expectedPotentialEnergy = -32.63949712087549;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
+        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {
@@ -174,10 +174,10 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.54442896375514;
+        double expectedPotentialEnergy = -32.543716300215436;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
+        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {
@@ -208,10 +208,10 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.53569396873495;
+        double expectedPotentialEnergy = -32.54372086556189;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
+        Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy,1E-6);
 
         // Delete all created directories and files.
         try {
