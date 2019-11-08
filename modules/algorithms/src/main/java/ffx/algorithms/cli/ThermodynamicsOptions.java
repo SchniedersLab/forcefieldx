@@ -63,7 +63,7 @@ public class ThermodynamicsOptions {
 
     /**
      * -Q or --equilibrate sets the number of equilibration steps prior to
-     * production ttOSRW counts begin.
+     * production OST counts begin.
      */
     @CommandLine.Option(names = {"-Q", "--equilibrate"}, paramLabel = "1000", description = "Number of equilibration steps before evaluation of thermodynamics.")
     private int nEquil = 1000;
@@ -82,7 +82,7 @@ public class ThermodynamicsOptions {
      * currently serves as a switch between OST and window-based methods.
      */
     @CommandLine.Option(names = {"--tA", "--thermodynamicsAlgorithm"}, paramLabel = "OST",
-            description = "Choice of thermodynamics algorithm. OST/OSRW use OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
+            description = "Choice of thermodynamics algorithm. THe default is OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
     private String thermoAlgoString = "OST";
 
     /**
@@ -128,7 +128,7 @@ public class ThermodynamicsOptions {
         molDyn.setRestartFrequency(dynamics.getCheckpoint());
         // Start sampling.
         if (nEquil > 0) {
-            logger.info(" Beginning equilibration");
+            logger.info("\n Beginning equilibration");
             runDynamics(molDyn, nEquil, dynamics, writeOut, true, dyn);
             logger.info(" Beginning fixed-lambda alchemical sampling");
             initVelocities = false;
@@ -172,12 +172,12 @@ public class ThermodynamicsOptions {
     /**
      * Represents categories of thermodynamics algorithms that must be handled differentially.
      * For legacy reasons, MC-OST and MD-OST are both just "OST", and the differences are handled
-     * in OSRWOptions and Thermodynamics.groovy. Introduced primarily to get BAR working.
+     * in OSTOptions and Thermodynamics.groovy. Introduced primarily to get BAR working.
      */
     public enum ThermodynamicsAlgorithm {
         // TODO: Separate MC-OST from MD-OST. Requires coupled changes elsewhere.
         // Fixed represents generation of snapshots for estimators like BAR, FEP, etc.
-        OST("OSRW", "MC-OSRW", "MC-OST", "MD-OSRW", "MD-OST", "DEFAULT"),
+        OST("OST", "MC-OST", "MD-OST", "DEFAULT"),
         FIXED("BAR", "MBAR", "FEP", "WINDOWED");
 
         private final Set<String> aliases;

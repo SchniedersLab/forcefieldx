@@ -98,7 +98,7 @@ public class CrystalThermoPathTest extends PotentialScript {
         System.clearProperty("lambdaterm");
 
         double expectedPotentialEnergyVac =   -7.70864934;
-        double expectedPotentialEnergyXtal = -36.22195894;
+        double expectedPotentialEnergyXtal = -36.22707541638729;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;
 
@@ -127,7 +127,7 @@ public class CrystalThermoPathTest extends PotentialScript {
         System.clearProperty("lambdaterm");
 
         double expectedPotentialEnergyVac =   -6.67890842;
-        double expectedPotentialEnergyXtal = -57.40727303;
+        double expectedPotentialEnergyXtal = -57.410945848200896;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;
 

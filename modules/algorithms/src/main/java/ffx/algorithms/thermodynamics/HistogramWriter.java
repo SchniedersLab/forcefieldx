@@ -40,10 +40,10 @@ package ffx.algorithms.thermodynamics;
 import java.io.PrintWriter;
 import java.io.Writer;
 
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
 /**
- * Write out the TT-OSRW Histogram.
+ * Write out the Histogram.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -51,26 +51,25 @@ import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
 class HistogramWriter extends PrintWriter {
 
     /**
-     * Private reference to the TTOSRW instance.
+     * Private reference to the Histogram instance.
      */
-    private TransitionTemperedOSRW transitionTemperedOSRW;
+    private Histogram histogram;
 
     /**
      * Constructor.
      *
-     * @param transitionTemperedOSRW The parent TTOSRW instance.
-     * @param writer                 The Writer to use.
+     * @param histogram The Histogram instance.
+     * @param writer    The Writer to use.
      */
-    HistogramWriter(TransitionTemperedOSRW transitionTemperedOSRW, Writer writer) {
+    HistogramWriter(Histogram histogram, Writer writer) {
         super(writer);
-        this.transitionTemperedOSRW = transitionTemperedOSRW;
+        this.histogram = histogram;
     }
 
     /**
      * Write the Histogram file.
      */
     void writeHistogramFile() {
-        Histogram histogram = transitionTemperedOSRW.getHistogram();
         printf("Temperature     %15.3f\n", histogram.temperature);
         printf("Lambda-Mass     %15.8e\n", histogram.thetaMass);
         printf("Lambda-Friction %15.8e\n", histogram.thetaFriction);
@@ -82,7 +81,7 @@ class HistogramWriter extends PrintWriter {
         printf("Flambda-Min     %15.8e\n", histogram.minFLambda);
         printf("Flambda-Width   %15.8e\n", histogram.dFL);
         int flag = 0;
-        if (transitionTemperedOSRW.isTempering()) {
+        if (histogram.isTempering()) {
             flag = 1;
         }
         printf("Tempering       %15d\n", flag);

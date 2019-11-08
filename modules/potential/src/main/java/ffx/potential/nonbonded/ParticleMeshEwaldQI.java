@@ -148,7 +148,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     private static final Logger logger = Logger.getLogger(ParticleMeshEwaldQI.class.getName());
     /**
      * [numThreads] Polymorphic inner class to handle lambda preloads on a
-     * setLambda() basis (for OSRW), or on an interaction-basis (for ESVs).
+     * setLambda() basis (for OST), or on an interaction-basis (for ESVs).
      */
     private LambdaFactors[] lambdaFactors = null;
 
@@ -381,12 +381,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * 4.) Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
      * <p>
      * Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for
-     * parts 2 & 3. This is OSRW_lambda only; ESV_lambda scales by overwriting
+     * parts 2 & 3. This is OST_lambda only; ESV_lambda scales by overwriting
      * polarizabilities in InitializationRegion.
      */
     private double polarizationScale = 1.0;
     /**
-     * Flag for ligand atoms; treats both OSRW and ESV lambdas.
+     * Flag for ligand atoms; treats both OST and ESV lambdas.
      */
     private boolean isSoft[];
 
@@ -1106,7 +1106,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     lambdaFactors[i] = new LambdaFactorsESV();
                 } else if (lambdaTerm) {
                     // Invoked on calls to setLambda().
-                    lambdaFactors[i] = new LambdaFactorsOSRW();
+                    lambdaFactors[i] = new LambdaFactorsOST();
                 } else {
                     // Invoked never; inoperative defaults.
                     lambdaFactors[i] = LambdaDefaults;
@@ -7909,9 +7909,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
 
     /**
      * The setFactors(i,k,lambdaMode) method is called every time through the
-     * inner PME loops, avoiding an "if (esv)" branch statement. A plain OSRW
-     * run will have an object of type LambdaFactorsQiOSRW instead, which
-     * contains an empty version of setFactors(i,k,lambdaMode). The OSRW version
+     * inner PME loops, avoiding an "if (esv)" branch statement. A plain OST
+     * run will have an object of type LambdaFactorsQiOST instead, which
+     * contains an empty version of setFactors(i,k,lambdaMode). The OST version
      * instead sets new factors only on lambda updates, in setLambda(i,k).
      * Interactions involving neither lambda receive the (inoperative) defaults
      * below.
@@ -7982,7 +7982,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         protected double[] ik = new double[2];
 
         /**
-         * Overriden by the OSRW version which updates only during setLambda().
+         * Overriden by the OST version which updates only during setLambda().
          */
         public void setFactors() {
             /* no-op */
@@ -8005,7 +8005,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             if (this instanceof LambdaFactorsESV) {
                 sb.append(format("  (QI-esv)  i,k:%d,%d", ik[0], ik[1]));
             } else {
-                sb.append(format("  (QI-osrw)"));
+                sb.append(format("  (QI-ost)"));
             }
             sb.append(format("  lambda:%.2f  lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
                     lambdaProd, lfAlpha, dlfAlpha, d2lfAlpha, lfPowPerm, dlfPowPerm, d2lfPowPerm, lfPowPol, dlfPowPol, d2lfPowPol));
@@ -8016,7 +8016,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
-    public class LambdaFactorsOSRW extends LambdaFactors {
+    public class LambdaFactorsOST extends LambdaFactors {
 
         @Override
         public void setFactors() {

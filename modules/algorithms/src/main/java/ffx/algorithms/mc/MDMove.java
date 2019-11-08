@@ -247,7 +247,7 @@ public class MDMove implements MCMove {
     }
 
     /**
-     * Write coordinate and velocity restart files out for MCOSRW.
+     * Write coordinate and velocity restart files out for MC-OST.
      */
     public void writeRestart() {
         molecularDynamics.writeRestart();

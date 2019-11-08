@@ -49,7 +49,8 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.integrators.IntegratorEnum
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -135,13 +136,13 @@ class Alchemical extends AlgorithmsScript {
     // File type of coordinate snapshots to write out.
     String fileType = "PDB"
 
-    // OSRW
-    boolean runOSRW = true
+    // OST
+    boolean runOST = true
 
     // Reset velocities (ignored if a restart file is given)
     boolean initVelocities = true
 
-    private TransitionTemperedOSRW osrw;
+    private OrthogonalSpaceTempering orthogonalSpaceTempering;
 
     @Override
     Alchemical run() {
@@ -309,15 +310,15 @@ class Alchemical extends AlgorithmsScript {
         refinementEnergy.setLambda(lambda)
 
         boolean asynchronous = true
-        osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
+        orthogonalSpaceTempering = new OrthogonalSpaceTempering(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
                 dynamicsOptions.write, asynchronous, algorithmFunctions.getDefaultListener())
 
-        osrw.setLambda(lambda);
-        osrw.setThetaMass(5.0e-19);
-        osrw.setOptimization(true, activeAssembly);
+        orthogonalSpaceTempering.setLambda(lambda);
+        orthogonalSpaceTempering.setThetaMass(5.0e-19);
+        orthogonalSpaceTempering.getOptimizationParameters().setOptimization(true, activeAssembly);
         // Create the MolecularDynamics instance.
-        MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], osrw, assemblies[0].getProperties(),
+        MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], orthogonalSpaceTempering, assemblies[0].getProperties(),
                 null, thermostat, integrator)
 
         algorithmFunctions.energy(assemblies[0])
@@ -326,12 +327,13 @@ class Alchemical extends AlgorithmsScript {
                 fileType, dynamicsOptions.write, dyn)
 
         logger.info(" Searching for low energy coordinates")
-        double[] lowEnergyCoordinates = osrw.getOSRWOptimumCoordinates()
-        double currentOSRWOptimum = osrw.getOSRWOptimumEnergy()
+        OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters();
+        double[] lowEnergyCoordinates = opt.getOptimumCoordinates()
+        double currentOSTOptimum = opt.getOptimumEnergy()
         if (lowEnergyCoordinates != null) {
             forceFieldEnergy.setCoordinates(lowEnergyCoordinates)
         } else {
-            logger.info(" OSRW stage did not succeed in finding a minimum.")
+            logger.info(" OST stage did not succeed in finding a minimum.")
         }
 
         return this
@@ -339,6 +341,6 @@ class Alchemical extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
+        return orthogonalSpaceTempering == null ? Collections.emptyList() : Collections.singletonList(orthogonalSpaceTempering);
     }
 }

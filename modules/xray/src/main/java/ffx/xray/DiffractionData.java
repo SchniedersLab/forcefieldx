@@ -657,7 +657,7 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * Return R value for OSRW x-ray minimization.
+     * Return R value for OST x-ray minimization.
      *
      * @return a double.
      */

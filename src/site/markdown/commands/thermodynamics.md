@@ -10,7 +10,7 @@ Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a
     files...                        The atomic coordinate file in PDB or XYZ format.
     --af, --activeFinal=-1          Final active atom (single-topology only).
     --as, --activeStart=1           Starting active atom (single-topology only).
-    --bM, --biasMag=0.05            OSRW Gaussian bias magnitude (kcal/mol).
+    --bM, --biasMag=0.05            OST Gaussian bias magnitude (kcal/mol).
     --dw, --distributeWalkers=OFF   AUTO: Pick up per-walker configurations as [filename. pdb]_[num], or specify a residue to distribute on.
     --ef1, --noElecFinal1=-1        Final no-electrostatics atom for 1st topology.
     --ef2, --noElecFinal2=-1        Final no-electrostatics atom for 2nd topology
@@ -23,9 +23,9 @@ Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a
     --lf, --lambdaFriction=1.0E-18  Friction on the lambda particle.
     --lm, --lambdaMass=1.0E-18      Mass of the lambda particle.
     --lw, --lambdaWritOut=1.0       Only write out snapshots if lambda is greater than the value specified.
-    --mc, monteCarlo                Monte Carlo OSRW
+    --mc, monteCarlo                Monte Carlo OST
     --mcL, --mcLambdaStd=0.1        Standard deviation for lambda move.
-    --mcMD, --mcTraj=100            Number of dynamics steps to take for each MD trajectory for Monte Carlo OSRW
+    --mcMD, --mcTraj=100            Number of dynamics steps to take for each MD trajectory for Monte Carlo OST
     --np, --nParallel=1             Number of topologies to evaluate in parallel
     --rn, --resetNumSteps           Ignore prior steps logged in .lam or similar files
     --rsym, --randomSymOp=-1.0      Apply a random Cartesian symmetry operator with a random translation in the range -X .. X; less than 0 disables.
@@ -34,11 +34,11 @@ Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a
     --s2, --start2=0                Starting ligand atom for 2nd topology
     --sf, --switchingFunction=1.0   Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)
     --tp, --temperingParam=8.0      Dama et al tempering rate parameter in multiples of kBT
-    --ts, --twoStep                 Sample MC-OSRW using separate lambda and MD moves.
+    --ts, --twoStep                 Sample MC-OST using separate lambda and MD moves.
     --uaA, --unsharedA=-1           Unshared atoms in the A dual topology (period-separated hyphenated ranges)
     --uaB, --unsharedB=-1           Unshared atoms in the B dual topology (period-separated hyphenated ranges)
 -b, --thermostat=Bussi              Thermostat: [Adiabatic / Berendsen / Bussi].
--C, --count=10                      Time steps between MD-OSRW counts.
+-C, --count=10                      Time steps between MD-OST counts.
 -d, --dt=1.0                        Time discretization step in femtoseconds.
 -F, --fileFormat=XYZ                Choose file type to write [PDB/XYZ].
 -h, --help                          Print this help message.

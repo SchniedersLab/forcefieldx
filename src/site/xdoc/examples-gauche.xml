@@ -79,7 +79,7 @@
                     <tbody>
                         <tr>
                             <td>-c 100</td>
-                            <td>Number of MD steps between OSRW counts</td>
+                            <td>Number of MD steps between OST counts</td>
                         </tr>
                         <tr>
                             <td>-a</td>

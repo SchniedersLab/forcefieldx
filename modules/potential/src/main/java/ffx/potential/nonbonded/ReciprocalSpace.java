@@ -529,7 +529,7 @@ public class ReciprocalSpace {
             }
         }
 
-        int minGrid = forceField.getInteger("PME_GRID_MIN", 32);
+        int minGrid = forceField.getInteger("PME_GRID_MIN", 16);
         nX = max(nX, minGrid);
         nY = max(nY, minGrid);
         nZ = max(nZ, minGrid);

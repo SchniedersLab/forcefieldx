@@ -109,7 +109,7 @@ class MultiTopTimer extends PotentialScript {
         double lambda = alchemical.getInitialLambda();
 
         // Relative free energies via the DualTopologyEnergy class require different
-        // default OSRW parameters than absolute free energies.
+        // default OST parameters than absolute free energies.
         if (nArgs >= 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.

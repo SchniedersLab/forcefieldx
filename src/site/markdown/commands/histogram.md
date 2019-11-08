@@ -9,6 +9,6 @@ Evaluate the Orthogonal Space Histogram.
     files...       XYZ or PDB input files.
 -h, --help         Print this help message.
 -p, --pmf          Save the bias histogram to a file.
--u, --untempered   Histogram for untempered OSRW.
+-u, --untempered   Histogram for untempered OST.
 ```
 ---

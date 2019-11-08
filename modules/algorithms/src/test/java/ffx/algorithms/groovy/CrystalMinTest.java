@@ -78,7 +78,7 @@ public class CrystalMinTest extends PJDependentTest {
 
     @Test
     public void testCrystalMinHelp() {
-        // Set-up the input arguments for the Biotype script.
+        // Set-up the input arguments for the CrystalMin script.
         String[] args = {"-h"};
         binding.setVariable("args", args);
 
@@ -106,7 +106,7 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.7350173210033;
+        double expectedPotentialEnergy = -32.72657252765883;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
         Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy,1E-6);
@@ -140,7 +140,7 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.63949712087549;
+        double expectedPotentialEnergy = -32.63130589380454;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
         Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
@@ -174,7 +174,7 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.543716300215436;
+        double expectedPotentialEnergy = -32.54442936288904;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
         Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy, 1E-6);
@@ -208,7 +208,7 @@ public class CrystalMinTest extends PJDependentTest {
         // Evaluate the script.
         xtalMin.run();
 
-        double expectedPotentialEnergy = -32.54372086556189;
+        double expectedPotentialEnergy = -32.535694367226576;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
         Assert.assertEquals(expectedPotentialEnergy, actualPotentialEnergy,1E-6);

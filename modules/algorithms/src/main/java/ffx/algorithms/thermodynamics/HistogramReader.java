@@ -42,10 +42,10 @@ import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
 /**
- * Read in the TT-OSRW Histogram.
+ * Read in the Histogram.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -55,19 +55,19 @@ class HistogramReader extends BufferedReader {
     private static final Logger logger = Logger.getLogger(HistogramReader.class.getName());
 
     /**
-     * Private reference to the TTOSRW instance.
+     * Private reference to the Histogram instance.
      */
-    private TransitionTemperedOSRW transitionTemperedOSRW;
+    private Histogram histogram;
 
     /**
      * Constructor.
      *
-     * @param transitionTemperedOSRW The parent TTOSRW instance.
-     * @param reader                 The Reader to use.
+     * @param histogram The Histogram instance.
+     * @param reader    The Reader to use.
      */
-    HistogramReader(TransitionTemperedOSRW transitionTemperedOSRW, Reader reader) {
+    HistogramReader(Histogram histogram, Reader reader) {
         super(reader);
-        this.transitionTemperedOSRW = transitionTemperedOSRW;
+        this.histogram = histogram;
     }
 
     /**
@@ -75,7 +75,6 @@ class HistogramReader extends BufferedReader {
      */
     void readHistogramFile() {
         try {
-            Histogram histogram = transitionTemperedOSRW.getHistogram();
             histogram.temperature = Double.parseDouble(readLine().split(" +")[1]);
             histogram.thetaMass = Double.parseDouble(readLine().split(" +")[1]);
             histogram.thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
@@ -92,7 +91,7 @@ class HistogramReader extends BufferedReader {
             histogram.dFL_2 = histogram.dFL / 2.0;
 
             int flag = Integer.parseInt(readLine().split(" +")[1]);
-            transitionTemperedOSRW.setTempering(flag != 0);
+            histogram.setTempering(flag != 0);
 
             // Allocate memory for the recursion kernel.
             histogram.allocateRecursionKernel();
@@ -104,7 +103,7 @@ class HistogramReader extends BufferedReader {
                 }
             }
         } catch (Exception e) {
-            String message = " Invalid OSRW Histogram file.";
+            String message = " Invalid OST Histogram file.";
             logger.log(Level.SEVERE, message, e);
         }
     }

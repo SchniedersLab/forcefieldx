@@ -67,16 +67,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import ffx.algorithms.misc.PJDependentTest;
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
+
+import ffx.algorithms.groovy.Thermodynamics;
 
 import groovy.lang.Binding;
 
 /**
- * Tests the functionality of the Transition-Tempered OSRW algorithm in Force Field X,
- * both by running a very simple and quick TT-OSRW run, and setting up a number of systems,
+ * Tests the functionality of the OST algorithm in Force Field X,
+ * both by running a very simple and quick OST run, and setting up a number of systems,
  * comparing output energies and gradients from the starting algorithmConfig.
  *
  * @author Michael J. Schnieders
@@ -669,7 +671,7 @@ public class ThermodynamicsTest extends PJDependentTest {
      */
     private static final Map<String, String> DEFAULT_OPTIONS;
     /**
-     * Set of default properties, such as "ttosrw-alwaystemper", "true" to use standard tempering scheme.
+     * Set of default properties, such as "ost-alwaystemper", "true" to use standard tempering scheme.
      * Can be over-ridden in test constructors.
      */
     private static final Map<String, String> DEFAULT_PROPERTIES;
@@ -715,8 +717,8 @@ public class ThermodynamicsTest extends PJDependentTest {
         }
         DEFAULT_OPTIONS = Collections.unmodifiableMap(optMap);
 
-        String[] props = {"ttosrw-alwaystemper", "true",
-                "ttosrw-temperOffset", "0.5", // Small to temper fast.
+        String[] props = {"ost-alwaystemper", "true",
+                "ost-temperOffset", "0.5", // Small to temper fast.
                 "print-on-failure", "false",
                 "disable-neighbor-updates", "false",
                 "vdw-lambda-alpha", "0.25",
@@ -752,7 +754,7 @@ public class ThermodynamicsTest extends PJDependentTest {
     private final Map<String, String> opts;
     private final List<String> flags;
     /**
-     * Configuration containing the properties to be used by TT-OSRW.
+     * Configuration containing the properties to be used by OST.
      */
     Configuration algorithmConfig;
 
@@ -771,13 +773,13 @@ public class ThermodynamicsTest extends PJDependentTest {
     private final int numGradAtoms;
 
     /**
-     * Potential energy of the underlying Potential (0), and OSRW after one bias drop (1).
+     * Potential energy of the underlying Potential (0), and OST after one bias drop (1).
      */
     private final double[] pe;
     private final double[] dudl;
     private final double[] d2udl2;
     /**
-     * Gradient of the underlying Potential ([0][0..n][0-2]), and OSRW after one bias drop ([1][0..n][0-2]).
+     * Gradient of the underlying Potential ([0][0..n][0-2]), and OST after one bias drop ([1][0..n][0-2]).
      * Axes: before/after bias, atoms, X/Y/Z.
      */
     private final double[][][] dudx;
@@ -1006,7 +1008,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                 tempDir.delete();
             }
 
-            if (thermo.getOSRW() == null) {
+            if (thermo.getOST() == null) {
                 assert mode == ThermoTestMode.HELP;
             } else {
                 thermo.destroyPotentials();
@@ -1068,8 +1070,8 @@ public class ThermodynamicsTest extends PJDependentTest {
     private void testFreeEnergy() {
         assembleThermo();
         thermo.run();
-        TransitionTemperedOSRW osrw = thermo.getOSRW();
-        Histogram histogram = osrw.getHistogram();
+        OrthogonalSpaceTempering orthogonalSpaceTempering = thermo.getOST();
+        Histogram histogram = orthogonalSpaceTempering.getHistogram();
         double delG = histogram.updateFLambda(false, false);
         assertEquals(String.format(" Test %s: not within tolerance %12.5g", info, feTol), freeEnergy, delG, feTol);
     }
@@ -1080,32 +1082,32 @@ public class ThermodynamicsTest extends PJDependentTest {
     private void testStaticGradients() {
         assembleThermo();
         thermo.run();
-        TransitionTemperedOSRW osrw = thermo.getOSRW();
-        osrw.setPropagateLambda(false);
+        OrthogonalSpaceTempering orthogonalSpaceTempering = thermo.getOST();
+        orthogonalSpaceTempering.setPropagateLambda(false);
         CrystalPotential under = thermo.getPotential();
-        int nVars = osrw.getNumberOfVariables();
+        int nVars = orthogonalSpaceTempering.getNumberOfVariables();
 
         double[] x = new double[nVars];
-        x = osrw.getCoordinates(x);
-        double[] gOSRWPre = new double[nVars];
+        x = orthogonalSpaceTempering.getCoordinates(x);
+        double[] gOSTPre = new double[nVars];
         double[] gUnderPre = new double[nVars];
-        double[] gOSRWPost = new double[nVars];
+        double[] gOSTPost = new double[nVars];
         double[] gUnderPost = new double[nVars];
 
-        logger.info(" Testing the OSRW potential before bias added.");
-        EnergyResult osrwPre = testGradientSet("Unbiased OSRW", osrw, x, gOSRWPre, 0);
+        logger.info(" Testing the OST potential before bias added.");
+        EnergyResult ostPre = testGradientSet("Unbiased OST", orthogonalSpaceTempering, x, gOSTPre, 0);
         logger.info(" Testing the underlying CrystalPotential before bias added.");
         EnergyResult underPre = testGradientSet("Unbiased potential", under, x, gUnderPre, 0);
 
-        // Assert that, before biases, OSRW and underlying potential are equal.
-        osrwPre.assertResultsEqual(underPre);
+        // Assert that, before biases, OST and underlying potential are equal.
+        ostPre.assertResultsEqual(underPre);
 
         // This code works perfectly on two local machines and yet fails on Travis.
         /*double currentdUdL = osrwPre.firstLam;
         logger.info(String.format(" Adding an OSRW bias at lambda %8.4g, dU/dL %14.8g", osrw.getLambda(), currentdUdL));
         osrw.addBias(currentdUdL, x, gOSRWPre);
 
-        // Wait for the bias to be received by the OSRW object.
+        // Wait for the bias to be received by the OST object.
         boolean biasReceived = false;
         for (int i = 0; i < 200; i++) {
             try {
@@ -1139,8 +1141,8 @@ public class ThermodynamicsTest extends PJDependentTest {
     /**
      * Generates and tests an EnergyResult against tabulated values.
      *
-     * @param description Description (such as unbiased OSRW)
-     * @param potential   A CrystalPotential (either OSRW or underlying).
+     * @param description Description (such as unbiased OST)
+     * @param potential   A CrystalPotential (either OST or underlying).
      * @param x           Coordinates.
      * @param g           Array to add gradients to.
      * @param tableIndex  0 for unbiased potential, 1 for a biased potential.
@@ -1167,7 +1169,7 @@ public class ThermodynamicsTest extends PJDependentTest {
      *
      * @param actual      Value from the test.
      * @param expected    Array of expected values (see tableIndex).
-     * @param tableIndex  0 for unbiased potential, 1 for biased OSRW potential.
+     * @param tableIndex  0 for unbiased potential, 1 for biased OST potential.
      * @param tol         Tolerance for this test.
      * @param description Scalar to be tested.
      */
@@ -1186,7 +1188,7 @@ public class ThermodynamicsTest extends PJDependentTest {
      *
      * @param actual      Array from the test, flat.
      * @param expected    Array of expected values, indexed by tableIndex, atoms, and XYZ.
-     * @param tableIndex  0 for unbiased potential, 1 for biased OSRW potential.
+     * @param tableIndex  0 for unbiased potential, 1 for biased OST potential.
      * @param tol         Tolerance for this test.
      * @param description Array to be tested.
      */
@@ -1242,7 +1244,7 @@ public class ThermodynamicsTest extends PJDependentTest {
             nVars = g.length;
             gradient = Arrays.copyOf(g, nVars);
 
-            hasSecondDerivatives = !(potential instanceof TransitionTemperedOSRW);
+            hasSecondDerivatives = !(potential instanceof OrthogonalSpaceTempering);
             if (hasSecondDerivatives) {
                 secondLam = linter.getd2EdL2();
                 lamGradient = new double[g.length];

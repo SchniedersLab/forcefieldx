@@ -40,7 +40,7 @@ package ffx.algorithms.thermodynamics;
 import java.io.PrintWriter;
 import java.io.Writer;
 
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 
 /**
  * Write out the current value of Lambda, its velocity and the number of counts.
@@ -51,28 +51,28 @@ import ffx.algorithms.thermodynamics.TransitionTemperedOSRW.Histogram;
 class LambdaWriter extends PrintWriter {
 
     /**
-     * Private reference to the TTOSRW instance.
+     * Private reference to the OST instance.
      */
-    private TransitionTemperedOSRW transitionTemperedOSRW;
+    private OrthogonalSpaceTempering orthogonalSpaceTempering;
 
     /**
      * Constructor.
      *
-     * @param transitionTemperedOSRW The parent TTOSRW instance.
-     * @param writer                 The Writer to use.
+     * @param orthogonalSpaceTempering The parent OrthogonalSpaceTempering instance.
+     * @param writer                   The Writer to use.
      */
-    LambdaWriter(TransitionTemperedOSRW transitionTemperedOSRW, Writer writer) {
+    LambdaWriter(OrthogonalSpaceTempering orthogonalSpaceTempering, Writer writer) {
         super(writer);
-        this.transitionTemperedOSRW = transitionTemperedOSRW;
+        this.orthogonalSpaceTempering = orthogonalSpaceTempering;
     }
 
     /**
      * Write the Lambda restart file.
      */
     void writeLambdaFile() {
-        Histogram histogram = transitionTemperedOSRW.getHistogram();
-        printf("Lambda          %15.8f\n", transitionTemperedOSRW.lambda);
+        Histogram histogram = orthogonalSpaceTempering.getHistogram();
+        printf("Lambda          %15.8f\n", orthogonalSpaceTempering.lambda);
         printf("Lambda-Velocity %15.8e\n", histogram.halfThetaVelocity);
-        printf("Steps-Taken     %15d\n", transitionTemperedOSRW.energyCount);
+        printf("Steps-Taken     %15d\n", orthogonalSpaceTempering.energyCount);
     }
 }

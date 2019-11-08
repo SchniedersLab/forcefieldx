@@ -140,7 +140,7 @@ public class Integrate1DTest {
          *
          * The whole point of this, then, is that the integration methods can
          * use any arbitrary DataSet, such as a DoublesDataSet taken straight
-         * from OSRW, and can be thoroughly tested using any arbitrary
+         * from OST, and can be thoroughly tested using any arbitrary
          * FunctionDataCurve, so that we're confident they are working as intended
          * when applied to DataSets where we don't know the true answer.
          */
