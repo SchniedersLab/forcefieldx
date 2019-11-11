@@ -47,6 +47,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -497,10 +498,9 @@ public class ReciprocalSpace {
         int fftZCurrent = fftZ;
 
         double density = forceField.getDouble("PME_MESH_DENSITY", 1.2);
-
         int nX = forceField.getInteger("PME_GRID_X", -1);
         if (nX < 2) {
-            nX = (int) Math.floor(crystal.a * density) + 1;
+            nX = (int) floor(crystal.a * density) + 1;
             if (nX % 2 != 0) {
                 nX += 1;
             }
@@ -510,7 +510,7 @@ public class ReciprocalSpace {
         }
         int nY = forceField.getInteger("PME_GRID_Y", -1);
         if (nY < 2) {
-            nY = (int) Math.floor(crystal.b * density) + 1;
+            nY = (int) floor(crystal.b * density) + 1;
             if (nY % 2 != 0) {
                 nY += 1;
             }
@@ -520,7 +520,7 @@ public class ReciprocalSpace {
         }
         int nZ = forceField.getInteger("PME_GRID_Z", -1);
         if (nZ < 2) {
-            nZ = (int) Math.floor(crystal.c * density) + 1;
+            nZ = (int) floor(crystal.c * density) + 1;
             if (nZ % 2 != 0) {
                 nZ += 1;
             }
@@ -529,9 +529,15 @@ public class ReciprocalSpace {
             }
         }
 
+        int minGrid = forceField.getInteger("PME_GRID_MIN", 16);
+        nX = max(nX, minGrid);
+        nY = max(nY, minGrid);
+        nZ = max(nZ, minGrid);
+
         fftX = nX;
         fftY = nY;
         fftZ = nZ;
+
 
         // Populate the matrix that fractionalizes multipoles.
         transformMultipoleMatrix();

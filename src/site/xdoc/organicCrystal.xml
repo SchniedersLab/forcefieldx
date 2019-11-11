@@ -4,14 +4,14 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Prediction of Deposition Free Energy of Organic Crystals Using OSRW</title>
+        <title>Prediction of Deposition Free Energy of Organic Crystals Using OST</title>
         <author email="Ian-Nessler@uiowa.edu">Ian J. Nessler</author>
     </properties>
     <body>
-        <section name="Organic Crystal Depsotition">
-            <subsection name="Prior to using the Osrw interface">
+        <section name="Organic Crystal Deposition">
+            <subsection name="Prior to using the OST sampling algorithm">
                 <p>
-                    In order to use the Osrw interface data depicting the atomic coordinates
+                    In order to use the OST interface data depicting the atomic coordinates
                     and connectivity of the compound are necessary for proper usage. Currently accepted
                     data formats include:
                 </p>
@@ -58,13 +58,13 @@
                 <p>
                     Each data file contains information on the xyz coordinates of each atom, the type
                     of each atom, and the which atoms are bonded to each atom. This information is in a
-                    crude form that osrw will not be able to interpret. The data filename that is listed serves as
+                    crude form that OST will not be able to interpret. The data filename that is listed serves as
                     a marker to a property file with the same filename that holds information necessary for running the script.
                 </p>
 
                 <p>
                     A property file provides general crystal information, the name of files used for patching, and/or force field options.
-                    When using Osrw the property file has the extension filename.key. It is important
+                    When using OST the property file has the extension filename.key. It is important
                     that the data file name and the properties file name are the same.
                     An example of a property file may look like this:
                 </p>
@@ -125,19 +125,17 @@
 
                 <p>
                     Once all this information is acquired in a file with the extension .patch along with
-                    the property file and data file a trial can be run on Osrw.
+                    the property file and data file a trial can be run on OST.
                 </p>
 
             </subsection>
 
-            <subsection name="Running Osrw">
-
+            <subsection name="Running OST">
                 <p>
                     When the script is run it tries to acquire both the data file and the properties file.
                     If the properties file is not under the same filename as the data file then an error will
                     occur while the program evaluates the script causing the program to shut down.
                 </p>
-
                 <p>
                     When running the script there are a couple of recommended flags that need user input on every trial.
                     These flags are:
@@ -155,10 +153,10 @@
                     Using the command:
                 </p>
 
-                <source> ffxc osrw -h</source>
+                <source> ffxc Thermodynamics -h</source>
 
                 <p>
-                    Provides the user with a helpful interface detailing the many flags of Osrw. The help interface
+                    Provides the user with a helpful interface detailing the many flags of OST. The help interface
                     looks like this:
                 </p>
 

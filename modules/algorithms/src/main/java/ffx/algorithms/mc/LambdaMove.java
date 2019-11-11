@@ -41,7 +41,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
 
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
 
 /**
  * Define an MC move to update lambda.
@@ -53,13 +53,13 @@ public class LambdaMove implements MCMove {
     private static final Logger logger = Logger.getLogger(LambdaMove.class.getName());
 
     /**
-     * Current value of lambda, which always refreshed from the OSRW instance.
+     * Current value of lambda, which always refreshed from the OST instance.
      */
     private double currentLambda;
     /**
-     * Apply the Lambda move to an OSRW instance.
+     * Apply the Lambda move to an OST instance.
      */
-    private final TransitionTemperedOSRW osrw;
+    private final OrthogonalSpaceTempering orthogonalSpaceTempering;
     /**
      * Random number generator.
      */
@@ -72,21 +72,21 @@ public class LambdaMove implements MCMove {
     /**
      * <p>Constructor for LambdaMove.</p>
      *
-     * @param osrw a {@link TransitionTemperedOSRW} object.
+     * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
      */
-    public LambdaMove(TransitionTemperedOSRW osrw) {
-        this.osrw = osrw;
+    public LambdaMove(OrthogonalSpaceTempering orthogonalSpaceTempering) {
+        this.orthogonalSpaceTempering = orthogonalSpaceTempering;
         random = new Random();
     }
 
     /**
      * <p>Constructor for LambdaMove.</p>
      *
-     * @param randomSeed Random seed to use.
-     * @param osrw       TransitionTemperedOSRW instance.
+     * @param randomSeed               Random seed to use.
+     * @param orthogonalSpaceTempering OrthogonalSpaceTempering instance.
      */
-    public LambdaMove(int randomSeed, TransitionTemperedOSRW osrw) {
-        this.osrw = osrw;
+    public LambdaMove(int randomSeed, OrthogonalSpaceTempering orthogonalSpaceTempering) {
+        this.orthogonalSpaceTempering = orthogonalSpaceTempering;
         random = new Random(randomSeed);
     }
 
@@ -104,7 +104,7 @@ public class LambdaMove implements MCMove {
      */
     @Override
     public void move() {
-        currentLambda = osrw.getLambda();
+        currentLambda = orthogonalSpaceTempering.getLambda();
 
         // Draw a trial move from the distribution.
         double dL = random.nextGaussian() * stdDev;
@@ -117,8 +117,8 @@ public class LambdaMove implements MCMove {
             newLambda = abs(newLambda);
         }
 
-        // Update the OSRW instance.
-        osrw.setLambda(newLambda);
+        // Update the OST instance.
+        orthogonalSpaceTempering.setLambda(newLambda);
     }
 
     /**
@@ -126,7 +126,7 @@ public class LambdaMove implements MCMove {
      */
     @Override
     public void revertMove() {
-        osrw.setLambda(currentLambda);
+        orthogonalSpaceTempering.setLambda(currentLambda);
     }
 
     /**

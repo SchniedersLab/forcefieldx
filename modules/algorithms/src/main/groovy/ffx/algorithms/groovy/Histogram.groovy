@@ -40,7 +40,7 @@ package ffx.algorithms.groovy
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -72,7 +72,7 @@ class Histogram extends AlgorithmsScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
     private List<String> filenames
 
-    private TransitionTemperedOSRW osrw
+    private OrthogonalSpaceTempering orthogonalSpaceTempering
     private File saveDir = null
 
     @Override
@@ -108,7 +108,7 @@ class Histogram extends AlgorithmsScript {
         // Print the current energy
         energy.energy(true, true)
 
-        // These fields are needed for the OSRW constructor, but otherwise are not used.
+        // These fields are needed for the OST constructor, but otherwise are not used.
         boolean asynchronous = false
         double timeStep = 1.0
         double printInterval = 1.0
@@ -120,14 +120,15 @@ class Histogram extends AlgorithmsScript {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
 
-        osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+        orthogonalSpaceTempering = new OrthogonalSpaceTempering(energy, energy, lambdaRestart, histogramRestart,
                 activeAssembly.getProperties(), temperature, timeStep, printInterval,
                 saveInterval, asynchronous, algorithmListener)
 
         if (pmf) {
-            osrw.setMolecularAssembly(activeAssembly)
-            osrw.updateFLambda(false, true)
-            StringBuffer sb = osrw.evaluateTotalPMF()
+            orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
+            OrthogonalSpaceTempering.Histogram histogram = orthogonalSpaceTempering.getHistogram()
+            histogram.updateFLambda(false, true)
+            StringBuffer sb = histogram.evaluateTotalPMF()
 
             String dirName = saveDir.toString() + File.separator
             String file = dirName + "pmf.txt"
@@ -136,7 +137,7 @@ class Histogram extends AlgorithmsScript {
             fileWriter.write(sb.toString())
             fileWriter.close()
 
-            sb = osrw.evaluate2DPMF()
+            sb = histogram.evaluate2DPMF()
             file = dirName + "pmf.2D.txt"
             logger.info(" Writing " + file)
             fileWriter = new FileWriter(file)
@@ -148,6 +149,6 @@ class Histogram extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw)
+        return orthogonalSpaceTempering == null ? Collections.emptyList() : Collections.singletonList(orthogonalSpaceTempering)
     }
 }

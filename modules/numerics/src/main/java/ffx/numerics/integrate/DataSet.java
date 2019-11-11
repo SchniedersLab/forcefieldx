@@ -96,7 +96,7 @@ public interface DataSet {
     double[] getX();
 
     /**
-     * Does this data set have half-width start/end bins. Intended for OSRW,
+     * Does this data set have half-width start/end bins. Intended for OST,
      * where the first and last bins are half the regular width.
      *
      * @return a boolean.

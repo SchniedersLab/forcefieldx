@@ -159,7 +159,7 @@
                         </tr>
                         <tr>
                             <td>--bM 0.002</td>
-                            <td>OSRW Gaussian bias magnitude (kcal/mol).</td>
+                            <td>OST Gaussian bias magnitude (kcal/mol).</td>
                         </tr>
                         <tr>
                             <td>-o</td>

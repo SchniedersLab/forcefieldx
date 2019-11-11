@@ -43,6 +43,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
+
 /**
  * Read in the current value of Lambda, its velocity and the number of counts.
  *
@@ -54,19 +56,19 @@ class LambdaReader extends BufferedReader {
     private static final Logger logger = Logger.getLogger(LambdaReader.class.getName());
 
     /**
-     * Private reference to the TTOSRW instance.
+     * Private reference to the OST instance.
      */
-    private TransitionTemperedOSRW transitionTemperedOSRW;
+    private OrthogonalSpaceTempering orthogonalSpaceTempering;
 
     /**
      * Constructor.
      *
-     * @param transitionTemperedOSRW The parent TTOSRW instance.
-     * @param reader                 The Reader to use.
+     * @param orthogonalSpaceTempering The parent OrthogonalSpaceTempering instance.
+     * @param reader                   The Reader to use.
      */
-    LambdaReader(TransitionTemperedOSRW transitionTemperedOSRW, Reader reader) {
+    LambdaReader(OrthogonalSpaceTempering orthogonalSpaceTempering, Reader reader) {
         super(reader);
-        this.transitionTemperedOSRW = transitionTemperedOSRW;
+        this.orthogonalSpaceTempering = orthogonalSpaceTempering;
     }
 
     /**
@@ -76,18 +78,19 @@ class LambdaReader extends BufferedReader {
      */
     void readLambdaFile(boolean resetEnergyCount) {
         try {
-            transitionTemperedOSRW.lambda = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
-            transitionTemperedOSRW.setLambda(transitionTemperedOSRW.lambda);
+            Histogram histogram = orthogonalSpaceTempering.getHistogram();
+            orthogonalSpaceTempering.lambda = Double.parseDouble(readLine().split(" +")[1]);
+            histogram.halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
+            orthogonalSpaceTempering.setLambda(orthogonalSpaceTempering.lambda);
         } catch (Exception e) {
-            String message = " Invalid OSRW Lambda file.";
+            String message = " Invalid OST Lambda file.";
             logger.log(Level.SEVERE, message, e);
         }
         if (!resetEnergyCount) {
             try {
-                transitionTemperedOSRW.energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
+                orthogonalSpaceTempering.energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
             } catch (Exception e) {
-                String message = format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString());
+                String message = format(" Could not find number of steps taken in OST Lambda file: %s", e.toString());
                 logger.log(Level.WARNING, message);
             }
         }

@@ -11,16 +11,16 @@ and open the template in the editor.
         xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
         <properties>
-            <title>GPU Accelerated MC-OSRW Solvation Free Energy</title>
+            <title>GPU Accelerated MC-OST Solvation Free Energy</title>
             <author email="hernan-bernabe@uiowa.edu">Hernan V. Bernabe</author>
         </properties>
         <body>
-            <section name="GPU Accelerated MC-OSRW Solvation Free Energy">
+            <section name="GPU Accelerated MC-OST Solvation Free Energy">
                 <p>
-                    Monte Carlo Orthogonal Space Random Walk (MC-OSRW) based sampling algorithm used to sample the thermodynamic landscape between two well defined molecular end states with
+                    Monte Carlo Orthogonal Space Random Walk (MC-OST) based sampling algorithm used to sample the thermodynamic landscape between two well defined molecular end states with
                     the end goal of calculating the free energy difference between those two states. The defined end states are connected via a thermodynamic path that is a function
                     of lambda that spans 0 to 1 (where 0 represents one well defined end state, 1 represents the other well defined end state and everywhere in between is an "alchemical"
-                    state that is comprised of aspects of both end states). This algorithm combines the sophisticated nature of MCOSRW sampling algorithms (implemented mainly using the FFX
+                    state that is comprised of aspects of both end states). This algorithm combines the sophisticated nature of MC-OST sampling algorithms (implemented mainly using the FFX
                     software package on a CPU) with the raw computational power of the GPU specialized OpenMM code to accurately and efficiently sample coordinate space and explore 
                     thermodynamic landscapes. 
                 </p>
@@ -46,14 +46,14 @@ and open the template in the editor.
                         vdw-cutoff 12.0
                     </source>
                     <p>
-                        Opmitizing a structure to elminate bad contacts between atoms may be necessary before using the MC-OSRW algorithm to explore a thermodynamic landscape. The FFX command
+                        Opmitizing a structure to elminate bad contacts between atoms may be necessary before using the MC-OST algorithm to explore a thermodynamic landscape. The FFX command
                         Minimize can be used to accomplish the optimization. Once the optimization is complete, make sure to rename the output to easiliy distinguish the optimized structure
                         from the original (example change the name to waterbox_min.xyz) and copy a key file with the same naming convention for the next step in the preparation phase. An example
                         Minimize command is shown below.
                     </p>
                     <source>ffxc Minimize -e 0.1 waterbox.xyz</source>
                     <p>
-                        It is important to equilibrate the newly optimized system to ensure that it relaxes into a state suitable for sampling using MC-OSRW. To accomplish this, a quick
+                        It is important to equilibrate the newly optimized system to ensure that it relaxes into a state suitable for sampling using MC-OST. To accomplish this, a quick
                         molecular dynamics run should be run. The Dynamics (or DynamicsOpenMM) command simulates the behavior of the molecular system over time under a defined state of conditions.
                         This dynamics run subjects the system to constant conditions that overtime relax the system into a confirmation that is useful for thermodynamic sampling under the given
                         conditions. For this example, we will equilibrate the system under constant temperature, constant volume and constant number of particles (known as the canonical ensemble) to
@@ -141,7 +141,7 @@ and open the template in the editor.
                             </tr>
                             <tr>
                                 <td>--mc</td>
-                                <td>Specifies that we will be using the Monte Carlo style sampling along with OSRW</td>
+                                <td>Specifies that we will be using the Monte Carlo style sampling along with OST</td>
                             </tr>
                             <tr>
                                 <td>--mcMD 50</td>
@@ -157,7 +157,7 @@ and open the template in the editor.
                             </tr>
                             <tr>
                                 <td>-Q 0</td>
-                                <td>Specifies the number of equilibration steps to be taken prior to MC-OSRW sampling</td>
+                                <td>Specifies the number of equilibration steps to be taken prior to MC-OST sampling</td>
                             </tr>
                             <tr>
                                 <td>--bM 0.001</td>
@@ -165,7 +165,7 @@ and open the template in the editor.
                             </tr>
                             <tr>
                                 <td>--tp 4.0</td>
-                                <td>Specifies the rate of decay or "tempering" of the OSRW Gaussian bias in multiples of kBT</td>
+                                <td>Specifies the rate of decay or "tempering" of the OST Gaussian bias in multiples of kBT</td>
                             </tr>
                             <tr>
                                 <td>--s1 1</td>
@@ -218,7 +218,7 @@ and open the template in the editor.
                         prior to the dynamics trajectory, the energy and temperature of the system post dynamics trajectory as well as the time required to process the trajectory, the inital
                         energy of the system (before any lambda or dyanmics moves) broken down into its components, the proposed energy of the system (after botht the lambda and the dynamics
                         moves) broken down into its components, the outcome of the Metropolis Monte Carlo Criterion (either Accept or Reject) along with the acceptance percentage of the move
-                        and finally the time it took to process the entire round of the MC-OSRW sampling. The output also reports a detailed breakdown of the sampling that has occured over the
+                        and finally the time it took to process the entire round of the MC-OST sampling. The output also reports a detailed breakdown of the sampling that has occured over the
                         lambda path throughout the simulation and records it in the .his (histogram file). An example output of the histogram file can be seen below.
                     </p>
                     <source>
@@ -274,7 +274,7 @@ and open the template in the editor.
                     <p>
                         As a simulation converges, the sum <i>Bias+dG(L)</i> approaches a constant and a random walk along lambda results. The final line of the output from above
                         reports the calculated free energy change for the simulation, the total weight (number of samples) recorded at that point in the simulation, the fraction 
-                        of the OSRW Guassian bias that remains at that point of the simulation and the number of counts (rounds) that have elapsed. Typically, the solvation free
+                        of the OST Guassian bias that remains at that point of the simulation and the number of counts (rounds) that have elapsed. Typically, the solvation free
                         energy for a single water molecule in a water box ranges from 5.6 to 5.8 kcal/mol for well converged simulations.
                     </p>
                 </subsection>

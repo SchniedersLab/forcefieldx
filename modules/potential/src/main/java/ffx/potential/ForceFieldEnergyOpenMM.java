@@ -1856,13 +1856,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * @param atoms Atoms in this list are considered.
          */
         void updateParameters(Atom[] atoms) {
+
             if (vdwLambdaTerm) {
                 if (fixedChargeNonBondedForce != null) {
                     if (!softcoreCreated) {
                         addCustomNonbondedSoftcoreForce();
                         // Re-initialize the context.
                         openMMContext.reinitContext();
-
+                        softcoreCreated = true;
                     }
                     openMMContext.setParameter("vdw_lambda", lambdaVDW);
                 } else if (amoebaVDWForce != null) {
@@ -1885,7 +1886,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 if (amoebaImproperTorsionForce != null) {
                     updateImproperTorsionForce();
                 }
-
             }
 
             if (atoms == null || atoms.length == 0) {

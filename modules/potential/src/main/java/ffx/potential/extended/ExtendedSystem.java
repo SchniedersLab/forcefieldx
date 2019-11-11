@@ -141,8 +141,8 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         public final double discrBias = prop("esv.biasMagnitude", 1.0);
         public final boolean forceRoomTemp = prop("esv.forceRoomTemp", false);
         public final boolean propagation = prop("esv.propagation", true);
-        public final double thetaMass = prop("esv.thetaMass", 1.0e-18);    // from OSRW, reasonably 100 a.m.u.
-        public final double thetaFriction = prop("esv.thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
+        public final double thetaMass = prop("esv.thetaMass", 1.0e-18);    // from OST, reasonably 100 a.m.u.
+        public final double thetaFriction = prop("esv.thetaFriction", 1.0e-19);    // from OST, reasonably 60/ps
 
         // Options below are untested and/or dangerous if changed.
         public final boolean cloneXyzIndices = prop("esv.cloneXyzIndices", true);    // set bg_idx = fg_idx

@@ -86,8 +86,8 @@ public class SimulatedAnnealingTest extends PJDependentTest {
                         "Acetamide with Stochastic integrator for Simulated Annealing Test", //info
                         "ffx/algorithms/structures/acetamide_annealing.xyz", //filename
                         2.7348819613719866, // endKineticEnergy
-                        -30.16220415900207, // endPotentialEnergy
-                        -27.427322197630094, // endTotalEnergy
+                        -30.162204159002336, // endPotentialEnergy
+                        -27.427322197628616, // endTotalEnergy
                         101.94414998339263 // endTemperature
                 }
 

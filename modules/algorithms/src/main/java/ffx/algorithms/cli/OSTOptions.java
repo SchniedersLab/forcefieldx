@@ -40,36 +40,38 @@ package ffx.algorithms.cli;
 import java.io.File;
 import java.util.logging.Logger;
 
-import ffx.potential.cli.WriteoutOptions;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.thermodynamics.MonteCarloOSRW;
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
+import ffx.algorithms.thermodynamics.MonteCarloOST;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.cli.WriteoutOptions;
 
 import picocli.CommandLine;
 
 /**
  * Represents command line options for scripts that utilize variants of the
- * Orthogonal Space Random Walk (OSRW) algorithm. Metadynamics will be treated
- * as a special case of OSRW where there is no dU/dL axis.
+ * Orthogonal Space Tempering (OST) algorithm. Metadynamics will be treated
+ * as a special case of OST where there is no dU/dL axis.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class OSRWOptions {
+public class OSTOptions {
 
-    private static final Logger logger = Logger.getLogger(OSRWOptions.class.getName());
+    private static final Logger logger = Logger.getLogger(OSTOptions.class.getName());
 
     /**
-     * -c or --count Sets the number of time steps between OSRW counts.
+     * -c or --count Sets the number of time steps between OST counts.
      */
     @CommandLine.Option(names = {"-C", "--count"}, paramLabel = "10",
             description = "Time steps between MD Orthogonal Space counts.")
@@ -81,6 +83,13 @@ public class OSRWOptions {
     @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05",
             description = "Orthogonal Space Gaussian bias magnitude (kcal/mol).")
     private double biasMag = 0.05;
+
+    /**
+     * --iW or --independentWalkers enforces that each walker maintains their own histogram.
+     */
+    @CommandLine.Option(names = {"--iW", "--independentWalkers"},
+            description = "Enforces that each walker maintains their own histogram. ")
+    private boolean independentWalkers = false;
 
     /**
      * --tp or --temperingParam sets the Dama et al tempering rate parameter, in
@@ -106,10 +115,10 @@ public class OSRWOptions {
     private boolean mcHW = false;
 
     /**
-     * --mcmD or --mcTraj Sets the number of steps to take for each MD trajectory for MCOSRW.
+     * --mcmD or --mcTraj Sets the number of steps to take for each MD trajectory for MC-OST.
      */
     @CommandLine.Option(names = {"--mcMD", "--mcTraj"}, paramLabel = "100",
-            description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OSRW")
+            description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OST")
     private int mcMD = 100;
 
     /**
@@ -132,8 +141,8 @@ public class OSRWOptions {
     @CommandLine.Option(names = {"--lw", "--lambdaWritOut"}, paramLabel = "0.0",
             description = "Only write out snapshots if lambda is greater than the value specified.")
     private double lambdaWriteOut = 0.0;
-    
-    @CommandLine.Option(names = {"--mcMDE","--mcMDEquilibration"},
+
+    @CommandLine.Option(names = {"--mcMDE", "--mcMDEquilibration"},
             description = "Specifies whether the user wants to equilibrate the system using shorter MD trajectories than those used for production sampling.")
     private boolean mcMDE = false;
 
@@ -159,7 +168,7 @@ public class OSRWOptions {
 
     /**
      * <p>
-     * constructOSRW.</p>
+     * constructOST.</p>
      *
      * @param potential        a {@link ffx.crystal.CrystalPotential} object.
      * @param lambdaRestart    a {@link java.io.File} object.
@@ -169,18 +178,18 @@ public class OSRWOptions {
      * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
      * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
-     * @return a {@link TransitionTemperedOSRW} object.
+     * @return a {@link OrthogonalSpaceTempering} object.
      */
-    public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-                                                MolecularAssembly firstAssembly, DynamicsOptions dynamics,
-                                                MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
-        return constructOSRW(potential, lambdaRestart, histogramRestart,
+    public OrthogonalSpaceTempering constructOST(CrystalPotential potential, File lambdaRestart, File histogramRestart,
+                                                 MolecularAssembly firstAssembly, DynamicsOptions dynamics,
+                                                 MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
+        return constructOST(potential, lambdaRestart, histogramRestart,
                 firstAssembly, null, dynamics, mdo, thermo, aListener);
     }
 
     /**
      * <p>
-     * constructOSRW.</p>
+     * constructOST.</p>
      *
      * @param potential        a {@link ffx.crystal.CrystalPotential} object.
      * @param lambdaRestart    a {@link java.io.File} object.
@@ -191,12 +200,12 @@ public class OSRWOptions {
      * @param mdo              a {@link ffx.algorithms.cli.MultiDynamicsOptions} object.
      * @param thermo           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
      * @param aListener        a {@link ffx.algorithms.AlgorithmListener} object.
-     * @return a {@link TransitionTemperedOSRW} object.
+     * @return a {@link OrthogonalSpaceTempering} object.
      */
-    public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-                                                MolecularAssembly firstAssembly, Configuration addedProperties,
-                                                DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
-                                                AlgorithmListener aListener) {
+    public OrthogonalSpaceTempering constructOST(CrystalPotential potential, File lambdaRestart, File histogramRestart,
+                                                 MolecularAssembly firstAssembly, Configuration addedProperties,
+                                                 DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
+                                                 AlgorithmListener aListener) {
 
         LambdaInterface linter = (LambdaInterface) potential;
         CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
@@ -209,58 +218,63 @@ public class OSRWOptions {
         double ckpt = dynamics.getCheckpoint();
         boolean async = !mdo.isSynchronous();
         boolean resetNSteps = thermo.getResetNumSteps();
-        TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
+        OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
-        ttOSRW.checkRecursionKernelSize();
-        ttOSRW.setHardWallConstraint(mcHW);
+        orthogonalSpaceTempering.setHardWallConstraint(mcHW);
+        Histogram histogram = orthogonalSpaceTempering.getHistogram();
+        histogram.checkRecursionKernelSize();
+        histogram.setIndependentWalkers(independentWalkers);
 
-        // Do NOT run applyOSRWOptions here, because that can mutate the TT-OSRW to a Barostat.
-        return ttOSRW;
+        // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
+        return orthogonalSpaceTempering;
     }
 
     /**
-     * Applies relevant options to a TransitionTemperedOSRW, and returns either
-     * the TTOSRW object or something that wraps the TTOSRW (such as a
+     * Applies relevant options to a OST, and returns either
+     * the OST object or something that wraps the OST (such as a
      * Barostat).
      *
-     * @param ttOSRW          Transition-Tempered Orthogonal Space Random Walk.
-     * @param firstAssembly   Primary assembly in ttOSRW.
-     * @param dynamics        MD options.
-     * @param lpo             Lambda particle options.
-     * @param barostat        NPT options.
-     * @param histogramExists If the histogram file exists already.
+     * @param orthogonalSpaceTempering Orthogonal Space Tempering.
+     * @param firstAssembly            Primary assembly in OST.
+     * @param dynamics                 MD options.
+     * @param lpo                      Lambda particle options.
+     * @param barostat                 NPT options.
+     * @param histogramExists          If the histogram file exists already.
      * @return a {@link ffx.crystal.CrystalPotential} object.
      */
-    public CrystalPotential applyAllOSRWOptions(TransitionTemperedOSRW ttOSRW, MolecularAssembly firstAssembly,
-                                                DynamicsOptions dynamics, LambdaParticleOptions lpo,
-                                                BarostatOptions barostat, boolean histogramExists) {
+    public CrystalPotential applyAllOSTOptions(OrthogonalSpaceTempering orthogonalSpaceTempering,
+                                               MolecularAssembly firstAssembly,
+                                               DynamicsOptions dynamics, LambdaParticleOptions lpo,
+                                               BarostatOptions barostat, boolean histogramExists) {
 
-        applyOSRWOptions(ttOSRW, histogramExists);
+        applyOSTOptions(orthogonalSpaceTempering, histogramExists);
         if (!histogramExists) {
-            ttOSRW.setThetaFrication(lpo.getLambdaFriction());
-            ttOSRW.setThetaMass(lpo.getLambdaMass());
+            orthogonalSpaceTempering.setThetaFrication(lpo.getLambdaFriction());
+            orthogonalSpaceTempering.setThetaMass(lpo.getLambdaMass());
         }
         if (dynamics.getOptimize()) {
-            ttOSRW.setOptimization(true, firstAssembly);
+            OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters();
+            opt.setOptimization(true, firstAssembly);
         }
-        return barostat.checkNPT(firstAssembly, ttOSRW);
+        return barostat.checkNPT(firstAssembly, orthogonalSpaceTempering);
     }
 
     /**
-     * Begins MD-OSRW sampling from an assembled TT-OSRW.
+     * Begins MD-OST sampling from an assembled OST.
      *
-     * @param ttOSRW     The TT-OSRW object.
-     * @param topologies All MolecularAssemblys.
-     * @param potential  The top-layer CrystalPotential.
-     * @param dynamics   Dynamics options.
-     * @param writeOut   a {@link WriteoutOptions} object.
-     * @param thermo     Thermodynamics options.
-     * @param dyn        The .dyn dynamics restart file.
-     * @param aListener  AlgorithmListener
+     * @param orthogonalSpaceTempering The OST object.
+     * @param topologies               All MolecularAssemblys.
+     * @param potential                The top-layer CrystalPotential.
+     * @param dynamics                 Dynamics options.
+     * @param writeOut                 a {@link WriteoutOptions} object.
+     * @param thermo                   Thermodynamics options.
+     * @param dyn                      The .dyn dynamics restart file.
+     * @param aListener                AlgorithmListener
      */
-    public void beginMDOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
-                            DynamicsOptions dynamics, WriteoutOptions writeOut, ThermodynamicsOptions thermo,
-                            File dyn, AlgorithmListener aListener) {
+    public void beginMDOST(OrthogonalSpaceTempering orthogonalSpaceTempering,
+                           MolecularAssembly[] topologies, CrystalPotential potential,
+                           DynamicsOptions dynamics, WriteoutOptions writeOut, ThermodynamicsOptions thermo,
+                           File dyn, AlgorithmListener aListener) {
         // Create the MolecularDynamics instance.
         MolecularAssembly firstTop = topologies[0];
         CompositeConfiguration props = firstTop.getProperties();
@@ -279,15 +293,15 @@ public class OSRWOptions {
         // Start sampling.
         int nEquil = thermo.getEquilSteps();
         if (nEquil > 0) {
-            logger.info(" Beginning equilibration");
-            ttOSRW.setPropagateLambda(false);
+            logger.info("\n Beginning equilibration");
+            orthogonalSpaceTempering.setPropagateLambda(false);
             runDynamics(molDyn, nEquil, dynamics, writeOut, true, dyn);
-            logger.info(" Beginning Transition-Tempered OSRW sampling");
-            ttOSRW.setPropagateLambda(true);
+            logger.info(" Beginning OST sampling");
+            orthogonalSpaceTempering.setPropagateLambda(true);
         } else {
-            logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
+            logger.info(" Beginning OST sampling without equilibration");
             if (!thermo.getResetNumSteps()) {
-                int nEnergyCount = ttOSRW.getEnergyCount();
+                int nEnergyCount = orthogonalSpaceTempering.getEnergyCount();
                 if (nEnergyCount > 0) {
                     nSteps -= nEnergyCount;
                     logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
@@ -304,60 +318,61 @@ public class OSRWOptions {
 
     /**
      * <p>
-     * beginMCOSRW.</p>
+     * beginMCOST.</p>
      *
-     * @param ttOSRW         a {@link TransitionTemperedOSRW} object.
-     * @param topologies     an array of {@link ffx.potential.MolecularAssembly} objects.
-     * @param dynamics       a {@link ffx.algorithms.cli.DynamicsOptions} object.
-     * @param thermodynamics a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
-     * @param verbose        Whether to print out additional information about MC-OSRW.
+     * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
+     * @param topologies               an array of {@link ffx.potential.MolecularAssembly} objects.
+     * @param dynamics                 a {@link ffx.algorithms.cli.DynamicsOptions} object.
+     * @param thermodynamics           a {@link ffx.algorithms.cli.ThermodynamicsOptions} object.
+     * @param verbose                  Whether to print out additional information about MC-OST.
      */
-    public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies,
-                            DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose) {
+    public void beginMCOST(OrthogonalSpaceTempering orthogonalSpaceTempering, MolecularAssembly[] topologies,
+                           DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose) {
         dynamics.init();
 
-        MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
+        MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(), orthogonalSpaceTempering, topologies[0],
                 topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose);
 
         int nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
-            logger.info("\n Beginning MC Transition-Tempered OSRW equilibration.");
-            mcOSRW.setEquilibration(true);
-            mcOSRW.setMDMoveParameters(nEquil, mcMD, dynamics.dt, mcMDE);
+            logger.info("\n Beginning MC-OST equilibration.");
+            monteCarloOST.setEquilibration(true);
+            monteCarloOST.setMDMoveParameters(nEquil, mcMD, dynamics.dt, mcMDE);
             if (ts) {
-                mcOSRW.sampleTwoStep();
+                monteCarloOST.sampleTwoStep();
             } else {
-                mcOSRW.sampleOneStep();
+                monteCarloOST.sampleOneStep();
             }
-            mcOSRW.setEquilibration(false);
-            logger.info("\n Finished MC Transition-Tempered OSRW equilibration.");
+            monteCarloOST.setEquilibration(false);
+            logger.info("\n Finished MC-OST equilibration.");
         }
 
-        logger.info("\n Beginning MC Transition-Tempered OSRW sampling.");
-        mcOSRW.setLambdaStdDev(mcL);
-        mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt, mcMDE);
+        logger.info("\n Beginning MC-OST sampling.");
+        monteCarloOST.setLambdaStdDev(mcL);
+        monteCarloOST.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt, mcMDE);
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
-            mcOSRW.setLambdaWriteOut(lambdaWriteOut);
+            monteCarloOST.setLambdaWriteOut(lambdaWriteOut);
         }
         if (ts) {
-            mcOSRW.sampleTwoStep();
+            monteCarloOST.sampleTwoStep();
         } else {
-            mcOSRW.sampleOneStep();
+            monteCarloOST.sampleOneStep();
         }
     }
 
     /**
      * <p>
-     * applyOSRWOptions.</p>
+     * applyOSTOptions.</p>
      *
-     * @param ttOSRW          a {@link TransitionTemperedOSRW} object.
-     * @param histogramExists a boolean.
+     * @param orthogonalSpaceTempering a {@link OrthogonalSpaceTempering} object.
+     * @param histogramExists          a boolean.
      */
-    private void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
-        ttOSRW.setTemperingParameter(temperParam);
+    private void applyOSTOptions(OrthogonalSpaceTempering orthogonalSpaceTempering, boolean histogramExists) {
+        Histogram histogram = orthogonalSpaceTempering.getHistogram();
+        histogram.setTemperingParameter(temperParam);
         if (!histogramExists) {
-            ttOSRW.setCountInterval(countFreq);
-            ttOSRW.setBiasMagnitude(biasMag);
+            orthogonalSpaceTempering.setCountInterval(countFreq);
+            histogram.setBiasMagnitude(biasMag);
         }
     }
 

@@ -48,7 +48,7 @@ import ffx.utilities.Constants;
  * an amino acid. All atomic charges and bonded terms scale linearly between
  * prot and deprot states.
  * <p>
- * Possible expansions: (1) Add back the ability to interact with OSRW lambda
+ * Possible expansions: (1) Add back the ability to interact with OST lambda
  * and thereby combine with protein design (QuadTop). (2) Allow triple-state
  * systems such as histidine with 0.5 protons per nitrogen or tautomeric
  * ASP/GLU. (3) Assess bytecode-output implementation via eg. ASM.

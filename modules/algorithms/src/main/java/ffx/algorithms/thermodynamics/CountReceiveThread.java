@@ -48,8 +48,10 @@ import static org.apache.commons.math3.util.FastMath.round;
 
 import edu.rit.mp.DoubleBuf;
 
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
+
 /**
- * The CountReceiveThread accumulates TT-OSRW statistics from multiple asynchronous walkers.
+ * The CountReceiveThread accumulates OST statistics from multiple asynchronous walkers.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -59,9 +61,9 @@ class CountReceiveThread extends Thread {
     private static final Logger logger = Logger.getLogger(CountReceiveThread.class.getName());
 
     /**
-     * Private reference to the TTOSRW instance.
+     * Private reference to the Histogram instance.
      */
-    private TransitionTemperedOSRW transitionTemperedOSRW;
+    private Histogram histogram;
     /**
      * Storage to receive a recursion count.
      */
@@ -74,10 +76,10 @@ class CountReceiveThread extends Thread {
     /**
      * Constructor for a thread to asynchronously receive recursion counts.
      *
-     * @param transitionTemperedOSRW Private TransitionTemperedOSRW instance of.
+     * @param histogram Histogram instance.
      */
-    CountReceiveThread(TransitionTemperedOSRW transitionTemperedOSRW) {
-        this.transitionTemperedOSRW = transitionTemperedOSRW;
+    CountReceiveThread(Histogram histogram) {
+        this.histogram = histogram;
         recursionCount = new double[4];
         recursionCountBuf = DoubleBuf.buffer(recursionCount);
     }
@@ -89,7 +91,7 @@ class CountReceiveThread extends Thread {
     public void run() {
         while (true) {
             try {
-                transitionTemperedOSRW.world.receive(null, recursionCountBuf);
+                histogram.world.receive(null, recursionCountBuf);
             } catch (InterruptedIOException ioe) {
                 String message = " CountReceiveThread was interrupted at world.receive; " +
                         "future message passing may be in an error state.";
@@ -109,31 +111,36 @@ class CountReceiveThread extends Thread {
 
             int rank = (int) round(recursionCount[0]);
             double lambda = recursionCount[1];
-            transitionTemperedOSRW.setCurrentLambdaforRank(rank, lambda);
+            histogram.setCurrentLambdaforRank(rank, lambda);
+
+            // If independent, only add bias values from this walker
+            if (histogram.getIndependentWalkers() && histogram.getRank() != rank) {
+                continue;
+            }
 
             double fLambda = recursionCount[2];
             // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
-            transitionTemperedOSRW.checkRecursionKernelSize(fLambda);
+            histogram.checkRecursionKernelSize(fLambda);
 
             // Increment the Recursion Kernel based on the input of current walker.
-            int walkerLambda = transitionTemperedOSRW.binForLambda(lambda);
-            int walkerFLambda = transitionTemperedOSRW.binForFLambda(fLambda);
+            int walkerLambda = histogram.binForLambda(lambda);
+            int walkerFLambda = histogram.binForFLambda(fLambda);
             double weight = recursionCount[3];
 
             // If the weight is less than 1.0, then a walker has activated tempering.
-            if (!transitionTemperedOSRW.isTempering() && weight < 1.0) {
-                transitionTemperedOSRW.setTempering(true);
+            if (!histogram.isTempering() && weight < 1.0) {
+                histogram.setTempering(true);
                 logger.info(format(" Tempering activated due to received weight of (%8.6f)", weight));
             }
 
-            if (transitionTemperedOSRW.resetStatistics && lambda > transitionTemperedOSRW.lambdaResetValue) {
-                transitionTemperedOSRW.allocateRecursionKernel();
-                transitionTemperedOSRW.resetStatistics = false;
-                logger.info(format(" Cleared OSRW histogram (Lambda = %6.4f).", lambda));
+            if (histogram.resetStatistics && lambda > histogram.lambdaResetValue) {
+                histogram.allocateRecursionKernel();
+                histogram.resetStatistics = false;
+                logger.info(format(" Cleared OST histogram (Lambda = %6.4f).", lambda));
             }
 
             // Increase the Recursion Kernel based on the input of current walker.
-            transitionTemperedOSRW.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight);
+            histogram.addToRecursionKernelValue(walkerLambda, walkerFLambda, weight);
             if (isInterrupted()) {
                 logger.log(Level.FINE, " CountReceiveThread was interrupted; ceasing execution.");
                 // No pending message receipt, so no warning.

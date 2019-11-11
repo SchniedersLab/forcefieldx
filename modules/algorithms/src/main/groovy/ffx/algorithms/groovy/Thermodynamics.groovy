@@ -50,10 +50,10 @@ import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.LambdaParticleOptions
 import ffx.algorithms.cli.MultiDynamicsOptions
-import ffx.algorithms.cli.OSRWOptions
+import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -61,8 +61,6 @@ import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.cli.WriteoutOptions
-import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED
-import static ffx.algorithms.cli.ThermodynamicsOptions.ThermodynamicsAlgorithm.OST
 
 import picocli.CommandLine
 
@@ -99,7 +97,7 @@ class Thermodynamics extends AlgorithmsScript {
     private MultiDynamicsOptions multidynamics
 
     @CommandLine.Mixin
-    private OSRWOptions osrwOptions
+    private OSTOptions ostOptions
 
     @CommandLine.Mixin
     private RandomSymopOptions randomSymop
@@ -112,7 +110,7 @@ class Thermodynamics extends AlgorithmsScript {
      * this reduces overall box size, but is not recommended for simulations long enough to see solute rotation.
      */
     @CommandLine.Option(names = ['-v', '--verbose'],
-            description = "Log additional information (primarily for MC-OSRW).")
+            description = "Log additional information (primarily for MC-OST).")
     private boolean verbose = false;
 
     /**
@@ -125,7 +123,7 @@ class Thermodynamics extends AlgorithmsScript {
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
     CrystalPotential potential
-    TransitionTemperedOSRW osrw = null;
+    OrthogonalSpaceTempering orthogonalSpaceTempering = null
     private Configuration additionalProperties
 
     /**
@@ -165,7 +163,7 @@ class Thermodynamics extends AlgorithmsScript {
 
 
         // Relative free energies via the DualTopologyEnergy class require different
-        // default OSRW parameters than absolute free energies.
+        // default OST parameters than absolute free energies.
         if (nArgs >= 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
@@ -180,7 +178,7 @@ class Thermodynamics extends AlgorithmsScript {
 
         double initLambda = alchemical.getInitialLambda(size, rank)
 
-        // Segment of code for MultiDynamics and OSRW.
+        // Segment of code for MultiDynamics and OST.
         List<File> structureFiles = arguments.stream().
                 map { fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath()) }.
                 collect(Collectors.toList())
@@ -211,6 +209,9 @@ class Thermodynamics extends AlgorithmsScript {
 
         File lambdaRestart = new File(withRankName + ".lam")
         File dyn = new File(withRankName + ".dyn")
+        if (ostOptions.independentWalkers) {
+            histogramRestart = new File(withRankName + ".his");
+        }
 
         // Read in files.
         if (!arguments || arguments.isEmpty()) {
@@ -235,12 +236,12 @@ class Thermodynamics extends AlgorithmsScript {
         switch (thermodynamics.getAlgorithm()) {
             case OST:
                 ostAlg: {
-                    sb.append("Transition-Tempered Orthogonal Space Random Walk");
+                    sb.append("Orthogonal Space Tempering");
                 }
                 break;
             case FIXED:
                 fixedAlg: {
-                    sb.append("Fixed-Lambda Sampling at Lambda ").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
+                    sb.append("Fixed-Lambda Sampling at Lambda").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
                 }
         }
         sb.append(" for ");
@@ -267,42 +268,35 @@ class Thermodynamics extends AlgorithmsScript {
 
         multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size)
 
-        switch (thermodynamics.getAlgorithm()) {
-        // Labels are necessary so Groovy doesn't complain about anonymous code blocks (which could be closures).
-            case OST:
-                ost:
-                {
-                    osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0],
-                            additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
-                    if (!lamExists) {
-                        osrw.setLambda(initLambda)
-                    }
-
-                    // Can be either the TT-OSRW or a Barostat on top of it.
-                    CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0],
-                            dynamics, lambdaParticle, barostat, hisExists)
-
-                    if (osrwOptions.mc) {
-                        osrwOptions.beginMCOSRW(osrw, topologies, dynamics, thermodynamics, verbose);
-                    } else {
-                        osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
-                    }
-                }
-                break;
-            case FIXED:
-                fixed:
-                {
-                    osrw = null;
-                    potential = barostat.checkNPT(topologies[0], potential);
-                    thermodynamics.runFixedAlchemy(topologies, potential, dynamics, writeout, dyn, algorithmListener);
-                }
+        if (thermodynamics.getAlgorithm() == ThermodynamicsOptions.ThermodynamicsAlgorithm.OST) {
+            orthogonalSpaceTempering = ostOptions.constructOST(potential, lambdaRestart, histogramRestart, topologies[0],
+                    additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener)
+            if (!lamExists) {
+                orthogonalSpaceTempering.setLambda(initLambda)
+            }
+            // Can be either the OST or a Barostat on top of it.
+            CrystalPotential ostPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
+                    dynamics, lambdaParticle, barostat, hisExists)
+            if (ostOptions.mc) {
+                ostOptions.beginMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose);
+            } else {
+                ostOptions.beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
+            }
+            logger.info(" Done running OST");
+        } else {
+            orthogonalSpaceTempering = null;
+            potential = barostat.checkNPT(topologies[0], potential);
+            thermodynamics.runFixedAlchemy(topologies, potential, dynamics, writeout, dyn, algorithmListener);
+            logger.info(" Done running Fixed");
         }
+
+        logger.info(" Algorithm Done: " + thermodynamics.getAlgorithm());
 
         return this
     }
 
-    TransitionTemperedOSRW getOSRW() {
-        return osrw
+    OrthogonalSpaceTempering getOST() {
+        return orthogonalSpaceTempering
     }
 
     CrystalPotential getPotential() {
@@ -311,10 +305,10 @@ class Thermodynamics extends AlgorithmsScript {
 
     @Override
     List<Potential> getPotentials() {
-        if (osrw == null) {
+        if (orthogonalSpaceTempering == null) {
             return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
         } else {
-            return Collections.singletonList(osrw);
+            return Collections.singletonList(orthogonalSpaceTempering);
         }
     }
 

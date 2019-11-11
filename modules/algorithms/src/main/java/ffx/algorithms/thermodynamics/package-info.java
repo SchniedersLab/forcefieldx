@@ -37,8 +37,8 @@
 //******************************************************************************
 
 /**
- * The Thermodynamics package computes free energy differences using Transition-Tempered Orthogonal Space
- * Random Walk (TT-OSRW) sampling via pure Java or OpenMM (via Monte Carlo TT-OSRW).
+ * The Thermodynamics package computes free energy differences using Orthogonal Space
+ * Tempering (OST) sampling via pure Java or OpenMM (via Monte Carlo OST).
  *
  * @since 1.0
  */

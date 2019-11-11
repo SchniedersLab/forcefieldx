@@ -67,7 +67,7 @@ import picocli.CommandLine;
 
 /**
  * Represents command line options for scripts that can create multiple walkers,
- * such as multi-walker OSRW. Should be kept agnostic to whether it is an MD-based
+ * such as multi-walker OST. Should be kept agnostic to whether it is an MD-based
  * algorithm, or some other flavor of Monte Carlo.
  *
  * @author Michael J. Schnieders

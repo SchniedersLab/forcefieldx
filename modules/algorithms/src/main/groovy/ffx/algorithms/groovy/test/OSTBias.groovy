@@ -43,26 +43,26 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.potential.DualTopologyEnergy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
 
 /**
- * The OSRWBias script tests the Transition-Tempered Orthogonal Space Random Walk Potential.
+ * The OSTBias script tests the Transition-Tempered Orthogonal Space Random Walk Potential.
  * <br>
  * Usage:
  * <br>
- * ffxc test.OSRWBias [options] &lt;filename [file2...]&gt;
+ * ffxc test.OSTBias [options] &lt;filename [file2...]&gt;
  */
-class OSRWBias extends Script {
+class OSTBias extends Script {
 
     /**
-     * Options for the OSRWBias Script.
+     * Options for the OSTBias Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc test.OSRWBias [options] &lt;filename [file2...]&gt;
+     * ffxc test.OSTBias [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -124,8 +124,8 @@ class OSRWBias extends Script {
     }
 
     @Override
-    OSRWBias run() {
-        def cli = new CliBuilder(usage: ' ffxc test.OSRWBias [options] <filename> [file2...]', header: ' Options:');
+    OSTBias run() {
+        def cli = new CliBuilder(usage: ' ffxc test.OSTBias [options] <filename> [file2...]', header: ' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -194,7 +194,7 @@ class OSRWBias extends Script {
         System.setProperty("lambdaterm", "true");
 
         // Relative free energies via the DualTopologyEnergy class require different
-        // default OSRW parameters than absolute free energies.
+        // default OST parameters than absolute free energies.
         if (arguments.size() == 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
@@ -229,13 +229,13 @@ class OSRWBias extends Script {
 
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
         energy.getCrystal().setSpecialPositionCutoff(0.0);
-        // OSRW will be configured for either single or dual topology.
-        TransitionTemperedOSRW osrw = null;
+        // OST will be configured for either single or dual topology.
+        OrthogonalSpaceTempering orthogonalSpaceTempering = null;
         // Save a reference to the first topology.
         topology1 = active;
 
         if (arguments.size() == 1) {
-            osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+            orthogonalSpaceTempering = new OrthogonalSpaceTempering(energy, energy, lambdaRestart, histogramRestart,
                     active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
         } else {
             // Open the 2nd topology.
@@ -269,7 +269,7 @@ class OSRWBias extends Script {
             energy.getCrystal().setSpecialPositionCutoff(0.0);
             // Create the DualTopology potential energy.
             DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
-            osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+            orthogonalSpaceTempering = new OrthogonalSpaceTempering(energy, energy, lambdaRestart, histogramRestart,
                     active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
         }
 
@@ -278,9 +278,9 @@ class OSRWBias extends Script {
          * to the biasing potential, which would introduce artifacts into the
          * finite-difference derivatives.
          */
-        osrw.setPropagateLambda(false);
-        osrw.setLambda(initialLambda);
-        n = osrw.getNumberOfVariables();
+        orthogonalSpaceTempering.setPropagateLambda(false);
+        orthogonalSpaceTempering.setLambda(initialLambda);
+        n = orthogonalSpaceTempering.getNumberOfVariables();
 
         assert (n % 3 == 0);
         n = n / 3;
@@ -292,7 +292,7 @@ class OSRWBias extends Script {
         double[] analytic = new double[3 * n];
         double[] g = new double[3 * n];
         double[] numeric = new double[3];
-        osrw.getCoordinates(x);
+        orthogonalSpaceTempering.getCoordinates(x);
 
         // Test Lambda gradients.
         for (int j = 0; j < 3; j++) {
@@ -303,21 +303,21 @@ class OSRWBias extends Script {
             } else if (lambda + step > 1.0) {
                 continue;
             } else {
-                osrw.setLambda(lambda);
+                orthogonalSpaceTempering.setLambda(lambda);
             }
 
             // Calculate the energy and analytic dE/dX
-            double eL = osrw.energyAndGradient(x, g);
+            double eL = orthogonalSpaceTempering.energyAndGradient(x, g);
 
             // Analytic dEdL
-            double dEdLambda = osrw.getTotaldEdLambda();
+            double dEdLambda = orthogonalSpaceTempering.getTotaldEdLambda();
 
             // Calculate the finite-difference dEdL
-            osrw.setLambda(lambda + step);
-            double lp = osrw.energyAndGradient(x, g);
+            orthogonalSpaceTempering.setLambda(lambda + step);
+            double lp = orthogonalSpaceTempering.energyAndGradient(x, g);
 
-            osrw.setLambda(lambda - step);
-            double lm = osrw.energyAndGradient(x, g);
+            orthogonalSpaceTempering.setLambda(lambda - step);
+            double lm = orthogonalSpaceTempering.energyAndGradient(x, g);
 
             double dedl = (lp - lm) / (2.0 * step);
 
@@ -325,7 +325,7 @@ class OSRWBias extends Script {
             logger.info(String.format(" Numeric  dE/dL:   %15.8f\n", dedl));
 
             // Calculate analytic dE/dX/dL
-            osrw.setLambda(lambda);
+            orthogonalSpaceTempering.setLambda(lambda);
             double e = 0.0;
             double orig = 0.0;
             double gradientTolerance = 1.0e-3;
@@ -339,32 +339,32 @@ class OSRWBias extends Script {
                 int i2 = i3 + 2;
 
                 // Calculate the analytic dE/dX
-                osrw.energyAndGradient(x, analytic);
+                orthogonalSpaceTempering.energyAndGradient(x, analytic);
 
                 // Find numeric dX
                 orig = x[i0];
                 x[i0] = orig + step;
-                e = osrw.energyAndGradient(x, g);
+                e = orthogonalSpaceTempering.energyAndGradient(x, g);
                 x[i0] = orig - step;
-                e = e - osrw.energyAndGradient(x, g);
+                e = e - orthogonalSpaceTempering.energyAndGradient(x, g);
                 x[i0] = orig;
                 numeric[0] = e / (2.0 * step);
 
                 // Find numeric dY
                 orig = x[i1];
                 x[i1] = orig + step;
-                e = osrw.energyAndGradient(x, g);
+                e = orthogonalSpaceTempering.energyAndGradient(x, g);
                 x[i1] = orig - step;
-                e = e - osrw.energyAndGradient(x, g);
+                e = e - orthogonalSpaceTempering.energyAndGradient(x, g);
                 x[i1] = orig;
                 numeric[1] = e / (2.0 * step);
 
                 // Find numeric dZ
                 orig = x[i2];
                 x[i2] = orig + step;
-                e = osrw.energyAndGradient(x, g);
+                e = orthogonalSpaceTempering.energyAndGradient(x, g);
                 x[i2] = orig - step;
-                e = e - osrw.energyAndGradient(x, g);
+                e = e - orthogonalSpaceTempering.energyAndGradient(x, g);
                 x[i2] = orig;
                 numeric[2] = e / (2.0 * step);
 
