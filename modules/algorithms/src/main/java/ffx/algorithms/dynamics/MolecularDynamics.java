@@ -384,7 +384,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 return DynamicsEngine.FFX;
             }
         } else {
-            if (potentialEnergy instanceof ffx.potential.ForceFieldEnergyOpenMM) {
+            // TODO: Replace this with a better check.
+            boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream().
+                    anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
+            if (ommLeaves) {
                 return DynamicsEngine.OPENMM;
             } else {
                 return DynamicsEngine.FFX;
