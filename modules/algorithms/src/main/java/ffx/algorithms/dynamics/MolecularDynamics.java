@@ -50,7 +50,6 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
-import ffx.potential.ForceFieldEnergyOpenMM;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -73,6 +72,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
@@ -82,7 +82,6 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
 
@@ -283,12 +282,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * MC notification flag.
      */
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
+
     /**
      * Monte Carlo notification enumeration.
      */
     public enum MonteCarloNotification {
         NEVER, EACH_STEP, AFTER_DYNAMICS
     }
+
     /**
      * ESV System.
      */
@@ -526,6 +527,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         verboseDynamicsState = properties.getBoolean("md-verbose", false);
         done = true;
+
+        logger.info(" Molecular Dynamics instance created.");
     }
 
     /**
@@ -534,12 +537,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param properties          a
-     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a {@link ThermostatEnum} object.
-     * @param requestedIntegrator a
-     *                            {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      * @param esvSystem           a {@link ffx.potential.extended.ExtendedSystem} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
@@ -695,8 +696,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param printInterval    a double.
      * @param saveInterval     a double.
      * @param fileType         a String.
-     * @param restartFrequency the number of steps between writing restart
-     *                         files.
+     * @param restartFrequency the number of steps between writing restart files.
      * @param temperature      a double.
      * @param initVelocities   a boolean.
      * @param dyn              a {@link java.io.File} object.
@@ -713,21 +713,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         if (integrator instanceof Stochastic) {
             if (constantPressure) {
-                logger.log(basicLogging,"\n Stochastic dynamics in the NPT ensemble");
+                logger.log(basicLogging, "\n Stochastic dynamics in the NPT ensemble");
             } else {
-                logger.log(basicLogging,"\n Stochastic dynamics in the NVT ensemble");
+                logger.log(basicLogging, "\n Stochastic dynamics in the NVT ensemble");
             }
         } else if (!(thermostat instanceof Adiabatic)) {
             if (constantPressure) {
-                logger.log(basicLogging,"\n Molecular dynamics in the NPT ensemble");
+                logger.log(basicLogging, "\n Molecular dynamics in the NPT ensemble");
             } else {
-                logger.log(basicLogging,"\n Molecular dynamics in the NVT ensemble");
+                logger.log(basicLogging, "\n Molecular dynamics in the NVT ensemble");
             }
         } else {
             if (constantPressure) {
                 logger.severe("\n NPT Molecular dynamics requires a thermostat");
             } else {
-                logger.log(basicLogging,"\n Molecular dynamics in the NVE ensemble");
+                logger.log(basicLogging, "\n Molecular dynamics in the NVE ensemble");
             }
         }
 
@@ -843,8 +843,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param printInterval  the number of steps between loggging updates.
      * @param saveInterval   the number of steps between saving snapshots.
      * @param temperature    the target temperature.
-     * @param initVelocities true to reset velocities from a Maxwell
-     *                       distribution.
+     * @param initVelocities true to reset velocities from a Maxwell distribution.
      * @param dyn            the Dynamic restart file.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
@@ -1381,6 +1380,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Returns the associated dynamics file.
+     *
      * @return
      */
     public File getDynFile() {
@@ -1476,7 +1476,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             arraycopy(xBak, 0, x, 0, numberOfVariables);
             Atom[] atoms = molecularAssembly.getActiveAtomArray();
             for (int i = 0; i < atoms.length; i++) {
-                int i3 = 3*i;
+                int i3 = 3 * i;
                 double[] newXYZ = new double[3];
                 arraycopy(xBak, i3, newXYZ, 0, 3);
                 atoms[i].setXYZ(newXYZ);

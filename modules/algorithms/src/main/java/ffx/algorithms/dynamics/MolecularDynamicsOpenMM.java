@@ -197,6 +197,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         } else {
             random.setSeed(0);
         }
+
+        logger.info(" Molecular Dynamics OpenMM instance created.");
     }
 
     /**
