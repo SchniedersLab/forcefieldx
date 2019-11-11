@@ -1282,6 +1282,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * Rank of this process.
          */
         protected final int rank;
+        private boolean independentWalkers = false;
         /**
          * Flag to indicate if OST should send and receive counts between processes
          * synchronously or asynchronously. The latter can be faster by ~40% because
@@ -1421,6 +1422,33 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
             // Attempt to load a restart file if one exists.
             readRestart();
+        }
+
+        /**
+         * For MPI parallel jobs, set if the walkers are independent (i.e. contribute to only their own histogram).
+         *
+         * @param independentWalkers If true, the walkers will be independent.
+         */
+        public void setIndependentWalkers(boolean independentWalkers) {
+            this.independentWalkers = independentWalkers;
+        }
+
+        /**
+         * For MPI parallel jobs, returns true if the walkers are independent (i.e. contribute to only their own histogram).
+         *
+         * @return True if the walkers are independent.
+         */
+        public boolean getIndependentWalkers() {
+            return independentWalkers;
+        }
+
+        /**
+         * For MPI parallel jobs, return the rank of this process.
+         *
+         * @return The rank of this process.
+         */
+        public int getRank() {
+            return rank;
         }
 
         /**
@@ -2257,7 +2285,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @param dUdL   Current value of dU/dL.
          */
         private void synchronousSend(double lambda, double dUdL) {
-
             // All-Gather counts from each walker.
             myRecursionWeight[0] = lambda;
             myRecursionWeight[1] = dUdL;
@@ -2273,6 +2300,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             double minRequired = Double.MAX_VALUE;
             double maxRequired = Double.MIN_VALUE;
             for (int i = 0; i < numProc; i++) {
+
+                // Only include this walkers bias.
+                if (independentWalkers && i != rank) {
+                    continue;
+                }
+
                 minRequired = min(minRequired, recursionWeights[i][1]);
                 maxRequired = max(maxRequired, recursionWeights[i][1]);
             }
@@ -2284,6 +2317,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             // Increment the Recursion Kernel based on the input of each walker.
             for (int i = 0; i < numProc; i++) {
                 currentLambdaValues[i] = recursionWeights[i][0];
+
+                // Only include this walkers bias.
+                if (independentWalkers && i != rank) {
+                    continue;
+                }
+
                 int walkerLambda = binForLambda(recursionWeights[i][0]);
                 int walkerFLambda = binForFLambda(recursionWeights[i][1]);
                 double weight = recursionWeights[i][2];

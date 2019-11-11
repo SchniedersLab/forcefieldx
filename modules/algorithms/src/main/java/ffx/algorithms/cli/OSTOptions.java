@@ -85,6 +85,13 @@ public class OSTOptions {
     private double biasMag = 0.05;
 
     /**
+     * --iW or --independentWalkers enforces that each walker maintains their own histogram.
+     */
+    @CommandLine.Option(names = {"--iW", "--independentWalkers"},
+            description = "Enforces that each walker maintains their own histogram. ")
+    private boolean independentWalkers = false;
+
+    /**
      * --tp or --temperingParam sets the Dama et al tempering rate parameter, in
      * multiples of kBT.
      */
@@ -213,9 +220,10 @@ public class OSTOptions {
         boolean resetNSteps = thermo.getResetNumSteps();
         OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
+        orthogonalSpaceTempering.setHardWallConstraint(mcHW);
         Histogram histogram = orthogonalSpaceTempering.getHistogram();
         histogram.checkRecursionKernelSize();
-        orthogonalSpaceTempering.setHardWallConstraint(mcHW);
+        histogram.setIndependentWalkers(independentWalkers);
 
         // Do NOT run applyOSTOptions here, because that can mutate the OST to a Barostat.
         return orthogonalSpaceTempering;

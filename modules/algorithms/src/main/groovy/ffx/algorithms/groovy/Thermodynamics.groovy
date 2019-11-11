@@ -209,6 +209,9 @@ class Thermodynamics extends AlgorithmsScript {
 
         File lambdaRestart = new File(withRankName + ".lam")
         File dyn = new File(withRankName + ".dyn")
+        if (ostOptions.independentWalkers) {
+            histogramRestart = new File(withRankName + ".his");
+        }
 
         // Read in files.
         if (!arguments || arguments.isEmpty()) {

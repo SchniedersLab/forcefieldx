@@ -113,6 +113,11 @@ class CountReceiveThread extends Thread {
             double lambda = recursionCount[1];
             histogram.setCurrentLambdaforRank(rank, lambda);
 
+            // If independent, only add bias values from this walker
+            if (histogram.getIndependentWalkers() && histogram.getRank() != rank) {
+                continue;
+            }
+
             double fLambda = recursionCount[2];
             // Check that the FLambda range of the Recursion kernel includes both the minimum and maximum FLambda value.
             histogram.checkRecursionKernelSize(fLambda);
