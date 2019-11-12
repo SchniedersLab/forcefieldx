@@ -317,7 +317,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         }
 
         // Configure optimization parameters.
-        optimizationParameters = new OptimizationParameters();
+        optimizationParameters = new OptimizationParameters(properties);
 
         // Log parameters.
         logger.info("\n Orthogonal Space Random Walk Parameters");
@@ -881,25 +881,31 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * <p>
          * The default lambdaCutoff = 0.8.
          */
-        private double lambdaCutoff = 0.8;
+        private double lambdaCutoff;
         /**
-         * The OST optimization frequency.
+         * The OST optimization frequency
+         * <p>
+         * The default is once every 10,000 steps.
          */
-        private int frequency = 10000;
+        private int frequency;
         /**
          * The OST optimization convergence criteria.
          * <p>
          * The default eps = 0.1.
          */
-        private double eps = 0.1;
+        private double eps;
         /**
          * The OST tolerance when checking for equal energy after coordinate reversion.
+         * <p>
+         * The default is 1.0e-8 kcal/mol.
          */
-        private double tolerance = 1.0e-8;
+        private double tolerance;
         /**
          * The OST optimization energy window.
+         * <p>
+         * The default is 4.0 kcal/mol, which is convenient for small organic crystals.
          */
-        private double energyWindow = 2.0;
+        private double energyWindow;
         /**
          * File instance used for saving optimized structures.
          */
@@ -912,8 +918,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         /**
          * Empty constructor.
          */
-        OptimizationParameters() {
-            // Currently empty.
+        OptimizationParameters(CompositeConfiguration properties) {
+            energyWindow = properties.getDouble("ost-opt-energy-window", 4.0);
+            eps = properties.getDouble("ost-opt-eps", 0.1);
+            tolerance = properties.getDouble("ost-opt-tolerance", 1.0e-8);
+            frequency = properties.getInt("ost-opt-frequency", 10000);
+            lambdaCutoff = properties.getDouble("ost-opt-lambda-cutoff", 0.8);
         }
 
         /**
