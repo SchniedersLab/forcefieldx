@@ -234,6 +234,7 @@ class Thermodynamics extends AlgorithmsScript {
 
         StringBuilder sb = new StringBuilder("\n Running ");
         switch (thermodynamics.getAlgorithm()) {
+            // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
             case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
                 ostAlg: {
                     sb.append("Orthogonal Space Tempering");
@@ -241,7 +242,12 @@ class Thermodynamics extends AlgorithmsScript {
                 break;
             case ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED:
                 fixedAlg: {
-                    sb.append("Fixed-Lambda Sampling at Lambda").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
+                    sb.append("Fixed-Lambda Sampling at Lambda ").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
+                }
+                break;
+            default:
+                defAlg: {
+                    sb.append("Unknown algorithm starting at Lambda ").append(String.format("%8.3f", alchemical.getInitialLambda(true)));
                 }
                 break;
         }
