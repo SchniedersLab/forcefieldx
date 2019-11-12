@@ -1527,7 +1527,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                     stringBuilder.append(format(" %6.4f", lambda));
                 }
                 logger.info(stringBuilder.toString());
-
+            }
+            if (rank == 0 || independentWalkers) {
                 try {
                     HistogramWriter histogramWriter = new HistogramWriter(this,
                             new BufferedWriter(new FileWriter(histogramFile)));
