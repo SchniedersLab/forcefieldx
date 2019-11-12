@@ -232,7 +232,27 @@ class Thermodynamics extends AlgorithmsScript {
 
         MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()])
 
-        StringBuilder sb = new StringBuilder("\n Running Orthogonal Space Tempering for ")
+        StringBuilder sb = new StringBuilder("\n Running ");
+        switch (thermodynamics.getAlgorithm()) {
+            // Labeled case blocks needed because Groovy (can't tell the difference between a closure and an anonymous code block).
+            case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
+                ostAlg: {
+                    sb.append("Orthogonal Space Tempering");
+                }
+                break;
+            case ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED:
+                fixedAlg: {
+                    sb.append("Fixed-Lambda Sampling at Lambda ").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
+                }
+                break;
+            default:
+                defAlg: {
+                    sb.append("Unknown algorithm starting at Lambda ").append(String.format("%8.3f", alchemical.getInitialLambda(true)));
+                }
+                break;
+        }
+        sb.append(" for ");
+
         potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
         LambdaInterface linter = (LambdaInterface) potential
         logger.info(sb.toString())
