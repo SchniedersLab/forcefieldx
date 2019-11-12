@@ -234,15 +234,16 @@ class Thermodynamics extends AlgorithmsScript {
 
         StringBuilder sb = new StringBuilder("\n Running ");
         switch (thermodynamics.getAlgorithm()) {
-            case OST:
+            case ThermodynamicsOptions.ThermodynamicsAlgorithm.OST:
                 ostAlg: {
                     sb.append("Orthogonal Space Tempering");
                 }
                 break;
-            case FIXED:
+            case ThermodynamicsOptions.ThermodynamicsAlgorithm.FIXED:
                 fixedAlg: {
                     sb.append("Fixed-Lambda Sampling at Lambda").append(String.format("%8.3f ", alchemical.getInitialLambda(true)));
                 }
+                break;
         }
         sb.append(" for ");
 
