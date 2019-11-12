@@ -358,8 +358,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 // TODO: Replace this with calls to the leaves of a proper tree structure.
                 // Unfortunately, neither Java, nor Apache Commons, nor Guava has an arbitrary tree implementing Collection.
                 // Nor does javax.swing have a quick "get me the leaves" method that I was able to find.
-                boolean ommLeaves = (potentialEnergy instanceof ForceFieldEnergyOpenMM ||
-                        potentialEnergy.getUnderlyingPotentials().stream().anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM));
+                boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream().
+                        anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
+                ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
                 if (ommLeaves) {
                     return new MolecularDynamicsOpenMM(assembly,
                             potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
@@ -385,7 +386,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 return DynamicsEngine.FFX;
             }
         } else {
-            if (potentialEnergy instanceof ffx.potential.ForceFieldEnergyOpenMM) {
+            // TODO: Replace this with a better check.
+            boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream().
+                    anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
+            ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
+            if (ommLeaves) {
                 return DynamicsEngine.OPENMM;
             } else {
                 return DynamicsEngine.FFX;

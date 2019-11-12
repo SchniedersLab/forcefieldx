@@ -38,14 +38,32 @@
 package ffx.numerics.switching;
 
 /**
- * The ConstantSwitch returns 1 for all input values x. This is useful for
+ * The ConstantSwitch returns a constant value for all input values x. This is useful for
  * having a single code path that accomodates both "real" switching behavior and no
- * switching behavior.
+ * switching behavior. The default value is 1.0.
  *
  *  @author Jacob M. Litman
  *  @author Michael J. Schnieders
  */
 public class ConstantSwitch implements UnivariateSwitchingFunction {
+
+    private final double val;
+
+    /**
+     * Default constructor: constant 1.0 value.
+     */
+    public ConstantSwitch() {
+        this(1.0);
+    }
+
+    /**
+     * Permits specification of a value.
+     *
+     * @param value Value this ConstantSwitch should maintain.
+     */
+    public ConstantSwitch(double value) {
+        this.val = value;
+    }
 
     /**
      * {@inheritDoc}
@@ -60,7 +78,7 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double getOneBound() {
-        return 1;
+        return Double.NaN;
     }
 
     /**
@@ -100,7 +118,7 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
      */
     @Override
     public double valueAt(double x) throws IllegalArgumentException {
-        return 1.0;
+        return val;
     }
 
     /**
@@ -126,12 +144,14 @@ public class ConstantSwitch implements UnivariateSwitchingFunction {
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
         if (order < 0) {
             throw new IllegalArgumentException(String.format(" Order must be > 0, was %d", order));
+        } else if (order == 0) {
+            return val;
         }
         return 0.0;
     }
 
     @Override
     public String toString() {
-        return "Constant-value f(x) = 1, with no switching behavior (i.e. a dummy switch)";
+        return String.format("Constant-value f(x) = %f, with no switching behavior (i.e. a dummy switch)", val);
     }
 }
