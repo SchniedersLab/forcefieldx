@@ -120,7 +120,7 @@ public class LogFormatter extends SimpleFormatter {
      */
     private String mpiFormat(int size, int rank, String[] lines) {
         int rankLen = Integer.toString(size - 1).length();
-        String formatString = " [%" + rankLen + "d]%s";
+        String formatString = " [%0" + rankLen + "d]%s";
         StringBuilder sb = new StringBuilder(String.format(formatString, rank, lines[0]));
         for (int i = 1; i < lines.length; i++) {
             sb.append("\n");
