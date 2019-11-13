@@ -98,11 +98,7 @@ public class LogFormatter extends SimpleFormatter {
             if (size > 1) {
                 if (mpiLogging) {
                     String[] lines = message.split("\n");
-                    message = mpiFormat(size, rank, lines[0]);
-                    int numLines = lines.length;
-                    for (int i = 1; i < numLines; i++) {
-                        message = message.concat(mpiFormat(size, rank, lines[i]));
-                    }
+                    message = mpiFormat(size, rank, lines);
                 } else if (rank != 0) {
                     message = null;
                 }
@@ -119,14 +115,17 @@ public class LogFormatter extends SimpleFormatter {
      *
      * @param size Number of MPI processes.
      * @param rank Rank of this MPI processs.
-     * @param line The String to format.
+     * @param lines The String to format split by new line characters.
      * @return " [Rank]line"
      */
-    private String mpiFormat(int size, int rank, String line) {
-        if (size <= 10) {
-            return String.format(" [%d]%s", rank, line);
-        } else {
-            return String.format(" [%2d]%s", rank, line);
+    private String mpiFormat(int size, int rank, String[] lines) {
+        int rankLen = Integer.toString(size - 1).length();
+        String formatString = " [%" + rankLen + "d]%s";
+        StringBuilder sb = new StringBuilder(String.format(formatString, rank, lines[0]));
+        for (int i = 1; i < lines.length; i++) {
+            sb.append("\n");
+            sb.append(String.format(formatString, rank, lines[i]));
         }
+        return sb.toString();
     }
 }
