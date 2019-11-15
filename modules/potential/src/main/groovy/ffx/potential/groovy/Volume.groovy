@@ -195,7 +195,12 @@ class Volume extends PotentialScript {
         logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
         logger.info(format(" Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
         if(verbose){
-            gaussVol.printTree()
+            //gaussVol.printTree()
+            index = 0
+            for (Atom atom : atoms) {
+                logger.info("Radius for atom "+atom.name+": "+radii[index]+"\n")
+                index++
+            }
         }
 
         // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
