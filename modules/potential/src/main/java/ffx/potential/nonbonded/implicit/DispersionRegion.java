@@ -110,7 +110,7 @@ public class DispersionRegion extends ParallelRegion {
      * This value was described as 0.36 in the original 2007 model (see Schnieders thesis)
      * and more recently the value was reduced to 0.26.
      */
-    private static final double DISP_OFFSET = 0.838;
+    private static final double DISP_OFFSET = 0.874;
     private static final double SLEVY = 1.0;
     private static final double AWATER = 0.033428;
     private static final double EPSO = 0.1100;
