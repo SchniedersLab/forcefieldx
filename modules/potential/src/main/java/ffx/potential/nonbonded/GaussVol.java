@@ -53,7 +53,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
-
 import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.rsq;
 import static ffx.numerics.math.VectorMath.scalar;
@@ -210,34 +209,33 @@ public class GaussVol {
     /**
      * Solvent pressure in kcal/mol/Ang^3.
      * Original value from Schnieders thesis work: 0.0327
+     * Value based on testing with Schnieders thesis test set, Sept 2019: 0.11337
      */
-    private double solventPressure = 0.06641;
+    private double solventPressure = GeneralizedKirkwood.DEFAULT_SOLVENT_PRESSURE;
     /**
      * Volume offset in Ang^3
-     * Set based on comparison of FFX Volumes for small molecules to Tinker
-     * Solvent-Accessible Volumes (not using H and a probe of 1.4 in Tinker)
+     * Set based on comparison of FFX Volumes for small alkanes (methane-decane)
+     * to Tinker Solvent-Accessible Volumes (using H and a probe of 1.4 in Tinker)
      * With a probe radius of 0.0: 27.939
      */
-    private double volumeOffsetVdwToSEV = 32.344;
+    private double volumeOffsetVdwToSEV = GeneralizedKirkwood.DEFAULT_VDW_TO_SEV_OFFSET;
     /**
      * Surface Area offset in Ang^2
      * Set based on comparison of FFX Surface Areas for small alkanes (methane-decane)
      * to Tinker Solvent-Accessible Surface Areas (using H and a probe of 1.4 in Tinker)
      * With a probe radius of 0.0: 46.111
      */
-    //private double surfaceAreaOffsetVdwToSASA = 52.885;
-    //private double surfaceAreaOffsetVdwToSASA = 37.529;
-    private double surfaceAreaOffsetVdwToSASA = 0.0;
+    private double surfaceAreaOffsetVdwToSASA = GeneralizedKirkwood.DEFAULT_VDW_TO_SASA_OFFSET;
     /**
      * Surface tension in kcal/mol/Ang^2.
      */
-    private double surfaceTension = 0.08;
+    private double surfaceTension = GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION;
     /**
      * Radius where volume dependence crosses over to surface area dependence (approximately at 1 nm).
      * Originally 3.0*surfaceTension/solventPressure
      * Reset to 7.339 to match Tinker
      */
-    private double crossOver = 9.0;
+    private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
     /**
      * Begin turning off the Volume term.
      */
@@ -313,6 +311,24 @@ public class GaussVol {
             radiiOffset[i] = radii[i] + offset;
             volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
         }
+    }
+
+    /**
+     * Set the SA offset.
+     *
+     * @param offset The offset (A^2).
+     */
+    public void setSurfaceAreaOffset(double offset) {
+        surfaceAreaOffsetVdwToSASA = offset;
+    }
+
+    /**
+     * Set the Volume offset.
+     *
+     * @param offset The offset (A^3).
+     */
+    public void setVolumeOffset(double offset) {
+        volumeOffsetVdwToSEV = offset;
     }
 
     /**
@@ -394,7 +410,9 @@ public class GaussVol {
      *
      * @return totalNumberOfOverlaps
      */
-    public int getTotalNumberOfOverlaps() {return totalNumberOfOverlaps;}
+    public int getTotalNumberOfOverlaps() {
+        return totalNumberOfOverlaps;
+    }
 
     /**
      * Set the isHydrogen flag.
@@ -607,9 +625,9 @@ public class GaussVol {
         }
 
         // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
-        double threeOverFourPi = 3.0/(4.0*Math.PI);
-        double radical = totalVolume[0]*threeOverFourPi;
-        double effectiveRadius = pow(radical, 1/3);
+        double threeOverFourPi = 3.0 / (4.0 * Math.PI);
+        double radical = totalVolume[0] * threeOverFourPi;
+        double effectiveRadius = pow(radical, 1 / 3);
 
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format("\n Volume:              %8.3f (Ang^3)", totalVolume[0]));
@@ -850,7 +868,7 @@ public class GaussVol {
          */
         int nAtoms;
         /**
-         * The root is at index 0, atoms are at 1..natoms
+         * The root is at index 0, atoms are at 1..natoms+1
          */
         ArrayList<GaussianOverlap> overlaps;
 

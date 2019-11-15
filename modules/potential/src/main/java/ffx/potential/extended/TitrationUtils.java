@@ -863,7 +863,7 @@ public class TitrationUtils {
 
     /**
      * Amino acid protonation reactions. Constructors below specify intrinsic
-     * pKa and reference free energy of protonation, obtained via (OSRW)
+     * pKa and reference free energy of protonation, obtained via (OST)
      * metadynamics on capped monomers.
      */
     public enum Titration {

@@ -81,7 +81,7 @@ public class DoublesDataSet implements DataSet {
 
     /**
      * Constructs a DataSet from actual data, with no known underlying function (or at least none with an analytically
-     * solved integral). Assumes no half-width end bins (such as found in OSRW).
+     * solved integral). Assumes no half-width end bins (such as found in OST).
      *
      * @param x  Points where f(x) is known
      * @param fX Values/estimates of f(x)
@@ -96,7 +96,7 @@ public class DoublesDataSet implements DataSet {
      *
      * @param x          Points where f(x) is known
      * @param fX         Values/estimates of f(x)
-     * @param halvedEnds Whether the first and last bins are half-width (such as OSRW)
+     * @param halvedEnds Whether the first and last bins are half-width (such as OST)
      */
     public DoublesDataSet(double[] x, double[] fX, boolean halvedEnds) {
         nX = x.length;

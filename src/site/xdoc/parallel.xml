@@ -69,7 +69,7 @@ The Scheduler runs parallel jobs over nodes.
                 <source>ffxc [-D&lt;property=value&gt;] MinimizeOpenMM [-options] &lt;PDB|XYZ&gt;</source>
                 <source>ffxc [-D&lt;property=value&gt;] DynamicsOpenMM [-options] &lt;PDB|XYZ&gt;</source>
                 <p>FFX can also make use of multiple GPUs in combination with message passing for Many-Body rotamer
-                    optimization and for Thermodynamics (i.e. the Monte Carlo OSRW algorithm). For Many-Body rotamer
+                    optimization and for Thermodynamics (i.e. the Monte Carlo OST algorithm). For Many-Body rotamer
                     optimization across nodes, after starting the Scheduler as described above, the command is
                 </p>
                 <source>ffxc -Dpj.nn=Y -Dplatform=omm [-D&lt;property=value&gt;] ManyBody [-options] &lt;PDB|XYZ&gt;</source>

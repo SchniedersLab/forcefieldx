@@ -40,12 +40,14 @@ package ffx.potential.groovy
 import static java.lang.String.format
 
 import org.apache.commons.io.FilenameUtils
+import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.pow
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.nonbonded.GaussVol
+import ffx.potential.nonbonded.GeneralizedKirkwood
 
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -64,11 +66,25 @@ class Volume extends PotentialScript {
     private static final double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0)
 
     /**
+     * -o or --includeOffsets Use volume and SA offsets to map GaussVol results to SEV and SASA, respectively.
+     */
+    @CommandLine.Option(names = ['-o', '--includeOffsets'], paramLabel = "false",
+            description = "Use volume and SA offsets to map GaussVol results to SEV and SASA, respectively.")
+    private boolean includeOffsets = false
+
+    /**
      * -y or --includeHydrogen leaves in hydrogen when calculating the overlap tree.
      */
     @CommandLine.Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
             description = "Include Hydrogen in calculation of overlaps and volumes")
     private boolean includeHydrogen = false
+
+    /**
+     * -s or --sigma Use sigma radii instead of Rmin.
+     */
+    @CommandLine.Option(names = ['-s', '--sigma'], paramLabel = "false",
+            description = "Use sigma radii instead of Rmin")
+    private boolean sigma = false
 
     /**
      * -p or --probe Add a probe radius offset to all atomic radii.
@@ -101,8 +117,8 @@ class Volume extends PotentialScript {
     /**
      * JUnit Testing Variables
      */
-    public double totalVolume = 0.0;
-    public double totalSurfaceArea = 0.0;
+    public double totalVolume = 0.0
+    public double totalSurfaceArea = 0.0
 
     /**
      * Execute the script.
@@ -149,8 +165,10 @@ class Volume extends PotentialScript {
             if (includeHydrogen) {
                 isHydrogen[index] = false
             }
-            // TODO: determine effects of using rmin vs sigma for larger nt's
-            radii[index] = atom.getVDWType().radius / 2.0 //* rminToSigma
+            radii[index] = atom.getVDWType().radius / 2.0
+            if (sigma) {
+                radii[index] *= rminToSigma;
+            }
             radii[index] += probe
             volume[index] = fourThirdsPI * pow(radii[index], 3)
             positions[index][0] = atom.getX()
@@ -161,29 +179,50 @@ class Volume extends PotentialScript {
 
         // Run Volume calculation to get vdw volume of molecule
         GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen)
+
+        CompositeConfiguration properties = activeAssembly.getProperties();
+        double solventPressure = properties.getDouble("solvent-pressure", GeneralizedKirkwood.DEFAULT_SOLVENT_PRESSURE)
+        gaussVol.setSolventPressure(solventPressure)
+        double surfaceTension = properties.getDouble("surface-tension", GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION)
+        gaussVol.setSurfaceTension(surfaceTension)
+
+        if (!includeOffsets) {
+            gaussVol.setVolumeOffset(0.0)
+            gaussVol.setSurfaceAreaOffset(0.0)
+        }
+
         gaussVol.computeVolumeAndSA(positions)
         logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
+        logger.info(format(" Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
         if(verbose){
-            index = 0
-            for (Atom atom : atoms) {
-                logger.info("Radius for atom "+atom.name+": "+radii[index]+"\n")
-                index++
-            }
             gaussVol.printTree()
         }
-        logger.info(format("\n Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
 
         // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
         double threeOverFourPi = 3.0/(4.0*Math.PI)
         double radical = gaussVol.getVolume()*threeOverFourPi
         double effectiveRadius = pow(radical, 1/3)
 
-        logger.info(format("\n Volume:              %8.3f (Ang^3)", gaussVol.getVolume()))
-        logger.info(format(" Volume Energy:       %8.3f (kcal/mol)", gaussVol.getVolumeEnergy()))
-        logger.info(format(" Surface Area:        %8.3f (Ang^2)", gaussVol.getSurfaceArea()))
-        logger.info(format(" Surface Area Energy: %8.3f (kcal/mol)", gaussVol.getSurfaceAreaEnergy()))
-        logger.info(format(" Volume + SA Energy:  %8.3f (kcal/mol)", gaussVol.getEnergy()))
-        logger.info(format(" Effective Radius:    %8.3f (Ang)", effectiveRadius))
+        if (sigma) {
+            logger.info(format("\n Radii:                  Sigma"))
+        } else {
+            logger.info(format("\n Radii:                   Rmin"))
+        }
+        logger.info(format(" Probe:               %8.4f (Ang)", probe))
+        logger.info(format(" Include hydrogen:    %8b", includeHydrogen))
+        logger.info(format(" Include offsets:     %8b", includeOffsets))
+
+        logger.info(format("\n Volume:              %8.4f (Ang^3)", gaussVol.getVolume()))
+        logger.info(format(" Solvent Pressure:    %8.4f (kcal/mol/Ang^3)", gaussVol.getSolventPressure()))
+        logger.info(format(" Volume Energy:       %8.4f (kcal/mol)", gaussVol.getVolumeEnergy()))
+
+        logger.info(format("\n Surface Area:        %8.4f (Ang^2)", gaussVol.getSurfaceArea()))
+        logger.info(format(" Surface Tension:     %8.4f (kcal/mol/Ang^2)", gaussVol.getSurfaceTension()))
+        logger.info(format(" Surface Area Energy: %8.4f (kcal/mol)", gaussVol.getSurfaceAreaEnergy()))
+
+        logger.info(format("\n Effective Radius:    %8.4f (Ang)", effectiveRadius))
+        logger.info(format(" Volume + SA Energy:  %8.4f (kcal/mol)", gaussVol.getEnergy()))
+
 
         // Set JUnit testing variables based on output volume and surface area
         totalVolume = gaussVol.getVolume()

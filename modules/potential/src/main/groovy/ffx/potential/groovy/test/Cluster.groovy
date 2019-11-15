@@ -36,10 +36,63 @@
 //
 //******************************************************************************
 
+import ffx.potential.cli.PotentialScript
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
+
 /**
- * The Thermodynamics package computes free energy differences using Orthogonal Space
- * Tempering (OST) sampling via pure Java or OpenMM (via Monte Carlo OST).
- *
- * @since 1.0
+ * The Cluster script clusters structures by RMSD.
+ * <br>
+ * Usage:
+ * <br>
+ * ffxc Cluster [options] &lt;filename&gt;
  */
-package ffx.algorithms.thermodynamics;
+@Command(description = " Cluster structures using an RMSD matrix.", name = "ffxc Cluster")
+class Cluster extends PotentialScript {
+
+    /**
+     * -a or --algorithm Clustering algorithm to use.
+     */
+    @Option(names = ['-a', '--algorithm'], paramLabel = "kmeans",
+            description = "Print out a file with density adjusted to match mean calculated density")
+    private String algorithm = "kmeans";
+
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Parameters(arity = "1", paramLabel = "files",
+            description = 'The RMSD matrix.')
+    List<String> filenames = null
+
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
+
+    /**
+     * Execute the script.
+     */
+    @Override
+    Cluster run() {
+        if (!init()) {
+            return this
+        }
+
+        if (filenames == null || filenames.isEmpty()) {
+            logger.info(helpString())
+            return this
+        }
+
+        // TODO: Read in the RMSD matrix.
+
+        // TODO: Input the RMSD matrix to the clustering algorithm
+        // Use the org.apache.commons.math3.ml.clustering package.
+
+        // TODO: Output the clusters in a useful way.
+
+        return this
+    }
+}

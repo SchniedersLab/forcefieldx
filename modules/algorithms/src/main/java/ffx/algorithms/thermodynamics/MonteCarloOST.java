@@ -53,20 +53,21 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.mc.LambdaMove;
 import ffx.algorithms.mc.MDMove;
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.EnergyException;
 import static ffx.utilities.Constants.NS2SEC;
 
 /**
- * Sample a thermodynamic path using the OSRW method, with the time-dependent
+ * Sample a thermodynamic path using the OST method, with the time-dependent
  * bias built up using Metropolis Monte Carlo steps.
  * <p>
  * The algorithm generates coordinate (X) MC moves using molecular dynamics at a
  * fixed lambda value (i.e. using OpenMM), followed by MC lambda moves.
  * <p>
  * 1.) At a fixed Lambda, run a defined length MD trajectory to "move"
- * coordinates and dU/dL on an approximate potential U* (i.e. no OSRW Bias).
+ * coordinates and dU/dL on an approximate potential U* (i.e. no OST Bias).
  * <p>
  * 2.) Accept / Reject the MD move with probability exp[-Beta(dU - dU*)] where
  * dU is the change in AMOEBA + Bias energy and dU* is the change in AMOEBA +
@@ -74,7 +75,7 @@ import static ffx.utilities.Constants.NS2SEC;
  * <p>
  * 3.) Randomly change the value of Lambda.
  * <p>
- * 4.) Accept / Reject the Lambda move using the AMOEBA + OSRW Bias energy.
+ * 4.) Accept / Reject the Lambda move using the AMOEBA + OST Bias energy.
  * <p>
  * 5.) Add to the time dependent 2D bias using the current values of Lambda and
  * dU/dL.
@@ -84,12 +85,12 @@ import static ffx.utilities.Constants.NS2SEC;
  * @author Mallory R. Tollefson
  * @since 1.0
  */
-public class MonteCarloOSRW extends BoltzmannMC {
+public class MonteCarloOST extends BoltzmannMC {
 
     /**
      * Logger object to print out information for this class.
      */
-    private static final Logger logger = Logger.getLogger(MonteCarloOSRW.class.getName());
+    private static final Logger logger = Logger.getLogger(MonteCarloOST.class.getName());
     /**
      * Energy conservation during MD moves should generally be within ~0.1
      * kcal/mol. A change in total energy of 1.0 kcal/mol or more is of
@@ -102,23 +103,23 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     private final Potential potential;
     /**
-     * OSRW object used to retrieve OSRW energy throughout the simulation.
+     * OST object used to retrieve OST energy throughout the simulation.
      */
-    private final TransitionTemperedOSRW osrw;
+    private final OrthogonalSpaceTempering orthogonalSpaceTempering;
     /**
-     * MDMove object for completing MC-OSRW molecular dynamics moves.
+     * MDMove object for completing MC-OST molecular dynamics moves.
      */
     private MDMove mdMove;
     /**
-     * Total number of steps to take for MC-OSRW sampling.
+     * Total number of steps to take for MC-OST sampling.
      */
     private int totalSteps = 10000000;
     /**
-     * Number of steps to take per MC-OSRW round.
+     * Number of steps to take per MC-OST round.
      */
     private int stepsPerMove = 50;
     /**
-     * Lambda move object for completing MC-OSRW lambda moves.
+     * Lambda move object for completing MC-OST lambda moves.
      */
     private LambdaMove lambdaMove;
     /**
@@ -126,8 +127,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     private double lambda = 1.0;
     /**
-     * Boolean that tells algorithm that we are in the equilibration phase of
-     * MC-OSRW.
+     * Boolean that tells algorithm that we are in the equilibration phase of MC-OST.
      */
     private boolean equilibration = false;
 
@@ -142,10 +142,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
     /**
      * <p>
-     * Constructor for MonteCarloOSRW.</p>
+     * Constructor for MonteCarloOST.</p>
      *
      * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param osrw                a {@link TransitionTemperedOSRW} object.
+     * @param orthogonalSpaceTempering                a {@link OrthogonalSpaceTempering} object.
      * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly} object.
      * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
@@ -153,11 +153,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      * @param verbose             A verbosity flag to print additional information with each MC-OST step.
      */
-    public MonteCarloOSRW(Potential potentialEnergy, TransitionTemperedOSRW osrw,
-                          MolecularAssembly molecularAssembly, CompositeConfiguration properties,
-                          AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator, boolean verbose) {
+    public MonteCarloOST(Potential potentialEnergy, OrthogonalSpaceTempering orthogonalSpaceTempering,
+                         MolecularAssembly molecularAssembly, CompositeConfiguration properties,
+                         AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator, boolean verbose) {
         this.potential = potentialEnergy;
-        this.osrw = osrw;
+        this.orthogonalSpaceTempering = orthogonalSpaceTempering;
         verboseLoggingLevel = verbose ? Level.INFO : Level.FINE;
         mdVerbosityLevel = verbose ? MolecularDynamics.VerbosityLevel.QUIET : MolecularDynamics.VerbosityLevel.SILENT;
 
@@ -166,14 +166,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
         if (properties.containsKey("randomseed")) {
             int randomSeed = properties.getInt("randomseed", 0);
             logger.info(format(" Setting random seed for lambdaMove to %d ", randomSeed));
-            lambdaMove = new LambdaMove(randomSeed, osrw);
+            lambdaMove = new LambdaMove(randomSeed, orthogonalSpaceTempering);
             setRandomSeed(randomSeed);
         } else {
-            lambdaMove = new LambdaMove(osrw);
+            lambdaMove = new LambdaMove(orthogonalSpaceTempering);
         }
 
         // Changing the value of lambda will be handled by this class, as well as adding the time dependent bias.
-        osrw.setPropagateLambda(false);
+        orthogonalSpaceTempering.setPropagateLambda(false);
 
     }
 
@@ -222,14 +222,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
     }
 
     /**
-     * Calls on the OSRW method set lambda to update lambda to the current value
+     * Calls on the OST method set lambda to update lambda to the current value
      * in this class
      *
      * @param lambda a double.
      */
     public void setLambda(double lambda) {
         this.lambda = lambda;
-        osrw.setLambda(lambda);
+        orthogonalSpaceTempering.setLambda(lambda);
     }
 
     /**
@@ -242,7 +242,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
     }
 
     public void setLambdaWriteOut(double lambdaWriteOut) {
-        osrw.setLambdaWriteOut(lambdaWriteOut);
+        orthogonalSpaceTempering.setLambdaWriteOut(lambdaWriteOut);
     }
 
     /**
@@ -254,11 +254,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * coordinates and dU/dL.
      * <p>
      * 2.) Accept / Reject the MD move using the total Hamiltonian (Kinetic
-     * energy + OSRW energy).
+     * energy + OST energy).
      * <p>
      * 3.) Randomly change the value of Lambda.
      * <p>
-     * 4.) Accept / Reject the Lambda move using the OSRW energy.
+     * 4.) Accept / Reject the Lambda move using the OST energy.
      * <p>
      * 5.) Add to the bias.
      */
@@ -275,13 +275,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
         // Initialize the current coordinates.
         potential.getCoordinates(currentCoordinates);
 
-        // Compute the current OSRW potential energy.
-        double currentOSRWEnergy = osrw.energyAndGradient(currentCoordinates, gradient);
+        // Compute the current OST potential energy.
+        double currentOSTEnergy = orthogonalSpaceTempering.energyAndGradient(currentCoordinates, gradient);
 
         // Collect the current dU/dL, Force Field Energy and Bias Energy.
-        double currentdUdL = osrw.getForceFielddEdL();
-        double currentForceFieldEnergy = osrw.getForceFieldEnergy();
-        double currentBiasEnergy = osrw.getBiasEnergy();
+        double currentdUdL = orthogonalSpaceTempering.getForceFielddEdL();
+        double currentForceFieldEnergy = orthogonalSpaceTempering.getForceFieldEnergy();
+        double currentBiasEnergy = orthogonalSpaceTempering.getBiasEnergy();
 
         // Initialize MC move instances.
         for (int imove = 0; imove < numMoves; imove++) {
@@ -294,7 +294,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.info(format("\n MC Orthogonal Space Sampling Round %d", imove + 1));
             }
 
-            // Run MD in an approximate potential U* (U star) that does not include the OSRW bias.
+            // Run MD in an approximate potential U* (U star) that does not include the OST bias.
             long mdMoveTime = -nanoTime();
             mdMove.move(mdVerbosityLevel);
             mdMoveTime += nanoTime();
@@ -307,29 +307,29 @@ public class MonteCarloOSRW extends BoltzmannMC {
             // Get the new coordinates.
             potential.getCoordinates(proposedCoordinates);
 
-            // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
-            long proposedOSRWEnergyTime = -nanoTime();
+            // Compute the Total OST Energy as the sum of the Force Field Energy and Bias Energy.
+            long proposedOSTEnergyTime = -nanoTime();
 
-            double proposedOSRWEnergy;
+            double proposedOSTEnergy;
             try {
-                proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
+                proposedOSTEnergy = orthogonalSpaceTempering.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
                 mdMove.revertMove();
                 logger.log(Level.INFO, " Unstable MD Move skipped.");
                 continue;
             }
-            proposedOSRWEnergyTime += nanoTime();
+            proposedOSTEnergyTime += nanoTime();
 
-            logger.fine(format("  Time to complete MD OSRW energy method call %6.3f", proposedOSRWEnergyTime * NS2SEC));
+            logger.fine(format("  Time to complete MD OST energy method call %6.3f", proposedOSTEnergyTime * NS2SEC));
 
             // Retrieve the proposed dU/dL, Force Field Energy and Bias Energy.
-            double proposeddUdL = osrw.getForceFielddEdL();
-            double proposedForceFieldEnergy = osrw.getForceFieldEnergy();
-            double proposedBiasEnergy = osrw.getBiasEnergy();
+            double proposeddUdL = orthogonalSpaceTempering.getForceFielddEdL();
+            double proposedForceFieldEnergy = orthogonalSpaceTempering.getForceFieldEnergy();
+            double proposedBiasEnergy = orthogonalSpaceTempering.getBiasEnergy();
 
-            // The Metropolis criteria is based on the sum of the OSRW Energy and Kinetic Energy.
-            double currentTotalEnergy = currentOSRWEnergy + currentKineticEnergy;
-            double proposedTotalEnergy = proposedOSRWEnergy + proposedKineticEnergy;
+            // The Metropolis criteria is based on the sum of the OST Energy and Kinetic Energy.
+            double currentTotalEnergy = currentOSTEnergy + currentKineticEnergy;
+            double proposedTotalEnergy = proposedOSTEnergy + proposedKineticEnergy;
 
             logger.log(verboseLoggingLevel, format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
             logger.log(verboseLoggingLevel, format("  Current  %12.4f %12.4f %12.4f %12.4f",
@@ -349,14 +349,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 continue;
             }
 
-            if (osrw.insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
+            if (orthogonalSpaceTempering.insideHardWallConstraint(orthogonalSpaceTempering.getLambda(), proposeddUdL) &&
                     evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                 // Accept MD move.
                 acceptMD++;
                 double percent = (acceptMD * 100.0) / (imove + 1);
                 logger.info(format(" Accept [FL=%8.3f, E=%12.4f]  -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
-                        currentdUdL, currentOSRWEnergy, proposeddUdL, proposedOSRWEnergy, percent));
-                currentOSRWEnergy = proposedOSRWEnergy;
+                        currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
+                currentOSTEnergy = proposedOSTEnergy;
                 currentdUdL = proposeddUdL;
                 currentForceFieldEnergy = proposedForceFieldEnergy;
                 currentBiasEnergy = proposedBiasEnergy;
@@ -364,51 +364,51 @@ public class MonteCarloOSRW extends BoltzmannMC {
             } else {
                 double percent = (acceptMD * 100.0) / (imove + 1);
                 logger.info(format(" Reject [FL=%8.3f, E=%12.4f]  -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
-                        currentdUdL, currentOSRWEnergy, proposeddUdL, proposedOSRWEnergy, percent));
+                        currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
                 mdMove.revertMove();
             }
             mdMoveAndEvalTime += nanoTime();
 
             logger.fine(format("\n  Total time to run and evaluate MD move: %6.3f", mdMoveAndEvalTime * NS2SEC));
 
-            // During equilibration, do not change Lambda or contribute to the OSRW bias.
+            // During equilibration, do not change Lambda or contribute to the OST bias.
             if (!equilibration) {
                 // Update Lambda.
                 logger.info(" MC Lambda Step");
 
                 long lambdaMoveTime = -nanoTime();
-                double currentLambda = osrw.getLambda();
+                double currentLambda = orthogonalSpaceTempering.getLambda();
                 lambdaMove.move();
-                double proposedLambda = osrw.getLambda();
+                double proposedLambda = orthogonalSpaceTempering.getLambda();
 
-                // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
-                long proposedOSRWEnergyTime2 = -nanoTime();
-                proposedOSRWEnergy = osrw.energyAndGradient(currentCoordinates, gradient);
-                proposedOSRWEnergyTime2 += nanoTime();
+                // Compute the Total OST Energy as the sum of the Force Field Energy and Bias Energy.
+                long proposedOSTEnergyTime2 = -nanoTime();
+                proposedOSTEnergy = orthogonalSpaceTempering.energyAndGradient(currentCoordinates, gradient);
+                proposedOSTEnergyTime2 += nanoTime();
 
-                logger.log(verboseLoggingLevel, format("  Time to complete Lambda OSRW energy method call %6.3f ", proposedOSRWEnergyTime2 * NS2SEC));
+                logger.log(verboseLoggingLevel, format("  Time to complete Lambda OST energy method call %6.3f ", proposedOSTEnergyTime2 * NS2SEC));
 
                 // Retrieve the proposed dU/dL, Force Field Energy and Bias Energy.
-                proposedForceFieldEnergy = osrw.getForceFieldEnergy();
-                proposeddUdL = osrw.getForceFielddEdL();
+                proposedForceFieldEnergy = orthogonalSpaceTempering.getForceFieldEnergy();
+                proposeddUdL = orthogonalSpaceTempering.getForceFielddEdL();
 
-                logger.log(verboseLoggingLevel, format("\n  Current  OSRW     %12.3f at L=%5.3f.", currentOSRWEnergy, currentLambda));
-                logger.log(verboseLoggingLevel, format("  Proposed OSRW     %12.3f at L=%5.3f.", proposedOSRWEnergy, proposedLambda));
-                logger.log(verboseLoggingLevel, format("  MC Energy change: %12.3f (kcal/mol).", proposedOSRWEnergy - currentOSRWEnergy));
+                logger.log(verboseLoggingLevel, format("\n  Current  OST     %12.3f at L=%5.3f.", currentOSTEnergy, currentLambda));
+                logger.log(verboseLoggingLevel, format("  Proposed OST     %12.3f at L=%5.3f.", proposedOSTEnergy, proposedLambda));
+                logger.log(verboseLoggingLevel, format("  MC Energy change: %12.3f (kcal/mol).", proposedOSTEnergy - currentOSTEnergy));
 
-                if (osrw.insideHardWallConstraint(proposedLambda, proposeddUdL) &&
-                        evaluateMove(currentOSRWEnergy, proposedOSRWEnergy)) {
+                if (orthogonalSpaceTempering.insideHardWallConstraint(proposedLambda, proposeddUdL) &&
+                        evaluateMove(currentOSTEnergy, proposedOSTEnergy)) {
                     acceptLambda++;
                     double percent = (acceptLambda * 100.0) / (imove + 1);
                     logger.info(format("  Accept [ L=%8.3f,E=%12.4f]   -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
-                            currentLambda, currentOSRWEnergy, proposedLambda, proposedOSRWEnergy, percent));
+                            currentLambda, currentOSTEnergy, proposedLambda, proposedOSTEnergy, percent));
                     currentForceFieldEnergy = proposedForceFieldEnergy;
                     currentdUdL = proposeddUdL;
                     lambda = proposedLambda;
                 } else {
                     double percent = (acceptLambda * 100.0) / (imove + 1);
                     logger.info(format("  Reject [ L=%8.3f,E=%12.4f]   -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
-                            currentLambda, currentOSRWEnergy, proposedLambda, proposedOSRWEnergy, percent));
+                            currentLambda, currentOSTEnergy, proposedLambda, proposedOSTEnergy, percent));
                     lambdaMove.revertMove();
                     lambda = currentLambda;
                 }
@@ -417,22 +417,23 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.log(verboseLoggingLevel, format("  Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
 
                 // Update time dependent bias.
-                osrw.addBias(currentdUdL, currentCoordinates, null);
+                Histogram histogram = orthogonalSpaceTempering.getHistogram();
+                histogram.addBias(currentdUdL, currentCoordinates, null);
 
                 logger.log(verboseLoggingLevel, format("  Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
-                // Compute the updated OSRW bias.
-                currentBiasEnergy = osrw.computeBiasEnergy(lambda, currentdUdL);
+                // Compute the updated OST bias.
+                currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
 
-                // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
-                currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
+                // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
+                currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0) {
-                    if (osrw.lambdaWriteOut >= 0.0 && osrw.lambdaWriteOut <= 1.0) {
-                        osrw.writeRestart();
-                        mdMove.writeLambdaThresholdRestart(lambda, osrw.lambdaWriteOut);
+                if (imove != 0 && ((imove + 1) * stepsPerMove) % orthogonalSpaceTempering.saveFrequency == 0) {
+                    if (orthogonalSpaceTempering.lambdaWriteOut >= 0.0 && orthogonalSpaceTempering.lambdaWriteOut <= 1.0) {
+                        orthogonalSpaceTempering.writeRestart();
+                        mdMove.writeLambdaThresholdRestart(lambda, orthogonalSpaceTempering.lambdaWriteOut);
                     } else {
-                        osrw.writeRestart();
+                        orthogonalSpaceTempering.writeRestart();
                         mdMove.writeRestart();
                     }
                 }
@@ -454,7 +455,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * coordinates and dU/dL.
      * <p>
      * 3.) Accept / Reject the Lambda + MD move using the total Hamiltonian
-     * (Kinetic energy + OSRW energy).
+     * (Kinetic energy + OST energy).
      * <p>
      * 4.) Add to the bias.
      */
@@ -466,24 +467,24 @@ public class MonteCarloOSRW extends BoltzmannMC {
         double[] proposedCoordinates = new double[n];
         int numMoves = totalSteps / stepsPerMove;
         int acceptMD = 0;
-        int acceptMCOSRW = 0;
+        int acceptMCOST = 0;
 
         // Initialize the current coordinates.
         potential.getCoordinates(currentCoordinates);
 
-        // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
-        double currentOSRWEnergy = osrw.energyAndGradient(currentCoordinates, gradient);
+        // Compute the Total OST Energy as the sum of the Force Field Energy and Bias Energy.
+        double currentOSTEnergy = orthogonalSpaceTempering.energyAndGradient(currentCoordinates, gradient);
 
         // Retrieve the computed dU/dL, Force Field Energy and Bias Energy.
-        double currentdUdL = osrw.getForceFielddEdL();
-        double currentForceFieldEnergy = osrw.getForceFieldEnergy();
-        double currentBiasEnergy = osrw.getBiasEnergy();
+        double currentdUdL = orthogonalSpaceTempering.getForceFielddEdL();
+        double currentForceFieldEnergy = orthogonalSpaceTempering.getForceFieldEnergy();
+        double currentBiasEnergy = orthogonalSpaceTempering.getBiasEnergy();
 
         // Initialize MC move instances.
         for (int imove = 0; imove < numMoves; imove++) {
             long totalMoveTime = -nanoTime();
 
-            double currentLambda = osrw.getLambda();
+            double currentLambda = orthogonalSpaceTempering.getLambda();
             double proposedLambda = currentLambda;
 
             if (equilibration) {
@@ -491,13 +492,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
             } else {
                 logger.info(format("\n MC-OST Round %d", imove + 1));
                 lambdaMove.move();
-                proposedLambda = osrw.getLambda();
+                proposedLambda = orthogonalSpaceTempering.getLambda();
                 logger.log(verboseLoggingLevel, format(" Proposed lambda: %5.3f.", proposedLambda));
             }
 
             logger.fine(format(" Starting force field energy for move %16.8f", currentForceFieldEnergy));
 
-            // Run MD in an approximate potential U* (U star) that does not include the OSRW bias.
+            // Run MD in an approximate potential U* (U star) that does not include the OST bias.
             long mdMoveTime = -nanoTime();
             mdMove.move(mdVerbosityLevel);
             mdMoveTime += nanoTime();
@@ -510,12 +511,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
             // Get the new coordinates.
             potential.getCoordinates(proposedCoordinates);
 
-            long proposedOSRWEnergyTime = -nanoTime();
+            long proposedOSTEnergyTime = -nanoTime();
 
-            // Compute the Total OSRW Energy as the sum of the Force Field Energy and Bias Energy.
-            double proposedOSRWEnergy;
+            // Compute the Total OST Energy as the sum of the Force Field Energy and Bias Energy.
+            double proposedOSTEnergy;
             try {
-                proposedOSRWEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
+                proposedOSTEnergy = orthogonalSpaceTempering.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
                 mdMove.revertMove();
                 if (!equilibration) {
@@ -526,17 +527,17 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 continue;
             }
 
-            proposedOSRWEnergyTime += nanoTime();
-            logger.fine(format(" Time to complete MD OSRW energy method call %6.3f", proposedOSRWEnergyTime * NS2SEC));
+            proposedOSTEnergyTime += nanoTime();
+            logger.fine(format(" Time to complete MD OST energy method call %6.3f", proposedOSTEnergyTime * NS2SEC));
 
             // Retrieve the proposed dU/dL, Force Field Energy and Bias Energy.
-            double proposeddUdL = osrw.getForceFielddEdL();
-            double proposedForceFieldEnergy = osrw.getForceFieldEnergy();
-            double proposedBiasEnergy = osrw.getBiasEnergy();
+            double proposeddUdL = orthogonalSpaceTempering.getForceFielddEdL();
+            double proposedForceFieldEnergy = orthogonalSpaceTempering.getForceFieldEnergy();
+            double proposedBiasEnergy = orthogonalSpaceTempering.getBiasEnergy();
 
-            // The Metropolis criteria is based on the sum of the OSRW Energy and Kinetic Energy.
-            double currentTotalEnergy = currentOSRWEnergy + currentKineticEnergy;
-            double proposedTotalEnergy = proposedOSRWEnergy + proposedKineticEnergy;
+            // The Metropolis criteria is based on the sum of the OST Energy and Kinetic Energy.
+            double currentTotalEnergy = currentOSTEnergy + currentKineticEnergy;
+            double proposedTotalEnergy = proposedOSTEnergy + proposedKineticEnergy;
 
             logger.log(verboseLoggingLevel, format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
             logger.log(verboseLoggingLevel, format("  Current  %12.4f %12.4f %12.4f %12.4f",
@@ -561,14 +562,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
             }
 
             if (equilibration) {
-                if (osrw.insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
+                if (orthogonalSpaceTempering.insideHardWallConstraint(orthogonalSpaceTempering.getLambda(), proposeddUdL) &&
                         evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                     // Accept MD.
                     acceptMD++;
                     double percent = (acceptMD * 100.0) / (imove + 1);
                     logger.info(format(" Accept [ FL=%8.3f, E=%12.4f]  -> [ FL=%8.3f, E=%12.4f] (%5.1f%%)",
-                            currentdUdL, currentOSRWEnergy, proposeddUdL, proposedOSRWEnergy, percent));
-                    currentOSRWEnergy = proposedOSRWEnergy;
+                            currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
+                    currentOSTEnergy = proposedOSTEnergy;
                     currentdUdL = proposeddUdL;
                     currentForceFieldEnergy = proposedForceFieldEnergy;
                     currentBiasEnergy = proposedBiasEnergy;
@@ -576,47 +577,48 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 } else {
                     double percent = (acceptMD * 100.0) / (imove + 1);
                     logger.info(format(" Reject [ FL=%8.3f, E=%12.4f]  -> [ FL=%8.3f, E=%12.4f] (%5.1f%%)",
-                            currentdUdL, currentOSRWEnergy, proposeddUdL, proposedOSRWEnergy, percent));
+                            currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
                     mdMove.revertMove();
                 }
             } else {
-                if (osrw.insideHardWallConstraint(osrw.getLambda(), proposeddUdL) &&
+                if (orthogonalSpaceTempering.insideHardWallConstraint(orthogonalSpaceTempering.getLambda(), proposeddUdL) &&
                         evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
-                    acceptMCOSRW++;
-                    double percent = (acceptMCOSRW * 100.0) / (imove + 1);
+                    acceptMCOST++;
+                    double percent = (acceptMCOST * 100.0) / (imove + 1);
                     logger.info(format(" Accept [ L=%5.3f, FL=%8.3f, E=%12.4f]  -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
-                            currentLambda, currentdUdL, currentOSRWEnergy, proposedLambda, proposeddUdL, proposedOSRWEnergy, percent));
+                            currentLambda, currentdUdL, currentOSTEnergy, proposedLambda, proposeddUdL, proposedOSTEnergy, percent));
                     lambda = proposedLambda;
                     currentdUdL = proposeddUdL;
                     currentForceFieldEnergy = proposedForceFieldEnergy;
                     arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
                 } else {
-                    double percent = (acceptMCOSRW * 100.0) / (imove + 1);
+                    double percent = (acceptMCOST * 100.0) / (imove + 1);
                     logger.info(format(" Reject [ L=%5.3f, FL=%8.3f, E=%12.4f]  -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
-                            currentLambda, currentdUdL, currentOSRWEnergy, proposedLambda, proposeddUdL, proposedOSRWEnergy, percent));
+                            currentLambda, currentdUdL, currentOSTEnergy, proposedLambda, proposeddUdL, proposedOSTEnergy, percent));
                     lambdaMove.revertMove();
                     lambda = currentLambda;
                     mdMove.revertMove();
                 }
 
                 // Update time-dependent bias.
-                osrw.addBias(currentdUdL, currentCoordinates, null);
+                Histogram histogram = orthogonalSpaceTempering.getHistogram();
+                histogram.addBias(currentdUdL, currentCoordinates, null);
 
                 logger.fine(format(" Added Bias at [ L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
-                // Compute the updated OSRW bias.
-                currentBiasEnergy = osrw.computeBiasEnergy(lambda, currentdUdL);
+                // Compute the updated OST bias.
+                currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
 
-                // Update the current OSRW Energy to be the sum of the current Force Field Energy and updated OSRW Bias.
-                currentOSRWEnergy = currentForceFieldEnergy + currentBiasEnergy;
+                // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
+                currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                if (imove != 0 && ((imove + 1) * stepsPerMove) % osrw.saveFrequency == 0) {
-                    if (osrw.lambdaWriteOut >= 0.0 && osrw.lambdaWriteOut <= 1.0) {
-                        mdMove.writeLambdaThresholdRestart(lambda, osrw.lambdaWriteOut);
+                if (imove != 0 && ((imove + 1) * stepsPerMove) % orthogonalSpaceTempering.saveFrequency == 0) {
+                    if (orthogonalSpaceTempering.lambdaWriteOut >= 0.0 && orthogonalSpaceTempering.lambdaWriteOut <= 1.0) {
+                        mdMove.writeLambdaThresholdRestart(lambda, orthogonalSpaceTempering.lambdaWriteOut);
                     } else {
                         mdMove.writeRestart();
                     }
-                    osrw.writeRestart();
+                    orthogonalSpaceTempering.writeRestart();
                 }
 
             }

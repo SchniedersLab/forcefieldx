@@ -78,9 +78,8 @@ public class DynamicsRESPANVETest extends PJDependentTest {
                 {
                         "Acetamide RESPA NVE", // info
                         "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                        -25.1958 // startingTotalEnergy
+                        -25.2085 // startingTotalEnergy
                 }
-
         });
 
     }
@@ -118,7 +117,8 @@ public class DynamicsRESPANVETest extends PJDependentTest {
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
         // Assert that the final total energy is within the tolerance for the molecular dynamics trajectory
-        assertEquals(info + "End total energy for RESPA integrator NVE", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
+        assertEquals(info + "End total energy for RESPA integrator NVE",
+                startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
     }
 
 }

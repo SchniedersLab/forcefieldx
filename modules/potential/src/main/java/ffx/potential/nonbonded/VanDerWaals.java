@@ -488,7 +488,7 @@ public class VanDerWaals implements MaskingInterface,
             if (esvTerm) {
                 lambdaFactors[i] = new LambdaFactorsESV();
             } else if (lambdaTerm) {
-                lambdaFactors[i] = new LambdaFactorsOSRW();
+                lambdaFactors[i] = new LambdaFactorsOST();
             } else {
                 lambdaFactors[i] = new LambdaFactors();
             }
@@ -935,7 +935,7 @@ public class VanDerWaals implements MaskingInterface,
             d2sc2dL2 = 0.0;
         }
 
-        // If LambdaFactors are in OSRW mode, update them now.
+        // If LambdaFactors are in OST mode, update them now.
         if (!esvTerm) {
             for (LambdaFactors lf : lambdaFactors) {
                 lf.setFactors();
@@ -992,9 +992,9 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * The trick: The setFactors(i,k) method is called every time through the
-     * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OSRW run
-     * will have an object of type LambdaFactorsOSRW instead, which contains an
-     * empty version of setFactors(i,k). The OSRW version sets new factors only
+     * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OST run
+     * will have an object of type LambdaFactorsOST instead, which contains an
+     * empty version of setFactors(i,k). The OST version sets new factors only
      * on lambda updates, in setLambda().
      */
     public class LambdaFactors {
@@ -1007,7 +1007,7 @@ public class VanDerWaals implements MaskingInterface,
         double d2sc2dL2 = 0.0;
 
         /**
-         * Overriden by the OSRW version which updates only during setLambda().
+         * Overriden by the OST version which updates only during setLambda().
          */
         public void setFactors() {
         }
@@ -1022,7 +1022,7 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
-    public class LambdaFactorsOSRW extends LambdaFactors {
+    public class LambdaFactorsOST extends LambdaFactors {
 
         @Override
         public void setFactors() {
@@ -1762,7 +1762,7 @@ public class VanDerWaals implements MaskingInterface,
                             }
                             /*
                               The setFactors(i,k) method is empty unless ESVs
-                              are present. If OSRW lambda present,
+                              are present. If OST lambda present,
                               lambdaFactors will already have been updated during setLambda().
                              */
                             if (soft) {

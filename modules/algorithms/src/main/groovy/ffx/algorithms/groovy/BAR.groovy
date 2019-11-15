@@ -144,7 +144,7 @@ class BAR extends AlgorithmsScript {
         }
 
         // Relative free energies via the DualTopologyEnergy class require different
-        // default OSRW parameters than absolute free energies.
+        // default OST parameters than absolute free energies.
         if (nPer >= 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
@@ -217,7 +217,7 @@ class BAR extends AlgorithmsScript {
             e1L2[i] = potential1.energy(x1, false);
 
             eDiff1[i] = e1L2[i] - e1L1[i];
-            logger.info(String.format(" Snapshot %d of system 1: E(L=%s) = %11.5g, E(L=%s) = %11.5g, difference = %11.5g",
+            logger.info(String.format(" Snapshot %d of system 1: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
                     i+1, lamString1, e1L1[i], lamString2, e1L2[i], eDiff1[i]));
         }
 
@@ -232,7 +232,7 @@ class BAR extends AlgorithmsScript {
             e2L2[i] = potential2.energy(x2, false);
 
             eDiff2[i] = e2L2[i] - e2L1[i];
-            logger.info(String.format(" Snapshot %d of system 2: E(L=%s) = %11.5g, E(L=%s) = %11.5g, difference = %11.5g",
+            logger.info(String.format(" Snapshot %d of system 2: E(L=%s) = %14.7f, E(L=%s) = %14.7f, difference = %14.7f",
                     i+1, lamString1, e1L1[i], lamString2, e1L2[i], eDiff2[i]));
         }
 
@@ -249,7 +249,7 @@ class BAR extends AlgorithmsScript {
             max1 = Math.max(max1, val);
         }
         double sd1 = FastMath.sqrt(var1 / (nSnapshots1 - 1));
-        logger.info(String.format(" System 1 differences: mean %11.5g, sample standard deviation %11.5g, min %11.5g, max %11.5g over %d samples", mean1, sd1, min1, max1, nSnapshots1));
+        logger.info(String.format(" System 1 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples", mean1, sd1, min1, max1, nSnapshots1));
 
         double mean2 = 0;
         double var2 = 0;
@@ -264,7 +264,7 @@ class BAR extends AlgorithmsScript {
             max2 = Math.max(max2, val);
         }
         double sd2 = FastMath.sqrt(var2 / (nSnapshots2 - 1));
-        logger.info(String.format(" System 2 differences: mean %11.5g, sample standard deviation %11.5g, min %11.5g, max %11.5g over %d samples", mean2, sd2, min2, max2, nSnapshots2));
+        logger.info(String.format(" System 2 differences: mean %14.7f, sample standard deviation %14.7f, min %14.7f, max %14.7f over %d samples", mean2, sd2, min2, max2, nSnapshots2));
 
         String barFileName = FilenameUtils.removeExtension(filenames.get(0)) + ".bar";
         logger.info(" Writing Tinker-compatible .bar file to ${barFileName}. For now: use Tinker's bar command; built-in FFX calculations not yet implemented.");
@@ -277,18 +277,18 @@ class BAR extends AlgorithmsScript {
             for (int i = 0; i < nPer; i++) {
                 fnames1.append("  ").append(filenames.get(i));
             }
-            bw.write(String.format("%8d %9.2f%s\n", nSnapshots1, temp1, fnames1.toString()));
+            bw.write(String.format("%8d %9.3f%s\n", nSnapshots1, temp1, fnames1.toString()));
             for (int i = 0; i < nSnapshots1; i++) {
-                bw.write(String.format("%8d %20.8g %20.8g\n", i+1, e1L1[i], e1L2[i]));
+                bw.write(String.format("%8d %20.10f %20.10f\n", i+1, e1L1[i], e1L2[i]));
             }
 
             StringBuilder fnames2 = new StringBuilder();
             for (int i = nPer; i < nFiles; i++) {
                 fnames2.append("  ").append(filenames.get(i));
             }
-            bw.write(String.format("%8d %9.2f  %s\n", nSnapshots2, temp2, fnames2.toString()));
+            bw.write(String.format("%8d %9.3f  %s\n", nSnapshots2, temp2, fnames2.toString()));
             for (int i = 0; i < nSnapshots2; i++) {
-                bw.write(String.format("%8d %20.8g %20.8g\n", i+1, e2L1[i], e2L2[i]));
+                bw.write(String.format("%8d %20.10f %20.10f\n", i+1, e2L1[i], e2L2[i]));
             }
         } finally {
             bw?.close();

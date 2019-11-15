@@ -51,8 +51,8 @@ import ffx.algorithms.dynamics.thermostats.ThermostatEnum
 import ffx.algorithms.mc.MCLoop
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing
-
-import ffx.algorithms.thermodynamics.TransitionTemperedOSRW
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.OptimizationParameters
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Angle
@@ -114,8 +114,8 @@ boolean runRotamer = false;
 // Simulated Annealing
 boolean runSimulatedAnnealing = false;
 
-// OSRW
-boolean runOSRW = true;
+// OST
+boolean runOST = true;
 
 // Monte Carlo with KIC
 boolean runMCLoop = false;
@@ -123,7 +123,7 @@ boolean runMCLoop = false;
 // Local minimization mode
 boolean localMin = false;
 
-// Check if OSRW found any loop
+// Check if OST found any loop
 boolean loopBuildError = false;
 
 RotamerLibrary rLib = new RotamerLibrary(true);
@@ -142,7 +142,7 @@ cli.r(longOpt: 'report', args: 1, argName: '0.01', 'Interval to report thermodya
 cli.w(longOpt: 'write', args: 1, argName: '100.0', 'Interval to write out coordinates (psec).');
 cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
 cli.g(longOpt: 'bias', args: 1, argName: '0.01', 'Gaussian bias magnitude (kcal/mol).');
-cli.osrw(longOpt: 'OSRW', 'Run OSRW.');
+cli.ost(longOpt: 'OST', 'Run OST.');
 cli.sa(longOpt: 'simulatedAnnealing', 'Run simulated annealing.');
 cli.rot(longOpt: 'rotamer', 'Run rotamer optimization.');
 cli.mc(longOpt: 'mcLoop', 'Run Monte Carlo KIC');
@@ -200,9 +200,9 @@ if (options.e) {
     eps = Double.parseDouble(options.e);
 }
 
-// Run OSRW
-if (options.osrw) {
-    runOSRW = true;
+// Run OST
+if (options.ost) {
+    runOST = true;
 }
 
 // Gaussian bias magnitude (kcal/mol).
@@ -225,26 +225,20 @@ if (options.rot) {
     runRotamer = true;
 }
 
-// Run Transition Tempered OSRW
-if (options.tt) {
-    runTTOSRW = true;
-}
-
 // Default
-if (!(options.osrw && options.sa)) {
-    runOSRW = true;
+if (!(options.ost && options.sa)) {
+    runOST = true;
 }
 
 // Run MC Loop Optimization
 if (options.mc) {
     runMCLoop = true;
-    //  runOSRW = false;
     MCLoop mcLoop;
 }
 
 // Robust Default
 if (options.a) {
-    runOSRW = true;
+    runOST = true;
     runRotamer = true;
 }
 // Build loop with PDBFilter if an existing loop is not provided
@@ -395,15 +389,15 @@ RealSpaceData realSpaceData = new RealSpaceData(active,
 RefinementMinimize refinementMinimize = new RefinementMinimize(realSpaceData, RefinementMode.COORDINATES);
 
 if (localMin) {
-    runOSRW = false;
+    runOST = false;
 } else {
     // Minimization without vdW.
     refinementMinimize.minimize(eps);
     energy();
 }
 
-if (runOSRW) {
-    // Run OSRW.
+if (runOST) {
+    // Run OST.
     System.setProperty("vdwterm", "true");
     System.setProperty("vdw-cutoff", "7.0");
     System.setProperty("mpoleterm", "true");
@@ -462,35 +456,36 @@ if (runOSRW) {
     energy();
 
     boolean asynchronous = true;
-    Potential osrw;
-        osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy,
+    Potential ost;
+        ost = new OrthogonalSpaceTempering(refinementEnergy, refinementEnergy,
                 lambdaRestart, histogramRestart, active.getProperties(),
                 (temperature), timeStep, printInterval, saveInterval, asynchronous, sh);
-    osrw.setLambda(lambda);
-    osrw.setThetaMass(5.0e-19);
-    osrw.setOptimization(true, active);
+    ost.setLambda(lambda);
+    ost.setThetaMass(5.0e-19);
+    ost.getOptimizationParameters().setOptimization(true, active);
     // Create the MolecularDynamics instance.
-    MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(),
+    MolecularDynamics molDyn = new MolecularDynamics(active, ost, active.getProperties(),
             null, thermostat, integrator);
 
     if (runMCLoop) {
         mcLoop = new MCLoop(active, mcStepFrequency, molDyn.getThermostat(), loopStart, loopStop);
         molDyn.addMCListener(mcLoop);
         mcLoop.addMolDyn(molDyn);
-        mcLoop.addLambdaInterface(osrw.getLambdaInterface());
+        mcLoop.addLambdaInterface(ost.getLambdaInterface());
         mcLoop.setIterations(20);
     }
 
     molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
             fileType, restartInterval, dyn);
 
-    logger.info("Obtaining low energy coordinates");
-    double[] lowEnergyCoordinates = osrw.getOSRWOptimumCoordinates();
-    double currentOSRWOptimum = osrw.getOSRWOptimumEnergy();
+    logger.info("Obtaining low energy coordinates")
+    OptimizationParameters opt = ost.getOptimizationParameters()
+    double[] lowEnergyCoordinates = opt.getOptimumCoordinates()
+    double currentOSTOptimum = opt.getOptimumEnergy();
     if (lowEnergyCoordinates != null) {
         forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
     } else {
-        logger.info("OSRW stage did not succeed in finding a loop.");
+        logger.info("OST stage did not succeed in finding a loop.");
         loopBuildError = true;
     }
 }
@@ -558,14 +553,14 @@ if (!loopBuildError) {
 
     energy();
     if (size > 1) {
-        structureFile = new File("postOSRW." + String.format("%d", world.rank()) + "." + structureFile.getName());
+        structureFile = new File("postOST." + String.format("%d", world.rank()) + "." + structureFile.getName());
     } else {
-        structureFile = new File("postOSRW." + structureFile.getName());
+        structureFile = new File("postOST." + structureFile.getName());
     }
     saveAsPDB(structureFile);
 }
 
-if (runOSRW && size > 1) {
+if (runOST && size > 1) {
 
     DoubleBuf receiveBuffer = DoubleBuf.buffer(energyArray);
     if (!(world.rank() == 0)) {
@@ -630,7 +625,7 @@ if (runRotamer) {
     int finalResID = residuesToRO.get(residuesToRO.size() - 1).getResidueNumber();
 
     //Find best loop generated by multiple walkers
-    if (runOSRW && size > 1) {
+    if (runOST && size > 1) {
         world.barrier();
         int bestRank;
 

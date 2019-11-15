@@ -116,7 +116,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * with a solute (ie: water will never be perfectly flat like it would be
      * during surface tension experiments with pure water)
      */
-    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.080;
+    public static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.080;
+    public static final double DEFAULT_VDW_TO_SASA_OFFSET = 0.0;
     /**
      * Default solvent pressure for apolar models with an explicit volume term.
      * <p>
@@ -125,23 +126,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * <p>
      * For use with GaussVol volumes (i.e. a vdW volume), a larger solvent pressure of 0.125 is needed.
      */
-    private static final double DEFAULT_SOLVENT_PRESSURE = 0.06641;
-
+    public static final double DEFAULT_SOLVENT_PRESSURE = 0.06641;
+    public static final double DEFAULT_VDW_TO_SEV_OFFSET = 32.344;
     /**
      * Original crossover in Schnieders thesis: 3.0*(surface tension/solvent pressure)
      * <p>
      * Currently set to 9.0 to match Chandler et al. simulation data.
      */
-    private static final double DEFAULT_CROSSOVER = 9.0;
+    public static final double DEFAULT_CROSSOVER = 9.0;
 
     /**
      * Default probe radius for use with Gaussian Volumes.
      */
-    private static final double DEFAULT_GAUSSVOL_PROBE = 0.6;
+    public static final double DEFAULT_GAUSSVOL_PROBE = 0.6;
     /**
      * Default dielectric offset
      **/
-    private static final double DEFAULT_DIELECTRIC_OFFSET = 0.09;
+    public static final double DEFAULT_DIELECTRIC_OFFSET = 0.09;
     /**
      * Default constant for the Generalized Kirkwood cross-term.
      */
@@ -896,7 +897,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             int index = 0;
             for (Atom atom : atoms) {
                 isHydrogen[index] = atom.isHydrogen();
-                radii[index] = atom.getVDWType().radius / 2.0; //* rminToSigma;
+                radii[index] = atom.getVDWType().radius / 2.0 * rminToSigma;
                 radii[index] += probe;
                 volume[index] = fourThirdsPI * pow(radii[index], 3);
                 gamma[index] = 1.0;

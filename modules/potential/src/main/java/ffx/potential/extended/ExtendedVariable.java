@@ -70,7 +70,7 @@ import static ffx.potential.parameters.MultipoleType.zeroM;
  * interpolate linearly between end states. ESVs based on MultiResidue (e.g.
  * TitrationESV) place a multiplier in the term objects themselves. b. PME and
  * vdW scaling and derivatives are handled inside these classes' inner loops.
- * Softcoring follows the same form used by OSRW lambda.
+ * Softcoring follows the same form used by OST lambda.
  *
  * @author Stephen LuCore
  * @since 1.0
@@ -86,7 +86,7 @@ public abstract class ExtendedVariable {
     /* Lambda and derivative variables. */
     private double lambda = 1.0;                    // ESVs travel on {0,1}
     private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
-    private double halfThetaVelocity = 0.0;         // from OSRW, start theta with zero velocity
+    private double halfThetaVelocity = 0.0;         // from OST, start theta with zero velocity
 
     private StringBuilder SB = new StringBuilder();
     /**

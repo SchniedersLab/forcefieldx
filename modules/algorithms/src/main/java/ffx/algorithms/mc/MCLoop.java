@@ -123,7 +123,7 @@ public class MCLoop implements MonteCarloListener {
      */
     private final ForceFieldEnergy forceFieldEnergy;
     /**
-     * The LambdaInterface object being used by OSRW.
+     * The LambdaInterface object being used by OST.
      */
     private LambdaInterface lambdaInterface;
     private boolean skipAlgorithm = false;

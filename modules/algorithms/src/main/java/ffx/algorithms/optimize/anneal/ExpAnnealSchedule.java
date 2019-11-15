@@ -119,6 +119,11 @@ public class ExpAnnealSchedule implements AnnealingSchedule {
     }
 
     @Override
+    public double maxWindowLength() {
+        return 1.0;
+    }
+
+    @Override
     public double totalWindowLength() {
         return nWindows;
     }

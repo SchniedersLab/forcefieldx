@@ -40,8 +40,10 @@ package ffx.algorithms.thermodynamics;
 import java.io.PrintWriter;
 import java.io.Writer;
 
+import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering.Histogram;
+
 /**
- * Write out the TT-OSRW Histogram.
+ * Write out the Histogram.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -49,44 +51,44 @@ import java.io.Writer;
 class HistogramWriter extends PrintWriter {
 
     /**
-     * Private reference to the TTOSRW instance.
+     * Private reference to the Histogram instance.
      */
-    private TransitionTemperedOSRW transitionTemperedOSRW;
+    private Histogram histogram;
 
     /**
      * Constructor.
      *
-     * @param transitionTemperedOSRW The parent TTOSRW instance.
-     * @param writer                 The Writer to use.
+     * @param histogram The Histogram instance.
+     * @param writer    The Writer to use.
      */
-    HistogramWriter(TransitionTemperedOSRW transitionTemperedOSRW, Writer writer) {
+    HistogramWriter(Histogram histogram, Writer writer) {
         super(writer);
-        this.transitionTemperedOSRW = transitionTemperedOSRW;
+        this.histogram = histogram;
     }
 
     /**
      * Write the Histogram file.
      */
     void writeHistogramFile() {
-        printf("Temperature     %15.3f\n", transitionTemperedOSRW.temperature);
-        printf("Lambda-Mass     %15.8e\n", transitionTemperedOSRW.thetaMass);
-        printf("Lambda-Friction %15.8e\n", transitionTemperedOSRW.thetaFriction);
-        printf("Bias-Mag        %15.8e\n", transitionTemperedOSRW.biasMag);
-        printf("Bias-Cutoff     %15d\n", transitionTemperedOSRW.biasCutoff);
-        printf("Count-Interval  %15d\n", transitionTemperedOSRW.countInterval);
-        printf("Lambda-Bins     %15d\n", transitionTemperedOSRW.lambdaBins);
-        printf("FLambda-Bins    %15d\n", transitionTemperedOSRW.FLambdaBins);
-        printf("Flambda-Min     %15.8e\n", transitionTemperedOSRW.minFLambda);
-        printf("Flambda-Width   %15.8e\n", transitionTemperedOSRW.dFL);
+        printf("Temperature     %15.3f\n", histogram.temperature);
+        printf("Lambda-Mass     %15.8e\n", histogram.thetaMass);
+        printf("Lambda-Friction %15.8e\n", histogram.thetaFriction);
+        printf("Bias-Mag        %15.8e\n", histogram.biasMag);
+        printf("Bias-Cutoff     %15d\n", histogram.biasCutoff);
+        printf("Count-Interval  %15d\n", histogram.countInterval);
+        printf("Lambda-Bins     %15d\n", histogram.lambdaBins);
+        printf("FLambda-Bins    %15d\n", histogram.FLambdaBins);
+        printf("Flambda-Min     %15.8e\n", histogram.minFLambda);
+        printf("Flambda-Width   %15.8e\n", histogram.dFL);
         int flag = 0;
-        if (transitionTemperedOSRW.isTempering()) {
+        if (histogram.isTempering()) {
             flag = 1;
         }
         printf("Tempering       %15d\n", flag);
-        for (int i = 0; i < transitionTemperedOSRW.lambdaBins; i++) {
-            printf("%g", transitionTemperedOSRW.getRecursionKernelValue(i, 0));
-            for (int j = 1; j < transitionTemperedOSRW.FLambdaBins; j++) {
-                printf(" %g", transitionTemperedOSRW.getRecursionKernelValue(i, j));
+        for (int i = 0; i < histogram.lambdaBins; i++) {
+            printf("%g", histogram.getRecursionKernelValue(i, 0));
+            for (int j = 1; j < histogram.FLambdaBins; j++) {
+                printf(" %g", histogram.getRecursionKernelValue(i, j));
             }
             println();
         }

@@ -50,7 +50,6 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
-import ffx.potential.ForceFieldEnergyOpenMM;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -73,6 +72,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
@@ -82,7 +82,6 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
 
@@ -278,17 +277,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Circular FIFO queues will simply discard old elements.
      */
-    private CircularFifoQueue<DynamicsState> lastSnapshots;
+    private CircularFifoQueue<CoordinateSnapshot> lastSnapshots;
     /**
      * MC notification flag.
      */
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
+
     /**
      * Monte Carlo notification enumeration.
      */
     public enum MonteCarloNotification {
         NEVER, EACH_STEP, AFTER_DYNAMICS
     }
+
     /**
      * ESV System.
      */
@@ -357,8 +358,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 // TODO: Replace this with calls to the leaves of a proper tree structure.
                 // Unfortunately, neither Java, nor Apache Commons, nor Guava has an arbitrary tree implementing Collection.
                 // Nor does javax.swing have a quick "get me the leaves" method that I was able to find.
-                boolean ommLeaves = (potentialEnergy instanceof ForceFieldEnergyOpenMM ||
-                        potentialEnergy.getUnderlyingPotentials().stream().anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM));
+                boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream().
+                        anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
+                ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
                 if (ommLeaves) {
                     return new MolecularDynamicsOpenMM(assembly,
                             potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
@@ -384,7 +386,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 return DynamicsEngine.FFX;
             }
         } else {
-            if (potentialEnergy instanceof ffx.potential.ForceFieldEnergyOpenMM) {
+            // TODO: Replace this with a better check.
+            boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream().
+                    anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
+            ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
+            if (ommLeaves) {
                 return DynamicsEngine.OPENMM;
             } else {
                 return DynamicsEngine.FFX;
@@ -420,7 +426,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         dynSleepTime = properties.getInt("dynamics-sleep-nanos", DEFAULT_DYNAMICS_SLEEP_TIME);
-        logger.info(" Dyn sleep time: " + dynSleepTime);
 
         assemblies.get(0).compositeConfiguration = properties;
         mass = potentialEnergy.getMass();
@@ -527,6 +532,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         verboseDynamicsState = properties.getBoolean("md-verbose", false);
         done = true;
+
+        logger.info(" Molecular Dynamics instance created.");
     }
 
     /**
@@ -535,12 +542,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param properties          a
-     *                            {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a {@link ThermostatEnum} object.
-     * @param requestedIntegrator a
-     *                            {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      * @param esvSystem           a {@link ffx.potential.extended.ExtendedSystem} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
@@ -696,8 +701,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param printInterval    a double.
      * @param saveInterval     a double.
      * @param fileType         a String.
-     * @param restartFrequency the number of steps between writing restart
-     *                         files.
+     * @param restartFrequency the number of steps between writing restart files.
      * @param temperature      a double.
      * @param initVelocities   a boolean.
      * @param dyn              a {@link java.io.File} object.
@@ -714,21 +718,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         if (integrator instanceof Stochastic) {
             if (constantPressure) {
-                logger.log(basicLogging,"\n Stochastic dynamics in the NPT ensemble");
+                logger.log(basicLogging, "\n Stochastic dynamics in the NPT ensemble");
             } else {
-                logger.log(basicLogging,"\n Stochastic dynamics in the NVT ensemble");
+                logger.log(basicLogging, "\n Stochastic dynamics in the NVT ensemble");
             }
         } else if (!(thermostat instanceof Adiabatic)) {
             if (constantPressure) {
-                logger.log(basicLogging,"\n Molecular dynamics in the NPT ensemble");
+                logger.log(basicLogging, "\n Molecular dynamics in the NPT ensemble");
             } else {
-                logger.log(basicLogging,"\n Molecular dynamics in the NVT ensemble");
+                logger.log(basicLogging, "\n Molecular dynamics in the NVT ensemble");
             }
         } else {
             if (constantPressure) {
                 logger.severe("\n NPT Molecular dynamics requires a thermostat");
             } else {
-                logger.log(basicLogging,"\n Molecular dynamics in the NVE ensemble");
+                logger.log(basicLogging, "\n Molecular dynamics in the NVE ensemble");
             }
         }
 
@@ -844,8 +848,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param printInterval  the number of steps between loggging updates.
      * @param saveInterval   the number of steps between saving snapshots.
      * @param temperature    the target temperature.
-     * @param initVelocities true to reset velocities from a Maxwell
-     *                       distribution.
+     * @param initVelocities true to reset velocities from a Maxwell distribution.
      * @param dyn            the Dynamic restart file.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
@@ -1283,7 +1286,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         double deltaPE = currentPotentialEnergy - priorPE;
 
-        DynamicsState currState = new DynamicsState();
+        CoordinateSnapshot currState = new CoordinateSnapshot();
         currState.storeState();
         lastSnapshots.add(currState);
 
@@ -1317,7 +1320,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 timeString);
 
         for (int is = 0; is < numSnaps; is++) {
-            DynamicsState oldState = lastSnapshots.poll();
+            CoordinateSnapshot oldState = lastSnapshots.poll();
             if (oldState != null) {
                 oldState.revertState();
             }
@@ -1382,6 +1385,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Returns the associated dynamics file.
+     *
      * @return
      */
     public File getDynFile() {
@@ -1456,6 +1460,33 @@ public class MolecularDynamics implements Runnable, Terminatable {
             throw new Exception();
         }
         dynamicsState.revertState();
+    }
+
+    /**
+     * More limited version of a DynamicsState, storing only coordinates.
+     * TODO: Make DynamicsState more flexible and let it store any combination of variables.
+     */
+    protected class CoordinateSnapshot {
+        final double[] xBak;
+
+        CoordinateSnapshot() {
+            xBak = new double[numberOfVariables];
+        }
+
+        void storeState() {
+            arraycopy(x, 0, xBak, 0, numberOfVariables);
+        }
+
+        void revertState() {
+            arraycopy(xBak, 0, x, 0, numberOfVariables);
+            Atom[] atoms = molecularAssembly.getActiveAtomArray();
+            for (int i = 0; i < atoms.length; i++) {
+                int i3 = 3 * i;
+                double[] newXYZ = new double[3];
+                arraycopy(xBak, i3, newXYZ, 0, 3);
+                atoms[i].setXYZ(newXYZ);
+            }
+        }
     }
 
     protected class DynamicsState {
@@ -1652,16 +1683,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @return a int.
      */
     public int getIntervalSteps() {
-        return 1;
-    }
-
-    /**
-     * <p>
-     * getNumAtoms.</p>
-     *
-     * @return a int.
-     */
-    public int getNumAtoms() {
         return 1;
     }
 

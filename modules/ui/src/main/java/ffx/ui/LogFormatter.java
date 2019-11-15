@@ -60,13 +60,11 @@ public class LogFormatter extends SimpleFormatter {
     /**
      * Constructor for the LogFormatter.
      *
-     * @param debug      If debug is true, then LogFormatter is equivalent to
-     *                   {@link SimpleFormatter}.
+     * @param debug      If debug is true, then LogFormatter is equivalent to {@link SimpleFormatter}.
      * @param mpiLogging Configure for MPI logging.
      * @since 1.0
      */
     LogFormatter(boolean debug, boolean mpiLogging) {
-
         this.debug = debug;
         this.mpiLogging = mpiLogging;
     }
@@ -84,9 +82,7 @@ public class LogFormatter extends SimpleFormatter {
      */
     @Override
     public String format(LogRecord record) {
-
         String message;
-
         if (debug || record.getLevel().intValue() >= warningLevel) {
             message = super.format(record);
         } else {
@@ -102,11 +98,7 @@ public class LogFormatter extends SimpleFormatter {
             if (size > 1) {
                 if (mpiLogging) {
                     String[] lines = message.split("\n");
-                    message = String.format(" [%d]%s", rank, lines[0]);
-                    int numLines = lines.length;
-                    for (int i = 1; i < numLines; i++) {
-                        message = message.concat(String.format("\n [%d]%s", rank, lines[i]));
-                    }
+                    message = mpiFormat(size, rank, lines);
                 } else if (rank != 0) {
                     message = null;
                 }
@@ -116,5 +108,24 @@ public class LogFormatter extends SimpleFormatter {
         }
 
         return message;
+    }
+
+    /**
+     * Prepend the MPI rank to a line of text to give: " [Rank]line"
+     *
+     * @param size Number of MPI processes.
+     * @param rank Rank of this MPI processs.
+     * @param lines The String to format split by new line characters.
+     * @return " [Rank]line"
+     */
+    private String mpiFormat(int size, int rank, String[] lines) {
+        int rankLen = Integer.toString(size - 1).length();
+        String formatString = " [%" + rankLen + "d]%s";
+        StringBuilder sb = new StringBuilder(String.format(formatString, rank, lines[0]));
+        for (int i = 1; i < lines.length; i++) {
+            sb.append("\n");
+            sb.append(String.format(formatString, rank, lines[i]));
+        }
+        return sb.toString();
     }
 }
