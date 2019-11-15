@@ -185,6 +185,8 @@ class Volume extends PotentialScript {
         gaussVol.setSolventPressure(solventPressure)
         double surfaceTension = properties.getDouble("surface-tension", GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION)
         gaussVol.setSurfaceTension(surfaceTension)
+        double crossOver = properties.getDouble("cross-over", GeneralizedKirkwood.DEFAULT_CROSSOVER)
+        gaussVol.setCrossOver(crossOver);
 
         if (!includeOffsets) {
             gaussVol.setVolumeOffset(0.0)
@@ -221,8 +223,8 @@ class Volume extends PotentialScript {
         logger.info(format(" Surface Area Energy: %8.4f (kcal/mol)", gaussVol.getSurfaceAreaEnergy()))
 
         logger.info(format("\n Effective Radius:    %8.4f (Ang)", effectiveRadius))
+        logger.info(format("\n Cross-over Radius:   %8.4f (Ang)", crossOver))
         logger.info(format(" Volume + SA Energy:  %8.4f (kcal/mol)", gaussVol.getEnergy()))
-
 
         // Set JUnit testing variables based on output volume and surface area
         totalVolume = gaussVol.getVolume()

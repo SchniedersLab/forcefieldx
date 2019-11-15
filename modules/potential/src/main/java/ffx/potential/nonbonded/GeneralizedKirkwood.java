@@ -639,6 +639,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
             logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", solventPressue));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
+            logger.info(format("   Cavitation Cross-Over Radius:       %8.3f (A)", crossOver));
         }
 
         // Print out all Base Radii
