@@ -125,7 +125,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * <p>
      * For use with GaussVol volumes (i.e. a vdW volume), a larger solvent pressure of 0.125 is needed.
      */
-    private static final double DEFAULT_SOLVENT_PRESSURE = 0.06962;
+    private static final double DEFAULT_SOLVENT_PRESSURE = 0.06641;
 
     /**
      * Original crossover in Schnieders thesis: 3.0*(surface tension/solvent pressure)
@@ -896,7 +896,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             int index = 0;
             for (Atom atom : atoms) {
                 isHydrogen[index] = atom.isHydrogen();
-                radii[index] = atom.getVDWType().radius / 2.0 * rminToSigma;
+                radii[index] = atom.getVDWType().radius / 2.0; //* rminToSigma;
                 radii[index] += probe;
                 volume[index] = fourThirdsPI * pow(radii[index], 3);
                 gamma[index] = 1.0;

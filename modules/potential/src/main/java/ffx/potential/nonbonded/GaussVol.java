@@ -210,18 +210,15 @@ public class GaussVol {
     /**
      * Solvent pressure in kcal/mol/Ang^3.
      * Original value from Schnieders thesis work: 0.0327
-     * Value based on testing with Schnieders thesis test set, Sept 2019: 0.11337
      */
-    private double solventPressure = 0.06962;
+    private double solventPressure = 0.06641;
     /**
      * Volume offset in Ang^3
-     * Set based on comparison of FFX Volumes for small alkanes (methane-decane)
-     * to Tinker Solvent-Accessible Volumes (using H and a probe of 1.4 in Tinker)
+     * Set based on comparison of FFX Volumes for small molecules to Tinker
+     * Solvent-Accessible Volumes (not using H and a probe of 1.4 in Tinker)
      * With a probe radius of 0.0: 27.939
      */
-    //private double volumeOffsetVdwToSEV = 30.744;
-    //private double volumeOffsetVdwToSEV = 0.0;
-    private double volumeOffsetVdwToSEV = 30.639;
+    private double volumeOffsetVdwToSEV = 32.344;
     /**
      * Surface Area offset in Ang^2
      * Set based on comparison of FFX Surface Areas for small alkanes (methane-decane)

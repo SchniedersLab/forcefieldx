@@ -150,7 +150,7 @@ class Volume extends PotentialScript {
                 isHydrogen[index] = false
             }
             // TODO: determine effects of using rmin vs sigma for larger nt's
-            radii[index] = atom.getVDWType().radius / 2.0 * rminToSigma
+            radii[index] = atom.getVDWType().radius / 2.0 //* rminToSigma
             radii[index] += probe
             volume[index] = fourThirdsPI * pow(radii[index], 3)
             positions[index][0] = atom.getX()
@@ -164,6 +164,11 @@ class Volume extends PotentialScript {
         gaussVol.computeVolumeAndSA(positions)
         logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
         if(verbose){
+            index = 0
+            for (Atom atom : atoms) {
+                logger.info("Radius for atom "+atom.name+": "+radii[index]+"\n")
+                index++
+            }
             gaussVol.printTree()
         }
         logger.info(format("\n Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
