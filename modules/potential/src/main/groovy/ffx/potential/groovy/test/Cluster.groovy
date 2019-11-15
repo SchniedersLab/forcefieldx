@@ -36,6 +36,7 @@
 //
 //******************************************************************************
 
+import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
 
 import picocli.CommandLine.Command
@@ -85,9 +86,51 @@ class Cluster extends PotentialScript {
             logger.info(helpString())
             return this
         }
-
+        File file = new File(filenames.get(0));
+        int nDim = 0;
+        double[][] distMatrix;
         // TODO: Read in the RMSD matrix.
-
+        try {
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            String data = br.readLine();
+            // Check for blank lines at the top of the file
+            while (data != null && data.trim().equals("")) {
+                data = br.readLine();
+            }
+            if (data == null) {
+                logger.severe("No Data in input file.");
+            }
+            String[] tokens = data.trim().split("\t");
+            // Expect a n x n matrix of distance values.
+            nDim = tokens.size();
+            distMatrix = new double[nDim][nDim];
+            for(int i=0; i<nDim; i++){
+                for(int j=0; j<nDim; j++){
+                    distMatrix[i][j] = tokens[j].toDouble();
+                }
+                data = br.readLine();
+                if (data != null) {
+                    logger.info("Next Line:");
+                    tokens = data.trim().split("\t");
+                }
+            }
+            br.close();
+            fr.close();
+        } catch (IOException e) {
+            logger.severe(e.toString());
+        }
+        if(distMatrix == null){
+            logger.severe("Input read attempt failed.");
+        }
+        String tempString="";
+        for(int i =0; i<nDim; i++){
+            for(int j = 0; j<nDim; j++){
+                tempString+=String.format("%f \t", distMatrix[i][j]);
+            }
+            tempString+="\n";
+        }
+        logger.info(tempString);
         // TODO: Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
 
