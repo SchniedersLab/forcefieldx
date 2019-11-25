@@ -115,6 +115,7 @@ class Cluster extends PotentialScript {
 //                    tempString += k;
 //                }
 //                logger.info(tempString);
+//                logger.info("\n\n");
                 for(int j=0; j<nDim; j++){
                      tokens2[j] = tokens[j].toDouble();
                 }
@@ -144,16 +145,19 @@ class Cluster extends PotentialScript {
         // Use the org.apache.commons.math3.ml.clustering package.
         KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(4,10000);
         List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
+        int id = 0;
         for(double [] i : distMatrix){
-            myClusterables.add(new ClusterWrapper(i));
+            myClusterables.add(new ClusterWrapper(i, id));
+            id++;
         }
         List<CentroidCluster<ClusterWrapper>> kClusters= kClusterer.cluster(myClusterables);
 
         for(int i=0; i<kClusters.size();i++){
-            logger.info(String.format("Cluster " + i));
+            logger.info(String.format("Cluster: " + i));
             for (ClusterWrapper clusterWrapper:kClusters.get(i).getPoints()){
-                logger.info(String.format("Place holder"));
+                logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
             }
+            logger.info(String.format("\n"));
         }
 
         // TODO: Output the clusters in a useful way.
@@ -163,12 +167,18 @@ class Cluster extends PotentialScript {
 }
 class ClusterWrapper implements Clusterable{
     private double[] points;
+    private final int UUID;
 
-    public ClusterWrapper(double[] distances) {
+    public ClusterWrapper(double[] distances, int ID) {
         this.points = distances;
+        UUID=ID;
     }
 
     public double[] getPoint() {
         return points;
+    }
+
+    public int getUUID() {
+        return UUID;
     }
 }
