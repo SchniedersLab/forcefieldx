@@ -38,10 +38,13 @@
 
 import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
-
+import org.apache.commons.math3.ml.clustering.CentroidCluster
+import org.apache.commons.math3.ml.clustering.Clusterable
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 
 /**
  * The Cluster script clusters structures by RMSD.
@@ -88,7 +91,7 @@ class Cluster extends PotentialScript {
         }
         File file = new File(filenames.get(0));
         int nDim = 0;
-        double[][] distMatrix;
+        List<double []> distMatrix = new ArrayList<double []>();
         // TODO: Read in the RMSD matrix.
         try {
             FileReader fr = new FileReader(file);
@@ -104,14 +107,20 @@ class Cluster extends PotentialScript {
             String[] tokens = data.trim().split("\t");
             // Expect a n x n matrix of distance values.
             nDim = tokens.size();
-            distMatrix = new double[nDim][nDim];
-            for(int i=0; i<nDim; i++){
+//            distMatrix = new double[nDim][nDim];
+            for(int i=0; i<nDim; i++) {
+//                String tempString=new String();
+                double[] tokens2 = new double[nDim];
+//                for (String k : tokens) {
+//                    tempString += k;
+//                }
+//                logger.info(tempString);
                 for(int j=0; j<nDim; j++){
-                    distMatrix[i][j] = tokens[j].toDouble();
+                     tokens2[j] = tokens[j].toDouble();
                 }
+                distMatrix.add(tokens2);
                 data = br.readLine();
                 if (data != null) {
-                    logger.info("Next Line:");
                     tokens = data.trim().split("\t");
                 }
             }
@@ -124,18 +133,42 @@ class Cluster extends PotentialScript {
             logger.severe("Input read attempt failed.");
         }
         String tempString="";
-        for(int i =0; i<nDim; i++){
+        for(double[] i : distMatrix){
             for(int j = 0; j<nDim; j++){
-                tempString+=String.format("%f \t", distMatrix[i][j]);
+                tempString+=String.format("%f\t", i[j]);
             }
             tempString+="\n";
         }
         logger.info(tempString);
         // TODO: Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
+        KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(4,10000);
+        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
+        for(double [] i : distMatrix){
+            myClusterables.add(new ClusterWrapper(i));
+        }
+        List<CentroidCluster<ClusterWrapper>> kClusters= kClusterer.cluster(myClusterables);
+
+        for(int i=0; i<kClusters.size();i++){
+            logger.info(String.format("Cluster " + i));
+            for (ClusterWrapper clusterWrapper:kClusters.get(i).getPoints()){
+                logger.info(String.format("Place holder"));
+            }
+        }
 
         // TODO: Output the clusters in a useful way.
 
         return this
+    }
+}
+class ClusterWrapper implements Clusterable{
+    private double[] points;
+
+    public ClusterWrapper(double[] distances) {
+        this.points = distances;
+    }
+
+    public double[] getPoint() {
+        return points;
     }
 }
