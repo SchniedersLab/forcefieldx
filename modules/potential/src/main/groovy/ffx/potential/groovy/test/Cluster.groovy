@@ -152,15 +152,15 @@ class Cluster extends PotentialScript {
         }
         List<CentroidCluster<ClusterWrapper>> kClusters= kClusterer.cluster(myClusterables);
 
+        // TODO: Output the clusters in a useful way.
+//Temp output method prints to screen
         for(int i=0; i<kClusters.size();i++){
             logger.info(String.format("Cluster: " + i));
             for (ClusterWrapper clusterWrapper:kClusters.get(i).getPoints()){
                 logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
             }
-            logger.info(String.format("\n"));
+            logger.info(String.format(""));
         }
-
-        // TODO: Output the clusters in a useful way.
 
         return this
     }
