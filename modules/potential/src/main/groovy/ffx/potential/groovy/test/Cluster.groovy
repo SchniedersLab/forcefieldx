@@ -143,7 +143,7 @@ class Cluster extends PotentialScript {
         logger.info(tempString);
         // TODO: Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
-        KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(4,10000);
+        KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(7,10000);
         List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
         int id = 0;
         for(double [] i : distMatrix){
