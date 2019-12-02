@@ -46,10 +46,16 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
+import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
+
+import java.util.logging.Level;
 
 /**
- * The Cluster script clusters structures by RMSD.
+ * The Cluster script clusters structures utilizing RMSD.
+ *
+ * @author Aaron J. Nessler
+ * @author Mallory R. Tollefson
+ * @author Michael J. Schnieders
  * <br>
  * Usage:
  * <br>
@@ -62,14 +68,14 @@ class Cluster extends PotentialScript {
      * -a or --algorithm Clustering algorithm to use.
      */
     @Option(names = ['-a', '--algorithm'], paramLabel = "kmeans",
-            description = "Print out a file with density adjusted to match mean calculated density")
+            description = "Algorithm to be used during clustering.")
     private String algorithm = "kmeans";
 
     /**
      * -k or --clusters Clustering algorithm to use.
      */
     @Option(names = ['-k', '--clusters'], paramLabel = "3",
-            description = "Print out a file with density adjusted to match mean calculated density")
+            description = "Number of desired clusters for the input data.")
     private int clusters = 3;
 
     /**
@@ -116,15 +122,8 @@ class Cluster extends PotentialScript {
             String[] tokens = data.trim().split("\t");
             // Expect a n x n matrix of distance values.
             nDim = tokens.size();
-//            distMatrix = new double[nDim][nDim];
             for(int i=0; i<nDim; i++) {
-//                String tempString=new String();
                 double[] tokens2 = new double[nDim];
-//                for (String k : tokens) {
-//                    tempString += k;
-//                }
-//                logger.info(tempString);
-//                logger.info("\n\n");
                 for(int j=0; j<nDim; j++){
                      tokens2[j] = tokens[j].toDouble();
                 }
@@ -142,32 +141,81 @@ class Cluster extends PotentialScript {
         if(distMatrix == null){
             logger.severe("Input read attempt failed.");
         }
-        String tempString="";
-        for(double[] i : distMatrix){
-            for(int j = 0; j<nDim; j++){
-                tempString+=String.format("%f\t", i[j]);
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(String.format("Original Distance Matrix:\n"))
+            String tempString = "";
+            for (double[] i : distMatrix) {
+                for (int j = 0; j < nDim; j++) {
+                    tempString += String.format("%f\t", i[j]);
+                }
+                tempString += "\n";
             }
-            tempString+="\n";
+            logger.finest(tempString);
         }
-        logger.info(tempString);
+
+        // Min-Max normalization of distances (not important if all inputs are on the same scale)
+//        double minimumDist=0;
+//        double maximumDist=0;
+//        for (double[] distArray in distMatrix){
+//            for (double dist in distArray){
+//                if( minimumDist>dist){
+//                    minimumDist = dist;
+//                }
+//                if(maximumDist<dist){
+//                    maximumDist = dist;
+//                }
+//            }
+//        }
+//        for(int i = 0; i<distMatrix.size(); i++) {
+//            for (int j = 0; j < distMatrix.get(i).size(); j++) {
+//                distMatrix.get(i)[j] = (distMatrix.get(i)[j] - minimumDist) / (maximumDist - minimumDist);
+//            }
+//        }
+//
+//        if (logger.isLoggable(Level.FINEST)) {
+//            logger.finest(String.format("\nNormalized Matrix:\n"));
+//            String tempString2 = "";
+//            for (double[] i : distMatrix) {
+//                for (int j = 0; j < nDim; j++) {
+//                    tempString2 += String.format("%f\t", i[j]);
+//                }
+//                tempString2 += "\n";
+//            }
+//            logger.finest(tempString2);
+//        }
+
         // TODO: Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
-        KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters,10000);
-        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
-        int id = 0;
-        for(double [] i : distMatrix){
-            myClusterables.add(new ClusterWrapper(i, id));
-            id++;
-        }
-        List<CentroidCluster<ClusterWrapper>> kClusters= kClusterer.cluster(myClusterables);
+//        if(algorithm.toUpperCase()=="KMEANS") {
+            KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
+            List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
+            int id = 0;
+            for (double[] i : distMatrix) {
+                myClusterables.add(new ClusterWrapper(i, id));
+                id++;
+            }
+            List<CentroidCluster<ClusterWrapper>> kClusters = kClusterer.cluster(myClusterables);
+//        }
 
         // TODO: Output the clusters in a useful way.
 //Temp output method prints to screen
+
         for(int i=0; i<kClusters.size();i++){
             logger.info(String.format("Cluster: " + i));
+            double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
             for (ClusterWrapper clusterWrapper:kClusters.get(i).getPoints()){
                 logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
+                double[] distArray = clusterWrapper.getPoint();
+                for( int j=0; j<distArray.size(); j++){
+                    sum[j]+=distArray[j];
+                }
             }
+            // Implement TWSS
+//            sum=sum/sum.size();
+//            double twss = 0
+//            for (ClusterWrapper clusterWrapper:kClusters.get(i).getPoints()){
+//                twss+=Math.sqrt(Math.pow(clusterWrapper.getPoint()-sum,2))
+//            }
             logger.info(String.format(""));
         }
 
