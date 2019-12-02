@@ -66,6 +66,13 @@ class Cluster extends PotentialScript {
     private String algorithm = "kmeans";
 
     /**
+     * -k or --clusters Clustering algorithm to use.
+     */
+    @Option(names = ['-k', '--clusters'], paramLabel = "3",
+            description = "Print out a file with density adjusted to match mean calculated density")
+    private int clusters = 3;
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -145,7 +152,7 @@ class Cluster extends PotentialScript {
         logger.info(tempString);
         // TODO: Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
-        KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(7,10000);
+        KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters,10000);
         List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
         int id = 0;
         for(double [] i : distMatrix){
