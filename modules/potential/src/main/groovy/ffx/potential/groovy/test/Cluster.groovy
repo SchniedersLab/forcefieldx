@@ -36,6 +36,8 @@
 //
 //******************************************************************************
 
+package test
+
 import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
 import org.apache.commons.math3.ml.clustering.CentroidCluster

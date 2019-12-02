@@ -165,7 +165,7 @@ class PACCOM extends PotentialScript {
 
 
 
-
+// Rest comes from Cart2Frac which this script was based off of...
 
         File saveDir = baseDir
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
