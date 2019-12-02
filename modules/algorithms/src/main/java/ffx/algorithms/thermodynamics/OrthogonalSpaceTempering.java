@@ -1548,12 +1548,27 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * Read a Histogram restart file (all ranks).
          */
         void readRestart() {
-            if (histogramFile != null && histogramFile.exists()) {
+            File histogramToRead = histogramFile;
+            // Independent walkers will write Histogram re-starts into the subdirectories,
+            // but we might be restarting from a Histogram in the parent directory.
+            if (histogramFile != null && !histogramFile.exists()) {
+                // Try to find a restart in the parent directory:
+                // Update /path/to/filename.his --> /path/to/../filename.his
+                String histogramString = histogramFile.getAbsolutePath();
+                String path = FilenameUtils.getPath(histogramString);
+                String name = FilenameUtils.getName(histogramString);
+                String parentHistogram = File.separator + path + ".." + File.separator + name;
+                histogramToRead = new File(parentHistogram);
+                if (histogramToRead.exists()) {
+                    logger.info(" Reading parent histogram: " + parentHistogram);
+                }
+            }
+            if (histogramToRead != null && histogramToRead.exists()) {
                 try {
-                    HistogramReader histogramReader = new HistogramReader(this, new FileReader(histogramFile));
+                    HistogramReader histogramReader = new HistogramReader(this, new FileReader(histogramToRead));
                     histogramReader.readHistogramFile();
                     updateFLambda(true, false);
-                    logger.info(format("\n Continuing OST histogram from %s.", histogramFile.getName()));
+                    logger.info(format("\n Read OST histogram from %s.", histogramFile.getName()));
                 } catch (FileNotFoundException ex) {
                     logger.info(" Histogram restart file could not be found and will be ignored.");
                 }

@@ -37,13 +37,14 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
+
 import org.apache.commons.io.FilenameUtils
 import org.jogamp.vecmath.Point3d
 
 import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.bonded.Atom
-import ffx.potential.nonbonded.implicit.Octree
+import ffx.potential.nonbonded.implicit.OldOctree
 
 int maxTreeDepth = 10;
 int maxAtomsPerVolume = 20;
@@ -109,7 +110,7 @@ Point3d corner = new Point3d(minX, minY, minZ);
 double edgeLength = Math.max(Math.max(maxX - minX, maxY - minY), maxZ - minZ);
 logger.info(String.format(" Total cube volume: %10.2g\n", Math.pow(edgeLength, 3)));
 
-Octree octree = new Octree(0, corner, edgeLength);
+OldOctree octree = new OldOctree(0, corner, edgeLength);
 octree.setMaxTreeDepth(maxTreeDepth);
 octree.setMaxAtomsPerVolume(maxAtomsPerVolume);
 octree.setLeaveStraddlersInParent(straddle);
