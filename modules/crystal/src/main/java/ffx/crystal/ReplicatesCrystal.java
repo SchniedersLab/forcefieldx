@@ -184,9 +184,12 @@ public class ReplicatesCrystal extends Crystal {
      * @param density Target density.
      * @param mass    Mass of the ReplicatesCrystal.
      */
-    public void randomParameters(double density, double mass) {
-        unitCell.randomParameters(density, mass);
-        updateReplicatesDimensions();
+    public boolean randomParameters(double density, double mass) {
+        boolean succeed = unitCell.randomParameters(density, mass);
+        if (succeed) {
+            updateReplicatesDimensions();
+        }
+        return succeed;
     }
 
     /**

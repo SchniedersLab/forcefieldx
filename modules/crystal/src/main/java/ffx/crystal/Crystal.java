@@ -543,7 +543,6 @@ public class Crystal {
      */
     public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta,
                                             double gamma) {
-
         if (checkRestrictions) {
             if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
                 if (logger.isLoggable(Level.FINE)) {
@@ -656,10 +655,13 @@ public class Crystal {
                 currentDensity, toShortString()));
     }
 
-    public void randomParameters(double dens, double mass) {
+    public boolean randomParameters(double dens, double mass) {
         double[] params = SpaceGroup.resetUnitCellParams(crystalSystem);
-        changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
-        setDensity(dens, mass);
+        boolean succeed = changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
+        if (succeed) {
+            setDensity(dens, mass);
+        }
+        return succeed;
     }
 
     /**
