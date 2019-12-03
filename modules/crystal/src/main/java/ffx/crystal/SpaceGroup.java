@@ -151,7 +151,7 @@ public class SpaceGroup {
     /**
      * True for a Sohncke group (non-enantiogenic).
      */
-    public final boolean chiral;
+    public final boolean respectsChirality;
     /**
      * realspace ASU limit
      */
@@ -193,7 +193,7 @@ public class SpaceGroup {
         this.limit = limit;
         this.asulim = asulim;
         this.pdbName = pdbName;
-        this.chiral = sohnckeGroup(number);
+        this.respectsChirality = sohnckeGroup(number);
         this.symOps = new ArrayList<>(Arrays.asList(symOps));
 
         // ToDo: Crystal systems are subdivided into crystal classes. This info needs to be added to each space group.
@@ -239,8 +239,8 @@ public class SpaceGroup {
         return lower <= x && x <= upper;
     }
 
-    public boolean isChiral() {
-        return chiral;
+    public boolean respectsChirality() {
+        return respectsChirality;
     }
 
     /**

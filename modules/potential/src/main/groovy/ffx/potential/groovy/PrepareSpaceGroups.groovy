@@ -177,11 +177,11 @@ class PrepareSpaceGroups extends PotentialScript {
                 }
             }
 
-            if (chiral && !spacegroup.isChiral()) {
+            if (chiral && !spacegroup.respectsChirality()) {
                 continue
             }
 
-            if (achiral && spacegroup.isChiral()) {
+            if (achiral && spacegroup.respectsChirality()) {
                 continue
             }
 

@@ -1082,8 +1082,8 @@
         </snapshotRepository>
         <repository>
             <uniqueVersion>false</uniqueVersion>
-            <id>Releases</id>
-            <name>Local Maven Release Repository</name>
+            <id>github</id>
+            <name>GitHub SchniedersLab Apache Maven Packages</name>
             <url>${release.repo}</url>
         </repository>
     </distributionManagement>
