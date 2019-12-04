@@ -676,6 +676,13 @@ public class Barostat implements CrystalPotential {
         molecularAssembly.moveToFractionalCoordinates();
     }
 
+    /**
+     * Attempt an MC move on a lattice parameter.
+     *
+     * @param currentE The current potential energy.
+     *                 
+     * @return The potential energy after attempting the MC move.
+     */
     private double applyBarostat(double currentE) {
         // Determine the current molecular centers of mass in fractional coordinates.
         molecularAssembly.computeFractionalCoordinates();
@@ -692,7 +699,7 @@ public class Barostat implements CrystalPotential {
 
         switch (spaceGroup.crystalSystem) {
             case MONOCLINIC: {
-                int move = (int) floor(random() * 5.0);
+                int move = (int) floor(random() * 4.0);
                 switch (move) {
                     case 0:
                         currentE = mcA(currentE);
@@ -706,9 +713,6 @@ public class Barostat implements CrystalPotential {
                     case 3:
                         currentE = mcBeta(currentE);
                         break;
-                    case 4:
-                        currentE = mcUNIT(currentE);
-                        break;
                     default:
                         logger.severe(" Barostat programming error.");
                 }
@@ -716,7 +720,7 @@ public class Barostat implements CrystalPotential {
             }
             case ORTHORHOMBIC: {
                 // alpha == beta == gamma == 90.0
-                int move = (int) floor(random() * 4.0);
+                int move = (int) floor(random() * 3.0);
                 switch (move) {
                     case 0:
                         currentE = mcA(currentE);
@@ -727,9 +731,6 @@ public class Barostat implements CrystalPotential {
                     case 2:
                         currentE = mcC(currentE);
                         break;
-                    case 3:
-                        currentE = mcUNIT(currentE);
-                        break;
                     default:
                         logger.severe(" Barostat programming error.");
                 }
@@ -737,16 +738,13 @@ public class Barostat implements CrystalPotential {
             }
             case TETRAGONAL: {
                 // (a == b, alpha == beta == gamma == 90.0
-                int move = (int) floor(random() * 3.0);
+                int move = (int) floor(random() * 2.0);
                 switch (move) {
                     case 0:
                         currentE = mcAB(currentE);
                         break;
                     case 1:
                         currentE = mcC(currentE);
-                        break;
-                    case 2:
-                        currentE = mcUNIT(currentE);
                         break;
                     default:
                         logger.severe(" Barostat programming error.");
@@ -756,7 +754,7 @@ public class Barostat implements CrystalPotential {
             case TRIGONAL: {
                 if (a == b && b == c && alpha == beta && beta == gamma) {
                     // Rombohedral axes, primitive cell.
-                    int move = (int) floor(random() * 3.0);
+                    int move = (int) floor(random() * 2.0);
                     switch (move) {
                         case 0:
                             currentE = mcABC(currentE);
@@ -764,24 +762,18 @@ public class Barostat implements CrystalPotential {
                         case 1:
                             currentE = mcABG(currentE);
                             break;
-                        case 2:
-                            currentE = mcUNIT(currentE);
-                            break;
                         default:
                             logger.severe(" Barostat programming error.");
                     }
                 } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
                     // Hexagonal axes, triple obverse cell.
-                    int move = (int) floor(random() * 3.0);
+                    int move = (int) floor(random() * 2.0);
                     switch (move) {
                         case 0:
                             currentE = mcAB(currentE);
                             break;
                         case 1:
                             currentE = mcC(currentE);
-                            break;
-                        case 2:
-                            currentE = mcUNIT(currentE);
                             break;
                         default:
                             logger.severe(" Barostat programming error.");
@@ -793,16 +785,13 @@ public class Barostat implements CrystalPotential {
             }
             case HEXAGONAL: {
                 // a == b, alpha == beta == 90.0, gamma == 120.0
-                int move = (int) floor(random() * 3.0);
+                int move = (int) floor(random() * 2.0);
                 switch (move) {
                     case 0:
                         currentE = mcAB(currentE);
                         break;
                     case 1:
                         currentE = mcC(currentE);
-                        break;
-                    case 2:
-                        currentE = mcUNIT(currentE);
                         break;
                     default:
                         logger.severe(" Barostat programming error.");
@@ -819,7 +808,7 @@ public class Barostat implements CrystalPotential {
                 if (a == b && b == c && alpha == 90.0 && beta == 90.0 && gamma == 90.0) {
                     currentE = mcABC(currentE);
                 } else {
-                    int move = (int) floor(random() * 7.0);
+                    int move = (int) floor(random() * 6.0);
                     switch (move) {
                         case 0:
                             currentE = mcA(currentE);
@@ -838,9 +827,6 @@ public class Barostat implements CrystalPotential {
                             break;
                         case 5:
                             currentE = mcGamma(currentE);
-                            break;
-                        case 6:
-                            currentE = mcUNIT(currentE);
                             break;
                         default:
                             logger.severe(" Barostat programming error.");

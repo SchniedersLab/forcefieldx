@@ -169,17 +169,24 @@ if [ $hasAwkSed ]; then
         EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
     fi
 
-    CVERS="`nvcc --version`"
-    if [ ! -z "$CVERS" ]; then
-      CVERS="`echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//'`"
-      NVFIRST="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }'`"
-      NVSEC="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $2; }'`"
-      if [ $NVFIRST -gt 10 ]; then
-        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
-      elif [ $NVFIRST -lt 10 ]; then
-        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
-      elif [ $NVSEC -ne 1 ]; then
-        echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+    nvccComm='which nvcc'
+    hasNVCC=''
+    if [ -x "$nvccComm" ]; then
+        hasNVCC='1'
+    fi
+    if [ $hasNVCC ]; then
+      CVERS="`nvcc --version`"
+      if [ ! -z "$CVERS" ]; then
+        CVERS="`echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//'`"
+        NVFIRST="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }'`"
+        NVSEC="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $2; }'`"
+        if [ $NVFIRST -gt 10 ]; then
+          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+        elif [ $NVFIRST -lt 10 ]; then
+          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+        elif [ $NVSEC -ne 1 ]; then
+          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+        fi
       fi
     fi
 else
