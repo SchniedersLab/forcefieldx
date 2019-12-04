@@ -42,6 +42,7 @@ import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
 import org.apache.commons.math3.ml.clustering.CentroidCluster
 import org.apache.commons.math3.ml.clustering.Clusterable
+import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -106,8 +107,9 @@ class Cluster extends PotentialScript {
         }
         File file = new File(filenames.get(0));
         int nDim = 0;
-        List<double []> distMatrix = new ArrayList<double []>();
-        // TODO: Read in the RMSD matrix.
+        List<double[]> distMatrix = new ArrayList<double[]>();
+        // TODO: Have FFX calculate RMSD rather than read them in... (likely requires separate script)
+        // Read in the RMSD matrix.
         try {
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
@@ -117,15 +119,15 @@ class Cluster extends PotentialScript {
                 data = br.readLine();
             }
             if (data == null) {
-                logger.severe("No Data in input file.");
+                logger.severe("No data in RMSD file.");
             }
             String[] tokens = data.trim().split("\t");
             // Expect a n x n matrix of distance values.
             nDim = tokens.size();
-            for(int i=0; i<nDim; i++) {
+            for (int i = 0; i < nDim; i++) {
                 double[] tokens2 = new double[nDim];
-                for(int j=0; j<nDim; j++){
-                     tokens2[j] = tokens[j].toDouble();
+                for (int j = 0; j < nDim; j++) {
+                    tokens2[j] = tokens[j].toDouble();
                 }
                 distMatrix.add(tokens2);
                 data = br.readLine();
@@ -138,7 +140,7 @@ class Cluster extends PotentialScript {
         } catch (IOException e) {
             logger.severe(e.toString());
         }
-        if(distMatrix == null){
+        if (distMatrix == null) {
             logger.severe("Input read attempt failed.");
         }
         if (logger.isLoggable(Level.FINEST)) {
@@ -184,40 +186,47 @@ class Cluster extends PotentialScript {
 //            logger.finest(tempString2);
 //        }
 
-        // TODO: Input the RMSD matrix to the clustering algorithm
+        // Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
-//        if(algorithm.toUpperCase()=="KMEANS") {
-            KMeansPlusPlusClusterer<ClusterWrapper> kClusterer = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
-            List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
-            int id = 0;
-            for (double[] i : distMatrix) {
-                myClusterables.add(new ClusterWrapper(i, id));
-                id++;
-            }
-            List<CentroidCluster<ClusterWrapper>> kClusters = kClusterer.cluster(myClusterables);
-//        }
+        KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
+        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
+        int id = 0;
+        for (double[] i : distMatrix) {
+            myClusterables.add(new ClusterWrapper(i, id));
+            id++;
+        }
+        List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
+
+        if (algorithm.toUpperCase() == "MULTIKMEANS") {
+            MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
+            kClusters = kClust2.cluster(myClusterables);
+        }
 
         // TODO: Output the clusters in a useful way.
-//Temp output method prints to screen
-
-        for(int i=0; i<kClusters.size();i++){
+        //Temp output method prints to screen
+        double ttwss = 0;
+        for (int i = 0; i < kClusters.size(); i++) {
             logger.info(String.format("Cluster: " + i));
             double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
-            for (ClusterWrapper clusterWrapper:kClusters.get(i).getPoints()){
+            for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
                 logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
                 double[] distArray = clusterWrapper.getPoint();
-                for( int j=0; j<distArray.size(); j++){
-                    sum[j]+=distArray[j];
+                for (int j = 0; j < distArray.size(); j++) {
+                    sum[j] += distArray[j];
                 }
             }
             // Implement TWSS
-//            sum=sum/sum.size();
-//            double twss = 0
-//            for (ClusterWrapper clusterWrapper:kClusters.get(i).getPoints()){
-//                twss+=Math.sqrt(Math.pow(clusterWrapper.getPoint()-sum,2))
-//            }
-            logger.info(String.format(""));
+            for(int j = 0; j<sum.size();j++) {
+                sum[j] = sum[j] / sum.size();
+            }
+            double twss = 0
+            for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
+                twss += Math.sqrt(Math.pow(clusterWrapper.getPoint()[0] - sum[0], 2) + Math.pow(clusterWrapper.getPoint()[1] - sum[1], 2) + Math.pow(clusterWrapper.getPoint()[2] - sum[2], 2))
+            }
+            logger.info(String.format("CLuster TWSS: %f", twss));
+            ttwss+=twss;
         }
+        logger.info(String.format("Total TWSS: %f", ttwss));
 
         return this
     }

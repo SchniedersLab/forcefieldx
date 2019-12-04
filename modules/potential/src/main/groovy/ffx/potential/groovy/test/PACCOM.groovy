@@ -90,6 +90,7 @@ class PACCOM extends PotentialScript {
     PACCOM run() {
 
         // The following should become flags at some point:
+        // PSUEDO: PARAMETERS INITIALIZED IN ORIGINAL PACCOM
 
         int n1 = 2; // 1st atom to fit
         int n2 = 6; // 2nd atom to fit
@@ -100,7 +101,7 @@ class PACCOM extends PotentialScript {
         int par2 = 6; // parameter for second round fitting (default is probably OK)
         int par3 = 8; // parameter for second round fitting (default is probably OK)
 
-
+        // PSUEDO: READ IN STRUCTURES
 
         if (!init()) {
             return
@@ -118,7 +119,7 @@ class PACCOM extends PotentialScript {
         // Get file
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
         logger.info("\n Calculating distance for: " + modelFilename)
-        // Now that the molecular assembly is obtained, we will center each system to the origin and
+        // PSUEDO: Now that the molecular assembly is obtained, we will center each system to the origin and
         //  record distances from each molecule to the origin for each crystal
         double[] origin = [0.0,0.0,0.0]
         double[][] distance1 = new double[assemblies.size()][assemblies[0].getMolecules()[0].getAtomList().size()];
@@ -131,11 +132,13 @@ class PACCOM extends PotentialScript {
             List<MSNode> molecules = system.getMolecules();
             List<Atom> atoms = system.getAtomList()
 
+            // Sum over molecules to determine center most in system
+
             coordinates = new double[atoms.size()][3]
             double[] cart = new double[3]
             double[] frac = new double[3]
 
-            //TODO: Currently assumes cartesian coordinates input (Masa's did the same). Flag for frac? idk
+            //TODO: Currently assumes cartesian coordinates input (Masa's did the same). Potential flag to support fracitonal?
             int molIndex = 0;
             for (MSNode molecule in molecules) {
                 double sx = 0.0;
@@ -159,13 +162,25 @@ class PACCOM extends PotentialScript {
             sysIndex++;
         }
 
+        //TODO: PSEUDO: SORT BY DISTANCE TO CENTER OF ALL ATOMS TO DETERMINE MOLECULE TO MOVE TO ORIGIN
+
         for (double [] molDist in distance1){
             Arrays.sort(molDist);
         }
 
+        //TODO: PSUEDO: MOVE CENTER-MOST MOLECULE OF FIRST LIST TO ORIGIN. ORIENTED n1 AT ORIGIN
+        //TODO: PSUEDO: RETAIN CLOSEST MOLECULES (# DETERMINED BY n_mol_cut) CREATES "SHELL"
+        //TODO: PSUEDO: MOVE n1 ATOM OF mTH MOLECULE OF 2ND LIST TO ORIGIN. m defined at line 325 of comp_rmsd_33_ffx_L.f
+        //TODO: PSUEDO: ORIENT MOLECULES SO CENTER-MOST MOLECULE ON XY PLANE
+        // PSUEDO: AT THIS POINT THE 1ST TWO MOLECULES IN THE TWO LISTS ARE SUPERPOSED (origin, x-axis, and x-y plane)
+        //TODO: PSUEDO: nm (USUALLY 3) MOLECULES NEAR ORIGIN ARE USED. 1ST MOLECULE IS REPLACED BY mTH MOLECULE
+        //TODO: PSUEDO: MOLECULES IN 2ND LIST ARRANGED TO MATCH 1ST LIST BASED ON DISTANCE (CLOSEST nm MOLECULES BY n1 ATOM).
+        // PSUEDO: AT THIS POINT FIRST nm MOLECULES SHOULD BE CLOSE TO EACH OTHER.
+        //TODO: PSUEDO: USE n1 ATOMS OF FIRST nm MOLECULES IN EACH LIST TO SUPERIMPOSE MOLECULES OF LISTS.
+        //TODO: PSUEDO: PAIR MOLECULES OF EACH LIST FOR RMSD
+        //TODO: PSUEDO: CALL RMSD METHOD DEVELOPED BY KEN DILL
 
-
-// Rest comes from Cart2Frac which this script was based off of...
+// Rest comes from Cart2Frac which this script was based off of. Will need to edit as necessary...
 
         File saveDir = baseDir
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
