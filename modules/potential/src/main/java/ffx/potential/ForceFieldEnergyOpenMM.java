@@ -277,7 +277,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Use two-sided finite difference dU/dL.
      */
-    private boolean twoSidedFiniteDifference;
+    private boolean twoSidedFiniteDifference = true;
 
     /**
      * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
@@ -316,7 +316,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
         finiteDifferenceStepSize = forceField.getDouble("FD_DLAMBDA", 0.001);
-        twoSidedFiniteDifference = forceField.getBoolean("FD_TWO_SIDED", true);
+        twoSidedFiniteDifference = forceField.getBoolean("FD_TWO_SIDED", twoSidedFiniteDifference);
     }
 
     /**
@@ -1727,6 +1727,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 vdWSoftcoreAlpha = 0.0;
                 // Torsions are linearly scaled for MELD.
                 torsionalLambdaPower = 1.0;
+                // Only need single-sided dU/dL
+                twoSidedFiniteDifference = false;
             }
 
             // Add Angle Force.
