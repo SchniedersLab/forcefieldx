@@ -1350,7 +1350,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             if (temperOffset < 0.0) {
                 temperOffset = 0.0;
             }
-            logger.info(format("  Coverage before tempering:     %7.4g kcal/mol", temperOffset));
 
             // Require modest sampling of the lambda path.
             if (dL > 0.1) {

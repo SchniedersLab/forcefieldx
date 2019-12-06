@@ -437,7 +437,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param gOMM    To be filled with OpenMM-calculated gradients.
      * @param gFFX    To be filled with FFX-calculated gradients.
      * @param verbose Whether to be verbose.
-     * @return        Difference in energies.
+     * @return Difference in energies.
      */
     public double energyAndGradientVsFFX(double[] x, double[] gOMM, double[] gFFX, boolean verbose) {
         double ffxE = super.energyAndGradient(x, gFFX, verbose);
@@ -471,7 +471,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (numberOfVariables != nOMMVar) {
             double[] newX = new double[nOMMVar];
             for (int i = 0; i < atoms.length; i++) {
-                int i3 = 3*i;
+                int i3 = 3 * i;
                 if (atoms[i].isActive()) {
                     System.arraycopy(x, xOffset, newX, i3, 3);
                     xOffset += 3;
@@ -916,7 +916,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         if (openMMSystem != null) {
             openMMSystem.setLambda(mappedLambda);
-
             if (atoms != null) {
                 List<Atom> atomList = new ArrayList<>();
                 for (Atom atom : atoms) {
@@ -924,14 +923,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         atomList.add(atom);
                     }
                 }
-
-                // Convert the list to an array.
-                Atom[] atomArray = atomList.toArray(new Atom[0]);
-
                 // Update force field parameters based on defined lambda values.
-                updateParameters(atomArray);
+                updateParameters(atomList.toArray(new Atom[0]));
             } else {
-                updateParameters(atoms);
+                updateParameters(null);
             }
         }
     }
@@ -1607,6 +1602,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * Value of the electrostatics lambda state variable.
          */
         private double lambdaTorsion = 1.0;
+
         /**
          * The lambda value that defines when the electrostatics will start to turn on for full path non-bonded term scaling.
          * <p>
@@ -1614,7 +1610,28 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * the ion having a formal negative charge and a large polarizability.
          */
         private double electrostaticStart = 0.6;
-        private double electrostaticLambdaPower = 2.0;
+        /**
+         * Electrostatics lambda is raised to this power.
+         */
+        private double electrostaticLambdaPower;
+        /**
+         * van der Waals softcore alpha.
+         */
+        private double vdWSoftcoreAlpha = 0.25;
+        /**
+         * van der Waals softcore beta.
+         */
+        private double vdwSoftcorePower = 3.0;
+        /**
+         * Torsional lambda power.
+         */
+        private double torsionalLambdaPower = 2.0;
+        /**
+         * When using MELD, our goal will be to scale down the potential by this factor.
+         * A negative value indicates we're not using MELD.
+         */
+        private boolean useMeld = false;
+        private double meldScaleFactor = -1.0;
 
         OpenMMSystem(MolecularAssembly molecularAssembly) {
             // Create the OpenMM System
@@ -1654,14 +1671,63 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 addBondForce();
             }
 
+            // Check for MELD use. If we're using MELD, set all lambda terms to true.
+            double meldScaleFactor = forceField.getDouble("MELD_SCALE_FACTOR", -1.0);
+            if (meldScaleFactor < 1.0 && meldScaleFactor > 0.0) {
+                useMeld = true;
+                elecLambdaTerm = true;
+                vdwLambdaTerm = true;
+                torsionLambdaTerm = true;
+            } else {
+                useMeld = false;
+                elecLambdaTerm = false;
+                vdwLambdaTerm = false;
+                torsionLambdaTerm = false;
+            }
+
             // Read alchemical information -- this needs to be done before creating forces.
-            elecLambdaTerm = forceField.getBoolean("ELEC_LAMBDATERM", false);
-            vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", false);
-            torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", false);
+            elecLambdaTerm = forceField.getBoolean("ELEC_LAMBDATERM", elecLambdaTerm);
+            vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", vdwLambdaTerm);
+            torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", torsionLambdaTerm);
 
             lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
 
+            VanDerWaals vdW = ForceFieldEnergyOpenMM.super.getVdwNode();
+            if (vdW != null) {
+                vdWSoftcoreAlpha = vdW.getAlpha();
+                vdwSoftcorePower = (int) vdW.getBeta();
+            }
+
+            // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
+            lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
+            if (lambdaStart > 1.0) {
+                lambdaStart = 1.0;
+            } else if (lambdaStart < 0.0) {
+                lambdaStart = 0.0;
+            }
+
+            electrostaticStart = forceField.getDouble("ELEC_START", electrostaticStart);
+            if (electrostaticStart > 1.0) {
+                electrostaticStart = 1.0;
+            } else if (electrostaticStart < 0.0) {
+                electrostaticStart = 0.0;
+            }
             electrostaticLambdaPower = forceField.getDouble("PERMANENT_LAMBDA_EXPONENT", 2.0);
+
+            if (useMeld) {
+                // lambda path starts at 0.0
+                lambdaStart = 0.0;
+                // electrostaticStart is ignored for MELD.
+                electrostaticStart = 0.0;
+                // electrostaticLambdaPower is ignored for MELD.
+                electrostaticLambdaPower = 1.0;
+                // vdW is linearly scaled for MELD.
+                vdwSoftcorePower = 1;
+                // No softcore offset for MELD.
+                vdWSoftcoreAlpha = 0.0;
+                // Torsions are linearly scaled for MELD.
+                torsionalLambdaPower = 1.0;
+            }
 
             // Add Angle Force.
             addAngleForce();
@@ -1700,7 +1766,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // Add angle-torsion coupling terms.
             addAngleTorsionForce();
 
-            VanDerWaals vdW = ForceFieldEnergyOpenMM.super.getVdwNode();
             if (vdW != null) {
                 VanDerWaalsForm vdwForm = vdW.getVDWForm();
                 if (vdwForm.vdwType == LENNARD_JONES) {
@@ -1715,31 +1780,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             if (lambdaTerm) {
-                logger.info(format("\n Lambda scales torsions:          %s", torsionLambdaTerm));
-                logger.info(format(" Lambda scales vdW interactions:  %s", vdwLambdaTerm));
-                logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
-
-                // Expand the path [lambda-start .. 1.0] to the interval [0.0 .. 1.0].
-                lambdaStart = forceField.getDouble("LAMBDA_START", 0.0);
-                if (lambdaStart > 1.0) {
-                    lambdaStart = 1.0;
-                } else if (lambdaStart < 0.0) {
-                    lambdaStart = 0.0;
-                }
                 logger.info(format(" Lambda path start:              %6.3f", lambdaStart));
-
-                // Define electrostatics to turn on at a value different from 0.5.
-                if (vdwLambdaTerm && elecLambdaTerm) {
-                    electrostaticStart = forceField.getDouble("ELEC_START", electrostaticStart);
-                    if (electrostaticStart > 1.0) {
-                        electrostaticStart = 1.0;
-                    } else if (electrostaticStart < 0.0) {
-                        electrostaticStart = 0.0;
-                    }
+                logger.info(format("\n Lambda scales torsions:          %s", torsionLambdaTerm));
+                if (torsionLambdaTerm) {
+                    logger.info(format(" torsion lambda power:           %6.3f", torsionalLambdaPower));
+                }
+                logger.info(format(" Lambda scales vdW interactions:  %s", vdwLambdaTerm));
+                if (vdwLambdaTerm) {
+                    logger.info(format(" van Der Waals alpha:            %6.3f", vdWSoftcoreAlpha));
+                    logger.info(format(" van Der Waals lambda power:     %6.3f", vdwSoftcorePower));
+                }
+                logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
+                if (elecLambdaTerm) {
                     logger.info(format(" Electrostatics start:           %6.3f", electrostaticStart));
+                    logger.info(format(" Electrostatics lambda power:    %6.3f", electrostaticLambdaPower));
                 }
             }
-
         }
 
         /**
@@ -1756,9 +1812,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // Applied to normal electrostatic parameters for alchemical atoms.
             lambdaElec = 1.0;
 
-            // Multiply torsional potentials by L^2 (dU/dL = 0 at L=0).
             if (torsionLambdaTerm) {
-                lambdaTorsion = lambda * lambda;
+                // Multiply torsional potentials by L^2 (dU/dL = 0 at L=0).
+                lambdaTorsion = pow(lambda, torsionalLambdaPower);
+                if (useMeld) {
+                    lambdaTorsion = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
+                }
             }
 
             if (elecLambdaTerm && vdwLambdaTerm) {
@@ -1773,13 +1832,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     lambdaElec = pow(lambdaElec, electrostaticLambdaPower);
                 }
                 lambdaVDW = lambda;
+                if (useMeld) {
+                    lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
+                    lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
+                }
             } else if (vdwLambdaTerm) {
                 // Lambda effects vdW, with electrostatics turned off.
                 lambdaElec = 0.0;
                 lambdaVDW = lambda;
+                if (useMeld) {
+                    lambdaVDW = meldScaleFactor + lambda * (1.0 - meldScaleFactor);
+                }
+
             } else if (elecLambdaTerm) {
                 // Lambda effects electrostatics, but not vdW.
                 lambdaElec = lambda;
+                if (useMeld) {
+                    lambdaElec = sqrt(meldScaleFactor + lambda * (1.0 - meldScaleFactor));
+                }
             }
         }
 
@@ -2721,8 +2791,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             PointerByReference fixedChargeSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
 
             // Get the Alpha and Beta constants from the VanDerWaals instance.
-            double alpha = vdW.getAlpha();
-            double beta = vdW.getBeta();
+            double alpha = vdWSoftcoreAlpha;
+            double beta = vdwSoftcorePower;
 
             OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "vdw_lambda", 1.0);
             OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "alpha", alpha);
@@ -3033,8 +3103,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (vdwLambdaTerm) {
                 OpenMM_AmoebaVdwForce_setAlchemicalMethod(amoebaVDWForce,
                         AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_AlchemicalMethod.OpenMM_AmoebaVdwForce_Decouple);
-                OpenMM_AmoebaVdwForce_setSoftcoreAlpha(amoebaVDWForce, vdW.getAlpha());
-                OpenMM_AmoebaVdwForce_setSoftcorePower(amoebaVDWForce, (int) vdW.getBeta());
+                OpenMM_AmoebaVdwForce_setSoftcoreAlpha(amoebaVDWForce, vdWSoftcoreAlpha);
+                OpenMM_AmoebaVdwForce_setSoftcorePower(amoebaVDWForce, (int) vdwSoftcorePower);
             }
 
             int[][] bondMask = vdW.getBondMask();

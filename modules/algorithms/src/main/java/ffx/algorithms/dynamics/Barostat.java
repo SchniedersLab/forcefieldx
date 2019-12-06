@@ -680,7 +680,7 @@ public class Barostat implements CrystalPotential {
      * Attempt an MC move on a lattice parameter.
      *
      * @param currentE The current potential energy.
-     *                 
+     *
      * @return The potential energy after attempting the MC move.
      */
     private double applyBarostat(double currentE) {
