@@ -40,14 +40,16 @@ package test
 
 import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
-import org.apache.commons.math3.ml.clustering.CentroidCluster
-import org.apache.commons.math3.ml.clustering.Clusterable
-import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import org.apache.commons.math3.ml.clustering.CentroidCluster
+import org.apache.commons.math3.ml.clustering.Clusterable
+import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
+
 
 import java.util.logging.Level;
 
@@ -206,42 +208,37 @@ class Cluster extends PotentialScript {
         //Temp output method prints to screen
         double ttwss = 0;
         for (int i = 0; i < kClusters.size(); i++) {
+            double twss = 0; // Reset cluster within distance
             logger.info(String.format("Cluster: " + i));
             double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
             for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
                 logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
                 double[] distArray = clusterWrapper.getPoint();
-                for (int j = 0; j < distArray.size(); j++) {
-                    sum[j] += distArray[j];
+                // Implement TWSS
+                for(int j = 0; j<sum.size();j++) {
+                    twss += Math.pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
                 }
             }
-            // Implement TWSS
-            for(int j = 0; j<sum.size();j++) {
-                sum[j] = sum[j] / sum.size();
-            }
-            double twss = 0
-            for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
-                twss += Math.sqrt(Math.pow(clusterWrapper.getPoint()[0] - sum[0], 2) + Math.pow(clusterWrapper.getPoint()[1] - sum[1], 2) + Math.pow(clusterWrapper.getPoint()[2] - sum[2], 2))
-            }
-            logger.info(String.format("CLuster TWSS: %f", twss));
+            twss = Math.sqrt(twss);
+            logger.info(String.format("Cluster TWSS: %f", twss));
             ttwss+=twss;
         }
-        logger.info(String.format("Total TWSS: %f", ttwss));
+        logger.info(String.format("\nTotal TWSS: %f", ttwss));
 
         return this
     }
 }
 class ClusterWrapper implements Clusterable{
-    private double[] points;
+    private double[] point;
     private final int UUID;
 
     public ClusterWrapper(double[] distances, int ID) {
-        this.points = distances;
+        this.point = distances;
         UUID=ID;
     }
 
     public double[] getPoint() {
-        return points;
+        return point;
     }
 
     public int getUUID() {
