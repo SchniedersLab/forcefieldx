@@ -712,6 +712,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (!isFinite(e)) {
             String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
             logger.warning(message);
+            if (lambdaTerm) {
+                openMMSystem.printLambdaValues();
+            }
             throw new EnergyException(message);
         }
 
@@ -1782,8 +1785,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             if (lambdaTerm) {
-                logger.info(format(" Lambda path start:              %6.3f", lambdaStart));
-                logger.info(format("\n Lambda scales torsions:          %s", torsionLambdaTerm));
+                logger.info(format("\n Lambda path start:              %6.3f", lambdaStart));
+                logger.info(format(" Lambda scales torsions:          %s", torsionLambdaTerm));
                 if (torsionLambdaTerm) {
                     logger.info(format(" torsion lambda power:           %6.3f", torsionalLambdaPower));
                 }
@@ -1803,6 +1806,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     logger.info(format(" Meld scale factor:              %6.3f", meldScaleFactor));
                 }
             }
+        }
+
+        public void printLambdaValues() {
+            logger.info(format("\n Lambda Values\n Torsion: %6.3f vdW: %6.3f Elec: %6.3f ", lambdaTorsion, lambdaVDW, lambdaElec));
         }
 
         /**
