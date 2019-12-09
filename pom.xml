@@ -581,7 +581,7 @@
                                 <!-- reactorModuleConvergence/ -->
                                 <requirePluginVersions/>
                                 <requireMavenVersion>
-                                    <version>3.0</version>
+                                    <version>3.0.5</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>[1.8,13.1]</version>
@@ -1082,8 +1082,8 @@
         </snapshotRepository>
         <repository>
             <uniqueVersion>false</uniqueVersion>
-            <id>Releases</id>
-            <name>Local Maven Release Repository</name>
+            <id>github</id>
+            <name>GitHub SchniedersLab Apache Maven Packages</name>
             <url>${release.repo}</url>
         </repository>
     </distributionManagement>
@@ -1135,8 +1135,8 @@
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
-        <guava.version>27.1-jre</guava.version>
-        <groovy-all.version>2.5.8.1</groovy-all.version>
+        <guava.version>28.1-jre</guava.version>
+        <groovy-all.version>3.0.0-rc-1.1</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.7.0</java3d.version>
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
@@ -1149,7 +1149,7 @@
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.2.0</clustering.version>
         <fastutil.version>8.3.0</fastutil.version>
-        <picocli.version>4.0.1</picocli.version>
+        <picocli.version>4.0.4</picocli.version>
         <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
         <tensorflow.version>1.12.0</tensorflow.version>
         <!-- Maven Core Plugin Versions -->
@@ -1159,7 +1159,7 @@
         <install.version>3.0.0-M1</install.version>
         <resources.version>3.1.0</resources.version>
         <site.version>3.8.2</site.version>
-        <surefire.version>3.0.0-M3</surefire.version>
+        <surefire.version>3.0.0-M4</surefire.version>
         <!-- Maven Packaging Tools Plugin Versions -->
         <jar.version>3.2.0</jar.version>
         <shade.version>3.2.1</shade.version>
@@ -1176,7 +1176,7 @@
         <antrun.version>1.8</antrun.version>
         <assembly.version>3.2.0</assembly.version>
         <dependency.version>3.1.1</dependency.version>
-        <enforcer.version>3.0.0-M2</enforcer.version>
+        <enforcer.version>3.0.0-M3</enforcer.version>
         <jarsigner.version>3.0.0</jarsigner.version>
         <release.version>2.5.3</release.version>
         <scm.version>1.11.2</scm.version>

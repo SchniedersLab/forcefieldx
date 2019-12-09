@@ -151,7 +151,7 @@ public class SpaceGroup {
     /**
      * True for a Sohncke group (non-enantiogenic).
      */
-    public final boolean chiral;
+    public final boolean respectsChirality;
     /**
      * realspace ASU limit
      */
@@ -193,7 +193,7 @@ public class SpaceGroup {
         this.limit = limit;
         this.asulim = asulim;
         this.pdbName = pdbName;
-        this.chiral = sohnckeGroup(number);
+        this.respectsChirality = sohnckeGroup(number);
         this.symOps = new ArrayList<>(Arrays.asList(symOps));
 
         // ToDo: Crystal systems are subdivided into crystal classes. This info needs to be added to each space group.
@@ -239,8 +239,8 @@ public class SpaceGroup {
         return lower <= x && x <= upper;
     }
 
-    public boolean isChiral() {
-        return chiral;
+    public boolean respectsChirality() {
+        return respectsChirality;
     }
 
     /**
@@ -421,32 +421,53 @@ public class SpaceGroup {
     }
 
     /**
-     * Check that the lattice parameters satisfy the restrictions of the crystal
-     * systems.
+     * Reset lattice parameters for the given crystal systems.
      *
-     * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem}
-     *                      object.
-     * @return True if the restrictions are satisfied, false otherwise.
+     * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem} object.
+     * @return New unit cell parameters.
      */
     static double[] resetUnitCellParams(CrystalSystem crystalSystem) {
-        double[] params = {0.1 + random(), 0.1 + random(), 0.1 + random(), 90.0, 90.0, 90.0};
+        double alpha = 60.0 + random() * 60.0;
+        double beta = 60.0 + random() * 60.0;
+        double gamma = 60.0 + random() * 60.0;
+        double[] params = {0.1 + random(), 0.1 + random(), 0.1 + random(), alpha, beta, gamma};
         switch (crystalSystem) {
             case TRICLINIC:
+                break;
             case MONOCLINIC:
+                // alpha == gamma == 90.0
+                params[3] = 90.0;
+                params[5] = 90.0;
+                break;
             case ORTHORHOMBIC:
+                // alpha == beta == gamma == 90.0
+                params[3] = 90.0;
+                params[4] = 90.0;
+                params[5] = 90.0;
                 break;
             case TETRAGONAL:
+                // a == b, alpha == beta == gamma == 90.0
                 params[1] = params[0];
+                params[3] = 90.0;
+                params[4] = 90.0;
+                params[5] = 90.0;
                 break;
             case TRIGONAL:
             case HEXAGONAL:
+                // a == b, alpha == beta == gamma == 120.0
                 params[1] = params[0];
+                params[3] = 90.0;
+                params[4] = 90.0;
                 params[5] = 120.0;
                 break;
             case CUBIC:
             default:
+                // a == b == c, alpha == beta == gamma == 90.0
                 params[1] = params[0];
                 params[2] = params[0];
+                params[3] = 90.0;
+                params[4] = 90.0;
+                params[5] = 90.0;
                 break;
         }
         return params;

@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.cli;
 
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
@@ -44,6 +45,7 @@ import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MSNode;
 
 import picocli.CommandLine;
 
@@ -90,15 +92,20 @@ public class RandomSymopOptions {
      */
     public void applyRandomSymop(MolecularAssembly assembly) {
         if (symScalar > 0) {
-            SymOp symOp = SymOp.randomSymOpFactory(symScalar);
-            logger.info(String.format("\n Applying random Cartesian SymOp:\n%s", symOp.toString()));
             Crystal crystal = assembly.getCrystal();
-            Atom[] atoms = assembly.getAtomArray();
             double[] xyz = new double[3];
-            for (Atom atom : atoms) {
-                atom.getXYZ(xyz);
-                crystal.applyCartesianSymOp(xyz, xyz, symOp);
-                atom.setXYZ(xyz);
+            ArrayList<MSNode> molecules = assembly.getMolecules();
+            int moleculeNum = 1;
+            for (MSNode msNode : molecules) {
+                ArrayList<Atom> atoms = msNode.getAtomList();
+                SymOp symOp = SymOp.randomSymOpFactory(symScalar);
+                logger.info(String.format("\n Applying random Cartesian SymOp to molecule %d:\n%s", moleculeNum, symOp.toString()));
+                for (Atom atom : atoms) {
+                    atom.getXYZ(xyz);
+                    crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                    atom.setXYZ(xyz);
+                }
+                moleculeNum++;
             }
         }
     }
