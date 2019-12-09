@@ -665,6 +665,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (!isFinite(e)) {
             String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
             logger.warning(message);
+            if (lambdaTerm) {
+                openMMSystem.printLambdaValues();
+            }
             throw new EnergyException(message);
         }
         OpenMM_State_destroy(state);
