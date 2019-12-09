@@ -1793,9 +1793,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     logger.info(format(" van Der Waals lambda power:     %6.3f", vdwSoftcorePower));
                 }
                 logger.info(format(" Lambda scales electrostatics:    %s", elecLambdaTerm));
+
                 if (elecLambdaTerm) {
                     logger.info(format(" Electrostatics start:           %6.3f", electrostaticStart));
                     logger.info(format(" Electrostatics lambda power:    %6.3f", electrostaticLambdaPower));
+                }
+                logger.info(format(" Using Meld:                      %s", useMeld));
+                if (useMeld) {
+                    logger.info(format(" Meld scale factor:              %6.3f", meldScaleFactor));
                 }
             }
         }
