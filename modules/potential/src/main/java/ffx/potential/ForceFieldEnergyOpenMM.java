@@ -1636,7 +1636,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          * When using MELD, our goal will be to scale down the potential by this factor.
          * A negative value indicates we're not using MELD.
          */
-        private boolean useMeld = false;
+        private boolean useMeld;
         private double meldScaleFactor = -1.0;
 
         OpenMMSystem(MolecularAssembly molecularAssembly) {
@@ -1678,7 +1678,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
 
             // Check for MELD use. If we're using MELD, set all lambda terms to true.
-            double meldScaleFactor = forceField.getDouble("MELD_SCALE_FACTOR", -1.0);
+            meldScaleFactor = forceField.getDouble("MELD_SCALE_FACTOR", meldScaleFactor);
             if (meldScaleFactor < 1.0 && meldScaleFactor > 0.0) {
                 useMeld = true;
                 elecLambdaTerm = true;
