@@ -110,13 +110,15 @@ public class DispersionRegion extends ParallelRegion {
      * This value was described as 0.36 in the original 2007 model (see Schnieders thesis)
      * and more recently the value was reduced to 0.26.
      */
-    private static final double DISP_OFFSET = 0.874;
+    public static final double DISP_OFFSET = 0.874;
     private static final double SLEVY = 1.0;
     private static final double AWATER = 0.033428;
     private static final double EPSO = 0.1100;
     private static final double EPSH = 0.0135;
     private static final double RMINO = 1.7025;
     private static final double RMINH = 1.3275;
+
+    private double dispersionOffest = DISP_OFFSET;
 
     public DispersionRegion(int nt, Atom[] atoms) {
         dispersionLoop = new DispersionLoop[nt];
@@ -125,6 +127,10 @@ public class DispersionRegion extends ParallelRegion {
         }
         sharedDispersion = new SharedDouble();
         allocate(atoms);
+    }
+
+    public void setDispersionOffest(double dispersionOffest) {
+        this.dispersionOffest = dispersionOffest;
     }
 
     public void allocate(Atom[] atoms) {
@@ -192,7 +198,7 @@ public class DispersionRegion extends ParallelRegion {
                 double rmixh7 = pow(rmixh, 7);
                 double ah = emixh * rmixh7;
                 // Apply the DISP_OFFSET here to start the integral beyond the atomic radius of atom i.
-                double ri = rDisp[i] + DISP_OFFSET;
+                double ri = rDisp[i] + dispersionOffest;
                 double ri3 = pow(ri, 3);
                 double ri7 = pow(ri, 7);
                 double ri11 = pow(ri, 11);
@@ -328,7 +334,7 @@ public class DispersionRegion extends ParallelRegion {
             double rmixh7 = pow(rmixh, 7);
             double ah = emixh * rmixh7;
             // Apply the DISP_OFFSET here to start the integral beyond the atomic radius of atom i.
-            double ri = rDisp[i] + DISP_OFFSET;
+            double ri = rDisp[i] + dispersionOffest;
             // Atom k descreens with no offset applied.
             double rk = rDisp[k];
             double sk = rk * DISP_OVERLAP_SCALE_FACTOR;
