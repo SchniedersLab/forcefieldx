@@ -161,6 +161,11 @@
             <artifactId>quickhull3d</artifactId>
             <version>${quickhull3D.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.apporiented</groupId>
+            <artifactId>hierarchical-clustering</artifactId>
+            <version>${clustering.version}</version>
+        </dependency>
         <!-- dependency>
             <groupId>org.tensorflow</groupId>
             <artifactId>libtensorflow</artifactId>

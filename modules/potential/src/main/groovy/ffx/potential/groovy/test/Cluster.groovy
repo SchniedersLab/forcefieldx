@@ -50,6 +50,7 @@ import org.apache.commons.math3.ml.clustering.Clusterable
 import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
 
+import com.apporiented.algorithm.clustering.*
 
 import java.util.logging.Level;
 
@@ -69,17 +70,25 @@ class Cluster extends PotentialScript {
 
     /**
      * -a or --algorithm Clustering algorithm to use.
+     * Choices are kmeans (0), and hierarchical agglomerative (2).
      */
-    @Option(names = ['-a', '--algorithm'], paramLabel = "kmeans",
-            description = "Algorithm to be used during clustering.")
-    private String algorithm = "kmeans";
+    @Option(names = ['-a', '--algorithm'], paramLabel = "0",
+            description = "Algorithm to be used during clustering: kmeans (0), multikmeans (1), hierarchical agglomerative (2)")
+    int algorithm = 0;
 
     /**
      * -k or --clusters Clustering algorithm to use.
      */
     @Option(names = ['-k', '--clusters'], paramLabel = "3",
-            description = "Number of desired clusters for the input data.")
+            description = "Number of desired kmeans clusters for the input data.")
     private int clusters = 3;
+
+    /**
+     * -r or --readInDistMat The algorithm should read in a provided distance matrix rather than the matrix being generated on the fly.
+     */
+    @Option(names = ['-r', '--readInDistMat'], paramLabel = "false",
+            description = "Tells algorithm to read in the distance matrix from an input file.")
+    Boolean readIn = false;
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -107,10 +116,79 @@ class Cluster extends PotentialScript {
             logger.info(helpString())
             return this
         }
+
+        List<double[]> distMatrix = new ArrayList<double[]>();
+
+        //Either read in the distance matrix or calculate the distance matrix on the fly.
+        if (readIn) {
+            distMatrix = readInDistanceMatrix(distMatrix);
+        } else {
+            distMatrix = calcDistanceMatrix();
+        }
+
+        //Either use kmeans clustering or hierarchical agglomerative clustering.
+        if(algorithm==0 || algorithm==1){
+            kmeansCluster(distMatrix);
+        } else if(algorithm==2){
+            hierarchicalAgglomerativeCluster(distMatrix);
+        } else{
+            logger.severe("Clustering algorithm has not been set.")
+        }
+
+        return this
+    }
+
+    void kmeansCluster(ArrayList<double[]> distMatrix){
+        // Input the RMSD matrix to the clustering algorithm
+        // Use the org.apache.commons.math3.ml.clustering package.
+        KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
+        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
+        int id = 0;
+        for (double[] i : distMatrix) {
+            myClusterables.add(new ClusterWrapper(i, id));
+            id++;
+        }
+        List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
+
+        if (algorithm==1) {
+            MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
+            kClusters = kClust2.cluster(myClusterables);
+        }
+
+        // TODO: Output the clusters in a useful way.
+        //Temp output method prints to screen
+        double ttwss = 0;
+        for (int i = 0; i < kClusters.size(); i++) {
+            double twss = 0; // Reset cluster within distance
+            logger.info(String.format("Cluster: " + i));
+            double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
+            for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
+                logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
+                double[] distArray = clusterWrapper.getPoint();
+                // Implement TWSS
+                for (int j = 0; j < sum.size(); j++) {
+                    twss += Math.pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
+                }
+            }
+            twss = Math.sqrt(twss);
+            logger.info(String.format("Cluster TWSS: %f", twss));
+            ttwss += twss;
+        }
+        logger.info(String.format("\nTotal TWSS: %f", ttwss));
+    }
+
+    void hierarchicalAgglomerativeCluster(ArrayList<double[]> distMatrix){
+    }
+
+    /**
+     * This method reads in the distance matrix from an input file.
+     * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
+     * @return ArrayList<double[] >  that holds all values for the read in distance matrix.
+     */
+    ArrayList<double[]> readInDistanceMatrix(ArrayList<double[]> distMatrix) {
         File file = new File(filenames.get(0));
         int nDim = 0;
-        List<double[]> distMatrix = new ArrayList<double[]>();
-        // TODO: Have FFX calculate RMSD rather than read them in... (likely requires separate script)
+
         // Read in the RMSD matrix.
         try {
             FileReader fr = new FileReader(file);
@@ -156,85 +234,28 @@ class Cluster extends PotentialScript {
             }
             logger.finest(tempString);
         }
+        return distMatrix
+    }
 
-        // Min-Max normalization of distances (not important if all inputs are on the same scale)
-//        double minimumDist=0;
-//        double maximumDist=0;
-//        for (double[] distArray in distMatrix){
-//            for (double dist in distArray){
-//                if( minimumDist>dist){
-//                    minimumDist = dist;
-//                }
-//                if(maximumDist<dist){
-//                    maximumDist = dist;
-//                }
-//            }
-//        }
-//        for(int i = 0; i<distMatrix.size(); i++) {
-//            for (int j = 0; j < distMatrix.get(i).size(); j++) {
-//                distMatrix.get(i)[j] = (distMatrix.get(i)[j] - minimumDist) / (maximumDist - minimumDist);
-//            }
-//        }
-//
-//        if (logger.isLoggable(Level.FINEST)) {
-//            logger.finest(String.format("\nNormalized Matrix:\n"));
-//            String tempString2 = "";
-//            for (double[] i : distMatrix) {
-//                for (int j = 0; j < nDim; j++) {
-//                    tempString2 += String.format("%f\t", i[j]);
-//                }
-//                tempString2 += "\n";
-//            }
-//            logger.finest(tempString2);
-//        }
-
-        // Input the RMSD matrix to the clustering algorithm
-        // Use the org.apache.commons.math3.ml.clustering package.
-        KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
-        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
-        int id = 0;
-        for (double[] i : distMatrix) {
-            myClusterables.add(new ClusterWrapper(i, id));
-            id++;
-        }
-        List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
-
-        if (algorithm.toUpperCase() == "MULTIKMEANS") {
-            MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
-            kClusters = kClust2.cluster(myClusterables);
-        }
-
-        // TODO: Output the clusters in a useful way.
-        //Temp output method prints to screen
-        double ttwss = 0;
-        for (int i = 0; i < kClusters.size(); i++) {
-            double twss = 0; // Reset cluster within distance
-            logger.info(String.format("Cluster: " + i));
-            double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
-            for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
-                logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
-                double[] distArray = clusterWrapper.getPoint();
-                // Implement TWSS
-                for(int j = 0; j<sum.size();j++) {
-                    twss += Math.pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
-                }
-            }
-            twss = Math.sqrt(twss);
-            logger.info(String.format("Cluster TWSS: %f", twss));
-            ttwss+=twss;
-        }
-        logger.info(String.format("\nTotal TWSS: %f", ttwss));
-
-        return this
+    /**
+     * This method calculates the distance matrix of all molecular assemblies in an arc/multiple model file.
+     *
+     * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
+     * @return ArrayList<double[]   >    that holds all values for the read in distance matrix.
+     */
+    // TODO: Have FFX calculate RMSD matrix rather than read them in.
+    ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix) {
+        return distMatrix;
     }
 }
-class ClusterWrapper implements Clusterable{
+
+class ClusterWrapper implements Clusterable {
     private double[] point;
     private final int UUID;
 
     public ClusterWrapper(double[] distances, int ID) {
         this.point = distances;
-        UUID=ID;
+        UUID = ID;
     }
 
     public double[] getPoint() {
@@ -244,4 +265,35 @@ class ClusterWrapper implements Clusterable{
     public int getUUID() {
         return UUID;
     }
+
+    /* Min-Max normalization of distances (not important if all inputs are on the same scale)
+          double minimumDist=0;
+          double maximumDist=0;
+          for (double[] distArray in distMatrix){
+              for (double dist in distArray){
+                  if( minimumDist>dist){
+                      minimumDist = dist;
+                  }
+                  if(maximumDist<dist){
+                      maximumDist = dist;
+                  }
+              }
+          }
+          for(int i = 0; i<distMatrix.size(); i++) {
+              for (int j = 0; j < distMatrix.get(i).size(); j++) {
+                  distMatrix.get(i)[j] = (distMatrix.get(i)[j] - minimumDist) / (maximumDist - minimumDist);
+              }
+          }
+
+          if (logger.isLoggable(Level.FINEST)) {
+              logger.finest(String.format("\nNormalized Matrix:\n"));
+              String tempString2 = "";
+              for (double[] i : distMatrix) {
+                  for (int j = 0; j < nDim; j++) {
+                      tempString2 += String.format("%f\t", i[j]);
+                  }
+                  tempString2 += "\n";
+              }
+              logger.finest(tempString2);
+          } */
 }
