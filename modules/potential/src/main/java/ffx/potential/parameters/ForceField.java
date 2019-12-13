@@ -823,6 +823,10 @@ public class ForceField {
     public SoluteType getSoluteType(String key) {
         return soluteTypes.get(key);
     }
+    
+    public Map<String, SoluteType> getSoluteTypes() {
+        return soluteTypes;
+    }
 
     /**
      * <p>Getter for the field <code>relativeSolvationTypes</code>.</p>

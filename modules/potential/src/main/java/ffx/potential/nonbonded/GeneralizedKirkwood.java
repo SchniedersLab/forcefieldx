@@ -657,6 +657,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
         initializationRegion.executeWith(parallelTeam);
     }
 
+    public GaussVol getGaussVol() {
+        return gaussVol;
+    }
+
+    public DispersionRegion getDispersionRegion() {
+        return dispersionRegion;
+    }
+
     public AtomicDoubleArray3D getGrad() {
         return grad;
     }
