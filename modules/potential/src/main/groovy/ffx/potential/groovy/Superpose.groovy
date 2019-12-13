@@ -78,6 +78,13 @@ class Superpose extends PotentialScript {
     private boolean frameComparison = false
 
     /**
+     * --store or --storeMatrix Store the distance matrix from all versus all RMSD calculation on multiple models.
+     */
+    @Option(names = ['--store', '--storeMatrix'], paramLabel = "false",
+            description = 'Store the distance matrix of all versus all RMSD calculation.')
+    private boolean storeMatrix = false
+
+    /**
      * -s or --start Atom number where RMSD calculation of structure will begin.
      */
     @Option(names = ['-s', '--start'], paramLabel = "1",
@@ -115,6 +122,8 @@ class Superpose extends PotentialScript {
     private File outFile
     private XYZFilter outputFilter
 
+    double[][] distMatrix
+
     /**
      * Execute the script.
      */
@@ -150,6 +159,9 @@ class Superpose extends PotentialScript {
         }
 
         SystemFilter systemFilter = potentialFunctions.getFilter()
+        int distMatrixSize = systemFilter.countNumModels()
+        distMatrix = new double[distMatrixSize][distMatrixSize]
+
         if (systemFilter instanceof PDBFilter || systemFilter instanceof XYZFilter) {
             double[] x2 = new double[nVars]
             double[] mass = new double[nVars / 3]
@@ -232,6 +244,9 @@ class Superpose extends PotentialScript {
                 // The first snapshot is being used for all comparisons here; therefore, snapshot = 1.
                 rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
             } else {
+                if(storeMatrix) {
+                    fillDiagonals(distMatrixSize)
+                }
                 rmsd(systemFilter, nUsed, usedIndices, x, x2, xUsed, x2Used, massUsed, 1)
                 SystemFilter systemFilter1 = null
                 if (systemFilter instanceof PDBFilter) {
@@ -310,6 +325,13 @@ class Superpose extends PotentialScript {
                         " Coordinate RMSD for %d and %d: Original %7.3f, After Translation %7.3f, After Rotation %7.3f",
                         snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
 
+                if(storeMatrix){
+                    int snapshot1Index = snapshot1 -1
+                    int snapshot2Index = snapshot2 -1
+                    distMatrix[snapshot1Index][snapshot2Index]=rotatedRMSD
+                    distMatrix[snapshot2Index][snapshot1Index]=rotatedRMSD
+                }
+
                 if (writeSnapshots) {
                     forceFieldEnergy.setCoordinates(x2)
                     outputFilter.writeFile(outFile, true)
@@ -318,5 +340,15 @@ class Superpose extends PotentialScript {
                 System.arraycopy(xBak, 0, x, 0, x.length)
             }
         }
+    }
+
+    void fillDiagonals(int size) {
+        for(int i = 0; i < size; i++){
+            distMatrix[i][i] = 0.0
+        }
+    }
+
+    double[][] getDistanceMatrix(){
+        return distMatrix
     }
 }
