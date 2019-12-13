@@ -36,7 +36,7 @@
 //
 //******************************************************************************
 
-package test
+package ffx.potential.groovy
 
 import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
@@ -51,6 +51,8 @@ import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
 
 import com.apporiented.algorithm.clustering.*
+
+import groovy.lang.Binding
 
 import java.util.logging.Level;
 
@@ -70,18 +72,18 @@ class Cluster extends PotentialScript {
 
     /**
      * -a or --algorithm Clustering algorithm to use.
-     * Choices are kmeans (0), and hierarchical agglomerative (2).
+     * Choices are kmeans (0), multikmeans (1), and hierarchical (2).
      */
     @Option(names = ['-a', '--algorithm'], paramLabel = "0",
-            description = "Algorithm to be used during clustering: kmeans (0), multikmeans (1), hierarchical agglomerative (2)")
-    int algorithm = 0;
+            description = "Algorithm to be used during clustering: kmeans (0), multikmeans (1), hierarchical (2)")
+    int algorithm = 0
 
     /**
      * -k or --clusters Clustering algorithm to use.
      */
     @Option(names = ['-k', '--clusters'], paramLabel = "3",
             description = "Number of desired kmeans clusters for the input data.")
-    private int clusters = 3;
+    private int clusters = 3
 
     /**
      * -r or --readInDistMat The algorithm should read in a provided distance matrix rather than the matrix being generated on the fly.
@@ -89,6 +91,20 @@ class Cluster extends PotentialScript {
     @Option(names = ['-r', '--readInDistMat'], paramLabel = "false",
             description = "Tells algorithm to read in the distance matrix from an input file.")
     Boolean readIn = false;
+
+    /**
+     * -s or --start Atom number where RMSD calculation of structure will begin.
+     */
+    @Option(names = ['-s', '--start'], paramLabel = "1",
+            description = 'Starting atom to include in the RMSD calculation.')
+    private String start = "1"
+
+    /**
+     * -f or --final Atom number where RMSD calculation of structure will end.
+     */
+    @Option(names = ['-f', '--final'], paramLabel = "nAtoms",
+            description = 'Final atom to include in the RMSD calculation.')
+    private String finish = Integer.MAX_VALUE.toString()
 
     /**
      * The final argument(s) should be one or more filenames.
@@ -243,9 +259,24 @@ class Cluster extends PotentialScript {
      * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
      * @return ArrayList<double[]   >    that holds all values for the read in distance matrix.
      */
-    // TODO: Have FFX calculate RMSD matrix rather than read them in.
     ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix) {
-        return distMatrix;
+        //Get the arc/multiple model PDB file from which the RMSD distance matrix should be calculated.
+        File file = new File(filenames.get(0));
+
+        //Prepare the superpose object and binding.
+        Binding binding = new Binding()
+        Superpose superpose = new Superpose()
+        superpose.setBinding(binding)
+
+        // Set-up the input arguments for the Superpose script.
+        String[] args = ["--aS", "2", "-A", "-s", start, "-f", finish, "--store", file]
+        binding.setVariable("args", args)
+
+        // Evaluate the superpose script to get the distance matrix of RMSD values.
+        superpose.run()
+        distMatrix = superpose.getDistanceMatrix()
+
+        return distMatrix
     }
 }
 
