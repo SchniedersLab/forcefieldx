@@ -117,6 +117,14 @@ public class BondedUtils {
      * @return A double[] with XYZ coordinates at which an atom would be placed.
      */
     static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
+        if (ia != null && !Double.isFinite(bond)) {
+            throw new IllegalArgumentException(String.format(" Passed bond length is non-finite %f", bond));
+        } else if (ib != null && !Double.isFinite(angle1)) {
+            throw new IllegalArgumentException(String.format(" Passed angle is non-finite %f", angle1));
+        } else if (ic != null && !Double.isFinite(angle2)) {
+            throw new IllegalArgumentException(String.format(" Passed dihedral/improper is non-finite %f", angle2));
+        }
+
         if (chiral == 3) {
             double[] negChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, -1);
             double[] posChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, 1);

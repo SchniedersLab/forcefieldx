@@ -37,7 +37,10 @@
 //******************************************************************************
 package ffx.potential.bonded;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static ffx.numerics.math.VectorMath.*;
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -47,12 +50,6 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
-import static ffx.numerics.math.VectorMath.cross;
-import static ffx.numerics.math.VectorMath.diff;
-import static ffx.numerics.math.VectorMath.dot;
-import static ffx.numerics.math.VectorMath.r;
-import static ffx.numerics.math.VectorMath.scalar;
-import static ffx.numerics.math.VectorMath.sum;
 
 /**
  * The Torsion class represents a torsional angle formed between four bonded
@@ -279,7 +276,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      *
      * @return Value of the dihedral angle.
      */
-    private double calculateDihedralAngle() {
+    public double calculateDihedralAngle() {
 
         double theVal = 0.0;
 
@@ -318,7 +315,37 @@ public class Torsion extends BondedTerm implements LambdaInterface {
             double r12 = r(v12);
             double cosine = dot(x0112, x1223) / rr;
             double sine = dot(v12, x) / (r12 * rr);
-            theVal = toDegrees(acos(cosine));
+            double angleRadians;
+
+            if (cosine < -1.0) {
+                angleRadians = Math.PI;
+                double error = cosine + 1.0;
+                if (Math.abs(error) > 1E-5) {
+                    logger.warning(String.format(" Severe discrepancy in calculating dihedral angle " +
+                            "for torsion %s; cosine of angle calculated as %12.7f < -1.0 by %12.7g radians",
+                            this.toString(), cosine, error));
+                } else {
+                    logger.fine(String.format(" Minor, likely numerical discrepancy in calculating dihedral " +
+                            "angle for torsion %s; cosine of angle calculated as %12.7f < -1.0 by %12.7g radians",
+                            this.toString(), cosine, error));
+                }
+            } else if (cosine > 1.0) {
+                angleRadians = 0;
+                double error = cosine - 1.0;
+                if (Math.abs(error) > 1E-5) {
+                    logger.warning(String.format(" Severe discrepancy in calculating dihedral angle for " +
+                            "torsion %s; cosine of angle calculated as %12.7f > +1.0 by %12.7g radians",
+                            this.toString(), cosine, error));
+                } else {
+                    logger.fine(String.format(" Minor, likely numerical discrepancy in calculating dihedral " +
+                            "angle for torsion %s; cosine of angle calculated as %12.7f > +1.0 by %12.7g radians",
+                            this.toString(), cosine, error));
+                }
+            } else {
+                angleRadians = acos(cosine);
+            }
+
+            theVal = toDegrees(angleRadians);
             if (sine < 0.0) {
                 theVal = -theVal;
             }
