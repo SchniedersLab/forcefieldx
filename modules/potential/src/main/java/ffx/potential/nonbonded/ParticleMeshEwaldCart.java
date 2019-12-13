@@ -1503,21 +1503,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     @Override
-    public double getCavitationEnergy(boolean throwError) {
-        return generalizedKirkwood.getCavitationEnergy(throwError);
+    public double getCavitationEnergy() {
+        return generalizedKirkwood.getCavitationEnergy();
     }
 
     @Override
-    public double getDispersionEnergy(boolean throwError) {
-        return generalizedKirkwood.getDispersionEnergy(throwError);
-    }
-
-    public double getCavitationEnergy() {
-        return generalizedKirkwood.getCavitationEnergy(false);
-    }
-
     public double getDispersionEnergy() {
-        return generalizedKirkwood.getDispersionEnergy(false);
+        return generalizedKirkwood.getDispersionEnergy();
     }
 
     /**
@@ -1931,14 +1923,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         for (int i = 0; i < nAtoms; i++) {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
+                String message = " No multipole could be assigned to atom:\n"
+                        + atom + "\nof type:\n" + atom.getAtomType();
+                StringBuilder sb = new StringBuilder(message);
                 for (Bond b : atom.getBonds()) {
                     Atom a2 = b.get1_2(atom);
                     AtomType aType2 = a2.getAtomType();
-                    logger.info(format(" Bonded atom %s type number %d type string %s", a2, aType2.type, aType2));
+                    sb.append(format("\n  Atom %s with type %s", a2, aType2));
                 }
-                String message = "No multipole could be assigned to atom:\n"
-                        + atom + "\nof type:\n" + atom.getAtomType();
-                logger.log(Level.SEVERE, message);
+                logger.log(Level.SEVERE, sb.toString());
             }
         }
 

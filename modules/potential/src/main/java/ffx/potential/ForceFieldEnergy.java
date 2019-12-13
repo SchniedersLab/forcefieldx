@@ -3620,7 +3620,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return a double.
      */
     public double getCavitationEnergy() {
-        return particleMeshEwald.getCavitationEnergy(false);
+        return particleMeshEwald.getCavitationEnergy();
     }
 
     /**
@@ -3629,7 +3629,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return a double.
      */
     public double getDispersionEnergy() {
-        return particleMeshEwald.getDispersionEnergy(false);
+        return particleMeshEwald.getDispersionEnergy();
     }
 
     /**
