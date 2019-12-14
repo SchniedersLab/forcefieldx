@@ -3633,6 +3633,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * <p>getGKEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getGKEnergy() {
+        return particleMeshEwald.getGKEnergy();
+    }
+
+
+    /**
      * <p>getEsvBiasEnergy.</p>
      *
      * @return a double.

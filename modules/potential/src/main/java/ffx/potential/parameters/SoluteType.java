@@ -69,7 +69,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     /**
      * Solute atomic diameter.
      */
-    public final double diameter;
+    public double diameter;
 
     /**
      * Solute atom chemical description.
