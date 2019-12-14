@@ -364,6 +364,13 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     public abstract double getDispersionEnergy();
 
     /**
+     * <p>getDispersionEnergy.</p>
+     *
+     * @return a double.
+     */
+    public abstract double getGKEnergy();
+
+    /**
      * <p>Getter for the field <code>coordinates</code>.</p>
      *
      * @return an array of {@link double} objects.
@@ -549,7 +556,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      *
      * @return a double.
      */
-    public double getGKEnergy() {
+    public double getSolvationEnergy() {
         return generalizedKirkwoodEnergy;
     }
 

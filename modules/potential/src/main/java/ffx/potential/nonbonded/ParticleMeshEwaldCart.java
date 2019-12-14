@@ -177,7 +177,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Generalized Kirkwood energy.
      */
-    private double generalizedKirkwoodEnergy;
+    private double solvationEnergy;
     /**
      * Reference to the force field being used.
      */
@@ -858,7 +858,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         inducedRealSpaceEnergy = 0.0;
         inducedSelfEnergy = 0.0;
         inducedReciprocalEnergy = 0.0;
-        generalizedKirkwoodEnergy = 0.0;
+        solvationEnergy = 0.0;
 
         // Initialize number of interactions.
         interactions = 0;
@@ -1018,7 +1018,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         // the energy of this step is 0 and we can skip it.
         double energy;
         if (skip) {
-            energy = permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
+            energy = permanentMultipoleEnergy + polarizationEnergy + solvationEnergy;
         } else {
             energy = computeEnergy(false);
             for (int i = 0; i < nAtoms; i++) {
@@ -1319,8 +1319,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             realSpaceEnergyRegion.executeWith(parallelTeam);
             eGK += realSpaceEnergyRegion.getPolarizationEnergy();
 
-            // Compute the generalized Kirkwood solvation free energy.
-            generalizedKirkwoodEnergy += generalizedKirkwood.solvationEnergy(eGK, gradient, print);
+            // Compute the solvation free energy.
+            solvationEnergy += generalizedKirkwood.solvationEnergy(eGK, gradient, print);
             if (gradient) {
                 // Add the GK derivative contributions into the overall derivatives.
                 generalizedKirkwood.reduce(grad, torque, lambdaGrad, lambdaTorque);
@@ -1355,12 +1355,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             sb.append(format(" Polarization Reciprocal: %16.8f\n", erecipi));
             sb.append(format(" Polarization Real Space: %16.8f\n", ereali));
             if (generalizedKirkwoodTerm) {
-                sb.append(format(" Generalized Kirkwood:    %16.8f\n", generalizedKirkwoodEnergy));
+                sb.append(format(" Generalized Kirkwood:    %16.8f\n", solvationEnergy));
             }
             logger.info(sb.toString());
         }
 
-        return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
+        return permanentMultipoleEnergy + polarizationEnergy + solvationEnergy;
     }
 
     /**
@@ -1498,8 +1498,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * @return a double.
      */
     @Override
-    public double getGKEnergy() {
-        return generalizedKirkwoodEnergy;
+    public double getSolvationEnergy() {
+        return solvationEnergy;
     }
 
     @Override
@@ -1510,6 +1510,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     @Override
     public double getDispersionEnergy() {
         return generalizedKirkwood.getDispersionEnergy();
+    }
+
+    /**
+     * <p>getGeneralizedKirkwoodEnergy.</p>
+     *
+     * @return a double.
+     */
+    @Override
+    public double getGKEnergy() {
+        return generalizedKirkwood.getGeneralizedKirkwoordEnergy();
     }
 
     /**

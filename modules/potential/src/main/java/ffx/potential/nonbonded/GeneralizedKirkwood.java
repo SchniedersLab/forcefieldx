@@ -369,9 +369,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private double dl2Pow = 0.0;
     /**
-     * Electrostatic Solvation Energy.
+     * Total Solvation Energy.
      */
     private double solvationEnergy = 0.0;
+    /**
+     * Electrostatic Solvation Energy.
+     */
+    private double gkEnergy = 0.0;
     /**
      * Dispersion Solvation Energy.
      */
@@ -1013,6 +1017,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     public double solvationEnergy(double gkPolarizationEnergy, boolean gradient, boolean print) {
 
+        cavitationEnergy = 0.0;
+        dispersionEnergy = 0.0;
+        gkEnergy = 0.0;
+
         try {
             // Find the GK energy.
             gkTime = -System.nanoTime();
@@ -1023,9 +1031,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             gkTime += System.nanoTime();
 
             // Find the nonpolar energy.
-            cavitationEnergy = 0.0;
-            dispersionEnergy = 0.0;
-
             switch (nonPolar) {
                 case CAV:
                     cavitationTime = -System.nanoTime();
@@ -1104,11 +1109,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        solvationEnergy = gkEnergyRegion.getEnergy() + gkPolarizationEnergy;
-        solvationEnergy += cavitationEnergy + dispersionEnergy;
+        gkEnergy = gkEnergyRegion.getEnergy() + gkPolarizationEnergy;
+
+        // Solvation energy is the sum of cavitation, dispersion and GK
+        solvationEnergy = cavitationEnergy + dispersionEnergy + gkEnergy;
 
         if (print) {
-            logger.info(format(" Generalized Kirkwood%16.8f %10.3f", solvationEnergy, gkTime * 1e-9));
+            logger.info(format(" Generalized Kirkwood%16.8f %10.3f", gkEnergy, gkTime * 1e-9));
             switch (nonPolar) {
                 case CAV:
                     logger.info(format(" Cavitation          %16.8f %10.3f",
@@ -1141,9 +1148,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
-     * Returns the cavitation component (if applicable) of GK energy. If this GK
-     * is operating without a cavitation term, it either returns 0, or throws an
-     * error if throwError is true.
+     * Returns the cavitation component of the solvation energy.
      *
      * @return Cavitation energy
      */
@@ -1152,14 +1157,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
-     * Returns the dispersion component (if applicable) of GK energy. If this GK
-     * is operating without a dispersion term, it either returns 0, or throws an
-     * error if throwError is true.
+     * Returns the dispersion component of the solvation energy.
      *
-     * @return Cavitation energy
+     * @return Dispersion energy
      */
     public double getDispersionEnergy() {
         return dispersionEnergy;
+    }
+
+    /**
+     * Returns the GK component of the solvation energy.
+     *
+     * @return GK electrostatic energy
+     */
+    public double getGeneralizedKirkwoordEnergy() {
+        return gkEnergy;
     }
 
     /**

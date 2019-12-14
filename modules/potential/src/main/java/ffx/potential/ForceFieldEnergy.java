@@ -2070,7 +2070,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
-                    solvationEnergy = particleMeshEwald.getGKEnergy();
+                    solvationEnergy = particleMeshEwald.getSolvationEnergy();
                     nGKInteractions = particleMeshEwald.getGKInteractions();
                     electrostaticTime += System.nanoTime();
                 }
@@ -3495,7 +3495,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             case InducedReciprocal:
                 return particleMeshEwald.getIndRecipEnergy();
             case GeneralizedKirkwood:
-                return particleMeshEwald.getGKEnergy();
+                return particleMeshEwald.getSolvationEnergy();
             case Bonded:
                 return totalBondedEnergy;
             case Bond:

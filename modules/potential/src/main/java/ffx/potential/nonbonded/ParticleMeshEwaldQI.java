@@ -1948,6 +1948,16 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     }
 
     /**
+     * <p>getGeneralizedKirkwoodEnergy.</p>
+     *
+     * @return a double.
+     */
+    @Override
+    public double getGKEnergy() {
+        return generalizedKirkwood.getGeneralizedKirkwoordEnergy();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -8215,7 +8225,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      *
      * @return a double.
      */
-    public double getGKEnergy() {
+    public double getSolvationEnergy() {
         return generalizedKirkwoodEnergy;
     }
 }
