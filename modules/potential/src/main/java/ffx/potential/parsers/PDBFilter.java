@@ -3118,46 +3118,29 @@ public final class PDBFilter extends SystemFilter {
 
     @Override
     public int countNumModels() {
-        Pattern model = Pattern.compile("MODEL");
-        int numModels = 0;
-        boolean eof = true;
-        for (MolecularAssembly system : systems) {
-            try {
-                BufferedReader currentReader;
-                if (readers.containsKey(system)) {
-                    currentReader = readers.get(system);
-                    if (!currentReader.ready()) {
-                        currentReader = new BufferedReader(new FileReader(readFile));
-                        readers.put(system, currentReader);
-                    }
-                } else {
-                    currentReader = new BufferedReader(new FileReader(readFile));
-                    readers.put(system, currentReader);
-                }
-                // Skip to appropriate model.
-                String line = currentReader.readLine();
+        Set<File> files = systems.stream().
+                map(MolecularAssembly::getFile).
+                map(File::toString).distinct().
+                map(File::new).
+                collect(Collectors.toSet());
+
+        // Dangers of parallelism are minimized by: unique files/filenames, read-only access.
+        return files.parallelStream().mapToInt((File fi) -> {
+            int nModelsLocal = 0;
+            try (BufferedReader br = new BufferedReader(new FileReader(fi))) {
+                String line = br.readLine();
                 while (line != null) {
-                    line = line.trim();
-                    Matcher match = model.matcher(line);
-                    if (match.find()) {
-                        numModels++;
-                        eof = false;
+                    if (line.startsWith("MODEL")) {
+                        ++nModelsLocal;
                     }
-                    line = currentReader.readLine();
+                    line = br.readLine();
                 }
-                if (eof) {
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.log(Level.FINEST, format("\n End of file reached for %s", readFile));
-                    }
-                    currentReader.close();
-                    return numModels;
-                }
+                nModelsLocal = Math.max(1, nModelsLocal);
             } catch (IOException ex) {
-                logger.info(format(" Exception in parsing frame %d of %s:"
-                        + " %s", modelsRead, system.toString(), ex.toString()));
+                logger.info(format(" Exception in parsing file %s: %s", fi, ex));
             }
-        }
-        return numModels;
+            return nModelsLocal;
+        }).sum();
     }
 
     /**
