@@ -51,6 +51,11 @@ import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
 
 import com.apporiented.algorithm.clustering.*
+import com.apporiented.algorithm.clustering.visualization.*
+
+import javax.swing.*
+import java.awt.BorderLayout
+import java.awt.Color
 
 import groovy.lang.Binding
 
@@ -193,7 +198,48 @@ class Cluster extends PotentialScript {
         logger.info(String.format("\nTotal TWSS: %f", ttwss));
     }
 
+    /**
+     * This method performs hierarchical clustering on a distance matrix. If the system isn't headless, a dendrogram
+     * is printed of the clustered results.
+     *
+     * @param distMatrix An ArrayList<double[]> that holds the distance matrix.
+     */
     void hierarchicalAgglomerativeCluster(ArrayList<double[]> distMatrix){
+        //Convert the distance matrix to a double[][] for the clustering algorithm.
+        int distMatrixLength = distMatrix.size()
+        double[][] distMatrixArray = new double[distMatrixLength][distMatrixLength]
+        String[] names = new String[distMatrixLength]
+        for(int i=0; i<distMatrixLength; i++){
+            distMatrixArray[i] = distMatrix.get(i)
+            //Set names of the clustered elements equal to the model number in the arc/pdb by creating string of sequential numbers.
+            names[i] = i.toString()
+        }
+
+        //Cluster the data.
+        ClusteringAlgorithm clusteringAlgorithm = new DefaultClusteringAlgorithm()
+        com.apporiented.algorithm.clustering.Cluster cluster = clusteringAlgorithm.performClustering(distMatrixArray,names,new AverageLinkageStrategy())
+
+        //If the system is headless, skip all graphical components. Otherwise print the dendrogram from clustering.
+        String headless = System.getProperty("java.awt.headless")
+        if(!headless){
+            JFrame frame = new JFrame()
+            frame.setSize(400, 300)
+            frame.setLocation(400, 300)
+            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+            JPanel content = new JPanel()
+            DendrogramPanel dp = new DendrogramPanel()
+            frame.setContentPane(content)
+            content.setBackground(Color.red)
+            content.setLayout(new BorderLayout())
+            content.add(dp, BorderLayout.CENTER)
+            dp.setBackground(Color.WHITE)
+            dp.setLineColor(Color.BLACK)
+            dp.setScaleValueDecimals(0)
+            dp.setScaleValueInterval(0.5)
+            dp.setShowDistances(false)
+            dp.setModel(cluster)
+            frame.setVisible(true)
+        }
     }
 
     /**
