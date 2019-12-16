@@ -369,9 +369,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private double dl2Pow = 0.0;
     /**
-     * Electrostatic Solvation Energy.
+     * Total Solvation Energy.
      */
     private double solvationEnergy = 0.0;
+    /**
+     * Electrostatic Solvation Energy.
+     */
+    private double gkEnergy = 0.0;
     /**
      * Dispersion Solvation Energy.
      */
@@ -1013,6 +1017,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     public double solvationEnergy(double gkPolarizationEnergy, boolean gradient, boolean print) {
 
+        cavitationEnergy = 0.0;
+        dispersionEnergy = 0.0;
+        gkEnergy = 0.0;
+
         try {
             // Find the GK energy.
             gkTime = -System.nanoTime();
@@ -1027,9 +1035,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 case CAV:
                     cavitationTime = -System.nanoTime();
                     parallelTeam.execute(cavitationRegion);
+                    cavitationEnergy = cavitationRegion.getEnergy();
                     if (doVolume) {
                         ParallelTeam serialTeam = new ParallelTeam(1);
                         serialTeam.execute(volumeRegion);
+                        cavitationEnergy += volumeRegion.getEnergy();
                     }
                     cavitationTime += System.nanoTime();
                     break;
@@ -1037,12 +1047,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionTime = -System.nanoTime();
                     dispersionRegion.init(atoms, crystal, use, neighborLists, x, y, z, cut2, gradient, grad);
                     parallelTeam.execute(dispersionRegion);
+                    dispersionEnergy = dispersionRegion.getEnergy();
                     dispersionTime += System.nanoTime();
                     cavitationTime = -System.nanoTime();
                     parallelTeam.execute(cavitationRegion);
+                    cavitationEnergy = cavitationRegion.getEnergy();
                     if (doVolume) {
                         ParallelTeam serialTeam = new ParallelTeam(1);
                         serialTeam.execute(volumeRegion);
+                        cavitationEnergy += volumeRegion.getEnergy();
                     }
                     cavitationTime += System.nanoTime();
                     break;
@@ -1050,8 +1063,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionTime = -System.nanoTime();
                     dispersionRegion.init(atoms, crystal, use, neighborLists, x, y, z, cut2, gradient, grad);
                     parallelTeam.execute(dispersionRegion);
+                    dispersionEnergy = dispersionRegion.getEnergy();
                     dispersionTime += System.nanoTime();
-
                     cavitationTime = -System.nanoTime();
                     double[][] positions = new double[nAtoms][3];
                     for (int i = 0; i < nAtoms; i++) {
@@ -1060,12 +1073,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         positions[i][2] = atoms[i].getZ();
                     }
                     gaussVol.energyAndGradient(positions, grad);
+                    cavitationEnergy = gaussVol.getEnergy();
                     cavitationTime += System.nanoTime();
                     break;
                 case BORN_CAV_DISP:
                     dispersionTime = -System.nanoTime();
                     dispersionRegion.init(atoms, crystal, use, neighborLists, x, y, z, cut2, gradient, grad);
                     parallelTeam.execute(dispersionRegion);
+                    dispersionEnergy = dispersionRegion.getEnergy();
                     dispersionTime += System.nanoTime();
                     break;
                 case HYDROPHOBIC_PMF:
@@ -1094,42 +1109,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        solvationEnergy = gkEnergyRegion.getEnergy() + gkPolarizationEnergy;
+        gkEnergy = gkEnergyRegion.getEnergy() + gkPolarizationEnergy;
+
+        // Solvation energy is the sum of cavitation, dispersion and GK
+        solvationEnergy = cavitationEnergy + dispersionEnergy + gkEnergy;
 
         if (print) {
-            logger.info(format(" Generalized Kirkwood%16.8f %10.3f", solvationEnergy, gkTime * 1e-9));
+            logger.info(format(" Generalized Kirkwood%16.8f %10.3f", gkEnergy, gkTime * 1e-9));
             switch (nonPolar) {
                 case CAV:
-                    if (doVolume) {
-                        cavitationEnergy = volumeRegion.getEnergy();
-                    } else {
-                        cavitationEnergy = cavitationRegion.getEnergy();
-                    }
                     logger.info(format(" Cavitation          %16.8f %10.3f",
                             cavitationEnergy, cavitationTime * 1e-9));
                     break;
                 case CAV_DISP:
-                    if (doVolume) {
-                        cavitationEnergy = volumeRegion.getEnergy();
-                    } else {
-                        cavitationEnergy = cavitationRegion.getEnergy();
-                    }
-                    dispersionEnergy = dispersionRegion.getEnergy();
-                    logger.info(format(" Cavitation          %16.8f %10.3f",
-                            cavitationEnergy, cavitationTime * 1e-9));
-                    logger.info(format(" Dispersion          %16.8f %10.3f",
-                            dispersionEnergy, dispersionTime * 1e-9));
-                    break;
                 case GAUSS_DISP:
-                    cavitationEnergy = gaussVol.getEnergy();
-                    dispersionEnergy = dispersionRegion.getEnergy();
                     logger.info(format(" Cavitation          %16.8f %10.3f",
                             cavitationEnergy, cavitationTime * 1e-9));
                     logger.info(format(" Dispersion          %16.8f %10.3f",
                             dispersionEnergy, dispersionTime * 1e-9));
                     break;
                 case BORN_CAV_DISP:
-                    dispersionEnergy = dispersionRegion.getEnergy();
                     logger.info(format(" Dispersion          %16.8f %10.3f",
                             dispersionEnergy, dispersionTime * 1e-9));
                     break;
@@ -1141,34 +1140,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        switch (nonPolar) {
-            case CAV:
-                if (doVolume) {
-                    solvationEnergy += volumeRegion.getEnergy();
-                } else {
-                    solvationEnergy += cavitationRegion.getEnergy();
-                }
-                break;
-            case CAV_DISP:
-                if (doVolume) {
-                    solvationEnergy += dispersionRegion.getEnergy() + volumeRegion.getEnergy();
-                } else {
-                    solvationEnergy += dispersionRegion.getEnergy() + cavitationRegion.getEnergy();
-                }
-                break;
-            case GAUSS_DISP:
-                solvationEnergy += dispersionRegion.getEnergy() + gaussVol.getEnergy();
-                break;
-            case BORN_CAV_DISP:
-                solvationEnergy += dispersionRegion.getEnergy();
-                break;
-            case HYDROPHOBIC_PMF:
-            case BORN_SOLV:
-            case NONE:
-            default:
-                break;
-        }
-
         if (lambdaTerm) {
             return lPow * solvationEnergy;
         } else {
@@ -1177,47 +1148,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
-     * Returns the cavitation component (if applicable) of GK energy. If this GK
-     * is operating without a cavitation term, it either returns 0, or throws an
-     * error if throwError is true.
+     * Returns the cavitation component of the solvation energy.
      *
-     * @param throwError a boolean.
      * @return Cavitation energy
      */
-    public double getCavitationEnergy(boolean throwError) {
-        switch (nonPolar) {
-            case CAV:
-            case CAV_DISP:
-                return cavitationEnergy;
-            default:
-                if (throwError) {
-                    throw new IllegalArgumentException(" GK is operating without a cavitation term");
-                } else {
-                    return 0.0;
-                }
-        }
+    public double getCavitationEnergy() {
+        return cavitationEnergy;
     }
 
     /**
-     * Returns the dispersion component (if applicable) of GK energy. If this GK
-     * is operating without a dispersion term, it either returns 0, or throws an
-     * error if throwError is true.
+     * Returns the dispersion component of the solvation energy.
      *
-     * @param throwError a boolean.
-     * @return Cavitation energy
+     * @return Dispersion energy
      */
-    public double getDispersionEnergy(boolean throwError) {
-        switch (nonPolar) {
-            case CAV_DISP:
-            case BORN_CAV_DISP:
-                return dispersionEnergy;
-            default:
-                if (throwError) {
-                    throw new IllegalArgumentException(" GK is operating without a dispersion term");
-                } else {
-                    return 0.0;
-                }
-        }
+    public double getDispersionEnergy() {
+        return dispersionEnergy;
+    }
+
+    /**
+     * Returns the GK component of the solvation energy.
+     *
+     * @return GK electrostatic energy
+     */
+    public double getGeneralizedKirkwoordEnergy() {
+        return gkEnergy;
     }
 
     /**

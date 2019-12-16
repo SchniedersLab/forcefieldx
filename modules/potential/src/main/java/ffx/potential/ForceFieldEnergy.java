@@ -2070,7 +2070,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
-                    solvationEnergy = particleMeshEwald.getGKEnergy();
+                    solvationEnergy = particleMeshEwald.getSolvationEnergy();
                     nGKInteractions = particleMeshEwald.getGKInteractions();
                     electrostaticTime += System.nanoTime();
                 }
@@ -3495,7 +3495,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             case InducedReciprocal:
                 return particleMeshEwald.getIndRecipEnergy();
             case GeneralizedKirkwood:
-                return particleMeshEwald.getGKEnergy();
+                return particleMeshEwald.getSolvationEnergy();
             case Bonded:
                 return totalBondedEnergy;
             case Bond:
@@ -3620,7 +3620,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return a double.
      */
     public double getCavitationEnergy() {
-        return particleMeshEwald.getCavitationEnergy(false);
+        return particleMeshEwald.getCavitationEnergy();
     }
 
     /**
@@ -3629,8 +3629,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return a double.
      */
     public double getDispersionEnergy() {
-        return particleMeshEwald.getDispersionEnergy(false);
+        return particleMeshEwald.getDispersionEnergy();
     }
+
+    /**
+     * <p>getGKEnergy.</p>
+     *
+     * @return a double.
+     */
+    public double getGKEnergy() {
+        return particleMeshEwald.getGKEnergy();
+    }
+
 
     /**
      * <p>getEsvBiasEnergy.</p>

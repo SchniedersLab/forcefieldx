@@ -1930,28 +1930,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getCavitationEnergy(boolean throwError) {
-        return generalizedKirkwood.getCavitationEnergy(throwError);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getDispersionEnergy(boolean throwError) {
-        return generalizedKirkwood.getDispersionEnergy(throwError);
-    }
-
-    /**
      * <p>getCavitationEnergy.</p>
      *
      * @return a double.
      */
     public double getCavitationEnergy() {
-        return generalizedKirkwood.getCavitationEnergy(false);
+        return generalizedKirkwood.getCavitationEnergy();
     }
 
     /**
@@ -1960,7 +1944,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * @return a double.
      */
     public double getDispersionEnergy() {
-        return generalizedKirkwood.getDispersionEnergy(false);
+        return generalizedKirkwood.getDispersionEnergy();
+    }
+
+    /**
+     * <p>getGeneralizedKirkwoodEnergy.</p>
+     *
+     * @return a double.
+     */
+    @Override
+    public double getGKEnergy() {
+        return generalizedKirkwood.getGeneralizedKirkwoordEnergy();
     }
 
     /**
@@ -8231,7 +8225,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      *
      * @return a double.
      */
-    public double getGKEnergy() {
+    public double getSolvationEnergy() {
         return generalizedKirkwoodEnergy;
     }
 }
