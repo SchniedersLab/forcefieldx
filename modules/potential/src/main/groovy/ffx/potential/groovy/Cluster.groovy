@@ -133,13 +133,13 @@ class Cluster extends PotentialScript {
             return this
         }
 
-        List<double[]> distMatrix = new ArrayList<double[]>();
+        ArrayList<double[]> distMatrix = new ArrayList<double[]>();
 
         //Either read in the distance matrix or calculate the distance matrix on the fly.
         if (readIn) {
             distMatrix = readInDistanceMatrix(distMatrix);
         } else {
-            distMatrix = calcDistanceMatrix();
+            distMatrix = calcDistanceMatrix(distMatrix);
         }
 
         //Either use kmeans clustering or hierarchical agglomerative clustering.
@@ -274,7 +274,12 @@ class Cluster extends PotentialScript {
 
         // Evaluate the superpose script to get the distance matrix of RMSD values.
         superpose.run()
-        distMatrix = superpose.getDistanceMatrix()
+        double[][] tempDistMatrix = superpose.getDistanceMatrix()
+        int matrixLength = tempDistMatrix.length
+
+        for(int i = 0; i < matrixLength; i++){
+            distMatrix.add(tempDistMatrix[i])
+        }
 
         return distMatrix
     }
