@@ -112,6 +112,14 @@ class Cluster extends PotentialScript {
     private String finish = Integer.MAX_VALUE.toString()
 
     /**
+     * --clusDis or --clusterDistance Distance value for dividing clusters from hierarchical tree.
+     * The Dill Group at Stony Brook University uses a value of 2.0.
+     */
+    @Option(names = ['--treeDis', '--treeDistance'], paramLabel = "2.0",
+            description = "The distance value where a hierarchical tree should be divided into clusters.")
+    private double treeDistance = 2.0
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -217,7 +225,12 @@ class Cluster extends PotentialScript {
 
         //Cluster the data.
         ClusteringAlgorithm clusteringAlgorithm = new DefaultClusteringAlgorithm()
-        com.apporiented.algorithm.clustering.Cluster cluster = clusteringAlgorithm.performClustering(distMatrixArray,names,new AverageLinkageStrategy())
+        com.apporiented.algorithm.clustering.Cluster cluster = clusteringAlgorithm.performClustering(distMatrixArray,names,new CompleteLinkageStrategy())
+        System.out.println("Root Cluster Name: " + cluster.getName())
+        System.out.println("Root Cluster Children: " + cluster.getChildren().toString())
+        System.out.println("Root Cluster Distance: " + cluster.getDistanceValue())
+
+        printChildren(cluster)
 
         //If the system is headless, skip all graphical components. Otherwise print the dendrogram from clustering.
         String headless = System.getProperty("java.awt.headless")
@@ -235,12 +248,70 @@ class Cluster extends PotentialScript {
             dp.setBackground(Color.WHITE)
             dp.setLineColor(Color.BLACK)
             dp.setScaleValueDecimals(0)
-            dp.setScaleValueInterval(0.5)
+            dp.setScaleValueInterval(1)
             dp.setShowDistances(false)
             dp.setModel(cluster)
             frame.setVisible(true)
         }
     }
+
+    void printChildren(com.apporiented.algorithm.clustering.Cluster cluster){
+        //Print cluster information.
+        //System.out.println("Cluster Name: " + cluster.getName())
+        //System.out.println("Cluster Children: " + cluster.getChildren().toString())
+        //System.out.println("Cluster Distance: " + cluster.getDistanceValue())
+        double clusterDistance = cluster.getDistanceValue()
+        List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
+
+        // Cluster division point by tree distance.
+        if(clusterDistance<=treeDistance && cluster.getParent().getDistanceValue() > treeDistance){
+            System.out.println("NEW CLUSTER.............................................................................")
+            for(com.apporiented.algorithm.clustering.Cluster child : children){
+                // Recurse through the rest of the tree and store names of ending cluster.
+                printChildren2(child)
+            }
+        }else {
+            if (children.size() == 0) {
+                return
+            } else {
+                for (com.apporiented.algorithm.clustering.Cluster child : children) {
+                    printChildren(child)
+                }
+            }
+        }
+        return
+    }
+
+    void printChildren2(com.apporiented.algorithm.clustering.Cluster cluster){
+        List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
+        if (children.size() == 0) {
+            System.out.println(cluster.getName())
+            return
+        } else {
+            for (com.apporiented.algorithm.clustering.Cluster child : children) {
+                printChildren2(child)
+            }
+        }
+    }
+
+    /*void printChildrenOriginal(com.apporiented.algorithm.clustering.Cluster cluster){
+        //Print cluster information.
+        System.out.println("Cluster Name: " + cluster.getName())
+        System.out.println("Cluster Children: " + cluster.getChildren().toString())
+        System.out.println("Cluster Distance: " + cluster.getDistanceValue())
+        double clusterDistance = cluster.getDistanceValue()
+
+        List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
+        if(children.size()==0){
+            System.out.println("No children for this cluster. End of line.")
+            return
+        }else{
+            for(com.apporiented.algorithm.clustering.Cluster child:children){
+                printChildren(child)
+            }
+        }
+        return
+    }*/
 
     /**
      * This method reads in the distance matrix from an input file.
