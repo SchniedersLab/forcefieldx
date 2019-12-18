@@ -225,16 +225,72 @@ class Cluster extends PotentialScript {
             names[i] = i.toString()
         }
 
-        //Cluster the data.
+        //Cluster the data. Note that the "cluster" object is actually the root node for the tree.
         ClusteringAlgorithm clusteringAlgorithm = new DefaultClusteringAlgorithm()
-        com.apporiented.algorithm.clustering.Cluster cluster = clusteringAlgorithm.performClustering(distMatrixArray, names, new CompleteLinkageStrategy())
-        System.out.println("Root Cluster Name: " + cluster.getName())
-        System.out.println("Root Cluster Children: " + cluster.getChildren().toString())
-        System.out.println("Root Cluster Distance: " + cluster.getDistanceValue())
+        com.apporiented.algorithm.clustering.Cluster rootNode = clusteringAlgorithm.performClustering(distMatrixArray, names, new CompleteLinkageStrategy())
 
-        parseClusters(cluster)
+        //Separate clusters based on the user-supplied treeDistance and fill the clusterList with lists holding
+        //the model numbers that belong to a particular cluster.
+        parseClusters(rootNode)
 
-        //If the system is headless, skip all graphical components. Otherwise print the dendrogram from clustering.
+        //If the system is headless, skip all graphical components. Otherwise print the dendrogram.
+        printDendrogram(rootNode)
+
+        //Find the index for the centroid of each cluster in the clusterList.
+        ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
+
+        //TODO:
+        //Save out information on each cluster based on the clusterList and centroids.
+        //Arc/PDB file with all models belonging to one cluster.
+        //Possibly print the cluster size.
+
+    }
+
+    /**
+     * This method finds the centroid for each cluster in the clusterList. The index for the location of
+     * the centroid of each cluster is returned.
+     *
+     * @param distMatrixArray The all vs. all distance matrix of RMSD values for each model/node in the hierarchical tree.
+     * @return An ArrayList<Integer> containing the index for the centroid of each cluster in the clusterList.
+     */
+    ArrayList<Integer> findCentroids(double[][] distMatrixArray){
+        //Find the centroid of each cluster.
+        ArrayList<Integer> indicesOfCentroids = new ArrayList<Integer>()
+        //Loop through every cluster.
+        for(ArrayList<String> clusterNodes : clusterList){
+            ArrayList<Double> rmsds = new ArrayList<>()
+            //Loop through every node in a cluster.
+            for(String node1 : clusterNodes){
+                double rmsd = 0
+                int counter = 0
+                //Loop through every node in a cluster again for comparison.
+                for(String node2: clusterNodes){
+                    //Skip analysis if node is the same.
+                    if(node1==node2){
+                        continue
+                    } else if(node1!=node2){
+                        //Find the rmsd of the two nodes from the all vs. all distance matrix of rmsds and add it to the total.
+                        rmsd+=distMatrixArray[node1.toInteger()][node2.toInteger()]
+                        counter++
+                    }
+                }
+                //Calculate the average rmsd for a node to all other nodes in a cluster.
+                rmsd = rmsd/counter
+                rmsds.add(rmsd.toDouble())
+            }
+            //Find minimum average rmsd a node has to all other nodes in a cluster. This node is the centroid of the cluster.
+            Double minimum = Collections.min(rmsds)
+            indicesOfCentroids.add(rmsds.indexOf(minimum).toInteger())
+        }
+        return indicesOfCentroids
+    }
+
+    /**
+     * This method prints a dendrogram to the screen if the system is not headless.
+     *
+     * @param cluster The root cluster of the hierarchical tree.
+     */
+    void printDendrogram(com.apporiented.algorithm.clustering.Cluster cluster){
         String headless = System.getProperty("java.awt.headless")
         if (!headless) {
             JFrame frame = new JFrame()
@@ -273,20 +329,21 @@ class Cluster extends PotentialScript {
     }
 
     /**
-     * This method adds node names to a cluster list to indicate which nodes belong to a particular cluster.
+     * This method adds node names to a cluster list to indicate which nodes belong to a particular cluster. Clusters
+     * from the hierarchical tree are determined based on the treeDistance cutoff.
      *
-     * @param cluster The cluster object being iterated over.
-     * @param curCluster A boolean indicating that a cluster has been identified.
-     * This is set to true once for each cluster.
+     * @param rootNode The cluster object being iterated over.
+     * @param curCluster A boolean indicating that a cluster has been identified based on the treeDistance cutoff.
+     * The curCluster is set to true once for each cluster.
      */
-    void populateChildren(final com.apporiented.algorithm.clustering.Cluster cluster, boolean curCluster) {
-        final double distance = cluster.getDistanceValue()
-        final List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
+    void populateChildren(final com.apporiented.algorithm.clustering.Cluster rootNode, boolean curCluster) {
+        final double distance = rootNode.getDistanceValue()
+        final List<com.apporiented.algorithm.clustering.Cluster> children = rootNode.getChildren()
         if (!curCluster && (distance <= treeDistance)) {
             curCluster = true
             List<String> clusterSubList = new ArrayList<>()
             clusterList.add(clusterSubList)
-            populateChildren(cluster, curCluster)
+            populateChildren(rootNode, curCluster)
         } else if (!children.empty) {
             for (final com.apporiented.algorithm.clustering.Cluster child : children) {
                 populateChildren(child, curCluster)
@@ -294,7 +351,7 @@ class Cluster extends PotentialScript {
         } else {
             final int clusterListSize = clusterList.size()
             if (clusterListSize != 0) {
-                clusterList.get(clusterListSize - 1).add(cluster.getName())
+                clusterList.get(clusterListSize - 1).add(rootNode.getName())
             } else {
                 logger.severe(" SEVERE: A node cannot be added to the tree.")
             }
@@ -303,6 +360,7 @@ class Cluster extends PotentialScript {
 
     /**
      * This method reads in the distance matrix from an input file.
+     *
      * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
      * @return ArrayList < double [ ] >   that holds all values for the read in distance matrix.
      */
