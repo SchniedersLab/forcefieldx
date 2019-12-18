@@ -128,6 +128,8 @@ class Cluster extends PotentialScript {
 
     private File baseDir = null
 
+    private final List<List<String>> clusterList = new ArrayList<>()
+
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir
     }
@@ -156,18 +158,18 @@ class Cluster extends PotentialScript {
         }
 
         //Either use kmeans clustering or hierarchical agglomerative clustering.
-        if(algorithm==0 || algorithm==1){
+        if (algorithm == 0 || algorithm == 1) {
             kmeansCluster(distMatrix);
-        } else if(algorithm==2){
+        } else if (algorithm == 2) {
             hierarchicalAgglomerativeCluster(distMatrix);
-        } else{
+        } else {
             logger.severe("Clustering algorithm has not been set.")
         }
 
         return this
     }
 
-    void kmeansCluster(ArrayList<double[]> distMatrix){
+    void kmeansCluster(ArrayList<double[]> distMatrix) {
         // Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
         KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
@@ -179,7 +181,7 @@ class Cluster extends PotentialScript {
         }
         List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
 
-        if (algorithm==1) {
+        if (algorithm == 1) {
             MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
             kClusters = kClust2.cluster(myClusterables);
         }
@@ -212,12 +214,12 @@ class Cluster extends PotentialScript {
      *
      * @param distMatrix An ArrayList<double[]> that holds the distance matrix.
      */
-    void hierarchicalAgglomerativeCluster(ArrayList<double[]> distMatrix){
+    void hierarchicalAgglomerativeCluster(ArrayList<double[]> distMatrix) {
         //Convert the distance matrix to a double[][] for the clustering algorithm.
         int distMatrixLength = distMatrix.size()
         double[][] distMatrixArray = new double[distMatrixLength][distMatrixLength]
         String[] names = new String[distMatrixLength]
-        for(int i=0; i<distMatrixLength; i++){
+        for (int i = 0; i < distMatrixLength; i++) {
             distMatrixArray[i] = distMatrix.get(i)
             //Set names of the clustered elements equal to the model number in the arc/pdb by creating string of sequential numbers.
             names[i] = i.toString()
@@ -225,16 +227,16 @@ class Cluster extends PotentialScript {
 
         //Cluster the data.
         ClusteringAlgorithm clusteringAlgorithm = new DefaultClusteringAlgorithm()
-        com.apporiented.algorithm.clustering.Cluster cluster = clusteringAlgorithm.performClustering(distMatrixArray,names,new CompleteLinkageStrategy())
+        com.apporiented.algorithm.clustering.Cluster cluster = clusteringAlgorithm.performClustering(distMatrixArray, names, new CompleteLinkageStrategy())
         System.out.println("Root Cluster Name: " + cluster.getName())
         System.out.println("Root Cluster Children: " + cluster.getChildren().toString())
         System.out.println("Root Cluster Distance: " + cluster.getDistanceValue())
 
-        printChildren(cluster)
+        parseClusters(cluster)
 
         //If the system is headless, skip all graphical components. Otherwise print the dendrogram from clustering.
         String headless = System.getProperty("java.awt.headless")
-        if(!headless){
+        if (!headless) {
             JFrame frame = new JFrame()
             frame.setSize(400, 300)
             frame.setLocation(400, 300)
@@ -255,68 +257,54 @@ class Cluster extends PotentialScript {
         }
     }
 
-    void printChildren(com.apporiented.algorithm.clustering.Cluster cluster){
-        //Print cluster information.
-        //System.out.println("Cluster Name: " + cluster.getName())
-        //System.out.println("Cluster Children: " + cluster.getChildren().toString())
-        //System.out.println("Cluster Distance: " + cluster.getDistanceValue())
-        double clusterDistance = cluster.getDistanceValue()
-        List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
-
-        // Cluster division point by tree distance.
-        if(clusterDistance<=treeDistance && cluster.getParent().getDistanceValue() > treeDistance){
-            System.out.println("NEW CLUSTER.............................................................................")
-            for(com.apporiented.algorithm.clustering.Cluster child : children){
-                // Recurse through the rest of the tree and store names of ending cluster.
-                printChildren2(child)
-            }
-        }else {
-            if (children.size() == 0) {
-                return
-            } else {
-                for (com.apporiented.algorithm.clustering.Cluster child : children) {
-                    printChildren(child)
-                }
+    /**
+     * This method parses clusters in the hierarchical tree and prints the model that belongs to each cluster.
+     * 
+     * @param root The root node of the hierarchical tree.
+     */
+    void parseClusters(final com.apporiented.algorithm.clustering.Cluster root) {
+        populateChildren(root, false)
+        for (final List<String> curCluster : clusterList) {
+            System.out.println("==========Iterating over next cluster==========")
+            for (final String element : curCluster) {
+                System.out.println(element)
             }
         }
-        return
     }
 
-    void printChildren2(com.apporiented.algorithm.clustering.Cluster cluster){
-        List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
-        if (children.size() == 0) {
-            System.out.println(cluster.getName())
-            return
+    /**
+     * This method adds node names to a cluster list to indicate which nodes belong to a particular cluster.
+     *
+     * @param cluster The cluster object being iterated over.
+     * @param curCluster A boolean indicating that a cluster has been identified.
+     * This is set to true once for each cluster.
+     */
+    void populateChildren(final com.apporiented.algorithm.clustering.Cluster cluster, boolean curCluster) {
+        final double distance = cluster.getDistanceValue()
+        final List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
+        if (!curCluster && (distance <= treeDistance)) {
+            curCluster = true
+            List<String> clusterSubList = new ArrayList<>()
+            clusterList.add(clusterSubList)
+            populateChildren(cluster, curCluster)
+        } else if (!children.empty) {
+            for (final com.apporiented.algorithm.clustering.Cluster child : children) {
+                populateChildren(child, curCluster)
+            }
         } else {
-            for (com.apporiented.algorithm.clustering.Cluster child : children) {
-                printChildren2(child)
+            final int clusterListSize = clusterList.size()
+            if (clusterListSize != 0) {
+                clusterList.get(clusterListSize - 1).add(cluster.getName())
+            } else {
+                logger.severe(" SEVERE: A node cannot be added to the tree.")
             }
         }
     }
-
-    /*void printChildrenOriginal(com.apporiented.algorithm.clustering.Cluster cluster){
-        //Print cluster information.
-        System.out.println("Cluster Name: " + cluster.getName())
-        System.out.println("Cluster Children: " + cluster.getChildren().toString())
-        System.out.println("Cluster Distance: " + cluster.getDistanceValue())
-        double clusterDistance = cluster.getDistanceValue()
-
-        List<com.apporiented.algorithm.clustering.Cluster> children = cluster.getChildren()
-        if(children.size()==0){
-            System.out.println("No children for this cluster. End of line.")
-            return
-        }else{
-            for(com.apporiented.algorithm.clustering.Cluster child:children){
-                printChildren(child)
-            }
-        }
-        return
-    }*/
 
     /**
      * This method reads in the distance matrix from an input file.
      * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
-     * @return ArrayList<double[] >  that holds all values for the read in distance matrix.
+     * @return ArrayList < double [ ] >   that holds all values for the read in distance matrix.
      */
     ArrayList<double[]> readInDistanceMatrix(ArrayList<double[]> distMatrix) {
         File file = new File(filenames.get(0));
@@ -374,7 +362,7 @@ class Cluster extends PotentialScript {
      * This method calculates the distance matrix of all molecular assemblies in an arc/multiple model file.
      *
      * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
-     * @return ArrayList<double[]   >    that holds all values for the read in distance matrix.
+     * @return ArrayList < double [ ] >     that holds all values for the read in distance matrix.
      */
     ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix) {
         //Get the arc/multiple model PDB file from which the RMSD distance matrix should be calculated.
@@ -394,7 +382,7 @@ class Cluster extends PotentialScript {
         double[][] tempDistMatrix = superpose.getDistanceMatrix()
         int matrixLength = tempDistMatrix.length
 
-        for(int i = 0; i < matrixLength; i++){
+        for (int i = 0; i < matrixLength; i++) {
             distMatrix.add(tempDistMatrix[i])
         }
 
