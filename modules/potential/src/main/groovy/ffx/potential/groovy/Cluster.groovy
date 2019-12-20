@@ -86,9 +86,9 @@ class Cluster extends PotentialScript {
     /**
      * -k or --clusters Clustering algorithm to use.
      */
-    @Option(names = ['-k', '--clusters'], paramLabel = "3",
-            description = "Number of desired kmeans clusters for the input data.")
-    private int clusters = 3
+    @Option(names = ['-k', '--clusters'], paramLabel = "0",
+            description = "Maximum number of kmeans clusters for the input data.")
+    private int maxClusters = 0
 
     /**
      * -r or --readInDistMat The algorithm should read in a provided distance matrix rather than the matrix being generated on the fly.
@@ -96,6 +96,13 @@ class Cluster extends PotentialScript {
     @Option(names = ['-r', '--readInDistMat'], paramLabel = "false",
             description = "Tells algorithm to read in the distance matrix from an input file.")
     Boolean readIn = false;
+
+    /**
+     * -numI or --numIterations The number of times each kmeans cluster should be determined.
+     */
+    @Option(names = ['--numI', '--numIterations'], paramLabel = "1",
+            description = "Number of repetitions for each kmeans cluster.")
+    private int numIterations = 1;
 
     /**
      * -s or --start Atom number where RMSD calculation of structure will begin.
@@ -172,40 +179,71 @@ class Cluster extends PotentialScript {
     void kmeansCluster(ArrayList<double[]> distMatrix) {
         // Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
-        KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
-        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
-        int id = 0;
-        for (double[] i : distMatrix) {
-            myClusterables.add(new ClusterWrapper(i, id));
-            id++;
-        }
-        List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
+        int minClusters = 1;
 
-        if (algorithm == 1) {
-            MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
-            kClusters = kClust2.cluster(myClusterables);
+        if (maxClusters <= 0 || maxClusters > distMatrix.size() - 1) {
+            maxClusters = distMatrix.size() - 1;
         }
 
-        // TODO: Output the clusters in a useful way.
-        //Temp output method prints to screen
-        double ttwss = 0;
-        for (int i = 0; i < kClusters.size(); i++) {
-            double twss = 0; // Reset cluster within distance
-            logger.info(String.format("Cluster: " + i));
-            double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
-            for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
-                logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
-                double[] distArray = clusterWrapper.getPoint();
-                // Implement TWSS
-                for (int j = 0; j < sum.size(); j++) {
-                    twss += Math.pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
+        double[] twss = new double[distMatrix.size() - 1];
+        if (algorithm == 0) {
+            minClusters = maxClusters;
+            twss = new double[1];
+        }
+
+        for (int i = 0; i < twss.size(); i++) {
+            twss[i] = Double.MAX_VALUE;
+        }
+
+        for (int clusters = minClusters; clusters <= maxClusters; clusters++) {
+            logger.info(String.format("\n%d Clusters:\n", clusters))
+            for (int k = 0; k < numIterations; k++) {
+                double currentTWSS = 0;
+                KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
+                List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
+                int id = 0;
+                for (double[] i : distMatrix) {
+                    myClusterables.add(new ClusterWrapper(i, id));
+                    id++;
+                }
+                List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
+
+                if (algorithm == 1) {
+                    MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
+                    kClusters = kClust2.cluster(myClusterables);
+                }
+
+                // TODO: Output the clusters in a useful way.
+                //Temp output method prints to screen
+                for (int i = 0; i < kClusters.size(); i++) {
+                    double wss = 0; // Reset cluster within distance
+                    //logger.info(String.format("Cluster: " + i));
+                    double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
+                    for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
+                        //logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
+                        double[] distArray = clusterWrapper.getPoint();
+                        // Implement WSS
+                        for (int j = 0; j < sum.size(); j++) {
+                            wss += Math.pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
+                        }
+                    }
+                    wss = Math.sqrt(wss);
+                    //logger.info(String.format("Cluster WSS: %f", wss));
+                    currentTWSS += wss;
+                }
+                if (algorithm==1 && currentTWSS < twss[clusters - 1]) {
+                    twss[clusters - 1] = currentTWSS;
                 }
             }
-            twss = Math.sqrt(twss);
-            logger.info(String.format("Cluster TWSS: %f", twss));
-            ttwss += twss;
+            logger.info(String.format("\nTotal WSS: %f", twss[clusters - 1]));
         }
-        logger.info(String.format("\nTotal TWSS: %f", ttwss));
+        if (algorithm == 0) {
+            double[] d2TWSS = new double[twss.size() - 2];
+            for (int i = 1; i < twss.size() - 1; i++) {
+                d2TWSS[i - 1] = twss[i + 1] - 2 * twss[i] + twss[i - 1]
+                logger.info(String.format("Second Derivative: %f", d2TWSS[i - 1]))
+            }
+        }
     }
 
     /**
