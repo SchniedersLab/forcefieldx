@@ -38,9 +38,13 @@
 
 package ffx.potential.groovy
 
+import ffx.potential.cli.PotentialScript
+import ffx.potential.MolecularAssembly
 import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
-
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -49,6 +53,7 @@ import org.apache.commons.math3.ml.clustering.CentroidCluster
 import org.apache.commons.math3.ml.clustering.Clusterable
 import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
+import org.apache.commons.io.FilenameUtils
 
 import com.apporiented.algorithm.clustering.*
 import com.apporiented.algorithm.clustering.visualization.*
@@ -155,20 +160,29 @@ class Cluster extends PotentialScript {
             return this
         }
 
-        ArrayList<double[]> distMatrix = new ArrayList<double[]>();
+        ArrayList<double[]> distMatrix = new ArrayList<double[]>()
 
         //Either read in the distance matrix or calculate the distance matrix on the fly.
         if (readIn) {
-            distMatrix = readInDistanceMatrix(distMatrix);
+            distMatrix = readInDistanceMatrix(distMatrix)
         } else {
-            distMatrix = calcDistanceMatrix(distMatrix);
+            File file
+            if (filenames != null && filenames.size() > 0) {
+                activeAssembly = potentialFunctions.open(filenames.get(0))
+                file = new File(filenames.get(0))
+            } else if (activeAssembly == null) {
+                logger.info(helpString())
+                return this
+            }
+
+            distMatrix = calcDistanceMatrix(distMatrix, file)
         }
 
         //Either use kmeans clustering or hierarchical agglomerative clustering.
         if (algorithm == 0 || algorithm == 1) {
-            kmeansCluster(distMatrix);
+            kmeansCluster(distMatrix)
         } else if (algorithm == 2) {
-            hierarchicalAgglomerativeCluster(distMatrix);
+            hierarchicalAgglomerativeCluster(distMatrix)
         } else {
             logger.severe("Clustering algorithm has not been set.")
         }
@@ -274,14 +288,61 @@ class Cluster extends PotentialScript {
         //If the system is headless, skip all graphical components. Otherwise print the dendrogram.
         printDendrogram(rootNode)
 
+        //Store all of the models in the arc/multiple model PDB file in an ArrayList of models.
+        /*SystemFilter systemFilter = potentialFunctions.getFilter()
+        ArrayList<MolecularAssembly> models = new ArrayList<MolecularAssembly>()
+        int counter3=0
+        while(systemFilter.readNext()){
+            String name = counter3.toString()
+            MolecularAssembly newAssembly = new MolecularAssembly("assembly" + name)
+
+            newAssembly.equals(activeAssembly)
+            newAssembly = activeAssembly
+            models.add(newAssembly)
+            counter3++
+        }
+
+        int counter1 = 0
+        for(MolecularAssembly assembly : models){
+            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
+            String dirName = saveDir.toString() + File.separator
+            String fileName = "model" + counter1.toString()
+            potentialFunctions.saveAsPDB(assembly, new File(dirName + fileName + ".pdb"))
+            counter1++
+        }
+
         //Find the index for the centroid of each cluster in the clusterList.
         ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
+        System.out.println("centroid indices: " + indicesOfCentroids.toString())
 
-        //TODO:
-        //Save out information on each cluster based on the clusterList and centroids.
-        //Arc/PDB file with all models belonging to one cluster.
-        //Possibly print the cluster size.
+        //Store the molecular assembly for each cluster centroid in an ArrayList.
+        ArrayList<MolecularAssembly> centroids = new ArrayList<MolecularAssembly>()
+        int counter = 0
+        for(Integer centroidIndex : indicesOfCentroids){
+            ArrayList<String> cluster = clusterList.get(counter)
 
+            Integer modelNumberForCentroid = Integer.valueOf(cluster.get(centroidIndex))
+            System.out.println("modelNumberForCentroid: " + modelNumberForCentroid)
+            MolecularAssembly centroid = models.get(modelNumberForCentroid)
+
+            centroids.add(centroid)
+            counter++
+
+            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
+            String dirName = saveDir.toString() + File.separator
+            String fileName = "cluster" + counter.toString()
+            potentialFunctions.saveAsPDB(centroid, new File(dirName + fileName + ".pdb"))
+        } */
+
+        //Store the molecular assemblies that belong to each cluster into an ArrayList.
+        /*ArrayList<ArrayList<MolecularAssembly>> clusterAssemblies = new ArrayList<MolecularAssembly>()
+        for(ArrayList cluster : clusterList){
+            ArrayList<MolecularAssembly> assemblies = new ArrayList<MolecularAssembly>()
+            for(String nodeIndex:cluster){
+                assemblies.add(models.get(nodeIndex.toInteger()))
+            }
+            clusterAssemblies.add(assemblies)
+        } */
     }
 
     /**
@@ -304,9 +365,9 @@ class Cluster extends PotentialScript {
                 //Loop through every node in a cluster again for comparison.
                 for(String node2: clusterNodes){
                     //Skip analysis if node is the same.
-                    if(node1==node2){
+                    if(node1.equals(node2)){
                         continue
-                    } else if(node1!=node2){
+                    } else if(!node1.equals(node2)){
                         //Find the rmsd of the two nodes from the all vs. all distance matrix of rmsds and add it to the total.
                         rmsd+=distMatrixArray[node1.toInteger()][node2.toInteger()]
                         counter++
@@ -460,10 +521,7 @@ class Cluster extends PotentialScript {
      * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
      * @return ArrayList < double [ ] >     that holds all values for the read in distance matrix.
      */
-    ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix) {
-        //Get the arc/multiple model PDB file from which the RMSD distance matrix should be calculated.
-        File file = new File(filenames.get(0));
-
+    ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix, File file) {
         //Prepare the superpose object and binding.
         Binding binding = new Binding()
         Superpose superpose = new Superpose()
