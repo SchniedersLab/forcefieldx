@@ -38,9 +38,13 @@
 
 package ffx.potential.groovy
 
+import ffx.potential.cli.PotentialScript
+import ffx.potential.MolecularAssembly
 import ffx.potential.Utilities
 import ffx.potential.cli.PotentialScript
-
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XYZFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -148,20 +152,29 @@ class Cluster extends PotentialScript {
             return this
         }
 
-        ArrayList<double[]> distMatrix = new ArrayList<double[]>();
+        ArrayList<double[]> distMatrix = new ArrayList<double[]>()
 
         //Either read in the distance matrix or calculate the distance matrix on the fly.
         if (readIn) {
-            distMatrix = readInDistanceMatrix(distMatrix);
+            distMatrix = readInDistanceMatrix(distMatrix)
         } else {
-            distMatrix = calcDistanceMatrix(distMatrix);
+            File file
+            if (filenames != null && filenames.size() > 0) {
+                activeAssembly = potentialFunctions.open(filenames.get(0))
+                file = new File(filenames.get(0))
+            } else if (activeAssembly == null) {
+                logger.info(helpString())
+                return this
+            }
+
+            distMatrix = calcDistanceMatrix(distMatrix, file)
         }
 
         //Either use kmeans clustering or hierarchical agglomerative clustering.
         if (algorithm == 0 || algorithm == 1) {
-            kmeansCluster(distMatrix);
+            kmeansCluster(distMatrix)
         } else if (algorithm == 2) {
-            hierarchicalAgglomerativeCluster(distMatrix);
+            hierarchicalAgglomerativeCluster(distMatrix)
         } else {
             logger.severe("Clustering algorithm has not been set.")
         }
@@ -239,10 +252,18 @@ class Cluster extends PotentialScript {
         //Find the index for the centroid of each cluster in the clusterList.
         ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
 
-        //TODO:
+
+        //Store all of the models in the arc/multiple model PDB file in an ArrayList of models.
+        SystemFilter systemFilter = potentialFunctions.getFilter()
+        ArrayList<MolecularAssembly> models = new ArrayList<MolecularAssembly>()
+        while(systemFilter.readNext()){
+            models.add(activeAssembly)
+        }
+
+        //TODO
         //Save out information on each cluster based on the clusterList and centroids.
         //Arc/PDB file with all models belonging to one cluster.
-        //Possibly print the cluster size.
+        //Possibly print the cluster size, rmsd histogram within cluster
 
     }
 
@@ -422,10 +443,7 @@ class Cluster extends PotentialScript {
      * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
      * @return ArrayList < double [ ] >     that holds all values for the read in distance matrix.
      */
-    ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix) {
-        //Get the arc/multiple model PDB file from which the RMSD distance matrix should be calculated.
-        File file = new File(filenames.get(0));
-
+    ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix, File file) {
         //Prepare the superpose object and binding.
         Binding binding = new Binding()
         Superpose superpose = new Superpose()
