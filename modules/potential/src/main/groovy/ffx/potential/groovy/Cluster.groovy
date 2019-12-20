@@ -53,6 +53,7 @@ import org.apache.commons.math3.ml.clustering.CentroidCluster
 import org.apache.commons.math3.ml.clustering.Clusterable
 import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
+import org.apache.commons.io.FilenameUtils
 
 import com.apporiented.algorithm.clustering.*
 import com.apporiented.algorithm.clustering.visualization.*
@@ -249,22 +250,61 @@ class Cluster extends PotentialScript {
         //If the system is headless, skip all graphical components. Otherwise print the dendrogram.
         printDendrogram(rootNode)
 
-        //Find the index for the centroid of each cluster in the clusterList.
-        ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
-
-
         //Store all of the models in the arc/multiple model PDB file in an ArrayList of models.
-        SystemFilter systemFilter = potentialFunctions.getFilter()
+        /*SystemFilter systemFilter = potentialFunctions.getFilter()
         ArrayList<MolecularAssembly> models = new ArrayList<MolecularAssembly>()
+        int counter3=0
         while(systemFilter.readNext()){
-            models.add(activeAssembly)
+            String name = counter3.toString()
+            MolecularAssembly newAssembly = new MolecularAssembly("assembly" + name)
+
+            newAssembly.equals(activeAssembly)
+            newAssembly = activeAssembly
+            models.add(newAssembly)
+            counter3++
         }
 
-        //TODO
-        //Save out information on each cluster based on the clusterList and centroids.
-        //Arc/PDB file with all models belonging to one cluster.
-        //Possibly print the cluster size, rmsd histogram within cluster
+        int counter1 = 0
+        for(MolecularAssembly assembly : models){
+            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
+            String dirName = saveDir.toString() + File.separator
+            String fileName = "model" + counter1.toString()
+            potentialFunctions.saveAsPDB(assembly, new File(dirName + fileName + ".pdb"))
+            counter1++
+        }
 
+        //Find the index for the centroid of each cluster in the clusterList.
+        ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
+        System.out.println("centroid indices: " + indicesOfCentroids.toString())
+
+        //Store the molecular assembly for each cluster centroid in an ArrayList.
+        ArrayList<MolecularAssembly> centroids = new ArrayList<MolecularAssembly>()
+        int counter = 0
+        for(Integer centroidIndex : indicesOfCentroids){
+            ArrayList<String> cluster = clusterList.get(counter)
+
+            Integer modelNumberForCentroid = Integer.valueOf(cluster.get(centroidIndex))
+            System.out.println("modelNumberForCentroid: " + modelNumberForCentroid)
+            MolecularAssembly centroid = models.get(modelNumberForCentroid)
+
+            centroids.add(centroid)
+            counter++
+
+            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
+            String dirName = saveDir.toString() + File.separator
+            String fileName = "cluster" + counter.toString()
+            potentialFunctions.saveAsPDB(centroid, new File(dirName + fileName + ".pdb"))
+        } */
+
+        //Store the molecular assemblies that belong to each cluster into an ArrayList.
+        /*ArrayList<ArrayList<MolecularAssembly>> clusterAssemblies = new ArrayList<MolecularAssembly>()
+        for(ArrayList cluster : clusterList){
+            ArrayList<MolecularAssembly> assemblies = new ArrayList<MolecularAssembly>()
+            for(String nodeIndex:cluster){
+                assemblies.add(models.get(nodeIndex.toInteger()))
+            }
+            clusterAssemblies.add(assemblies)
+        } */
     }
 
     /**
@@ -287,9 +327,9 @@ class Cluster extends PotentialScript {
                 //Loop through every node in a cluster again for comparison.
                 for(String node2: clusterNodes){
                     //Skip analysis if node is the same.
-                    if(node1==node2){
+                    if(node1.equals(node2)){
                         continue
-                    } else if(node1!=node2){
+                    } else if(!node1.equals(node2)){
                         //Find the rmsd of the two nodes from the all vs. all distance matrix of rmsds and add it to the total.
                         rmsd+=distMatrixArray[node1.toInteger()][node2.toInteger()]
                         counter++
