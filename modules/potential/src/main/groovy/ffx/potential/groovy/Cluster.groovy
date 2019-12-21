@@ -288,52 +288,44 @@ class Cluster extends PotentialScript {
         //If the system is headless, skip all graphical components. Otherwise print the dendrogram.
         printDendrogram(rootNode)
 
-        //Store all of the models in the arc/multiple model PDB file in an ArrayList of models.
-        /*SystemFilter systemFilter = potentialFunctions.getFilter()
-        ArrayList<MolecularAssembly> models = new ArrayList<MolecularAssembly>()
-        int counter3=0
-        while(systemFilter.readNext()){
-            String name = counter3.toString()
-            MolecularAssembly newAssembly = new MolecularAssembly("assembly" + name)
-
-            newAssembly.equals(activeAssembly)
-            newAssembly = activeAssembly
-            models.add(newAssembly)
-            counter3++
-        }
-
-        int counter1 = 0
-        for(MolecularAssembly assembly : models){
-            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
-            String dirName = saveDir.toString() + File.separator
-            String fileName = "model" + counter1.toString()
-            potentialFunctions.saveAsPDB(assembly, new File(dirName + fileName + ".pdb"))
-            counter1++
-        }
-
         //Find the index for the centroid of each cluster in the clusterList.
         ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
-        System.out.println("centroid indices: " + indicesOfCentroids.toString())
+        HashMap<Integer, Integer> pdbsToWrite = new HashMap<Integer, Integer>(indicesOfCentroids.size())
+        //final List<Integer> pdbsToWrite = new ArrayList<>(indicesOfCentroids.size())
 
-        //Store the molecular assembly for each cluster centroid in an ArrayList.
-        ArrayList<MolecularAssembly> centroids = new ArrayList<MolecularAssembly>()
+        //Get and store the index of each centroid in context of ALL models, not just the index relative to the cluster
+        //the centroid belongs to.
         int counter = 0
         for(Integer centroidIndex : indicesOfCentroids){
             ArrayList<String> cluster = clusterList.get(counter)
-
-            Integer modelNumberForCentroid = Integer.valueOf(cluster.get(centroidIndex))
-            System.out.println("modelNumberForCentroid: " + modelNumberForCentroid)
-            MolecularAssembly centroid = models.get(modelNumberForCentroid)
-
-            centroids.add(centroid)
+            pdbsToWrite.put(Integer.valueOf(cluster.get(centroidIndex)),counter)
             counter++
+        }
 
-            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
-            String dirName = saveDir.toString() + File.separator
-            String fileName = "cluster" + counter.toString()
-            potentialFunctions.saveAsPDB(centroid, new File(dirName + fileName + ".pdb"))
-        } */
+        // Directory to write centroid PDBs to.
+        final String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
+        final String dirName = saveDir.toString() + File.separator
 
+        //Write out PDB files for each centroid structure of each cluster.
+        final HashMap<Integer, Integer> sortedIds = pdbsToWrite.toSorted()
+        SystemFilter systemFilter = potentialFunctions.getFilter()
+        while((!sortedIds.empty) && systemFilter.readNext()) {
+            int modelNumber = systemFilter.getSnapshot()-1
+            if (sortedIds.containsKey(modelNumber)) {
+                String fileName = "centroid" + sortedIds.get(modelNumber).toString()
+                potentialFunctions.saveAsPDB(activeAssembly, new File(dirName + fileName + ".pdb"))
+                sortedIds.remove(modelNumber)
+            }
+        }
+
+        if (sortedIds.empty) {
+            System.out.println("Found all PDBs")
+        } else {
+            System.out.println("Some models from clustering not found while parsing: " + Arrays.asList(sortedIds))
+        }
+
+        //TODO: Write out models for each cluster into a "clusterArc"
+        //TODO: Write out size of each cluster.
         //Store the molecular assemblies that belong to each cluster into an ArrayList.
         /*ArrayList<ArrayList<MolecularAssembly>> clusterAssemblies = new ArrayList<MolecularAssembly>()
         for(ArrayList cluster : clusterList){
@@ -419,12 +411,13 @@ class Cluster extends PotentialScript {
      */
     void parseClusters(final com.apporiented.algorithm.clustering.Cluster root) {
         populateChildren(root, false)
-        for (final List<String> curCluster : clusterList) {
+        //Print out 0 indexed model numbers that belong to each cluster.
+        /*for (final List<String> curCluster : clusterList) {
             System.out.println("==========Iterating over next cluster==========")
             for (final String element : curCluster) {
                 System.out.println(element)
             }
-        }
+        }*/
     }
 
     /**
