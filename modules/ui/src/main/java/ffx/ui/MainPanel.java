@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
 //
 // This file is part of Force Field X.
 //
@@ -1015,7 +1015,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String version = "1.0.0-BETA";
     /**
-     * Constant <code>date="October 2019"</code>
+     * Constant <code>date="January 2020"</code>
      */
     public static final String date = "October 2019";
 
@@ -1107,9 +1107,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     public static final String aboutString
             = "        Version " + commitVersion + "  " + commitDate + " \n"
             + commitSCM // Will contain its own spacing/newline, or be empty.
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2019 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2019 \n"
-            + "        Portions Copyright (c)  Jacob M. Litman 2015-2019 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders    2001-2020 \n"
+            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2020 \n"
+            + "        Portions Copyright (c)  Jacob M. Litman 2015-2020 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"

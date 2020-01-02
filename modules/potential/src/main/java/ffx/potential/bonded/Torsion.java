@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
 //
 // This file is part of Force Field X.
 //
@@ -144,8 +144,14 @@ public class Torsion extends BondedTerm implements LambdaInterface {
         if (torsionType == null) {
             int[] c = {c0, c1, c2, c3};
             String key = TorsionType.sortKey(c);
-            logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n",
+
+            logger.info(format(" No TorsionType for key: %s\n%s\n%s\n%s\n",
                     key, bond1.toString(), middleBond.toString(), bond3.toString()));
+            logger.info(" Atom 1: " + bond1.getAtom(0));
+            logger.info(" Atom 2: " + bond1.getAtom(1));
+            logger.info(" Atom 3: " + bond3.getAtom(0));
+            logger.info(" Atom 4: " + bond3.getAtom(1));
+            logger.severe(" Force Field X will exit.");
             return null;
         }
 
