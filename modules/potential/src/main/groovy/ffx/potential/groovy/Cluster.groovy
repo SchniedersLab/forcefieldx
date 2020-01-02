@@ -91,9 +91,9 @@ class Cluster extends PotentialScript {
     /**
      * -k or --clusters Clustering algorithm to use.
      */
-    @Option(names = ['-k', '--clusters'], paramLabel = "3",
-            description = "Number of desired kmeans clusters for the input data.")
-    private int clusters = 3
+    @Option(names = ['-k', '--clusters'], paramLabel = "0",
+            description = "Maximum number of kmeans clusters for the input data.")
+    private int maxClusters = 0
 
     /**
      * -r or --readInDistMat The algorithm should read in a provided distance matrix rather than the matrix being generated on the fly.
@@ -101,6 +101,13 @@ class Cluster extends PotentialScript {
     @Option(names = ['-r', '--readInDistMat'], paramLabel = "false",
             description = "Tells algorithm to read in the distance matrix from an input file.")
     Boolean readIn = false;
+
+    /**
+     * -numI or --numIterations The number of times each kmeans cluster should be determined.
+     */
+    @Option(names = ['--numI', '--numIterations'], paramLabel = "1",
+            description = "Number of repetitions for each kmeans cluster.")
+    private int numIterations = 1;
 
     /**
      * -s or --start Atom number where RMSD calculation of structure will begin.
@@ -186,40 +193,71 @@ class Cluster extends PotentialScript {
     void kmeansCluster(ArrayList<double[]> distMatrix) {
         // Input the RMSD matrix to the clustering algorithm
         // Use the org.apache.commons.math3.ml.clustering package.
-        KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
-        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
-        int id = 0;
-        for (double[] i : distMatrix) {
-            myClusterables.add(new ClusterWrapper(i, id));
-            id++;
-        }
-        List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
+        int minClusters = 1;
 
-        if (algorithm == 1) {
-            MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
-            kClusters = kClust2.cluster(myClusterables);
+        if (maxClusters <= 0 || maxClusters > distMatrix.size() - 1) {
+            maxClusters = distMatrix.size() - 1;
         }
 
-        // TODO: Output the clusters in a useful way.
-        //Temp output method prints to screen
-        double ttwss = 0;
-        for (int i = 0; i < kClusters.size(); i++) {
-            double twss = 0; // Reset cluster within distance
-            logger.info(String.format("Cluster: " + i));
-            double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
-            for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
-                logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
-                double[] distArray = clusterWrapper.getPoint();
-                // Implement TWSS
-                for (int j = 0; j < sum.size(); j++) {
-                    twss += Math.pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
+        double[] twss = new double[distMatrix.size() - 1];
+        if (algorithm == 0) {
+            minClusters = maxClusters;
+            twss = new double[1];
+        }
+
+        for (int i = 0; i < twss.size(); i++) {
+            twss[i] = Double.MAX_VALUE;
+        }
+
+        for (int clusters = minClusters; clusters <= maxClusters; clusters++) {
+            logger.info(String.format("\n%d Clusters:\n", clusters))
+            for (int k = 0; k < numIterations; k++) {
+                double currentTWSS = 0;
+                KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(clusters, 10000);
+                List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>();
+                int id = 0;
+                for (double[] i : distMatrix) {
+                    myClusterables.add(new ClusterWrapper(i, id));
+                    id++;
+                }
+                List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables);
+
+                if (algorithm == 1) {
+                    MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(kClust1, 10000)
+                    kClusters = kClust2.cluster(myClusterables);
+                }
+
+                // TODO: Output the clusters in a useful way.
+                //Temp output method prints to screen
+                for (int i = 0; i < kClusters.size(); i++) {
+                    double wss = 0; // Reset cluster within distance
+                    //logger.info(String.format("Cluster: " + i));
+                    double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
+                    for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
+                        //logger.info(String.format("Row: %d", clusterWrapper.getUUID()));
+                        double[] distArray = clusterWrapper.getPoint();
+                        // Implement WSS
+                        for (int j = 0; j < sum.size(); j++) {
+                            wss += Math.pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
+                        }
+                    }
+                    wss = Math.sqrt(wss);
+                    //logger.info(String.format("Cluster WSS: %f", wss));
+                    currentTWSS += wss;
+                }
+                if (algorithm==1 && currentTWSS < twss[clusters - 1]) {
+                    twss[clusters - 1] = currentTWSS;
                 }
             }
-            twss = Math.sqrt(twss);
-            logger.info(String.format("Cluster TWSS: %f", twss));
-            ttwss += twss;
+            logger.info(String.format("\nTotal WSS: %f", twss[clusters - 1]));
         }
-        logger.info(String.format("\nTotal TWSS: %f", ttwss));
+        if (algorithm == 0) {
+            double[] d2TWSS = new double[twss.size() - 2];
+            for (int i = 1; i < twss.size() - 1; i++) {
+                d2TWSS[i - 1] = twss[i + 1] - 2 * twss[i] + twss[i - 1]
+                logger.info(String.format("Second Derivative: %f", d2TWSS[i - 1]))
+            }
+        }
     }
 
     /**
@@ -250,52 +288,44 @@ class Cluster extends PotentialScript {
         //If the system is headless, skip all graphical components. Otherwise print the dendrogram.
         printDendrogram(rootNode)
 
-        //Store all of the models in the arc/multiple model PDB file in an ArrayList of models.
-        /*SystemFilter systemFilter = potentialFunctions.getFilter()
-        ArrayList<MolecularAssembly> models = new ArrayList<MolecularAssembly>()
-        int counter3=0
-        while(systemFilter.readNext()){
-            String name = counter3.toString()
-            MolecularAssembly newAssembly = new MolecularAssembly("assembly" + name)
-
-            newAssembly.equals(activeAssembly)
-            newAssembly = activeAssembly
-            models.add(newAssembly)
-            counter3++
-        }
-
-        int counter1 = 0
-        for(MolecularAssembly assembly : models){
-            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
-            String dirName = saveDir.toString() + File.separator
-            String fileName = "model" + counter1.toString()
-            potentialFunctions.saveAsPDB(assembly, new File(dirName + fileName + ".pdb"))
-            counter1++
-        }
-
         //Find the index for the centroid of each cluster in the clusterList.
         ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
-        System.out.println("centroid indices: " + indicesOfCentroids.toString())
+        HashMap<Integer, Integer> pdbsToWrite = new HashMap<Integer, Integer>(indicesOfCentroids.size())
+        //final List<Integer> pdbsToWrite = new ArrayList<>(indicesOfCentroids.size())
 
-        //Store the molecular assembly for each cluster centroid in an ArrayList.
-        ArrayList<MolecularAssembly> centroids = new ArrayList<MolecularAssembly>()
+        //Get and store the index of each centroid in context of ALL models, not just the index relative to the cluster
+        //the centroid belongs to.
         int counter = 0
         for(Integer centroidIndex : indicesOfCentroids){
             ArrayList<String> cluster = clusterList.get(counter)
-
-            Integer modelNumberForCentroid = Integer.valueOf(cluster.get(centroidIndex))
-            System.out.println("modelNumberForCentroid: " + modelNumberForCentroid)
-            MolecularAssembly centroid = models.get(modelNumberForCentroid)
-
-            centroids.add(centroid)
+            pdbsToWrite.put(Integer.valueOf(cluster.get(centroidIndex)),counter)
             counter++
+        }
 
-            String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
-            String dirName = saveDir.toString() + File.separator
-            String fileName = "cluster" + counter.toString()
-            potentialFunctions.saveAsPDB(centroid, new File(dirName + fileName + ".pdb"))
-        } */
+        // Directory to write centroid PDBs to.
+        final String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
+        final String dirName = saveDir.toString() + File.separator
 
+        //Write out PDB files for each centroid structure of each cluster.
+        final HashMap<Integer, Integer> sortedIds = pdbsToWrite.toSorted()
+        SystemFilter systemFilter = potentialFunctions.getFilter()
+        while((!sortedIds.empty) && systemFilter.readNext()) {
+            int modelNumber = systemFilter.getSnapshot()-1
+            if (sortedIds.containsKey(modelNumber)) {
+                String fileName = "centroid" + sortedIds.get(modelNumber).toString()
+                potentialFunctions.saveAsPDB(activeAssembly, new File(dirName + fileName + ".pdb"))
+                sortedIds.remove(modelNumber)
+            }
+        }
+
+        if (sortedIds.empty) {
+            System.out.println("Found all PDBs")
+        } else {
+            System.out.println("Some models from clustering not found while parsing: " + Arrays.asList(sortedIds))
+        }
+
+        //TODO: Write out models for each cluster into a "clusterArc"
+        //TODO: Write out size of each cluster.
         //Store the molecular assemblies that belong to each cluster into an ArrayList.
         /*ArrayList<ArrayList<MolecularAssembly>> clusterAssemblies = new ArrayList<MolecularAssembly>()
         for(ArrayList cluster : clusterList){
@@ -381,12 +411,13 @@ class Cluster extends PotentialScript {
      */
     void parseClusters(final com.apporiented.algorithm.clustering.Cluster root) {
         populateChildren(root, false)
-        for (final List<String> curCluster : clusterList) {
+        //Print out 0 indexed model numbers that belong to each cluster.
+        /*for (final List<String> curCluster : clusterList) {
             System.out.println("==========Iterating over next cluster==========")
             for (final String element : curCluster) {
                 System.out.println(element)
             }
-        }
+        }*/
     }
 
     /**
