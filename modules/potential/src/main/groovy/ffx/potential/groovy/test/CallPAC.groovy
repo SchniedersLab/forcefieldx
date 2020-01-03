@@ -160,6 +160,7 @@ class CallPAC extends PotentialScript {
                 BufferedReader brArc = new BufferedReader(frArc);
                 while(line = brArc.readLine() != null){
                     if(line.matches(".*_opt.xyz_.*") || line.matches(".*.arc.*")){
+                        bwNewXYZ.close();
                         if(fileCount>0){
                             xyzFiles.add(newXYZ)
                         }
@@ -300,8 +301,6 @@ class CallPAC extends PotentialScript {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
         return this
     }
 }
