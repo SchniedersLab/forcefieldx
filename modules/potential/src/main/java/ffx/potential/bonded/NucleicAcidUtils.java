@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
 //
 // This file is part of Force Field X.
 //
@@ -391,9 +391,11 @@ public class NucleicAcidUtils {
                             && position != LAST_RESIDUE && numberOfResidues != 1) {
                         continue;
                     }
-                    logger.log(Level.WARNING, format(" An atom for residue %s has the wrong number of bonds:\n %s",
-                            residueName, atom.toString()));
-                    logger.log(Level.WARNING, format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
+                    logger.warning(format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName, atom.toString()));
+                    logger.info(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
+                    for (Bond bond : atom.getBonds()) {
+                        logger.info(" " + bond.toString());
+                    }
                 }
             }
 
