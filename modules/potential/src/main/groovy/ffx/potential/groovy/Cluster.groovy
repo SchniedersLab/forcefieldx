@@ -517,7 +517,7 @@ class Cluster extends PotentialScript {
     ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix, File file) {
         //Prepare the superpose object and binding.
         Binding binding = new Binding()
-        Superpose superpose = new Superpose()
+//        Superpose superpose = new Superpose()
         superpose.setBinding(binding)
 
         // Set-up the input arguments for the Superpose script.
