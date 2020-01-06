@@ -301,11 +301,13 @@ class CallPAC extends PotentialScript {
                 }
             }
                 bwOutput.write(array)
-                logger.info(String.format("%d", xyzFiles.size()))
             int exitCode = process.waitFor();
             logger.info(String.format("\nExited with error code : " + exitCode));
 
             bwOutput.close()
+            if(exitCode == 0){
+                logger.info(String.format("Results written to output.dat"))
+            }
 
         } catch (IOException e) {
             logger.info(String.format("Be certain that PACCOM is setup using the following command: comp_rmsd_33_ffx_L"))
