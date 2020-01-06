@@ -70,20 +70,6 @@ import java.util.stream.Collectors;
 class CallPAC extends PotentialScript {
 
     /**
-     * -a or --algorithm Clustering algorithm to use.
-     */
-    @Option(names = ['-a', '--algorithm'], paramLabel = "0",
-            description = "Algorithm to be used during comparison. 0: All v All 1: 1 v All")
-    private int algorithm = 0;
-
-    /**
-     * -k or --clusters Clustering algorithm to use.
-     */
-    @Option(names = ['-k', '--clusters'], paramLabel = "3",
-            description = "Number of desired clusters for the input data.")
-    private int clusters = 3;
-
-    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -146,7 +132,7 @@ class CallPAC extends PotentialScript {
         }
 
         String line;
-        if (arc){
+        if (arc){ //if arc break down into xyz files
             File newXYZ = new File("temp")
             FileWriter fwNewXYZ = new FileWriter(newXYZ);
             BufferedWriter bwNewXYZ = new BufferedWriter(fwNewXYZ);
@@ -158,18 +144,18 @@ class CallPAC extends PotentialScript {
                 FileReader frArc = new FileReader(f);
 
                 BufferedReader brArc = new BufferedReader(frArc);
-                while(line = brArc.readLine() != null){
-                    if(line.matches(".*_opt.xyz_.*") || line.matches(".*.arc.*")){
+                while((line = brArc.readLine()) != null){
+                    if(line.contains("_opt.xyz_") || line.contains(".arc")){
                         bwNewXYZ.close();
                         if(fileCount>0){
                             xyzFiles.add(newXYZ)
                         }
-                        newXYZ = new File(String.format(FilenameUtils.getBaseName(f.getName())+"xyz_%d", fileCount++))
+                        newXYZ = new File(String.format(FilenameUtils.getBaseName(f.getName())+".xyz_%d", ++fileCount))
                         fwNewXYZ = new FileWriter(newXYZ)
                         bwNewXYZ = new BufferedWriter(fwNewXYZ)
-
+                        bwNewXYZ.write(line + "\n")
                     }else{
-                        bwNewXYZ.write(line)
+                        bwNewXYZ.write(line + "\n")
                     }
                 }
             }
@@ -223,20 +209,36 @@ class CallPAC extends PotentialScript {
             BufferedWriter bwProps2 = new BufferedWriter(fwProps2)
 
             //TODO Make inputs to data33.in flags.
-            bwData33.write("30" + "\n" + "8" + " " + "6" + " " + "8" + "\n" + "32" + "\n" + "32" + "\n" + "2" + "\n" + "6" + "\n" + "7" + "\n" + "FFX" + "\n" + "FFX")
+            if(pdb) {
+                bwData33.write("30" + "\n" + "8" + " " + "6" + " " + "8" + "\n" + "32" + "\n" + "32" + "\n" + "2" + "\n" + "6" + "\n" + "7" + "\n" + "PDB" + "\n" + "FFX")
+            }else{
+                bwData33.write("30" + "\n" + "8" + " " + "6" + " " + "8" + "\n" + "32" + "\n" + "32" + "\n" + "2" + "\n" + "6" + "\n" + "7" + "\n" + "FFX" + "\n" + "FFX")
+
+            }
 
             for (File structFile in xyzFiles) {
-                bwStructs1.write(structFile.getName() + "\n")
+                if(pdb){
+                    for(File structPDB in pdbFiles){
+                        bwStructs1.write(structPDB.getName() + "\n")
+                    }
+                }else {
+                    bwStructs1.write(structFile.getName() + "\n")
+                }
                 bwStructs2.write(structFile.getName() + "\n")
                 //TODO Better determination of properties/key file
                 String baseName = structFile.getName().replaceAll("_opt.xyz_.*", "")
+                baseName = baseName.replaceAll(".xyz.*", "")
                 File tempProp1 = new File(baseName + ".properties")
                 File tempProp2 = new File(baseName + ".key")
                 if (tempProp1.exists()) {
-                    bwProps1.write(baseName + ".properties" + "\n")
+                    if(!pdb) {
+                        bwProps1.write(baseName + ".properties" + "\n")
+                    }
                     bwProps2.write(baseName + ".properties" + "\n")
                 } else if (tempProp2.exists()) {
-                    bwProps1.write(baseName + ".key" + "\n")
+                    if(!pdb) {
+                        bwProps1.write(baseName + ".key" + "\n")
+                    }
                     bwProps2.write(baseName + ".key" + "\n")
                 } else {
                     logger.severe("Property/Key file not found...")
@@ -251,6 +253,12 @@ class CallPAC extends PotentialScript {
             logger.severe(e.toString());
         }
 
+        if(pdb){
+            if (props1.exists()) {
+                props1.delete()
+            }
+        }
+
         ProcessBuilder processBuilder = new ProcessBuilder();
 //        Map<String, String> envMap = processBuilder.environment();
 //        Set<String> keys = envMap.keySet();
@@ -262,35 +270,39 @@ class CallPAC extends PotentialScript {
         processBuilder.command("/Users/anessler/Research/MTPC/PACCOM/src_bin_analysis_forFFX_33_Aaron_org/comp_rmsd_33_ffx_L");
 
         try {
-
+            System.out.println("Running PACCOM")
             FileWriter fwOutput = new FileWriter(output, true)
             BufferedWriter bwOutput = new BufferedWriter(fwOutput)
 
-
             Process process = processBuilder.start();
 
-            // blocked :(
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(process.getInputStream()));
-
             ArrayList<String> distances = new ArrayList<>();
-            while ((line = reader.readLine()) != null) {
-                int rmsdEnd = line.indexOf("   "); // three spaces go behind rmsd
-                distances.add(line.substring(2, rmsdEnd)); //two blank spaces before rmsd...
-            }
             String array = ""
-            for(int i=0;i<xyzFiles.size();i++){
-                String tempLine =""
-                for(int j=0; j<Math.pow(xyzFiles.size(),2);j+=xyzFiles.size()){
-                    tempLine+=distances.get(i+j)
-                    tempLine+="\t"
+            if(!pdb) {
+                while ((line = reader.readLine()) != null) {
+                    int rmsdEnd = line.indexOf("   "); // three spaces go behind rmsd
+                    distances.add(line.substring(2, rmsdEnd)); //two blank spaces before rmsd...
                 }
-                array+=tempLine
-                array+="\n"
+                System.println(distances.size())
+                for (int i = 0; i < xyzFiles.size(); i++) {
+                    String tempLine = ""
+                    for (int j = 0; j < Math.pow(xyzFiles.size(), 2); j += xyzFiles.size()) {
+                        tempLine += distances.get(i + j)
+                        tempLine += "\t"
+                    }
+                    array += tempLine
+                    array += "\n"
+                }
+            }else{
+                while ((line = reader.readLine()) != null){
+                    array += line
+                    array += "\n"
+                }
             }
-            bwOutput.write(array)
-            logger.info(String.format("%d",xyzFiles.size()))
-
+                bwOutput.write(array)
+                logger.info(String.format("%d", xyzFiles.size()))
             int exitCode = process.waitFor();
             System.out.println("\nExited with error code : " + exitCode);
 
@@ -301,6 +313,23 @@ class CallPAC extends PotentialScript {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        if (data33.exists()){
+            data33.delete()
+        }
+        if (structs1.exists()) {
+            structs1.delete()
+        }
+        if (props1.exists()) {
+            props1.delete()
+        }
+        if (structs2.exists()) {
+            structs2.delete()
+        }
+        if (props2.exists()) {
+            props2.delete()
+        }
+
         return this
     }
 }
