@@ -262,7 +262,7 @@ class Cluster extends PotentialScript {
 
     /**
      * This method performs hierarchical clustering on a distance matrix. If the system isn't headless, a dendrogram
-     * is printed of the clustered results.
+     * is printed of the clustered results. A PDB file for the centroid of each cluster is saved.
      *
      * @param distMatrix An ArrayList<double[]> that holds the distance matrix.
      */
