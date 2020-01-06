@@ -263,14 +263,14 @@ class CallPAC extends PotentialScript {
 //        Map<String, String> envMap = processBuilder.environment();
 //        Set<String> keys = envMap.keySet();
 //        for(String key:keys){
-//            System.out.println(key+" ==> "+envMap.get(key));
+//            logger.info(String.format((key+" ==> "+envMap.get(key));
 //        }
 //TODO call from $PATH instead of hard code
         // Run this on Windows, cmd, /c = terminate after this run
         processBuilder.command("comp_rmsd_33_ffx_L");
 
         try {
-            System.out.println("Running PACCOM")
+            logger.info(String.format("Running PACCOM"));
             FileWriter fwOutput = new FileWriter(output, true)
             BufferedWriter bwOutput = new BufferedWriter(fwOutput)
 
@@ -285,7 +285,6 @@ class CallPAC extends PotentialScript {
                     int rmsdEnd = line.indexOf("   "); // three spaces go behind rmsd
                     distances.add(line.substring(2, rmsdEnd)); //two blank spaces before rmsd...
                 }
-                System.println(distances.size())
                 for (int i = 0; i < xyzFiles.size(); i++) {
                     String tempLine = ""
                     for (int j = 0; j < Math.pow(xyzFiles.size(), 2); j += xyzFiles.size()) {
@@ -304,11 +303,12 @@ class CallPAC extends PotentialScript {
                 bwOutput.write(array)
                 logger.info(String.format("%d", xyzFiles.size()))
             int exitCode = process.waitFor();
-            System.out.println("\nExited with error code : " + exitCode);
+            logger.info(String.format("\nExited with error code : " + exitCode));
 
             bwOutput.close()
 
         } catch (IOException e) {
+            logger.info(String.format("Be certain that PACCOM is setup using the following command: comp_rmsd_33_ffx_L"))
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
