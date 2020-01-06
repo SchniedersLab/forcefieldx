@@ -267,7 +267,7 @@ class CallPAC extends PotentialScript {
 //        }
 //TODO call from $PATH instead of hard code
         // Run this on Windows, cmd, /c = terminate after this run
-        processBuilder.command("/Users/anessler/Research/MTPC/PACCOM/src_bin_analysis_forFFX_33_Aaron_org/comp_rmsd_33_ffx_L");
+        processBuilder.command("comp_rmsd_33_ffx_L");
 
         try {
             System.out.println("Running PACCOM")
