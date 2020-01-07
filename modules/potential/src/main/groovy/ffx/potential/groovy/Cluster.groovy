@@ -302,6 +302,14 @@ class Cluster extends PotentialScript {
             counter++
         }
 
+        //Print out size of each cluster.
+        System.out.println("==========Cluster Sizes==========")
+        counter = 0
+        for(List cluster : clusterList){
+            System.out.println(" Cluster " + counter + " Size: " + cluster.size())
+            counter++
+        }
+
         // Directory to write centroid PDBs to.
         final String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
         final String dirName = saveDir.toString() + File.separator
@@ -325,7 +333,6 @@ class Cluster extends PotentialScript {
         }
 
         //TODO: Write out models for each cluster into a "clusterArc"
-        //TODO: Write out size of each cluster.
         //Store the molecular assemblies that belong to each cluster into an ArrayList.
         /*ArrayList<ArrayList<MolecularAssembly>> clusterAssemblies = new ArrayList<MolecularAssembly>()
         for(ArrayList cluster : clusterList){
@@ -405,7 +412,7 @@ class Cluster extends PotentialScript {
     }
 
     /**
-     * This method parses clusters in the hierarchical tree and prints the model that belongs to each cluster.
+     * This method parses clusters in the hierarchical tree and can print the model that belongs to each cluster.
      * 
      * @param root The root node of the hierarchical tree.
      */
