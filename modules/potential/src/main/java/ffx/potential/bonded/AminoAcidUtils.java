@@ -367,6 +367,12 @@ public class AminoAcidUtils {
             buildBond(C, OXT, forceField, bondList);
         }
 
+        Boolean meldTerm = forceField.getBoolean("MELDTERM", false);
+        Level logImproperBondsForMeld = Level.WARNING;
+        if(meldTerm){
+            logImproperBondsForMeld = Level.FINE;
+        }
+
         // Do some checks on the current residue to make sure all atoms have been assigned an atom type.
         List<Atom> resAtoms = residue.getAtomList();
         for (Atom atom : resAtoms) {
@@ -393,15 +399,16 @@ public class AminoAcidUtils {
 
             }
             int numberOfBonds = atom.getNumBonds();
+
             if (numberOfBonds != atomType.valence) {
                 if (atom == C && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE) {
                     continue;
                 }
-                logger.warning(format(" An atom for residue %s has the wrong number of bonds:\n %s",
+                logger.log(logImproperBondsForMeld, format(" An atom for residue %s has the wrong number of bonds:\n %s",
                         residueName, atom.toString()));
-                logger.info(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
+                logger.log(logImproperBondsForMeld, format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
                 for (Bond bond : atom.getBonds()) {
-                    logger.info(" " + bond.toString());
+                    logger.log(logImproperBondsForMeld, " " + bond.toString());
                 }
             }
         }
