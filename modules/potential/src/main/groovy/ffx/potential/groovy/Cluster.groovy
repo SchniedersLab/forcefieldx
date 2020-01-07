@@ -291,7 +291,6 @@ class Cluster extends PotentialScript {
         //Find the index for the centroid of each cluster in the clusterList.
         ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
         HashMap<Integer, Integer> pdbsToWrite = new HashMap<Integer, Integer>(indicesOfCentroids.size())
-        //final List<Integer> pdbsToWrite = new ArrayList<>(indicesOfCentroids.size())
 
         //Get and store the index of each centroid in context of ALL models, not just the index relative to the cluster
         //the centroid belongs to.
@@ -331,17 +330,6 @@ class Cluster extends PotentialScript {
         } else {
             System.out.println("Some models from clustering not found while parsing: " + Arrays.asList(sortedIds))
         }
-
-        //TODO: Write out models for each cluster into a "clusterArc"
-        //Store the molecular assemblies that belong to each cluster into an ArrayList.
-        /*ArrayList<ArrayList<MolecularAssembly>> clusterAssemblies = new ArrayList<MolecularAssembly>()
-        for(ArrayList cluster : clusterList){
-            ArrayList<MolecularAssembly> assemblies = new ArrayList<MolecularAssembly>()
-            for(String nodeIndex:cluster){
-                assemblies.add(models.get(nodeIndex.toInteger()))
-            }
-            clusterAssemblies.add(assemblies)
-        } */
     }
 
     /**
