@@ -106,6 +106,13 @@ class Superpose extends PotentialScript {
     private boolean writeSnapshots = false
 
     /**
+     * -v or --verbose Print out RMSD information.
+     */
+    @Option(names = ['-v', '--verbose'], paramLabel = "true",
+            description = 'Write out RMSD information.')
+    private boolean verbose = true
+
+    /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
@@ -179,7 +186,9 @@ class Superpose extends PotentialScript {
             }
 
             // Note that atoms are indexed from 0 to nAtoms - 1.
-            logger.info(format(" Atoms from %d to %d will be considered.", start + 1, finish + 1))
+            if(verbose) {
+                logger.info(format(" Atoms from %d to %d will be considered.", start + 1, finish + 1))
+            }
 
             // Begin streaming the possible atom indices, filtering out inactive atoms.
             IntStream atomIndexStream = IntStream.range(start, finish + 1).filter({ int i -> return atoms[i].isActive() })
@@ -217,7 +226,9 @@ class Superpose extends PotentialScript {
                     break
             }
 
-            logger.info(" Superpose selection criteria: " + selectionType)
+            if(verbose) {
+                logger.info(" Superpose selection criteria: " + selectionType)
+            }
 
             // Indices of atoms used in alignment and RMSD calculations.
             int[] usedIndices = atomIndexStream.toArray()
@@ -321,9 +332,11 @@ class Superpose extends PotentialScript {
                 copyCoordinates(nUsed, usedIndices, x2, x2Used)
                 double rotatedRMSD = ffx.potential.utils.Superpose.rmsd(xUsed, x2Used, massUsed)
 
-                logger.info(format(
-                        " Coordinate RMSD for %d and %d: Original %7.3f, After Translation %7.3f, After Rotation %7.3f",
-                        snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
+                if(verbose) {
+                    logger.info(format(
+                            " Coordinate RMSD for %d and %d: Original %7.3f, After Translation %7.3f, After Rotation %7.3f",
+                            snapshot1, snapshot2, origRMSD, translatedRMSD, rotatedRMSD))
+                }
 
                 if(storeMatrix){
                     int snapshot1Index = snapshot1 -1
