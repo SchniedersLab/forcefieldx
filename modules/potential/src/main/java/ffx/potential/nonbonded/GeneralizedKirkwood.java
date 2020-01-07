@@ -543,6 +543,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 cavitationRegion = null;
                 volumeRegion = null;
                 gaussVol = new GaussVol(nAtoms, null);
+                gaussVol.setVolumeOffset(forceField.getDouble("OSEV",GeneralizedKirkwood.DEFAULT_VDW_TO_SEV_OFFSET));
+                gaussVol.setSurfaceAreaOffset(forceField.getDouble("OSASA",GeneralizedKirkwood.DEFAULT_VDW_TO_SASA_OFFSET));
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
 
                 boolean[] isHydrogen = new boolean[nAtoms];
