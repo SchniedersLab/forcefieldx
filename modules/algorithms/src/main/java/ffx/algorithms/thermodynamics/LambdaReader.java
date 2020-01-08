@@ -90,8 +90,8 @@ class LambdaReader extends BufferedReader {
             try {
                 orthogonalSpaceTempering.energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
             } catch (Exception e) {
-                String message = format(" Could not find number of steps taken in OST Lambda file: %s", e.toString());
-                logger.log(Level.WARNING, message);
+                String message = format(" Could not find number of steps taken in OST Lambda file: %s. This warning is expected for MC-OST.", e.toString());
+                logger.log(Level.INFO, message);
             }
         }
     }
