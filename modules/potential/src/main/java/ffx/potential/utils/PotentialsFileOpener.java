@@ -354,6 +354,7 @@ public class PotentialsFileOpener implements FileOpener {
                             continue;
                         }
                         MolecularAssembly newAssembly = new MolecularAssembly(pathI.toString());
+                        newAssembly.setFile(fileI);
                         newAssembly.setForceField(assembly.getForceField());
                         pdbFilter.setAltID(newAssembly, c);
                         pdbFilter.clearSegIDs();
