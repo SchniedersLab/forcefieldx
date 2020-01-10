@@ -309,10 +309,6 @@ class Cluster extends PotentialScript {
             counter++
         }
 
-        // Directory to write centroid PDBs to.
-        final String saveDir = new File(FilenameUtils.getFullPath(filenames.get(0)))
-        final String dirName = saveDir.toString() + File.separator
-
         //Write out PDB files for each centroid structure of each cluster.
         final HashMap<Integer, Integer> sortedIds = pdbsToWrite.toSorted()
         SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -320,15 +316,15 @@ class Cluster extends PotentialScript {
             int modelNumber = systemFilter.getSnapshot()-1
             if (sortedIds.containsKey(modelNumber)) {
                 String fileName = "centroid" + sortedIds.get(modelNumber).toString()
-                potentialFunctions.saveAsPDB(activeAssembly, new File(dirName + fileName + ".pdb"))
+                potentialFunctions.saveAsPDB(activeAssembly, new File(fileName + ".pdb"))
                 sortedIds.remove(modelNumber)
             }
         }
 
         if (sortedIds.empty) {
-            System.out.println("Found all PDBs")
+            System.out.println(" Found all PDBs")
         } else {
-            System.out.println("Some models from clustering not found while parsing: " + Arrays.asList(sortedIds))
+            System.out.println(" Some models from clustering not found while parsing: " + Arrays.asList(sortedIds))
         }
     }
 
