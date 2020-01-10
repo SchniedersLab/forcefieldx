@@ -39,12 +39,8 @@
 package ffx.potential.groovy
 
 import ffx.potential.cli.PotentialScript
-import ffx.potential.MolecularAssembly
-import ffx.potential.Utilities
-import ffx.potential.cli.PotentialScript
-import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
-import ffx.potential.parsers.XYZFilter
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -53,7 +49,6 @@ import org.apache.commons.math3.ml.clustering.CentroidCluster
 import org.apache.commons.math3.ml.clustering.Clusterable
 import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
-import org.apache.commons.io.FilenameUtils
 
 import com.apporiented.algorithm.clustering.*
 import com.apporiented.algorithm.clustering.visualization.*
