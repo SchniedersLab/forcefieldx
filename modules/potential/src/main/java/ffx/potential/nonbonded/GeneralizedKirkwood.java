@@ -69,8 +69,8 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 
 /**
@@ -131,10 +131,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Using a S.P. of 0.0334 kcal/mol/A^3, and a limiting surface tension of 0.103 kcal/mol/A^2,
      * the cross-over point is 9.2515 A.
-     *
+     * <p>
      * Using a S.P. of 0.0334 kcal/mol/A^3, and a limiting surface tension of 0.08 (i.e. 80% of the experimentally
      * observed surface tension of 0.103 kcal/mol/A^2), we derive a cross-over of:
-     *
+     * <p>
      * 9.251 A = 3 * 0.103 kcal/mol/A^2 / 0.0334 kcal/mol/A^3.
      */
     public static final double DEFAULT_CROSSOVER = 9.251;
@@ -571,8 +571,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
                 try {
                     gaussVol.setGammas(gamma);
-                    gaussVol.setRadii(radii);
-                    gaussVol.setVolumes(volume);
+                    gaussVol.setRadiiAndVolumes(radii, volume);
                     gaussVol.setIsHydrogen(isHydrogen);
                 } catch (Exception e) {
                     logger.severe(" Exception creating GaussVol: " + e.toString());
@@ -651,8 +650,39 @@ public class GeneralizedKirkwood implements LambdaInterface {
         initializationRegion.executeWith(parallelTeam);
     }
 
+    /**
+     * Return the GaussVol instance.
+     *
+     * @return GaussVol.
+     */
     public GaussVol getGaussVol() {
         return gaussVol;
+    }
+
+    /**
+     * Update the GaussVol radii offset value.
+     *
+     * @param offset
+     */
+    public void setDefaultGaussVolRadiiOffset(double offset) {
+        this.offset = offset;
+        if (gaussVol != null) {
+            double[] radii = new double[nAtoms];
+            double[] volume = new double[nAtoms];
+            double fourThirdsPI = 4.0 / 3.0 * PI;
+            int index = 0;
+            for (Atom atom : atoms) {
+                radii[index] = atom.getVDWType().radius / 2.0;
+                radii[index] += offset;
+                volume[index] = fourThirdsPI * pow(radii[index], 3);
+                index++;
+            }
+            try {
+                gaussVol.setRadiiAndVolumes(radii, volume);
+            } catch (Exception e) {
+                logger.severe(" Exception creating GaussVol: " + e.toString());
+            }
+        }
     }
 
     public DispersionRegion getDispersionRegion() {
@@ -909,15 +939,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             try {
                 gaussVol.setGammas(gamma);
-                gaussVol.setRadii(radii);
-                gaussVol.setVolumes(volume);
+                gaussVol.setRadiiAndVolumes(radii, volume);
                 gaussVol.setIsHydrogen(isHydrogen);
             } catch (Exception e) {
                 logger.severe(" Exception creating GaussVol: " + e.toString());
             }
-
         }
-
     }
 
     /**

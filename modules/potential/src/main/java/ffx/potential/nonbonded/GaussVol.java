@@ -464,13 +464,14 @@ public class GaussVol {
     }
 
     /**
-     * Set radii.
+     * Set radii and volumes.
      *
-     * @param radii Atomic radii (Angstroms).
+     * @param radii   Atomic radii (Angstroms).
+     * @param volumes Atomic volumes (Angstroms^3).
      * @return The number of atoms.
      * @throws Exception
      */
-    int setRadii(double[] radii) throws Exception {
+    int setRadiiAndVolumes(double[] radii, double[] volumes) throws Exception {
         if (nAtoms == radii.length) {
             this.radii = radii;
             radiiOffset = new double[nAtoms];
@@ -480,26 +481,17 @@ public class GaussVol {
                 radiiOffset[i] = radii[i] + offset;
                 volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
             }
-            return nAtoms;
         } else {
             throw new Exception(" setRadii: number of atoms does not match");
         }
-    }
 
-    /**
-     * Set volumes.
-     *
-     * @param volumes Atomic volumes (Angstroms^3).
-     * @return The number of atoms.
-     * @throws Exception
-     */
-    int setVolumes(double[] volumes) throws Exception {
         if (nAtoms == volumes.length) {
             this.volumes = volumes;
-            return nAtoms;
         } else {
             throw new Exception(" setVolumes: number of atoms does not match");
         }
+
+        return nAtoms;
     }
 
     /**
