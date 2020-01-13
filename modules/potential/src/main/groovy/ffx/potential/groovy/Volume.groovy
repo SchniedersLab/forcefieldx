@@ -66,31 +66,31 @@ class Volume extends PotentialScript {
     private static final double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0)
 
     /**
-     * -o or --includeOffsets Use volume and SA offsets to map GaussVol results to SEV and SASA, respectively.
-     */
-    @CommandLine.Option(names = ['-o', '--includeOffsets'], paramLabel = "false",
-            description = "Use volume and SA offsets to map GaussVol results to SEV and SASA, respectively.")
-    private boolean includeOffsets = false
-
-    /**
      * -y or --includeHydrogen leaves in hydrogen when calculating the overlap tree.
      */
     @CommandLine.Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
-            description = "Include Hydrogen in calculation of overlaps and volumes")
+            description = "Include Hydrogen in calculation of overlaps and volumes.")
     private boolean includeHydrogen = false
 
     /**
      * -s or --sigma Use sigma radii instead of Rmin.
      */
     @CommandLine.Option(names = ['-s', '--sigma'], paramLabel = "false",
-            description = "Use sigma radii instead of Rmin")
+            description = "Use sigma radii instead of Rmin.")
     private boolean sigma = false
 
     /**
-     * -p or --probe Add a probe radius offset to all atomic radii.
+     * -o or --offset Add a probe radius offset to all atomic radii.
+     */
+    @CommandLine.Option(names = ['-o', '--offset'], paramLabel = "0.0",
+            description = "Add a probe radius offset to all atomic radii.")
+    private double offset = 0.0
+
+    /**
+     * -p or --probe Add a probe radius to the GaussVol vdW volume effective radius.
      */
     @CommandLine.Option(names = ['-p', '--probe'], paramLabel = "0.0",
-            description = "Add a probe radius offset to all atomic radii")
+            description = "Add a probe radius to the GaussVol vdW volume effective radius.")
     private double probe = 0.0
 
     /**
@@ -98,7 +98,7 @@ class Volume extends PotentialScript {
      * the first snapshot is always printed verbosely).
      */
     @CommandLine.Option(names = ['-v', '--verbose'], paramLabel = "false",
-            description = "Print out all components of volume of molecule and offset")
+            description = "Print out all components of volume of molecule and offset.")
     private boolean verbose = false
 
     /**
@@ -169,7 +169,7 @@ class Volume extends PotentialScript {
             if (sigma) {
                 radii[index] *= rminToSigma;
             }
-            radii[index] += probe
+            radii[index] += offset
             volume[index] = fourThirdsPI * pow(radii[index], 3)
             positions[index][0] = atom.getX()
             positions[index][1] = atom.getY()
@@ -186,12 +186,8 @@ class Volume extends PotentialScript {
         double surfaceTension = properties.getDouble("surface-tension", GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION)
         gaussVol.setSurfaceTension(surfaceTension)
         double crossOver = properties.getDouble("cross-over", GeneralizedKirkwood.DEFAULT_CROSSOVER)
-        gaussVol.setCrossOver(crossOver);
-
-        if (!includeOffsets) {
-            gaussVol.setVolumeOffset(0.0)
-            gaussVol.setSurfaceAreaOffset(0.0)
-        }
+        gaussVol.setCrossOver(crossOver)
+        gaussVol.setEffectiveRadiusProbe(probe)
 
         gaussVol.computeVolumeAndSA(positions)
         logger.info(format("\n Maximum depth of overlaps in tree: %d", gaussVol.getMaximumDepth()))
@@ -205,19 +201,15 @@ class Volume extends PotentialScript {
             }
         }
 
-        // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
-        double threeOverFourPi = 3.0/(4.0*Math.PI)
-        double radical = gaussVol.getVolume()*threeOverFourPi
-        double effectiveRadius = pow(radical, 1/3)
-
         if (sigma) {
             logger.info(format("\n Radii:                  Sigma"))
         } else {
             logger.info(format("\n Radii:                   Rmin"))
         }
-        logger.info(format(" Probe:               %8.4f (Ang)", probe))
+
+        logger.info(format(" Radii offset:        %8.4f (Ang)", offset))
+        logger.info(format(" Volume probe radius: %8.4f (Ang)", probe))
         logger.info(format(" Include hydrogen:    %8b", includeHydrogen))
-        logger.info(format(" Include offsets:     %8b", includeOffsets))
 
         logger.info(format("\n Volume:              %8.4f (Ang^3)", gaussVol.getVolume()))
         logger.info(format(" Solvent Pressure:    %8.4f (kcal/mol/Ang^3)", gaussVol.getSolventPressure()))
@@ -227,7 +219,7 @@ class Volume extends PotentialScript {
         logger.info(format(" Surface Tension:     %8.4f (kcal/mol/Ang^2)", gaussVol.getSurfaceTension()))
         logger.info(format(" Surface Area Energy: %8.4f (kcal/mol)", gaussVol.getSurfaceAreaEnergy()))
 
-        logger.info(format("\n Effective Radius:    %8.4f (Ang)", effectiveRadius))
+        logger.info(format("\n Effective Radius:    %8.4f (Ang)", gaussVol.getEffectiveRadius()))
         logger.info(format("\n Cross-over Radius:   %8.4f (Ang)", crossOver))
         logger.info(format(" Volume + SA Energy:  %8.4f (kcal/mol)", gaussVol.getEnergy()))
 

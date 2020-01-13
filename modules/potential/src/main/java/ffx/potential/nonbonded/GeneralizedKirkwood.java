@@ -108,37 +108,41 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private static final double DEFAULT_CAV_SURFACE_TENSION = 0.0049;
     /**
+     * Default solvent pressure for apolar models with an explicit volume term.
+     * <p>
+     * From work by Chandler et al., the following relationship for cavitation free energy as
+     * a function of spherical particle size was found:
+     * Cross-Over = 3 * S.T. / S.P.
+     * <p>
+     * A S.P. of 0.0334 kcal/mol/A^3 was obtained using explicit AMOEBA water simulations and solvent excluded volumes.
+     * <p>
+     * A S.P. of 0.0343 kcal/mol/A^3 is obtained assuming a macroscopic surface tension of 0.103 kcal/mol/A^3
+     * and a cross-over of 9.0 (i.e. S.P. = 3 * S.T. / Cross-Over)
+     * <p>
+     * Both values are in reasonably good agreement, and 0.334 is chosen as our default.
+     */
+    public static final double DEFAULT_SOLVENT_PRESSURE = 0.0334;
+    /**
      * Default surface tension for apolar models with an explicit dispersion term.
      * <p>
      * Experimental value: 0.103 kcal/mol/Ang^2
-     * <p>
-     * Originally set to 0.08 kcal/mol/Ang^2 since there will always be a slight curve in water
-     * with a solute (ie: water will never be perfectly flat like it would be
-     * during surface tension experiments with pure water)
      */
-    public static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.080;
-    public static final double DEFAULT_VDW_TO_SASA_OFFSET = 0.0;
+    public static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.103;
     /**
-     * Default solvent pressure for apolar models with an explicit volume term.
-     * <p>
-     * Original value of 0.0327 kcal/mol/A^3 is based on using rigorous solvent
-     * accessible volumes.
-     * <p>
-     * For use with GaussVol volumes (i.e. a vdW volume), a larger solvent pressure of 0.125 is needed.
+     * Using a S.P. of 0.0334 kcal/mol/A^3, and a limiting surface tension of 0.103 kcal/mol/A^2,
+     * the cross-over point is 9.2515 A.
+     *
+     * Using a S.P. of 0.0334 kcal/mol/A^3, and a limiting surface tension of 0.08 (i.e. 80% of the experimentally
+     * observed surface tension of 0.103 kcal/mol/A^2), we derive a cross-over of:
+     *
+     * 9.251 A = 3 * 0.103 kcal/mol/A^2 / 0.0334 kcal/mol/A^3.
      */
-    public static final double DEFAULT_SOLVENT_PRESSURE = 0.06935;
-    public static final double DEFAULT_VDW_TO_SEV_OFFSET = 32.344;
+    public static final double DEFAULT_CROSSOVER = 9.251;
     /**
-     * Original crossover in Schnieders thesis: 3.0*(surface tension/solvent pressure)
-     * <p>
-     * Currently set to 9.0 to match Chandler et al. simulation data.
+     * Default offset applied to radii for use with Gaussian Volumes to
+     * correct for not including hydrogen atoms.
      */
-    public static final double DEFAULT_CROSSOVER = 9.0;
-
-    /**
-     * Default probe radius for use with Gaussian Volumes.
-     */
-    public static final double DEFAULT_GAUSSVOL_PROBE = 0.6;
+    public static final double DEFAULT_GAUSSVOL_RADII_OFFSET = 0.4;
     /**
      * Default dielectric offset
      **/
@@ -163,6 +167,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Volume to surface area cross-over point (A).
      */
     private final double crossOver;
+    /**
+     * GaussVol radii offset.
+     */
+    private double offset;
     /**
      * The requested permittivity.
      */
@@ -543,8 +551,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 cavitationRegion = null;
                 volumeRegion = null;
                 gaussVol = new GaussVol(nAtoms, null);
-                gaussVol.setVolumeOffset(forceField.getDouble("OSEV",GeneralizedKirkwood.DEFAULT_VDW_TO_SEV_OFFSET));
-                gaussVol.setSurfaceAreaOffset(forceField.getDouble("OSASA",GeneralizedKirkwood.DEFAULT_VDW_TO_SASA_OFFSET));
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
 
                 boolean[] isHydrogen = new boolean[nAtoms];
@@ -553,36 +559,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double[] gamma = new double[nAtoms];
 
                 double fourThirdsPI = 4.0 / 3.0 * PI;
-                double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0);
-
-                probe = forceField.getDouble("PROBE_RADIUS", DEFAULT_GAUSSVOL_PROBE);
+                offset = forceField.getDouble("GAUSSVOL_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
                 int index = 0;
-                double hydrogenFactor = 0.035;
-                int nCarbons = 0;
-
-                // Count number of carbons
-                for (Atom atom : atoms) {
-                    if (atom.getAtomicNumber() == 12) {
-                        nCarbons += 1;
-                    }
-                }
-
                 for (Atom atom : atoms) {
                     isHydrogen[index] = atom.isHydrogen();
-                    radii[index] = atom.getVDWType().radius / 2.0; //* rminToSigma;
-                    if (atom.getNumberOfBondedHydrogen() == 3) {
-                        hydrogenFactor = 0.036 - (0.001 * nCarbons);
-                    } else if (atom.getNumberOfBondedHydrogen() <= 2) {
-                        hydrogenFactor = 0.00;
-                    }
-                    //System.out.println("Hydrogen Factor: "+hydrogenFactor);
-                    //radii[index] += probe + hydrogenFactor * atom.getNumberOfBondedHydrogen();
-                    radii[index] += probe;
+                    radii[index] = atom.getVDWType().radius / 2.0;
+                    radii[index] += offset;
                     volume[index] = fourThirdsPI * pow(radii[index], 3);
                     gamma[index] = 1.0;
                     index++;
                 }
-
                 try {
                     gaussVol.setGammas(gamma);
                     gaussVol.setRadii(radii);
@@ -591,6 +577,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } catch (Exception e) {
                     logger.severe(" Exception creating GaussVol: " + e.toString());
                 }
+                probe = gaussVol.getEffectiveRadiusProbe();
 
                 break;
             case BORN_CAV_DISP:
@@ -642,7 +629,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         } else if (gaussVol != null) {
-            logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
+            logger.info(format("   Cavitation Radii Offset:            %8.3f (A)", offset));
+            logger.info(format("   Cavitation Effective Radius Probe:  %8.3f (A)", probe));
             logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", solventPressue));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
             logger.info(format("   Cavitation Cross-Over Radius:       %8.3f (A)", crossOver));

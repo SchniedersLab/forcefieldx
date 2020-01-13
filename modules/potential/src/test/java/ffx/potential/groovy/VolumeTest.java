@@ -35,14 +35,14 @@ public class VolumeTest {
         // Set-up the input arguments for the Volume script using butane as a test case
         // *Note: updating this test case will require updating butane.xyz, butane.properties, and the
         // parameter file referenced in butane.properties (in this case, the amoeba09.prm file.
-        String[] args = {"-p", "1.0", "src/main/java/ffx/potential/structures/butane.xyz"};
+        String[] args = {"-p", "1.4", "-o", "0.4", "src/main/java/ffx/potential/structures/butane.xyz"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
         volume.run();
 
-        org.junit.Assert.assertEquals(225.71615644500164, volume.totalVolume, 0.01);
-        org.junit.Assert.assertEquals(202.187, volume.totalSurfaceArea, 0.01);
+        org.junit.Assert.assertEquals(383.2278278467365, volume.totalVolume, 0.01);
+        org.junit.Assert.assertEquals(134.25693852184395, volume.totalSurfaceArea, 0.01);
 
     }
 
@@ -51,14 +51,14 @@ public class VolumeTest {
         // Set-up the input arguments for the Volume script using butane as a test case
         // *Note: updating this test case will require updating ethylbenzene.xyz, ethylbenzene.properties, and the
         // parameter file referenced in ethylbenzene.properties (in this case, the amoeba09.prm file.
-        String[] args = {"-p", "1.0", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+        String[] args = {"-p", "1.4", "-o", "0.4", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
         binding.setVariable("args", args);
 
         // Evaluate the script
         volume.run();
 
-        org.junit.Assert.assertEquals(337.53839598843217, volume.totalVolume, 0.001);
-        org.junit.Assert.assertEquals(283.704, volume.totalSurfaceArea, 0.001);
+        org.junit.Assert.assertEquals(521.7024513160144, volume.totalVolume, 0.001);
+        org.junit.Assert.assertEquals(193.15447011592823, volume.totalSurfaceArea, 0.001);
 
     }
 

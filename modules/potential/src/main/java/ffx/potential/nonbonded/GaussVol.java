@@ -46,9 +46,9 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
@@ -135,6 +135,11 @@ public class GaussVol {
     private static double VOLMINB = 0.1 * ANG3;
 
     /**
+     * Default offset applied to radii for use with Gaussian Volumes.
+     */
+    public static final double DEFAULT_VDW_PROBE = 1.4;
+
+    /**
      * Number of atoms.
      */
     private int nAtoms;
@@ -199,6 +204,24 @@ public class GaussVol {
      */
     private double cavitationEnergy;
     /**
+     * Effective radius probe.
+     * <p>
+     * In cavitation volume scaling regime, approximate solvent excluded volume
+     * and effective radius are computed as follow.
+     * <p>
+     * 1) GaussVol vdW volume is computed from defined radii.
+     * 2) Effective radius is computed as Reff = cbrt(3.0 * volume / (4.0 * PI)) + effectiveRadiusProbe.
+     * 3) Solvent Excluded Volume = 4/3 * Pi * Reff^3
+     */
+    private double effectiveRadius;
+    /**
+     * Effective radius probe.
+     * <p>
+     * This is added to the effective radius determined from a vdW Volume. For a spherical solute,
+     * adding the probe in this manner results in a solvent excluded Volume.
+     */
+    private double effectiveRadiusProbe = DEFAULT_VDW_PROBE;
+    /**
      * The volume gradient, which does not include the solvent pressure constant (i.e. this is in Ang^2).
      */
     private double[] volumeGradient;
@@ -213,20 +236,6 @@ public class GaussVol {
      */
     private double solventPressure = GeneralizedKirkwood.DEFAULT_SOLVENT_PRESSURE;
     /**
-     * Volume offset in Ang^3
-     * Set based on comparison of FFX Volumes for small alkanes (methane-decane)
-     * to Tinker Solvent-Accessible Volumes (using H and a probe of 1.4 in Tinker)
-     * With a probe radius of 0.0: 27.939
-     */
-    private double volumeOffsetVdwToSEV = GeneralizedKirkwood.DEFAULT_VDW_TO_SEV_OFFSET;
-    /**
-     * Surface Area offset in Ang^2
-     * Set based on comparison of FFX Surface Areas for small alkanes (methane-decane)
-     * to Tinker Solvent-Accessible Surface Areas (using H and a probe of 1.4 in Tinker)
-     * With a probe radius of 0.0: 46.111
-     */
-    private double surfaceAreaOffsetVdwToSASA = GeneralizedKirkwood.DEFAULT_VDW_TO_SASA_OFFSET;
-    /**
      * Surface tension in kcal/mol/Ang^2.
      */
     private double surfaceTension = GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION;
@@ -236,22 +245,24 @@ public class GaussVol {
      * Reset to 7.339 to match Tinker
      */
     private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
+    private double switchRange = 3.5;
+    private double saSwitchRangeOff = 3.9;
     /**
      * Begin turning off the Volume term.
      */
-    private double volumeOff = crossOver - 3.5;
+    private double volumeOff = crossOver - switchRange;
     /**
      * Volume term is zero at the cut-off.
      */
-    private double volumeCut = crossOver + 3.5;
+    private double volumeCut = crossOver + switchRange;
     /**
      * Begin turning off the SA term.
      */
-    private double surfaceAreaOff = crossOver + 3.9;
+    private double surfaceAreaOff = crossOver + saSwitchRangeOff;
     /**
      * SA term is zero at the cut-off.
      */
-    private double surfaceAreaCut = crossOver - 3.5;
+    private double surfaceAreaCut = crossOver - switchRange;
     /**
      * Volume multiplicative switch.
      */
@@ -308,27 +319,14 @@ public class GaussVol {
         volumeOffset = new double[nAtoms];
         double fourThirdsPI = 4.0 / 3.0 * PI;
         for (int i = 0; i < nAtoms; i++) {
-            radiiOffset[i] = radii[i] + offset;
-            volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
+            if (radii[i] != 0.0 && !ishydrogen[i]) {
+                radiiOffset[i] = radii[i] + offset;
+                volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
+            } else {
+                radiiOffset[i] = 0.0;
+                volumeOffset[i] = 0.0;
+            }
         }
-    }
-
-    /**
-     * Set the SA offset.
-     *
-     * @param offset The offset (A^2).
-     */
-    public void setSurfaceAreaOffset(double offset) {
-        surfaceAreaOffsetVdwToSASA = offset;
-    }
-
-    /**
-     * Set the Volume offset.
-     *
-     * @param offset The offset (A^3).
-     */
-    public void setVolumeOffset(double offset) {
-        volumeOffsetVdwToSEV = offset;
     }
 
     /**
@@ -358,6 +356,37 @@ public class GaussVol {
 
     public void setCrossOver(double crossOver) {
         this.crossOver = crossOver;
+        volumeOff = crossOver - switchRange;
+        volumeCut = crossOver + switchRange;
+        surfaceAreaOff = crossOver + saSwitchRangeOff;
+        surfaceAreaCut = crossOver - switchRange;
+        volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
+        surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
+    }
+
+    /**
+     * Effective radius probe.
+     * <p>
+     * This is added to the effective radius determined from a vdW Volume. For a spherical solute,
+     * adding the probe in this manner results in a solvent excluded Volume.
+     *
+     * @param effectiveRadiusProbe
+     */
+    public void setEffectiveRadiusProbe(double effectiveRadiusProbe) {
+        this.effectiveRadiusProbe = effectiveRadiusProbe;
+    }
+
+
+    /**
+     * Effective radius probe.
+     * <p>
+     * This is added to the effective radius determined from a vdW Volume. For a spherical solute,
+     * adding the probe in this manner results in a solvent excluded Volume.
+     *
+     * @return effectiveRadiusProbe
+     */
+    public double getEffectiveRadiusProbe() {
+        return effectiveRadiusProbe;
     }
 
     /**
@@ -394,6 +423,10 @@ public class GaussVol {
      */
     public double getSurfaceArea() {
         return surfaceArea;
+    }
+
+    public double getEffectiveRadius() {
+        return effectiveRadius;
     }
 
     /**
@@ -539,7 +572,7 @@ public class GaussVol {
         }
 
         // Save the total molecular volume.
-        volume = totalVolume[0] + volumeOffsetVdwToSEV;
+        volume = totalVolume[0];
 
         // Calculate a purely volume based cavitation energy.
         volumeEnergy = volume * solventPressure;
@@ -581,53 +614,71 @@ public class GaussVol {
         }
 
         // Calculate the surface area.
-        surfaceArea = ((selfVolumeOffsetSum - selfVolumeSum) / offset) + surfaceAreaOffsetVdwToSASA;
+        surfaceArea = (selfVolumeOffsetSum - selfVolumeSum) / offset;
 
         // Calculate a purely surface area based cavitation energy.
         surfaceAreaEnergy = surfaceArea * surfaceTension;
 
         // Use SA to find an effective cavity radius.
-        double reff = 0.5 * sqrt(surfaceArea / PI);
+//        effectiveRadius = 0.5 * sqrt(surfaceArea / PI) + effectiveRadiusProbe;
+//        double reff = effectiveRadius;
+//        double reff2 = reff * reff;
+//        double reff3 = reff2 * reff;
+//        double reff4 = reff3 * reff;
+//        double reff5 = reff4 * reff;
+//        double dreff = reff / (2.0 * surfaceArea);
+
+        // Use Volume to find an effective cavity radius.
+        double vdwVolume = volume;
+
+        effectiveRadius = cbrt(3.0 * vdwVolume / (4.0 * PI)) + effectiveRadiusProbe;
+        double reff = effectiveRadius;
         double reff2 = reff * reff;
         double reff3 = reff2 * reff;
         double reff4 = reff3 * reff;
         double reff5 = reff4 * reff;
-        double dreff = reff / (2.0 * surfaceArea);
+        double vdWVolPI23 = pow(vdwVolume / PI, 2.0 / 3.0);
+        double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
+
+        double dVolSEVdVolvdW = 1.0;
+        if (effectiveRadiusProbe > 0.0) {
+            dVolSEVdVolvdW = 2.0 * pow(2.0, 1.0 / 3.0) * reff2 / (pow(3.0, 2.0 / 3.0) * vdWVolPI23);
+        }
+
+        // double sevSASAChainRule = 4.0 * pow(2.0, 1.0/3.0) * reff / (pow(3.0, 2.0/3.0) * volPI23);
+        // logger.info(format(" Volume Reff: %16.8f, %16.8f", reff, dreff));
+
+        // Update the vdW volume to an SEV volume.
+        volume = 4.0 / 3.0 * PI * pow(effectiveRadius, 3);
+
+        // Calculate a purely SEV based cavitation energy.
+        volumeEnergy = volume * solventPressure;
 
         // Find the cavitation energy using a combination of volume and surface area dependence.
         if (reff < volumeOff) {
-            // Volume only.
-            // logger.info(format(" Volume Only: %8.6f < %8.6f", reff, volumeOff));
             // Find cavity energy from only the molecular volume.
             cavitationEnergy = volumeEnergy;
-            addVolumeGradient(1.0, 0.0, gradient);
+            addVolumeGradient(dVolSEVdVolvdW * solventPressure, gradient);
         } else if (reff <= volumeCut) {
             // Include a tapered molecular volume.
             double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
-            double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dreff;
-            // logger.info(format(" Tapered Volume: %8.6f <= %8.6f <= %8.6f -> %8.6f", volumeOff, reff, volumeCut, taper));
+            double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
             cavitationEnergy = taper * volumeEnergy;
-            addVolumeGradient(taper, dtaper, gradient);
+            double factor = dtaper * volumeEnergy + taper * dVolSEVdVolvdW * solventPressure;
+            addVolumeGradient(factor, gradient);
         }
 
         if (reff > surfaceAreaOff) {
             // Find cavity energy from only SA.
             cavitationEnergy = surfaceAreaEnergy;
-            // logger.info(format(" SA Only: %8.6f > %8.6f", surfaceAreaCut, reff));
-            addSurfaceAreaGradient(1.0, 0.0, gradient);
+            addSurfaceAreaGradient(0.0, surfaceTension, gradient);
         } else if (reff >= surfaceAreaCut) {
             // Include a tapered surface area term.
             double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
-            double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dreff;
-            // logger.info(format(" Tapered SA: %8.6f <= %8.6f <= %8.6f -> %8.6f", surfaceAreaCut, reff, surfaceAreaOff, taperSA));
+            double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
             cavitationEnergy += taperSA * surfaceAreaEnergy;
-            addSurfaceAreaGradient(taperSA, dtaperSA, gradient);
+            addSurfaceAreaGradient(dtaperSA * surfaceAreaEnergy, taperSA * surfaceTension, gradient);
         }
-
-        // Calculate effective radius by assuming the GaussVol volume is the volume of a sphere
-        double threeOverFourPi = 3.0 / (4.0 * Math.PI);
-        double radical = totalVolume[0] * threeOverFourPi;
-        double effectiveRadius = pow(radical, 1 / 3);
 
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format("\n Volume:              %8.3f (Ang^3)", totalVolume[0]));
@@ -635,7 +686,7 @@ public class GaussVol {
             logger.fine(format(" Surface Area:        %8.3f (Ang^2)", surfaceArea));
             logger.fine(format(" Surface Area Energy: %8.3f (kcal/mol)", surfaceAreaEnergy));
             logger.fine(format(" Volume + SA Energy:  %8.3f (kcal/mol)", cavitationEnergy));
-            logger.fine(format(" Effective Radius:    %8.3f (Ang)", effectiveRadius));
+            logger.fine(format(" Effective Radius:    %8.3f (Ang)", reff));
         }
 
         return cavitationEnergy;
@@ -644,21 +695,18 @@ public class GaussVol {
     /**
      * Collect the volume base cavitation energy and gradient contributions.
      *
-     * @param taperVolume    Tapered volume (A^3).
-     * @param dTaperVolumedR Derivative of the tapered volume with respect to effective radius.
-     * @param gradient       Array to accumulate derivatives.
+     * @param factor   dTaper/dReff * dReff/dVolvdW * Vsev + Tapered volume (A^3) * dVolSEV/dVolvdW
+     * @param gradient Array to accumulate derivatives.
      */
-    private void addVolumeGradient(double taperVolume, double dTaperVolumedR, AtomicDoubleArray3D gradient) {
-        taperVolume *= solventPressure;
-        dTaperVolumedR *= volumeEnergy;
+    private void addVolumeGradient(double factor, AtomicDoubleArray3D gradient) {
         for (int i = 0; i < nAtoms; i++) {
             int index = i * 3;
-//            gradient[0][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
-//            gradient[1][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
-//            gradient[2][i] += taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index];
-            double gx = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
-            double gy = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
-            double gz = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index];
+            double gx = factor * volumeGradient[index++];
+            double gy = factor * volumeGradient[index++];
+            double gz = factor * volumeGradient[index];
+            // double gx = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+            // double gy = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index++];
+            // double gz = taperVolume * volumeGradient[index] + dTaperVolumedR * surfaceAreaGradient[index];
             gradient.add(0, i, gx, gy, gz);
         }
     }
@@ -666,20 +714,16 @@ public class GaussVol {
     /**
      * Collect the surface area based cavitation energy and gradient contributions.
      *
-     * @param taperSA    Tapered surface area (A^2).
-     * @param dTaperSAdR Derivative of the tapered surface area with respect to effective radius.
-     * @param gradient   Array to accumulate derivatives.
+     * @param volFactor Factor to multiply vdW volume gradient by.
+     * @param saFactor  Factor to multiply vdw surface area by.
+     * @param gradient  Array to accumulate derivatives.
      */
-    private void addSurfaceAreaGradient(double taperSA, double dTaperSAdR, AtomicDoubleArray3D gradient) {
-        double factor = surfaceTension * taperSA + surfaceAreaEnergy * dTaperSAdR;
+    private void addSurfaceAreaGradient(double volFactor, double saFactor, AtomicDoubleArray3D gradient) {
         for (int i = 0; i < nAtoms; i++) {
             int index = i * 3;
-//            gradient[0][i] += factor * surfaceAreaGradient[index++];
-//            gradient[1][i] += factor * surfaceAreaGradient[index++];
-//            gradient[2][i] += factor * surfaceAreaGradient[index];
-            double gx = factor * surfaceAreaGradient[index++];
-            double gy = factor * surfaceAreaGradient[index++];
-            double gz = factor * surfaceAreaGradient[index];
+            double gx = volFactor * volumeGradient[index] + saFactor * surfaceAreaGradient[index++];
+            double gy = volFactor * volumeGradient[index] + saFactor * surfaceAreaGradient[index++];
+            double gz = volFactor * volumeGradient[index] + saFactor * surfaceAreaGradient[index];
             gradient.add(0, i, gx, gy, gz);
         }
     }
