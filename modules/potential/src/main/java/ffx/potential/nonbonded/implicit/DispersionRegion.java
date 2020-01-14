@@ -117,7 +117,6 @@ public class DispersionRegion extends ParallelRegion {
     private static final double EPSH = 0.0135;
     private static final double RMINO = 1.7025;
     private static final double RMINH = 1.3275;
-
     private double dispersionOffest = DISP_OFFSET;
 
     public DispersionRegion(int nt, Atom[] atoms) {
@@ -131,6 +130,8 @@ public class DispersionRegion extends ParallelRegion {
 
     public void setDispersionOffest(double dispersionOffest) {
         this.dispersionOffest = dispersionOffest;
+        // Update the maximum dispersion energy.
+        maxDispersionEnergy();
     }
 
     public void allocate(Atom[] atoms) {
