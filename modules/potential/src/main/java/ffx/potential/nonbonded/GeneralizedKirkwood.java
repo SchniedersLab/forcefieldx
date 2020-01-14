@@ -631,12 +631,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
         logger.info(format("   Non-Polar Model:                  %10s",
                 nonPolar.toString().replace('_', '-')));
 
+        if (dispersionRegion != null) {
+            logger.info(format("   Dispersion Integral Offset:         %8.3f (A)",
+                    dispersionRegion.getDispersionOffset()));
+        }
+
         if (cavitationRegion != null) {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         } else if (gaussVol != null) {
             logger.info(format("   Cavitation Radii Offset:            %8.3f (A)", offset));
-            logger.info(format("   Cavitation Effective Radius Probe:  %8.3f (A)", probe));
+            if (probe != 0.0) {
+                logger.info(format("   Cavitation Effective Radius Probe:  %8.3f (A)", probe));
+            }
             logger.info(format("   Cavitation Solvent Pressure:        %8.3f (Kcal/mol/A^3)", solventPressue));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
             logger.info(format("   Cavitation Cross-Over Radius:       %8.3f (A)", crossOver));
