@@ -664,7 +664,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param offset
      */
-    public void setDefaultGaussVolRadiiOffset(double offset) {
+    public void setGaussVolRadiiOffset(double offset) {
         this.offset = offset;
         if (gaussVol != null) {
             double[] radii = new double[nAtoms];
@@ -672,8 +672,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             double fourThirdsPI = 4.0 / 3.0 * PI;
             int index = 0;
             for (Atom atom : atoms) {
-                radii[index] = atom.getVDWType().radius / 2.0;
-                radii[index] += offset;
+                radii[index] = atom.getVDWType().radius / 2.0 + offset;
                 volume[index] = fourThirdsPI * pow(radii[index], 3);
                 index++;
             }
