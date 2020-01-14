@@ -69,6 +69,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
+import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISP_OFFSET;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
@@ -544,10 +545,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         grad, threadCount, probe, tensionDefault);
                 volumeRegion = new VolumeRegion(atoms, x, y, z, tensionDefault, threadCount);
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
+                double dispersionOffset = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISP_OFFSET);
+                dispersionRegion.setDispersionOffest(dispersionOffset);
                 gaussVol = null;
                 break;
             case GAUSS_DISP:
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
+                dispersionOffset = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISP_OFFSET);
+                dispersionRegion.setDispersionOffest(dispersionOffset);
                 cavitationRegion = null;
                 volumeRegion = null;
                 gaussVol = new GaussVol(nAtoms, null);
@@ -560,6 +565,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
                 double fourThirdsPI = 4.0 / 3.0 * PI;
                 offset = forceField.getDouble("GAUSSVOL_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
+                probe = forceField.getDouble("PROBE_RADIUS", GaussVol.DEFAULT_VDW_PROBE);
                 int index = 0;
                 for (Atom atom : atoms) {
                     isHydrogen[index] = atom.isHydrogen();
@@ -576,8 +582,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } catch (Exception e) {
                     logger.severe(" Exception creating GaussVol: " + e.toString());
                 }
-                probe = gaussVol.getEffectiveRadiusProbe();
-
+                gaussVol.setEffectiveRadiusProbe(probe);
                 break;
             case BORN_CAV_DISP:
                 probe = tempProbe;
@@ -586,6 +591,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 volumeRegion = null;
                 gaussVol = null;
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
+                dispersionOffset = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISP_OFFSET);
+                dispersionRegion.setDispersionOffest(dispersionOffset);
                 break;
             case HYDROPHOBIC_PMF:
             case BORN_SOLV:
@@ -922,15 +929,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
             double[] radii = new double[nAtoms];
             double[] volume = new double[nAtoms];
             double[] gamma = new double[nAtoms];
-
             double fourThirdsPI = 4.0 / 3.0 * PI;
-            double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0);
-
             int index = 0;
             for (Atom atom : atoms) {
                 isHydrogen[index] = atom.isHydrogen();
-                radii[index] = atom.getVDWType().radius / 2.0 * rminToSigma;
-                radii[index] += probe;
+                radii[index] = atom.getVDWType().radius / 2.0;
+                radii[index] += offset;
                 volume[index] = fourThirdsPI * pow(radii[index], 3);
                 gamma[index] = 1.0;
                 index++;
