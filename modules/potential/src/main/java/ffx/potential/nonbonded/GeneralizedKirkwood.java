@@ -664,7 +664,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param offset
      */
-    public void setDefaultGaussVolRadiiOffset(double offset) {
+    public void setGaussVolRadiiOffset(double offset) {
         this.offset = offset;
         if (gaussVol != null) {
             double[] radii = new double[nAtoms];
