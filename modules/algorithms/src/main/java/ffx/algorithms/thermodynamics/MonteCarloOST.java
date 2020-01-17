@@ -139,6 +139,10 @@ public class MonteCarloOST extends BoltzmannMC {
      * How verbose MD should be.
      */
     private final MolecularDynamics.VerbosityLevel mdVerbosityLevel;
+    /**
+     * Deposit a bias once every N MC cycles. Defaults to 1.
+     */
+    private final int biasDepositionFrequency;
 
     /**
      * <p>
@@ -174,7 +178,10 @@ public class MonteCarloOST extends BoltzmannMC {
 
         // Changing the value of lambda will be handled by this class, as well as adding the time dependent bias.
         orthogonalSpaceTempering.setPropagateLambda(false);
-
+        biasDepositionFrequency = properties.getInt("mc-ost-biasf", 1);
+        if (biasDepositionFrequency < 1) {
+            throw new IllegalArgumentException("The property mc-ost-biasf must be a positive integer, found " + biasDepositionFrequency + " !");
+        }
     }
 
     /**
@@ -274,6 +281,9 @@ public class MonteCarloOST extends BoltzmannMC {
 
         // Initialize the current coordinates.
         potential.getCoordinates(currentCoordinates);
+
+        // Update time dependent bias.
+        Histogram histogram = orthogonalSpaceTempering.getHistogram();
 
         // Compute the current OST potential energy.
         double currentOSTEnergy = orthogonalSpaceTempering.energyAndGradient(currentCoordinates, gradient);
@@ -416,9 +426,12 @@ public class MonteCarloOST extends BoltzmannMC {
                 lambdaMoveTime += nanoTime();
                 logger.log(verboseLoggingLevel, format("  Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
 
-                // Update time dependent bias.
-                Histogram histogram = orthogonalSpaceTempering.getHistogram();
-                histogram.addBias(currentdUdL, currentCoordinates, null);
+                if (imove % biasDepositionFrequency == 0) {
+                    histogram.addBias(currentdUdL, currentCoordinates, null);
+                } else {
+                    // TODO: Step down to FINE when we know this works.
+                    logger.log(Level.INFO, format(" Cycle %d: skipping bias deposition.", imove));
+                }
 
                 logger.log(verboseLoggingLevel, format("  Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
@@ -486,6 +499,9 @@ public class MonteCarloOST extends BoltzmannMC {
 
         // Initialize the current coordinates.
         potential.getCoordinates(currentCoordinates);
+
+        // Update time-dependent bias.
+        Histogram histogram = orthogonalSpaceTempering.getHistogram();
 
         // Compute the Total OST Energy as the sum of the Force Field Energy and Bias Energy.
         double currentOSTEnergy = orthogonalSpaceTempering.energyAndGradient(currentCoordinates, gradient);
@@ -617,9 +633,12 @@ public class MonteCarloOST extends BoltzmannMC {
                     mdMove.revertMove();
                 }
 
-                // Update time-dependent bias.
-                Histogram histogram = orthogonalSpaceTempering.getHistogram();
-                histogram.addBias(currentdUdL, currentCoordinates, null);
+                if (imove % biasDepositionFrequency == 0) {
+                    histogram.addBias(currentdUdL, currentCoordinates, null);
+                } else {
+                    // TODO: Step down to FINE when we know this works.
+                    logger.log(Level.INFO, format(" Cycle %d: skipping bias deposition.", imove));
+                }
 
                 logger.fine(format(" Added Bias at [ L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
