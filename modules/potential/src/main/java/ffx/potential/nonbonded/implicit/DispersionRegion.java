@@ -128,10 +128,24 @@ public class DispersionRegion extends ParallelRegion {
         allocate(atoms);
     }
 
+    /**
+     * The dispersion integral begins offset from the vdW radius.
+     *
+     * @param dispersionOffest the dispersion integral offset.
+     */
     public void setDispersionOffest(double dispersionOffest) {
         this.dispersionOffest = dispersionOffest;
         // Update the maximum dispersion energy.
         maxDispersionEnergy();
+    }
+
+    /**
+     * The dispersion integral begins offset from the vdW radius.
+     *
+     * @return the dispersion integral offset.
+     */
+    public double getDispersionOffset() {
+        return dispersionOffest;
     }
 
     public void allocate(Atom[] atoms) {

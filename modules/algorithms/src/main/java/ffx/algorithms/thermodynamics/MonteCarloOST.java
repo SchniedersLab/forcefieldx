@@ -291,7 +291,7 @@ public class MonteCarloOST extends BoltzmannMC {
             if (equilibration) {
                 logger.info(format("\n MD Equilibration Round %d", imove + 1));
             } else {
-                logger.info(format("\n MC Orthogonal Space Sampling Round %d", imove + 1));
+                logger.info(format("\n MC Orthogonal Space Sampling Round %d: Independent Steps", imove + 1));
             }
 
             // Run MD in an approximate potential U* (U star) that does not include the OST bias.
@@ -444,6 +444,21 @@ public class MonteCarloOST extends BoltzmannMC {
         }
     }
 
+    private double singleStepLambda() {
+        lambdaMove.move();
+        double proposedLambda = orthogonalSpaceTempering.getLambda();
+        logger.log(verboseLoggingLevel, format(" Proposed lambda: %5.3f.", proposedLambda));
+        return proposedLambda;
+    }
+
+    private void singleStepMD() {
+        // Run MD in an approximate potential U* (U star) that does not include the OST bias.
+        long mdMoveTime = -nanoTime();
+        mdMove.move(mdVerbosityLevel);
+        mdMoveTime += nanoTime();
+        logger.log(verboseLoggingLevel, format(" Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
+    }
+
     /**
      * The goal is to sample lambda and coordinates (X) simultaneously to
      * converge the ensemble average dU/dL for every state (lambda) along the
@@ -487,22 +502,24 @@ public class MonteCarloOST extends BoltzmannMC {
             double currentLambda = orthogonalSpaceTempering.getLambda();
             double proposedLambda = currentLambda;
 
+            boolean lambdaFirst = random.nextBoolean();
+
             if (equilibration) {
                 logger.info(format("\n Equilibration Round %d", imove + 1));
             } else {
-                logger.info(format("\n MC-OST Round %d", imove + 1));
-                lambdaMove.move();
-                proposedLambda = orthogonalSpaceTempering.getLambda();
-                logger.log(verboseLoggingLevel, format(" Proposed lambda: %5.3f.", proposedLambda));
+                String moveType = lambdaFirst ? "Single-step lambda plus MD move." : " Single-step MD plus lambda move.";
+                logger.info(format("\n MC-OST Round %d: %s", imove + 1, moveType));
             }
 
             logger.fine(format(" Starting force field energy for move %16.8f", currentForceFieldEnergy));
 
-            // Run MD in an approximate potential U* (U star) that does not include the OST bias.
-            long mdMoveTime = -nanoTime();
-            mdMove.move(mdVerbosityLevel);
-            mdMoveTime += nanoTime();
-            logger.log(verboseLoggingLevel, format(" Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
+            if (lambdaFirst) {
+                proposedLambda = singleStepLambda();
+                singleStepMD();
+            } else {
+                singleStepMD();
+                proposedLambda = singleStepLambda();
+            }
 
             // Get the starting and final kinetic energy for the MD move.
             double currentKineticEnergy = mdMove.getStartingKineticEnergy();
