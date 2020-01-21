@@ -566,7 +566,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * @param i       Number of OpenMM MD rounds.
      * @param running True if OpenMM MD rounds have begun running.
      */
-    private void updateFromOpenMM(int i, boolean running) {
+    private void updateFromOpenMM(long i, boolean running) {
 
         double priorPE = currentPotentialEnergy;
 
