@@ -552,11 +552,18 @@ public final class Main extends JFrame {
             argList.addAll(Arrays.asList(args).subList(1, nArgs));
         }
 
-        // Start up the GUI or CLI version of Force Field X.
-        if (!GraphicsEnvironment.isHeadless()) {
-            startGraphicalUserInterface(commandLineFile, argList);
-        } else {
-            startCommandLineInterface(commandLineFile, argList);
+        try {
+            // Start up the GUI or CLI version of Force Field X.
+            if (!GraphicsEnvironment.isHeadless()) {
+                startGraphicalUserInterface(commandLineFile, argList);
+            } else {
+                startCommandLineInterface(commandLineFile, argList);
+            }
+        } catch (Throwable t) {
+            int statusCode = 1;
+            logger.info(" Uncaught exception: exiting with status code " + statusCode);
+            t.printStackTrace();
+            System.exit(statusCode);
         }
     }
 
