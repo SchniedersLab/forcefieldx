@@ -713,17 +713,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Perform a sanity check on a frequency to ensure it's not longer than total runtime.
+     * Currently, the setter parameter is ignored due to issues with our test suite.
      *
      * @param describe  Description of the frequency.
      * @param frequency Frequency in timesteps.
-     * @param setter    Appropriate setter (accepting interval in ps) to correct the value.
+     * @param setter    Currently ignored.
      */
     private void sanityCheckFrequency(String describe, int frequency, DoubleConsumer setter) {
         if (frequency > nSteps) {
-            logger.warning(format(" Specified %s frequency of %d (timesteps) > " +
-                    "run length %d; resetting to run length %d", describe, frequency,
-                    nSteps, frequency));
-            setter.accept(nSteps * dt);
+            logger.info(format(" Specified %s frequency of %d (timesteps) > " +
+                    "run length %d!", describe, frequency, nSteps));
+            //setter.accept(nSteps * dt);
         }
     }
 
