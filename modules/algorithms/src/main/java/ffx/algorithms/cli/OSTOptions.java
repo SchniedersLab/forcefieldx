@@ -288,10 +288,10 @@ public class OSTOptions {
         }
 
         boolean initVelocities = true;
-        int nSteps = dynamics.steps;
+        long nSteps = dynamics.steps;
         molDyn.setRestartFrequency(dynamics.getCheckpoint());
         // Start sampling.
-        int nEquil = thermo.getEquilSteps();
+        long nEquil = thermo.getEquilSteps();
         if (nEquil > 0) {
             logger.info("\n Beginning equilibration");
             orthogonalSpaceTempering.setPropagateLambda(false);
@@ -301,7 +301,7 @@ public class OSTOptions {
         } else {
             logger.info(" Beginning OST sampling without equilibration");
             if (!thermo.getResetNumSteps()) {
-                int nEnergyCount = orthogonalSpaceTempering.getEnergyCount();
+                long nEnergyCount = orthogonalSpaceTempering.getEnergyCount();
                 if (nEnergyCount > 0) {
                     nSteps -= nEnergyCount;
                     logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
@@ -333,7 +333,7 @@ public class OSTOptions {
         MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(), orthogonalSpaceTempering, topologies[0],
                 topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose);
 
-        int nEquil = thermodynamics.getEquilSteps();
+        long nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
             logger.info("\n Beginning MC-OST equilibration.");
             monteCarloOST.setEquilibration(true);
@@ -376,7 +376,7 @@ public class OSTOptions {
         }
     }
 
-    private void runDynamics(MolecularDynamics molDyn, int numSteps, DynamicsOptions dynamics,
+    private void runDynamics(MolecularDynamics molDyn, long numSteps, DynamicsOptions dynamics,
                              WriteoutOptions writeout, boolean initVelocities, File dyn) {
         molDyn.dynamic(numSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
                 initVelocities, writeout.getFileType(), dynamics.getCheckpoint(), dyn);

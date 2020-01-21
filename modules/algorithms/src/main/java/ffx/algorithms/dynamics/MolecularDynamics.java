@@ -140,7 +140,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Number of MD steps to take.
      */
-    private int nSteps = 1000;
+    private long nSteps = 1000;
     /**
      * State of the dynamics.
      */
@@ -731,17 +731,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * init</p>
      *
-     * @param nSteps           Number of MD steps
-     * @param timeStep         Time step in femtoseconds
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
      * @param loggingInterval    Interval between printing/logging information in picoseconds.
-     * @param trajectoryInterval     Interval between adding a frame to the trajectory file in picoseconds.
-     * @param fileType         XYZ or ARC to save to .arc, PDB for .pdb files
-     * @param restartInterval  Interval between writing new restart files in picoseconds.
-     * @param temperature      Temperature in Kelvins.
-     * @param initVelocities   Initialize new velocities from a Maxwell-Boltzmann distribution.
-     * @param dyn              A {@link java.io.File} object to write the restart file to.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param fileType           XYZ or ARC to save to .arc, PDB for .pdb files
+     * @param restartInterval    Interval between writing new restart files in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void init(final int nSteps, final double timeStep, final double loggingInterval,
+    public void init(final long nSteps, final double timeStep, final double loggingInterval,
                      final double trajectoryInterval, final String fileType, final double restartInterval,
                      final double temperature, final boolean initVelocities, final File dyn) {
 
@@ -872,18 +872,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * method with default values for added parameters. Needed by (at least)
      * ReplicaExchange, which calls this directly.
      *
-     * @param nSteps         the number of MD steps.
-     * @param timeStep       the time step.
-     * @param printInterval  the number of steps between loggging updates.
-     * @param saveInterval   the number of steps between saving snapshots.
-     * @param temperature    the target temperature.
-     * @param initVelocities true to reset velocities from a Maxwell distribution.
-     * @param dyn            the Dynamic restart file.
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
+     * @param loggingInterval    Interval between printing/logging information in picoseconds.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void init(final int nSteps, final double timeStep, final double printInterval,
-                     final double saveInterval, final double temperature, final boolean initVelocities,
+    public void init(final long nSteps, final double timeStep, final double loggingInterval,
+                     final double trajectoryInterval, final double temperature, final boolean initVelocities,
                      final File dyn) {
-        init(nSteps, timeStep, printInterval, saveInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
     }
 
     /**
@@ -926,22 +926,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
      *
-     * @param nSteps           a int.
-     * @param timeStep         a double.
-     * @param printInterval    a double.
-     * @param saveInterval     a double.
-     * @param temperature      a double.
-     * @param initVelocities   a boolean.
-     * @param fileType         a String (either XYZ or PDB).
-     * @param restartFrequency a double specifying the restart frequency.
-     * @param dyn              a {@link java.io.File} object.
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
+     * @param loggingInterval    Interval between printing/logging information in picoseconds.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param fileType           XYZ or ARC to save to .arc, PDB for .pdb files
+     * @param restartInterval    Interval between writing new restart files in picoseconds.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
-                        String fileType, double restartFrequency, final File dyn) {
+    public void dynamic(final long nSteps, final double timeStep, final double loggingInterval,
+                        final double trajectoryInterval, final double temperature, final boolean initVelocities,
+                        String fileType, double restartInterval, final File dyn) {
         this.fileType = fileType;
-        setRestartFrequency(restartFrequency);
-        dynamic(nSteps, timeStep, printInterval, saveInterval, temperature,
+        setRestartFrequency(restartInterval);
+        dynamic(nSteps, timeStep, loggingInterval, trajectoryInterval, temperature,
                 initVelocities, dyn);
     }
 
@@ -949,16 +949,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
      *
-     * @param nSteps         a int.
-     * @param timeStep       a double.
-     * @param printInterval  a double.
-     * @param saveInterval   a double.
-     * @param temperature    a double.
-     * @param initVelocities a boolean.
-     * @param dyn            a {@link java.io.File} object.
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
+     * @param loggingInterval    Interval between printing/logging information in picoseconds.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
+    public void dynamic(final long nSteps, final double timeStep, final double loggingInterval,
+                        final double trajectoryInterval, final double temperature, final boolean initVelocities,
                         final File dyn) {
         // Return if already running;
         // Could happen if two threads call dynamic on the same MolecularDynamics instance.
@@ -967,7 +967,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             return;
         }
 
-        init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency,
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, fileType, restartFrequency,
                 temperature, initVelocities, dyn);
 
         Thread dynamicThread = new Thread(this);
@@ -1241,7 +1241,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // Integrate Newton's equations of motion for the requested number of steps,
         // unless early termination is requested.
         long time = System.nanoTime();
-        for (int step = 1; step <= nSteps; step++) {
+        for (long step = 1; step <= nSteps; step++) {
             if (step > 1) {
                 List<Constraint> constraints = potential.getConstraints();
                 // TODO: Replace magic numbers with named constants.
@@ -1349,7 +1349,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param step Step to write files (if any) for.
      */
-    public void writeFilesForStep(int step) {
+    public void writeFilesForStep(long step) {
         // Write out snapshots in selected format every saveSnapshotFrequency steps.
         if (trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
             appendSnapshot();

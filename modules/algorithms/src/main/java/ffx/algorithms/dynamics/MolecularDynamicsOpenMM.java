@@ -257,7 +257,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * {@inheritDoc}
      */
     @Override
-    public void init(int numSteps, double timeStep, double loggingInterval, double trajectoryInterval,
+    public void init(long numSteps, double timeStep, double loggingInterval, double trajectoryInterval,
                      String fileType, double restartInterval, double temperature, boolean initVelocities, File dyn) {
         super.init(numSteps, timeStep, loggingInterval, trajectoryInterval,
                 fileType, restartInterval, temperature, initVelocities, dyn);
@@ -331,8 +331,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         running = true;
     }
 
-    private void mainLoop(int numSteps) {
-        int i = 0;
+    private void mainLoop(long numSteps) {
+        long i = 0;
         time = -System.nanoTime();
 
         while (i < numSteps) {
@@ -367,7 +367,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * simulation.
      */
     @Override
-    public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
+    public void dynamic(long numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
         // Return if already running;
         // Could happen if two threads call dynamic on the same MolecularDynamics instance.
         if (!done) {
@@ -378,7 +378,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartInterval, temperature, initVelocities, dyn);
 
         if (intervalSteps == 0 || intervalSteps > numSteps) {
-            intervalSteps = numSteps;
+            // Safe cast: if intervalSteps > numSteps, then numSteps must be less than Integer.MAX_VALUE.
+            intervalSteps = (int) numSteps;
         }
 
         try {

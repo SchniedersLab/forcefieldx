@@ -76,7 +76,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     /**
      * Number of MD steps per annealing window.
      */
-    private final int mdSteps;
+    private final long mdSteps;
     /**
      * Integration time step.
      */
@@ -132,7 +132,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
                               ThermostatEnum requestedThermostat,
                               IntegratorEnum requestedIntegrator,
                               AnnealingSchedule schedule,
-                              int mdSteps,
+                              long mdSteps,
                               double timeStep,
                               boolean reinitVelocities,
                               File dynFile) {

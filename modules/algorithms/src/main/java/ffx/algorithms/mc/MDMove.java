@@ -68,7 +68,7 @@ public class MDMove implements MCMove {
     /**
      * Number of MD steps per move.
      */
-    private int mdSteps = 50;
+    private long mdSteps = 50;
     /**
      * Time step in femtoseconds.
      */
@@ -149,7 +149,7 @@ public class MDMove implements MCMove {
      * @param mdSteps  a int.
      * @param timeStep a double.
      */
-    public void setMDParameters(int mdSteps, double timeStep) {
+    public void setMDParameters(long mdSteps, double timeStep) {
         this.mdSteps = mdSteps;
         this.timeStep = timeStep;
         printInterval = mdSteps * timeStep / 1000;
@@ -252,7 +252,7 @@ public class MDMove implements MCMove {
      *
      * @param mdStep MD step (not MC cycle number) to write files (if any) for.
      */
-    public void writeFilesForStep(int mdStep) {
+    public void writeFilesForStep(long mdStep) {
         molecularDynamics.writeFilesForStep(mdStep);
     }
 }

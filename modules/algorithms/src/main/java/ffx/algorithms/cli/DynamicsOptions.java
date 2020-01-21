@@ -114,7 +114,7 @@ public class DynamicsOptions {
      */
     @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000",
             description = "Number of molecular dynamics steps.")
-    int steps = 1000000;
+    long steps = 1000000;
 
     /**
      * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).

@@ -179,7 +179,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * Number of times the OST biasing potential has been evaluated with the
      * "propagateLambda" flag true.
      */
-    int energyCount;
+    long energyCount;
     /**
      * Force Field Potential Energy (i.e. with no bias terms added).
      */
@@ -646,7 +646,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      *
      * @return Number of energy steps taken by this walker.
      */
-    public int getEnergyCount() {
+    public long getEnergyCount() {
         return energyCount;
     }
 

@@ -113,11 +113,11 @@ public class MonteCarloOST extends BoltzmannMC {
     /**
      * Total number of steps to take for MC-OST sampling.
      */
-    private int totalSteps = 10000000;
+    private long totalSteps = 10000000;
     /**
      * Number of steps to take per MC-OST round.
      */
-    private int stepsPerMove = 50;
+    private long stepsPerMove = 50;
     /**
      * Lambda move object for completing MC-OST lambda moves.
      */
@@ -194,7 +194,7 @@ public class MonteCarloOST extends BoltzmannMC {
      * @param timeStep     a double.
      * @param mcMDE        a boolean
      */
-    public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep, boolean mcMDE) {
+    public void setMDMoveParameters(long totalSteps, int stepsPerMove, double timeStep, boolean mcMDE) {
 
         if (mcMDE) {
             if (equilibration) {
@@ -275,7 +275,7 @@ public class MonteCarloOST extends BoltzmannMC {
         double[] gradient = new double[n];
         double[] currentCoordinates = new double[n];
         double[] proposedCoordinates = new double[n];
-        int numMoves = totalSteps / stepsPerMove;
+        long numMoves = totalSteps / stepsPerMove;
         int acceptLambda = 0;
         int acceptMD = 0;
 
@@ -442,7 +442,7 @@ public class MonteCarloOST extends BoltzmannMC {
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
                 if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
-                    int mdMoveNum = imove * stepsPerMove;
+                    long mdMoveNum = imove * stepsPerMove;
                     mdMove.writeFilesForStep(mdMoveNum);
                 }
             }
@@ -488,7 +488,7 @@ public class MonteCarloOST extends BoltzmannMC {
         double[] gradient = new double[n];
         double[] currentCoordinates = new double[n];
         double[] proposedCoordinates = new double[n];
-        int numMoves = totalSteps / stepsPerMove;
+        long numMoves = totalSteps / stepsPerMove;
         int acceptMD = 0;
         int acceptMCOST = 0;
 
@@ -644,7 +644,7 @@ public class MonteCarloOST extends BoltzmannMC {
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
                 if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
-                    int mdMoveNum = imove * stepsPerMove;
+                    long mdMoveNum = imove * stepsPerMove;
                     mdMove.writeFilesForStep(mdMoveNum);
                 }
             }
