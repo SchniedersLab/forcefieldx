@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.DoubleConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -216,6 +217,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Time step (picoseconds).
      */
     protected double dt = 1.0;
+    /**
+     * Whether MD handles writing restart/trajectory files itself (true), or will be
+     * commanded by another class (false) to do it. The latter is true for MC-OST, for example.
+     */
     protected boolean automaticWriteouts = true;
     /**
      * Time between writing out restart/checkpoint files in picoseconds.
@@ -225,6 +230,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Timesteps between writing out restart/checkpoint files. Set by the init method.
      */
     protected int restartFrequency;
+    private static final String RESTART_FREQ_STRING = "Restart";
     /**
      * Time between appending to the trajectory file in picoseconds.
      */
@@ -233,6 +239,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Timesteps between adding a frame to the trajectory file. Set by the init method.
      */
     protected int trajectoryFrequency;
+    private static final String TRAJ_FREQ_STRING = "Trajectory writeout";
     /**
      * Time between logging information to the screen in picoseconds.
      */
@@ -241,6 +248,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * TImesteps between logging information to the screen. Set by the init method.
      */
     protected int logFrequency;
+    private static final String LOG_FREQ_STRING = "Reporting (logging)";
     /**
      * Target temperature. ToDo: use the Thermostat instance.
      */
@@ -704,6 +712,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Perform a sanity check on a frequency to ensure it's not longer than total runtime.
+     *
+     * @param describe  Description of the frequency.
+     * @param frequency Frequency in timesteps.
+     * @param setter    Appropriate setter (accepting interval in ps) to correct the value.
+     */
+    private void sanityCheckFrequency(String describe, int frequency, DoubleConsumer setter) {
+        if (frequency > nSteps) {
+            logger.warning(format(" Specified %s frequency of %d (timesteps) > " +
+                    "run length %d; resetting to run length %d", describe, frequency,
+                    nSteps, frequency));
+            setter.accept(nSteps * dt);
+        }
+    }
+
+    /**
      * <p>
      * init</p>
      *
@@ -757,6 +781,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
         setLoggingFrequency(loggingInterval);
         setTrajectoryFrequency(trajectoryInterval);
         setRestartFrequency(restartInterval);
+
+        sanityCheckFrequency(LOG_FREQ_STRING, logFrequency, this::setLoggingFrequency);
+        if (automaticWriteouts) {
+            // Only sanity check these values if MD is doing this itself.
+            sanityCheckFrequency(TRAJ_FREQ_STRING, trajectoryFrequency, this::setTrajectoryFrequency);
+            sanityCheckFrequency(RESTART_FREQ_STRING, restartFrequency, this::setRestartFrequency);
+        }
 
         // Set snapshot file type.
         saveSnapshotAsPDB = true;
@@ -1006,7 +1037,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *                                            positive number
      */
     public void setRestartFrequency(double restartInterval) throws IllegalArgumentException {
-        restartFrequency = intervalToFreq(restartInterval, "Restart interval");
+        restartFrequency = intervalToFreq(restartInterval, RESTART_FREQ_STRING + " interval");
         this.restartInterval = restartInterval;
     }
 
@@ -1016,7 +1047,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param logInterval Time in ps between logging information to the screen.
      */
     private void setLoggingFrequency(double logInterval) {
-        logFrequency = intervalToFreq(logInterval, "Reporting (logging) interval");
+        logFrequency = intervalToFreq(logInterval, LOG_FREQ_STRING + " interval");
         this.logInterval = logInterval;
     }
 
@@ -1026,7 +1057,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param snapshotInterval Time in ps between appending snapshots to the trajectory file.
      */
     private void setTrajectoryFrequency(double snapshotInterval) {
-        trajectoryFrequency = intervalToFreq(snapshotInterval, "Trajectory writeout interval");
+        trajectoryFrequency = intervalToFreq(snapshotInterval, TRAJ_FREQ_STRING + " interval");
+        this.trajectoryInterval = snapshotInterval;
     }
 
     /**
