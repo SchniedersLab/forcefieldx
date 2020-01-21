@@ -215,8 +215,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     @Override
+    public void appendSnapshot() {
+        if (!getAllVars) {
+            // If !getAllVars, need to ensure coordinates are synced before writing a snapshot.
+            getOpenMMEnergiesAndPositions();
+        }
+        super.appendSnapshot();
+    }
+
+    @Override
     public void writeRestart() {
         if (!getAllVars) {
+            // If !getAllVars, need to ensure all variables are synced before writing the restart.
             getAllOpenMMVariables();
         }
         super.writeRestart();
@@ -247,10 +257,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * {@inheritDoc}
      */
     @Override
-    public void init(int numSteps, double timeStep, double printInterval, double saveInterval,
-                     String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
-        super.init(numSteps, timeStep, printInterval, saveInterval,
-                fileType, restartFrequency, temperature, initVelocities, dyn);
+    public void init(int numSteps, double timeStep, double loggingInterval, double trajectoryInterval,
+                     String fileType, double restartInterval, double temperature, boolean initVelocities, File dyn) {
+        super.init(numSteps, timeStep, loggingInterval, trajectoryInterval,
+                fileType, restartInterval, temperature, initVelocities, dyn);
 
         boolean isLangevin = integratorType.equals(IntegratorEnum.STOCHASTIC);
         switch (thermostatType) {
@@ -365,7 +375,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             return;
         }
 
-        init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+        init(numSteps, timeStep, printInterval, saveInterval, fileType, restartInterval, temperature, initVelocities, dyn);
 
         if (intervalSteps == 0 || intervalSteps > numSteps) {
             intervalSteps = numSteps;
@@ -574,49 +584,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
                 startingKineticEnergy = currentKineticEnergy;
                 startingTotalEnergy = currentTotalEnergy;
-            } else if (i % printFrequency == 0) {
-                double simTime = i * dt;
-                time += System.nanoTime();
-                logger.log(basicLogging, format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
-                        simTime, currentKineticEnergy, currentPotentialEnergy,
-                        currentTotalEnergy, currentTemperature, time * NS2SEC));
-
-                endTotalEnergy = currentTotalEnergy;
-
-                time = -System.nanoTime();
+            } else if (i % logFrequency == 0) {
+                time = logThermodynamics(time);
             }
 
-            if (saveSnapshotFrequency > 0 && i % saveSnapshotFrequency == 0 && i != 0) {
-                for (AssemblyInfo ai : assemblies) {
-                    if (ai.archiveFile != null && !saveSnapshotAsPDB) {
-                        if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                            logger.log(basicLogging, String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
-                        } else {
-                            logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
-                        }
-                    } else if (saveSnapshotAsPDB) {
-                        if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                            logger.log(basicLogging, String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
-                        } else {
-                            logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
-                        }
-                    }
-                }
-            }
-
-            // Write out restart files every saveRestartFileFrequency steps.
-            if (saveRestartFileFrequency > 0 && i % saveRestartFileFrequency == 0 && i != 0) {
-                if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.log(basicLogging, format(" Wrote dynamics restart file to %s", restartFile.getName()));
-                    if (constantPressure) {
-                        Crystal crystal = molecularAssembly.getCrystal();
-                        double currentDensity = crystal.getDensity(molecularAssembly.getTotalMass());
-                        logger.info(format(" Density %6.3f (g/cc) with unit cell %s.",
-                                currentDensity, crystal.toShortString()));
-                    }
-                } else {
-                    logger.info(format(" Writing dynamics restart file to %s failed.", restartFile.getName()));
-                }
+            if (automaticWriteouts) {
+                writeFilesForStep(i);
             }
         }
     }

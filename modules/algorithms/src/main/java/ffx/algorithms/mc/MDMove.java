@@ -123,6 +123,7 @@ public class MDMove implements MCMove {
         this.potential = potentialEnergy;
         molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        molecularDynamics.setAutomaticWriteouts(false);
 
         // Ensure at least one interval is printed.
         if (printInterval < mdSteps * timeStep) {
@@ -247,13 +248,11 @@ public class MDMove implements MCMove {
     }
 
     /**
-     * Write coordinate and velocity restart files out for MC-OST.
+     * Write restart and trajectory files if the provided step matches the frequency.
+     *
+     * @param mdStep MD step (not MC cycle number) to write files (if any) for.
      */
-    public void writeRestart() {
-        molecularDynamics.writeRestart();
-    }
-
-    public void writeLambdaThresholdRestart(double lambda, double lambdaWriteOut) {
-        molecularDynamics.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
+    public void writeFilesForStep(int mdStep) {
+        molecularDynamics.writeFilesForStep(mdStep);
     }
 }

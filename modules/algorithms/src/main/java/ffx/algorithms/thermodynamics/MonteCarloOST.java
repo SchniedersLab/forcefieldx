@@ -441,14 +441,9 @@ public class MonteCarloOST extends BoltzmannMC {
                 // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                if (imove != 0 && ((imove + 1) * stepsPerMove) % orthogonalSpaceTempering.saveFrequency == 0) {
-                    if (orthogonalSpaceTempering.lambdaWriteOut >= 0.0 && orthogonalSpaceTempering.lambdaWriteOut <= 1.0) {
-                        orthogonalSpaceTempering.writeRestart();
-                        mdMove.writeLambdaThresholdRestart(lambda, orthogonalSpaceTempering.lambdaWriteOut);
-                    } else {
-                        orthogonalSpaceTempering.writeRestart();
-                        mdMove.writeRestart();
-                    }
+                if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
+                    int mdMoveNum = imove * stepsPerMove;
+                    mdMove.writeFilesForStep(mdMoveNum);
                 }
             }
 
@@ -648,15 +643,10 @@ public class MonteCarloOST extends BoltzmannMC {
                 // Update the current OST Energy to be the sum of the current Force Field Energy and updated OST Bias.
                 currentOSTEnergy = currentForceFieldEnergy + currentBiasEnergy;
 
-                if (imove != 0 && ((imove + 1) * stepsPerMove) % orthogonalSpaceTempering.saveFrequency == 0) {
-                    if (orthogonalSpaceTempering.lambdaWriteOut >= 0.0 && orthogonalSpaceTempering.lambdaWriteOut <= 1.0) {
-                        mdMove.writeLambdaThresholdRestart(lambda, orthogonalSpaceTempering.lambdaWriteOut);
-                    } else {
-                        mdMove.writeRestart();
-                    }
-                    orthogonalSpaceTempering.writeRestart();
+                if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
+                    int mdMoveNum = imove * stepsPerMove;
+                    mdMove.writeFilesForStep(mdMoveNum);
                 }
-
             }
 
             totalMoveTime += nanoTime();
