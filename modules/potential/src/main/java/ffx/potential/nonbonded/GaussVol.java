@@ -364,6 +364,8 @@ public class GaussVol {
         surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
     }
 
+    public double getCrossOver() { return crossOver; }
+
     /**
      * Effective radius probe.
      * <p>

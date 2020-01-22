@@ -47,9 +47,11 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.atan2;
+import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -57,7 +59,9 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
 
+import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.utils.EnergyException;
 import static ffx.numerics.math.VectorMath.cross;
 import static ffx.numerics.math.VectorMath.dist;
@@ -76,11 +80,101 @@ public class VolumeRegion extends ParallelRegion {
     private final int nAtoms;
     private final Atom[] atoms;
     private final double[] x, y, z;
+    /**
+     * Base atomic radii without the "exclude" buffer.
+     */
+    private final double[] baseRadius;
+    /**
+     * Atomic radii including the "exclude" buffer.
+     */
+    private final double[] radius;
+    /**
+     * If true, atom is not used.
+     */
+    private final boolean[] skip;
 
     private final VolumeLoop[] volumeLoop;
     private final SharedDouble sharedVolume;
     private final SharedDouble sharedArea;
-    private final SharedDouble sharedVolumeCavitation;
+    /**
+     * Surface area (Ang^2).
+     */
+    private double surfaceArea;
+    /**
+     * Surface area energy (kcal/mol).
+     */
+    private double surfaceAreaEnergy;
+    /**
+     * Volume (Ang^3).
+     */
+    private double volume;
+    /**
+     * Volume energy (kcal/mol).
+     */
+    private double volumeEnergy;
+    /**
+     * Cavitation energy, which is a function of volume and/or surface area.
+     */
+    private double cavitationEnergy;
+    /**
+     * Probe is used for molecular (contact/reentrant) volume and surface area.
+     */
+    private double probe = 0.0;
+    /**
+     * Exclude is used for excluded volume and accessible surface area.
+     */
+    private double exclude = 1.4;
+    /**
+     * Solvent pressure for small solutes.
+     */
+    private double solventPressure = GeneralizedKirkwood.DEFAULT_SOLVENT_PRESSURE;
+    /**
+     * Chandler cross-over point between small solutes and large solutes.
+     */
+    private double crossOver = GeneralizedKirkwood.DEFAULT_CROSSOVER;
+    /**
+     * Surface tension for large solutes.
+     */
+    private double surfaceTension = GeneralizedKirkwood.DEFAULT_CAVDISP_SURFACE_TENSION;
+
+    /**
+     * Effective radius probe.
+     * <p>
+     * In cavitation volume scaling regime, approximate solvent excluded volume
+     * and effective radius are computed as follow.
+     * <p>
+     * 1) GaussVol vdW volume is computed from defined radii.
+     * 2) Effective radius is computed as Reff = cbrt(3.0 * volume / (4.0 * PI)) + effectiveRadiusProbe.
+     * 3) Solvent Excluded Volume = 4/3 * Pi * Reff^3
+     */
+    private double effectiveRadius;
+    private double switchRange = 3.5;
+    private double saSwitchRangeOff = 3.9;
+    /**
+     * Begin turning off the Volume term.
+     */
+    private double volumeOff = crossOver - switchRange;
+    /**
+     * Volume term is zero at the cut-off.
+     */
+    private double volumeCut = crossOver + switchRange;
+    /**
+     * Begin turning off the SA term.
+     */
+    private double surfaceAreaOff = crossOver + saSwitchRangeOff;
+    /**
+     * SA term is zero at the cut-off.
+     */
+    private double surfaceAreaCut = crossOver - switchRange;
+    /**
+     * Volume multiplicative switch.
+     */
+    private MultiplicativeSwitch volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
+    /**
+     * Surface area multiplicative switch.
+     */
+    private MultiplicativeSwitch surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
+
     private final int[] itab;
     private final static int MAXCUBE = 40;
     private final static int MAXARC = 1000;
@@ -93,10 +187,6 @@ public class VolumeRegion extends ParallelRegion {
      * maximum number of convex face cycles.
      */
     private final static int MAXFPCY = 10;
-    /**
-     * Radius of a water molecular.
-     */
-    private final static double exclude = 1.4;
     /**
      * maximum number of saddle faces.
      */
@@ -145,14 +235,6 @@ public class VolumeRegion extends ParallelRegion {
      * maximum number of cycles.
      */
     private final int maxcy;
-    /**
-     * Atomic radii.
-     */
-    private final double[] radius;
-    /**
-     * If true, atom is not used.
-     */
-    private final boolean[] skip;
     /**
      * Copy of the atomic coordinates. [X,Y,Z][Atom Number]
      */
@@ -366,15 +448,15 @@ public class VolumeRegion extends ParallelRegion {
     /**
      * True if cube contains active atoms.
      */
-    private final boolean[][][] activeCube;
+    private final boolean[] activeCube;
     /**
      * True if cube or adjacent cubes have active atoms.
      */
-    private final boolean[][][] activeAdjacentCube;
+    private final boolean[] activeAdjacentCube;
     /**
      * Pointer to first atom in list for cube.
      */
-    private final int[][][] firstAtomPointer;
+    private final int[] firstAtomPointer;
     /**
      * Integer cube coordinates.
      */
@@ -384,32 +466,26 @@ public class VolumeRegion extends ParallelRegion {
      */
     private final int[] nextAtomPointer;
 
-    private double ecav = 0.0;
-    private double esurf = 0.0;
-    private double evol = 0.0;
-    private double earea = 0.0;
-    private double probe = 0.0;
-    private double surfaceTension;
-
     private final static double SIZE = 0.000001;
     private final double[] vector = new double[3];
 
     /**
      * VolumeRegion constructor.
      *
-     * @param atoms
-     * @param x
-     * @param y
-     * @param z
-     * @param nt
+     * @param atoms Array of atom instances.
+     * @param x     X-coordinates.
+     * @param y     Y-coordinates.
+     * @param z     Z-cooddinates.
+     * @param nt    Number of threads.
      */
-    public VolumeRegion(Atom[] atoms, double[] x, double[] y, double[] z, double surfaceTension, int nt) {
+    public VolumeRegion(Atom[] atoms, double[] x, double[] y, double[] z,
+                        double[] baseRadius, int nt) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.x = x;
         this.y = y;
         this.z = z;
-        this.surfaceTension = surfaceTension;
+        this.baseRadius = baseRadius;
 
         volumeLoop = new VolumeLoop[nt];
         for (int i = 0; i < nt; i++) {
@@ -417,24 +493,10 @@ public class VolumeRegion extends ParallelRegion {
         }
         sharedVolume = new SharedDouble();
         sharedArea = new SharedDouble();
-        sharedVolumeCavitation = new SharedDouble();
         itab = new int[nAtoms];
 
         radius = new double[nAtoms];
         skip = new boolean[nAtoms];
-
-        // Set atom coordinates and radii, the excluded buffer radius
-        // ("exclude") is added to atomic radii.
-        for (int i = 0; i < nAtoms; i++) {
-            if (radius[i] == 0.0) {
-                skip[i] = true;
-            } else {
-                radius[i] += exclude;
-                skip[i] = false;
-            }
-        }
-
-
         maxfs = 6 * nAtoms;
         maxep = 12 * nAtoms;
         maxcls = 240 * nAtoms;
@@ -491,31 +553,96 @@ public class VolumeRegion extends ParallelRegion {
         fpa = new int[maxfp];
         fpcy = new int[MAXFPCY][maxfp];
         fpncy = new int[maxfp];
-        activeCube = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
-        activeAdjacentCube = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
-        firstAtomPointer = new int[MAXCUBE][MAXCUBE][MAXCUBE];
+
+        activeCube = new boolean[MAXCUBE * MAXCUBE * MAXCUBE];
+        activeAdjacentCube = new boolean[MAXCUBE * MAXCUBE * MAXCUBE];
+        firstAtomPointer = new int[MAXCUBE * MAXCUBE * MAXCUBE];
         cubeCoordinates = new int[3][nAtoms];
         nextAtomPointer = new int[nAtoms];
-
     }
 
-    public double getArea() {
-        return sharedArea.get();
+    public void setSolventPressure(double solventPressure) {
+        this.solventPressure = solventPressure;
+    }
+
+    public void setSurfaceTension(double surfaceTension) {
+        this.surfaceTension = surfaceTension;
+    }
+
+    public void setCrossOver(double crossOver) {
+        this.crossOver = crossOver;
+        volumeOff = crossOver - switchRange;
+        volumeCut = crossOver + switchRange;
+        surfaceAreaOff = crossOver + saSwitchRangeOff;
+        surfaceAreaCut = crossOver - switchRange;
+        volumeSwitch = new MultiplicativeSwitch(volumeCut, volumeOff);
+        surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
+    }
+
+    public void setExclude(double exclude) {
+        this.exclude = exclude;
+    }
+
+    public void setProbe(double probe) {
+        this.probe = probe;
+    }
+
+    public double getSurfaceArea() {
+        return surfaceArea;
     }
 
     public double getVolume() {
-        return sharedVolume.get();
+        return volume;
+    }
+
+    public double getSolventPressure() {
+        return solventPressure;
+    }
+
+    public double getSurfaceTension() {
+        return surfaceTension;
+    }
+
+    public double getCrossOver() { return crossOver; }
+
+    /**
+     * Return Volume based cavitation energy.
+     *
+     * @return Volume based cavitation energy.
+     */
+    public double getVolumeEnergy() {
+        return volumeEnergy;
+    }
+
+    /**
+     * Return Surface Area based cavitation energy.
+     *
+     * @return Surface Area based cavitation energy.
+     */
+    public double getSurfaceAreaEnergy() {
+        return surfaceAreaEnergy;
     }
 
     public double getEnergy() {
-        return sharedVolumeCavitation.get();
+        return cavitationEnergy;
+    }
+
+    public double getEffectiveRadius() {
+        return effectiveRadius;
+    }
+
+    public double getProbe() {
+        return probe;
+    }
+
+    public double getExclude() {
+        return exclude;
     }
 
     @Override
     public void start() {
         sharedVolume.set(0.0);
         sharedArea.set(0.0);
-        sharedVolumeCavitation.set(0.0);
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             a[0][i] = atom.getX();
@@ -533,6 +660,11 @@ public class VolumeRegion extends ParallelRegion {
             String message = "Fatal exception computing Volume energy in thread " + getThreadIndex() + "\n";
             logger.log(Level.SEVERE, message, e);
         }
+    }
+
+    @Override
+    public void finish() {
+        energy();
     }
 
     private void wiggle() {
@@ -565,6 +697,74 @@ public class VolumeRegion extends ParallelRegion {
         vector[0] = s * x;
     }
 
+    private void energy() {
+
+        // Calculate a purely surface area based cavitation energy.
+        surfaceArea = sharedArea.get();
+        surfaceAreaEnergy = surfaceArea * surfaceTension;
+
+        // Calculate a purely volume based cavitation energy.
+        volume = sharedVolume.get();
+        volumeEnergy = volume * solventPressure;
+
+        // Use Volume to find an effective cavity radius.
+        effectiveRadius = cbrt(3.0 * volume / (4.0 * PI));
+        double reff = effectiveRadius;
+        double reff2 = reff * reff;
+        double reff3 = reff2 * reff;
+        double reff4 = reff3 * reff;
+        double reff5 = reff4 * reff;
+        double vdWVolPI23 = pow(volume / PI, 2.0 / 3.0);
+        // double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
+
+        // Find the cavitation energy using a combination of volume and surface area dependence.
+        if (reff < volumeOff) {
+            // Find cavity energy from only the molecular volume.
+            cavitationEnergy = volumeEnergy;
+            // addVolumeGradient(dVolSEVdVolvdW * solventPressure, gradient);
+        } else if (reff <= volumeCut) {
+            // Include a tapered molecular volume.
+            double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
+            cavitationEnergy = taper * volumeEnergy;
+            // double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
+            // double factor = dtaper * volumeEnergy + taper * solventPressure;
+            // addVolumeGradient(factor, gradient);
+        }
+
+        if (reff > surfaceAreaOff) {
+            // Find cavity energy from only SA.
+            cavitationEnergy = surfaceAreaEnergy;
+            // addSurfaceAreaGradient(0.0, surfaceTension, gradient);
+        } else if (reff >= surfaceAreaCut) {
+            // Include a tapered surface area term.
+            double taperSA = surfaceAreaSwitch.taper(reff, reff2, reff3, reff4, reff5);
+            cavitationEnergy += taperSA * surfaceAreaEnergy;
+            // double dtaperSA = surfaceAreaSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
+            // addSurfaceAreaGradient(dtaperSA * surfaceAreaEnergy, taperSA * surfaceTension, gradient);
+        }
+
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format("\n Volume:              %8.3f (Ang^3)", volume));
+            logger.fine(format(" Volume Energy:       %8.3f (kcal/mol)", volumeEnergy));
+            logger.fine(format(" Surface Area:        %8.3f (Ang^2)", surfaceArea));
+            logger.fine(format(" Surface Area Energy: %8.3f (kcal/mol)", surfaceAreaEnergy));
+            logger.fine(format(" Volume + SA Energy:  %8.3f (kcal/mol)", cavitationEnergy));
+            logger.fine(format(" Effective Radius:    %8.3f (Ang)", reff));
+        }
+    }
+
+    /**
+     * Row major indexing (the last dimension is contiguous in memory).
+     *
+     * @param i x index.
+     * @param j y index.
+     * @param k z index.
+     * @return the row major index.
+     */
+    private static int index(int i, int j, int k) {
+        return k + MAXCUBE * (j + MAXCUBE * i);
+    }
+
     /**
      * Compute Volume energy for a range of atoms.
      *
@@ -573,38 +773,17 @@ public class VolumeRegion extends ParallelRegion {
     private class VolumeLoop extends IntegerForLoop {
 
         private int nfn;
-        private int l, l1, l2;
-        private int io, ir, in, iv;
-        private int narc, nx, ny, nz;
-        private int istart, istop;
-        private int jstart, jstop;
-        private int kstart, kstop;
-        private int mstart, mstop;
-        private int isum, itemp, tcube;
+        private int iv;
+        private int itemp;
         private final int mxcube = 15;
         private final int[] inov = new int[MAXARC];
-        private final int[][][][] cube = new int[2][mxcube][mxcube][mxcube];
+        private final int[][] cube = new int[2][mxcube * mxcube * mxcube];
         private double xmin, ymin, zmin;
         private double xmax, ymax, zmax;
-        private double aa, bb, temp, phi_term;
-        private double theta1, theta2, dtheta;
-        private double seg_dx, seg_dy, seg_dz;
-        private double pre_dx, pre_dy, pre_dz;
-        private double rinsq, rdiff;
-        private double rsecn, rsec2n;
-        private double cosine, ti, tf;
-        private double alpha, beta;
-        private double ztop, zstart;
-        private double ztopshave;
-        private double phi1, cos_phi1;
-        private double phi2, cos_phi2;
-        private double zgrid, pix2;
-        private double rsec2r, rsecr;
-        private double rr, rrx2, rrsq;
-        private double rmax, edge;
-        private double xr, yr, zr;
-        private double dist2, vdwsum;
-        private double zstep;
+        private double theta1;
+        private double theta2;
+        private double pix2;
+        private double rmax;
         private final double[] arci = new double[MAXARC];
         private final double[] arcf = new double[MAXARC];
         private final double[] dx = new double[MAXARC];
@@ -614,25 +793,8 @@ public class VolumeRegion extends ParallelRegion {
         private boolean ttok;
         private final double[] vdwrad = new double[nAtoms];
         private final double[][] dex = new double[3][nAtoms];
-
-        // module limits
-        double vdwcut, chgcut;
-        double dplcut, mpolecut;
-        double vdwtaper, chgtaper;
-        double dpltaper, mpoletaper;
-
-        // module nonpol
-        double solvprs;
-        double spcut, spoff;
-        double stcut, stoff;
-
-        // module shunt
-        double off, off2;
-        double cut, cut2;
-        double c0, c1, c2;
-        double c3, c4, c5;
-        double f0, f1, f2, f3;
-        double f4, f5, f6, f7;
+        private double localVolume;
+        private double localSurfaceArea;
 
         /**
          * Extra padding to avert cache interface.
@@ -640,20 +802,31 @@ public class VolumeRegion extends ParallelRegion {
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
+        /**
+         * Row major indexing (the last dimension is contiguous in memory).
+         *
+         * @param i x index.
+         * @param j y index.
+         * @param k z index.
+         * @return the row major index.
+         */
+        private int index2(int i, int j, int k) {
+            return k + mxcube * (j + mxcube * i);
+        }
+
         @Override
         public void start() {
             fill(dex[0], 0.0);
             fill(dex[1], 0.0);
             fill(dex[2], 0.0);
-            evol = 0.0;
-            earea = 0.0;
+            localVolume = 0.0;
+            localSurfaceArea = 0.0;
         }
 
         @Override
         public void finish() {
-            sharedVolume.addAndGet(evol);
-            sharedArea.addAndGet(earea);
-            sharedVolumeCavitation.addAndGet(ecav);
+            sharedVolume.addAndGet(localVolume);
+            sharedArea.addAndGet(localSurfaceArea);
         }
 
         void setRadius() {
@@ -667,21 +840,20 @@ public class VolumeRegion extends ParallelRegion {
             zmin = z[0];
             zmax = z[0];
 
-                /*
-                  Assign van der Waals radii to the atoms; note that the radii
-                  are incremented by the size of the probe; then get the
-                  maximum and minimum ranges of atoms.
-                 */
+            /*
+              Assign van der Waals radii to the atoms; note that the radii
+              are incremented by the size of the probe; then get the
+              maximum and minimum ranges of atoms.
+             */
             for (int i = 0; i < nAtoms; i++) {
-                radius[i] = atoms[i].getVDWType().radius / 2.0;
-                vdwrad[i] = radius[i];
-                if (vdwrad[i] == 0.0) {
+                if (baseRadius[i] == 0.0) {
+                    radius[i] = 0.0;
+                    vdwrad[i] = 0.0;
                     skip[i] = true;
                 } else {
-                    vdwrad[i] += exclude;
-                    radius[i] += exclude;
                     skip[i] = false;
-                    //vdwrad[i] += probe;
+                    vdwrad[i] = baseRadius[i] + exclude;
+                    radius[i] = baseRadius[i] + exclude;
                     if (vdwrad[i] > rmax) {
                         rmax = vdwrad[i];
                     }
@@ -711,18 +883,13 @@ public class VolumeRegion extends ParallelRegion {
          * Find the analytical volume and surface area.
          */
         void calcVolume() {
-            double volume = 0;
-            double area = 0;
-
-            probe = 0.0;
-
             nearby();
             torus();
             place();
             compress();
             saddles();
             contact();
-            vam(volume, area);
+            vam();
         }
 
         void getVector(double[] ai, double[][] temp, int index) {
@@ -875,15 +1042,18 @@ public class VolumeRegion extends ParallelRegion {
             }
 
             // Initialize head pointer and srn=2 arrays.
-            for (int i = 0; i < MAXCUBE; i++) {
-                for (int j = 0; j < MAXCUBE; j++) {
-                    for (int k = 0; k < MAXCUBE; k++) {
-                        firstAtomPointer[i][j][k] = -1;
-                        activeCube[i][j][k] = false;
-                        activeAdjacentCube[i][j][k] = false;
-                    }
-                }
-            }
+//            for (int i = 0; i < MAXCUBE; i++) {
+//                for (int j = 0; j < MAXCUBE; j++) {
+//                    for (int k = 0; k < MAXCUBE; k++) {
+//                        firstAtomPointer[i][j][k] = -1;
+//                        activeCube[i][j][k] = false;
+//                        activeAdjacentCube[i][j][k] = false;
+//                    }
+//                }
+//            }
+            fill(firstAtomPointer, -1);
+            fill(activeCube, false);
+            fill(activeAdjacentCube, false);
 
             // Initialize linked list pointers.
             fill(nextAtomPointer, -1);
@@ -900,13 +1070,13 @@ public class VolumeRegion extends ParallelRegion {
                 int i = cubeCoordinates[0][iatom];
                 int j = cubeCoordinates[1][iatom];
                 int k = cubeCoordinates[2][iatom];
-                if (firstAtomPointer[i][j][k] <= -1) {
+                if (firstAtomPointer[index(i, j, k)] <= -1) {
                     // First atom in this cube.
-                    firstAtomPointer[i][j][k] = iatom;
+                    firstAtomPointer[index(i, j, k)] = iatom;
                 } else {
                     int counter = 1;
                     // Add to end of linked list.
-                    iptr = firstAtomPointer[i][j][k];
+                    iptr = firstAtomPointer[index(i, j, k)];
                     innerloop:
                     for (i = 0; i < counter; i++) {
                         getVector(aj, a, iptr);
@@ -931,7 +1101,7 @@ public class VolumeRegion extends ParallelRegion {
 
                 // Check for surfaced atom.
                 if (!skip[iatom]) {
-                    activeCube[i][j][k] = true;
+                    activeCube[index(i, j, k)] = true;
                 }
             }
 
@@ -939,12 +1109,12 @@ public class VolumeRegion extends ParallelRegion {
             for (int k = 0; k < MAXCUBE; k++) {
                 for (int j = 0; j < MAXCUBE; j++) {
                     for (int i = 0; i < MAXCUBE; i++) {
-                        if (firstAtomPointer[i][j][k] != -1) {
+                        if (firstAtomPointer[index(i, j, k)] != -1) {
                             for (k1 = Math.max(k - 1, 0); k1 < Math.min(k + 2, MAXCUBE); k1++) {
                                 for (j1 = Math.max(j - 1, 0); j1 < Math.min(j + 2, MAXCUBE); j1++) {
                                     for (i1 = Math.max(i - 1, 0); i1 < Math.min(i + 2, MAXCUBE); i1++) {
-                                        if (activeCube[i1][j1][k1]) {
-                                            activeAdjacentCube[i][j][k] = true;
+                                        if (activeCube[index(i1, j1, k1)]) {
+                                            activeAdjacentCube[index(i, j, k)] = true;
                                         }
                                     }
                                 }
@@ -969,7 +1139,7 @@ public class VolumeRegion extends ParallelRegion {
                 ick = cubeCoordinates[2][i];
 
                 // Skip iatom if its cube and adjoining cubes contain only blockers.
-                if (!activeAdjacentCube[ici][icj][ick]) {
+                if (!activeAdjacentCube[index(ici, icj, ick)]) {
                     continue;
                 }
                 sumi = 2.0 * probe + radius[i];
@@ -979,7 +1149,7 @@ public class VolumeRegion extends ParallelRegion {
                     for (jcj = max(icj - 1, 0); jcj < min(icj + 2, MAXCUBE); jcj++) {
                         for4:
                         for (jci = max(ici - 1, 0); jci < min(ici + 2, MAXCUBE); jci++) {
-                            int j = firstAtomPointer[jci][jcj][jck];
+                            int j = firstAtomPointer[index(jci, jcj, jck)];
                             int counter = 1;
                             for (int q = 0; q < counter; q++) {
                                 for (int z = 0; z < 1; z++) {
@@ -1270,10 +1440,11 @@ public class VolumeRegion extends ParallelRegion {
                         continue;
                     }
                     // Put remaining neighbors in linked list at proper position.
+                    int l;
                     for (l = 1; l < nmnb + 1; l++) {
 
-                        l1 = -1;
-                        l2 = lkf;
+                        int l1 = -1;
+                        int l2 = lkf;
                         int counter2 = 1;
                         for (int w = 0; w < counter2; w++) {
                             if (discls[l] < discls[l2]) {
@@ -1585,7 +1756,6 @@ public class VolumeRegion extends ParallelRegion {
                     // First, transfer information.
                     nt++;
                     if (nt > maxt) {
-                        //logger.severe("Too many non-buried tori.");
                         throw new EnergyException("Too many non-buried tori.", false);
                     }
                     int ia = tta[0][itt];
@@ -1627,8 +1797,7 @@ public class VolumeRegion extends ParallelRegion {
         }
 
         /**
-         * The saddles method constructs circles, convex edges, and saddle
-         * faces.
+         * The saddles method constructs circles, convex edges, and saddle faces.
          */
         void saddles() {
             final int maxent = 500;
@@ -1652,18 +1821,17 @@ public class VolumeRegion extends ParallelRegion {
             nc = -1;
             nep = -1;
             nfs = -1;
-            for (ia = 0; ia < nAtoms; ia++) {
-                afe[ia] = -1;
-                ale[ia] = -1;
-                abur[ia] = true;
-            }
+            fill(afe, -1);
+            fill(ale, -1);
+            fill(abur, true);
+
             // No saddle faces if no tori.
             if (nt < 0) {
                 return;
             }
 
             // Cycle through tori.
-            for (it = 0; it < nt + 1; it++) {
+            for (it = 0; it <= nt; it++) {
                 if (skip[ta[0][it]] && skip[ta[1][it]]) {
                     continue;
                 }
@@ -1684,7 +1852,6 @@ public class VolumeRegion extends ParallelRegion {
                     // One more circle.
                     nc++;
                     if (nc > maxc) {
-                        //logger.severe("Too many Circles");
                         throw new EnergyException("Too many Circles", false);
                     }
 
@@ -1703,231 +1870,204 @@ public class VolumeRegion extends ParallelRegion {
                     cr[nc] = factor * tr[it];
                 }
 
-                // Skip to special code if free torus.
-                outerfor:
-                for (int i = 0; i < 1; i++) {
-                    for (int r = 0; r < 1; r++) {
-                        if (tfree[it]) {
-                            continue;
+                // Skip to special "free torus" code.
+                if (!tfree[it]) {
+                    /*
+                      Now we collect all the concave edges for this
+                      torus; for each concave edge, calculate vector
+                      from torus center through probe center and the
+                      angle relative to first such vector.
+                     */
+
+                    // Clear the number of concave edges for torus.
+                    nent = -1;
+
+                    // Pointer to start of linked list.
+                    ien = tfe[it];
+                    // 10 Continue
+                    while (ien >= 0) {
+                        // One more concave edge.
+                        nent++;
+                        if (nent > maxent) {
+                            //logger.severe("Too many Edges for Torus");
+                            throw new EnergyException("Too many Edges for Torus", false);
                         }
-                            /*
-                              Now we collect all the concave edges for this
-                              torus; for each concave edge, calculate vector
-                              from torus center through probe center and the
-                              angle relative to first such vector.
-                             */
+                        // First vertex of edge.
+                        iv = env[0][ien];
 
-                        // Clear the number of concave edges for torus.
-                        nent = -1;
+                        // Probe number of vertex.
+                        ip = vp[iv];
+                        for (k = 0; k < 3; k++) {
+                            tev[k][nent] = p[k][ip] - t[k][it];
+                        }
+                        dtev = 0.0;
+                        for (k = 0; k < 3; k++) {
+                            dtev += tev[k][nent] * tev[k][nent];
+                        }
+                        if (dtev <= 0.0) {
+                            throw new EnergyException("Probe on Torus Axis", false);
+                        }
+                        dtev = sqrt(dtev);
+                        for (k = 0; k < 3; k++) {
+                            tev[k][nent] = tev[k][nent] / dtev;
+                        }
 
-                        // Pointer to start of linked list.
-                        ien = tfe[it];
-                        int counter = 1;
-                        for (int q = 0; q < counter; counter++) {
-                            if (ien <= -1) {
-                                continue;
-                            }
-                            // One more concave edge.
-                            nent++;
-                            if (nent > maxent) {
-                                //logger.severe("Too many Edges for Torus");
-                                throw new EnergyException("Too many Edges for Torus", false);
-                            }
-                            // First vertex of edge.
-                            iv = env[0][ien];
-
-                            // Probe number of vertex.
-                            ip = vp[iv];
+                        // Store concave edge number.
+                        ten[nent] = ien;
+                        if (nent > 0) {
+                            // Calculate angle between this vector and first vector.
+                            dt = 0.0;
                             for (k = 0; k < 3; k++) {
-                                tev[k][nent] = p[k][ip] - t[k][it];
+                                dt += tev[k][0] * tev[k][nent];
                             }
-                            dtev = 0.0;
-                            for (k = 0; k < 3; k++) {
-                                dtev += tev[k][nent] * tev[k][nent];
+                            if (dt > 1.0) {
+                                dt = 1.0;
                             }
-                            if (dtev <= 0.0) {
-                                //logger.severe("Probe on Torus Axis");
-                                throw new EnergyException("Probe on Torus Axis", false);
-                            }
-                            dtev = sqrt(dtev);
-                            for (k = 0; k < 3; k++) {
-                                tev[k][nent] = tev[k][nent] / dtev;
+                            if (dt < -1.0) {
+                                dt = -1.0;
                             }
 
-                            // Store concave edge number.
-                            ten[nent] = ien;
-                            if (nent > 0) {
+                            // Store angle.
+                            teang[nent] = Math.acos(dt);
 
-                                // Calculate angle between this vector and first vector.
-                                dt = 0.0;
-                                for (k = 0; k < 3; k++) {
-                                    dt += tev[k][0] * tev[k][nent];
-                                }
-                                //dt = check(dt);
-                                if (dt > 1.0) {
-                                    dt = 1.0;
-                                }
-                                if (dt < -1.0) {
-                                    dt = -1.0;
-                                }
+                            ai[0] = tev[0][0];
+                            ai[1] = tev[1][0];
+                            ai[2] = tev[2][0];
+                            aj[0] = tev[0][nent];
+                            aj[1] = tev[1][nent];
+                            aj[2] = tev[2][nent];
+                            ak[0] = tax[0][it];
+                            ak[1] = tax[1][it];
+                            ak[2] = tax[2][it];
 
-                                // Store angle.
-                                teang[nent] = Math.acos(dt);
-
-                                ai[0] = tev[0][0];
-                                ai[1] = tev[1][0];
-                                ai[2] = tev[2][0];
-                                aj[0] = tev[0][nent];
-                                aj[1] = tev[1][nent];
-                                aj[2] = tev[2][nent];
-                                ak[0] = tax[0][it];
-                                ak[1] = tax[1][it];
-                                ak[2] = tax[2][it];
-
-                                // Get the sign right.
-                                triple = triple(ai, aj, ak);
-                                if (triple < 0.0) {
-                                    teang[nent] = 2.0 * Math.PI - teang[nent];
-                                }
-                            } else {
-                                teang[0] = 0.0;
+                            // Get the sign right.
+                            triple = triple(ai, aj, ak);
+                            if (triple < 0.0) {
+                                teang[nent] = 2.0 * Math.PI - teang[nent];
                             }
-                            // Saddle face starts with this edge if it points parallel to torus axis vector (which
-                            // goes from first to second atom).
-                            sdstrt[nent] = (va[iv] == ta[0][it]);
-                            // Next edge in list.
-                            ien = enext[ien];
-                            counter++;
+                        } else {
+                            teang[0] = 0.0;
                         }
-                        if (nent <= -1) {
-                            logger.severe("No Edges for Non-free Torus");
-                        }
-                        itwo = 2;
-                        if ((nent % itwo) == 0) {
-                            //logger.severe("Odd Number of Edges for Toruss");
-                            throw new EnergyException("Odd Number of Edges for Torus", false);
-                        }
-
-                        // Set up linked list of concave edges in order of increasing angle around the torus axis; clear
-                        // second linked (angle-ordered) list pointers.
-                        for (ient = 0; ient < nent + 1; ient++) {
-                            nxtang[ient] = -1;
-                        }
-                        for (ient = 1; ient < nent + 1; ient++) {
-                            // We have an entry to put into linked list search for place to put it.
-                            l1 = -1;
-                            l2 = 0;
-                            int counter2 = 1;
-                            for (int w = 0; w < counter2; w++) {
-                                if (teang[ient] < teang[l2]) {
-                                    continue;
-                                }
-                                l1 = l2;
-                                l2 = nxtang[l2];
-                                if (l2 != -1) {
-                                    counter2++;
-                                }
-                            }
-                            // We are at end of linked list or between l1 and l2; insert edge.
-                            if (l1 <= -1) {
-                                //logger.severe("Logic Error in SADDLES");
-                                throw new EnergyException("Logic Error in SADDLES", true);
-                            }
-                            nxtang[l1] = ient;
-                            nxtang[ient] = l2;
-                        }
-                        // Collect pairs of concave edges into saddles create convex edges while you're at it.
-                        l1 = 0;
-                        int counter3 = 1;
-                        for (int t = 0; t < counter3; t++) {
-                            if (l1 <= -1) {
-                                continue outerfor;
-                            }
-                            // Check for start of saddle.
-                            if (sdstrt[l1]) {
-
-                                // One more saddle face.
-                                nfs++;
-                                if (nfs > maxfs) {
-                                    //logger.severe("Too many Saddle Faces");
-                                    throw new EnergyException("Too many Saddle Faces", false);
-                                }
-                                // Get edge number.
-                                ien = ten[l1];
-                                // First concave edge of saddle.
-                                fsen[0][nfs] = ien;
-                                // One more convex edge.
-                                nep++;
-                                if (nep > maxep) {
-                                    //logger.severe("Too many Convex Edges");
-                                    throw new EnergyException("Too many Convex Edges", false);
-                                }
-                                // First convex edge points to second circle.
-                                epc[nep] = nc;
-                                // Atom circle lies on.
-                                ia = ca[nc];
-                                // Insert convex edge into linked list for atom.
-                                ipedge(nep, ia);
-                                // First vertex of convex edge is second vertex of concave edge.
-                                epv[0][nep] = env[1][ien];
-                                // First convex edge of saddle.
-                                fsep[0][nfs] = nep;
-                                // One more convex edge.
-                                nep++;
-                                if (nep > maxep) {
-                                    //logger.severe("Too many Convex Edges");
-                                    throw new EnergyException("Too many Convex Edges", false);
-                                }
-                                // Second convex edge points to fist circle.
-                                epc[nep] = nc - 1;
-                                ia = ca[nc - 1];
-                                // Insert convex edge into linked list for atom.
-                                ipedge(nep, ia);
-                                // Second vertex of second convex edge is first vertex of first concave edge.
-                                epv[1][nep] = env[0][ien];
-                                l1 = nxtang[l1];
-                                // Wrap around.
-                                if (l1 <= -1) {
-                                    l1 = 0;
-                                }
-                                if (sdstrt[l1]) {
-                                    m1 = nxtang[l1];
-                                    if (m1 <= -1) {
-                                        m1 = 0;
-                                    }
-                                    if (sdstrt[m1]) {
-                                        //logger.severe("Three Starts in a Row");
-                                        throw new EnergyException("Three Starts in a Row", false);
-                                    }
-                                    n1 = nxtang[m1];
-                                    // The old switcheroo.
-                                    nxtang[l1] = n1;
-                                    nxtang[m1] = l1;
-                                    l1 = m1;
-                                }
-                                ien = ten[l1];
-                                // Second concave edge for saddle face.
-                                fsen[1][nfs] = ien;
-                                // Second vertex of first convex edge is first vertex of second concave edge.
-                                epv[1][nep - 1] = env[0][ien];
-                                // First vertex of second convex edge is second vertex of second concave edge.
-                                epv[0][nep] = env[1][ien];
-                                fsep[1][nfs] = nep;
-                                // Quit if we have wrapped around to first edge.
-                                if (l1 == 0) {
-                                    continue outerfor;
-                                }
-                            }
-                            // Next concave edge.
-                            l1 = nxtang[l1];
-                            counter3++;
-                        }
+                        // Saddle face starts with this edge if it points parallel to torus axis vector
+                        // (which goes from first to second atom).
+                        sdstrt[nent] = (va[iv] == ta[0][it]);
+                        // Next edge in list.
+                        ien = enext[ien];
                     }
-                    // Free torus.
+
+                    if (nent <= -1) {
+                        logger.severe("No Edges for Non-free Torus");
+                    }
+
+                    itwo = 2;
+                    if ((nent % itwo) == 0) {
+                        throw new EnergyException("Odd Number of Edges for Torus", false);
+                    }
+
+                    // Set up linked list of concave edges in order of increasing angle
+                    // around the torus axis;
+                    // clear second linked (angle-ordered) list pointers.
+                    for (ient = 0; ient <= nent; ient++) {
+                        nxtang[ient] = -1;
+                    }
+                    for (ient = 1; ient <= nent; ient++) {
+                        // We have an entry to put into linked list search for place to put it.
+                        l1 = -1;
+                        l2 = 0;
+                        while (l2 != -1 && teang[ient] >= teang[l2]) {
+                            l1 = l2;
+                            l2 = nxtang[l2];
+                        }
+                        // We are at end of linked list or between l1 and l2; insert edge.
+                        if (l1 <= -1) {
+                            throw new EnergyException("Logic Error in SADDLES", true);
+                        }
+                        nxtang[l1] = ient;
+                        nxtang[ient] = l2;
+                    }
+
+                    // Collect pairs of concave edges into saddles.
+                    // Create convex edges while you're at it.
+                    l1 = 0;
+                    while (l1 > -1) {
+                        // Check for start of saddle.
+                        if (sdstrt[l1]) {
+                            // One more saddle face.
+                            nfs++;
+                            if (nfs > maxfs) {
+                                throw new EnergyException("Too many Saddle Faces", false);
+                            }
+                            // Get edge number.
+                            ien = ten[l1];
+                            // First concave edge of saddle.
+                            fsen[0][nfs] = ien;
+                            // One more convex edge.
+                            nep++;
+                            if (nep > maxep) {
+                                throw new EnergyException("Too many Convex Edges", false);
+                            }
+                            // First convex edge points to second circle.
+                            epc[nep] = nc;
+                            // Atom circle lies on.
+                            ia = ca[nc];
+                            // Insert convex edge into linked list for atom.
+                            ipedge(nep, ia);
+                            // First vertex of convex edge is second vertex of concave edge.
+                            epv[0][nep] = env[1][ien];
+                            // First convex edge of saddle.
+                            fsep[0][nfs] = nep;
+                            // One more convex edge.
+                            nep++;
+                            if (nep > maxep) {
+                                throw new EnergyException("Too many Convex Edges", false);
+                            }
+                            // Second convex edge points to fist circle.
+                            epc[nep] = nc - 1;
+                            ia = ca[nc - 1];
+                            // Insert convex edge into linked list for atom.
+                            ipedge(nep, ia);
+                            // Second vertex of second convex edge is first vertex of first concave edge.
+                            epv[1][nep] = env[0][ien];
+                            l1 = nxtang[l1];
+                            // Wrap around.
+                            if (l1 <= -1) {
+                                l1 = 0;
+                            }
+                            if (sdstrt[l1]) {
+                                m1 = nxtang[l1];
+                                if (m1 <= -1) {
+                                    m1 = 0;
+                                }
+                                if (sdstrt[m1]) {
+                                    throw new EnergyException("Three Starts in a Row", false);
+                                }
+                                n1 = nxtang[m1];
+                                // The old switcheroo.
+                                nxtang[l1] = n1;
+                                nxtang[m1] = l1;
+                                l1 = m1;
+                            }
+                            ien = ten[l1];
+                            // Second concave edge for saddle face.
+                            fsen[1][nfs] = ien;
+                            // Second vertex of first convex edge is first vertex of second concave edge.
+                            epv[1][nep - 1] = env[0][ien];
+                            // First vertex of second convex edge is second vertex of second concave edge.
+                            epv[0][nep] = env[1][ien];
+                            fsep[1][nfs] = nep;
+                            // Quit if we have wrapped around to first edge.
+                            if (l1 == 0) {
+                                break;
+                            }
+                        }
+                        // Next concave edge.
+                        l1 = nxtang[l1];
+                    }
+                } else {
+                    // Free torus
                     // Set up entire circles as convex edges for new saddle surface; one more saddle face.
                     nfs++;
                     if (nfs > maxfs) {
-                        //logger.severe("Too many Saddle Faces");
                         throw new EnergyException("Too many Saddle Faces", false);
                     }
                     // No concave edge for saddle.
@@ -2201,7 +2341,6 @@ public class VolumeRegion extends ParallelRegion {
                             }
                             // It better connect to first edge of cycle.
                             if (lookv != av[0][iepa]) {
-                                //logger.severe("Cycle does not Close");
                                 throw new EnergyException("Cycle does not Close", true);
                             }
                         }
@@ -2531,7 +2670,7 @@ public class VolumeRegion extends ParallelRegion {
             return height * vect3[2] / 2.0;
         }
 
-        void measfp(int ifp, double av[]) {
+        void measfp(int ifp, double[] av) {
             double angle;
             double[] ai = new double[3];
             double[] aj = new double[3];
@@ -2807,7 +2946,7 @@ public class VolumeRegion extends ParallelRegion {
          * a collection of spherical and toroidal polygons and uses it to
          * compute the volume and surface area
          */
-        void vam(double volume, double area) {
+        void vam() {
             if (nfn < 0) {
                 nfn = 0;
             }
@@ -3412,15 +3551,14 @@ public class VolumeRegion extends ParallelRegion {
                 }
             }
             // Finally, compute the total area and total volume.
-            area = totap + totas + totan - totasp - alenst;
-            volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
+            double area = totap + totas + totan - totasp - alenst;
+            double volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
             //logger.info(format(" Volume = %16.8f, Area = %16.8f", volume, area));
             //logger.info(format(" Total Volume        %16.8f", volume));
             //logger.info(format(" Total Area          %16.8f", area));
 
-            evol += volume;
-            earea += area;
-
+            localVolume += volume;
+            localSurfaceArea += area;
         }
 
         /**
@@ -3570,28 +3708,30 @@ public class VolumeRegion extends ParallelRegion {
                   accuracy of the numerical derivatives; zstep=0.06 is a good
                   balance between compute time and accuracy.
                  */
-            zstep = 0.0601;
+            double zstep = 0.0601;
 
             // Load the cubes based on coarse lattice; first of all set edge
             // length to the maximum diameter of any atom.
-            edge = 2.0 * rmax;
-            nx = (int) ((xmax - xmin) / edge);
-            ny = (int) ((ymax - ymin) / edge);
-            nz = (int) ((zmax - zmin) / edge);
+            double edge = 2.0 * rmax;
+            int nx = (int) ((xmax - xmin) / edge);
+            int ny = (int) ((ymax - ymin) / edge);
+            int nz = (int) ((zmax - zmin) / edge);
             if (max(max(nx, ny), nz) > mxcube) {
                 //logger.severe(" VOLUME1  --  Increase the Value of MAXCUBE");
                 throw new EnergyException(" VOLUME1  --  Increase the Value of MAXCUBE", false);
             }
 
             // Initialize the coarse lattice of cubes.
-            for (int i = 0; i <= nx; i++) {
-                for (int j = 0; j <= ny; j++) {
-                    for (int k = 0; k <= nz; k++) {
-                        cube[0][i][j][k] = -1;
-                        cube[1][i][j][k] = -1;
-                    }
-                }
-            }
+//            for (int i = 0; i <= nx; i++) {
+//                for (int j = 0; j <= ny; j++) {
+//                    for (int k = 0; k <= nz; k++) {
+//                        cube[0][index2(i,j,k)] = -1;
+//                        cube[1][index2(i,j,k)] = -1;
+//                    }
+//                }
+//            }
+            fill(cube[0], -1);
+            fill(cube[1], -1);
 
             // Find the number of atoms in each cube.
             for (int m = 0; m < nAtoms; m++) {
@@ -3599,7 +3739,7 @@ public class VolumeRegion extends ParallelRegion {
                     int i = (int) ((x[m] - xmin) / edge);
                     int j = (int) ((y[m] - ymin) / edge);
                     int k = (int) ((z[m] - zmin) / edge);
-                    cube[0][i][j][k]++;
+                    cube[0][index2(i, j, k)]++;
                 }
             }
 
@@ -3610,14 +3750,15 @@ public class VolumeRegion extends ParallelRegion {
                   atoms in the present cube is the final index of the last cube
                   plus the number of atoms in the present cube.
                  */
-            isum = 0;
+            int isum = 0;
+            int tcube;
             for (int i = 0; i <= nx; i++) {
                 for (int j = 0; j <= ny; j++) {
                     for (int k = 0; k <= nz; k++) {
-                        tcube = cube[0][i][j][k];
+                        tcube = cube[0][index2(i, j, k)];
                         if (tcube != -1) {
                             isum += tcube;
-                            cube[1][i][j][k] = isum;
+                            cube[1][index2(i, j, k)] = isum;
                         }
                     }
                 }
@@ -3631,9 +3772,9 @@ public class VolumeRegion extends ParallelRegion {
                     int i = (int) ((x[m] - xmin) / edge);
                     int j = (int) ((y[m] - ymin) / edge);
                     int k = (int) ((z[m] - zmin) / edge);
-                    tcube = cube[1][i][j][k];
+                    tcube = cube[1][index2(i, j, k)];
                     itab[tcube] = m;
-                    cube[1][i][j][k]--;
+                    cube[1][index2(i, j, k)]--;
                 }
             }
 
@@ -3643,11 +3784,11 @@ public class VolumeRegion extends ParallelRegion {
             for (int i = 0; i <= nx; i++) {
                 for (int j = 0; j <= ny; j++) {
                     for (int k = 0; k <= nz; k++) {
-                        tcube = cube[0][i][j][k];
+                        tcube = cube[0][index2(i, j, k)];
                         if (tcube != -1) {
                             isum += tcube;
-                            cube[0][i][j][k] = isum;
-                            cube[1][i][j][k]++;
+                            cube[0][index2(i, j, k)] = isum;
+                            cube[1][index2(i, j, k)]++;
                         }
                     }
                 }
@@ -3655,37 +3796,39 @@ public class VolumeRegion extends ParallelRegion {
 
             // Process in turn each atom from the coordinate list; first
             // select the potential intersecting atoms.
+            int ir;
             for (ir = 0; ir < nAtoms; ir++) {
-                pre_dx = 0.0;
-                pre_dy = 0.0;
-                pre_dz = 0.0;
+                double pre_dx = 0.0;
+                double pre_dy = 0.0;
+                double pre_dz = 0.0;
                 if (skip[ir]) {
                     continue;
                 }
-                rr = vdwrad[ir];
-                rrx2 = 2.0 * rr;
-                rrsq = rr * rr;
-                xr = x[ir];
-                yr = y[ir];
-                zr = z[ir];
+                double rr = vdwrad[ir];
+                double rrx2 = 2.0 * rr;
+                double rrsq = rr * rr;
+                double xr = x[ir];
+                double yr = y[ir];
+                double zr = z[ir];
                 // Find cubes to search for overlaps for current atom.
-                istart = (int) ((xr - xmin) / edge);
-                istop = min(istart + 2, nx + 1);
+                int istart = (int) ((xr - xmin) / edge);
+                int istop = min(istart + 2, nx + 1);
                 istart = max(istart, 1);
-                jstart = (int) ((yr - ymin) / edge);
-                jstop = min(jstart + 2, ny + 1);
+                int jstart = (int) ((yr - ymin) / edge);
+                int jstop = min(jstart + 2, ny + 1);
                 jstart = max(jstart, 1);
-                kstart = (int) ((zr - zmin) / edge);
-                kstop = min(kstart + 2, nz + 1);
+                int kstart = (int) ((zr - zmin) / edge);
+                int kstop = min(kstart + 2, nz + 1);
                 kstart = max(kstart, 1);
                 // Load all overlapping atoms into "inov".
-                io = -1;
+                int io = -1;
+                int in;
                 for (int i = istart - 1; i < istop; i++) {
                     for (int j = jstart - 1; j < jstop; j++) {
                         for (int k = kstart - 1; k < kstop; k++) {
-                            mstart = cube[1][i][j][k];
+                            int mstart = cube[1][index2(i, j, k)];
                             if (mstart != -1) {
-                                mstop = cube[0][i][j][k];
+                                int mstop = cube[0][index2(i, j, k)];
                                 for (int m = mstart; m <= mstop; m++) {
                                     in = itab[m];
                                     if (in != ir) {
@@ -3696,8 +3839,8 @@ public class VolumeRegion extends ParallelRegion {
                                         dx[io] = x[in] - xr;
                                         dy[io] = y[in] - yr;
                                         dsq[io] = (dx[io] * dx[io]) + (dy[io] * dy[io]);
-                                        dist2 = dsq[io] + ((z[in] - zr) * (z[in] - zr));
-                                        vdwsum = (rr + vdwrad[in]) * (rr + vdwrad[in]);
+                                        double dist2 = dsq[io] + ((z[in] - zr) * (z[in] - zr));
+                                        double vdwsum = (rr + vdwrad[in]) * (rr + vdwrad[in]);
                                         if (dist2 > vdwsum || dist2 == 0.0) {
                                             io--;
                                         } else {
@@ -3713,20 +3856,22 @@ public class VolumeRegion extends ParallelRegion {
 
                 // Determine resolution along the z-axis.
                 if (io != -1) {
-                    ztop = zr + rr;
-                    ztopshave = ztop - zstep;
-                    zgrid = zr - rr;
+                    double ztop = zr + rr;
+                    double ztopshave = ztop - zstep;
+                    double zgrid = zr - rr;
                     // Half of the part not covered by the planes.
                     zgrid += 0.5 * (rrx2 - (((int) (rrx2 / zstep)) * zstep));
-                    zstart = zgrid;
+                    double zstart = zgrid;
                     // Section atom spheres perpendicular to the z-axis.
                     while (zgrid <= ztop) {
                         // "rsecr" is radius of circle of intersection of "ir" sphere on the current sphere.
-                        rsec2r = rrsq - ((zgrid - zr) * (zgrid - zr));
+                        double rsec2r = rrsq - ((zgrid - zr) * (zgrid - zr));
                         if (rsec2r < 0.0) {
                             rsec2r = 0.000001;
                         }
-                        rsecr = sqrt(rsec2r);
+                        double rsecr = sqrt(rsec2r);
+                        double phi1;
+                        double cos_phi1;
                         if (zgrid >= ztopshave) {
                             cos_phi1 = 1.0;
                             phi1 = 0.0;
@@ -3734,6 +3879,8 @@ public class VolumeRegion extends ParallelRegion {
                             cos_phi1 = (zgrid + (0.5 * zstep) - zr) / rr;
                             phi1 = acos(cos_phi1);
                         }
+                        double phi2;
+                        double cos_phi2;
                         if (zgrid == zstart) {
                             cos_phi2 = -1.0;
                             phi2 = PI;
@@ -3742,15 +3889,15 @@ public class VolumeRegion extends ParallelRegion {
                             phi2 = acos(cos_phi2);
                         }
                         // Check intersection of neighbor circles.
-                        narc = -1;
+                        int narc = -1;
                         for (int k = 0; k <= io; k++) {
                             in = inov[k];
-                            rinsq = vdwrad[in] * vdwrad[in];
-                            rsec2n = rinsq - ((zgrid - z[in]) * (zgrid - z[in]));
+                            double rinsq = vdwrad[in] * vdwrad[in];
+                            double rsec2n = rinsq - ((zgrid - z[in]) * (zgrid - z[in]));
                             if (rsec2n > 0.0) {
-                                rsecn = sqrt(rsec2n);
+                                double rsecn = sqrt(rsec2n);
                                 if (d[k] < (rsecr + rsecn)) {
-                                    rdiff = rsecr - rsecn;
+                                    double rdiff = rsecr - rsecn;
                                     if (d[k] <= abs(rdiff)) {
                                         if (rdiff < 0.0) {
                                             narc = 0;
@@ -3772,7 +3919,7 @@ public class VolumeRegion extends ParallelRegion {
                                           final endpoint in "arcf"; get
                                           "cosine" via law of cosines.
                                          */
-                                    cosine = (dsq[k] + rsec2r - rsec2n) / (2.0 * d[k] * rsecr);
+                                    double cosine = (dsq[k] + rsec2r - rsec2n) / (2.0 * d[k] * rsecr);
                                     cosine = min(1.0, max(-1.0, cosine));
                                         /*
                                           "alpha" is the angle between a line
@@ -3783,13 +3930,13 @@ public class VolumeRegion extends ParallelRegion {
                                           between the line containing both
                                           circle centers and x-axis.
                                          */
-                                    alpha = acos(cosine);
-                                    beta = atan2(dy[k], dx[k]);
+                                    double alpha = acos(cosine);
+                                    double beta = atan2(dy[k], dx[k]);
                                     if (dy[k] < 0.0) {
                                         beta += pix2;
                                     }
-                                    ti = beta - alpha;
-                                    tf = beta + alpha;
+                                    double ti = beta - alpha;
+                                    double tf = beta + alpha;
                                     if (ti < 0.0) {
                                         ti += pix2;
                                     }
@@ -3812,6 +3959,7 @@ public class VolumeRegion extends ParallelRegion {
                         // Find the pre-area and pre-forces on this section
                         // (band), "pre-" means a multiplicative factor is
                         // yet to be applied.
+                        double seg_dz;
                         if (narc == -1) {
                             seg_dz = pix2 * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
                             pre_dz += seg_dz;
@@ -3819,9 +3967,10 @@ public class VolumeRegion extends ParallelRegion {
                             // Sort the arc endpoint arrays, each with
                             // "narc" entries, in order of increasing values
                             // of the arguments in "arci".
+                            double temp;
                             for (int k = 0; k < narc; k++) {
-                                aa = arci[k];
-                                bb = arcf[k];
+                                double aa = arci[k];
+                                double bb = arcf[k];
                                 temp = 1000000.0;
                                 for (int i = k; i <= narc; i++) {
                                     if (arci[i] <= temp) {
@@ -3874,14 +4023,15 @@ public class VolumeRegion extends ParallelRegion {
                             for (int k = 0; k <= narc; k++) {
                                 theta1 = arci[k];
                                 theta2 = arcf[k];
+                                double dtheta;
                                 if (theta2 >= theta1) {
                                     dtheta = theta2 - theta1;
                                 } else {
                                     dtheta = (theta2 + pix2) - theta1;
                                 }
-                                phi_term = phi2 - phi1 - 0.5 * (sin(2.0 * phi2) - sin(2.0 * phi1));
-                                seg_dx = (sin(theta2) - sin(theta1)) * phi_term;
-                                seg_dy = (cos(theta1) - cos(theta2)) * phi_term;
+                                double phi_term = phi2 - phi1 - 0.5 * (sin(2.0 * phi2) - sin(2.0 * phi1));
+                                double seg_dx = (sin(theta2) - sin(theta1)) * phi_term;
+                                double seg_dy = (cos(theta1) - cos(theta2)) * phi_term;
                                 seg_dz = dtheta * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
                                 pre_dx += seg_dx;
                                 pre_dy += seg_dy;
@@ -3897,122 +4047,11 @@ public class VolumeRegion extends ParallelRegion {
             }
         }
 
-        public void Switch(String mode) {
-            double denom;
-
-            // Get the switching window for the current potential type.
-            switch (mode) {
-                case "GKV":
-                    off = spoff;
-                    cut = spcut;
-                    break;
-                case "GKSA":
-                    off = stcut;
-                    cut = stoff;
-                    break;
-                default:
-                    off = min(vdwcut, min(chgcut, min(dplcut, mpolecut)));
-                    cut = min(vdwtaper, min(chgtaper, min(dpltaper, mpoletaper)));
-                    break;
-            }
-
-            // Set switching coefficients to zero for truncation cutoffs.
-            c0 = 0.0;
-            c1 = 0.0;
-            c2 = 0.0;
-            c3 = 0.0;
-            c4 = 0.0;
-            c5 = 0.0;
-            f0 = 0.0;
-            f1 = 0.0;
-            f2 = 0.0;
-            f3 = 0.0;
-            f4 = 0.0;
-            f5 = 0.0;
-            f6 = 0.0;
-            f7 = 0.0;
-            // Store the powers of the switching window cutoffs.
-            off2 = off * off;
-            cut2 = cut * cut;
-            // Get 5th degree multiplicative switching function coefficients.
-            if (cut < off) {
-                denom = (off - cut) * (off - cut) * (off - cut) * (off - cut) * (off - cut);
-                c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
-                c1 = -30.0 * off2 * cut2 / denom;
-                c2 = 30.0 * (off2 * cut + off * cut2) / denom;
-                c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
-                c4 = 15.0 * (off + cut) / denom;
-                c5 = -6.0 / denom;
-            }
-        }
-
-        void enp() {
-            double evolume;
-            double cross;
-            double taper;
-            double reff, reff2, reff3;
-            double reff4, reff5;
-            String mode;
-            solvprs = 0.0327;
-
-            cross = 3.0 * surfaceTension / solvprs;
-            spcut = cross - 3.5;
-            spoff = cross + 3.5;
-            stcut = cross + 3.9;
-            stoff = cross - 3.5;
-
-            // Zero out the nonpolar implicit solvation energy terms.
-            ecav = 0.0;
-            // Compute SASA and effective radius needed for cavity term.
-            reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));
-            reff2 = reff * reff;
-            reff3 = reff2 * reff;
-            reff4 = reff3 * reff;
-            reff5 = reff4 * reff;
-            // Compute solvent excluded volume needed for small solutes.
-            evolume = evol;
-            if (reff < spoff) {
-                evolume = evolume * solvprs;
-            }
-            // Find cavity energy from only the solvent excluded volume.
-            if (reff <= spcut) {
-                ecav = evolume;
-            } else if (reff > spcut && reff <= stoff) {
-                // Find cavity energy from only a tapered volume term.
-                mode = "GKV";
-                Switch(mode);
-                taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-                ecav = taper * evolume;
-            } else if (reff > stoff && reff <= spoff) {
-                // Find cavity energy using both volume and SASA terms.
-                mode = "GKV";
-                Switch(mode);
-                taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-                ecav = taper * evolume;
-                mode = "GKSA";
-                Switch(mode);
-                taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-                taper = 1.0 - taper;
-                ecav = ecav + taper * esurf;
-            } else if (reff > spoff && reff <= stcut) {
-                // Find cavity energy from only a tapered SASA term.
-                mode = "GKSA";
-                Switch(mode);
-                taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
-                taper = 1.0 - taper;
-                ecav = taper * esurf;
-                // Find cavity energy from only a SASA-based term.
-            } else {
-                ecav = esurf;
-            }
-        }
-
         @Override
         public void run(int lb, int ub) {
             setRadius();
             calcVolume();
-            calcDerivative(lb, ub);
-            enp();
+            // calcDerivative(lb, ub);
         }
     }
 }
