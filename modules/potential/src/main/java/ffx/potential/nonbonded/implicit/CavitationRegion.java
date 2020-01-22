@@ -100,23 +100,22 @@ public class CavitationRegion extends ParallelRegion {
     private double esurf;
     private AtomicDoubleArray3D grad;
     private double surfaceTension;
-    private boolean doVolume;
 
     /**
      * This class is a port of the Cavitation code in TINKER.
      * <p>
      * GK implicit solvents are moving to use Gaussian based definitions of surface area for efficiency.
      *
-     * @param atoms
-     * @param x
-     * @param y
-     * @param z
-     * @param use
-     * @param neighborLists
-     * @param grad
-     * @param nt
-     * @param probe
-     * @param surfaceTension
+     * @param atoms          Atom array.
+     * @param x              X-coordinate array.
+     * @param y              Y-coordinate array.
+     * @param z              Z-coordinate array.
+     * @param use            Specifies if the atom is used in the potential.
+     * @param neighborLists  Neighbor-list array.
+     * @param grad           Gradient array.
+     * @param nt             Number of threads.
+     * @param probe          Solvent probe radius.
+     * @param surfaceTension Surface tension.
      */
     public CavitationRegion(Atom[] atoms, double[] x, double[] y, double[] z,
                             boolean[] use, int[][][] neighborLists,
@@ -214,7 +213,7 @@ public class CavitationRegion extends ParallelRegion {
         }
     }
 
-    private class IndexedDouble implements Comparable {
+    static private class IndexedDouble implements Comparable {
 
         public double value;
         public int key;
@@ -470,15 +469,11 @@ public class CavitationRegion extends ParallelRegion {
 
         @Override
         public void run(int lb, int ub) {
-
             // Compute the area and derivatives of current "ir" sphere
             for (int ir = lb; ir <= ub; ir++) {
                 if (skip.get(ir) || !use[ir]) {
                     continue;
                 }
-                double xi = x[ir];
-                double yi = y[ir];
-                double zi = z[ir];
                 double rri = r[ir];
                 double rri2 = 2.0 * rri;
                 double rrisq = rri * rri;
@@ -488,24 +483,10 @@ public class CavitationRegion extends ParallelRegion {
                 if (area[ir] < 0.0) {
                     logger.log(Level.WARNING, format(" Negative surface area set to 0 for atom %d.", ir));
                     area[ir] = 0.0;
-                    /*
-                     * xi = xi + rmove; yi = yi + rmove; zi = zi + rmove;
-                     * moved = true; surface(xi, yi, zi, rri, rri2, rrisq,
-                     * wght, moved, ir); if (area[ir] < 0.0) {
-                     * logger.warning(format(" Negative surface area
-                     * set to 0 for atom %d.", ir)); area[ir] = 0.0;
-                     * continue; }
-                     */
                 }
                 area[ir] *= rrisq * wght;
                 esurf += area[ir];
             }
-
-            double solvprs = 0.0327;
-            double cross = 3.0 * surfaceTension / solvprs;
-            double stcut = cross + 3.9;
-            double reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));
-            doVolume = reff <= stcut;
         }
 
         public void surface(double rri, double rri2, double rrisq, double wght, boolean moved, int ir) {
@@ -543,11 +524,11 @@ public class CavitationRegion extends ParallelRegion {
                 area[ir] = area[ir] % pix4;
                 return;
             }
-                /*
-                  General case where more than one sphere intersects the
-                  current sphere; sort intersecting spheres by their degree of
-                  overlap with the current main sphere
-                 */
+            /*
+              General case where more than one sphere intersects the
+              current sphere; sort intersecting spheres by their degree of
+              overlap with the current main sphere
+             */
             sort(gr[ir], 0, count[ir]);
             for (int j = 0; j < count[ir]; j++) {
                 int k = gr[ir][j].key;
@@ -584,10 +565,10 @@ public class CavitationRegion extends ParallelRegion {
                     if (omit[j]) {
                         continue;
                     }
-                        /*
-                          Check to see if J circle is intersecting K circle;
-                          get distance between circle centers and sum of radii.
-                         */
+                    /*
+                      Check to see if J circle is intersecting K circle;
+                      get distance between circle centers and sum of radii.
+                     */
                     double cc = (txk * xc[j] + tyk * yc[j] + tzk * zc[j]) / (bk * b[j]);
 
                     // Check acos FORTRAN vs. Java.
@@ -690,10 +671,10 @@ public class CavitationRegion extends ParallelRegion {
                         } else if (thec <= -1.0) {
                             the = -PI;
                         }
-                            /*
-                              See if "tk1" is entry or exit point; check t=0
-                              point; "ti" is exit point, "tf" is entry point.
-                             */
+                        /*
+                          See if "tk1" is entry or exit point; check t=0
+                          point; "ti" is exit point, "tf" is entry point.
+                         */
                         cosine = min(1.0, max(-1.0, (uzl * gk - uxl * rik)
                                 / (b[l] * rri)));
                         double ti, tf;
@@ -824,12 +805,12 @@ public class CavitationRegion extends ParallelRegion {
                     double gacb = (gk - uzl * gl / b[l]) * sign_yder[l] * rri / wxlsq;
                     sign_yder[l] = 0;
                     if (!moved) {
-                        double faca = ux[l] * gaca - uy[l] * gacb;
-                        double facb = uy[l] * gaca + ux[l] * gacb;
-                        double facc = rcn * (decl - (gk * dtkcl - gl * dtlcl) / rri);
-                        double dax = axx * faca - ayx * facb + azx * facc;
-                        double day = axy * faca + ayy * facb + azy * facc;
-                        double daz = azz * facc - axz * faca;
+//                        double faca = ux[l] * gaca - uy[l] * gacb;
+//                        double facb = uy[l] * gaca + ux[l] * gacb;
+//                        double facc = rcn * (decl - (gk * dtkcl - gl * dtlcl) / rri);
+//                        double dax = axx * faca - ayx * facb + azx * facc;
+//                        double day = axy * faca + ayy * facb + azy * facc;
+//                        double daz = azz * facc - axz * faca;
                         int in = intag[l];
                         grad.add(threadID, ir, txk * t1 * wght, tyk * t1 * wght, tzk * t1 * wght);
                         grad.sub(threadID, in, txk * t1 * wght, tyk * t1 * wght, tzk * t1 * wght);
@@ -839,8 +820,7 @@ public class CavitationRegion extends ParallelRegion {
                 arclen += gr[ir][k].value * arcsum;
                 if (!moved) {
                     int in = intag[k];
-                    t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in])
-                            / (rri2 * bsqk * bk);
+                    t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in]) / (rri2 * bsqk * bk);
                     grad.sub(threadID, ir, txk * t1 * wght, tyk * t1 * wght, tzk * t1 * wght);
                     grad.add(threadID, in, txk * t1 * wght, tyk * t1 * wght, tzk * t1 * wght);
                 }
