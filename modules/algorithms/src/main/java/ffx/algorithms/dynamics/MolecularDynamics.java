@@ -261,17 +261,33 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     double currentTemperature;
     /**
+     * Temperature of the system as of the last init call (and start of the last dynamics run).
+     */
+    protected double initialTemp;
+    /**
      * Current kinetic energy.
      */
     double currentKineticEnergy;
+    /**
+     * Kinetic energy of the system as of the last init call (and start of the last dynamics run).
+     */
+    protected double initialKinetic;
     /**
      * Current potential energy.
      */
     double currentPotentialEnergy;
     /**
+     * Potential energy of the system as of the last init call (and start of the last dynamics run).
+     */
+    protected double initialPotential;
+    /**
      * Current total energy.
      */
     double currentTotalEnergy;
+    /**
+     * Total energy of the system as of the last init call (and start of the last dynamics run).
+     */
+    protected double initialTotal;
     /**
      * Save snapshots in PDB format.
      */
@@ -1112,6 +1128,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             writeStoredSnapshots();
             throw ex;
         }
+        initialPotential = currentPotentialEnergy;
 
         // Initialize current and previous accelerations.
         if (!loadRestart || initialized || integrator instanceof Respa) {
@@ -1133,8 +1150,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // Compute the current kinetic energy.
         thermostat.kineticEnergy();
         currentKineticEnergy = thermostat.getKineticEnergy();
+        initialKinetic = currentKineticEnergy;
         currentTemperature = thermostat.getCurrentTemperature();
+        initialTemp = currentTemperature;
         currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
+        initialTotal = currentTotalEnergy;
     }
 
     /**
@@ -1466,6 +1486,42 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Gets the kinetic energy at the start of the last dynamics run.
+     * 
+     * @return Kinetic energy at the start of the run.
+     */
+    public double getInitialKineticEnergy() {
+        return initialKinetic;
+    }
+    
+    /**
+     * Gets the temperature at the start of the last dynamics run.
+     *
+     * @return temperature at the start of the run.
+     */
+    public double getInitialTemperature() {
+        return initialTemp;
+    }
+    
+    /**
+     * Gets the potential energy at the start of the last dynamics run.
+     *
+     * @return potential energy at the start of the run.
+     */
+    public double getInitialPotentialEnergy() {
+        return initialPotential;
+    }
+    
+    /**
+     * Gets the total energy at the start of the last dynamics run.
+     *
+     * @return total energy at the start of the run.
+     */
+    public double getInitialTotalEnergy() {
+        return initialTotal;
+    }
+
+    /**
      * Returns the associated dynamics file.
      *
      * @return Dynamics restart File.
@@ -1719,16 +1775,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         public EnumSet<ForceFieldEnergy.Platform> getSupportedPlatforms() {
             return EnumSet.copyOf(platforms);
         }
-    }
-
-    /**
-     * <p>
-     * getStartingTotalEnergy.</p>
-     *
-     * @return Total energy in kcal/mol at the start of the last dynamics run.
-     */
-    public double getStartingTotalEnergy() {
-        return 0.0;
     }
 
     /**

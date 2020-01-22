@@ -120,10 +120,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private long time;
     /**
-     * Total energy at the end of a molecular dynamics move.
-     */
-    private double endTotalEnergy;
-    /**
      * Obtain all variables with each update (i.e. include velocities, gradients).
      */
     private boolean getAllVars = true;
@@ -183,7 +179,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         integratorType = integratorMD;
         integratorToString(integratorType);
 
-        /**
+        /*
          * Pseudo-random number generator used to seed the OpenMM velocity generator
          * method.
          */
@@ -317,6 +313,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         updateContext();
 
         getOpenMMEnergies();
+        initialKinetic = currentKineticEnergy;
+        initialPotential = currentPotentialEnergy;
+        initialTotal = currentTotalEnergy;
+        initialTemp = currentTemperature;
     }
 
     void postInitEnergies() {
@@ -340,7 +340,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             i += intervalSteps;
 
             long secondUpdateTime = -System.nanoTime();
-            updateFromOpenMM(i, running, true);
+            updateFromOpenMM(i, running);
             secondUpdateTime += System.nanoTime();
 
             logger.fine(String.format("\n Update finished in %6.3f", secondUpdateTime * NS2SEC));
@@ -541,13 +541,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * @param i       Number of OpenMM MD rounds.
      * @param running True if OpenMM MD rounds have begun running.
      */
-    private void updateFromOpenMM(long i, boolean running, boolean update) {
+    private void updateFromOpenMM(long i, boolean running) {
 
         double priorPE = currentPotentialEnergy;
-
-        if (update) {
-            obtainVariables.run();
-        }
 
         double defaultDeltaPEThresh = 1.0E6;
         detectAtypicalEnergy(priorPE, defaultDeltaPEThresh);

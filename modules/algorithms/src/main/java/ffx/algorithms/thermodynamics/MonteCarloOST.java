@@ -312,7 +312,7 @@ public class MonteCarloOST extends BoltzmannMC {
             logger.log(verboseLoggingLevel, format("  Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
 
             // Get the starting and final kinetic energy for the MD move.
-            double currentKineticEnergy = mdMove.getStartingKineticEnergy();
+            double currentKineticEnergy = mdMove.getInitialKinetic();
             double proposedKineticEnergy = mdMove.getKineticEnergy();
 
             // Get the new coordinates.
@@ -534,7 +534,7 @@ public class MonteCarloOST extends BoltzmannMC {
             }
 
             // Get the starting and final kinetic energy for the MD move.
-            double currentKineticEnergy = mdMove.getStartingKineticEnergy();
+            double currentKineticEnergy = mdMove.getInitialKinetic();
             double proposedKineticEnergy = mdMove.getKineticEnergy();
 
             // Get the new coordinates.

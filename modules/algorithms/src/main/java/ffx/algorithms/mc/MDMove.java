@@ -145,7 +145,7 @@ public class MDMove implements MCMove {
 
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
-        collectInitialEnergies();
+        collectEnergies();
     }
 
     /**
@@ -196,10 +196,13 @@ public class MDMove implements MCMove {
         move(MolecularDynamics.VerbosityLevel.QUIET);
     }
 
-    private void collectInitialEnergies() {
-        initialKinetic = molecularDynamics.getKineticEnergy();
-        initialPotential = molecularDynamics.getPotentialEnergy();
-        initialTotal = molecularDynamics.getTotalEnergy();
+    private void collectEnergies() {
+        initialTotal = molecularDynamics.getInitialTotalEnergy();
+        initialKinetic = molecularDynamics.getInitialKineticEnergy();
+        initialPotential = molecularDynamics.getInitialPotentialEnergy();
+        // Assert that kinetic + potential = total to within tolerance.
+        assert Math.abs((initialKinetic + initialPotential - initialTotal) / initialTotal) < 1.0E-7;
+        // If there's ever a need to store run-terminal energies, do it here.
     }
 
     /**
@@ -210,9 +213,10 @@ public class MDMove implements MCMove {
         MolecularDynamics.VerbosityLevel origLevel = molecularDynamics.getVerbosityLevel();
         molecularDynamics.setVerbosityLevel(verbosityLevel);
         mdMoveCounter++;
-        collectInitialEnergies();
 
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
+        // IMPORTANT: Initial energy as of the start of this run is not equal to initial energy at the end of the last run!
+        collectEnergies();
         energyChange = molecularDynamics.getTotalEnergy() - initialTotal;
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
@@ -239,13 +243,16 @@ public class MDMove implements MCMove {
         molecularDynamics.setIntervalSteps(intervalSteps);
     }
 
-    /**
-     * <p>getStartingKineticEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getStartingKineticEnergy() {
+    public double getInitialKinetic() {
         return initialKinetic;
+    }
+
+    public double getInitialPotential() {
+        return initialPotential;
+    }
+
+    public double getInitialTotal() {
+        return initialTotal;
     }
 
     /**
