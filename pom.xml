@@ -418,6 +418,7 @@
                         </dependency>
                     </dependencies>
                     <configuration>
+                        <!-- forkCount>0</forkCount -->
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
@@ -1141,7 +1142,7 @@
         <java3d.version>1.7.0</java3d.version>
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
         <jcuda.version>10.1.0</jcuda.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13</junit.version>
         <jopenmm.version>7.5.0</jopenmm.version>
         <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
@@ -1163,7 +1164,7 @@
         <!-- Maven Packaging Tools Plugin Versions -->
         <jar.version>3.2.0</jar.version>
         <shade.version>3.2.1</shade.version>
-        <source.version>3.2.0</source.version>
+        <source.version>3.2.1</source.version>
         <!-- Maven Reporting Plugin Versions -->
         <changes.version>2.12.1</changes.version>
         <checkstyle.version>3.1.0</checkstyle.version>
@@ -1178,7 +1179,7 @@
         <dependency.version>3.1.1</dependency.version>
         <enforcer.version>3.0.0-M3</enforcer.version>
         <jarsigner.version>3.0.0</jarsigner.version>
-        <release.version>2.5.3</release.version>
+        <release.version>3.0.0-M1</release.version>
         <scm.version>1.11.2</scm.version>
         <!-- MojoHaus Plugins -->
         <jdepend.version>2.0</jdepend.version>
