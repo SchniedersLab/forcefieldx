@@ -124,10 +124,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private double endTotalEnergy;
     /**
-     * Boolean to signify that we are updating the system (post-MD move).
-     */
-    private boolean update = false;
-    /**
      * Obtain all variables with each update (i.e. include velocities, gradients).
      */
     private boolean getAllVars = true;
@@ -321,9 +317,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         updateContext();
 
         getOpenMMEnergies();
-        startingKineticEnergy = currentKineticEnergy;
-        startingTotalEnergy = currentTotalEnergy;
-        startingPotentialEnergy = currentPotentialEnergy;
     }
 
     void postInitEnergies() {
@@ -346,13 +339,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             // Update the total step count.
             i += intervalSteps;
 
-            update = true;
             long secondUpdateTime = -System.nanoTime();
-            updateFromOpenMM(i, running);
+            updateFromOpenMM(i, running, true);
             secondUpdateTime += System.nanoTime();
 
             logger.fine(String.format("\n Update finished in %6.3f", secondUpdateTime * NS2SEC));
-            update = false;
         }
     }
 
@@ -391,22 +382,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         postInitEnergies(); // Not over-ridden.
         mainLoop(numSteps);
         postRun(); // Not over-ridden.
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getStartingTotalEnergy() {
-        return startingTotalEnergy;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double getEndTotalEnergy() {
-        return endTotalEnergy;
     }
 
     /**
@@ -566,7 +541,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * @param i       Number of OpenMM MD rounds.
      * @param running True if OpenMM MD rounds have begun running.
      */
-    private void updateFromOpenMM(long i, boolean running) {
+    private void updateFromOpenMM(long i, boolean running, boolean update) {
 
         double priorPE = currentPotentialEnergy;
 
@@ -583,8 +558,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.log(basicLogging, format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
                 logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f",
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
-                startingKineticEnergy = currentKineticEnergy;
-                startingTotalEnergy = currentTotalEnergy;
             } else if (i % logFrequency == 0) {
                 time = logThermodynamics(time);
             }

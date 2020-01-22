@@ -105,6 +105,18 @@ public class MDMove implements MCMove {
      * Potential to operate on.
      */
     private final Potential potential;
+    /**
+     * Kinetic energy at the start of the move.
+     */
+    private double initialKinetic;
+    /**
+     * Potential energy at the start of the move.
+     */
+    private double initialPotential;
+    /**
+     * Total energy at the start of the move.
+     */
+    private double initialTotal;
 
 
     /**
@@ -133,6 +145,7 @@ public class MDMove implements MCMove {
 
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
+        collectInitialEnergies();
     }
 
     /**
@@ -183,6 +196,12 @@ public class MDMove implements MCMove {
         move(MolecularDynamics.VerbosityLevel.QUIET);
     }
 
+    private void collectInitialEnergies() {
+        initialKinetic = molecularDynamics.getKineticEnergy();
+        initialPotential = molecularDynamics.getPotentialEnergy();
+        initialTotal = molecularDynamics.getTotalEnergy();
+    }
+
     /**
      * Performs an MDMove.
      * @param verbosityLevel How verbose to be.
@@ -191,9 +210,10 @@ public class MDMove implements MCMove {
         MolecularDynamics.VerbosityLevel origLevel = molecularDynamics.getVerbosityLevel();
         molecularDynamics.setVerbosityLevel(verbosityLevel);
         mdMoveCounter++;
+        collectInitialEnergies();
 
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
-        energyChange = molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
+        energyChange = molecularDynamics.getTotalEnergy() - initialTotal;
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
             energyDriftNet += energyChange;
@@ -225,7 +245,7 @@ public class MDMove implements MCMove {
      * @return a double.
      */
     public double getStartingKineticEnergy() {
-        return molecularDynamics.getStartingKineticEnergy();
+        return initialKinetic;
     }
 
     /**

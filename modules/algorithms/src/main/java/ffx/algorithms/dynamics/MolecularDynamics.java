@@ -273,18 +273,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     double currentTotalEnergy;
     /**
-     * Kinetic energy before taking a time step.
-     */
-    double startingKineticEnergy;
-    /**
-     * Potential energy before taking a time step.
-     */
-    double startingPotentialEnergy;
-    /**
-     * Total energy before taking a time step.
-     */
-    double startingTotalEnergy;
-    /**
      * Save snapshots in PDB format.
      */
     boolean saveSnapshotAsPDB = true;
@@ -1145,12 +1133,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // Compute the current kinetic energy.
         thermostat.kineticEnergy();
         currentKineticEnergy = thermostat.getKineticEnergy();
-        startingKineticEnergy = currentKineticEnergy;
         currentTemperature = thermostat.getCurrentTemperature();
         currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
-
-        startingPotentialEnergy = currentPotentialEnergy;
-        startingTotalEnergy = currentTotalEnergy;
     }
 
     /**
@@ -1464,30 +1448,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Get the system kinetic energy.
-     *
-     * @return kinetic energy.
-     */
-    public double getStartingKineticEnergy() {
-        return startingKineticEnergy;
-    }
-
-    /**
      * Get the system potential energy.
      *
      * @return potential energy.
      */
     public double getPotentialEnergy() {
         return currentPotentialEnergy;
-    }
-
-    /**
-     * Get the starting system potential energy.
-     *
-     * @return potential energy.
-     */
-    public double getStartingPotentialEnergy() {
-        return startingPotentialEnergy;
     }
 
     /**
@@ -1502,7 +1468,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Returns the associated dynamics file.
      *
-     * @return
+     * @return Dynamics restart File.
      */
     public File getDynFile() {
         return restartFile;
@@ -1762,16 +1728,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @return Total energy in kcal/mol at the start of the last dynamics run.
      */
     public double getStartingTotalEnergy() {
-        return 0.0;
-    }
-
-    /**
-     * <p>
-     * getEndTotalEnergy.</p>
-     *
-     * @return Total energy in kcal/mol at the end of the last dynamics run.
-     */
-    public double getEndTotalEnergy() {
         return 0.0;
     }
 
