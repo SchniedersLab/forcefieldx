@@ -130,6 +130,10 @@ public class DynamicsOptions {
             description = "Interval to write out restart files (.dyn, .his, etc).")
     private double checkpoint = 1.0;
 
+    /**
+     * --mdE or --molecularDynamicsEngine over-rides the default engine choice for
+     * integrating the equations of motion
+     */
     @CommandLine.Option(names = {"--mdE", "--molecularDynamicsEngine"}, paramLabel = "FFX",
             description = "Use FFX or OpenMM to integrate dynamics.")
     private String engineString = null;
