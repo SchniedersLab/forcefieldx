@@ -222,10 +222,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * commanded by another class (false) to do it. The latter is true for MC-OST, for example.
      */
     protected boolean automaticWriteouts = true;
+    private static final double DEFAULT_RESTART_INTERVAL = 1.0;
+    private static final double DEFAULT_LOG_INTERVAL = 0.25;
+    private static final double DEFAULT_TRAJECTORY_INTERVAL = 10.0;
     /**
      * Time between writing out restart/checkpoint files in picoseconds.
      */
-    protected double restartInterval;
+    protected double restartInterval = DEFAULT_RESTART_INTERVAL;
     /**
      * Timesteps between writing out restart/checkpoint files. Set by the init method.
      */
@@ -234,7 +237,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Time between appending to the trajectory file in picoseconds.
      */
-    private double trajectoryInterval;
+    private double trajectoryInterval = DEFAULT_TRAJECTORY_INTERVAL;
     /**
      * Timesteps between adding a frame to the trajectory file. Set by the init method.
      */
@@ -243,7 +246,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Time between logging information to the screen in picoseconds.
      */
-    private double logInterval;
+    private double logInterval = DEFAULT_LOG_INTERVAL;
     /**
      * TImesteps between logging information to the screen. Set by the init method.
      */

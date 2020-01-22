@@ -117,6 +117,7 @@ public class MDMove implements MCMove {
      * @param requestedThermostat a {@link ThermostatEnum} object.
      * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      */
+    @Deprecated
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
                   CompositeConfiguration properties, AlgorithmListener listener,
                   ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
@@ -132,6 +133,25 @@ public class MDMove implements MCMove {
 
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
+    }
+
+    /**
+     * <p>Constructor for MDMove.</p>
+     *
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ThermostatEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param restartInterval     Interval between writing restart files in psec.
+     */
+    public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
+                  CompositeConfiguration properties, AlgorithmListener listener,
+                  ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
+                  double restartInterval) {
+        this(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        molecularDynamics.setRestartFrequency(restartInterval);
     }
 
     /**

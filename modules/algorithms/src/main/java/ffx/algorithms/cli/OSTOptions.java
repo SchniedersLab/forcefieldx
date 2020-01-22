@@ -331,7 +331,7 @@ public class OSTOptions {
         dynamics.init();
 
         MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(), orthogonalSpaceTempering, topologies[0],
-                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose);
+                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose, dynamics.getCheckpoint());
 
         long nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
