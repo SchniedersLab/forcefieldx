@@ -66,7 +66,7 @@ public class ThermodynamicsOptions {
      * production OST counts begin.
      */
     @CommandLine.Option(names = {"-Q", "--equilibrate"}, paramLabel = "1000", description = "Number of equilibration steps before evaluation of thermodynamics.")
-    private int nEquil = 1000;
+    private long nEquil = 1000;
 
     /**
      * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart
@@ -99,7 +99,7 @@ public class ThermodynamicsOptions {
      *
      * @return a int.
      */
-    public int getEquilSteps() {
+    public long getEquilSteps() {
         return nEquil;
     }
 
@@ -124,7 +124,7 @@ public class ThermodynamicsOptions {
         }
 
         boolean initVelocities = true;
-        int nSteps = dynamics.steps;
+        long nSteps = dynamics.steps;
         molDyn.setRestartFrequency(dynamics.getCheckpoint());
         // Start sampling.
         if (nEquil > 0) {
@@ -154,7 +154,7 @@ public class ThermodynamicsOptions {
         return molDyn;
     }
 
-    private void runDynamics(MolecularDynamics md, int nSteps, DynamicsOptions dynamics, WriteoutOptions writeOut,
+    private void runDynamics(MolecularDynamics md, long nSteps, DynamicsOptions dynamics, WriteoutOptions writeOut,
                              boolean initVelocities, File dyn) {
         md.dynamic(nSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp,
                 initVelocities, writeOut.getFileType(), dynamics.getCheckpoint(), dyn);

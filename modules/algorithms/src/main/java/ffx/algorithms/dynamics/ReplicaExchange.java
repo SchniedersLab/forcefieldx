@@ -178,7 +178,7 @@ public class ReplicaExchange implements Terminatable {
      * @param printInterval a double.
      * @param saveInterval  a double.
      */
-    public void sample(int cycles, int nSteps, double timeStep, double printInterval, double saveInterval) {
+    public void sample(int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
         done = false;
         terminate = false;
         for (int i = 0; i < cycles; i++) {
@@ -251,7 +251,7 @@ public class ReplicaExchange implements Terminatable {
      * @param printInterval the number of steps between loggging updates.
      * @param saveInterval  the number of steps between saving snapshots.
      */
-    private void dynamic(final int nSteps, final double timeStep, final double printInterval, final double saveInterval) {
+    private void dynamic(final long nSteps, final double timeStep, final double printInterval, final double saveInterval) {
 
         int i = rank2Temp[rank];
 

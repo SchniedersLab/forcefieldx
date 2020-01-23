@@ -44,8 +44,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.DoubleConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -82,6 +84,7 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.Constants;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
 
@@ -137,7 +140,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Number of MD steps to take.
      */
-    private int nSteps = 1000;
+    private long nSteps = 1000;
     /**
      * State of the dynamics.
      */
@@ -215,21 +218,40 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     protected double dt = 1.0;
     /**
-     * Number of steps between logging info to the screen.
+     * Whether MD handles writing restart/trajectory files itself (true), or will be
+     * commanded by another class (false) to do it. The latter is true for MC-OST, for example.
      */
-    int printFrequency = 100;
+    protected boolean automaticWriteouts = true;
+    private static final double DEFAULT_RESTART_INTERVAL = 1.0;
+    private static final double DEFAULT_LOG_INTERVAL = 0.25;
+    private static final double DEFAULT_TRAJECTORY_INTERVAL = 10.0;
     /**
-     * Frequency to write out restart info.
+     * Time between writing out restart/checkpoint files in picoseconds.
      */
-    protected double restartFrequency = 0.1;
+    protected double restartInterval = DEFAULT_RESTART_INTERVAL;
     /**
-     * Frequency to save restart files.
+     * Timesteps between writing out restart/checkpoint files. Set by the init method.
      */
-    int saveRestartFileFrequency = 1000;
+    protected int restartFrequency;
+    private static final String RESTART_FREQ_STRING = "Restart";
     /**
-     * Frequency to save snap shot files.
+     * Time between appending to the trajectory file in picoseconds.
      */
-    int saveSnapshotFrequency = 1000;
+    private double trajectoryInterval = DEFAULT_TRAJECTORY_INTERVAL;
+    /**
+     * Timesteps between adding a frame to the trajectory file. Set by the init method.
+     */
+    protected int trajectoryFrequency;
+    private static final String TRAJ_FREQ_STRING = "Trajectory writeout";
+    /**
+     * Time between logging information to the screen in picoseconds.
+     */
+    private double logInterval = DEFAULT_LOG_INTERVAL;
+    /**
+     * TImesteps between logging information to the screen. Set by the init method.
+     */
+    protected int logFrequency;
+    private static final String LOG_FREQ_STRING = "Reporting (logging)";
     /**
      * Target temperature. ToDo: use the Thermostat instance.
      */
@@ -239,29 +261,33 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     double currentTemperature;
     /**
+     * Temperature of the system as of the last init call (and start of the last dynamics run).
+     */
+    protected double initialTemp;
+    /**
      * Current kinetic energy.
      */
     double currentKineticEnergy;
+    /**
+     * Kinetic energy of the system as of the last init call (and start of the last dynamics run).
+     */
+    protected double initialKinetic;
     /**
      * Current potential energy.
      */
     double currentPotentialEnergy;
     /**
+     * Potential energy of the system as of the last init call (and start of the last dynamics run).
+     */
+    protected double initialPotential;
+    /**
      * Current total energy.
      */
     double currentTotalEnergy;
     /**
-     * Kinetic energy before taking a time step.
+     * Total energy of the system as of the last init call (and start of the last dynamics run).
      */
-    double startingKineticEnergy;
-    /**
-     * Potential energy before taking a time step.
-     */
-    double startingPotentialEnergy;
-    /**
-     * Total energy before taking a time step.
-     */
-    double startingTotalEnergy;
+    protected double initialTotal;
     /**
      * Save snapshots in PDB format.
      */
@@ -693,21 +719,37 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Perform a sanity check on a frequency to ensure it's not longer than total runtime.
+     * Currently, the setter parameter is ignored due to issues with our test suite.
+     *
+     * @param describe  Description of the frequency.
+     * @param frequency Frequency in timesteps.
+     * @param setter    Currently ignored.
+     */
+    private void sanityCheckFrequency(String describe, int frequency, DoubleConsumer setter) {
+        if (frequency > nSteps) {
+            logger.info(format(" Specified %s frequency of %d (timesteps) > " +
+                    "run length %d!", describe, frequency, nSteps));
+            //setter.accept(nSteps * dt);
+        }
+    }
+
+    /**
      * <p>
      * init</p>
      *
-     * @param nSteps           a int.
-     * @param timeStep         a double.
-     * @param printInterval    a double.
-     * @param saveInterval     a double.
-     * @param fileType         a String.
-     * @param restartFrequency the number of steps between writing restart files.
-     * @param temperature      a double.
-     * @param initVelocities   a boolean.
-     * @param dyn              a {@link java.io.File} object.
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
+     * @param loggingInterval    Interval between printing/logging information in picoseconds.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param fileType           XYZ or ARC to save to .arc, PDB for .pdb files
+     * @param restartInterval    Interval between writing new restart files in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void init(final int nSteps, final double timeStep, final double printInterval,
-                     final double saveInterval, final String fileType, final double restartFrequency,
+    public void init(final long nSteps, final double timeStep, final double loggingInterval,
+                     final double trajectoryInterval, final String fileType, final double restartInterval,
                      final double temperature, final boolean initVelocities, final File dyn) {
 
         // Return if already running.
@@ -740,32 +782,26 @@ public class MolecularDynamics implements Runnable, Terminatable {
         totalSimTime = 0.0;
 
         // Convert the time step from femtoseconds to picoseconds.
-        dt = timeStep * 1.0e-3;
+        dt = timeStep * Constants.FSEC_TO_PSEC;
 
-        // Convert the print interval to a print frequency.
-        printFrequency = 100;
-        if (printInterval >= this.dt) {
-            printFrequency = (int) (printInterval / this.dt);
-        }
+        // Convert intervals in ps to frequencies in timesteps.
+        setLoggingFrequency(loggingInterval);
+        setTrajectoryFrequency(trajectoryInterval);
+        setRestartFrequency(restartInterval);
 
-        // Convert the save interval to a save frequency.
-        saveSnapshotFrequency = 1000;
-        if (saveInterval >= this.dt) {
-            saveSnapshotFrequency = (int) (saveInterval / this.dt);
+        sanityCheckFrequency(LOG_FREQ_STRING, logFrequency, this::setLoggingFrequency);
+        if (automaticWriteouts) {
+            // Only sanity check these values if MD is doing this itself.
+            sanityCheckFrequency(TRAJ_FREQ_STRING, trajectoryFrequency, this::setTrajectoryFrequency);
+            sanityCheckFrequency(RESTART_FREQ_STRING, restartFrequency, this::setRestartFrequency);
         }
 
         // Set snapshot file type.
         saveSnapshotAsPDB = true;
-        if (fileType.equalsIgnoreCase("XYZ")) {
+        if (fileType.equalsIgnoreCase("XYZ") || fileType.equalsIgnoreCase("ARC")) {
             saveSnapshotAsPDB = false;
         } else if (!fileType.equalsIgnoreCase("PDB")) {
-            logger.warning("Snapshot file type unrecognized; saving snaphshots as PDB.\n");
-        }
-
-        // Convert restart frequency to steps.
-        saveRestartFileFrequency = 1000;
-        if (restartFrequency >= this.dt) {
-            saveRestartFileFrequency = (int) (restartFrequency / this.dt);
+            logger.warning("Snapshot file type unrecognized; saving snapshots as PDB.\n");
         }
 
         assemblyInfo();
@@ -795,8 +831,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (!verbosityLevel.isQuiet) {
             logger.info(format(" Number of steps:     %8d", nSteps));
             logger.info(format(" Time step:           %8.3f (fsec)", timeStep));
-            logger.info(format(" Print interval:      %8.3f (psec)", printInterval));
-            logger.info(format(" Save interval:       %8.3f (psec)", saveInterval));
+            logger.info(format(" Print interval:      %8.3f (psec)", loggingInterval));
+            logger.info(format(" Save interval:       %8.3f (psec)", trajectoryInterval));
             //logger.info(format(" Archive file: %s", archiveFile.getName()));
             for (int i = 0; i < assemblies.size(); i++) {
                 AssemblyInfo ai = assemblies.get(i);
@@ -843,18 +879,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * method with default values for added parameters. Needed by (at least)
      * ReplicaExchange, which calls this directly.
      *
-     * @param nSteps         the number of MD steps.
-     * @param timeStep       the time step.
-     * @param printInterval  the number of steps between loggging updates.
-     * @param saveInterval   the number of steps between saving snapshots.
-     * @param temperature    the target temperature.
-     * @param initVelocities true to reset velocities from a Maxwell distribution.
-     * @param dyn            the Dynamic restart file.
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
+     * @param loggingInterval    Interval between printing/logging information in picoseconds.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void init(final int nSteps, final double timeStep, final double printInterval,
-                     final double saveInterval, final double temperature, final boolean initVelocities,
+    public void init(final long nSteps, final double timeStep, final double loggingInterval,
+                     final double trajectoryInterval, final double temperature, final boolean initVelocities,
                      final File dyn) {
-        init(nSteps, timeStep, printInterval, saveInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
     }
 
     /**
@@ -897,22 +933,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
      *
-     * @param nSteps           a int.
-     * @param timeStep         a double.
-     * @param printInterval    a double.
-     * @param saveInterval     a double.
-     * @param temperature      a double.
-     * @param initVelocities   a boolean.
-     * @param fileType         a String (either XYZ or PDB).
-     * @param restartFrequency a double specifying the restart frequency.
-     * @param dyn              a {@link java.io.File} object.
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
+     * @param loggingInterval    Interval between printing/logging information in picoseconds.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param fileType           XYZ or ARC to save to .arc, PDB for .pdb files
+     * @param restartInterval    Interval between writing new restart files in picoseconds.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
-                        String fileType, double restartFrequency, final File dyn) {
+    public void dynamic(final long nSteps, final double timeStep, final double loggingInterval,
+                        final double trajectoryInterval, final double temperature, final boolean initVelocities,
+                        String fileType, double restartInterval, final File dyn) {
         this.fileType = fileType;
-        this.restartFrequency = restartFrequency;
-        dynamic(nSteps, timeStep, printInterval, saveInterval, temperature,
+        setRestartFrequency(restartInterval);
+        dynamic(nSteps, timeStep, loggingInterval, trajectoryInterval, temperature,
                 initVelocities, dyn);
     }
 
@@ -920,16 +956,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
      *
-     * @param nSteps         a int.
-     * @param timeStep       a double.
-     * @param printInterval  a double.
-     * @param saveInterval   a double.
-     * @param temperature    a double.
-     * @param initVelocities a boolean.
-     * @param dyn            a {@link java.io.File} object.
+     * @param nSteps             Number of MD steps
+     * @param timeStep           Time step in femtoseconds
+     * @param loggingInterval    Interval between printing/logging information in picoseconds.
+     * @param trajectoryInterval Interval between adding a frame to the trajectory file in picoseconds.
+     * @param temperature        Temperature in Kelvins.
+     * @param initVelocities     Initialize new velocities from a Maxwell-Boltzmann distribution.
+     * @param dyn                A {@link java.io.File} object to write the restart file to.
      */
-    public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
+    public void dynamic(final long nSteps, final double timeStep, final double loggingInterval,
+                        final double trajectoryInterval, final double temperature, final boolean initVelocities,
                         final File dyn) {
         // Return if already running;
         // Could happen if two threads call dynamic on the same MolecularDynamics instance.
@@ -938,7 +974,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             return;
         }
 
-        init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency,
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, fileType, restartFrequency,
                 temperature, initVelocities, dyn);
 
         Thread dynamicThread = new Thread(this);
@@ -968,18 +1004,68 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Enable or disable automatic writeout of trajectory snapshots and restart files.
+     *
+     * Primarily intended for use with MC-OST, which handles the timing itself.
+     *
+     * @param autoWriteout Whether to automatically write out trajectory and restart files.
+     */
+    public void setAutomaticWriteouts(boolean autoWriteout) {
+        this.automaticWriteouts = autoWriteout;
+    }
+
+    /**
+     * Converts an interval in ps to a frequency in timesteps.
+     *
+     * @param interval Interval between events in ps
+     * @param describe Description of the event.
+     * @return         Frequency of event in timesteps per event.
+     * @throws IllegalArgumentException If interval is not a positive finite value.
+     */
+    private int intervalToFreq(double interval, String describe) throws IllegalArgumentException {
+        if (!Double.isFinite(interval) || interval <= 0) {
+            throw new IllegalArgumentException(format(" %s must be " +
+                    "positive finite value in ps, was %10.4g", describe, interval));
+        }
+        if (interval >= dt) {
+            return (int) (interval / this.dt);
+        } else {
+            logger.warning(format(" Specified %s of %.6f ps < timestep %.3f fs; " +
+                    "interval is set to once per timestep!", describe, interval, this.dt));
+            return 1;
+        }
+    }
+
+    /**
      * Method to set the Restart Frequency.
      *
-     * @param restartFrequency the time between writing restart files.
+     * @param restartInterval Time in ps between writing restart files.
      * @throws java.lang.IllegalArgumentException If restart frequency is not a
      *                                            positive number
      */
-    public void setRestartFrequency(double restartFrequency) throws IllegalArgumentException {
-        if (Double.isFinite(restartFrequency) && restartFrequency > 0) {
-            this.restartFrequency = restartFrequency;
-        } else {
-            throw new IllegalArgumentException(format(" Restart frequency must be positive finite, was %10.4g", restartFrequency));
-        }
+    public void setRestartFrequency(double restartInterval) throws IllegalArgumentException {
+        restartFrequency = intervalToFreq(restartInterval, RESTART_FREQ_STRING + " interval");
+        this.restartInterval = restartInterval;
+    }
+
+    /**
+     * Method to set the logging/printing frequency.
+     *
+     * @param logInterval Time in ps between logging information to the screen.
+     */
+    private void setLoggingFrequency(double logInterval) {
+        logFrequency = intervalToFreq(logInterval, LOG_FREQ_STRING + " interval");
+        this.logInterval = logInterval;
+    }
+
+    /**
+     * Method to set the frequency of appending snapshots to the trajectory file.
+     *
+     * @param snapshotInterval Time in ps between appending snapshots to the trajectory file.
+     */
+    private void setTrajectoryFrequency(double snapshotInterval) {
+        trajectoryFrequency = intervalToFreq(snapshotInterval, TRAJ_FREQ_STRING + " interval");
+        this.trajectoryInterval = snapshotInterval;
     }
 
     /**
@@ -1042,6 +1128,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             writeStoredSnapshots();
             throw ex;
         }
+        initialPotential = currentPotentialEnergy;
 
         // Initialize current and previous accelerations.
         if (!loadRestart || initialized || integrator instanceof Respa) {
@@ -1063,12 +1150,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // Compute the current kinetic energy.
         thermostat.kineticEnergy();
         currentKineticEnergy = thermostat.getKineticEnergy();
-        startingKineticEnergy = currentKineticEnergy;
+        initialKinetic = currentKineticEnergy;
         currentTemperature = thermostat.getCurrentTemperature();
+        initialTemp = currentTemperature;
         currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
-
-        startingPotentialEnergy = currentPotentialEnergy;
-        startingTotalEnergy = currentTotalEnergy;
+        initialTotal = currentTotalEnergy;
     }
 
     /**
@@ -1109,13 +1195,60 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Append a snapshot to the trajectory file.
+     */
+    public void appendSnapshot() {
+        for (AssemblyInfo ai : assemblies) {
+            if (ai.archiveFile != null && !saveSnapshotAsPDB) {
+                if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
+                    logger.log(basicLogging, format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                } else {
+                    logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
+                }
+            } else if (saveSnapshotAsPDB) {
+                if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
+                    logger.log(basicLogging, format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                } else {
+                    logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+                }
+            }
+        }
+    }
+
+    /**
+     * Log thermodynamics to the screen.
+     *
+     * @param time Clock time (in nsec) since this was last called.
+     * @return     Clock time at the end of this call.
+     */
+    protected long logThermodynamics(long time) {
+        // Original print statement
+        time = System.nanoTime() - time;
+        logger.log(basicLogging, format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
+                totalSimTime, currentKineticEnergy, currentPotentialEnergy,
+                currentTotalEnergy, currentTemperature, time * NS2SEC));
+        return System.nanoTime();
+    }
+
+    /**
+     * Write out a restart file.
+     */
+    public void writeRestart() {
+        if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+            logger.log(basicLogging, " Wrote dynamics restart file to " + restartFile.getName());
+        } else {
+            logger.log(basicLogging, " Writing dynamics restart file to " + restartFile.getName() + " failed");
+        }
+    }
+
+    /**
      * Main loop of the run method.
      */
     private void mainLoop() {
         // Integrate Newton's equations of motion for the requested number of steps,
         // unless early termination is requested.
         long time = System.nanoTime();
-        for (int step = 1; step <= nSteps; step++) {
+        for (long step = 1; step <= nSteps; step++) {
             if (step > 1) {
                 List<Constraint> constraints = potential.getConstraints();
                 // TODO: Replace magic numbers with named constants.
@@ -1190,49 +1323,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             // Log the current state every printFrequency steps.
             totalSimTime += dt;
-            if (step % printFrequency == 0) {
-                // Original print statement
-                time = System.nanoTime() - time;
-                logger.log(basicLogging, format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
-                        totalSimTime, currentKineticEnergy, currentPotentialEnergy,
-                        currentTotalEnergy, currentTemperature, time * NS2SEC));
-                time = System.nanoTime();
+            if (step % logFrequency == 0) {
+                time = logThermodynamics(time);
             }
             if (step % printEsvFrequency == 0 && esvSystem != null) {
                 logger.log(basicLogging, format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
             }
 
-            // Write out snapshots in selected format every saveSnapshotFrequency steps.
-            if (saveSnapshotFrequency > 0 && step % saveSnapshotFrequency == 0) {
-                for (AssemblyInfo ai : assemblies) {
-                    if (ai.archiveFile != null && !saveSnapshotAsPDB) {
-                        if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                            logger.log(basicLogging, format(" Appended snap shot to %s", ai.archiveFile.getName()));
-                        } else {
-                            logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
-                        }
-                    } else if (saveSnapshotAsPDB) {
-                        if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                            logger.log(basicLogging, format(" Wrote PDB file to %s", ai.pdbFile.getName()));
-                        } else {
-                            logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
-                        }
-                    }
-                }
+            if (automaticWriteouts) {
+                writeFilesForStep(step);
             }
 
-            // Write out restart files every saveRestartFileFrequency steps.
-            if (saveRestartFileFrequency > 0 && step % saveRestartFileFrequency == 0) {
-                if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.log(basicLogging, " Wrote dynamics restart file to " + restartFile.getName());
-                } else {
-                    logger.log(basicLogging, " Writing dynamics restart file to " + restartFile.getName() + " failed");
-                }
-            }
-
-            // Notify the algorithmListener.
-            if (algorithmListener != null && step % printFrequency == 0) {
-                //algorithmListener.algorithmUpdate(molecularAssembly);
+            // Notify the algorithmListeners.
+            if (algorithmListener != null && step % logFrequency == 0) {
                 for (AssemblyInfo assembly : assemblies) {
                     // Probably unwise to parallelize this, so that it doesn't
                     // hit the GUI with parallel updates.
@@ -1245,6 +1348,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.info(format("\n Terminating after %8d time steps\n", step));
                 break;
             }
+        }
+    }
+
+    /**
+     * Write restart and trajectory files if the provided step matches the frequency.
+     *
+     * @param step Step to write files (if any) for.
+     */
+    public void writeFilesForStep(long step) {
+        // Write out snapshots in selected format every saveSnapshotFrequency steps.
+        if (trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
+            appendSnapshot();
+        }
+
+        // Write out restart files every saveRestartFileFrequency steps.
+        if (restartFrequency > 0 && step % restartFrequency == 0) {
+            writeRestart();
         }
     }
 
@@ -1348,30 +1468,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Get the system kinetic energy.
-     *
-     * @return kinetic energy.
-     */
-    public double getStartingKineticEnergy() {
-        return startingKineticEnergy;
-    }
-
-    /**
      * Get the system potential energy.
      *
      * @return potential energy.
      */
     public double getPotentialEnergy() {
         return currentPotentialEnergy;
-    }
-
-    /**
-     * Get the starting system potential energy.
-     *
-     * @return potential energy.
-     */
-    public double getStartingPotentialEnergy() {
-        return startingPotentialEnergy;
     }
 
     /**
@@ -1384,9 +1486,45 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Gets the kinetic energy at the start of the last dynamics run.
+     * 
+     * @return Kinetic energy at the start of the run.
+     */
+    public double getInitialKineticEnergy() {
+        return initialKinetic;
+    }
+    
+    /**
+     * Gets the temperature at the start of the last dynamics run.
+     *
+     * @return temperature at the start of the run.
+     */
+    public double getInitialTemperature() {
+        return initialTemp;
+    }
+    
+    /**
+     * Gets the potential energy at the start of the last dynamics run.
+     *
+     * @return potential energy at the start of the run.
+     */
+    public double getInitialPotentialEnergy() {
+        return initialPotential;
+    }
+    
+    /**
+     * Gets the total energy at the start of the last dynamics run.
+     *
+     * @return total energy at the start of the run.
+     */
+    public double getInitialTotalEnergy() {
+        return initialTotal;
+    }
+
+    /**
      * Returns the associated dynamics file.
      *
-     * @return
+     * @return Dynamics restart File.
      */
     public File getDynFile() {
         return restartFile;
@@ -1640,27 +1778,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>
-     * getStartingTotalEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getStartingTotalEnergy() {
-        return 0.0;
-    }
-
-    /**
-     * <p>
-     * getEndTotalEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getEndTotalEnergy() {
-        return 0.0;
-    }
-
-    /**
-     * @param intervalSteps
+     * No-op; FFX does not need to occasionally return information from FFX.
+     * @param intervalSteps Ignored.
      */
     public void setIntervalSteps(int intervalSteps) {
         // Not meaningful for FFX MD.
@@ -1670,7 +1789,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * getTimeStep.</p>
      *
-     * @return a double.
+     * @return Timestep in picoseconds.
      */
     public double getTimeStep() {
         return dt;
@@ -1680,70 +1799,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * getIntervalSteps.</p>
      *
-     * @return a int.
+     * @return Always 1 for this implementation.
      */
     public int getIntervalSteps() {
         return 1;
-    }
-
-    /**
-     * Write out restart files.
-     */
-    public void writeRestart() {
-        writeSnapShot();
-        writeDynamicsRestart();
-    }
-
-    /**
-     * Write out snapshots only if lambda is greater than the lambda writeout
-     * value.
-     *
-     * @param lambda         Current value of lambda.
-     * @param lambdaWriteOut The lambda write out cut-off.
-     */
-    public void writeLambdaThresholdRestart(double lambda, double lambdaWriteOut) {
-        if (lambda >= lambdaWriteOut) {
-            writeSnapShot();
-        }
-        writeDynamicsRestart();
-    }
-
-    /**
-     * Write out coordinate snapshots.
-     */
-    private void writeSnapShot() {
-        for (AssemblyInfo ai : assemblies) {
-            if (ai.archiveFile != null && !saveSnapshotAsPDB) {
-                if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                    logger.info(format(" Appended snap shot to %s", ai.archiveFile.getName()));
-                } else {
-                    logger.warning(format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
-                }
-            } else if (saveSnapshotAsPDB) {
-                if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                    logger.info(format(" Wrote PDB file to %s", ai.pdbFile.getName()));
-                } else {
-                    logger.warning(format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
-                }
-            }
-        }
-    }
-
-    /**
-     * Write out Dynamics restart.
-     */
-    private void writeDynamicsRestart() {
-        if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-            logger.info(" Wrote dynamics restart file to " + restartFile.getName());
-            if (constantPressure) {
-                Crystal crystal = molecularAssembly.getCrystal();
-                double currentDensity = crystal.getDensity(molecularAssembly.getTotalMass());
-                logger.info(format(" Density %6.3f (g/cc) with unit cell %s.",
-                        currentDensity, crystal.toShortString()));
-            }
-        } else {
-            logger.info(" Writing dynamics restart file to " + restartFile.getName() + " failed.");
-        }
     }
 
     public enum VerbosityLevel {
