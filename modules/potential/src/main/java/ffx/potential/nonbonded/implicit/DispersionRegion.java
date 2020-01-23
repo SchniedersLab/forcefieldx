@@ -110,15 +110,14 @@ public class DispersionRegion extends ParallelRegion {
      * This value was described as 0.36 in the original 2007 model (see Schnieders thesis)
      * and more recently the value was reduced to 0.26.
      */
-    public static final double DISP_OFFSET = 0.874;
+    public static final double DEFAULT_DISP_OFFSET = 1.4;
     private static final double SLEVY = 1.0;
     private static final double AWATER = 0.033428;
     private static final double EPSO = 0.1100;
     private static final double EPSH = 0.0135;
     private static final double RMINO = 1.7025;
     private static final double RMINH = 1.3275;
-
-    private double dispersionOffest = DISP_OFFSET;
+    private double dispersionOffest = DEFAULT_DISP_OFFSET;
 
     public DispersionRegion(int nt, Atom[] atoms) {
         dispersionLoop = new DispersionLoop[nt];
@@ -129,8 +128,24 @@ public class DispersionRegion extends ParallelRegion {
         allocate(atoms);
     }
 
+    /**
+     * The dispersion integral begins offset from the vdW radius.
+     *
+     * @param dispersionOffest the dispersion integral offset.
+     */
     public void setDispersionOffest(double dispersionOffest) {
         this.dispersionOffest = dispersionOffest;
+        // Update the maximum dispersion energy.
+        maxDispersionEnergy();
+    }
+
+    /**
+     * The dispersion integral begins offset from the vdW radius.
+     *
+     * @return the dispersion integral offset.
+     */
+    public double getDispersionOffset() {
+        return dispersionOffest;
     }
 
     public void allocate(Atom[] atoms) {

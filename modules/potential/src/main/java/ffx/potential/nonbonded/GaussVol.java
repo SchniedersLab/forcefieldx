@@ -137,7 +137,7 @@ public class GaussVol {
     /**
      * Default offset applied to radii for use with Gaussian Volumes.
      */
-    public static final double DEFAULT_VDW_PROBE = 1.4;
+    public static final double DEFAULT_VDW_PROBE = 0.0;
 
     /**
      * Number of atoms.
@@ -364,6 +364,8 @@ public class GaussVol {
         surfaceAreaSwitch = new MultiplicativeSwitch(surfaceAreaCut, surfaceAreaOff);
     }
 
+    public double getCrossOver() { return crossOver; }
+
     /**
      * Effective radius probe.
      * <p>
@@ -375,7 +377,6 @@ public class GaussVol {
     public void setEffectiveRadiusProbe(double effectiveRadiusProbe) {
         this.effectiveRadiusProbe = effectiveRadiusProbe;
     }
-
 
     /**
      * Effective radius probe.
