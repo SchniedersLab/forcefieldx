@@ -182,6 +182,8 @@ public class MonteCarloOST extends BoltzmannMC {
         biasDepositionFrequency = properties.getInt("mc-ost-biasf", 1);
         if (biasDepositionFrequency < 1) {
             throw new IllegalArgumentException("The property mc-ost-biasf must be a positive integer, found " + biasDepositionFrequency + " !");
+        } else if (biasDepositionFrequency > 1) {
+            logger.info(format(" MC-OST will deposit a bias only once per %d MC cycles (mc-ost-biasf).", biasDepositionFrequency));
         }
     }
 
@@ -632,8 +634,7 @@ public class MonteCarloOST extends BoltzmannMC {
                 if (imove % biasDepositionFrequency == 0) {
                     histogram.addBias(currentdUdL, currentCoordinates, null);
                 } else {
-                    // TODO: Step down to FINE when we know this works.
-                    logger.log(Level.INFO, format(" Cycle %d: skipping bias deposition.", imove));
+                    logger.log(Level.FINE, format(" Cycle %d: skipping bias deposition.", imove));
                 }
 
                 logger.fine(format(" Added Bias at [ L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
