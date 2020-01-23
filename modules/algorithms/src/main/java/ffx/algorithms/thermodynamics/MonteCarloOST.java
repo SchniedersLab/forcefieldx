@@ -527,12 +527,16 @@ public class MonteCarloOST extends BoltzmannMC {
 
             logger.fine(format(" Starting force field energy for move %16.8f", currentForceFieldEnergy));
 
-            if (lambdaFirst) {
-                proposedLambda = singleStepLambda();
+            if (equilibration) {
                 singleStepMD();
             } else {
-                singleStepMD();
-                proposedLambda = singleStepLambda();
+                if (lambdaFirst) {
+                    proposedLambda = singleStepLambda();
+                    singleStepMD();
+                } else {
+                    singleStepMD();
+                    proposedLambda = singleStepLambda();
+                }
             }
 
             // Get the starting and final kinetic energy for the MD move.
