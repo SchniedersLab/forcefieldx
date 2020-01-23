@@ -481,10 +481,16 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         return totalEnergy;
     }
 
+    @Override
+    public void writeAdditionalRestartInfo() {
+        getUnderlyingPotentials().forEach(Potential::writeAdditionalRestartInfo);
+        writeRestart();
+    }
+
     /**
      * Write histogram and lambda restart files.
      */
-    void writeRestart() {
+    private void writeRestart() {
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
         }

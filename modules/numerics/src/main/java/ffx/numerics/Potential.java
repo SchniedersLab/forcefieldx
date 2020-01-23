@@ -304,4 +304,11 @@ public interface Potential {
     default List<Potential> getUnderlyingPotentials() {
         return Collections.emptyList();
     }
+
+    /**
+     * Writes additional restart information, if any (e.g. OST histogram and lambda restart files).
+     */
+    default void writeAdditionalRestartInfo() {
+        getUnderlyingPotentials().forEach(Potential::writeAdditionalRestartInfo);
+    }
 }
