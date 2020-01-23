@@ -327,17 +327,20 @@ public class OSTOptions {
      * @param verbose                  Whether to print out additional information about MC-OST.
      */
     public void beginMCOST(OrthogonalSpaceTempering orthogonalSpaceTempering, MolecularAssembly[] topologies,
-                           DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose) {
+                           DynamicsOptions dynamics, ThermodynamicsOptions thermodynamics, boolean verbose,
+                           AlgorithmListener listener) {
         dynamics.init();
 
-        MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(), orthogonalSpaceTempering, topologies[0],
-                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose, dynamics.getCheckpoint());
+        /*MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(), orthogonalSpaceTempering, topologies[0],
+                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator, verbose, dynamics.getCheckpoint());*/
+        MonteCarloOST monteCarloOST = new MonteCarloOST(orthogonalSpaceTempering.getPotentialEnergy(),
+                orthogonalSpaceTempering, topologies[0], topologies[0].getProperties(), listener, dynamics, verbose, mcMD);
 
         long nEquil = thermodynamics.getEquilSteps();
         if (nEquil > 0) {
             logger.info("\n Beginning MC-OST equilibration.");
             monteCarloOST.setEquilibration(true);
-            monteCarloOST.setMDMoveParameters(nEquil, mcMD, dynamics.dt, mcMDE);
+            monteCarloOST.setMDMoveParameters(nEquil, mcMD, mcMDE);
             if (ts) {
                 monteCarloOST.sampleTwoStep();
             } else {
@@ -349,7 +352,7 @@ public class OSTOptions {
 
         logger.info("\n Beginning MC-OST sampling.");
         monteCarloOST.setLambdaStdDev(mcL);
-        monteCarloOST.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt, mcMDE);
+        monteCarloOST.setMDMoveParameters(dynamics.steps, mcMD, mcMDE);
         if (lambdaWriteOut >= 0.0 && lambdaWriteOut <= 1.0) {
             monteCarloOST.setLambdaWriteOut(lambdaWriteOut);
         }
