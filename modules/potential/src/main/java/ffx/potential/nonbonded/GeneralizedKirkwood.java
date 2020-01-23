@@ -344,6 +344,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Parallel computation of Volume.
      */
     private final VolumeRegion volumeRegion;
+    private final ParallelTeam volumeTeam;
     /**
      * Gaussian Based Volume and Surface Area
      */
@@ -529,6 +530,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 cavitationRegion = new CavitationRegion(atoms, x, y, z, use, neighborLists,
                         grad, threadCount, probe, tensionDefault);
                 volumeRegion = null;
+                volumeTeam = null;
                 dispersionRegion = null;
                 gaussVol = null;
                 break;
@@ -539,6 +541,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         grad, threadCount, probe, tensionDefault);
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 volumeRegion = null;
+                volumeTeam = null;
                 gaussVol = null;
                 break;
             case SEV_DISP:
@@ -551,6 +554,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     index++;
                 }
                 volumeRegion = new VolumeRegion(atoms, x, y, z, radii, threadCount);
+                volumeTeam = new ParallelTeam(1);
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 cavitationRegion = null;
                 gaussVol = null;
@@ -559,6 +563,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 cavitationRegion = null;
                 volumeRegion = null;
+                volumeTeam = null;
                 gaussVol = new GaussVol(nAtoms, null);
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 boolean[] isHydrogen = new boolean[nAtoms];
@@ -591,6 +596,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 cavitationRegion = null;
                 volumeRegion = null;
+                volumeTeam = null;
                 gaussVol = null;
                 dispersionRegion = new DispersionRegion(threadCount, atoms);
                 break;
@@ -602,6 +608,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 cavitationRegion = null;
                 volumeRegion = null;
+                volumeTeam = null;
                 dispersionRegion = null;
                 gaussVol = null;
                 break;
@@ -1099,8 +1106,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionEnergy = dispersionRegion.getEnergy();
                     dispersionTime += System.nanoTime();
                     cavitationTime = -System.nanoTime();
-                    ParallelTeam oneThreadTeam = new ParallelTeam(1);
-                    oneThreadTeam.execute(volumeRegion);
+                    volumeTeam.execute(volumeRegion);
                     cavitationEnergy = volumeRegion.getEnergy();
                     cavitationTime += System.nanoTime();
                     break;

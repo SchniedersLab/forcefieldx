@@ -1160,7 +1160,8 @@
         <install.version>3.0.0-M1</install.version>
         <resources.version>3.1.0</resources.version>
         <site.version>3.8.2</site.version>
-        <surefire.version>3.0.0-M4</surefire.version>
+        <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
+        <surefire.version>3.0.0-M2</surefire.version>
         <!-- Maven Packaging Tools Plugin Versions -->
         <jar.version>3.2.0</jar.version>
         <shade.version>3.2.1</shade.version>
