@@ -483,7 +483,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     @Override
     public void writeAdditionalRestartInfo() {
-        getUnderlyingPotentials().forEach(Potential::writeAdditionalRestartInfo);
+        potential.writeAdditionalRestartInfo();
         writeRestart();
     }
 
