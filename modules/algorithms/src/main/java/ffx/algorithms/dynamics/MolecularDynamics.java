@@ -48,6 +48,7 @@ import java.util.function.DoubleConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.utilities.Constants.*;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -85,8 +86,6 @@ import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Constants;
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static ffx.utilities.Constants.NS2SEC;
 
 /**
  * Run NVE, NVT, or NPT molecular dynamics.
@@ -148,7 +147,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Total simulation time.
      */
-    private double totalSimTime = 0.0;
+    protected double totalSimTime = 0.0;
     /**
      * Indicates how verbose MD should be.
      */
@@ -214,9 +213,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     protected double[] mass;
     /**
-     * Time step (picoseconds).
+     * Time step (picoseconds). Always use setTimestep to set!
      */
-    protected double dt = 1.0;
+    protected double dt = 0.001;
     /**
      * Whether MD handles writing restart/trajectory files itself (true), or will be
      * commanded by another class (false) to do it. The latter is true for MC-OST, for example.
@@ -735,6 +734,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Sets the timestep and resets frequencies based on stored intervals.
+     *
+     * @param step Timestep in femtoseconds.
+     */
+    private void setTimestep(double step) {
+        dt = step * FSEC_TO_PSEC;
+        // Reset frequencies to be consistent with new timestep.
+        setRestartFrequency(restartInterval);
+        setLoggingFrequency(logInterval);
+        setTrajectoryFrequency(trajectoryInterval);
+    }
+
+    /**
      * <p>
      * init</p>
      *
@@ -782,7 +794,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         totalSimTime = 0.0;
 
         // Convert the time step from femtoseconds to picoseconds.
-        dt = timeStep * Constants.FSEC_TO_PSEC;
+        setTimestep(timeStep);
 
         // Convert intervals in ps to frequencies in timesteps.
         setLoggingFrequency(loggingInterval);
@@ -890,7 +902,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void init(final long nSteps, final double timeStep, final double loggingInterval,
                      final double trajectoryInterval, final double temperature, final boolean initVelocities,
                      final File dyn) {
-        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ",  restartInterval, temperature, initVelocities, dyn);
     }
 
     /**
@@ -974,7 +986,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             return;
         }
 
-        init(nSteps, timeStep, loggingInterval, trajectoryInterval, fileType, restartFrequency,
+        init(nSteps, timeStep, loggingInterval, trajectoryInterval, fileType, restartInterval,
                 temperature, initVelocities, dyn);
 
         Thread dynamicThread = new Thread(this);
@@ -1028,10 +1040,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     "positive finite value in ps, was %10.4g", describe, interval));
         }
         if (interval >= dt) {
-            return (int) (interval / this.dt);
+            return (int) (interval / dt);
         } else {
-            logger.warning(format(" Specified %s of %.6f ps < timestep %.3f fs; " +
-                    "interval is set to once per timestep!", describe, interval, this.dt));
+            logger.warning(format(" Specified %s of %.6f ps < timestep %.6f ps; " +
+                    "interval is set to once per timestep!", describe, interval, dt));
             return 1;
         }
     }
@@ -1216,13 +1228,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Checks if thermodynamics must be logged. If logged, current time is returned,
+     * else the time passed in is returned.
+     *
+     * @param step Timestep to possibly log thermodynamics for.
+     * @param time Clock time (in nsec) thermodynamics was last logged.
+     * @return Either current time (if logged), else the time variable passed in.
+     */
+    protected long logThermoForTime(long step, long time) {
+        if (step % logFrequency == 0) {
+            return logThermodynamics(time);
+        } else {
+            return time;
+        }
+    }
+
+    /**
      * Log thermodynamics to the screen.
      *
      * @param time Clock time (in nsec) since this was last called.
      * @return     Clock time at the end of this call.
      */
-    protected long logThermodynamics(long time) {
-        // Original print statement
+    private long logThermodynamics(long time) {
         time = System.nanoTime() - time;
         logger.log(basicLogging, format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
                 totalSimTime, currentKineticEnergy, currentPotentialEnergy,
@@ -1234,6 +1261,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Write out a restart file.
      */
     public void writeRestart() {
+        potential.writeAdditionalRestartInfo();
         if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
             logger.log(basicLogging, " Wrote dynamics restart file to " + restartFile.getName());
         } else {
@@ -1323,9 +1351,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             // Log the current state every printFrequency steps.
             totalSimTime += dt;
-            if (step % logFrequency == 0) {
-                time = logThermodynamics(time);
-            }
+            time = logThermoForTime(step, time);
             if (step % printEsvFrequency == 0 && esvSystem != null) {
                 logger.log(basicLogging, format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
             }
@@ -1357,14 +1383,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param step Step to write files (if any) for.
      */
     public void writeFilesForStep(long step) {
-        // Write out snapshots in selected format every saveSnapshotFrequency steps.
-        if (trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
-            appendSnapshot();
-        }
+        if (step != 0) {
+            // Write out snapshots in selected format every saveSnapshotFrequency steps.
+            if (trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
+                appendSnapshot();
+            }
 
-        // Write out restart files every saveRestartFileFrequency steps.
-        if (restartFrequency > 0 && step % restartFrequency == 0) {
-            writeRestart();
+            // Write out restart files every saveRestartFileFrequency steps.
+            if (restartFrequency > 0 && step % restartFrequency == 0) {
+                writeRestart();
+            }
         }
     }
 
