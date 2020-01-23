@@ -285,7 +285,7 @@ class Thermodynamics extends AlgorithmsScript {
             CrystalPotential ostPotential = ostOptions.applyAllOSTOptions(orthogonalSpaceTempering, topologies[0],
                     dynamics, lambdaParticle, barostat, hisExists)
             if (ostOptions.mc) {
-                ostOptions.beginMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose);
+                ostOptions.beginMCOST(orthogonalSpaceTempering, topologies, dynamics, thermodynamics, verbose, algorithmListener);
             } else {
                 ostOptions.beginMDOST(orthogonalSpaceTempering, topologies, ostPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener)
             }

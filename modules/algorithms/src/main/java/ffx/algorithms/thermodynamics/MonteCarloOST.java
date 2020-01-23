@@ -43,6 +43,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.lang.System.nanoTime;
 
+import ffx.algorithms.cli.DynamicsOptions;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 
@@ -109,15 +110,15 @@ public class MonteCarloOST extends BoltzmannMC {
     /**
      * MDMove object for completing MC-OST molecular dynamics moves.
      */
-    private MDMove mdMove;
+    private final MDMove mdMove;
     /**
      * Total number of steps to take for MC-OST sampling.
      */
-    private long totalSteps = 10000000;
+    private long totalSteps;
     /**
      * Number of steps to take per MC-OST round.
      */
-    private long stepsPerMove = 50;
+    private long stepsPerMove;
     /**
      * Lambda move object for completing MC-OST lambda moves.
      */
@@ -153,21 +154,23 @@ public class MonteCarloOST extends BoltzmannMC {
      * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly} object.
      * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ThermostatEnum} object.
-     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
-     * @param verbose             A verbosity flag to print additional information with each MC-OST step.
+     * @param dynamics            CLI object containing key information.
+     * @param verbose             Whether to be verbose.
+     * @param cycleLength         Length of an MC cycle in MD steps.
      */
     public MonteCarloOST(Potential potentialEnergy, OrthogonalSpaceTempering orthogonalSpaceTempering,
                          MolecularAssembly molecularAssembly, CompositeConfiguration properties,
-                         AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
-                         boolean verbose, double restartInterval) {
+                         AlgorithmListener listener, DynamicsOptions dynamics, boolean verbose,
+                         int cycleLength) {
         this.potential = potentialEnergy;
         this.orthogonalSpaceTempering = orthogonalSpaceTempering;
         verboseLoggingLevel = verbose ? Level.INFO : Level.FINE;
         mdVerbosityLevel = verbose ? MolecularDynamics.VerbosityLevel.QUIET : MolecularDynamics.VerbosityLevel.SILENT;
+        stepsPerMove = cycleLength;
+        totalSteps = dynamics.getNumSteps();
 
         // Create the MC MD and Lambda moves.
-        mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator, restartInterval);
+        mdMove = new MDMove(molecularAssembly, potential, properties, listener, dynamics, stepsPerMove);
         if (properties.containsKey("randomseed")) {
             int randomSeed = properties.getInt("randomseed", 0);
             logger.info(format(" Setting random seed for lambdaMove to %d ", randomSeed));
@@ -194,10 +197,9 @@ public class MonteCarloOST extends BoltzmannMC {
      *
      * @param totalSteps   a int.
      * @param stepsPerMove a int.
-     * @param timeStep     a double.
      * @param mcMDE        a boolean
      */
-    public void setMDMoveParameters(long totalSteps, int stepsPerMove, double timeStep, boolean mcMDE) {
+    public void setMDMoveParameters(long totalSteps, int stepsPerMove, boolean mcMDE) {
 
         if (mcMDE) {
             if (equilibration) {
@@ -207,8 +209,6 @@ public class MonteCarloOST extends BoltzmannMC {
             }
         }
         this.totalSteps = totalSteps;
-        this.stepsPerMove = stepsPerMove;
-        mdMove.setMDParameters(stepsPerMove, timeStep);
     }
 
     /**
