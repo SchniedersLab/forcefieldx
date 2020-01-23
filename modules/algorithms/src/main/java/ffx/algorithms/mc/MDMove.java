@@ -68,7 +68,7 @@ public class MDMove implements MCMove {
     /**
      * Number of MD steps per move.
      */
-    private int mdSteps = 50;
+    private long mdSteps = 50;
     /**
      * Time step in femtoseconds.
      */
@@ -105,6 +105,18 @@ public class MDMove implements MCMove {
      * Potential to operate on.
      */
     private final Potential potential;
+    /**
+     * Kinetic energy at the start of the move.
+     */
+    private double initialKinetic;
+    /**
+     * Potential energy at the start of the move.
+     */
+    private double initialPotential;
+    /**
+     * Total energy at the start of the move.
+     */
+    private double initialTotal;
 
 
     /**
@@ -117,12 +129,14 @@ public class MDMove implements MCMove {
      * @param requestedThermostat a {@link ThermostatEnum} object.
      * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
      */
+    @Deprecated
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
                   CompositeConfiguration properties, AlgorithmListener listener,
                   ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
         this.potential = potentialEnergy;
         molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        molecularDynamics.setAutomaticWriteouts(false);
 
         // Ensure at least one interval is printed.
         if (printInterval < mdSteps * timeStep) {
@@ -131,6 +145,26 @@ public class MDMove implements MCMove {
 
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
+        collectEnergies();
+    }
+
+    /**
+     * <p>Constructor for MDMove.</p>
+     *
+     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ThermostatEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param restartInterval     Interval between writing restart files in psec.
+     */
+    public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
+                  CompositeConfiguration properties, AlgorithmListener listener,
+                  ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
+                  double restartInterval) {
+        this(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        molecularDynamics.setRestartFrequency(restartInterval);
     }
 
     /**
@@ -148,7 +182,7 @@ public class MDMove implements MCMove {
      * @param mdSteps  a int.
      * @param timeStep a double.
      */
-    public void setMDParameters(int mdSteps, double timeStep) {
+    public void setMDParameters(long mdSteps, double timeStep) {
         this.mdSteps = mdSteps;
         this.timeStep = timeStep;
         printInterval = mdSteps * timeStep / 1000;
@@ -162,6 +196,15 @@ public class MDMove implements MCMove {
         move(MolecularDynamics.VerbosityLevel.QUIET);
     }
 
+    private void collectEnergies() {
+        initialTotal = molecularDynamics.getInitialTotalEnergy();
+        initialKinetic = molecularDynamics.getInitialKineticEnergy();
+        initialPotential = molecularDynamics.getInitialPotentialEnergy();
+        // Assert that kinetic + potential = total to within tolerance.
+        assert Math.abs((initialKinetic + initialPotential - initialTotal) / initialTotal) < 1.0E-7;
+        // If there's ever a need to store run-terminal energies, do it here.
+    }
+
     /**
      * Performs an MDMove.
      * @param verbosityLevel How verbose to be.
@@ -172,7 +215,9 @@ public class MDMove implements MCMove {
         mdMoveCounter++;
 
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
-        energyChange = molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
+        // IMPORTANT: Initial energy as of the start of this run is not equal to initial energy at the end of the last run!
+        collectEnergies();
+        energyChange = molecularDynamics.getTotalEnergy() - initialTotal;
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
             energyDriftNet += energyChange;
@@ -198,13 +243,16 @@ public class MDMove implements MCMove {
         molecularDynamics.setIntervalSteps(intervalSteps);
     }
 
-    /**
-     * <p>getStartingKineticEnergy.</p>
-     *
-     * @return a double.
-     */
-    public double getStartingKineticEnergy() {
-        return molecularDynamics.getStartingKineticEnergy();
+    public double getInitialKinetic() {
+        return initialKinetic;
+    }
+
+    public double getInitialPotential() {
+        return initialPotential;
+    }
+
+    public double getInitialTotal() {
+        return initialTotal;
     }
 
     /**
@@ -247,13 +295,11 @@ public class MDMove implements MCMove {
     }
 
     /**
-     * Write coordinate and velocity restart files out for MC-OST.
+     * Write restart and trajectory files if the provided step matches the frequency.
+     *
+     * @param mdStep MD step (not MC cycle number) to write files (if any) for.
      */
-    public void writeRestart() {
-        molecularDynamics.writeRestart();
-    }
-
-    public void writeLambdaThresholdRestart(double lambda, double lambdaWriteOut) {
-        molecularDynamics.writeLambdaThresholdRestart(lambda, lambdaWriteOut);
+    public void writeFilesForStep(long mdStep) {
+        molecularDynamics.writeFilesForStep(mdStep);
     }
 }
