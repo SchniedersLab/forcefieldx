@@ -76,13 +76,12 @@ class Volume extends PotentialScript {
             description = "Use the Connolly algorithm to compute solvent excluded volume and solvent accessible surface area.")
     private boolean connolly = false
 
-//   NOT SUPPORTED YET.
-//    /**
-//     * -m or --molecular If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).
-//     */
-//    @CommandLine.Option(names = ['-m', '--molecular'], paramLabel = "false",
-//            description = "If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).")
-//    private boolean molecular = false
+    /**
+     * -m or --molecular If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).
+     */
+    @CommandLine.Option(names = ['-m', '--molecular'], paramLabel = "false",
+            description = "If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).")
+    private boolean molecular = false
 
     /**
      * -p or --probe If using the Connolly algorithm, set the exclude radius (SASA) or probe radius (molecular surface).
@@ -251,10 +250,10 @@ class Volume extends PotentialScript {
             double exclude = 0.0
 
             // For SEV/SASA, set exclude to the chosen probe, and zero the probe.
-            // if (!molecular) {
+            if (!molecular) {
                 exclude = probe
                 probe = 0.0
-            // }
+            }
 
             // Connolly Volume and Surface Area.
             double[] radii = new double[nAtoms]
@@ -294,13 +293,13 @@ class Volume extends PotentialScript {
                 logger.warning(" Exception executing Volume region");
             }
 
-            // if (!molecular) {
+            if (!molecular) {
                 logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")
                 logger.info(format("  Exclude radius:      %8.4f (Ang)", exclude))
-            // } else {
-            //    logger.info("\n Connolly Molecular Surface Area and Volume")
-            //    logger.info(format("  Probe radius:       %8.4f (Ang)", probe))
-            // }
+            } else {
+                logger.info("\n Connolly Molecular Surface Area and Volume")
+                logger.info(format("  Probe radius:       %8.4f (Ang)", probe))
+            }
 
             if (sigma) {
                 logger.info(format("  Radii:                  Sigma"))
