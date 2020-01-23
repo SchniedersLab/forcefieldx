@@ -203,7 +203,7 @@ public class MonteCarloOST extends BoltzmannMC {
 
         if (mcMDE) {
             if (equilibration) {
-                stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
+                this.stepsPerMove = (int) Math.round(stepsPerMove * 0.1);
             } else {
                 mdMove.setMDIntervalSteps(stepsPerMove);
             }
