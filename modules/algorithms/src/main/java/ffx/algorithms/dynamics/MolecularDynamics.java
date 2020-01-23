@@ -801,9 +801,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         setTrajectoryFrequency(trajectoryInterval);
         setRestartFrequency(restartInterval);
 
-        logger.info(format(" Intervals: %.4f, %.4f, %.4f. Frequencies: %d, %d, %d. Log/Traj/Rst.",
-                loggingInterval, trajectoryInterval, restartInterval, logFrequency, trajectoryFrequency, restartFrequency));
-
         sanityCheckFrequency(LOG_FREQ_STRING, logFrequency, this::setLoggingFrequency);
         if (automaticWriteouts) {
             // Only sanity check these values if MD is doing this itself.
@@ -1045,8 +1042,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (interval >= dt) {
             return (int) (interval / dt);
         } else {
-            logger.warning(format(" Specified %s of %.6f ps < dt %.6f ps; " +
-                    "interval is set to once per dt!", describe, interval, dt));
+            logger.warning(format(" Specified %s of %.6f ps < timestep %.6f ps; " +
+                    "interval is set to once per timestep!", describe, interval, dt));
             return 1;
         }
     }
