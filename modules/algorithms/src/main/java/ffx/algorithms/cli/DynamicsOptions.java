@@ -257,4 +257,12 @@ public class DynamicsOptions {
     public boolean getOptimize() {
         return optimize;
     }
+
+    /**
+     * Re-sets the thermostat; intended for MC-OST going to ADIABATIC.
+     * @param thermo Thermostat to replace the requested one with.
+     */
+    public void setThermostat(ThermostatEnum thermo) {
+        thermostat = thermo;
+    }
 }

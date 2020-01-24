@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -44,6 +45,7 @@ import static java.lang.System.arraycopy;
 import static java.lang.System.nanoTime;
 
 import ffx.algorithms.cli.DynamicsOptions;
+import ffx.algorithms.dynamics.thermostats.Thermostat;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 
@@ -168,6 +170,18 @@ public class MonteCarloOST extends BoltzmannMC {
         mdVerbosityLevel = verbose ? MolecularDynamics.VerbosityLevel.QUIET : MolecularDynamics.VerbosityLevel.SILENT;
         stepsPerMove = cycleLength;
         totalSteps = dynamics.getNumSteps();
+
+        ThermostatEnum tstat = dynamics.thermostat;
+        if (!tstat.equals(ThermostatEnum.ADIABATIC)) {
+            logger.warning(format("MC-OST requires the ADIABATIC thermostat, found %s.", tstat));
+            dynamics.setThermostat(ThermostatEnum.ADIABATIC);
+        }
+
+        IntegratorEnum integ = dynamics.integrator;
+        if (!integ.knownReversible || !integ.knownDeterministic) {
+            throw new IllegalArgumentException(format("MC-OST requires " +
+                    "a reversible deterministic integrator (e.g. VERLET, RESPA), found %s!", integ));
+        }
 
         // Create the MC MD and Lambda moves.
         mdMove = new MDMove(molecularAssembly, potential, properties, listener, dynamics, stepsPerMove);
@@ -554,6 +568,7 @@ public class MonteCarloOST extends BoltzmannMC {
                 proposedOSTEnergy = orthogonalSpaceTempering.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
                 mdMove.revertMove();
+                mdMove.writeErrorFiles();
                 if (!equilibration) {
                     lambdaMove.revertMove();
                     lambda = currentLambda;
@@ -651,7 +666,10 @@ public class MonteCarloOST extends BoltzmannMC {
 
                 if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
                     long mdMoveNum = imove * stepsPerMove;
-                    mdMove.writeFilesForStep(mdMoveNum);
+                    EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum);
+                    if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+                        orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
+                    }
                 }
             }
 

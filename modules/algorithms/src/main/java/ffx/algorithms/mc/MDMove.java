@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.mc;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
@@ -252,6 +253,13 @@ public class MDMove implements MCMove {
     }
 
     /**
+     * Triggers MD to write out its stored snapshots in case of error.
+     */
+    public void writeErrorFiles() {
+        molecularDynamics.writeStoredSnapshots();
+    }
+
+    /**
      * Get the total energy change for the current move.
      *
      * @return Total energy change.
@@ -265,7 +273,7 @@ public class MDMove implements MCMove {
      *
      * @param mdStep MD step (not MC cycle number) to write files (if any) for.
      */
-    public void writeFilesForStep(long mdStep) {
-        molecularDynamics.writeFilesForStep(mdStep);
+    public EnumSet<MolecularDynamics.WriteActions> writeFilesForStep(long mdStep) {
+        return molecularDynamics.writeFilesForStep(mdStep);
     }
 }
