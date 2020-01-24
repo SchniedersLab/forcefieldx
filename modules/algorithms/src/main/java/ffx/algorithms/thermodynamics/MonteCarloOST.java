@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.thermodynamics;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -665,7 +666,10 @@ public class MonteCarloOST extends BoltzmannMC {
 
                 if (lambda >= orthogonalSpaceTempering.lambdaWriteOut) {
                     long mdMoveNum = imove * stepsPerMove;
-                    mdMove.writeFilesForStep(mdMoveNum);
+                    EnumSet<MolecularDynamics.WriteActions> written = mdMove.writeFilesForStep(mdMoveNum);
+                    if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+                        orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
+                    }
                 }
             }
 

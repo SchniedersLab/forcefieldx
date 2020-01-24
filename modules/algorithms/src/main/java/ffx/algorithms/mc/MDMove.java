@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.algorithms.mc;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
@@ -272,7 +273,7 @@ public class MDMove implements MCMove {
      *
      * @param mdStep MD step (not MC cycle number) to write files (if any) for.
      */
-    public void writeFilesForStep(long mdStep) {
-        molecularDynamics.writeFilesForStep(mdStep);
+    public EnumSet<MolecularDynamics.WriteActions> writeFilesForStep(long mdStep) {
+        return molecularDynamics.writeFilesForStep(mdStep);
     }
 }

@@ -307,8 +307,13 @@ public interface Potential {
 
     /**
      * Writes additional restart information, if any (e.g. OST histogram and lambda restart files).
+     * The recursive flag should generally only be true for the top-level Potential called.
+     *
+     * @param recursive Whether to have all underlying Potentials write additional restart info.
      */
-    default void writeAdditionalRestartInfo() {
-        getUnderlyingPotentials().forEach(Potential::writeAdditionalRestartInfo);
+    default void writeAdditionalRestartInfo(boolean recursive) {
+        if (recursive) {
+            getUnderlyingPotentials().forEach((Potential p) -> p.writeAdditionalRestartInfo(false));
+        } // Else, no-op.
     }
 }

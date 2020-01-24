@@ -309,6 +309,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
 
     /**
+     * Describes actions taken by writeFilesForStep
+     */
+    public enum WriteActions {
+        // TODO: Flesh this out if more functionality is needed.
+        RESTART, SNAPSHOT
+    }
+
+    /**
      * Monte Carlo notification enumeration.
      */
     public enum MonteCarloNotification {
@@ -1261,7 +1269,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Write out a restart file.
      */
     public void writeRestart() {
-        potential.writeAdditionalRestartInfo();
+        potential.writeAdditionalRestartInfo(true);
         if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
             logger.log(basicLogging, " Wrote dynamics restart file to " + restartFile.getName());
         } else {
@@ -1381,19 +1389,24 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Write restart and trajectory files if the provided step matches the frequency.
      *
      * @param step Step to write files (if any) for.
+     * @return EnumSet of actions taken by this method.
      */
-    public void writeFilesForStep(long step) {
+    public EnumSet<WriteActions> writeFilesForStep(long step) {
+        EnumSet<WriteActions> written = EnumSet.noneOf(WriteActions.class);
         if (step != 0) {
             // Write out snapshots in selected format every saveSnapshotFrequency steps.
             if (trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
                 appendSnapshot();
+                written.add(WriteActions.SNAPSHOT);
             }
 
             // Write out restart files every saveRestartFileFrequency steps.
             if (restartFrequency > 0 && step % restartFrequency == 0) {
                 writeRestart();
+                written.add(WriteActions.RESTART);
             }
         }
+        return written;
     }
 
     /**
