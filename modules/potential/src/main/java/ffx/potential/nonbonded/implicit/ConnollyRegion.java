@@ -57,8 +57,10 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
+import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
@@ -71,15 +73,37 @@ import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.r;
 
 /**
- * Initial port of the TINKER volume area code.
+ * ConnollyRegion uses the algorithms from the AMS/VAM programs of
+ * Michael Connolly to compute the analytical molecular surface
+ * area and volume of a collection of spherical atoms; thus
+ * it implements Fred Richards' molecular surface definition as
+ * a set of analytically defined spherical and toroidal polygons.
+ * <p>
+ * Numerical derivatives of the volume are available.
+ * <p>
+ * Literature references:
+ * M. L. Connolly, "Analytical Molecular Surface Calculation",
+ * Journal of Applied Crystallography, 16, 548-558 (1983)
+ * <p>
+ * M. L. Connolly, "Computation of Molecular Volume", Journal
+ * of the American Chemical Society, 107, 1118-1124 (1985)
+ * <p>
+ * C. E. Kundrot, J. W. Ponder and F. M. Richards, "Algorithms for
+ * Calculating Excluded Volume and Its Derivatives as a Function
+ * of Molecular Conformation and Their Use in Energy Minimization",
+ * Journal of Computational Chemistry, 12, 402-409 (1991)
+ *
+ * @author Guowei Qi
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
-public class VolumeRegion extends ParallelRegion {
+public class ConnollyRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(VolumeRegion.class.getName());
+    private static final Logger logger = Logger.getLogger(ConnollyRegion.class.getName());
 
     private final int nAtoms;
-    private final Atom[] atoms;
-    private final double[] x, y, z;
+    private Atom[] atoms;
+    private double[] x, y, z;
     /**
      * Base atomic radii without the "exclude" buffer.
      */
@@ -92,6 +116,18 @@ public class VolumeRegion extends ParallelRegion {
      * If true, atom is not used.
      */
     private final boolean[] skip;
+    /**
+     * If true, compute the gradient
+     */
+    private boolean gradient = false;
+    /**
+     * Array to store volume gradient
+     **/
+    private final double[][] dex;
+    /**
+     * A 3D array to store the gradient.
+     */
+    private AtomicDoubleArray3D grad;
 
     private final VolumeLoop[] volumeLoop;
     private final SharedDouble sharedVolume;
@@ -469,6 +505,8 @@ public class VolumeRegion extends ParallelRegion {
      */
     private final int[] nextAtomPointer;
 
+    private final ParallelTeam parallelTeam;
+
     /**
      * VolumeRegion constructor.
      *
@@ -478,8 +516,8 @@ public class VolumeRegion extends ParallelRegion {
      * @param z        Z-cooddinates.
      * @param nThreads Number of threads.
      */
-    public VolumeRegion(Atom[] atoms, double[] x, double[] y, double[] z,
-                        double[] baseRadius, int nThreads) {
+    public ConnollyRegion(Atom[] atoms, double[] x, double[] y, double[] z,
+                          double[] baseRadius, int nThreads) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.x = x;
@@ -487,45 +525,41 @@ public class VolumeRegion extends ParallelRegion {
         this.z = z;
         this.baseRadius = baseRadius;
 
+        // Parallelization variables.
+        parallelTeam = new ParallelTeam(1);
         volumeLoop = new VolumeLoop[nThreads];
         for (int i = 0; i < nThreads; i++) {
             volumeLoop[i] = new VolumeLoop();
         }
         sharedVolume = new SharedDouble();
         sharedArea = new SharedDouble();
-        itab = new int[nAtoms];
 
+        // Atom variables.
         radius = new double[nAtoms];
         skip = new boolean[nAtoms];
-        maxSaddleFace = 6 * nAtoms;
-        maxConvexEdges = 12 * nAtoms;
-        maxAtomPairs = 240 * nAtoms;
-        maxCircles = 8 * nAtoms;
-        maxTori = 4 * nAtoms;
-        maxTempTori = 120 * nAtoms;
-        maxConcaveEdges = 12 * nAtoms;
-        maxVertices = 12 * nAtoms;
-        maxProbePositions = 4 * nAtoms;
-        maxConcaveFaces = 4 * nAtoms;
-        maxConvexFaces = 2 * nAtoms;
-        maxCycles = 3 * nAtoms;
-
         atomCoords = new double[3][nAtoms];
         noFreeSurface = new boolean[nAtoms];
         atomFreeOfNeighbors = new boolean[nAtoms];
         atomBuried = new boolean[nAtoms];
         atomNeighborPointers = new int[2][nAtoms];
-        neighborAtomNumbers = new int[maxAtomPairs];
 
+        // Atom pair variables.
+        maxAtomPairs = 240 * nAtoms;
+        neighborAtomNumbers = new int[maxAtomPairs];
         neighborToTorus = new int[maxAtomPairs];
 
+        // Temporary Torus variables.
+        maxTempTori = 120 * nAtoms;
+        maxConcaveEdges = 12 * nAtoms;
         tempToriAtomNumbers = new int[2][maxTempTori];
         tempToriFirstEdge = new int[maxTempTori];
         tempToriLastEdge = new int[maxTempTori];
-        tempToriNextEdge = new int[maxConcaveEdges];
         tempToriBuried = new boolean[maxTempTori];
         tempToriFree = new boolean[maxTempTori];
+        tempToriNextEdge = new int[maxConcaveEdges];
 
+        // Torus variables.
+        maxTori = 4 * nAtoms;
         torusCenter = new double[3][maxTori];
         torusRadius = new double[maxTori];
         torusAxis = new double[3][maxTori];
@@ -533,21 +567,33 @@ public class VolumeRegion extends ParallelRegion {
         torusFirstEdge = new int[maxTori];
         torusNeighborFreeEdge = new boolean[maxTori];
 
+        // Probe variables.
+        maxProbePositions = 4 * nAtoms;
         probeCoords = new double[3][maxProbePositions];
         probeAtomNumbers = new int[3][maxProbePositions];
 
+        // Vertex variables.
+        maxVertices = 12 * nAtoms;
         vertexCoords = new double[3][maxVertices];
         vertexAtomNumbers = new int[maxVertices];
         vertexProbeNumber = new int[maxVertices];
 
+        // Concave face variables.
+        maxConcaveFaces = 4 * nAtoms;
         concaveFaceEdgeNumbers = new int[3][maxConcaveFaces];
         concaveEdgeVertexNumbers = new int[2][maxConcaveEdges];
 
+        // Circle variables.
+        maxCircles = 8 * nAtoms;
         circleCenter = new double[3][maxCircles];
         circleRadius = new double[maxCircles];
         circleAtomNumber = new int[maxCircles];
         circleTorusNumber = new int[maxCircles];
 
+        // Convex face variables.
+        maxConvexEdges = 12 * nAtoms;
+        maxConvexFaces = 2 * nAtoms;
+        maxCycles = 3 * nAtoms;
         convexEdgeCircleNumber = new int[maxConvexEdges];
         convexEdgeVertexNumber = new int[2][maxConvexEdges];
         convexEdgeFirst = new int[nAtoms];
@@ -559,14 +605,43 @@ public class VolumeRegion extends ParallelRegion {
         convexFaceNumCycles = new int[maxConvexFaces];
         convexFaceCycleNumbers = new int[MAXFPCY][maxConvexFaces];
 
+        // Saddle face variables.
+        maxSaddleFace = 6 * nAtoms;
         saddleConcaveEdgeNumbers = new int[2][maxSaddleFace];
         saddleConvexEdgeNumbers = new int[2][maxSaddleFace];
 
+        // Domain decomposition
         activeCube = new boolean[MAXCUBE * MAXCUBE * MAXCUBE];
         activeAdjacentCube = new boolean[MAXCUBE * MAXCUBE * MAXCUBE];
         firstAtomPointer = new int[MAXCUBE * MAXCUBE * MAXCUBE];
         cubeCoordinates = new int[3][nAtoms];
         nextAtomPointer = new int[nAtoms];
+
+        // Volume derivative variables.
+        dex = new double[3][nAtoms];
+        itab = new int[nAtoms];
+    }
+
+    /**
+     * Initialize this VolumeRegion instance for an energy evaluation.
+     * <p>
+     * Currently the number of atoms cannot change.
+     *
+     * @param atoms    Array of atoms.
+     * @param x        X-coordinates.
+     * @param y        Y-coordinates.
+     * @param z        Z-coordinates.
+     * @param gradient Compute the atomic coordinate gradient.
+     * @param grad     Array to accumulate the gradient.
+     */
+    public void init(Atom[] atoms, double[] x, double[] y, double[] z, boolean gradient,
+                     AtomicDoubleArray3D grad) {
+        this.atoms = atoms;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.gradient = gradient;
+        this.grad = grad;
     }
 
     public void setSolventPressure(double solventPressure) {
@@ -649,6 +724,18 @@ public class VolumeRegion extends ParallelRegion {
         return exclude;
     }
 
+    /**
+     * Execute the VolumeRegion with a private, single threaded ParallelTeam.
+     */
+    public void runVolume() {
+        try {
+            parallelTeam.execute(this);
+        } catch (Exception e) {
+            String message = " Fatal exception computing the Connolly surface area and volume.";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
     @Override
     public void start() {
         sharedVolume.set(0.0);
@@ -727,22 +814,45 @@ public class VolumeRegion extends ParallelRegion {
         double reff4 = reff3 * reff;
         double reff5 = reff4 * reff;
         double vdWVolPI23 = pow(volume / PI, 2.0 / 3.0);
-        // double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
+        double dReffdvdW = 1.0 / (pow(6.0, 2.0 / 3.0) * PI * vdWVolPI23);
+
+        if (gradient) {
+            for (int i = 0; i < nAtoms; i++) {
+                logger.info(format(" Gradient %d (%16.8f, %16.8f, %16.8f)",
+                        i, dex[0][i], dex[1][i], dex[2][i]));
+            }
+        }
 
         // Find the cavitation energy using a combination of volume and surface area dependence.
         if (reff < volumeOff) {
             // Find cavity energy from only the molecular volume.
             cavitationEnergy = volumeEnergy;
-            // addVolumeGradient(dVolSEVdVolvdW * solventPressure, gradient);
+            if (gradient) {
+                for (int i = 0; i < nAtoms; i++) {
+                    double dx = solventPressure * dex[0][i];
+                    double dy = solventPressure * dex[1][i];
+                    double dz = solventPressure * dex[2][i];
+                    grad.add(0, i, dx, dy, dz);
+                }
+            }
         } else if (reff <= volumeCut) {
             // Include a tapered molecular volume.
             double taper = volumeSwitch.taper(reff, reff2, reff3, reff4, reff5);
             cavitationEnergy = taper * volumeEnergy;
-            // double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
-            // double factor = dtaper * volumeEnergy + taper * solventPressure;
-            // addVolumeGradient(factor, gradient);
+
+            if (gradient) {
+                double dtaper = volumeSwitch.dtaper(reff, reff2, reff3, reff4) * dReffdvdW;
+                double factor = dtaper * volumeEnergy + taper * solventPressure;
+                for (int i = 0; i < nAtoms; i++) {
+                    double dx = factor * dex[0][i];
+                    double dy = factor * dex[1][i];
+                    double dz = factor * dex[2][i];
+                    grad.add(0, i, dx, dy, dz);
+                }
+            }
         }
 
+        // TODO: We need to include the surface area contribution to the gradient.
         if (reff > surfaceAreaOff) {
             // Find cavity energy from only SA.
             cavitationEnergy = surfaceAreaEnergy;
@@ -783,26 +893,17 @@ public class VolumeRegion extends ParallelRegion {
      * @since 1.0
      */
     private class VolumeLoop extends IntegerForLoop {
-        private int iv;
-        private int itemp;
         private final int mxcube = 15;
+        private final double twoPI = 2.0 * PI;
         private final int[] inov = new int[MAXARC];
         private final int[][] cube = new int[2][mxcube * mxcube * mxcube];
-        private double xmin, ymin, zmin;
-        private double xmax, ymax, zmax;
-        private double theta1;
-        private double theta2;
-        private double pix2;
-        private double rmax;
         private final double[] arci = new double[MAXARC];
         private final double[] arcf = new double[MAXARC];
         private final double[] dx = new double[MAXARC];
         private final double[] dy = new double[MAXARC];
         private final double[] dsq = new double[MAXARC];
         private final double[] d = new double[MAXARC];
-        private boolean ttok;
         private final double[] vdwrad = new double[nAtoms];
-        private final double[][] dex = new double[3][nAtoms];
         private double localVolume;
         private double localSurfaceArea;
 
@@ -812,25 +913,24 @@ public class VolumeRegion extends ParallelRegion {
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-        /**
-         * Row major indexing (the last dimension is contiguous in memory).
-         *
-         * @param i x index.
-         * @param j y index.
-         * @param k z index.
-         * @return the row major index.
-         */
-        private int index2(int i, int j, int k) {
-            return k + mxcube * (j + mxcube * i);
+        @Override
+        public void start() {
+            localVolume = 0.0;
+            localSurfaceArea = 0.0;
+            if (gradient) {
+                fill(dex[0], 0.0);
+                fill(dex[1], 0.0);
+                fill(dex[2], 0.0);
+            }
         }
 
         @Override
-        public void start() {
-            fill(dex[0], 0.0);
-            fill(dex[1], 0.0);
-            fill(dex[2], 0.0);
-            localVolume = 0.0;
-            localSurfaceArea = 0.0;
+        public void run(int lb, int ub) {
+            setRadius();
+            computeVolumeAndArea();
+            if (gradient) {
+                computeVolumeGradient();
+            }
         }
 
         @Override
@@ -839,21 +939,10 @@ public class VolumeRegion extends ParallelRegion {
             sharedArea.addAndGet(localSurfaceArea);
         }
 
-        void setRadius() {
-            // Initialize minimum and maximum range of atoms.
-            pix2 = 2.0 * PI;
-            rmax = 0.0;
-            xmin = x[0];
-            xmax = x[0];
-            ymin = y[0];
-            ymax = y[0];
-            zmin = z[0];
-            zmax = z[0];
-
+        private void setRadius() {
             /*
               Assign van der Waals radii to the atoms; note that the radii
-              are incremented by the size of the probe; then get the
-              maximum and minimum ranges of atoms.
+              are incremented by the size of the probe.
              */
             for (int i = 0; i < nAtoms; i++) {
                 if (baseRadius[i] == 0.0) {
@@ -864,27 +953,6 @@ public class VolumeRegion extends ParallelRegion {
                     skip[i] = false;
                     vdwrad[i] = baseRadius[i] + exclude;
                     radius[i] = baseRadius[i] + exclude;
-                    if (vdwrad[i] > rmax) {
-                        rmax = vdwrad[i];
-                    }
-                    if (x[i] < xmin) {
-                        xmin = x[i];
-                    }
-                    if (x[i] > xmax) {
-                        xmax = x[i];
-                    }
-                    if (y[i] < ymin) {
-                        ymin = y[i];
-                    }
-                    if (y[i] > ymax) {
-                        ymax = y[i];
-                    }
-                    if (z[i] < zmin) {
-                        zmin = z[i];
-                    }
-                    if (z[i] > zmax) {
-                        zmax = z[i];
-                    }
                 }
             }
         }
@@ -892,7 +960,7 @@ public class VolumeRegion extends ParallelRegion {
         /**
          * Find the analytical volume and surface area.
          */
-        void calcVolume() {
+        private void computeVolumeAndArea() {
             nearby();
             torus();
             place();
@@ -902,19 +970,19 @@ public class VolumeRegion extends ParallelRegion {
             vam();
         }
 
-        void getVector(double[] ai, double[][] temp, int index) {
+        private void getVector(double[] ai, double[][] temp, int index) {
             ai[0] = temp[0][index];
             ai[1] = temp[1][index];
             ai[2] = temp[2][index];
         }
 
-        void putVector(double[] ai, double[][] temp, int index) {
+        private void putVector(double[] ai, double[][] temp, int index) {
             temp[0][index] = ai[0];
             temp[1][index] = ai[1];
             temp[2][index] = ai[2];
         }
 
-        void getVector(double[] ai, double[][][] temp, int index1, int index2) {
+        private void getVector(double[] ai, double[][][] temp, int index1, int index2) {
             ai[0] = temp[0][index1][index2];
             ai[1] = temp[1][index1][index2];
             ai[2] = temp[2][index1][index2];
@@ -925,7 +993,7 @@ public class VolumeRegion extends ParallelRegion {
          * interface between two atoms, and finds the torus radius, center
          * and axis.
          */
-        boolean gettor(int ia, int ja, double[] torcen, double[] torad, double[] torax) {
+        private boolean gettor(int ia, int ja, double[] torcen, double[] torad, double[] torax) {
 
             double dij, temp;
             double temp1, temp2;
@@ -936,7 +1004,7 @@ public class VolumeRegion extends ParallelRegion {
             double[] aj = new double[3];
 
             // Get the distance between the two atoms.
-            ttok = false;
+            boolean ttok = false;
             getVector(ai, atomCoords, ia);
             getVector(aj, atomCoords, ja);
             dij = dist(ai, aj);
@@ -977,7 +1045,7 @@ public class VolumeRegion extends ParallelRegion {
          * The nearby method finds all of the through-space neighbors of
          * each atom for use in surface area and volume calculations.
          */
-        public void nearby() {
+        private void nearby() {
             int maxclsa = 1000;
             int[] clsa = new int[maxclsa];
             // Temporary neighbor list, before sorting.
@@ -1245,7 +1313,7 @@ public class VolumeRegion extends ParallelRegion {
          * positions by testing for a torus between each atom and its
          * neighbors
          */
-        void torus() {
+        private void torus() {
             // No torus is possible if there is only one atom.
             nTempTori = -1;
             fill(atomFreeOfNeighbors, true);
@@ -1271,7 +1339,7 @@ public class VolumeRegion extends ParallelRegion {
                             if (ja >= ia) {
                                 // Do some solid geometry.
                                 double[] ttr = {0.0};
-                                ttok = gettor(ia, ja, tt, ttr, ttax);
+                                boolean ttok = gettor(ia, ja, tt, ttr, ttax);
                                 if (ttok) {
                                     // We have temporary torus; set up variables.
                                     nTempTori++;
@@ -1303,7 +1371,7 @@ public class VolumeRegion extends ParallelRegion {
          * The place method finds the probe sites by putting the probe
          * sphere tangent to each triple of neighboring atoms.
          */
-        public void place() {
+        private void place() {
             int[] mnb = new int[MAXMNB];
             int[] ikt = new int[MAXMNB];
             int[] jkt = new int[MAXMNB];
@@ -1404,7 +1472,7 @@ public class VolumeRegion extends ParallelRegion {
                     continue;
                 }
                 double[] hij = {0.0};
-                ttok = gettor(ia, ja, bij, hij, uij);
+                boolean ttok = gettor(ia, ja, bij, hij, uij);
                 for (int km = 0; km < nmnb + 1; km++) {
                     int ka = mnb[km];
                     getVector(ak, atomCoords, ka);
@@ -1691,7 +1759,7 @@ public class VolumeRegion extends ParallelRegion {
          * The inedge method inserts a concave edge into the linked list for
          * its temporary torus.
          */
-        void inedge(int edgeNumber, int torusNumber) {
+        private void inedge(int edgeNumber, int torusNumber) {
             // Check for a serious error in the calling arguments.
             if (edgeNumber <= -1) {
                 //logger.severe("Bad Edge Number in INEDGE");
@@ -1717,7 +1785,7 @@ public class VolumeRegion extends ParallelRegion {
          * The compress method transfers only the non-buried tori from the
          * temporary tori arrays to the final tori arrays.
          */
-        void compress() {
+        private void compress() {
             double[] ai = new double[3];
             double[] aj = new double[3];
             // Initialize the number of non-buried tori.
@@ -1741,7 +1809,7 @@ public class VolumeRegion extends ParallelRegion {
                     int ja = tempToriAtomNumbers[1][itt];
                     getVector(ai, torusCenter, nTori);
                     getVector(aj, torusAxis, nTori);
-                    ttok = gettor(ia, ja, ai, trtemp, aj);
+                    boolean ttok = gettor(ia, ja, ai, trtemp, aj);
                     torusCenter[0][nTori] = ai[0];
                     torusCenter[1][nTori] = ai[1];
                     torusCenter[2][nTori] = ai[2];
@@ -1778,7 +1846,7 @@ public class VolumeRegion extends ParallelRegion {
         /**
          * The saddles method constructs circles, convex edges, and saddle faces.
          */
-        void saddles() {
+        private void saddles() {
             final int maxent = 500;
             int k, ia, in, ip;
             int it, iv, itwo;
@@ -2086,7 +2154,7 @@ public class VolumeRegion extends ParallelRegion {
          * as a service routine by the Connolly surface area and volume
          * computation.
          */
-        public double triple(double[] x, double[] y, double[] z) {
+        private double triple(double[] x, double[] y, double[] z) {
             double triple;
             double[] xy = new double[3];
             cross(x, y, xy);
@@ -2101,7 +2169,7 @@ public class VolumeRegion extends ParallelRegion {
          * @param edgeNumber
          * @param atomNumber
          */
-        void ipedge(int edgeNumber, int atomNumber) {
+        private void ipedge(int edgeNumber, int atomNumber) {
             // First, check for an error condition.
             if (edgeNumber <= -1) {
                 //logger.severe("Bad Edge Number in IPEDGE");
@@ -2127,7 +2195,7 @@ public class VolumeRegion extends ParallelRegion {
          * The contact method constructs the contact surface, cycles and
          * convex faces.
          */
-        public void contact() {
+        private void contact() {
             final int maxepa = 300;
             final int maxcypa = 100;
             int jepa;
@@ -2466,7 +2534,7 @@ public class VolumeRegion extends ParallelRegion {
             }
         }
 
-        boolean ptincy(double[] pnt, double[] unvect, int icy) {
+        private boolean ptincy(double[] pnt, double[] unvect, int icy) {
             double[] acvect = new double[3];
             double[] cpvect = new double[3];
             double[] polev = new double[3];
@@ -2501,7 +2569,7 @@ public class VolumeRegion extends ParallelRegion {
 
                 // Vertex number (use first vertex of edge).
                 int iep = convexEdgeCycleNumbers[ke][icy];
-                iv = convexEdgeVertexNumber[0][iep];
+                int iv = convexEdgeVertexNumber[0][iep];
                 if (iv != 0) {
                     // Vector from north pole to vertex.
                     for (int k = 0; k < 3; k++) {
@@ -2527,7 +2595,7 @@ public class VolumeRegion extends ParallelRegion {
             return (totang > 0.0);
         }
 
-        double rotang(double[][] epu, int nedge, double[] unvect) {
+        private double rotang(double[][] epu, int nedge, double[] unvect) {
             double[] crs = new double[3];
             double[] ai = new double[3];
             double[] aj = new double[3];
@@ -2570,7 +2638,7 @@ public class VolumeRegion extends ParallelRegion {
             return totang;
         }
 
-        void epuclc(double[][] spv, int nedge, double[][] epu) {
+        private void epuclc(double[][] spv, int nedge, double[][] epu) {
             double[] ai = new double[3];
             // Calculate unit vectors along edges.
             for (int ke = 0; ke < nedge; ke++) {
@@ -2621,7 +2689,7 @@ public class VolumeRegion extends ParallelRegion {
          * The measpm method computes the volume of a single prism section
          * of the full interior polyhedron.
          */
-        double measurePrism(int ifn) {
+        private double measurePrism(int ifn) {
             double[][] pav = new double[3][3];
             double[] vect1 = new double[3];
             double[] vect2 = new double[3];
@@ -2646,7 +2714,7 @@ public class VolumeRegion extends ParallelRegion {
             return height * vect3[2] / 2.0;
         }
 
-        void measureConvexFace(int ifp, double[] av) {
+        private void measureConvexFace(int ifp, double[] av) {
             double angle;
             double[] ai = new double[3];
             double[] aj = new double[3];
@@ -2750,7 +2818,7 @@ public class VolumeRegion extends ParallelRegion {
             av[1] = volp;
         }
 
-        void measureSaddleFace(int ifs, double[] saddle) {
+        private void measureSaddleFace(int ifs, double[] saddle) {
             double areas = 0.0;
             double vols = 0.0;
             double areasp = 0.0;
@@ -2785,8 +2853,8 @@ public class VolumeRegion extends ParallelRegion {
             }
             double d1 = -1.0 * dot(vect1, aavect);
             double d2 = dot(vect2, aavect);
-            theta1 = atan2(d1, torusRadius[it]);
-            theta2 = atan2(d2, torusRadius[it]);
+            double theta1 = atan2(d1, torusRadius[it]);
+            double theta2 = atan2(d2, torusRadius[it]);
 
             // Check for cusps.
             double thetaq;
@@ -2852,7 +2920,7 @@ public class VolumeRegion extends ParallelRegion {
             saddle[3] = volsp;
         }
 
-        void measureConcaveFace(int ifn, double[] av) {
+        private void measureConcaveFace(int ifn, double[] av) {
             double[] ai = new double[3];
             double[] aj = new double[3];
             double[] ak = new double[3];
@@ -2921,7 +2989,7 @@ public class VolumeRegion extends ParallelRegion {
          * a collection of spherical and toroidal polygons and uses it to
          * compute the volume and surface area
          */
-        void vam() {
+        private void vam() {
             final int maxdot = 1000;
             final int maxop = 100;
             final int nscale = 20;
@@ -3080,7 +3148,7 @@ public class VolumeRegion extends ParallelRegion {
                         nspt[k][ifn] = -1;
                     }
                     int ien = concaveFaceEdgeNumbers[0][ifn];
-                    iv = concaveEdgeVertexNumbers[0][ien];
+                    int iv = concaveEdgeVertexNumbers[0][ien];
                     int ip = vertexProbeNumber[iv];
                     getVector(ai, alts, ifn);
                     depths[ifn] = depth(ip, ai);
@@ -3388,7 +3456,7 @@ public class VolumeRegion extends ParallelRegion {
                         for (int kv = 0; kv < 3; kv++) {
                             vip[kv] = false;
                             int ien = concaveFaceEdgeNumbers[kv][jfn];
-                            iv = concaveEdgeVertexNumbers[0][ien];
+                            int iv = concaveEdgeVertexNumbers[0][ien];
                             for (int k = 0; k < 3; k++) {
                                 vect1[k] = vertexCoords[k][iv] - fncen[k][ifn];
                             }
@@ -3564,7 +3632,7 @@ public class VolumeRegion extends ParallelRegion {
          * surface points for a sphere with the input radius and coordinate
          * center.
          */
-        void gendot(int[] ndots, double[][] dots, double radius) {
+        private void gendot(int[] ndots, double[][] dots, double radius) {
             int nequat = (int) sqrt(PI * ((double) ndots[0]));
             int nvert = (int) (0.5 * (double) nequat);
             if (nvert < 1) {
@@ -3600,9 +3668,9 @@ public class VolumeRegion extends ParallelRegion {
          * The cirpln method determines the points of intersection between a
          * specified circle and plane.
          */
-        boolean cirpln(double[] circen, double cirrad, double[] cirvec,
-                       double[] plncen, double[] plnvec, boolean[] cinsp,
-                       boolean[] cintp, double[] xpnt1, double[] xpnt2) {
+        private boolean cirpln(double[] circen, double cirrad, double[] cirvec,
+                               double[] plncen, double[] plnvec, boolean[] cinsp,
+                               boolean[] cintp, double[] xpnt1, double[] xpnt2) {
             double[] cpvect = new double[3];
             double[] pnt1 = new double[3];
             double[] vect1 = new double[3];
@@ -3649,7 +3717,7 @@ public class VolumeRegion extends ParallelRegion {
          * respect to a coordinate axis; returns an angle in the range
          * [0,2*PI].
          */
-        double vecang(double[] v1, double[] v2, double[] axis, double hand) {
+        private double vecang(double[] v1, double[] v2, double[] axis, double hand) {
             double a1 = r(v1);
             double a2 = r(v2);
             double dt = dot(v1, v2);
@@ -3668,7 +3736,7 @@ public class VolumeRegion extends ParallelRegion {
             return vecang;
         }
 
-        public double depth(int ip, double[] alt) {
+        private double depth(int ip, double[] alt) {
             double[] vect1 = new double[3];
             double[] vect2 = new double[3];
             double[] vect3 = new double[3];
@@ -3690,7 +3758,7 @@ public class VolumeRegion extends ParallelRegion {
             return dot;
         }
 
-        public double check(double angle) {
+        private double check(double angle) {
             if (angle > 1.0) {
                 angle = 1.0;
             } else if (angle < -1.0) {
@@ -3699,12 +3767,59 @@ public class VolumeRegion extends ParallelRegion {
             return angle;
         }
 
-        void calcDerivative(int lb, int ub) {
-                /*
-                  Fix the step size in the z-direction; this value sets the
-                  accuracy of the numerical derivatives; zstep=0.06 is a good
-                  balance between compute time and accuracy.
-                 */
+        /**
+         * Row major indexing (the last dimension is contiguous in memory).
+         *
+         * @param i x index.
+         * @param j y index.
+         * @param k z index.
+         * @return the row major index.
+         */
+        private int index2(int i, int j, int k) {
+            return k + mxcube * (j + mxcube * i);
+        }
+
+        private void computeVolumeGradient() {
+
+            // Initialize minimum and maximum range of atoms.
+            double rmax = 0.0;
+            double xmin = x[0];
+            double xmax = x[0];
+            double ymin = y[0];
+            double ymax = y[0];
+            double zmin = z[0];
+            double zmax = z[0];
+            for (int i = 0; i < nAtoms; i++) {
+                if (vdwrad[i] > 0.0) {
+                    if (vdwrad[i] > rmax) {
+                        rmax = vdwrad[i];
+                    }
+                    if (x[i] < xmin) {
+                        xmin = x[i];
+                    }
+                    if (x[i] > xmax) {
+                        xmax = x[i];
+                    }
+                    if (y[i] < ymin) {
+                        ymin = y[i];
+                    }
+                    if (y[i] > ymax) {
+                        ymax = y[i];
+                    }
+                    if (z[i] < zmin) {
+                        zmin = z[i];
+                    }
+                    if (z[i] > zmax) {
+                        zmax = z[i];
+                    }
+                }
+            }
+
+            /*
+              Fix the step size in the z-direction; this value sets the
+              accuracy of the numerical derivatives; zstep=0.06 is a good
+              balance between compute time and accuracy.
+             */
             double zstep = 0.0601;
 
             // Load the cubes based on coarse lattice; first of all set edge
@@ -3714,19 +3829,10 @@ public class VolumeRegion extends ParallelRegion {
             int ny = (int) ((ymax - ymin) / edge);
             int nz = (int) ((zmax - zmin) / edge);
             if (max(max(nx, ny), nz) > mxcube) {
-                //logger.severe(" VOLUME1  --  Increase the Value of MAXCUBE");
-                throw new EnergyException(" VOLUME1  --  Increase the Value of MAXCUBE", false);
+                throw new EnergyException(" VolumeRegion derivative  --  Increase the Value of mxcube", false);
             }
 
             // Initialize the coarse lattice of cubes.
-//            for (int i = 0; i <= nx; i++) {
-//                for (int j = 0; j <= ny; j++) {
-//                    for (int k = 0; k <= nz; k++) {
-//                        cube[0][index2(i,j,k)] = -1;
-//                        cube[1][index2(i,j,k)] = -1;
-//                    }
-//                }
-//            }
             fill(cube[0], -1);
             fill(cube[1], -1);
 
@@ -3740,13 +3846,13 @@ public class VolumeRegion extends ParallelRegion {
                 }
             }
 
-                /*
-                  Determine the highest index in the array "itab" for the atoms
-                  that fall into each cube; the first cube that has atoms
-                  defines the first index for "itab"; the final index for the
-                  atoms in the present cube is the final index of the last cube
-                  plus the number of atoms in the present cube.
-                 */
+            /*
+              Determine the highest index in the array "itab" for the atoms
+              that fall into each cube; the first cube that has atoms
+              defines the first index for "itab"; the final index for the
+              atoms in the present cube is the final index of the last cube
+              plus the number of atoms in the present cube.
+             */
             int isum = 0;
             int tcube;
             for (int i = 0; i <= nx; i++) {
@@ -3831,7 +3937,7 @@ public class VolumeRegion extends ParallelRegion {
                                     if (in != ir) {
                                         io++;
                                         if (io > MAXARC) {
-                                            //logger.severe(" VOLUME1  --  Increase the Value of MAXARC");
+                                            logger.severe(" VolumeRegion gradient  --  Increase the Value of MAXARC");
                                         }
                                         dx[io] = x[in] - xr;
                                         dy[io] = y[in] - yr;
@@ -3899,52 +4005,52 @@ public class VolumeRegion extends ParallelRegion {
                                         if (rdiff < 0.0) {
                                             narc = 0;
                                             arci[narc] = 0.0;
-                                            arcf[narc] = pix2;
+                                            arcf[narc] = twoPI;
                                         }
                                         continue;
                                     }
                                     narc++;
                                     if (narc > MAXARC) {
-                                        //logger.info("VOLUME1 -- Increase the Value of MAXARC");
+                                        logger.severe(" VolumeRegion gradient  --  Increase the Value of MAXARC");
                                     }
-                                        /*
-                                          Initial and final arc endpoints are
-                                          found for intersection of "ir" circle
-                                          with another circle contained in same
-                                          plane; the initial endpoint of the
-                                          enclosed arc is stored in "arci", the
-                                          final endpoint in "arcf"; get
-                                          "cosine" via law of cosines.
-                                         */
+                                    /*
+                                      Initial and final arc endpoints are
+                                      found for intersection of "ir" circle
+                                      with another circle contained in same
+                                      plane; the initial endpoint of the
+                                      enclosed arc is stored in "arci", the
+                                      final endpoint in "arcf"; get
+                                      "cosine" via law of cosines.
+                                     */
                                     double cosine = (dsq[k] + rsec2r - rsec2n) / (2.0 * d[k] * rsecr);
                                     cosine = min(1.0, max(-1.0, cosine));
-                                        /*
-                                          "alpha" is the angle between a line
-                                          containing either point of
-                                          intersection and the reference circle
-                                          center and the line containing both
-                                          circle centers; "beta" is the angle
-                                          between the line containing both
-                                          circle centers and x-axis.
-                                         */
+                                    /*
+                                      "alpha" is the angle between a line
+                                      containing either point of
+                                      intersection and the reference circle
+                                      center and the line containing both
+                                      circle centers; "beta" is the angle
+                                      between the line containing both
+                                      circle centers and x-axis.
+                                     */
                                     double alpha = acos(cosine);
                                     double beta = atan2(dy[k], dx[k]);
                                     if (dy[k] < 0.0) {
-                                        beta += pix2;
+                                        beta += twoPI;
                                     }
                                     double ti = beta - alpha;
                                     double tf = beta + alpha;
                                     if (ti < 0.0) {
-                                        ti += pix2;
+                                        ti += twoPI;
                                     }
-                                    if (tf > pix2) {
-                                        tf -= pix2;
+                                    if (tf > twoPI) {
+                                        tf -= twoPI;
                                     }
                                     arci[narc] = ti;
                                     // If the arc crosses zero, then it is broken into two segments; the first
                                     // ends at two pi and the second begins at zero.
                                     if (tf < ti) {
-                                        arcf[narc] = pix2;
+                                        arcf[narc] = twoPI;
                                         narc++;
                                         arci[narc] = 0.0;
                                     }
@@ -3958,17 +4064,17 @@ public class VolumeRegion extends ParallelRegion {
                         // yet to be applied.
                         double seg_dz;
                         if (narc == -1) {
-                            seg_dz = pix2 * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
+                            seg_dz = twoPI * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
                             pre_dz += seg_dz;
                         } else {
                             // Sort the arc endpoint arrays, each with
                             // "narc" entries, in order of increasing values
                             // of the arguments in "arci".
-                            double temp;
                             for (int k = 0; k < narc; k++) {
                                 double aa = arci[k];
                                 double bb = arcf[k];
-                                temp = 1000000.0;
+                                double temp = 1000000.0;
+                                int itemp = 0;
                                 for (int i = k; i <= narc; i++) {
                                     if (arci[i] <= temp) {
                                         temp = arci[i];
@@ -3981,7 +4087,7 @@ public class VolumeRegion extends ParallelRegion {
                                 arcf[itemp] = bb;
                             }
                             // Consolidate arcs by removing overlapping arc endpoints.
-                            temp = arcf[0];
+                            double temp = arcf[0];
                             int j = 0;
                             for (int k = 1; k <= narc; k++) {
                                 if (temp < arci[k]) {
@@ -3997,7 +4103,7 @@ public class VolumeRegion extends ParallelRegion {
                             narc = j;
                             if (narc == 0) {
                                 narc = 1;
-                                arcf[1] = pix2;
+                                arcf[1] = twoPI;
                                 arci[1] = arcf[0];
                                 arcf[0] = arci[0];
                                 arci[0] = 0.0;
@@ -4008,7 +4114,7 @@ public class VolumeRegion extends ParallelRegion {
                                     arcf[k] = arci[k + 1];
                                 }
 
-                                if (temp == 0.0 && arcf[narc] == pix2) {
+                                if (temp == 0.0 && arcf[narc] == twoPI) {
                                     narc--;
                                 } else {
                                     arci[narc] = arcf[narc];
@@ -4018,13 +4124,13 @@ public class VolumeRegion extends ParallelRegion {
 
                             // Compute the numerical pre-derivative values.
                             for (int k = 0; k <= narc; k++) {
-                                theta1 = arci[k];
-                                theta2 = arcf[k];
+                                double theta1 = arci[k];
+                                double theta2 = arcf[k];
                                 double dtheta;
                                 if (theta2 >= theta1) {
                                     dtheta = theta2 - theta1;
                                 } else {
-                                    dtheta = (theta2 + pix2) - theta1;
+                                    dtheta = (theta2 + twoPI) - theta1;
                                 }
                                 double phi_term = phi2 - phi1 - 0.5 * (sin(2.0 * phi2) - sin(2.0 * phi1));
                                 double seg_dx = (sin(theta2) - sin(theta1)) * phi_term;
@@ -4042,13 +4148,6 @@ public class VolumeRegion extends ParallelRegion {
                 dex[1][ir] = 0.5 * rrsq * pre_dy;
                 dex[2][ir] = 0.5 * rrsq * pre_dz;
             }
-        }
-
-        @Override
-        public void run(int lb, int ub) {
-            setRadius();
-            calcVolume();
-            // calcDerivative(lb, ub);
         }
     }
 }
