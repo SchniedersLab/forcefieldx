@@ -567,6 +567,7 @@ public class MonteCarloOST extends BoltzmannMC {
                 proposedOSTEnergy = orthogonalSpaceTempering.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
                 mdMove.revertMove();
+                mdMove.writeErrorFiles();
                 if (!equilibration) {
                     lambdaMove.revertMove();
                     lambda = currentLambda;

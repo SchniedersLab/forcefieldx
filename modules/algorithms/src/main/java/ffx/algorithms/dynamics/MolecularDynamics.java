@@ -1455,7 +1455,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Performs the inner loop of writing snapshots to disk; used by both
      * detectAtypicalEnergy and a try-catch in dynamics.
      */
-    private void writeStoredSnapshots() {
+    public void writeStoredSnapshots() {
         int numSnaps = lastSnapshots.size();
 
         File origFile = molecularAssembly.getFile();

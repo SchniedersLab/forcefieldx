@@ -252,6 +252,13 @@ public class MDMove implements MCMove {
     }
 
     /**
+     * Triggers MD to write out its stored snapshots in case of error.
+     */
+    public void writeErrorFiles() {
+        molecularDynamics.writeStoredSnapshots();
+    }
+
+    /**
      * Get the total energy change for the current move.
      *
      * @return Total energy change.
