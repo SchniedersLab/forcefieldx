@@ -188,262 +188,265 @@ public class VolumeRegion extends ParallelRegion {
      */
     private final static int MAXFPCY = 10;
     /**
-     * maximum number of saddle faces.
+     * Maximum number of saddle faces.
      */
-    private final int maxfs;
+    private final int maxSaddleFace;
     /**
      * maximum number of convex edges.
      */
-    private final int maxep;
+    private final int maxConvexEdges;
     /**
      * maximum number of neighboring atom pairs.
      */
-    private final int maxcls;
+    private final int maxAtomPairs;
     /**
      * maximum number of circles.
      */
-    private final int maxc;
+    private final int maxCircles;
     /**
      * maximum number of total tori.
      */
-    private final int maxt;
+    private final int maxTori;
     /**
      * maximum number of temporary tori.
      */
-    private final int maxtt;
+    private final int maxTempTori;
     /**
      * maximum number of concave edges.
      */
-    private final int maxen;
+    private final int maxConcaveEdges;
     /**
      * maximum number of vertices.
      */
-    private final int maxv;
+    private final int maxVertices;
     /**
      * maximum number of probe positions.
      */
-    private final int maxp;
+    private final int maxProbePositions;
     /**
      * maximum number of concave faces.
      */
-    private final int maxfn;
+    private final int maxConcaveFaces;
     /**
      * maximum number of convex faces.
      */
-    private final int maxfp;
+    private final int maxConvexFaces;
     /**
      * maximum number of cycles.
      */
-    private final int maxcy;
+    private final int maxCycles;
     /**
      * Copy of the atomic coordinates. [X,Y,Z][Atom Number]
      */
-    private final double[][] a;
+    private final double[][] atomCoords;
     /**
      * If true, atom has no free surface.
      */
-    private final boolean[] nosurf;
+    private final boolean[] noFreeSurface;
     /**
      * Atom free of neighbors.
      */
-    private final boolean[] afree;
+    private final boolean[] atomFreeOfNeighbors;
     /**
      * Atom buried.
      */
-    private final boolean[] abur;
+    private final boolean[] atomBuried;
     /**
      * Begin and end pointers for atoms neighbors.
      */
-    private final int[][] acls;
+    private final int[][] atomNeighborPointers;
     /**
      * Atom numbers of neighbors.
      */
-    private final int[] cls;
+    private final int[] neighborAtomNumbers;
     /**
      * Pointer from neighbor to torus.
      */
-    private final int[] clst;
+    private final int[] neighborToTorus;
     /**
      * Number of temporary tori.
      */
-    private int ntt;
+    private int nTempTori;
     /**
      * Temporary torus atom numbers.
      */
-    private final int[][] tta;
+    private final int[][] tempToriAtomNumbers;
     /**
      * First edge of each temporary torus.
      */
-    private final int[] ttfe;
+    private final int[] tempToriFirstEdge;
     /**
      * Last edge of each temporary torus.
      */
-    private final int[] ttle;
+    private final int[] tempToriLastEdge;
     /**
      * Pointer to next edge of temporary torus.
      */
-    private final int[] enext;
+    private final int[] tempToriNextEdge;
     /**
      * Temporary torus buried.
      */
-    private final boolean[] ttbur;
+    private final boolean[] tempToriBuried;
     /**
      * Temporary torus free.
      */
-    private final boolean[] ttfree;
+    private final boolean[] tempToriFree;
     /**
      * Torus center.
      */
-    private final double[][] t;
+    private final double[][] torusCenter;
     /**
      * Torus radius.
      */
-    private final double[] tr;
+    private final double[] torusRadius;
     /**
      * Torus axis.
      */
-    private final double[][] tax;
+    private final double[][] torusAxis;
     /**
      * Number of tori.
      */
-    private int nt;
+    private int nTori;
     /**
      * Torus atom number.
      */
-    private final int[][] ta;
+    private final int[][] torusAtomNumber;
     /**
      * Torus first edge.
      */
-    private final int[] tfe;
+    private final int[] torusFirstEdge;
     /**
      * Torus free edge of neighbor.
      */
-    private final boolean[] tfree;
+    private final boolean[] torusNeighborFreeEdge;
     /**
      * Probe position coordinates.
      */
-    private final double[][] p;
+    private final double[][] probeCoords;
     /**
      * Number of probe positions.
      */
-    private int np;
+    private int nProbePositions;
     /**
      * Probe position atom numbers.
      */
-    private final int[][] pa;
+    private final int[][] probeAtomNumbers;
     /**
      * Vertex coordinates.
      */
-    private final double[][] v;
+    private final double[][] vertexCoords;
+    /**
+     * Number of concave faces.
+     */
+    private int nConcaveFaces;
     /**
      * Number of vertices.
      */
-    private int nv;
+    private int nConcaveVerts;
     /**
      * Vertex atom number.
      */
-    private final int[] va;
+    private final int[] vertexAtomNumbers;
     /**
      * Vertex probe number.
      */
-    private final int[] vp;
+    private final int[] vertexProbeNumber;
     /**
      * Number of concave edges.
      */
-    private int nen;
+    private int nConcaveEdges;
     /**
      * Vertex numbers for each concave edge.
      */
-    private final int[][] env;
+    private final int[][] concaveEdgeVertexNumbers;
     /**
      * Concave face concave edge numbers.
      */
-    private final int[][] fnen;
+    private final int[][] concaveFaceEdgeNumbers;
     /**
      * Circle center.
      */
-    private final double[][] c;
+    private final double[][] circleCenter;
     /**
      * Circle radius.
      */
-    private final double[] cr;
+    private final double[] circleRadius;
     /**
      * Number of circles.
      */
-    private int nc;
+    private int nCircles;
     /**
      * Circle atom number.
      */
-    private final int[] ca;
+    private final int[] circleAtomNumber;
     /**
      * Circle torus number.
      */
-    private final int[] ct;
+    private final int[] circleTorusNumber;
     /**
      * Number of convex edges.
      */
-    private int nep;
+    private int nConvexEdges;
     /**
      * Convex edge circle number.
      */
-    private final int[] epc;
+    private final int[] convexEdgeCircleNumber;
     /**
      * Convex edge vertex number.
      */
-    private final int[][] epv;
+    private final int[][] convexEdgeVertexNumber;
     /**
      * First convex edge of each atom.
      */
-    private final int[] afe;
+    private final int[] convexEdgeFirst;
     /**
      * Last convex edge of each atom.
      */
-    private final int[] ale;
+    private final int[] convexEdgeLast;
     /**
      * Pointer to next convex edge of atom.
      */
-    private final int[] epnext;
+    private final int[] convexEdgeNext;
     /**
      * Number of saddle faces.
      */
-    private int nfs;
+    private int nSaddleFaces;
     /**
      * Saddle face concave edge numbers.
      */
-    private final int[][] fsen;
+    private final int[][] saddleConcaveEdgeNumbers;
     /**
      * Saddle face convex edge numbers.
      */
-    private final int[][] fsep;
+    private final int[][] saddleConvexEdgeNumbers;
     /**
      * Number of cycles.
      */
-    private int ncy;
+    private int nCycles;
     /**
      * Number of convex edges in cycle.
      */
-    private final int[] cynep;
+    private final int[] convexEdgeCycleNum;
     /**
      * Cycle convex edge numbers.
      */
-    private final int[][] cyep;
+    private final int[][] convexEdgeCycleNumbers;
     /**
      * Number of convex faces.
      */
-    private int nfp;
+    private int nConvexFaces;
     /**
      * Atom number of convex face.
      */
-    private final int[] fpa;
+    private final int[] convexFaceAtomNumber;
     /**
      * Convex face cycle numbers
      */
-    private final int[][] fpcy;
+    private final int[][] convexFaceCycleNumbers;
     /**
      * Number of cycles bounding convex face.
      */
-    private final int[] fpncy;
-
+    private final int[] convexFaceNumCycles;
     // These are from the "nearby" method.
     /**
      * True if cube contains active atoms.
@@ -466,20 +469,17 @@ public class VolumeRegion extends ParallelRegion {
      */
     private final int[] nextAtomPointer;
 
-    private final static double SIZE = 0.000001;
-    private final double[] vector = new double[3];
-
     /**
      * VolumeRegion constructor.
      *
-     * @param atoms Array of atom instances.
-     * @param x     X-coordinates.
-     * @param y     Y-coordinates.
-     * @param z     Z-cooddinates.
-     * @param nt    Number of threads.
+     * @param atoms    Array of atom instances.
+     * @param x        X-coordinates.
+     * @param y        Y-coordinates.
+     * @param z        Z-cooddinates.
+     * @param nThreads Number of threads.
      */
     public VolumeRegion(Atom[] atoms, double[] x, double[] y, double[] z,
-                        double[] baseRadius, int nt) {
+                        double[] baseRadius, int nThreads) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.x = x;
@@ -487,8 +487,8 @@ public class VolumeRegion extends ParallelRegion {
         this.z = z;
         this.baseRadius = baseRadius;
 
-        volumeLoop = new VolumeLoop[nt];
-        for (int i = 0; i < nt; i++) {
+        volumeLoop = new VolumeLoop[nThreads];
+        for (int i = 0; i < nThreads; i++) {
             volumeLoop[i] = new VolumeLoop();
         }
         sharedVolume = new SharedDouble();
@@ -497,62 +497,70 @@ public class VolumeRegion extends ParallelRegion {
 
         radius = new double[nAtoms];
         skip = new boolean[nAtoms];
-        maxfs = 6 * nAtoms;
-        maxep = 12 * nAtoms;
-        maxcls = 240 * nAtoms;
-        maxc = 8 * nAtoms;
-        maxt = 4 * nAtoms;
-        maxtt = 120 * nAtoms;
-        maxen = 12 * nAtoms;
-        maxv = 12 * nAtoms;
-        maxp = 4 * nAtoms;
-        maxfn = 4 * nAtoms;
-        maxfp = 2 * nAtoms;
-        maxcy = 3 * nAtoms;
+        maxSaddleFace = 6 * nAtoms;
+        maxConvexEdges = 12 * nAtoms;
+        maxAtomPairs = 240 * nAtoms;
+        maxCircles = 8 * nAtoms;
+        maxTori = 4 * nAtoms;
+        maxTempTori = 120 * nAtoms;
+        maxConcaveEdges = 12 * nAtoms;
+        maxVertices = 12 * nAtoms;
+        maxProbePositions = 4 * nAtoms;
+        maxConcaveFaces = 4 * nAtoms;
+        maxConvexFaces = 2 * nAtoms;
+        maxCycles = 3 * nAtoms;
 
-        a = new double[3][nAtoms];
-        nosurf = new boolean[nAtoms];
-        afree = new boolean[nAtoms];
-        abur = new boolean[nAtoms];
-        acls = new int[2][nAtoms];
-        cls = new int[maxcls];
-        clst = new int[maxcls];
-        tta = new int[2][maxtt];
-        ttfe = new int[maxtt];
-        ttle = new int[maxtt];
-        enext = new int[maxen];
-        ttbur = new boolean[maxtt];
-        ttfree = new boolean[maxtt];
-        t = new double[3][maxt];
-        tr = new double[maxt];
-        tax = new double[3][maxt];
+        atomCoords = new double[3][nAtoms];
+        noFreeSurface = new boolean[nAtoms];
+        atomFreeOfNeighbors = new boolean[nAtoms];
+        atomBuried = new boolean[nAtoms];
+        atomNeighborPointers = new int[2][nAtoms];
+        neighborAtomNumbers = new int[maxAtomPairs];
 
-        ta = new int[2][maxt];
-        tfe = new int[maxt];
-        tfree = new boolean[maxt];
-        p = new double[3][maxp];
-        pa = new int[3][maxp];
-        v = new double[3][maxv];
-        va = new int[maxv];
-        vp = new int[maxv];
-        env = new int[2][maxen];
-        fnen = new int[3][maxfn];
-        c = new double[3][maxc];
-        cr = new double[maxc];
-        ca = new int[maxc];
-        ct = new int[maxc];
-        epc = new int[maxep];
-        epv = new int[2][maxep];
-        afe = new int[nAtoms];
-        ale = new int[nAtoms];
-        epnext = new int[maxep];
-        fsen = new int[2][maxfs];
-        fsep = new int[2][maxfs];
-        cynep = new int[maxcy];
-        cyep = new int[MAXCYEP][maxcy];
-        fpa = new int[maxfp];
-        fpcy = new int[MAXFPCY][maxfp];
-        fpncy = new int[maxfp];
+        neighborToTorus = new int[maxAtomPairs];
+
+        tempToriAtomNumbers = new int[2][maxTempTori];
+        tempToriFirstEdge = new int[maxTempTori];
+        tempToriLastEdge = new int[maxTempTori];
+        tempToriNextEdge = new int[maxConcaveEdges];
+        tempToriBuried = new boolean[maxTempTori];
+        tempToriFree = new boolean[maxTempTori];
+
+        torusCenter = new double[3][maxTori];
+        torusRadius = new double[maxTori];
+        torusAxis = new double[3][maxTori];
+        torusAtomNumber = new int[2][maxTori];
+        torusFirstEdge = new int[maxTori];
+        torusNeighborFreeEdge = new boolean[maxTori];
+
+        probeCoords = new double[3][maxProbePositions];
+        probeAtomNumbers = new int[3][maxProbePositions];
+
+        vertexCoords = new double[3][maxVertices];
+        vertexAtomNumbers = new int[maxVertices];
+        vertexProbeNumber = new int[maxVertices];
+
+        concaveFaceEdgeNumbers = new int[3][maxConcaveFaces];
+        concaveEdgeVertexNumbers = new int[2][maxConcaveEdges];
+
+        circleCenter = new double[3][maxCircles];
+        circleRadius = new double[maxCircles];
+        circleAtomNumber = new int[maxCircles];
+        circleTorusNumber = new int[maxCircles];
+
+        convexEdgeCircleNumber = new int[maxConvexEdges];
+        convexEdgeVertexNumber = new int[2][maxConvexEdges];
+        convexEdgeFirst = new int[nAtoms];
+        convexEdgeLast = new int[nAtoms];
+        convexEdgeNext = new int[maxConvexEdges];
+        convexEdgeCycleNum = new int[maxCycles];
+        convexEdgeCycleNumbers = new int[MAXCYEP][maxCycles];
+        convexFaceAtomNumber = new int[maxConvexFaces];
+        convexFaceNumCycles = new int[maxConvexFaces];
+        convexFaceCycleNumbers = new int[MAXFPCY][maxConvexFaces];
+
+        saddleConcaveEdgeNumbers = new int[2][maxSaddleFace];
+        saddleConvexEdgeNumbers = new int[2][maxSaddleFace];
 
         activeCube = new boolean[MAXCUBE * MAXCUBE * MAXCUBE];
         activeAdjacentCube = new boolean[MAXCUBE * MAXCUBE * MAXCUBE];
@@ -603,7 +611,9 @@ public class VolumeRegion extends ParallelRegion {
         return surfaceTension;
     }
 
-    public double getCrossOver() { return crossOver; }
+    public double getCrossOver() {
+        return crossOver;
+    }
 
     /**
      * Return Volume based cavitation energy.
@@ -645,9 +655,9 @@ public class VolumeRegion extends ParallelRegion {
         sharedArea.set(0.0);
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            a[0][i] = atom.getX();
-            a[1][i] = atom.getY();
-            a[2][i] = atom.getZ();
+            atomCoords[0][i] = atom.getX();
+            atomCoords[1][i] = atom.getY();
+            atomCoords[2][i] = atom.getZ();
         }
         wiggle();
     }
@@ -668,12 +678,14 @@ public class VolumeRegion extends ParallelRegion {
     }
 
     private void wiggle() {
+        double SIZE = 0.000001;
+        double[] vector = new double[3];
         // Apply a small perturbation of fixed magnitude to each atom.
         for (int i = 0; i < nAtoms; i++) {
             getRandomVector(vector);
-            a[0][i] = x[i] + (SIZE * vector[0]);
-            a[1][i] = y[i] + (SIZE * vector[1]);
-            a[2][i] = z[i] + (SIZE * vector[2]);
+            atomCoords[0][i] = x[i] + (SIZE * vector[0]);
+            atomCoords[1][i] = y[i] + (SIZE * vector[1]);
+            atomCoords[2][i] = z[i] + (SIZE * vector[2]);
         }
     }
 
@@ -771,8 +783,6 @@ public class VolumeRegion extends ParallelRegion {
      * @since 1.0
      */
     private class VolumeLoop extends IntegerForLoop {
-
-        private int nfn;
         private int iv;
         private int itemp;
         private final int mxcube = 15;
@@ -898,6 +908,12 @@ public class VolumeRegion extends ParallelRegion {
             ai[2] = temp[2][index];
         }
 
+        void putVector(double[] ai, double[][] temp, int index) {
+            temp[0][index] = ai[0];
+            temp[1][index] = ai[1];
+            temp[2][index] = ai[2];
+        }
+
         void getVector(double[] ai, double[][][] temp, int index1, int index2) {
             ai[0] = temp[0][index1][index2];
             ai[1] = temp[1][index1][index2];
@@ -921,20 +937,20 @@ public class VolumeRegion extends ParallelRegion {
 
             // Get the distance between the two atoms.
             ttok = false;
-            getVector(ai, a, ia);
-            getVector(aj, a, ja);
+            getVector(ai, atomCoords, ia);
+            getVector(aj, atomCoords, ja);
             dij = dist(ai, aj);
 
             // Find a unit vector along interatomic (torus) axis.
             for (int k = 0; k < 3; k++) {
-                vij[k] = a[k][ja] - a[k][ia];
+                vij[k] = atomCoords[k][ja] - atomCoords[k][ia];
                 uij[k] = vij[k] / dij;
             }
 
             // Find coordinates of the center of the torus.
             temp = 1.0 + ((radius[ia] + probe) * (radius[ia] + probe) - (radius[ja] + probe) * (radius[ja] + probe)) / (dij * dij);
             for (int k = 0; k < 3; k++) {
-                bij[k] = a[k][ia] + 0.5 * vij[k] * temp;
+                bij[k] = atomCoords[k][ia] + 0.5 * vij[k] * temp;
             }
 
             // Skip if atoms too far apart (should not happen).
@@ -963,24 +979,9 @@ public class VolumeRegion extends ParallelRegion {
          */
         public void nearby() {
             int maxclsa = 1000;
-            int iptr, juse;
-            int i1, j1, k1;
-            int iatom, jatom;
-            int ici, icj, ick;
-            int jci, jcj, jck;
-            int jcls, jmin;
-            int jmincls = 0;
-            int jmold;
-            int ncls, nclsa;
             int[] clsa = new int[maxclsa];
-
             // Temporary neighbor list, before sorting.
             int[] tempNeighborList = new int[maxclsa];
-            double radmax, width;
-            double sum, sumi;
-            double d2, r2;
-            double vect1, vect2, vect3;
-
             // Minimum atomic coordinates (cube corner).
             double[] minAtomicCoordinates = new double[3];
             double[] ai = new double[3];
@@ -992,11 +993,11 @@ public class VolumeRegion extends ParallelRegion {
              */
             for (int i = 0; i < nAtoms - 1; i++) {
                 if (!skip[i]) {
-                    getVector(ai, a, i);
+                    getVector(ai, atomCoords, i);
                     for (int j = i + 1; j < nAtoms; j++) {
-                        getVector(aj, a, j);
-                        d2 = dist2(ai, aj);
-                        r2 = (radius[i] - radius[j]) * (radius[i] - radius[j]);
+                        getVector(aj, atomCoords, j);
+                        double d2 = dist2(ai, aj);
+                        double r2 = (radius[i] - radius[j]) * (radius[i] - radius[j]);
                         if (!skip[j] && d2 < r2) {
                             if (radius[i] < radius[j]) {
                                 skip[i] = true;
@@ -1009,14 +1010,14 @@ public class VolumeRegion extends ParallelRegion {
             }
 
             // Check for new coordinate minima and radii maxima.
-            radmax = 0.0;
+            double radmax = 0.0;
             for (int k = 0; k < 3; k++) {
-                minAtomicCoordinates[k] = a[k][0];
+                minAtomicCoordinates[k] = atomCoords[k][0];
             }
             for (int i = 0; i < nAtoms; i++) {
                 for (int k = 0; k < 3; k++) {
-                    if (a[k][i] < minAtomicCoordinates[k]) {
-                        minAtomicCoordinates[k] = a[k][i];
+                    if (atomCoords[k][i] < minAtomicCoordinates[k]) {
+                        minAtomicCoordinates[k] = atomCoords[k][i];
                     }
                 }
                 if (radius[i] > radmax) {
@@ -1025,32 +1026,21 @@ public class VolumeRegion extends ParallelRegion {
             }
 
             // Calculate width of cube from maximum atom radius and probe radius.
-            width = 2.0 * (radmax + probe);
+            double width = 2.0 * (radmax + probe);
 
             // Set up cube arrays; first the integer coordinate arrays.
             for (int i = 0; i < nAtoms; i++) {
                 for (int k = 0; k < 3; k++) {
-                    cubeCoordinates[k][i] = (int) ((a[k][i] - minAtomicCoordinates[k]) / width);
+                    cubeCoordinates[k][i] = (int) ((atomCoords[k][i] - minAtomicCoordinates[k]) / width);
                     if (cubeCoordinates[k][i] < 0) {
-                        //logger.severe("Cube Coordinate Too Small");
                         throw new EnergyException("Cube Coordinate Too Small", false);
                     } else if (cubeCoordinates[k][i] > MAXCUBE) {
-                        //logger.severe("Cube Coordinate Too Large");
                         throw new EnergyException("Cube Coordinate Too Large", false);
                     }
                 }
             }
 
             // Initialize head pointer and srn=2 arrays.
-//            for (int i = 0; i < MAXCUBE; i++) {
-//                for (int j = 0; j < MAXCUBE; j++) {
-//                    for (int k = 0; k < MAXCUBE; k++) {
-//                        firstAtomPointer[i][j][k] = -1;
-//                        activeCube[i][j][k] = false;
-//                        activeAdjacentCube[i][j][k] = false;
-//                    }
-//                }
-//            }
             fill(firstAtomPointer, -1);
             fill(activeCube, false);
             fill(activeAdjacentCube, false);
@@ -1059,42 +1049,39 @@ public class VolumeRegion extends ParallelRegion {
             fill(nextAtomPointer, -1);
 
             // Set up head and later pointers for each atom.
-            outerloop:
-            for (iatom = 0; iatom < nAtoms; iatom++) {
-
+            atomLoop:
+            for (int iatom = 0; iatom < nAtoms; iatom++) {
                 // Skip atoms with surface request numbers of zero.
                 if (skip[iatom]) {
                     continue;
                 }
-                getVector(ai, a, iatom);
+
+                getVector(ai, atomCoords, iatom);
                 int i = cubeCoordinates[0][iatom];
                 int j = cubeCoordinates[1][iatom];
                 int k = cubeCoordinates[2][iatom];
+
                 if (firstAtomPointer[index(i, j, k)] <= -1) {
                     // First atom in this cube.
                     firstAtomPointer[index(i, j, k)] = iatom;
                 } else {
-                    int counter = 1;
                     // Add to end of linked list.
-                    iptr = firstAtomPointer[index(i, j, k)];
-                    innerloop:
-                    for (i = 0; i < counter; i++) {
-                        getVector(aj, a, iptr);
-
+                    int iptr = firstAtomPointer[index(i, j, k)];
+                    boolean done = false;
+                    while (!done) {
+                        getVector(aj, atomCoords, iptr);
                         // Check for duplicate atoms, turn off one of them.
                         if (dist2(ai, aj) <= 0.0) {
                             skip[iatom] = true;
-                            continue outerloop;
+                            continue atomLoop;
                         }
-
                         // Move on down the list.
                         if (nextAtomPointer[iptr] <= -1.0) {
-                            continue;
+                            done = true;
+                        } else {
+                            iptr = nextAtomPointer[iptr];
                         }
-                        iptr = nextAtomPointer[iptr];
-                        counter++;
                     }
-
                     // Store atom number.
                     nextAtomPointer[iptr] = iatom;
                 }
@@ -1110,45 +1097,39 @@ public class VolumeRegion extends ParallelRegion {
                 for (int j = 0; j < MAXCUBE; j++) {
                     for (int i = 0; i < MAXCUBE; i++) {
                         if (firstAtomPointer[index(i, j, k)] != -1) {
-                            for (k1 = Math.max(k - 1, 0); k1 < Math.min(k + 2, MAXCUBE); k1++) {
-                                for (j1 = Math.max(j - 1, 0); j1 < Math.min(j + 2, MAXCUBE); j1++) {
-                                    for (i1 = Math.max(i - 1, 0); i1 < Math.min(i + 2, MAXCUBE); i1++) {
-                                        if (activeCube[index(i1, j1, k1)]) {
-                                            activeAdjacentCube[index(i, j, k)] = true;
-                                        }
-                                    }
-                                }
-                            }
+                            checkCube(i, j, k);
                         }
                     }
                 }
             }
-            ncls = -1;
+
+            int ncls = -1;
 
             // Zero pointers for atom and find its cube.
             for (int i = 0; i < nAtoms; i++) {
-                nclsa = -1;
-                nosurf[i] = skip[i];
-                acls[0][i] = -1;
-                acls[1][i] = -1;
+                int nclsa = -1;
+                noFreeSurface[i] = skip[i];
+                atomNeighborPointers[0][i] = -1;
+                atomNeighborPointers[1][i] = -1;
                 if (skip[i]) {
                     continue;
                 }
-                ici = cubeCoordinates[0][i];
-                icj = cubeCoordinates[1][i];
-                ick = cubeCoordinates[2][i];
+                int ici = cubeCoordinates[0][i];
+                int icj = cubeCoordinates[1][i];
+                int ick = cubeCoordinates[2][i];
 
                 // Skip iatom if its cube and adjoining cubes contain only blockers.
                 if (!activeAdjacentCube[index(ici, icj, ick)]) {
                     continue;
                 }
-                sumi = 2.0 * probe + radius[i];
+                double sumi = 2.0 * probe + radius[i];
 
                 // Check iatom cube and adjacent cubes for neighboring atoms.
-                for (jck = max(ick - 1, 0); jck < min(ick + 2, MAXCUBE); jck++) {
-                    for (jcj = max(icj - 1, 0); jcj < min(icj + 2, MAXCUBE); jcj++) {
+                for (int jck = max(ick - 1, 0); jck < min(ick + 2, MAXCUBE); jck++) {
+                    for (int jcj = max(icj - 1, 0); jcj < min(icj + 2, MAXCUBE); jcj++) {
+                        // TODO: Try to remove this labeled for loop.
                         for4:
-                        for (jci = max(ici - 1, 0); jci < min(ici + 2, MAXCUBE); jci++) {
+                        for (int jci = max(ici - 1, 0); jci < min(ici + 2, MAXCUBE); jci++) {
                             int j = firstAtomPointer[index(jci, jcj, jck)];
                             int counter = 1;
                             for (int q = 0; q < counter; q++) {
@@ -1163,31 +1144,30 @@ public class VolumeRegion extends ParallelRegion {
                                     }
 
                                     // Distance check.
-                                    sum = sumi + radius[j];
-                                    vect1 = abs(a[0][j] - a[0][i]);
+                                    double sum = sumi + radius[j];
+                                    double vect1 = abs(atomCoords[0][j] - atomCoords[0][i]);
                                     if (vect1 >= sum) {
                                         continue;
                                     }
-                                    vect2 = abs(a[1][j] - a[1][i]);
+                                    double vect2 = abs(atomCoords[1][j] - atomCoords[1][i]);
                                     if (vect2 >= sum) {
                                         continue;
                                     }
-                                    vect3 = abs(a[2][j] - a[2][i]);
+                                    double vect3 = abs(atomCoords[2][j] - atomCoords[2][i]);
                                     if (vect3 >= sum) {
                                         continue;
                                     }
-                                    d2 = (vect1 * vect1) + (vect2 * vect2) + (vect3 * vect3);
+                                    double d2 = (vect1 * vect1) + (vect2 * vect2) + (vect3 * vect3);
                                     if (d2 >= sum * sum) {
                                         continue;
                                     }
 
                                     // Atoms are neighbors, save atom number in temporary array.
                                     if (!skip[j]) {
-                                        nosurf[i] = false;
+                                        noFreeSurface[i] = false;
                                     }
                                     nclsa++;
                                     if (nclsa > maxclsa) {
-                                        //logger.severe("Too many Neighbors for Atom");
                                         throw new EnergyException("Too many Neighbors for Atom", false);
                                     }
                                     tempNeighborList[nclsa] = j;
@@ -1200,16 +1180,17 @@ public class VolumeRegion extends ParallelRegion {
                         }
                     }
                 }
-                if (nosurf[i]) {
+
+                if (noFreeSurface[i]) {
                     continue;
                 }
 
                 // Set up neighbors arrays with jatom in increasing order.
-                jmold = -1;
-                for (juse = 0; juse < nclsa + 1; juse++) {
-                    jmin = nAtoms;
-                    for (jcls = 0; jcls < nclsa + 1; jcls++) {
-
+                int jmold = -1;
+                for (int juse = 0; juse < nclsa + 1; juse++) {
+                    int jmin = nAtoms;
+                    int jmincls = 0;
+                    for (int jcls = 0; jcls < nclsa + 1; jcls++) {
                         // Don't use ones already sorted.
                         if (tempNeighborList[jcls] > jmold) {
                             if (tempNeighborList[jcls] < jmin) {
@@ -1219,25 +1200,43 @@ public class VolumeRegion extends ParallelRegion {
                         }
                     }
                     jmold = jmin;
-                    jcls = jmincls;
-                    jatom = tempNeighborList[jcls];
+                    int jcls = jmincls;
+                    int jatom = tempNeighborList[jcls];
                     clsa[juse] = jatom;
                 }
 
                 // Set up pointers to first and last neighbors of atom.
                 if (nclsa > -1) {
-                    acls[0][i] = ncls + 1;
+                    atomNeighborPointers[0][i] = ncls + 1;
                     for (int m = 0; m < nclsa + 1; m++) {
                         ncls++;
-                        if (ncls > maxcls) {
-                            //logger.severe("Too many Neighboring Atom Pairs");
+                        if (ncls > maxAtomPairs) {
                             throw new EnergyException("Too many Neighboring Atom Pairs", false);
                         }
-                        cls[ncls] = clsa[m];
+                        neighborAtomNumbers[ncls] = clsa[m];
                     }
-                    acls[1][i] = ncls;
+                    atomNeighborPointers[1][i] = ncls;
                 }
+            }
+        }
 
+        /**
+         * Check if this cube or any adjacent cube has active atoms.
+         *
+         * @param i X-index for activeAdjacentCube.
+         * @param j Y-index for activeAdjacentCube.
+         * @param k Z-index for activeAdjacentCube.
+         */
+        private void checkCube(int i, int j, int k) {
+            for (int k1 = max(k - 1, 0); k1 < min(k + 2, MAXCUBE); k1++) {
+                for (int j1 = max(j - 1, 0); j1 < min(j + 2, MAXCUBE); j1++) {
+                    for (int i1 = max(i - 1, 0); i1 < min(i + 2, MAXCUBE); i1++) {
+                        if (activeCube[index(i1, j1, k1)]) {
+                            activeAdjacentCube[index(i, j, k)] = true;
+                            return;
+                        }
+                    }
+                }
             }
         }
 
@@ -1247,69 +1246,52 @@ public class VolumeRegion extends ParallelRegion {
          * neighbors
          */
         void torus() {
-            int ia, ja, jn;
-            int ibeg = -1;
-            int iend = -1;
-            double[] tt = new double[3];
-            double[] ttax = new double[3];
-
             // No torus is possible if there is only one atom.
-            ntt = -1;
-            for (ia = 0; ia < nAtoms; ia++) {
-                afree[ia] = true;
-            }
-            if (nAtoms < 1) {
+            nTempTori = -1;
+            fill(atomFreeOfNeighbors, true);
+            if (nAtoms <= 1) {
                 return;
             }
 
+            double[] tt = new double[3];
+            double[] ttax = new double[3];
             // Get beginning and end pointers to neighbors of this atom.
-            for (ia = 0; ia < nAtoms; ia++) {
-                if (!nosurf[ia]) {
-                    ibeg = acls[0][ia];
-                    iend = acls[1][ia];
-                }
-
-                // Check for no neighbors.
-                if (ibeg > -1) {
-                    for (jn = ibeg; jn < iend + 1; jn++) {
-
-                        // Clear pointer from neighbor to torus.
-                        clst[jn] = -1;
-
-                        // Get atom number of neighbor.
-                        ja = cls[jn];
-
-                        // Don't create torus twice.
-                        if (ja >= ia) {
-
-                            // Do some solid geometry.
-                            double[] ttr = {0.0};
-
-                            ttok = gettor(ia, ja, tt, ttr, ttax);
-                            if (ttok) {
-                                // We have temporary torus; set up variables.
-                                ntt++;
-                                if (ntt > maxtt) {
-                                    //logger.severe("Too many Temporary Tori");
-                                    throw new EnergyException("Too many Temporary Tori", false);
+            for (int ia = 0; ia < nAtoms; ia++) {
+                if (!noFreeSurface[ia]) {
+                    int ibeg = atomNeighborPointers[0][ia];
+                    int iend = atomNeighborPointers[1][ia];
+                    if (ibeg > -1) {
+                        // Check for no neighbors.
+                        for (int jn = ibeg; jn <= iend; jn++) {
+                            // Clear pointer from neighbor to torus.
+                            neighborToTorus[jn] = -1;
+                            // Get atom number of neighbor.
+                            int ja = neighborAtomNumbers[jn];
+                            // Don't create torus twice.
+                            if (ja >= ia) {
+                                // Do some solid geometry.
+                                double[] ttr = {0.0};
+                                ttok = gettor(ia, ja, tt, ttr, ttax);
+                                if (ttok) {
+                                    // We have temporary torus; set up variables.
+                                    nTempTori++;
+                                    if (nTempTori > maxTempTori) {
+                                        throw new EnergyException("Too many Temporary Tori", false);
+                                    }
+                                    // Mark both atoms not free.
+                                    atomFreeOfNeighbors[ia] = false;
+                                    atomFreeOfNeighbors[ja] = false;
+                                    tempToriAtomNumbers[0][nTempTori] = ia;
+                                    tempToriAtomNumbers[1][nTempTori] = ja;
+                                    // Pointer from neighbor to torus.
+                                    neighborToTorus[jn] = nTempTori;
+                                    // Initialize torus as both free and buried.
+                                    tempToriFree[nTempTori] = true;
+                                    tempToriBuried[nTempTori] = true;
+                                    // Clear pointers from torus to first and last concave edges.
+                                    tempToriFirstEdge[nTempTori] = -1;
+                                    tempToriLastEdge[nTempTori] = -1;
                                 }
-
-                                // Mark both atoms not free.
-                                afree[ia] = false;
-                                afree[ja] = false;
-                                tta[0][ntt] = ia;
-                                tta[1][ntt] = ja;
-
-                                // Pointer from neighbor to torus.
-                                clst[jn] = ntt;
-
-                                // Initialize torus as both free and buried.
-                                ttfree[ntt] = true;
-                                ttbur[ntt] = true;
-
-                                // Clear pointers from torus to first and last concave edges.
-                                ttfe[ntt] = -1;
-                                ttle[ntt] = -1;
                             }
                         }
                     }
@@ -1344,89 +1326,88 @@ public class VolumeRegion extends ParallelRegion {
             double[] sumcls = new double[MAXMNB];
             boolean tb, tok, prbok;
 
+            nProbePositions = -1;
+            nConcaveFaces = -1;
+            nConcaveEdges = -1;
+            nConcaveVerts = -1;
+
             // No possible placement if there are no temporary tori.
-            if (ntt <= -1) {
+            if (nTempTori <= -1) {
                 return;
             }
 
-            np = -1;
-            nfn = -1;
-            nen = -1;
-            nv = -1;
-
             // Consider each torus in turn.
-            for (int itt = 0; itt < ntt + 1; itt++) {
+            for (int itt = 0; itt < nTempTori + 1; itt++) {
                 // Get atom numbers.
-                int ia = tta[0][itt];
-                int ja = tta[1][itt];
+                int ia = tempToriAtomNumbers[0][itt];
+                int ja = tempToriAtomNumbers[1][itt];
 
                 // Form mutual neighbor list; clear number of mutual neighbors of atoms ia and ja.
                 int nmnb = -1;
 
                 // Get beginning and end pointers for each atom's neighbor list.
-                int iptr = acls[0][ia];
-                int jptr = acls[0][ja];
+                int iptr = atomNeighborPointers[0][ia];
+                int jptr = atomNeighborPointers[0][ja];
 
                 // For loops like this help replace go to statements from the Tinker code.
                 outerloop:
                 for (int i = 0; i < 1; i++) {
-
                     if (iptr <= -1 || jptr <= -1) {
                         continue;
                     }
-                    int iend = acls[1][ia];
-                    int jend = acls[1][ja];
+                    int iend = atomNeighborPointers[1][ia];
+                    int jend = atomNeighborPointers[1][ja];
 
                     // Collect mutual neighbors.
                     int counter = 1;
                     int counter2 = 1;
+                    // TODO: Try to turn this into a while loop.
                     for (int t = 0; t < counter2; t++) {
+                        // TODO: Try to turn this into a while loop.
                         for (int q = 0; q < counter; q++) {
-
                             // Check for end of loop.
                             if (iptr > iend || jptr > jend) {
                                 continue outerloop;
                             }
-
                             // Go move the lagging pointer.
-                            if (cls[iptr] < cls[jptr]) {
+                            if (neighborAtomNumbers[iptr] < neighborAtomNumbers[jptr]) {
                                 iptr++;
                                 counter++;
                                 continue;
                             }
-                            if (cls[jptr] < cls[iptr]) {
+                            if (neighborAtomNumbers[jptr] < neighborAtomNumbers[iptr]) {
                                 jptr++;
                                 counter++;
                             }
                         }
-                            /*
-                              Both point at same neighbor; one more mutual
-                              neighbor save atom number of mutual neighbor.
-                             */
+
+                        /*
+                          Both point at same neighbor; one more mutual
+                          neighbor save atom number of mutual neighbor.
+                         */
                         nmnb++;
                         if (nmnb > MAXMNB) {
-                            //logger.severe("Too many Mutual Neighbors");
                             throw new EnergyException("Too many Mutual Neighbors", false);
                         }
-                        mnb[nmnb] = cls[iptr];
+                        mnb[nmnb] = neighborAtomNumbers[iptr];
 
                         // Save pointers to second and third tori.
-                        ikt[nmnb] = clst[iptr];
-                        jkt[nmnb] = clst[jptr];
+                        ikt[nmnb] = neighborToTorus[iptr];
+                        jkt[nmnb] = neighborToTorus[jptr];
                         iptr++;
                         counter2++;
                     }
                 }
                 // We have all the mutual neighbors of ia and ja if no mutual neighbors, skip to end of loop.
                 if (nmnb <= -1) {
-                    ttbur[itt] = false;
+                    tempToriBuried[itt] = false;
                     continue;
                 }
                 double[] hij = {0.0};
                 ttok = gettor(ia, ja, bij, hij, uij);
                 for (int km = 0; km < nmnb + 1; km++) {
                     int ka = mnb[km];
-                    getVector(ak, a, ka);
+                    getVector(ak, atomCoords, ka);
                     discls[km] = dist2(bij, ak);
                     sumcls[km] = (probe + radius[ka]) * (probe + radius[ka]);
                     // Initialize link to next farthest out neighbor.
@@ -1488,7 +1469,7 @@ public class VolumeRegion extends ParallelRegion {
                     tok = gettor(ia, ja, tij, rij, uij);
                     for (int w = 0; w < 1; w++) {
                         if (tok) {
-                            getVector(ai, a, ka);
+                            getVector(ai, atomCoords, ka);
                             double dat2 = dist2(ai, tij);
                             double rad2 = (radius[ka] + probe) * (radius[ka] + probe) - rij[0] * rij[0];
 
@@ -1528,7 +1509,7 @@ public class VolumeRegion extends ParallelRegion {
                             for (int k = 0; k < 3; k++) {
                                 bijk[k] = tij[k] + utb[k] * fact;
                             }
-                            getVector(ai, a, ia);
+                            getVector(ai, atomCoords, ia);
                             double dba = dist2(ai, bijk);
                             double rip2 = (radius[ia] + probe) * (radius[ia] + probe);
                             double rad = rip2 - dba;
@@ -1541,8 +1522,8 @@ public class VolumeRegion extends ParallelRegion {
                         }
                     }
                     if (tb) {
-                        ttbur[itt] = true;
-                        ttfree[itt] = false;
+                        tempToriBuried[itt] = true;
+                        tempToriFree[itt] = false;
                         continue;
                     }
 
@@ -1568,9 +1549,9 @@ public class VolumeRegion extends ParallelRegion {
                         }
 
                         // Mark three tori not free.
-                        ttfree[itt] = false;
-                        ttfree[ik] = false;
-                        ttfree[jk] = false;
+                        tempToriFree[itt] = false;
+                        tempToriFree[ik] = false;
+                        tempToriFree[jk] = false;
 
                         // Check for collisions.
                         int lm = lkf;
@@ -1588,7 +1569,7 @@ public class VolumeRegion extends ParallelRegion {
                                 if (la == ka) {
                                     continue;
                                 }
-                                getVector(ak, a, la);
+                                getVector(ak, atomCoords, la);
                                 // Compare distance to sum of radii.
                                 if (dist2(pijk, ak) <= sumcls[lm]) {
                                     continue for3;
@@ -1598,29 +1579,29 @@ public class VolumeRegion extends ParallelRegion {
                             counter3++;
                         }
                         // We have a new probe position.
-                        np++;
-                        if (np > maxp) {
+                        nProbePositions++;
+                        if (nProbePositions > maxProbePositions) {
                             //logger.severe("Too many Probe Positions");
                             throw new EnergyException("Too many Probe Positions", false);
                         }
                         // Mark three tori not buried.
-                        ttbur[itt] = false;
-                        ttbur[ik] = false;
-                        ttbur[jk] = false;
+                        tempToriBuried[itt] = false;
+                        tempToriBuried[ik] = false;
+                        tempToriBuried[jk] = false;
                         // Store probe center.
                         for (int k = 0; k < 3; k++) {
-                            p[k][np] = pijk[k];
+                            probeCoords[k][nProbePositions] = pijk[k];
                         }
 
                         // Calculate vectors from probe to atom centers.
-                        if (nv + 3 > maxv) {
+                        if (nConcaveVerts + 3 > maxVertices) {
                             //logger.severe("Too many Vertices");
                             throw new EnergyException("Too many Vertices", false);
                         }
                         for (int k = 0; k < 3; k++) {
-                            v[k][nv + 1] = a[k][ia] - p[k][np];
-                            v[k][nv + 2] = a[k][ja] - p[k][np];
-                            v[k][nv + 3] = a[k][ka] - p[k][np];
+                            vertexCoords[k][nConcaveVerts + 1] = atomCoords[k][ia] - probeCoords[k][nProbePositions];
+                            vertexCoords[k][nConcaveVerts + 2] = atomCoords[k][ja] - probeCoords[k][nProbePositions];
+                            vertexCoords[k][nConcaveVerts + 3] = atomCoords[k][ka] - probeCoords[k][nProbePositions];
                         }
                         //double matrix[] = new double[9];
                         //int a = 0;
@@ -1631,78 +1612,76 @@ public class VolumeRegion extends ParallelRegion {
                         //}
 
                         // Calculate determinant of vectors defining triangle.
-                        double det = v[0][nv + 1] * v[1][nv + 2] * v[2][nv + 3]
-                                + v[0][nv + 2] * v[1][nv + 3] * v[2][nv + 1]
-                                + v[0][nv + 3] * v[1][nv + 1] * v[2][nv + 2]
-                                - v[0][nv + 3] * v[1][nv + 2] * v[2][nv + 1]
-                                - v[0][nv + 2] * v[1][nv + 1] * v[2][nv + 3]
-                                - v[0][nv + 1] * v[1][nv + 3] * v[2][nv + 2];
+                        double det = vertexCoords[0][nConcaveVerts + 1] * vertexCoords[1][nConcaveVerts + 2] * vertexCoords[2][nConcaveVerts + 3]
+                                + vertexCoords[0][nConcaveVerts + 2] * vertexCoords[1][nConcaveVerts + 3] * vertexCoords[2][nConcaveVerts + 1]
+                                + vertexCoords[0][nConcaveVerts + 3] * vertexCoords[1][nConcaveVerts + 1] * vertexCoords[2][nConcaveVerts + 2]
+                                - vertexCoords[0][nConcaveVerts + 3] * vertexCoords[1][nConcaveVerts + 2] * vertexCoords[2][nConcaveVerts + 1]
+                                - vertexCoords[0][nConcaveVerts + 2] * vertexCoords[1][nConcaveVerts + 1] * vertexCoords[2][nConcaveVerts + 3]
+                                - vertexCoords[0][nConcaveVerts + 1] * vertexCoords[1][nConcaveVerts + 3] * vertexCoords[2][nConcaveVerts + 2];
                         // Now add probe coordinates to vertices.
                         for (int k = 0; k < 3; k++) {
-                            v[k][nv + 1] = p[k][np] + (v[k][nv + 1] * probe / (radius[ia] + probe));
-                            v[k][nv + 2] = p[k][np] + (v[k][nv + 2] * probe / (radius[ja] + probe));
-                            v[k][nv + 3] = p[k][np] + (v[k][nv + 3] * probe / (radius[ka] + probe));
+                            vertexCoords[k][nConcaveVerts + 1] = probeCoords[k][nProbePositions] + (vertexCoords[k][nConcaveVerts + 1] * probe / (radius[ia] + probe));
+                            vertexCoords[k][nConcaveVerts + 2] = probeCoords[k][nProbePositions] + (vertexCoords[k][nConcaveVerts + 2] * probe / (radius[ja] + probe));
+                            vertexCoords[k][nConcaveVerts + 3] = probeCoords[k][nProbePositions] + (vertexCoords[k][nConcaveVerts + 3] * probe / (radius[ka] + probe));
                         }
                         // Want the concave face to have counter-clockwise orientation.
                         if (det > 0.0) {
                             // Swap second and third vertices.
                             for (int k = 0; k < 3; k++) {
-                                tempv[k] = v[k][nv + 2];
-                                v[k][nv + 2] = v[k][nv + 3];
-                                v[k][nv + 3] = tempv[k];
+                                tempv[k] = vertexCoords[k][nConcaveVerts + 2];
+                                vertexCoords[k][nConcaveVerts + 2] = vertexCoords[k][nConcaveVerts + 3];
+                                vertexCoords[k][nConcaveVerts + 3] = tempv[k];
                             }
                             // Set up pointers from probe to atoms.
-                            pa[0][np] = ia;
-                            pa[1][np] = ka;
-                            pa[2][np] = ja;
+                            probeAtomNumbers[0][nProbePositions] = ia;
+                            probeAtomNumbers[1][nProbePositions] = ka;
+                            probeAtomNumbers[2][nProbePositions] = ja;
                             // Set pointers from vertices to atoms.
-                            va[nv + 1] = ia;
-                            va[nv + 2] = ka;
-                            va[nv + 3] = ja;
+                            vertexAtomNumbers[nConcaveVerts + 1] = ia;
+                            vertexAtomNumbers[nConcaveVerts + 2] = ka;
+                            vertexAtomNumbers[nConcaveVerts + 3] = ja;
                             // Insert concave edges into linked lists for appropriate tori.
-                            inedge(nen + 1, ik);
-                            inedge(nen + 2, jk);
-                            inedge(nen + 3, itt);
+                            inedge(nConcaveEdges + 1, ik);
+                            inedge(nConcaveEdges + 2, jk);
+                            inedge(nConcaveEdges + 3, itt);
                         } else {
                             // Similarly, if face already counter-clockwise.
-                            pa[0][np] = ia;
-                            pa[1][np] = ja;
-                            pa[2][np] = ka;
-                            va[nv + 1] = ia;
-                            va[nv + 2] = ja;
-                            va[nv + 3] = ka;
-                            inedge(nen + 1, itt);
-                            inedge(nen + 2, jk);
-                            inedge(nen + 3, ik);
+                            probeAtomNumbers[0][nProbePositions] = ia;
+                            probeAtomNumbers[1][nProbePositions] = ja;
+                            probeAtomNumbers[2][nProbePositions] = ka;
+                            vertexAtomNumbers[nConcaveVerts + 1] = ia;
+                            vertexAtomNumbers[nConcaveVerts + 2] = ja;
+                            vertexAtomNumbers[nConcaveVerts + 3] = ka;
+                            inedge(nConcaveEdges + 1, itt);
+                            inedge(nConcaveEdges + 2, jk);
+                            inedge(nConcaveEdges + 3, ik);
                         }
                         // Set up pointers from vertices to probe.
                         for (int kv = 1; kv < 4; kv++) {
-                            vp[nv + kv] = np;
+                            vertexProbeNumber[nConcaveVerts + kv] = nProbePositions;
                         }
                         // Set up concave edges and concave face.
-                        if (nen + 3 > maxen) {
-                            //logger.severe("Too many Concave Edges");
+                        if (nConcaveEdges + 3 > maxConcaveEdges) {
                             throw new EnergyException("Too many Concave Edges", false);
                         }
                         // Edges point to vertices.
-                        env[0][nen + 1] = nv + 1;
-                        env[1][nen + 1] = nv + 2;
-                        env[0][nen + 2] = nv + 2;
-                        env[1][nen + 2] = nv + 3;
-                        env[0][nen + 3] = nv + 3;
-                        env[1][nen + 3] = nv + 1;
-                        if (nfn + 1 > maxfn) {
-                            //logger.severe("Too many Concave Faces");
+                        concaveEdgeVertexNumbers[0][nConcaveEdges + 1] = nConcaveVerts + 1;
+                        concaveEdgeVertexNumbers[1][nConcaveEdges + 1] = nConcaveVerts + 2;
+                        concaveEdgeVertexNumbers[0][nConcaveEdges + 2] = nConcaveVerts + 2;
+                        concaveEdgeVertexNumbers[1][nConcaveEdges + 2] = nConcaveVerts + 3;
+                        concaveEdgeVertexNumbers[0][nConcaveEdges + 3] = nConcaveVerts + 3;
+                        concaveEdgeVertexNumbers[1][nConcaveEdges + 3] = nConcaveVerts + 1;
+                        if (nConcaveFaces + 1 > maxConcaveFaces) {
                             throw new EnergyException("Too many Concave Faces", false);
                         }
                         // Face points to edges.
                         for (int ke = 0; ke < 3; ke++) {
-                            fnen[ke][nfn + 1] = nen + ke + 1;
+                            concaveFaceEdgeNumbers[ke][nConcaveFaces + 1] = nConcaveEdges + ke + 1;
                         }
                         // Increment counters for number of faces, edges, and vertices.
-                        nfn++;
-                        nen += 3;
-                        nv += 3;
+                        nConcaveFaces++;
+                        nConcaveEdges += 3;
+                        nConcaveVerts += 3;
                     }
                 }
             }
@@ -1723,14 +1702,14 @@ public class VolumeRegion extends ParallelRegion {
                 throw new EnergyException("Bad Torus Number in INEDGE", false);
             }
             // Set beginning of list or add to end.
-            if (ttfe[torusNumber] == -1) {
-                ttfe[torusNumber] = edgeNumber;
-                enext[edgeNumber] = -1;
-                ttle[torusNumber] = edgeNumber;
+            if (tempToriFirstEdge[torusNumber] == -1) {
+                tempToriFirstEdge[torusNumber] = edgeNumber;
+                tempToriNextEdge[edgeNumber] = -1;
+                tempToriLastEdge[torusNumber] = edgeNumber;
             } else {
-                enext[ttle[torusNumber]] = edgeNumber;
-                enext[edgeNumber] = -1;
-                ttle[torusNumber] = edgeNumber;
+                tempToriNextEdge[tempToriLastEdge[torusNumber]] = edgeNumber;
+                tempToriNextEdge[edgeNumber] = -1;
+                tempToriLastEdge[torusNumber] = edgeNumber;
             }
         }
 
@@ -1742,54 +1721,54 @@ public class VolumeRegion extends ParallelRegion {
             double[] ai = new double[3];
             double[] aj = new double[3];
             // Initialize the number of non-buried tori.
-            nt = -1;
-            if (ntt <= -1) {
+            nTori = -1;
+            if (nTempTori <= -1) {
                 return;
             }
             // If torus is free, then it is not buried; skip to end of loop if buried torus.
             double[] trtemp = {0};
-            for (int itt = 0; itt < ntt + 1; itt++) {
-                if (ttfree[itt]) {
-                    ttbur[itt] = false;
+            for (int itt = 0; itt <= nTempTori; itt++) {
+                if (tempToriFree[itt]) {
+                    tempToriBuried[itt] = false;
                 }
-                if (!ttbur[itt]) {
+                if (!tempToriBuried[itt]) {
                     // First, transfer information.
-                    nt++;
-                    if (nt > maxt) {
+                    nTori++;
+                    if (nTori > maxTori) {
                         throw new EnergyException("Too many non-buried tori.", false);
                     }
-                    int ia = tta[0][itt];
-                    int ja = tta[1][itt];
-                    getVector(ai, t, nt);
-                    getVector(aj, tax, nt);
+                    int ia = tempToriAtomNumbers[0][itt];
+                    int ja = tempToriAtomNumbers[1][itt];
+                    getVector(ai, torusCenter, nTori);
+                    getVector(aj, torusAxis, nTori);
                     ttok = gettor(ia, ja, ai, trtemp, aj);
-                    t[0][nt] = ai[0];
-                    t[1][nt] = ai[1];
-                    t[2][nt] = ai[2];
-                    tax[0][nt] = aj[0];
-                    tax[1][nt] = aj[1];
-                    tax[2][nt] = aj[2];
-                    tr[nt] = trtemp[0];
-                    ta[0][nt] = ia;
-                    ta[1][nt] = ja;
-                    tfree[nt] = ttfree[itt];
-                    tfe[nt] = ttfe[itt];
+                    torusCenter[0][nTori] = ai[0];
+                    torusCenter[1][nTori] = ai[1];
+                    torusCenter[2][nTori] = ai[2];
+                    torusAxis[0][nTori] = aj[0];
+                    torusAxis[1][nTori] = aj[1];
+                    torusAxis[2][nTori] = aj[2];
+                    torusRadius[nTori] = trtemp[0];
+                    torusAtomNumber[0][nTori] = ia;
+                    torusAtomNumber[1][nTori] = ja;
+                    torusNeighborFreeEdge[nTori] = tempToriFree[itt];
+                    torusFirstEdge[nTori] = tempToriFirstEdge[itt];
                     // Special check for inconsistent probes.
-                    int iptr = tfe[nt];
+                    int iptr = torusFirstEdge[nTori];
                     int ned = -1;
                     while (iptr != -1) {
                         ned++;
-                        iptr = enext[iptr];
+                        iptr = tempToriNextEdge[iptr];
                     }
                     if ((ned % 2) == 0) {
-                        iptr = tfe[nt];
+                        iptr = torusFirstEdge[nTori];
                         while (iptr != -1) {
-                            int iv1 = env[0][iptr];
-                            int iv2 = env[1][iptr];
-                            int ip1 = vp[iv1];
-                            int ip2 = vp[iv2];
+                            int iv1 = concaveEdgeVertexNumbers[0][iptr];
+                            int iv2 = concaveEdgeVertexNumbers[1][iptr];
+                            int ip1 = vertexProbeNumber[iv1];
+                            int ip2 = vertexProbeNumber[iv2];
                             logger.warning(format("Odd Torus for Probes IP1 %d and IP2 %d", ip1, ip2));
-                            iptr = enext[iptr];
+                            iptr = tempToriNextEdge[iptr];
                         }
                     }
                 }
@@ -1818,60 +1797,60 @@ public class VolumeRegion extends ParallelRegion {
             boolean[] sdstrt = new boolean[maxent];
 
             // Zero the number of circles, convex edges, and saddle faces.
-            nc = -1;
-            nep = -1;
-            nfs = -1;
-            fill(afe, -1);
-            fill(ale, -1);
-            fill(abur, true);
+            nCircles = -1;
+            nConvexEdges = -1;
+            nSaddleFaces = -1;
+            fill(convexEdgeFirst, -1);
+            fill(convexEdgeLast, -1);
+            fill(atomBuried, true);
 
             // No saddle faces if no tori.
-            if (nt < 0) {
+            if (nTori < 0) {
                 return;
             }
 
             // Cycle through tori.
-            for (it = 0; it <= nt; it++) {
-                if (skip[ta[0][it]] && skip[ta[1][it]]) {
+            for (it = 0; it <= nTori; it++) {
+                if (skip[torusAtomNumber[0][it]] && skip[torusAtomNumber[1][it]]) {
                     continue;
                 }
 
                 // Set up two circles.
                 for (in = 0; in < 2; in++) {
-                    ia = ta[in][it];
+                    ia = torusAtomNumber[in][it];
 
                     // Mark atom not buried.
-                    abur[ia] = false;
+                    atomBuried[ia] = false;
 
                     // Vector from atom to torus center.
                     for (k = 0; k < 3; k++) {
-                        atvect[k] = t[k][it] - a[k][ia];
+                        atvect[k] = torusCenter[k][it] - atomCoords[k][ia];
                     }
                     factor = radius[ia] / (radius[ia] + probe);
 
                     // One more circle.
-                    nc++;
-                    if (nc > maxc) {
+                    nCircles++;
+                    if (nCircles > maxCircles) {
                         throw new EnergyException("Too many Circles", false);
                     }
 
                     // Circle center.
                     for (k = 0; k < 3; k++) {
-                        c[k][nc] = a[k][ia] + factor * atvect[k];
+                        circleCenter[k][nCircles] = atomCoords[k][ia] + factor * atvect[k];
                     }
 
                     // Pointer from circle to atom.
-                    ca[nc] = ia;
+                    circleAtomNumber[nCircles] = ia;
 
                     // Pointer from circle to torus.
-                    ct[nc] = it;
+                    circleTorusNumber[nCircles] = it;
 
                     // Circle radius.
-                    cr[nc] = factor * tr[it];
+                    circleRadius[nCircles] = factor * torusRadius[it];
                 }
 
                 // Skip to special "free torus" code.
-                if (!tfree[it]) {
+                if (!torusNeighborFreeEdge[it]) {
                     /*
                       Now we collect all the concave edges for this
                       torus; for each concave edge, calculate vector
@@ -1883,7 +1862,7 @@ public class VolumeRegion extends ParallelRegion {
                     nent = -1;
 
                     // Pointer to start of linked list.
-                    ien = tfe[it];
+                    ien = torusFirstEdge[it];
                     // 10 Continue
                     while (ien >= 0) {
                         // One more concave edge.
@@ -1893,12 +1872,12 @@ public class VolumeRegion extends ParallelRegion {
                             throw new EnergyException("Too many Edges for Torus", false);
                         }
                         // First vertex of edge.
-                        iv = env[0][ien];
+                        iv = concaveEdgeVertexNumbers[0][ien];
 
                         // Probe number of vertex.
-                        ip = vp[iv];
+                        ip = vertexProbeNumber[iv];
                         for (k = 0; k < 3; k++) {
-                            tev[k][nent] = p[k][ip] - t[k][it];
+                            tev[k][nent] = probeCoords[k][ip] - torusCenter[k][it];
                         }
                         dtev = 0.0;
                         for (k = 0; k < 3; k++) {
@@ -1936,9 +1915,9 @@ public class VolumeRegion extends ParallelRegion {
                             aj[0] = tev[0][nent];
                             aj[1] = tev[1][nent];
                             aj[2] = tev[2][nent];
-                            ak[0] = tax[0][it];
-                            ak[1] = tax[1][it];
-                            ak[2] = tax[2][it];
+                            ak[0] = torusAxis[0][it];
+                            ak[1] = torusAxis[1][it];
+                            ak[2] = torusAxis[2][it];
 
                             // Get the sign right.
                             triple = triple(ai, aj, ak);
@@ -1950,9 +1929,9 @@ public class VolumeRegion extends ParallelRegion {
                         }
                         // Saddle face starts with this edge if it points parallel to torus axis vector
                         // (which goes from first to second atom).
-                        sdstrt[nent] = (va[iv] == ta[0][it]);
+                        sdstrt[nent] = (vertexAtomNumbers[iv] == torusAtomNumber[0][it]);
                         // Next edge in list.
-                        ien = enext[ien];
+                        ien = tempToriNextEdge[ien];
                     }
 
                     if (nent <= -1) {
@@ -1993,41 +1972,41 @@ public class VolumeRegion extends ParallelRegion {
                         // Check for start of saddle.
                         if (sdstrt[l1]) {
                             // One more saddle face.
-                            nfs++;
-                            if (nfs > maxfs) {
+                            nSaddleFaces++;
+                            if (nSaddleFaces > maxSaddleFace) {
                                 throw new EnergyException("Too many Saddle Faces", false);
                             }
                             // Get edge number.
                             ien = ten[l1];
                             // First concave edge of saddle.
-                            fsen[0][nfs] = ien;
+                            saddleConcaveEdgeNumbers[0][nSaddleFaces] = ien;
                             // One more convex edge.
-                            nep++;
-                            if (nep > maxep) {
+                            nConvexEdges++;
+                            if (nConvexEdges > maxConvexEdges) {
                                 throw new EnergyException("Too many Convex Edges", false);
                             }
                             // First convex edge points to second circle.
-                            epc[nep] = nc;
+                            convexEdgeCircleNumber[nConvexEdges] = nCircles;
                             // Atom circle lies on.
-                            ia = ca[nc];
+                            ia = circleAtomNumber[nCircles];
                             // Insert convex edge into linked list for atom.
-                            ipedge(nep, ia);
+                            ipedge(nConvexEdges, ia);
                             // First vertex of convex edge is second vertex of concave edge.
-                            epv[0][nep] = env[1][ien];
+                            convexEdgeVertexNumber[0][nConvexEdges] = concaveEdgeVertexNumbers[1][ien];
                             // First convex edge of saddle.
-                            fsep[0][nfs] = nep;
+                            saddleConvexEdgeNumbers[0][nSaddleFaces] = nConvexEdges;
                             // One more convex edge.
-                            nep++;
-                            if (nep > maxep) {
+                            nConvexEdges++;
+                            if (nConvexEdges > maxConvexEdges) {
                                 throw new EnergyException("Too many Convex Edges", false);
                             }
                             // Second convex edge points to fist circle.
-                            epc[nep] = nc - 1;
-                            ia = ca[nc - 1];
+                            convexEdgeCircleNumber[nConvexEdges] = nCircles - 1;
+                            ia = circleAtomNumber[nCircles - 1];
                             // Insert convex edge into linked list for atom.
-                            ipedge(nep, ia);
+                            ipedge(nConvexEdges, ia);
                             // Second vertex of second convex edge is first vertex of first concave edge.
-                            epv[1][nep] = env[0][ien];
+                            convexEdgeVertexNumber[1][nConvexEdges] = concaveEdgeVertexNumbers[0][ien];
                             l1 = nxtang[l1];
                             // Wrap around.
                             if (l1 <= -1) {
@@ -2049,12 +2028,12 @@ public class VolumeRegion extends ParallelRegion {
                             }
                             ien = ten[l1];
                             // Second concave edge for saddle face.
-                            fsen[1][nfs] = ien;
+                            saddleConcaveEdgeNumbers[1][nSaddleFaces] = ien;
                             // Second vertex of first convex edge is first vertex of second concave edge.
-                            epv[1][nep - 1] = env[0][ien];
+                            convexEdgeVertexNumber[1][nConvexEdges - 1] = concaveEdgeVertexNumbers[0][ien];
                             // First vertex of second convex edge is second vertex of second concave edge.
-                            epv[0][nep] = env[1][ien];
-                            fsep[1][nfs] = nep;
+                            convexEdgeVertexNumber[0][nConvexEdges] = concaveEdgeVertexNumbers[1][ien];
+                            saddleConvexEdgeNumbers[1][nSaddleFaces] = nConvexEdges;
                             // Quit if we have wrapped around to first edge.
                             if (l1 == 0) {
                                 break;
@@ -2066,37 +2045,37 @@ public class VolumeRegion extends ParallelRegion {
                 } else {
                     // Free torus
                     // Set up entire circles as convex edges for new saddle surface; one more saddle face.
-                    nfs++;
-                    if (nfs > maxfs) {
+                    nSaddleFaces++;
+                    if (nSaddleFaces > maxSaddleFace) {
                         throw new EnergyException("Too many Saddle Faces", false);
                     }
                     // No concave edge for saddle.
-                    fsen[0][nfs] = -1;
-                    fsen[1][nfs] = -1;
+                    saddleConcaveEdgeNumbers[0][nSaddleFaces] = -1;
+                    saddleConcaveEdgeNumbers[1][nSaddleFaces] = -1;
                     // One more convex edge.
-                    nep++;
-                    ia = ca[nc];
+                    nConvexEdges++;
+                    ia = circleAtomNumber[nCircles];
                     // Insert convex edge into linked list of atom.
-                    ipedge(nep, ia);
+                    ipedge(nConvexEdges, ia);
                     // No vertices for convex edge.
-                    epv[0][nep] = -1;
-                    epv[1][nep] = -1;
+                    convexEdgeVertexNumber[0][nConvexEdges] = -1;
+                    convexEdgeVertexNumber[1][nConvexEdges] = -1;
                     // Pointer from convex edge to second circle.
-                    epc[nep] = nc;
+                    convexEdgeCircleNumber[nConvexEdges] = nCircles;
                     // First convex edge for saddle face.
-                    fsep[0][nfs] = nep;
+                    saddleConvexEdgeNumbers[0][nSaddleFaces] = nConvexEdges;
                     // One more convex edge.
-                    nep++;
-                    ia = ca[nc - 1];
+                    nConvexEdges++;
+                    ia = circleAtomNumber[nCircles - 1];
                     // Insert second convex edge into linked list.
-                    ipedge(nep, ia);
+                    ipedge(nConvexEdges, ia);
                     // No vertices for convex edge.
-                    epv[0][nep] = -1;
-                    epv[1][nep] = -1;
+                    convexEdgeVertexNumber[0][nConvexEdges] = -1;
+                    convexEdgeVertexNumber[1][nConvexEdges] = -1;
                     // Convex edge points to first circle.
-                    epc[nep] = nc - 1;
+                    convexEdgeCircleNumber[nConvexEdges] = nCircles - 1;
                     // Second convex edge for saddle face.
-                    fsep[1][nfs] = nep;
+                    saddleConvexEdgeNumbers[1][nSaddleFaces] = nConvexEdges;
                     // Buried torus; do nothing with it.
                 }
             }
@@ -2133,14 +2112,14 @@ public class VolumeRegion extends ParallelRegion {
                 throw new EnergyException("Bad Atom Number in IPEDGE", true);
             }
             // Set beginning of list or add to end.
-            if (afe[atomNumber] == -1) {
-                afe[atomNumber] = edgeNumber;
-                epnext[edgeNumber] = -1;
-                ale[atomNumber] = edgeNumber;
+            if (convexEdgeFirst[atomNumber] == -1) {
+                convexEdgeFirst[atomNumber] = edgeNumber;
+                convexEdgeNext[edgeNumber] = -1;
+                convexEdgeLast[atomNumber] = edgeNumber;
             } else {
-                epnext[ale[atomNumber]] = edgeNumber;
-                epnext[edgeNumber] = -1;
-                ale[atomNumber] = edgeNumber;
+                convexEdgeNext[convexEdgeLast[atomNumber]] = edgeNumber;
+                convexEdgeNext[edgeNumber] = -1;
+                convexEdgeLast[atomNumber] = edgeNumber;
             }
         }
 
@@ -2170,32 +2149,32 @@ public class VolumeRegion extends ParallelRegion {
             boolean[][] samef = new boolean[maxcypa][maxcypa];
 
             // Zero out the number of cycles and convex faces.
-            ncy = -1;
-            nfp = -1;
+            nCycles = -1;
+            nConvexFaces = -1;
 
             // Mark all free atoms not buried.
             for (int ia = 0; ia < nAtoms; ia++) {
-                if (afree[ia]) {
-                    abur[ia] = false;
+                if (atomFreeOfNeighbors[ia]) {
+                    atomBuried[ia] = false;
                 }
             }
 
             // Go through all atoms.
             firstloop:
             for (int ia = 0; ia < nAtoms; ia++) {
-                if (skip[ia] || abur[ia]) {
+                if (skip[ia] || atomBuried[ia]) {
                     continue;
                 }
 
                 // Special code for completely solvent-accessible atom.
                 for (int o = 0; o < 1; o++) {
-                    if (afree[ia]) {
+                    if (atomFreeOfNeighbors[ia]) {
                         continue;
                     }
                     // Gather convex edges for atom Clear number of convex edges for atom.
                     int nepa = -1;
                     // Pointer to first edge.
-                    int iep = afe[ia];
+                    int iep = convexEdgeFirst[ia];
                     int counter = 1;
                     for (int j = 0; j < counter; j++) {
                         // Check whether finished gathering.
@@ -2209,20 +2188,20 @@ public class VolumeRegion extends ParallelRegion {
                             throw new EnergyException("Too many Convex Edges for Atom", false);
                         }
                         // Store vertices of edge.
-                        av[0][nepa] = epv[0][iep];
-                        av[1][nepa] = epv[1][iep];
+                        av[0][nepa] = convexEdgeVertexNumber[0][iep];
+                        av[1][nepa] = convexEdgeVertexNumber[1][iep];
                         // Store convex edge number.
                         aep[nepa] = iep;
-                        int ic = epc[iep];
+                        int ic = convexEdgeCircleNumber[iep];
                         // Store circle number.
                         aic[nepa] = ic;
                         // Get neighboring atom.
-                        int it = ct[ic];
+                        int it = circleTorusNumber[ic];
                         int ia2;
-                        if (ta[0][it] == ia) {
-                            ia2 = ta[1][it];
+                        if (torusAtomNumber[0][it] == ia) {
+                            ia2 = torusAtomNumber[1][it];
                         } else {
-                            ia2 = ta[0][it];
+                            ia2 = torusAtomNumber[0][it];
                         }
                         // Store other atom number, we might need it sometime.
                         aia[nepa] = ia2;
@@ -2232,13 +2211,13 @@ public class VolumeRegion extends ParallelRegion {
                               we use one vector, sometimes the other.
                              */
                         for (int k = 0; k < 3; k++) {
-                            acvect[k][nepa] = c[k][ic] - a[k][ia];
-                            aavect[k][nepa] = a[k][ia2] - a[k][ia];
+                            acvect[k][nepa] = circleCenter[k][ic] - atomCoords[k][ia];
+                            aavect[k][nepa] = atomCoords[k][ia2] - atomCoords[k][ia];
                         }
                         // Circle radius.
-                        acr[nepa] = cr[ic];
+                        acr[nepa] = circleRadius[ic];
                         // Pointer to next edge.
-                        iep = epnext[iep];
+                        iep = convexEdgeNext[iep];
                         counter++;
                     }
                     if (nepa <= -1) {
@@ -2250,7 +2229,7 @@ public class VolumeRegion extends ParallelRegion {
                         epused[iepa] = false;
                     }
                     // Save old number of cycles.
-                    int ncyold = ncy;
+                    int ncyold = nCycles;
                     int nused = -1;
                     int ncypa = -1;
                     // Look for starting edge.
@@ -2282,15 +2261,15 @@ public class VolumeRegion extends ParallelRegion {
                         epused[iepa] = true;
                         nused++;
                         // One more cycle for molecule.
-                        ncy++;
-                        if (ncy > maxcy) {
+                        nCycles++;
+                        if (nCycles > maxCycles) {
                             //logger.severe("Too many Cycles");
                             throw new EnergyException("Too many Cycles", false);
                         }
                         // Index of edge in atom cycle array.
                         cyepa[ncyep][ncypa] = iepa;
                         // Store in molecule cycle array a pointer to edge.
-                        cyep[ncyep][ncy] = iep;
+                        convexEdgeCycleNumbers[ncyep][nCycles] = iep;
                         // Second vertex of this edge is the vertex to look for
                         // next as the first vertex of another edge.
                         int lookv = av[1][iepa];
@@ -2326,7 +2305,7 @@ public class VolumeRegion extends ParallelRegion {
                                         // Store index in local edge array.
                                         cyepa[ncyep][ncypa] = jepa;
                                         // Store pointer to edge.
-                                        cyep[ncyep][ncy] = iep;
+                                        convexEdgeCycleNumbers[ncyep][nCycles] = iep;
                                         // New vertex to look for.
                                         lookv = av[1][jepa];
                                         // If no vertex, this cycle is in trouble.
@@ -2346,7 +2325,7 @@ public class VolumeRegion extends ParallelRegion {
                         }
                         // This cycle is finished, store number of edges in cycle.
                         ncyepa[ncypa] = ncyep;
-                        cynep[ncy] = ncyep;
+                        convexEdgeCycleNum[nCycles] = ncyep;
                         // Look for more cycles.
                         if (nused < nepa) {
                             counter3++;
@@ -2387,7 +2366,7 @@ public class VolumeRegion extends ParallelRegion {
                             double factor = radius[ia] / anaa;
                             // North pole and unit vector pointer south.
                             for (int k = 0; k < 3; k++) {
-                                pole[k] = factor * aavect[k][iepa] + a[k][ia];
+                                pole[k] = factor * aavect[k][iepa] + atomCoords[k][ia];
                                 unvect[k] = -aavect[k][iepa] / anaa;
                             }
                             cycy[icya][jcya] = ptincy(pole, unvect, jcy);
@@ -2442,15 +2421,14 @@ public class VolumeRegion extends ParallelRegion {
                             continue;
                         }
                         // One more convex face.
-                        nfp++;
-                        if (nfp > maxfp) {
-                            //logger.severe("Too many Convex Faces");
+                        nConvexFaces++;
+                        if (nConvexFaces > maxConvexFaces) {
                             throw new EnergyException("Too many Convex Faces", false);
                         }
                         // Clear number of cycles for face.
-                        fpncy[nfp] = -1;
+                        convexFaceNumCycles[nConvexFaces] = -1;
                         // Pointer from face to atom.
-                        fpa[nfp] = ia;
+                        convexFaceAtomNumber[nConvexFaces] = ia;
                         // Look for all other cycles belonging to same face.
                         for (int jcya = 0; jcya < ncypa + 1; jcya++) {
                             // Check for cycle alraDY used in another face.
@@ -2461,14 +2439,14 @@ public class VolumeRegion extends ParallelRegion {
                             cyused[jcya] = true;
                             nused++;
                             // One more cycle for face.
-                            fpncy[nfp]++;
-                            if (fpncy[nfp] > MAXFPCY) {
+                            convexFaceNumCycles[nConvexFaces]++;
+                            if (convexFaceNumCycles[nConvexFaces] > MAXFPCY) {
                                 //logger.severe("Too many Cycles bounding Convex Face");
                                 throw new EnergyException("Too many Cycles bounding Convex Face", false);
                             }
-                            int i = fpncy[nfp];
+                            int i = convexFaceNumCycles[nConvexFaces];
                             // Store cycle number.
-                            fpcy[i][nfp] = ncyold + jcya + 1;
+                            convexFaceCycleNumbers[i][nConvexFaces] = ncyold + jcya + 1;
                             // Check for finished.
                             if (nused >= ncypa) {
                                 continue firstloop;
@@ -2476,17 +2454,15 @@ public class VolumeRegion extends ParallelRegion {
                         }
                     }
                     // Should not fall though end of for loops.
-                    //logger.severe("Not all Cycles grouped into Convex Faces");
                     throw new EnergyException("Not all Cycles grouped into Convex Faces", true);
                 }
                 // Once face for free atom; no cycles.
-                nfp++;
-                if (nfp > maxfp) {
-                    //logger.severe("Too many Convex Faces");
+                nConvexFaces++;
+                if (nConvexFaces > maxConvexFaces) {
                     throw new EnergyException("Too many Convex Faces", false);
                 }
-                fpa[nfp] = ia;
-                fpncy[nfp] = -1;
+                convexFaceAtomNumber[nConvexFaces] = ia;
+                convexFaceNumCycles[nConvexFaces] = -1;
             }
         }
 
@@ -2498,38 +2474,38 @@ public class VolumeRegion extends ParallelRegion {
             double[][] epu = new double[3][MAXCYEP];
             // Check for being eaten by neighbor.
             int iatom = 0;
-            for (int ke = 0; ke < cynep[icy]; ke++) {
-                int iep = cyep[ke][icy];
-                int ic = epc[iep];
-                int it = ct[ic];
-                iatom = ca[ic];
+            for (int ke = 0; ke < convexEdgeCycleNum[icy]; ke++) {
+                int iep = convexEdgeCycleNumbers[ke][icy];
+                int ic = convexEdgeCircleNumber[iep];
+                int it = circleTorusNumber[ic];
+                iatom = circleAtomNumber[ic];
                 int iaoth;
-                if (ta[0][it] == iatom) {
-                    iaoth = ta[1][it];
+                if (torusAtomNumber[0][it] == iatom) {
+                    iaoth = torusAtomNumber[1][it];
                 } else {
-                    iaoth = ta[0][it];
+                    iaoth = torusAtomNumber[0][it];
                 }
                 for (int k = 0; k < 3; k++) {
-                    acvect[k] = a[k][iaoth] - a[k][iatom];
-                    cpvect[k] = pnt[k] - c[k][ic];
+                    acvect[k] = atomCoords[k][iaoth] - atomCoords[k][iatom];
+                    cpvect[k] = pnt[k] - circleCenter[k][ic];
                 }
                 if (dot(acvect, cpvect) >= 0.0) {
                     return false;
                 }
             }
-            if (cynep[icy] <= 1) {
+            if (convexEdgeCycleNum[icy] <= 1) {
                 return true;
             }
-            int nedge = cynep[icy];
-            for (int ke = 0; ke < cynep[icy]; ke++) {
+            int nedge = convexEdgeCycleNum[icy];
+            for (int ke = 0; ke < convexEdgeCycleNum[icy]; ke++) {
 
                 // Vertex number (use first vertex of edge).
-                int iep = cyep[ke][icy];
-                iv = epv[0][iep];
+                int iep = convexEdgeCycleNumbers[ke][icy];
+                iv = convexEdgeVertexNumber[0][iep];
                 if (iv != 0) {
                     // Vector from north pole to vertex.
                     for (int k = 0; k < 3; k++) {
-                        polev[k] = v[k][iv] - pnt[k];
+                        polev[k] = vertexCoords[k][iv] - pnt[k];
                     }
                     // Calculate multiplication factor.
                     double dt = dot(polev, unvect);
@@ -2645,23 +2621,23 @@ public class VolumeRegion extends ParallelRegion {
          * The measpm method computes the volume of a single prism section
          * of the full interior polyhedron.
          */
-        double measpm(int ifn) {
+        double measurePrism(int ifn) {
             double[][] pav = new double[3][3];
             double[] vect1 = new double[3];
             double[] vect2 = new double[3];
             double[] vect3 = new double[3];
             double height = 0.0;
             for (int ke = 0; ke < 3; ke++) {
-                int ien = fnen[ke][ifn];
-                iv = env[0][ien];
-                int ia = va[iv];
-                height += a[2][ia];
-                int ip = vp[iv];
+                int ien = concaveFaceEdgeNumbers[ke][ifn];
+                int iv = concaveEdgeVertexNumbers[0][ien];
+                int ia = vertexAtomNumbers[iv];
+                height += atomCoords[2][ia];
+                int ip = vertexProbeNumber[iv];
                 for (int k = 0; k < 3; k++) {
-                    pav[k][ke] = a[k][ia] - p[k][ip];
+                    pav[k][ke] = atomCoords[k][ia] - probeCoords[k][ip];
                 }
             }
-            height *= 1 / 3.0;
+            height *= 1.0 / 3.0;
             for (int k = 0; k < 3; k++) {
                 vect1[k] = pav[k][1] - pav[k][0];
                 vect2[k] = pav[k][2] - pav[k][0];
@@ -2670,7 +2646,7 @@ public class VolumeRegion extends ParallelRegion {
             return height * vect3[2] / 2.0;
         }
 
-        void measfp(int ifp, double[] av) {
+        void measureConvexFace(int ifp, double[] av) {
             double angle;
             double[] ai = new double[3];
             double[] aj = new double[3];
@@ -2683,8 +2659,8 @@ public class VolumeRegion extends ParallelRegion {
             double[][] radial = new double[3][MAXCYEP];
             double pcurve = 0.0;
             double gcurve = 0.0;
-            int ia = fpa[ifp];
-            int ncycle = fpncy[ifp];
+            int ia = convexFaceAtomNumber[ifp];
+            int ncycle = convexFaceNumCycles[ifp];
             int ieuler;
             if (ncycle > -1) {
                 ieuler = 1 - ncycle;
@@ -2692,34 +2668,34 @@ public class VolumeRegion extends ParallelRegion {
                 ieuler = 2;
             }
             for (int icyptr = 0; icyptr < ncycle + 1; icyptr++) {
-                int icy = fpcy[icyptr][ifp];
-                int nedge = cynep[icy];
+                int icy = convexFaceCycleNumbers[icyptr][ifp];
+                int nedge = convexEdgeCycleNum[icy];
                 for (int ke = 0; ke < nedge + 1; ke++) {
-                    int iep = cyep[ke][icy];
-                    int ic = epc[iep];
-                    int it = ct[ic];
+                    int iep = convexEdgeCycleNumbers[ke][icy];
+                    int ic = convexEdgeCircleNumber[iep];
+                    int it = circleTorusNumber[ic];
                     int ia2;
-                    if (ia == ta[0][it]) {
-                        ia2 = ta[1][it];
+                    if (ia == torusAtomNumber[0][it]) {
+                        ia2 = torusAtomNumber[1][it];
                     } else {
-                        ia2 = ta[0][it];
+                        ia2 = torusAtomNumber[0][it];
                     }
                     for (int k = 0; k < 3; k++) {
-                        acvect[k] = c[k][ic] - a[k][ia];
-                        aavect[k] = a[k][ia2] - a[k][ia];
+                        acvect[k] = circleCenter[k][ic] - atomCoords[k][ia];
+                        aavect[k] = atomCoords[k][ia2] - atomCoords[k][ia];
                     }
                     norm(aavect, aavect);
                     double dt = dot(acvect, aavect);
-                    double geo = -dt / (radius[ia] * cr[ic]);
-                    int iv1 = epv[0][iep];
-                    int iv2 = epv[1][iep];
+                    double geo = -dt / (radius[ia] * circleRadius[ic]);
+                    int iv1 = convexEdgeVertexNumber[0][iep];
+                    int iv2 = convexEdgeVertexNumber[1][iep];
                     if (iv1 == -1 || iv2 == -1) {
                         angle = 2.0 * PI;
                     } else {
                         for (int k = 0; k < 3; k++) {
-                            vect1[k] = v[k][iv1] - c[k][ic];
-                            vect2[k] = v[k][iv2] - c[k][ic];
-                            radial[k][ke] = v[k][iv1] - a[k][ia];
+                            vect1[k] = vertexCoords[k][iv1] - circleCenter[k][ic];
+                            vect2[k] = vertexCoords[k][iv2] - circleCenter[k][ic];
+                            radial[k][ke] = vertexCoords[k][iv1] - atomCoords[k][ia];
                         }
                         getVector(ai, radial, ke);
                         norm(ai, ai);
@@ -2740,7 +2716,7 @@ public class VolumeRegion extends ParallelRegion {
                         tanv[2][1][ke] = ak[2];
                         angle = vecang(vect1, vect2, aavect, -1.0);
                     }
-                    gcurve += cr[ic] * angle * geo;
+                    gcurve += circleRadius[ic] * angle * geo;
                     if (nedge != 0) {
                         if (ke > 0) {
                             getVector(ai, tanv, 1, ke - 1);
@@ -2774,51 +2750,50 @@ public class VolumeRegion extends ParallelRegion {
             av[1] = volp;
         }
 
-        void measfs(int ifs, double[] saddle) {
+        void measureSaddleFace(int ifs, double[] saddle) {
             double areas = 0.0;
             double vols = 0.0;
             double areasp = 0.0;
             double volsp = 0.0;
-            double[] vect1 = new double[3];
-            double[] vect2 = new double[3];
+            int iep = saddleConvexEdgeNumbers[0][ifs];
+            int ic = convexEdgeCircleNumber[iep];
+            int it = circleTorusNumber[ic];
+            int ia1 = torusAtomNumber[0][it];
+            int ia2 = torusAtomNumber[1][it];
             double[] aavect = new double[3];
-
-            int iep = fsep[0][ifs];
-            int ic = epc[iep];
-            int it = ct[ic];
-            int ia1 = ta[0][it];
-            int ia2 = ta[1][it];
             for (int k = 0; k < 3; k++) {
-                aavect[k] = a[k][ia2] - a[k][ia1];
+                aavect[k] = atomCoords[k][ia2] - atomCoords[k][ia1];
             }
             norm(aavect, aavect);
-            int iv1 = epv[0][iep];
-            int iv2 = epv[1][iep];
+            int iv1 = convexEdgeVertexNumber[0][iep];
+            int iv2 = convexEdgeVertexNumber[1][iep];
             double phi;
+            double[] vect1 = new double[3];
+            double[] vect2 = new double[3];
             if (iv1 == -1 || iv2 == -1) {
                 phi = 2.0 * PI;
             } else {
                 for (int k = 0; k < 3; k++) {
-                    vect1[k] = v[k][iv1] - c[k][ic];
-                    vect2[k] = v[k][iv2] - c[k][ic];
+                    vect1[k] = vertexCoords[k][iv1] - circleCenter[k][ic];
+                    vect2[k] = vertexCoords[k][iv2] - circleCenter[k][ic];
                 }
                 phi = vecang(vect1, vect2, aavect, 1.0);
             }
             for (int k = 0; k < 3; k++) {
-                vect1[k] = a[k][ia2] - t[k][it];
-                vect2[k] = a[k][ia2] - t[k][it];
+                vect1[k] = atomCoords[k][ia1] - torusCenter[k][it];
+                vect2[k] = atomCoords[k][ia2] - torusCenter[k][it];
             }
             double d1 = -1.0 * dot(vect1, aavect);
             double d2 = dot(vect2, aavect);
-            theta1 = atan2(d1, tr[it]);
-            theta2 = atan2(d2, tr[it]);
+            theta1 = atan2(d1, torusRadius[it]);
+            theta2 = atan2(d2, torusRadius[it]);
 
             // Check for cusps.
             double thetaq;
             boolean cusp;
-            if (tr[it] < probe && theta1 > 0.0 && theta2 > 0.0) {
+            if (torusRadius[it] < probe && theta1 > 0.0 && theta2 > 0.0) {
                 cusp = true;
-                double rat = tr[it] / probe;
+                double rat = torusRadius[it] / probe;
                 if (rat > 1.0) {
                     rat = 1.0;
                 } else if (rat < -1.0) {
@@ -2831,32 +2806,32 @@ public class VolumeRegion extends ParallelRegion {
                 areasp = 0.0;
                 volsp = 0.0;
             }
-            double term1 = tr[it] * probe * (theta1 + theta2);
+            double term1 = torusRadius[it] * probe * (theta1 + theta2);
             double term2 = (probe * probe) * (sin(theta1) + sin(theta2));
             areas = phi * (term1 - term2);
             if (cusp) {
-                double spin = tr[it] * probe * thetaq - probe * probe * sin(thetaq);
+                double spin = torusRadius[it] * probe * thetaq - probe * probe * sin(thetaq);
                 areasp = 2.0 * phi * spin;
             }
 
-            iep = fsep[0][ifs];
-            int ic2 = epc[iep];
-            iep = fsep[1][ifs];
-            int ic1 = epc[iep];
-            if (ca[ic1] != ia1) {
+            iep = saddleConvexEdgeNumbers[0][ifs];
+            int ic2 = convexEdgeCircleNumber[iep];
+            iep = saddleConvexEdgeNumbers[1][ifs];
+            int ic1 = convexEdgeCircleNumber[iep];
+            if (circleAtomNumber[ic1] != ia1) {
                 throw new EnergyException("IA1 Inconsistency in MEASFS", true);
             }
             for (int k = 0; k < 3; k++) {
-                vect1[k] = c[k][ic1] - a[k][ia1];
-                vect2[k] = c[k][ic2] - a[k][ia2];
+                vect1[k] = circleCenter[k][ic1] - atomCoords[k][ia1];
+                vect2[k] = circleCenter[k][ic2] - atomCoords[k][ia2];
             }
             double w1 = dot(vect1, aavect);
             double w2 = -1.0 * dot(vect2, aavect);
-            double cone1 = phi * ((w1 * cr[ic1] * cr[ic1])) / 6.0;
-            double cone2 = phi * ((w2 * cr[ic2] * cr[ic2])) / 6.0;
-            term1 = (tr[it] * tr[it]) * probe * (sin(theta1) + sin(theta2));
+            double cone1 = phi * ((w1 * circleRadius[ic1] * circleRadius[ic1])) / 6.0;
+            double cone2 = phi * ((w2 * circleRadius[ic2] * circleRadius[ic2])) / 6.0;
+            term1 = (torusRadius[it] * torusRadius[it]) * probe * (sin(theta1) + sin(theta2));
             term2 = sin(theta1) * cos(theta1) + theta1 + sin(theta2) * cos(theta2) + theta2;
-            term2 = tr[it] * (probe * probe) * term2;
+            term2 = torusRadius[it] * (probe * probe) * term2;
             double term3 = sin(theta1) * cos(theta1) * cos(theta1)
                     + 2.0 * sin(theta1) + sin(theta2) * cos(theta2) * cos(theta2)
                     + 2.0 * sin(theta2);
@@ -2864,9 +2839,9 @@ public class VolumeRegion extends ParallelRegion {
             double volt = (phi / 2.0) * (term1 - term2 + term3);
             vols = volt + cone1 + cone2;
             if (cusp) {
-                term1 = (tr[it] * tr[it]) * probe * sin(thetaq);
+                term1 = (torusRadius[it] * torusRadius[it]) * probe * sin(thetaq);
                 term2 = sin(thetaq) * cos(thetaq) + thetaq;
-                term2 = tr[it] * (probe * probe) * term2;
+                term2 = torusRadius[it] * (probe * probe) * term2;
                 term3 = sin(thetaq) * cos(thetaq) * cos(thetaq) + 2.0 * sin(thetaq);
                 term3 = (probe * probe * probe / 3.0) * term3;
                 volsp = phi * (term1 - term2 + term3);
@@ -2877,7 +2852,7 @@ public class VolumeRegion extends ParallelRegion {
             saddle[3] = volsp;
         }
 
-        void measfn(int ifn, double[] av) {
+        void measureConcaveFace(int ifn, double[] av) {
             double[] ai = new double[3];
             double[] aj = new double[3];
             double[] ak = new double[3];
@@ -2888,17 +2863,18 @@ public class VolumeRegion extends ParallelRegion {
             double arean;
             double voln;
             for (int ke = 0; ke < 3; ke++) {
-                int ien = fnen[ke][ifn];
-                int iv = env[0][ien];
-                int ia = va[iv];
-                int ip = vp[iv];
+                int ien = concaveFaceEdgeNumbers[ke][ifn];
+                int iv = concaveEdgeVertexNumbers[0][ien];
+                int ia = vertexAtomNumbers[iv];
+                int ip = vertexProbeNumber[iv];
                 for (int k = 0; k < 3; k++) {
-                    pvv[k][ke] = v[k][iv] - p[k][ip];
-                    pav[k][ke] = a[k][ia] - p[k][ip];
+                    pvv[k][ke] = vertexCoords[k][iv] - probeCoords[k][ip];
+                    pav[k][ke] = atomCoords[k][ia] - probeCoords[k][ip];
                 }
                 if (probe > 0.0) {
                     getVector(ai, pvv, ke);
                     norm(ai, ai);
+                    putVector(ai, pvv, ke);
                 }
             }
             if (probe <= 0.0) {
@@ -2911,9 +2887,9 @@ public class VolumeRegion extends ParallelRegion {
                     }
                     getVector(ai, pvv, ke);
                     getVector(aj, pvv, je);
-                    getVector(ak, planev, ke);
                     cross(ai, aj, ak);
                     norm(ak, ak);
+                    putVector(ak, planev, ke);
                 }
                 for (int ke = 0; ke < 3; ke++) {
                     int je = ke - 1;
@@ -2938,7 +2914,6 @@ public class VolumeRegion extends ParallelRegion {
             voln = simplx - arean * probe / 3.0;
             av[0] = arean;
             av[1] = voln;
-
         }
 
         /**
@@ -2947,9 +2922,6 @@ public class VolumeRegion extends ParallelRegion {
          * compute the volume and surface area
          */
         void vam() {
-            if (nfn < 0) {
-                nfn = 0;
-            }
             final int maxdot = 1000;
             final int maxop = 100;
             final int nscale = 20;
@@ -2957,10 +2929,7 @@ public class VolumeRegion extends ParallelRegion {
             int[] ispind = new int[3];
             int[] ispnd2 = new int[3];
             int[] ifnop = new int[maxop];
-            int[] nlap = new int[nfn];
             int[] enfs = new int[20 * nAtoms];
-            int[][] fnt = new int[3][nfn];
-            int[][] nspt = new int[3][nfn];
             double[][] cenop = new double[3][maxop];
             double[] sdot = new double[3];
             double[] dotv = new double[nscale];
@@ -2993,97 +2962,115 @@ public class VolumeRegion extends ParallelRegion {
             double[] al = new double[3];
             double[][] dots = new double[3][maxdot];
             double[][] tdots = new double[3][maxdot];
-            double[] atmarea = new double[nAtoms];
-            double[] depths = new double[nfn];
-            double[] cora = new double[nfn];
-            double[] corv = new double[nfn];
-            double[][] alts = new double[3][nfn];
-            double[][] fncen = new double[3][nfn];
-            double[][][] fnvect = new double[3][3][nfn];
+            double[] atomArea = new double[nAtoms];
             boolean[] ate = new boolean[maxop];
-            boolean[] badav = new boolean[nfn];
-            boolean[] badt = new boolean[nfn];
-            boolean[][] fcins = new boolean[3][nfn];
-            boolean[][] fcint = new boolean[3][nfn];
-            boolean[][] fntrev = new boolean[3][nfn];
             boolean[] vip = new boolean[3];
             boolean[] cintp = new boolean[1];
             boolean[] cinsp = new boolean[1];
 
+            int[] nlap = null;
+            int[][] fnt = null;
+            int[][] nspt = null;
+            double[] depths = null;
+            double[] cora = null;
+            double[] corv = null;
+            double[][] alts = null;
+            double[][] fncen = null;
+            double[][][] fnvect = null;
+            boolean[] badav = null;
+            boolean[] badt = null;
+            boolean[][] fcins = null;
+            boolean[][] fcint = null;
+            boolean[][] fntrev = null;
+            if (nConcaveFaces >= 0) {
+                nlap = new int[nConcaveFaces + 1];
+                fnt = new int[3][nConcaveFaces + 1];
+                nspt = new int[3][nConcaveFaces + 1];
+                depths = new double[nConcaveFaces + 1];
+                cora = new double[nConcaveFaces + 1];
+                corv = new double[nConcaveFaces + 1];
+                alts = new double[3][nConcaveFaces + 1];
+                fncen = new double[3][nConcaveFaces + 1];
+                fnvect = new double[3][3][nConcaveFaces + 1];
+                badav = new boolean[nConcaveFaces + 1];
+                badt = new boolean[nConcaveFaces + 1];
+                fcins = new boolean[3][nConcaveFaces + 1];
+                fcint = new boolean[3][nConcaveFaces + 1];
+                fntrev = new boolean[3][nConcaveFaces + 1];
+            }
+
             // Compute the volume of the interior polyhedron.
             double polyhedronVolume = 0.0;
-            for (int ifn = 0; ifn < nfn + 1; ifn++) {
-                polyhedronVolume += measpm(ifn);
+            for (int i = 0; i <= nConcaveFaces; i++) {
+                polyhedronVolume += measurePrism(i);
             }
 
             // Compute the area and volume due to convex faces as well as
             // the area partitioned among the atoms.
-            double totap = 0.0;
-            double totvp = 0.0;
-            fill(atmarea, 0.0);
+            double convexFaceArea = 0.0;
+            double convexFaceVolume = 0.0;
+            fill(atomArea, 0.0);
             double[] convexFaces = {0.0, 0.0};
-            for (int ifp = 0; ifp < nfp + 1; ifp++) {
-                measfp(ifp, convexFaces);
-                int ia = fpa[ifp];
-                atmarea[ia] += convexFaces[0];
-                totap += convexFaces[0];
-                totvp += convexFaces[1];
+            for (int i = 0; i <= nConvexFaces; i++) {
+                measureConvexFace(i, convexFaces);
+                int ia = convexFaceAtomNumber[i];
+                atomArea[ia] += convexFaces[0];
+                convexFaceArea += convexFaces[0];
+                convexFaceVolume += convexFaces[1];
             }
 
             // Compute the area and volume due to saddle faces
             // as well as the spindle correction value.
-            double totas = 0.0;
-            double totvs = 0.0;
-            double totasp = 0.0;
-            double totvsp = 0.0;
+            double saddleFaceArea = 0.0;
+            double saddleFaceVolume = 0.0;
+            double saddleFaceAreaP = 0.0;
+            double saddleFaceVolumeP = 0.0;
             double[] saddle = {0.0, 0.0, 0.0, 0.0};
-            for (int ifs = 0; ifs < nfs + 1; ifs++) {
+            for (int i = 0; i <= nSaddleFaces; i++) {
                 for (int k = 0; k < 2; k++) {
-                    int ien = fsen[k][ifs];
+                    int ien = saddleConcaveEdgeNumbers[k][i];
                     if (ien > -1) {
-                        enfs[ien] = ifs;
+                        enfs[ien] = i;
                     }
                 }
-                measfs(ifs, saddle);
+                measureSaddleFace(i, saddle);
                 double areas = saddle[0];
                 double vols = saddle[1];
                 double areasp = saddle[2];
                 double volsp = saddle[3];
-                totas += areas;
-                totvs += vols;
-                totasp += areasp;
-                totvsp += volsp;
+                saddleFaceArea += areas;
+                saddleFaceVolume += vols;
+                saddleFaceAreaP += areasp;
+                saddleFaceVolumeP += volsp;
                 if (areas - areasp < 0.0) {
-                    //logger.severe("Negative Area for Saddle Face");
                     throw new EnergyException("Negative Area for Saddle Face", true);
                 }
             }
 
             // Compute the area and volume due to concave faces.
-            double totan = 0.0;
-            double totvn = 0.0;
+            double concaveFaceArea = 0.0;
+            double concaveFaceVolume = 0.0;
             double[] concaveFaces = {0.0, 0.0};
-            for (int ifn = 0; ifn < nfn + 1; ifn++) {
-                measfn(ifn, concaveFaces);
+            for (int i = 0; i <= nConcaveFaces; i++) {
+                measureConcaveFace(i, concaveFaces);
                 double arean = concaveFaces[0];
                 double voln = concaveFaces[1];
-                totan += arean;
-                totvn += voln;
+                concaveFaceArea += arean;
+                concaveFaceVolume += voln;
             }
 
             // Compute the area and volume lens correction values.
-            double alenst = 0.0;
+            double lensCorrectionArea = 0.0;
             double alensn = 0.0;
-            double vlenst = 0.0;
+            double lensCorrectionVolume = 0.0;
             double vlensn = 0.0;
-            for (int j = 0; j < 1; j++) {
-                if (probe <= 0.0) {
-                    continue;
-                }
+
+            if (probe > 0.0) {
                 int[] ndots = {maxdot};
-                gendot(ndots, dots, probe, 0.0, 0.0, 0.0);
+                gendot(ndots, dots, probe);
                 double dota = (4.0 * PI * probe * probe) / ndots[0];
-                for (int ifn = 0; ifn < nfn + 1; ifn++) {
+                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
+                    // ifn == 35 causes out of bounds.
                     nlap[ifn] = -1;
                     cora[ifn] = 0.0;
                     corv[ifn] = 0.0;
@@ -3092,31 +3079,31 @@ public class VolumeRegion extends ParallelRegion {
                     for (int k = 0; k < 3; k++) {
                         nspt[k][ifn] = -1;
                     }
-                    int ien = fnen[0][ifn];
-                    iv = env[0][ien];
-                    int ip = vp[iv];
+                    int ien = concaveFaceEdgeNumbers[0][ifn];
+                    iv = concaveEdgeVertexNumbers[0][ien];
+                    int ip = vertexProbeNumber[iv];
                     getVector(ai, alts, ifn);
                     depths[ifn] = depth(ip, ai);
                     for (int k = 0; k < 3; k++) {
-                        fncen[k][ifn] = p[k][ip];
+                        fncen[k][ifn] = probeCoords[k][ip];
                     }
                     // This assigned value was never used?
-                    int ia = va[iv];
+                    int ia = vertexAtomNumbers[iv];
                     // Get vertices and vectors.
                     for (int ke = 0; ke < 3; ke++) {
-                        ien = fnen[ke][ifn];
-                        ivs[ke] = env[0][ien];
-                        ia = va[ivs[ke]];
+                        ien = concaveFaceEdgeNumbers[ke][ifn];
+                        ivs[ke] = concaveEdgeVertexNumbers[0][ien];
+                        ia = vertexAtomNumbers[ivs[ke]];
                         int ifs = enfs[ien];
-                        int iep = fsep[0][ifs];
-                        int ic = epc[iep];
-                        int it = ct[ic];
+                        int iep = saddleConvexEdgeNumbers[0][ifs];
+                        int ic = convexEdgeCircleNumber[iep];
+                        int it = circleTorusNumber[ic];
                         fnt[ke][ifn] = it;
-                        fntrev[ke][ifn] = (ta[0][it] != ia);
+                        fntrev[ke][ifn] = (torusAtomNumber[0][it] != ia);
                     }
                     for (int ke = 0; ke < 3; ke++) {
                         for (int k = 0; k < 3; k++) {
-                            vects[k][ke] = v[k][ivs[ke]] - p[k][ip];
+                            vects[k][ke] = vertexCoords[k][ivs[ke]] - probeCoords[k][ip];
                         }
                     }
                     // Calculate normal vectors for the three planes that
@@ -3135,8 +3122,8 @@ public class VolumeRegion extends ParallelRegion {
                     cross(ai, aj, ak);
                     norm(ak, ak);
                 }
-                for (int ifn = 0; ifn < nfn; ifn++) {
-                    for (int jfn = ifn + 1; jfn < nfn + 1; jfn++) {
+                for (int ifn = 0; ifn <= nConcaveFaces - 1; ifn++) {
+                    for (int jfn = ifn + 1; jfn <= nConcaveFaces; jfn++) {
                         getVector(ai, fncen, ifn);
                         getVector(aj, fncen, jfn);
                         double dij2 = dist2(ai, aj);
@@ -3188,7 +3175,7 @@ public class VolumeRegion extends ParallelRegion {
                                 continue;
                             }
                             int it = fnt[ke][ifn];
-                            if (tr[it] > probe) {
+                            if (torusRadius[it] > probe) {
                                 continue;
                             }
                             for (int ke2 = 0; ke2 < 3; ke2++) {
@@ -3205,22 +3192,22 @@ public class VolumeRegion extends ParallelRegion {
                             }
 
                             // Check that the two ways of calculating intersection points match.
-                            rat = tr[it] / probe;
+                            rat = torusRadius[it] / probe;
                             check(rat);
                             thetaq[ke] = acos(rat);
                             double stq = sin(thetaq[ke]);
                             if (fntrev[ke][ifn]) {
                                 for (int k = 0; k < 3; k++) {
-                                    uij[k] = -tax[k][it];
+                                    uij[k] = -torusAxis[k][it];
                                 }
                             } else {
                                 for (int k = 0; k < 3; k++) {
-                                    uij[k] = tax[k][it];
+                                    uij[k] = torusAxis[k][it];
                                 }
                             }
                             for (int k = 0; k < 3; k++) {
-                                qij[k] = t[k][it] - stq * probe * uij[k];
-                                qji[k] = t[k][it] + stq * probe * uij[k];
+                                qij[k] = torusCenter[k][it] - stq * probe * uij[k];
+                                qji[k] = torusCenter[k][it] + stq * probe * uij[k];
                             }
                             for (int k = 0; k < 3; k++) {
                                 umq[k] = (qij[k] - ppm[k]) / rm;
@@ -3263,12 +3250,12 @@ public class VolumeRegion extends ParallelRegion {
                         nlap[ifn]++;
                         nlap[jfn]++;
                         for (int ke = 0; ke < 3; ke++) {
-                            int ien = fnen[ke][ifn];
-                            int iv1 = env[0][ien];
-                            int iv2 = env[1][ien];
+                            int ien = concaveFaceEdgeNumbers[ke][ifn];
+                            int iv1 = concaveEdgeVertexNumbers[0][ien];
+                            int iv2 = concaveEdgeVertexNumbers[1][ien];
                             for (int k = 0; k < 3; k++) {
-                                vect3[k] = v[k][iv1] - fncen[k][ifn];
-                                vect4[k] = v[k][iv2] - fncen[k][ifn];
+                                vect3[k] = vertexCoords[k][iv1] - fncen[k][ifn];
+                                vect4[k] = vertexCoords[k][iv2] - fncen[k][ifn];
                             }
                             for (int ke2 = 0; ke2 < 3; ke2++) {
                                 if (ispind[ke] == ispnd2[ke2] || ispind[ke] == -1) {
@@ -3282,12 +3269,12 @@ public class VolumeRegion extends ParallelRegion {
                                 if (!cintp[0]) {
                                     continue;
                                 }
-                                ien = fnen[ke2][jfn];
-                                iv1 = env[0][ien];
-                                iv2 = env[1][ien];
+                                ien = concaveFaceEdgeNumbers[ke2][jfn];
+                                iv1 = concaveEdgeVertexNumbers[0][ien];
+                                iv2 = concaveEdgeVertexNumbers[1][ien];
                                 for (int k = 0; k < 3; k++) {
-                                    vect7[k] = v[k][iv1] - fncen[k][jfn];
-                                    vect8[k] = v[k][iv2] - fncen[k][jfn];
+                                    vect7[k] = vertexCoords[k][iv1] - fncen[k][jfn];
+                                    vect8[k] = vertexCoords[k][iv2] - fncen[k][jfn];
                                 }
                                 // Check whether point lies on spindle arc.
                                 for (int k = 0; k < 3; k++) {
@@ -3324,12 +3311,12 @@ public class VolumeRegion extends ParallelRegion {
                             }
                         }
                         for (int ke = 0; ke < 3; ke++) {
-                            int ien = fnen[ke][ifn];
-                            int iv1 = env[0][ien];
-                            int iv2 = env[1][ien];
+                            int ien = concaveFaceEdgeNumbers[ke][ifn];
+                            int iv1 = concaveEdgeVertexNumbers[0][ien];
+                            int iv2 = concaveEdgeVertexNumbers[1][ien];
                             for (int k = 0; k < 3; k++) {
-                                vect3[k] = v[k][iv1] - fncen[k][ifn];
-                                vect4[k] = v[k][iv2] - fncen[k][ifn];
+                                vect3[k] = vertexCoords[k][iv1] - fncen[k][ifn];
+                                vect4[k] = vertexCoords[k][iv2] - fncen[k][ifn];
                             }
                             for (int ke2 = 0; ke2 < 3; ke2++) {
                                 if (ispind[ke] == ispnd2[ke2] || ispnd2[ke2] == -1) {
@@ -3343,12 +3330,12 @@ public class VolumeRegion extends ParallelRegion {
                                 if (!cintp[0]) {
                                     continue;
                                 }
-                                ien = fnen[ke2][jfn];
-                                iv1 = env[0][ien];
-                                iv2 = env[1][ien];
+                                ien = concaveFaceEdgeNumbers[ke2][jfn];
+                                iv1 = concaveEdgeVertexNumbers[0][ien];
+                                iv2 = concaveEdgeVertexNumbers[1][ien];
                                 for (int k = 0; k < 3; k++) {
-                                    vect7[k] = v[k][iv1] - fncen[k][jfn];
-                                    vect8[k] = v[k][iv2] - fncen[k][jfn];
+                                    vect7[k] = vertexCoords[k][iv1] - fncen[k][jfn];
+                                    vect8[k] = vertexCoords[k][iv2] - fncen[k][jfn];
                                 }
                                 // Check whether point lies on spindle arc.
                                 for (int k = 0; k < 3; k++) {
@@ -3400,15 +3387,15 @@ public class VolumeRegion extends ParallelRegion {
                         outerloop:
                         for (int kv = 0; kv < 3; kv++) {
                             vip[kv] = false;
-                            int ien = fnen[kv][jfn];
-                            iv = env[0][ien];
+                            int ien = concaveFaceEdgeNumbers[kv][jfn];
+                            iv = concaveEdgeVertexNumbers[0][ien];
                             for (int k = 0; k < 3; k++) {
-                                vect1[k] = v[k][iv] - fncen[k][ifn];
+                                vect1[k] = vertexCoords[k][iv] - fncen[k][ifn];
                             }
                             norm(vect1, vect1);
                             for (int ke = 0; ke < 3; ke++) {
                                 getVector(ai, fnvect, ke, ifn);
-                                getVector(aj, v, iv);
+                                getVector(aj, vertexCoords, iv);
                                 double dt = dot(ai, aj);
                                 if (dt > 0.0) {
                                     continue outerloop;
@@ -3418,20 +3405,20 @@ public class VolumeRegion extends ParallelRegion {
                         }
                     }
                 }
-                for (int ifn = 0; ifn < nfn + 1; ifn++) {
+                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
                     for (int ke = 0; ke < 3; ke++) {
                         if (nspt[ke][ifn] > 0) {
                             badt[ifn] = true;
                         }
                     }
                 }
-                for (int ifn = 0; ifn < nfn + 1; ifn++) {
+                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
                     if (nlap[ifn] <= -1) {
                         continue;
                     }
                     // Gather all overlapping probes.
                     int nop = -1;
-                    for (int jfn = 0; jfn < nfn + 1; jfn++) {
+                    for (int jfn = 0; jfn <= nConcaveFaces; jfn++) {
                         if (ifn != jfn) {
                             getVector(ai, fncen, ifn);
                             getVector(aj, fncen, jfn);
@@ -3458,7 +3445,7 @@ public class VolumeRegion extends ParallelRegion {
                             double rsc = isc - 0.5;
                             dotv[isc] = probe * dota * rsc * rsc * scinc * scinc * scinc;
                         }
-                        for (int iop = 0; iop < nop + 1; iop++) {
+                        for (int iop = 0; iop < nop; iop++) {
                             ate[iop] = false;
                         }
                         int neatmx = 0;
@@ -3545,17 +3532,28 @@ public class VolumeRegion extends ParallelRegion {
                             corv[ifn] = corvn;
                             vlensn += corv[ifn];
                         }
-                        alenst += cora[ifn];
-                        vlenst += corv[ifn];
+                        lensCorrectionArea += cora[ifn];
+                        lensCorrectionVolume += corv[ifn];
                     }
                 }
             }
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(format(" Polyhedron %d Volume %18.6e", nConcaveFaces + 1, polyhedronVolume));
+                logger.fine(format(" Convex faces: %d Area: %18.6f Volume: %18.6f",
+                        nConvexFaces + 1, convexFaceArea, convexFaceVolume));
+                logger.fine(format(" Saddle Faces: %d Area: %18.6f Volume: %18.6f AreaP: %18.6f VolumeP: %18.6f",
+                        nSaddleFaces + 1, saddleFaceArea, saddleFaceVolume,
+                        saddleFaceAreaP, saddleFaceVolumeP));
+                logger.fine(format(" Concave faces: %d Area: %18.6f Volume: %18.6f",
+                        nConcaveFaces + 1, concaveFaceArea, concaveFaceVolume));
+                logger.fine(format(" Lens correction: Area: %18.6f Volume: %18.6f",
+                        lensCorrectionArea, lensCorrectionVolume));
+            }
+
             // Finally, compute the total area and total volume.
-            double area = totap + totas + totan - totasp - alenst;
-            double volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
-            //logger.info(format(" Volume = %16.8f, Area = %16.8f", volume, area));
-            //logger.info(format(" Total Volume        %16.8f", volume));
-            //logger.info(format(" Total Area          %16.8f", area));
+            double area = convexFaceArea + saddleFaceArea + concaveFaceArea - saddleFaceAreaP - lensCorrectionArea;
+            double volume = convexFaceVolume + saddleFaceVolume + concaveFaceVolume + polyhedronVolume - saddleFaceVolumeP + lensCorrectionVolume;
 
             localVolume += volume;
             localSurfaceArea += area;
@@ -3566,31 +3564,30 @@ public class VolumeRegion extends ParallelRegion {
          * surface points for a sphere with the input radius and coordinate
          * center.
          */
-        void gendot(int[] ndots, double[][] dots, double radius,
-                    double xcenter, double ycenter, double zcenter) {
+        void gendot(int[] ndots, double[][] dots, double radius) {
             int nequat = (int) sqrt(PI * ((double) ndots[0]));
-            int nvert = nequat / 2;
-            if (nvert < 0) {
-                nvert = 0;
+            int nvert = (int) (0.5 * (double) nequat);
+            if (nvert < 1) {
+                nvert = 1;
             }
-            int k = 0;
+            int k = -1;
             outerloop:
-            for (int i = -1; i < nvert + 1; i++) {
+            for (int i = 0; i <= nvert; i++) {
                 double fi = (PI * ((double) i)) / ((double) nvert);
                 double z = cos(fi);
                 double xy = sin(fi);
                 int nhoriz = (int) (nequat * xy);
-                if (nhoriz < 0) {
-                    nhoriz = 0;
+                if (nhoriz < 1) {
+                    nhoriz = 1;
                 }
-                for (int j = -1; j < nhoriz; j++) {
-                    double fj = (2.0 * PI * ((double) (j))) / ((double) (nhoriz));
+                for (int j = 0; j < nhoriz; j++) {
+                    double fj = (2.0 * PI * ((double) j)) / ((double) nhoriz);
                     double x = cos(fj) * xy;
                     double y = sin(fj) * xy;
                     k++;
-                    dots[0][k] = x * radius + xcenter;
-                    dots[1][k] = y * radius + ycenter;
-                    dots[2][k] = z * radius + zcenter;
+                    dots[0][k] = x * radius;
+                    dots[1][k] = y * radius;
+                    dots[2][k] = z * radius;
                     if (k >= ndots[0]) {
                         break outerloop;
                     }
@@ -3676,13 +3673,13 @@ public class VolumeRegion extends ParallelRegion {
             double[] vect2 = new double[3];
             double[] vect3 = new double[3];
             double[] vect4 = new double[3];
-            int ia1 = pa[0][ip];
-            int ia2 = pa[1][ip];
-            int ia3 = pa[2][ip];
+            int ia1 = probeAtomNumbers[0][ip];
+            int ia2 = probeAtomNumbers[1][ip];
+            int ia3 = probeAtomNumbers[2][ip];
             for (int k = 0; k < 3; k++) {
-                vect1[k] = a[k][ia1] - a[k][ia3];
-                vect2[k] = a[k][ia2] - a[k][ia3];
-                vect3[k] = p[k][ip] - a[k][ia3];
+                vect1[k] = atomCoords[k][ia1] - atomCoords[k][ia3];
+                vect2[k] = atomCoords[k][ia2] - atomCoords[k][ia3];
+                vect3[k] = probeCoords[k][ip] - atomCoords[k][ia3];
             }
             cross(vect1, vect2, vect4);
             norm(vect4, vect4);
