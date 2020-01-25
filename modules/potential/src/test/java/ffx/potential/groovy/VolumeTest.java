@@ -168,5 +168,32 @@ public class VolumeTest {
         assertEquals(340.264998320387, volume.totalSurfaceArea, 0.001);
     }
 
+    /**
+     * Test Connolly SEV & SASA with a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollyMolecularCrambin() {
+        String[] args = {"-c", "-m", "-p", "1.4", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(5222.628196815338, volume.totalVolume, 0.001);
+        assertEquals(2326.375086471378, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly SEV & SASA with a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollySEVCrambin() {
+        String[] args = {"-c", "-p", "1.4", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(8956.620463626994, volume.totalVolume, 0.001);
+        assertEquals(3015.7687533888334, volume.totalSurfaceArea, 0.001);
+    }
 
 }
