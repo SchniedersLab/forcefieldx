@@ -765,10 +765,12 @@ public class ConnollyRegion extends ParallelRegion {
         energy();
     }
 
+    /**
+     * Apply a small perturbation of fixed magnitude to each atom.
+     */
     private void wiggle() {
         double SIZE = 0.000001;
         double[] vector = new double[3];
-        // Apply a small perturbation of fixed magnitude to each atom.
         for (int i = 0; i < nAtoms; i++) {
             getRandomVector(vector);
             atomCoords[0][i] = x[i] + (SIZE * vector[0]);
@@ -777,6 +779,11 @@ public class ConnollyRegion extends ParallelRegion {
         }
     }
 
+    /**
+     * Construct the 3-dimensional random unit vector.
+     *
+     * @param vector The generated vector.
+     */
     private void getRandomVector(double[] vector) {
         double x, y, s;
         x = 0;
@@ -797,6 +804,9 @@ public class ConnollyRegion extends ParallelRegion {
         vector[0] = s * x;
     }
 
+    /**
+     * Compute the cavitation energy.
+     */
     private void energy() {
 
         // Calculate a purely surface area based cavitation energy.
@@ -969,30 +979,6 @@ public class ConnollyRegion extends ParallelRegion {
             saddles();
             contact();
             vam();
-        }
-
-        private void getVector(double[] ai, double[][] temp, int index) {
-            ai[0] = temp[0][index];
-            ai[1] = temp[1][index];
-            ai[2] = temp[2][index];
-        }
-
-        private void putVector(double[] ai, double[][] temp, int index) {
-            temp[0][index] = ai[0];
-            temp[1][index] = ai[1];
-            temp[2][index] = ai[2];
-        }
-
-        private void getVector(double[] ai, double[][][] temp, int index1, int index2) {
-            ai[0] = temp[0][index1][index2];
-            ai[1] = temp[1][index1][index2];
-            ai[2] = temp[2][index1][index2];
-        }
-
-        private void putVector(double[] ai, double[][][] temp, int index1, int index2) {
-            temp[0][index1][index2] = ai[0];
-            temp[1][index1][index2] = ai[1];
-            temp[2][index1][index2] = ai[2];
         }
 
         /**
@@ -1655,7 +1641,6 @@ public class ConnollyRegion extends ParallelRegion {
                         // We have a new probe position.
                         nProbePositions++;
                         if (nProbePositions > maxProbePositions) {
-                            //logger.severe("Too many Probe Positions");
                             throw new EnergyException("Too many Probe Positions", false);
                         }
                         // Mark three tori not buried.
@@ -1669,8 +1654,7 @@ public class ConnollyRegion extends ParallelRegion {
 
                         // Calculate vectors from probe to atom centers.
                         if (nConcaveVerts + 3 > maxVertices) {
-                            //logger.severe("Too many Vertices");
-                            throw new EnergyException("Too many Vertices", false);
+                            throw new EnergyException(" Too many Vertices", false);
                         }
                         for (int k = 0; k < 3; k++) {
                             vertexCoords[k][nConcaveVerts + 1] = atomCoords[k][ia] - probeCoords[k][nProbePositions];
@@ -1768,12 +1752,10 @@ public class ConnollyRegion extends ParallelRegion {
         private void inedge(int edgeNumber, int torusNumber) {
             // Check for a serious error in the calling arguments.
             if (edgeNumber <= -1) {
-                //logger.severe("Bad Edge Number in INEDGE");
-                throw new EnergyException("Bad Edge Number in INEDGE", false);
+                throw new EnergyException(" Bad Edge Number in INEDGE", false);
             }
             if (torusNumber <= -1) {
-                //logger.severe("Bad Torus Number in INEDGE");
-                throw new EnergyException("Bad Torus Number in INEDGE", false);
+                throw new EnergyException(" Bad Torus Number in INEDGE", false);
             }
             // Set beginning of list or add to end.
             if (tempToriFirstEdge[torusNumber] == -1) {
@@ -1841,7 +1823,7 @@ public class ConnollyRegion extends ParallelRegion {
                             int iv2 = concaveEdgeVertexNumbers[1][iptr];
                             int ip1 = vertexProbeNumber[iv1];
                             int ip2 = vertexProbeNumber[iv2];
-                            logger.warning(format("Odd Torus for Probes IP1 %d and IP2 %d", ip1, ip2));
+                            logger.warning(format(" Odd Torus for Probes IP1 %d and IP2 %d", ip1, ip2));
                             iptr = tempToriNextEdge[iptr];
                         }
                     }
@@ -1854,14 +1836,8 @@ public class ConnollyRegion extends ParallelRegion {
          */
         private void saddles() {
             final int maxent = 500;
-            int k, ia, in, ip;
-            int it, iv, itwo;
-            int ien, ient, nent;
-            int l1, l2, m1, n1;
             int[] ten = new int[maxent];
             int[] nxtang = new int[maxent];
-            double triple, factor;
-            double dtev, dt;
             double[] ai = new double[3];
             double[] aj = new double[3];
             double[] ak = new double[3];
@@ -1884,23 +1860,23 @@ public class ConnollyRegion extends ParallelRegion {
             }
 
             // Cycle through tori.
-            for (it = 0; it <= nTori; it++) {
+            for (int it = 0; it <= nTori; it++) {
                 if (skip[torusAtomNumber[0][it]] && skip[torusAtomNumber[1][it]]) {
                     continue;
                 }
 
                 // Set up two circles.
-                for (in = 0; in < 2; in++) {
-                    ia = torusAtomNumber[in][it];
+                for (int in = 0; in < 2; in++) {
+                    int ia = torusAtomNumber[in][it];
 
                     // Mark atom not buried.
                     atomBuried[ia] = false;
 
                     // Vector from atom to torus center.
-                    for (k = 0; k < 3; k++) {
+                    for (int k = 0; k < 3; k++) {
                         atvect[k] = torusCenter[k][it] - atomCoords[k][ia];
                     }
-                    factor = radius[ia] / (radius[ia] + probe);
+                    double factor = radius[ia] / (radius[ia] + probe);
 
                     // One more circle.
                     nCircles++;
@@ -1909,7 +1885,7 @@ public class ConnollyRegion extends ParallelRegion {
                     }
 
                     // Circle center.
-                    for (k = 0; k < 3; k++) {
+                    for (int k = 0; k < 3; k++) {
                         circleCenter[k][nCircles] = atomCoords[k][ia] + factor * atvect[k];
                     }
 
@@ -1933,35 +1909,34 @@ public class ConnollyRegion extends ParallelRegion {
                      */
 
                     // Clear the number of concave edges for torus.
-                    nent = -1;
+                    int nent = -1;
 
                     // Pointer to start of linked list.
-                    ien = torusFirstEdge[it];
+                    int ien = torusFirstEdge[it];
                     // 10 Continue
                     while (ien >= 0) {
                         // One more concave edge.
                         nent++;
                         if (nent > maxent) {
-                            //logger.severe("Too many Edges for Torus");
-                            throw new EnergyException("Too many Edges for Torus", false);
+                            throw new EnergyException(" Too many Edges for Torus", false);
                         }
                         // First vertex of edge.
-                        iv = concaveEdgeVertexNumbers[0][ien];
+                        int iv = concaveEdgeVertexNumbers[0][ien];
 
                         // Probe number of vertex.
-                        ip = vertexProbeNumber[iv];
-                        for (k = 0; k < 3; k++) {
+                        int ip = vertexProbeNumber[iv];
+                        for (int k = 0; k < 3; k++) {
                             tev[k][nent] = probeCoords[k][ip] - torusCenter[k][it];
                         }
-                        dtev = 0.0;
-                        for (k = 0; k < 3; k++) {
+                        double dtev = 0.0;
+                        for (int k = 0; k < 3; k++) {
                             dtev += tev[k][nent] * tev[k][nent];
                         }
                         if (dtev <= 0.0) {
                             throw new EnergyException("Probe on Torus Axis", false);
                         }
                         dtev = sqrt(dtev);
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             tev[k][nent] = tev[k][nent] / dtev;
                         }
 
@@ -1969,8 +1944,8 @@ public class ConnollyRegion extends ParallelRegion {
                         ten[nent] = ien;
                         if (nent > 0) {
                             // Calculate angle between this vector and first vector.
-                            dt = 0.0;
-                            for (k = 0; k < 3; k++) {
+                            double dt = 0.0;
+                            for (int k = 0; k < 3; k++) {
                                 dt += tev[k][0] * tev[k][nent];
                             }
                             if (dt > 1.0) {
@@ -1981,7 +1956,7 @@ public class ConnollyRegion extends ParallelRegion {
                             }
 
                             // Store angle.
-                            teang[nent] = Math.acos(dt);
+                            teang[nent] = acos(dt);
 
                             ai[0] = tev[0][0];
                             ai[1] = tev[1][0];
@@ -1994,7 +1969,7 @@ public class ConnollyRegion extends ParallelRegion {
                             ak[2] = torusAxis[2][it];
 
                             // Get the sign right.
-                            triple = triple(ai, aj, ak);
+                            double triple = tripleProduct(ai, aj, ak);
                             if (triple < 0.0) {
                                 teang[nent] = 2.0 * Math.PI - teang[nent];
                             }
@@ -2009,24 +1984,23 @@ public class ConnollyRegion extends ParallelRegion {
                     }
 
                     if (nent <= -1) {
-                        logger.severe("No Edges for Non-free Torus");
+                        logger.severe(" No Edges for Non-free Torus");
                     }
 
-                    itwo = 2;
-                    if ((nent % itwo) == 0) {
+                    if ((nent % 2) == 0) {
                         throw new EnergyException("Odd Number of Edges for Torus", false);
                     }
 
                     // Set up linked list of concave edges in order of increasing angle
                     // around the torus axis;
                     // clear second linked (angle-ordered) list pointers.
-                    for (ient = 0; ient <= nent; ient++) {
+                    for (int ient = 0; ient <= nent; ient++) {
                         nxtang[ient] = -1;
                     }
-                    for (ient = 1; ient <= nent; ient++) {
+                    for (int ient = 1; ient <= nent; ient++) {
                         // We have an entry to put into linked list search for place to put it.
-                        l1 = -1;
-                        l2 = 0;
+                        int l1 = -1;
+                        int l2 = 0;
                         while (l2 != -1 && teang[ient] >= teang[l2]) {
                             l1 = l2;
                             l2 = nxtang[l2];
@@ -2041,7 +2015,7 @@ public class ConnollyRegion extends ParallelRegion {
 
                     // Collect pairs of concave edges into saddles.
                     // Create convex edges while you're at it.
-                    l1 = 0;
+                    int l1 = 0;
                     while (l1 > -1) {
                         // Check for start of saddle.
                         if (sdstrt[l1]) {
@@ -2062,9 +2036,9 @@ public class ConnollyRegion extends ParallelRegion {
                             // First convex edge points to second circle.
                             convexEdgeCircleNumber[nConvexEdges] = nCircles;
                             // Atom circle lies on.
-                            ia = circleAtomNumber[nCircles];
+                            int ia = circleAtomNumber[nCircles];
                             // Insert convex edge into linked list for atom.
-                            ipedge(nConvexEdges, ia);
+                            insertConvexEdgeForAtom(nConvexEdges, ia);
                             // First vertex of convex edge is second vertex of concave edge.
                             convexEdgeVertexNumber[0][nConvexEdges] = concaveEdgeVertexNumbers[1][ien];
                             // First convex edge of saddle.
@@ -2078,7 +2052,7 @@ public class ConnollyRegion extends ParallelRegion {
                             convexEdgeCircleNumber[nConvexEdges] = nCircles - 1;
                             ia = circleAtomNumber[nCircles - 1];
                             // Insert convex edge into linked list for atom.
-                            ipedge(nConvexEdges, ia);
+                            insertConvexEdgeForAtom(nConvexEdges, ia);
                             // Second vertex of second convex edge is first vertex of first concave edge.
                             convexEdgeVertexNumber[1][nConvexEdges] = concaveEdgeVertexNumbers[0][ien];
                             l1 = nxtang[l1];
@@ -2087,14 +2061,14 @@ public class ConnollyRegion extends ParallelRegion {
                                 l1 = 0;
                             }
                             if (sdstrt[l1]) {
-                                m1 = nxtang[l1];
+                                int m1 = nxtang[l1];
                                 if (m1 <= -1) {
                                     m1 = 0;
                                 }
                                 if (sdstrt[m1]) {
                                     throw new EnergyException("Three Starts in a Row", false);
                                 }
-                                n1 = nxtang[m1];
+                                int n1 = nxtang[m1];
                                 // The old switcheroo.
                                 nxtang[l1] = n1;
                                 nxtang[m1] = l1;
@@ -2128,9 +2102,9 @@ public class ConnollyRegion extends ParallelRegion {
                     saddleConcaveEdgeNumbers[1][nSaddleFaces] = -1;
                     // One more convex edge.
                     nConvexEdges++;
-                    ia = circleAtomNumber[nCircles];
+                    int ia = circleAtomNumber[nCircles];
                     // Insert convex edge into linked list of atom.
-                    ipedge(nConvexEdges, ia);
+                    insertConvexEdgeForAtom(nConvexEdges, ia);
                     // No vertices for convex edge.
                     convexEdgeVertexNumber[0][nConvexEdges] = -1;
                     convexEdgeVertexNumber[1][nConvexEdges] = -1;
@@ -2142,7 +2116,7 @@ public class ConnollyRegion extends ParallelRegion {
                     nConvexEdges++;
                     ia = circleAtomNumber[nCircles - 1];
                     // Insert second convex edge into linked list.
-                    ipedge(nConvexEdges, ia);
+                    insertConvexEdgeForAtom(nConvexEdges, ia);
                     // No vertices for convex edge.
                     convexEdgeVertexNumber[0][nConvexEdges] = -1;
                     convexEdgeVertexNumber[1][nConvexEdges] = -1;
@@ -2153,58 +2127,18 @@ public class ConnollyRegion extends ParallelRegion {
                     // Buried torus; do nothing with it.
                 }
             }
+
+            logger.fine(format(" Number of circles      %d", nCircles + 1));
+            logger.fine(format(" Number of convex edges %d", nConvexEdges + 1));
+            logger.fine(format(" Number of saddle faces %d", nSaddleFaces + 1));
         }
 
         /**
-         * The triple method finds the triple product of three vectors; used
-         * as a service routine by the Connolly surface area and volume
-         * computation.
-         */
-        private double triple(double[] x, double[] y, double[] z) {
-            double triple;
-            double[] xy = new double[3];
-            cross(x, y, xy);
-            triple = dot(xy, z);
-            return triple;
-        }
-
-        /**
-         * The ipedge method inserts a convex edge into linked list for
-         * atom.
-         *
-         * @param edgeNumber
-         * @param atomNumber
-         */
-        private void ipedge(int edgeNumber, int atomNumber) {
-            // First, check for an error condition.
-            if (edgeNumber <= -1) {
-                //logger.severe("Bad Edge Number in IPEDGE");
-                throw new EnergyException("Bad Edge Number in IPEDGE", true);
-            }
-            if (atomNumber <= -1) {
-                //logger.severe("Bad Atom Number in IPEDGE");
-                throw new EnergyException("Bad Atom Number in IPEDGE", true);
-            }
-            // Set beginning of list or add to end.
-            if (convexEdgeFirst[atomNumber] == -1) {
-                convexEdgeFirst[atomNumber] = edgeNumber;
-                convexEdgeNext[edgeNumber] = -1;
-                convexEdgeLast[atomNumber] = edgeNumber;
-            } else {
-                convexEdgeNext[convexEdgeLast[atomNumber]] = edgeNumber;
-                convexEdgeNext[edgeNumber] = -1;
-                convexEdgeLast[atomNumber] = edgeNumber;
-            }
-        }
-
-        /**
-         * The contact method constructs the contact surface, cycles and
-         * convex faces.
+         * The contact method constructs the contact surface, cycles and convex faces.
          */
         private void contact() {
             final int maxepa = 300;
             final int maxcypa = 100;
-            int jepa;
             int[] aic = new int[maxepa];
             int[] aia = new int[maxepa];
             int[] aep = new int[maxepa];
@@ -2234,7 +2168,7 @@ public class ConnollyRegion extends ParallelRegion {
             }
 
             // Go through all atoms.
-            firstloop:
+            atomLoop:
             for (int ia = 0; ia < nAtoms; ia++) {
                 if (skip[ia] || atomBuried[ia]) {
                     continue;
@@ -2249,17 +2183,12 @@ public class ConnollyRegion extends ParallelRegion {
                     int nepa = -1;
                     // Pointer to first edge.
                     int iep = convexEdgeFirst[ia];
-                    int counter = 1;
-                    for (int j = 0; j < counter; j++) {
-                        // Check whether finished gathering.
-                        if (iep <= -1) {
-                            continue;
-                        }
+                    // Check whether finished gathering.
+                    while (iep > -1) {
                         // One more edge.
                         nepa++;
                         if (nepa > maxepa) {
-                            //logger.severe("Too many Convex Edges for Atom");
-                            throw new EnergyException("Too many Convex Edges for Atom", false);
+                            throw new EnergyException(" Too many Convex Edges for Atom", false);
                         }
                         // Store vertices of edge.
                         av[0][nepa] = convexEdgeVertexNumber[0][iep];
@@ -2279,11 +2208,11 @@ public class ConnollyRegion extends ParallelRegion {
                         }
                         // Store other atom number, we might need it sometime.
                         aia[nepa] = ia2;
-                            /*
-                              Vector from atom to circle center; also vector
-                              from atom to center of neighboring atom sometimes
-                              we use one vector, sometimes the other.
-                             */
+                        /*
+                          Vector from atom to circle center; also vector
+                          from atom to center of neighboring atom sometimes
+                          we use one vector, sometimes the other.
+                         */
                         for (int k = 0; k < 3; k++) {
                             acvect[k][nepa] = circleCenter[k][ic] - atomCoords[k][ia];
                             aavect[k][nepa] = atomCoords[k][ia2] - atomCoords[k][ia];
@@ -2292,11 +2221,9 @@ public class ConnollyRegion extends ParallelRegion {
                         acr[nepa] = circleRadius[ic];
                         // Pointer to next edge.
                         iep = convexEdgeNext[iep];
-                        counter++;
                     }
                     if (nepa <= -1) {
-                        //logger.severe("No Edges for Non-buried, Non-free Atom");
-                        throw new EnergyException("No Edges for Non-buried, Non-free Atom", false);
+                        throw new EnergyException(" No Edges for Non-buried, Non-free Atom", false);
                     }
                     // Form cycles; initialize all the convex edges as not used in cycle.
                     for (int iepa = 0; iepa < nepa + 1; iepa++) {
@@ -2306,21 +2233,18 @@ public class ConnollyRegion extends ParallelRegion {
                     int ncyold = nCycles;
                     int nused = -1;
                     int ncypa = -1;
-                    // Look for starting edge.
-                    int iepa = 0;
-                    int counter3 = 1;
-                    outerloop:
-                    for (int z = 0; z < counter3; z++) {
-                        innerloop:
-                        for (int w = 0; w < 1; w++) {
-                            for (iepa = 0; iepa < nepa + 1; iepa++) {
-                                if (!epused[iepa]) {
-                                    continue innerloop;
-                                }
+                    while (nused < nepa) {
+                        // Look for starting edge.
+                        int iepa;
+                        for (iepa = 0; iepa <= nepa; iepa++) {
+                            if (!epused[iepa]) {
+                                break;
                             }
-                            continue outerloop;
                         }
-                        // Cannot find starting edge; finished.
+                        if (iepa > nepa) {
+                            // Cannot find starting edge; finished.
+                            break;
+                        }
                         // Pointer to edge.
                         iep = aep[iepa];
                         // One edge so far on this cycle.
@@ -2328,8 +2252,7 @@ public class ConnollyRegion extends ParallelRegion {
                         // One more cycle for atom.
                         ncypa++;
                         if (ncypa > maxcypa) {
-                            //logger.severe("Too many Cycles per Atom");
-                            throw new EnergyException("Too many Cycles per Atom", false);
+                            throw new EnergyException(" Too many Cycles per Atom", false);
                         }
                         // Mark edge used in cycle.
                         epused[iepa] = true;
@@ -2337,8 +2260,7 @@ public class ConnollyRegion extends ParallelRegion {
                         // One more cycle for molecule.
                         nCycles++;
                         if (nCycles > maxCycles) {
-                            //logger.severe("Too many Cycles");
-                            throw new EnergyException("Too many Cycles", false);
+                            throw new EnergyException(" Too many Cycles", false);
                         }
                         // Index of edge in atom cycle array.
                         cyepa[ncyep][ncypa] = iepa;
@@ -2348,68 +2270,50 @@ public class ConnollyRegion extends ParallelRegion {
                         // next as the first vertex of another edge.
                         int lookv = av[1][iepa];
                         // If no vertex, this cycle is finished.
-                        for (int t = 0; t < 1; t++) {
-                            if (lookv <= -1) {
-                                continue;
-                            }
-                            int counter2 = 1;
-
-                            for (int r = 0; r < counter2; r++) {
-                                // Look for next connected edge.
-                                outer:
-                                for (jepa = 0; jepa < nepa + 1; jepa++) {
-                                    for (int q = 0; q < 1; q++) {
-                                        if (epused[jepa]) {
-                                            continue;
-                                        }
-                                        // Check second vertex of iepa versus first vertex of jepa.
-                                        if (av[0][jepa] != lookv) {
-                                            continue;
-                                        }
-                                        // Edges are connected pointer to edge.
-                                        iep = aep[jepa];
-                                        // One more edge for this cycle.
-                                        ncyep++;
-                                        if (ncyep > MAXCYEP) {
-                                            //logger.severe("Too many Edges per Cycle");
-                                            throw new EnergyException("Too many Edges per Cycle", false);
-                                        }
-                                        epused[jepa] = true;
-                                        nused++;
-                                        // Store index in local edge array.
-                                        cyepa[ncyep][ncypa] = jepa;
-                                        // Store pointer to edge.
-                                        convexEdgeCycleNumbers[ncyep][nCycles] = iep;
-                                        // New vertex to look for.
-                                        lookv = av[1][jepa];
-                                        // If no vertex, this cycle is in trouble.
-                                        if (lookv <= -1) {
-                                            //logger.severe("Pointer Error in Cycle");
-                                            throw new EnergyException("Pointer Error in Cycle", true);
-                                        }
-                                        counter2++;
-                                        break outer;
-                                    }
+                        if (lookv > -1) {
+                            for (int jepa = 0; jepa < nepa + 1; jepa++) {
+                                if (epused[jepa]) {
+                                    continue;
                                 }
+                                // Check second vertex of iepa versus first vertex of jepa.
+                                if (av[0][jepa] != lookv) {
+                                    continue;
+                                }
+                                // Edges are connected pointer to edge.
+                                iep = aep[jepa];
+                                // One more edge for this cycle.
+                                ncyep++;
+                                if (ncyep > MAXCYEP) {
+                                    throw new EnergyException(" Too many Edges per Cycle", false);
+                                }
+                                epused[jepa] = true;
+                                nused++;
+                                // Store index in local edge array.
+                                cyepa[ncyep][ncypa] = jepa;
+                                // Store pointer to edge.
+                                convexEdgeCycleNumbers[ncyep][nCycles] = iep;
+                                // New vertex to look for.
+                                lookv = av[1][jepa];
+                                // If no vertex, this cycle is in trouble.
+                                if (lookv <= -1) {
+                                    throw new EnergyException(" Pointer Error in Cycle", true);
+                                }
+                                jepa = 0;
                             }
                             // It better connect to first edge of cycle.
                             if (lookv != av[0][iepa]) {
-                                throw new EnergyException("Cycle does not Close", true);
+                                throw new EnergyException(" Cycle does not Close", true);
                             }
                         }
                         // This cycle is finished, store number of edges in cycle.
                         ncyepa[ncypa] = ncyep;
                         convexEdgeCycleNum[nCycles] = ncyep;
-                        // Look for more cycles.
-                        if (nused < nepa) {
-                            counter3++;
-                        }
                     }
                     // Compare cycles for inside/outside relation; check to
                     // see if cycle i is inside cycle j.
-                    for (int icya = 0; icya < ncypa + 1; icya++) {
-                        innerloop:
-                        for (int jcya = 0; jcya < ncypa + 1; jcya++) {
+                    for (int icya = 0; icya <= ncypa; icya++) {
+                        innerLoop:
+                        for (int jcya = 0; jcya <= ncypa; jcya++) {
                             int jcy = ncyold + jcya + 1;
                             // Initialize.
                             cycy[icya][jcya] = true;
@@ -2419,20 +2323,19 @@ public class ConnollyRegion extends ParallelRegion {
                             }
                             // If cycles i and j have a pair of edges belonging to the same circle,
                             // then they are outside each other.
-                            for (int icyep = 0; icyep < ncyepa[icya] + 1; icyep++) {
-                                iepa = cyepa[icyep][icya];
+                            for (int icyep = 0; icyep <= ncyepa[icya]; icyep++) {
+                                int iepa = cyepa[icyep][icya];
                                 int ic = aic[iepa];
-                                //for (int jcyep = 0; jcyep < ncyepa[jcya]; jcyep++) {
-                                for (int jcyep = 0; jcyep < ncyepa[jcya] + 1; jcyep++) {
-                                    jepa = cyepa[jcyep][jcya];
+                                for (int jcyep = 0; jcyep <= ncyepa[jcya]; jcyep++) {
+                                    int jepa = cyepa[jcyep][jcya];
                                     int jc = aic[jepa];
                                     if (ic == jc) {
                                         cycy[icya][jcya] = false;
-                                        continue innerloop;
+                                        continue innerLoop;
                                     }
                                 }
                             }
-                            iepa = cyepa[0][icya];
+                            int iepa = cyepa[0][icya];
                             ai[0] = aavect[0][iepa];
                             ai[1] = aavect[1][iepa];
                             ai[2] = aavect[2][iepa];
@@ -2447,8 +2350,8 @@ public class ConnollyRegion extends ParallelRegion {
                         }
                     }
                     // Group cycles into faces; direct comparison for i and j.
-                    for (int icya = 0; icya < ncypa + 1; icya++) {
-                        for (int jcya = 0; jcya < ncypa + 1; jcya++) {
+                    for (int icya = 0; icya <= ncypa; icya++) {
+                        for (int jcya = 0; jcya <= ncypa; jcya++) {
                             // Tentatively say that cycles i and j bound the
                             // same face if they are inside each other.
                             samef[icya][jcya] = (cycy[icya][jcya] && cycy[jcya][icya]);
@@ -2456,12 +2359,13 @@ public class ConnollyRegion extends ParallelRegion {
                     }
                     // If i is in exterior of k, and k is in interior of i
                     // and j, then i and j do not bound the same face.
-                    for (int icya = 0; icya < ncypa + 1; icya++) {
-                        for (int jcya = 0; jcya < ncypa + 1; jcya++) {
+                    for (int icya = 0; icya <= ncypa; icya++) {
+                        for (int jcya = 0; jcya <= ncypa; jcya++) {
                             if (icya != jcya) {
-                                for (int kcya = 0; kcya < ncypa + 1; kcya++) {
+                                for (int kcya = 0; kcya <= ncypa; kcya++) {
                                     if (kcya != icya && kcya != jcya) {
-                                        if (cycy[kcya][icya] && cycy[kcya][jcya] && !cycy[icya][kcya]) {
+                                        if (cycy[kcya][icya] && cycy[kcya][jcya] &&
+                                                (!cycy[icya][kcya])) {
                                             samef[icya][jcya] = false;
                                             samef[jcya][icya] = false;
                                         }
@@ -2474,7 +2378,7 @@ public class ConnollyRegion extends ParallelRegion {
                     for (int icya = 0; icya < ncypa - 1; icya++) {
                         for (int jcya = icya + 1; jcya < ncypa; jcya++) {
                             if (samef[icya][jcya]) {
-                                for (int kcya = jcya + 1; kcya < ncypa + 1; kcya++) {
+                                for (int kcya = jcya + 1; kcya <= ncypa; kcya++) {
                                     if (samef[jcya][kcya]) {
                                         samef[icya][kcya] = true;
                                         samef[kcya][icya] = true;
@@ -2484,12 +2388,12 @@ public class ConnollyRegion extends ParallelRegion {
                         }
                     }
                     // Group cycles belonging to the same face.
-                    for (int icya = 0; icya < ncypa + 1; icya++) {
+                    for (int icya = 0; icya <= ncypa; icya++) {
                         cyused[icya] = false;
                     }
                     // Clear number of cycles used in bounding faces.
                     nused = -1;
-                    for (int icya = 0; icya < ncypa + 1; icya++) {
+                    for (int icya = 0; icya <= ncypa; icya++) {
                         // Check for already used.
                         if (cyused[icya]) {
                             continue;
@@ -2497,16 +2401,21 @@ public class ConnollyRegion extends ParallelRegion {
                         // One more convex face.
                         nConvexFaces++;
                         if (nConvexFaces > maxConvexFaces) {
-                            throw new EnergyException("Too many Convex Faces", false);
+                            throw new EnergyException(" Too many Convex Faces", false);
                         }
                         // Clear number of cycles for face.
                         convexFaceNumCycles[nConvexFaces] = -1;
                         // Pointer from face to atom.
                         convexFaceAtomNumber[nConvexFaces] = ia;
                         // Look for all other cycles belonging to same face.
-                        for (int jcya = 0; jcya < ncypa + 1; jcya++) {
-                            // Check for cycle alraDY used in another face.
-                            if (cyused[jcya] || !samef[icya][jcya]) {
+                        for (int jcya = 0; jcya <= ncypa; jcya++) {
+                            // Check for cycle already used in another face.
+                            if (cyused[jcya]) {
+                                continue;
+
+                            }
+                            // Cycles i and j belonging to same face
+                            if (!samef[icya][jcya]) {
                                 continue;
                             }
                             // Mark cycle used.
@@ -2515,15 +2424,14 @@ public class ConnollyRegion extends ParallelRegion {
                             // One more cycle for face.
                             convexFaceNumCycles[nConvexFaces]++;
                             if (convexFaceNumCycles[nConvexFaces] > MAXFPCY) {
-                                //logger.severe("Too many Cycles bounding Convex Face");
-                                throw new EnergyException("Too many Cycles bounding Convex Face", false);
+                                throw new EnergyException(" Too many Cycles bounding Convex Face", false);
                             }
                             int i = convexFaceNumCycles[nConvexFaces];
                             // Store cycle number.
                             convexFaceCycleNumbers[i][nConvexFaces] = ncyold + jcya + 1;
                             // Check for finished.
                             if (nused >= ncypa) {
-                                continue firstloop;
+                                continue atomLoop;
                             }
                         }
                     }
@@ -2540,15 +2448,687 @@ public class ConnollyRegion extends ParallelRegion {
             }
         }
 
-        private boolean ptincy(double[] pnt, double[] unvect, int icy) {
+        /**
+         * The vam method takes the analytical molecular surface defined as
+         * a collection of spherical and toroidal polygons and uses it to
+         * compute the volume and surface area
+         */
+        private void vam() {
+            final int maxdot = 1000;
+            final int maxop = 100;
+            final int nscale = 20;
+            int[] ivs = new int[3];
+            int[] ispind = new int[3];
+            int[] ispnd2 = new int[3];
+            int[] ifnop = new int[maxop];
+            int[] enfs = new int[20 * nAtoms];
+            double[][] cenop = new double[3][maxop];
+            double[] sdot = new double[3];
+            double[] dotv = new double[nscale];
+            double[] tau = new double[3];
+            double[] ppm = new double[3];
+            double[] xpnt1 = new double[3];
+            double[] xpnt2 = new double[3];
+            double[] qij = new double[3];
+            double[] qji = new double[3];
+            double[][] vects = new double[3][3];
+            double[] vect1 = new double[3];
+            double[] vect2 = new double[3];
+            double[] vect3 = new double[3];
+            double[] vect4 = new double[3];
+            double[] vect5 = new double[3];
+            double[] vect6 = new double[3];
+            double[] vect7 = new double[3];
+            double[] vect8 = new double[3];
+            double[] upp = new double[3];
+            double[] thetaq = new double[3];
+            double[] sigmaq = new double[3];
+            double[] umq = new double[3];
+            double[] upq = new double[3];
+            double[] uc = new double[3];
+            double[] uq = new double[3];
+            double[] uij = new double[3];
+            double[] ai = new double[3];
+            double[] aj = new double[3];
+            double[] ak = new double[3];
+            double[] al = new double[3];
+            double[][] dots = new double[3][maxdot];
+            double[][] tdots = new double[3][maxdot];
+            double[] atomArea = new double[nAtoms];
+            boolean[] ate = new boolean[maxop];
+            boolean[] vip = new boolean[3];
+            boolean[] cinsp = new boolean[1];
+
+            int[] nlap = null;
+            int[][] fnt = null;
+            int[][] nspt = null;
+            double[] depths = null;
+            double[] cora = null;
+            double[] corv = null;
+            double[][] alts = null;
+            double[][] fncen = null;
+            double[][][] fnvect = null;
+            boolean[] badav = null;
+            boolean[] badt = null;
+            boolean[][] fcins = null;
+            boolean[][] fcint = null;
+            boolean[][] fntrev = null;
+            if (nConcaveFaces >= 0) {
+                nlap = new int[nConcaveFaces + 1];
+                fnt = new int[3][nConcaveFaces + 1];
+                nspt = new int[3][nConcaveFaces + 1];
+                depths = new double[nConcaveFaces + 1];
+                cora = new double[nConcaveFaces + 1];
+                corv = new double[nConcaveFaces + 1];
+                alts = new double[3][nConcaveFaces + 1];
+                fncen = new double[3][nConcaveFaces + 1];
+                fnvect = new double[3][3][nConcaveFaces + 1];
+                badav = new boolean[nConcaveFaces + 1];
+                badt = new boolean[nConcaveFaces + 1];
+                fcins = new boolean[3][nConcaveFaces + 1];
+                fcint = new boolean[3][nConcaveFaces + 1];
+                fntrev = new boolean[3][nConcaveFaces + 1];
+            }
+
+            // Compute the volume of the interior polyhedron.
+            double polyhedronVolume = 0.0;
+            for (int i = 0; i <= nConcaveFaces; i++) {
+                polyhedronVolume += measurePrism(i);
+            }
+
+            // Compute the area and volume due to convex faces as well as
+            // the area partitioned among the atoms.
+            double convexFaceArea = 0.0;
+            double convexFaceVolume = 0.0;
+            fill(atomArea, 0.0);
+            double[] convexFaces = {0.0, 0.0};
+            for (int i = 0; i <= nConvexFaces; i++) {
+                measureConvexFace(i, convexFaces);
+                int ia = convexFaceAtomNumber[i];
+                atomArea[ia] += convexFaces[0];
+                convexFaceArea += convexFaces[0];
+                convexFaceVolume += convexFaces[1];
+            }
+
+            // Compute the area and volume due to saddle faces
+            // as well as the spindle correction value.
+            double saddleFaceArea = 0.0;
+            double saddleFaceVolume = 0.0;
+            double spindleArea = 0.0;
+            double spindleVolume = 0.0;
+            double[] saddle = {0.0, 0.0, 0.0, 0.0};
+            for (int i = 0; i <= nSaddleFaces; i++) {
+                for (int k = 0; k < 2; k++) {
+                    int ien = saddleConcaveEdgeNumbers[k][i];
+                    if (ien > -1) {
+                        enfs[ien] = i;
+                    }
+                }
+                measureSaddleFace(i, saddle);
+                double areas = saddle[0];
+                double vols = saddle[1];
+                double areasp = saddle[2];
+                double volsp = saddle[3];
+                saddleFaceArea += areas;
+                saddleFaceVolume += vols;
+                spindleArea += areasp;
+                spindleVolume += volsp;
+                if (areas - areasp < 0.0) {
+                    throw new EnergyException(" Negative Area for Saddle Face", true);
+                }
+            }
+
+            // Compute the area and volume due to concave faces.
+            double concaveFaceArea = 0.0;
+            double concaveFaceVolume = 0.0;
+            double[] concaveFaces = {0.0, 0.0};
+            for (int i = 0; i <= nConcaveFaces; i++) {
+                measureConcaveFace(i, concaveFaces);
+                double arean = concaveFaces[0];
+                double voln = concaveFaces[1];
+                concaveFaceArea += arean;
+                concaveFaceVolume += voln;
+            }
+
+            // Compute the area and volume lens correction values.
+            double lensArea = 0.0;
+            double lensAreaNumeric = 0.0;
+            double lensVolume = 0.0;
+            double lensVolumeNumeric = 0.0;
+
+            if (probe > 0.0) {
+                int ndots = genDots(maxdot, dots, probe);
+                double dota = (4.0 * PI * probe * probe) / ndots;
+                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
+                    nlap[ifn] = -1;
+                    cora[ifn] = 0.0;
+                    corv[ifn] = 0.0;
+                    badav[ifn] = false;
+                    badt[ifn] = false;
+                    for (int k = 0; k < 3; k++) {
+                        nspt[k][ifn] = -1;
+                    }
+                    int ien = concaveFaceEdgeNumbers[0][ifn];
+                    int iv = concaveEdgeVertexNumbers[0][ien];
+                    int ip = vertexProbeNumber[iv];
+                    getVector(ai, alts, ifn);
+                    depths[ifn] = depth(ip, ai);
+                    for (int k = 0; k < 3; k++) {
+                        fncen[k][ifn] = probeCoords[k][ip];
+                    }
+                    // Get vertices and vectors.
+                    for (int ke = 0; ke < 3; ke++) {
+                        ien = concaveFaceEdgeNumbers[ke][ifn];
+                        ivs[ke] = concaveEdgeVertexNumbers[0][ien];
+                        int ia = vertexAtomNumbers[ivs[ke]];
+                        int ifs = enfs[ien];
+                        int iep = saddleConvexEdgeNumbers[0][ifs];
+                        int ic = convexEdgeCircleNumber[iep];
+                        int it = circleTorusNumber[ic];
+                        fnt[ke][ifn] = it;
+                        fntrev[ke][ifn] = (torusAtomNumber[0][it] != ia);
+                    }
+                    for (int ke = 0; ke < 3; ke++) {
+                        for (int k = 0; k < 3; k++) {
+                            vects[k][ke] = vertexCoords[k][ivs[ke]] - probeCoords[k][ip];
+                        }
+                    }
+                    // Calculate normal vectors for the three planes that
+                    // cut out the geodesic triangle.
+                    getVector(ai, vects, 0);
+                    getVector(aj, vects, 1);
+                    cross(ai, aj, ak);
+                    norm(ak, ak);
+                    putVector(ak, fnvect, 0, ifn);
+                    getVector(ak, vects, 2);
+                    cross(aj, ak, ai);
+                    norm(ai, ai);
+                    putVector(ai, fnvect, 1, ifn);
+                    getVector(ai, vects, 0);
+                    cross(ak, ai, aj);
+                    norm(aj, aj);
+                    putVector(aj, fnvect, 2, ifn);
+                }
+                for (int ifn = 0; ifn <= nConcaveFaces - 1; ifn++) {
+                    for (int jfn = ifn + 1; jfn <= nConcaveFaces; jfn++) {
+                        getVector(ai, fncen, ifn);
+                        getVector(aj, fncen, jfn);
+                        double dij2 = dist2(ai, aj);
+                        if (dij2 > 4.0 * probe * probe) {
+                            continue;
+                        }
+                        if (depths[ifn] > probe && depths[jfn] > probe) {
+                            continue;
+                        }
+                        // These two probes may have intersecting surfaces.
+                        double dpp = dist(ai, aj);
+                        // Compute the midpoint.
+                        for (int k = 0; k < 3; k++) {
+                            ppm[k] = (fncen[k][ifn] + fncen[k][jfn]) / 2.0;
+                            upp[k] = (fncen[k][jfn] - fncen[k][ifn]) / dpp;
+                        }
+                        double rm = probe * probe - (dpp / 2.0) * (dpp / 2.0);
+                        if (rm < 0.0) {
+                            rm = 0.0;
+                        }
+                        rm = sqrt(rm);
+                        double rat = check(dpp / (2.0 * probe));
+                        double rho = asin(rat);
+                        // Use circle-place intersection routine.
+                        boolean alli = true;
+                        boolean anyi = false;
+                        boolean spindl = false;
+                        for (int k = 0; k < 3; k++) {
+                            ispind[k] = -1;
+                            ispnd2[k] = -1;
+                        }
+                        for (int ke = 0; ke < 3; ke++) {
+                            thetaq[ke] = 0.0;
+                            sigmaq[ke] = 0.0;
+                            tau[ke] = 0.0;
+                            getVector(ai, fncen, ifn);
+                            getVector(aj, fnvect, ke, ifn);
+                            boolean cintp = circlePlane(ppm, rm, upp, ai, aj, cinsp, xpnt1, xpnt2);
+                            fcins[ke][ifn] = cinsp[0];
+                            fcint[ke][ifn] = cintp;
+                            if (!cinsp[0]) {
+                                alli = false;
+                            }
+                            if (cintp) {
+                                anyi = true;
+                            }
+                            if (!cintp) {
+                                continue;
+                            }
+                            int it = fnt[ke][ifn];
+                            if (torusRadius[it] > probe) {
+                                continue;
+                            }
+                            for (int ke2 = 0; ke2 < 3; ke2++) {
+                                if (it == fnt[ke2][jfn]) {
+                                    ispind[ke] = it;
+                                    nspt[ke][ifn]++;
+                                    ispnd2[ke2] = it;
+                                    nspt[ke2][jfn]++;
+                                    spindl = true;
+                                }
+                            }
+                            if (ispind[ke] == -1) {
+                                continue;
+                            }
+
+                            // Check that the two ways of calculating intersection points match.
+                            rat = check(torusRadius[it] / probe);
+                            thetaq[ke] = acos(rat);
+                            double stq = sin(thetaq[ke]);
+                            if (fntrev[ke][ifn]) {
+                                for (int k = 0; k < 3; k++) {
+                                    uij[k] = -torusAxis[k][it];
+                                }
+                            } else {
+                                for (int k = 0; k < 3; k++) {
+                                    uij[k] = torusAxis[k][it];
+                                }
+                            }
+                            for (int k = 0; k < 3; k++) {
+                                qij[k] = torusCenter[k][it] - stq * probe * uij[k];
+                                qji[k] = torusCenter[k][it] + stq * probe * uij[k];
+                            }
+                            for (int k = 0; k < 3; k++) {
+                                umq[k] = (qij[k] - ppm[k]) / rm;
+                                upq[k] = (qij[k] - fncen[k][ifn]) / probe;
+                            }
+                            cross(uij, upp, vect1);
+                            double dt = check(dot(umq, vect1));
+                            sigmaq[ke] = acos(dt);
+                            getVector(ai, fnvect, ke, ifn);
+                            cross(upq, ai, vect1);
+                            norm(vect1, uc);
+                            cross(upp, upq, vect1);
+                            norm(vect1, uq);
+                            dt = check(dot(uc, uq));
+                            tau[ke] = PI - acos(dt);
+                        }
+                        boolean allj = true;
+                        boolean anyj = false;
+                        for (int ke = 0; ke < 3; ke++) {
+                            getVector(ai, fncen, jfn);
+                            getVector(aj, fnvect, ke, jfn);
+                            boolean cintp = circlePlane(ppm, rm, upp, ai, aj, cinsp, xpnt1, xpnt2);
+                            fcins[ke][jfn] = cinsp[0];
+                            fcint[ke][jfn] = cintp;
+                            if (!cinsp[0]) {
+                                allj = false;
+                            }
+                            if (cintp) {
+                                anyj = true;
+                            }
+                        }
+                        boolean case1 = (alli && allj && !anyi && !anyj);
+                        boolean case2 = (anyi && anyj && spindl);
+                        if (!case1 && !case2) {
+                            continue;
+                        }
+                        // This kind of overlap can be handled.
+                        nlap[ifn]++;
+                        nlap[jfn]++;
+                        for (int ke = 0; ke < 3; ke++) {
+                            int ien = concaveFaceEdgeNumbers[ke][ifn];
+                            int iv1 = concaveEdgeVertexNumbers[0][ien];
+                            int iv2 = concaveEdgeVertexNumbers[1][ien];
+                            for (int k = 0; k < 3; k++) {
+                                vect3[k] = vertexCoords[k][iv1] - fncen[k][ifn];
+                                vect4[k] = vertexCoords[k][iv2] - fncen[k][ifn];
+                            }
+                            for (int ke2 = 0; ke2 < 3; ke2++) {
+                                if (ispind[ke] == ispnd2[ke2] || ispind[ke] == -1) {
+                                    continue;
+                                }
+                                getVector(ai, fncen, ifn);
+                                getVector(aj, fnvect, ke, ifn);
+                                getVector(ak, fncen, jfn);
+                                getVector(al, fnvect, ke2, jfn);
+                                boolean cintp = circlePlane(ai, probe, aj, ak, al, cinsp, xpnt1, xpnt2);
+                                if (!cintp) {
+                                    continue;
+                                }
+                                ien = concaveFaceEdgeNumbers[ke2][jfn];
+                                iv1 = concaveEdgeVertexNumbers[0][ien];
+                                iv2 = concaveEdgeVertexNumbers[1][ien];
+                                for (int k = 0; k < 3; k++) {
+                                    vect7[k] = vertexCoords[k][iv1] - fncen[k][jfn];
+                                    vect8[k] = vertexCoords[k][iv2] - fncen[k][jfn];
+                                }
+                                // Check whether point lies on spindle arc.
+                                for (int k = 0; k < 3; k++) {
+                                    vect1[k] = xpnt1[k] - fncen[k][ifn];
+                                    vect2[k] = xpnt2[k] - fncen[k][ifn];
+                                    vect5[k] = xpnt1[k] - fncen[k][jfn];
+                                    vect6[k] = xpnt2[k] - fncen[k][jfn];
+                                }
+                                // Continue to next if statement if any of the following are true.
+                                getVector(ai, fnvect, ke, ifn);
+                                getVector(aj, fnvect, ke2, jfn);
+                                if (tripleProduct(vect3, vect1, ai) < 0.0
+                                        || tripleProduct(vect1, vect4, ai) < 0.0
+                                        || tripleProduct(vect7, vect5, aj) < 0.0
+                                        || tripleProduct(vect5, vect8, aj) < 0.0) {
+                                    if (!(tripleProduct(vect3, vect2, ai) < 0.0
+                                            || tripleProduct(vect2, vect4, ai) < 0.0
+                                            || tripleProduct(vect7, vect6, aj) < 0.0
+                                            || tripleProduct(vect6, vect8, aj) < 0.0)) {
+                                        badav[ifn] = true;
+                                    }
+                                } else {
+                                    badav[ifn] = true;
+                                }
+                            }
+                        }
+                        for (int ke = 0; ke < 3; ke++) {
+                            int ien = concaveFaceEdgeNumbers[ke][ifn];
+                            int iv1 = concaveEdgeVertexNumbers[0][ien];
+                            int iv2 = concaveEdgeVertexNumbers[1][ien];
+                            for (int k = 0; k < 3; k++) {
+                                vect3[k] = vertexCoords[k][iv1] - fncen[k][ifn];
+                                vect4[k] = vertexCoords[k][iv2] - fncen[k][ifn];
+                            }
+                            for (int ke2 = 0; ke2 < 3; ke2++) {
+                                if (ispind[ke] == ispnd2[ke2] || ispnd2[ke2] == -1) {
+                                    continue;
+                                }
+                                getVector(ai, fncen, ifn);
+                                getVector(aj, fnvect, ke, ifn);
+                                getVector(ak, fncen, jfn);
+                                getVector(al, fnvect, ke2, jfn);
+                                boolean cintp = circlePlane(ak, probe, al, ai, aj, cinsp, xpnt1, xpnt2);
+                                if (!cintp) {
+                                    continue;
+                                }
+                                ien = concaveFaceEdgeNumbers[ke2][jfn];
+                                iv1 = concaveEdgeVertexNumbers[0][ien];
+                                iv2 = concaveEdgeVertexNumbers[1][ien];
+                                for (int k = 0; k < 3; k++) {
+                                    vect7[k] = vertexCoords[k][iv1] - fncen[k][jfn];
+                                    vect8[k] = vertexCoords[k][iv2] - fncen[k][jfn];
+                                }
+                                // Check whether point lies on spindle arc.
+                                for (int k = 0; k < 3; k++) {
+                                    vect1[k] = xpnt1[k] - fncen[k][ifn];
+                                    vect2[k] = xpnt2[k] - fncen[k][ifn];
+                                    vect5[k] = xpnt1[k] - fncen[k][jfn];
+                                    vect6[k] = xpnt2[k] - fncen[k][jfn];
+                                }
+                                // Continue to next if statement if any of the following are true.
+                                getVector(ai, fnvect, ke, ifn);
+                                getVector(aj, fnvect, ke2, jfn);
+                                if (tripleProduct(vect3, vect1, ai) < 0.0
+                                        || tripleProduct(vect1, vect4, ai) < 0.0
+                                        || tripleProduct(vect7, vect5, aj) < 0.0
+                                        || tripleProduct(vect5, vect8, aj) < 0.0) {
+                                    if (!(tripleProduct(vect3, vect2, ai) < 0.0
+                                            || tripleProduct(vect2, vect4, ai) < 0.0
+                                            || tripleProduct(vect7, vect6, aj) < 0.0
+                                            || tripleProduct(vect6, vect8, aj) < 0.0)) {
+                                        badav[jfn] = true;
+                                    }
+                                } else {
+                                    badav[jfn] = true;
+                                }
+                            }
+                        }
+
+                        double sumlam = 0.0;
+                        double sumsig = 0.0;
+                        double sumsc = 0.0;
+                        for (int ke = 0; ke < 3; ke++) {
+                            if (ispind[ke] != -1) {
+                                sumlam += (PI - tau[ke]);
+                                sumsig += (sigmaq[ke] - PI);
+                                sumsc += (sin(sigmaq[ke]) * cos(sigmaq[ke]));
+                            }
+                        }
+                        double alens = 2.0 * probe * probe
+                                * (PI - sumlam - sin(rho) * (PI + sumsig));
+                        double vint = alens * probe / 3.0;
+                        double vcone = probe * rm * rm * sin(rho) * (PI + sumsig) / 3.0;
+                        double vpyr = probe * rm * rm * sin(rho) * sumsc / 3.0;
+                        double vlens = vint - vcone + vpyr;
+                        cora[ifn] += alens;
+                        cora[jfn] += alens;
+                        corv[ifn] += vlens;
+                        corv[jfn] += vlens;
+
+                        // Check for vertex on opposing probe in face.
+                        outerloop:
+                        for (int kv = 0; kv < 3; kv++) {
+                            vip[kv] = false;
+                            int ien = concaveFaceEdgeNumbers[kv][jfn];
+                            int iv = concaveEdgeVertexNumbers[0][ien];
+                            for (int k = 0; k < 3; k++) {
+                                vect1[k] = vertexCoords[k][iv] - fncen[k][ifn];
+                            }
+                            norm(vect1, vect1);
+                            for (int ke = 0; ke < 3; ke++) {
+                                getVector(ai, fnvect, ke, ifn);
+                                getVector(aj, vertexCoords, iv);
+                                double dt = dot(ai, aj);
+                                if (dt > 0.0) {
+                                    continue outerloop;
+                                }
+                                vip[kv] = true;
+                            }
+                        }
+                    }
+                }
+
+                outerLoop:
+                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
+                    for (int ke = 0; ke < 3; ke++) {
+                        if (nspt[ke][ifn] > 0) {
+                            badt[ifn] = true;
+                            break outerLoop;
+                        }
+                    }
+                }
+
+                double fourProbe2 = 4.0 * probe * probe;
+                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
+                    if (nlap[ifn] <= -1) {
+                        continue;
+                    }
+                    // Gather all overlapping probes.
+                    int nop = -1;
+                    for (int jfn = 0; jfn <= nConcaveFaces; jfn++) {
+                        if (ifn != jfn) {
+                            getVector(ai, fncen, ifn);
+                            getVector(aj, fncen, jfn);
+                            double dij2 = dist2(ai, aj);
+                            if (dij2 <= fourProbe2 && depths[jfn] <= probe) {
+                                nop++;
+                                if (nop >= maxop) {
+                                    throw new EnergyException("NOP Overflow in VAM", false);
+                                }
+                                ifnop[nop] = jfn;
+                                for (int k = 0; k < 3; k++) {
+                                    cenop[k][nop] = fncen[k][jfn];
+                                }
+                            }
+                        }
+                    }
+
+                    // Numerical calculation of the correction.
+                    double areado = 0.0;
+                    double voldo = 0.0;
+                    double scinc = 1.0 / nscale;
+                    for (int isc = 0; isc < nscale; isc++) {
+                        double rsc = (isc + 1) - 0.5;
+                        dotv[isc] = probe * dota * rsc * rsc * scinc * scinc * scinc;
+                    }
+                    for (int iop = 0; iop <= nop; iop++) {
+                        ate[iop] = false;
+                    }
+                    int neatmx = 0;
+                    dotLoop:
+                    for (int idot = 0; idot < ndots; idot++) {
+                        for (int ke = 0; ke < 3; ke++) {
+                            getVector(ai, fnvect, ke, ifn);
+                            getVector(aj, dots, idot);
+                            double dt = dot(ai, aj);
+                            if (dt > 0.0) {
+                                continue dotLoop;
+                            }
+                        }
+                        for (int k = 0; k < 3; k++) {
+                            tdots[k][idot] = fncen[k][ifn] + dots[k][idot];
+                        }
+                        for (int iop = 0; iop <= nop; iop++) {
+                            int jfn = ifnop[iop];
+                            getVector(ai, tdots, idot);
+                            getVector(aj, fncen, jfn);
+                            double ds2 = dist2(ai, aj);
+                            if (ds2 < probe * probe) {
+                                areado += dota;
+                                break;
+                            }
+                        }
+                        for (int isc = 0; isc < nscale; isc++) {
+                            double rsc = (isc + 1) - 0.5;
+                            for (int k = 0; k < 3; k++) {
+                                sdot[k] = fncen[k][ifn] + rsc * scinc * dots[k][idot];
+                            }
+                            int neat = 0;
+                            optLoop:
+                            for (int iop = 0; iop <= nop; iop++) {
+                                int jfn = ifnop[iop];
+                                getVector(ai, fncen, jfn);
+                                double ds2 = dist2(sdot, ai);
+                                if (ds2 < probe * probe) {
+                                    for (int k = 0; k < 3; k++) {
+                                        vect1[k] = sdot[k] - fncen[k][jfn];
+                                    }
+                                    for (int ke = 0; ke < 3; ke++) {
+                                        getVector(ai, fnvect, ke, jfn);
+                                        double dt = dot(ai, vect1);
+                                        if (dt > 0.0) {
+                                            continue optLoop;
+                                        }
+                                    }
+                                    neat++;
+                                    ate[iop] = true;
+                                }
+                            }
+                            if (neat > neatmx) {
+                                neatmx = neat;
+                            }
+                            if (neat > 0) {
+                                voldo += dotv[isc] * (neat / (1.0 + neat));
+                            }
+                        }
+                    }
+                    double coran = areado;
+                    double corvn = voldo;
+                    int nate = 0;
+                    for (int iop = 0; iop <= nop; iop++) {
+                        if (ate[iop]) {
+                            nate++;
+                        }
+                    }
+
+                    // Use either the analytical or numerical correction.
+                    boolean usenum = (nate > nlap[ifn] + 1 || neatmx > 1 || badt[ifn]);
+                    if (usenum) {
+                        cora[ifn] = coran;
+                        corv[ifn] = corvn;
+                        lensAreaNumeric += cora[ifn];
+                        lensVolumeNumeric += corv[ifn];
+                    } else if (badav[ifn]) {
+                        corv[ifn] = corvn;
+                        lensVolumeNumeric += corv[ifn];
+                    }
+                    lensArea += cora[ifn];
+                    lensVolume += corv[ifn];
+                }
+            }
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(format(" Convex Faces:     %6d Area: %12.6f Volume: %12.6f", nConvexFaces + 1, convexFaceArea, convexFaceVolume));
+                logger.fine(format(" Saddle Faces:     %6d Area: %12.6f Volume: %12.6f", nSaddleFaces + 1, saddleFaceArea, saddleFaceVolume));
+                logger.fine(format(" Concave Faces:    %6d Area: %12.6f Volume: %12.6f", nConcaveFaces + 1, concaveFaceArea, concaveFaceVolume));
+                logger.fine(format(" Buried Polyhedron:                          Volume: %12.6f", polyhedronVolume));
+                if (probe > 0.0) {
+                    logger.fine(format("\n Spindle Correction:            Area: %12.6f Volume: %12.6f", -spindleArea, -spindleVolume));
+                    logger.fine(format(" Lens Analytic Correction:      Area: %12.6f Volume: %12.6f",
+                            -lensArea - lensAreaNumeric, lensVolume - lensVolumeNumeric));
+                    logger.fine(format(" Lens Numerical Correction:     Area: %12.6f Volume: %12.6f",
+                            lensAreaNumeric, lensVolumeNumeric));
+                }
+            }
+
+            // Finally, compute the total area and total volume.
+            double area = convexFaceArea + saddleFaceArea + concaveFaceArea - spindleArea - lensArea;
+            double volume = convexFaceVolume + saddleFaceVolume + concaveFaceVolume + polyhedronVolume - spindleVolume + lensVolume;
+
+            localVolume += volume;
+            localSurfaceArea += area;
+        }
+
+        /**
+         * The triple method finds the triple product of three vectors; used
+         * as a service routine by the Connolly surface area and volume
+         * computation.
+         *
+         * @param x Vector 1.
+         * @param y Vector 2.
+         * @param z Vector 3.
+         * @return The triple product.
+         */
+        private double tripleProduct(double[] x, double[] y, double[] z) {
+            double[] xy = new double[3];
+            cross(x, y, xy);
+            return dot(xy, z);
+        }
+
+        /**
+         * The insertConvexEdgeForAtom method inserts a convex edge into the linked list for an atom.
+         *
+         * @param edgeNumber The edge number.
+         * @param atomNumber The atom number.
+         */
+        private void insertConvexEdgeForAtom(int edgeNumber, int atomNumber) {
+            if (edgeNumber <= -1) {
+                throw new EnergyException(" Bad Edge Number in IPEDGE", true);
+            }
+            if (atomNumber <= -1) {
+                throw new EnergyException(" Bad Atom Number in IPEDGE", true);
+            }
+            // Set beginning of list or add to end.
+            if (convexEdgeFirst[atomNumber] == -1) {
+                convexEdgeFirst[atomNumber] = edgeNumber;
+                convexEdgeNext[edgeNumber] = -1;
+                convexEdgeLast[atomNumber] = edgeNumber;
+            } else {
+                convexEdgeNext[convexEdgeLast[atomNumber]] = edgeNumber;
+                convexEdgeNext[edgeNumber] = -1;
+                convexEdgeLast[atomNumber] = edgeNumber;
+            }
+        }
+
+        /**
+         * Check for eaten by neighbor.
+         *
+         * @param northPole  North pole vector.
+         * @param unitVector Unit vector.
+         * @param icy        Cycle index.
+         * @return
+         */
+        private boolean ptincy(double[] northPole, double[] unitVector, int icy) {
             double[] acvect = new double[3];
             double[] cpvect = new double[3];
-            double[] polev = new double[3];
-            double[][] spv = new double[3][MAXCYEP];
-            double[][] epu = new double[3][MAXCYEP];
+            double[][] projectedVertsForConvexEdges = new double[3][MAXCYEP];
+            double[][] unitVectorsAlongEdges = new double[3][MAXCYEP];
             // Check for being eaten by neighbor.
-            int iatom = 0;
-            for (int ke = 0; ke < convexEdgeCycleNum[icy]; ke++) {
+            int iatom = -1;
+            for (int ke = 0; ke <= convexEdgeCycleNum[icy]; ke++) {
                 int iep = convexEdgeCycleNumbers[ke][icy];
                 int ic = convexEdgeCircleNumber[iep];
                 int it = circleTorusNumber[ic];
@@ -2561,7 +3141,7 @@ public class ConnollyRegion extends ParallelRegion {
                 }
                 for (int k = 0; k < 3; k++) {
                     acvect[k] = atomCoords[k][iaoth] - atomCoords[k][iatom];
-                    cpvect[k] = pnt[k] - circleCenter[k][ic];
+                    cpvect[k] = northPole[k] - circleCenter[k][ic];
                 }
                 if (dot(acvect, cpvect) >= 0.0) {
                     return false;
@@ -2570,122 +3150,142 @@ public class ConnollyRegion extends ParallelRegion {
             if (convexEdgeCycleNum[icy] <= 1) {
                 return true;
             }
-            int nedge = convexEdgeCycleNum[icy];
-            for (int ke = 0; ke < convexEdgeCycleNum[icy]; ke++) {
+            if (projectedVertexForEachConvexEdge(northPole, unitVector, icy, iatom, projectedVertsForConvexEdges)) {
+                return true;
+            }
+            int nEdges = convexEdgeCycleNum[icy];
+            unitVectorsAlongEdges(projectedVertsForConvexEdges, nEdges, unitVectorsAlongEdges);
+            double angleSum = sumOfAnglesAtVerticesForCycle(unitVectorsAlongEdges, nEdges, unitVector);
+            return (angleSum > 0.0);
+        }
 
+        /**
+         * Projected vertex for each convex edge.
+         *
+         * @param northPole                    North pole vector.
+         * @param unitVector                   Unit vector.
+         * @param icy                          Cycle number.
+         * @param ia                           Atom number.
+         * @param projectedVertsForConvexEdges Projected vertex for each convex edge.
+         * @return Returns true if the projection terminates before completion.
+         */
+        private boolean projectedVertexForEachConvexEdge(double[] northPole, double[] unitVector,
+                                                         int icy, int ia, double[][] projectedVertsForConvexEdges) {
+            double[] polev = new double[3];
+            for (int ke = 0; ke <= convexEdgeCycleNum[icy]; ke++) {
                 // Vertex number (use first vertex of edge).
                 int iep = convexEdgeCycleNumbers[ke][icy];
                 int iv = convexEdgeVertexNumber[0][iep];
-                if (iv != 0) {
+                if (iv != -1) {
                     // Vector from north pole to vertex.
                     for (int k = 0; k < 3; k++) {
-                        polev[k] = vertexCoords[k][iv] - pnt[k];
+                        polev[k] = vertexCoords[k][iv] - northPole[k];
                     }
                     // Calculate multiplication factor.
-                    double dt = dot(polev, unvect);
+                    double dt = dot(polev, unitVector);
                     if (dt == 0.0) {
                         return true;
                     }
-                    double f = (radius[iatom] * radius[iatom]) / dt;
+                    double f = (2 * radius[ia]) / dt;
                     if (f < 1.0) {
                         return true;
                     }
                     // Projected vertex for this convex edge.
                     for (int k = 0; k < 3; k++) {
-                        spv[k][ke] = pnt[k] + f * polev[k];
+                        projectedVertsForConvexEdges[k][ke] = northPole[k] + f * polev[k];
                     }
                 }
             }
-            epuclc(spv, nedge, epu);
-            double totang = rotang(epu, nedge, unvect);
-            return (totang > 0.0);
+            return false;
         }
 
-        private double rotang(double[][] epu, int nedge, double[] unvect) {
+        /**
+         * Sum of angles at vertices of cycle.
+         *
+         * @param unitVectorsAlongEdges Input vertices.
+         * @param nEdges                Number of edges.
+         * @param unitVector            Input vector.
+         * @return Sum of angles at vertices of cycle
+         */
+        private double sumOfAnglesAtVerticesForCycle(double[][] unitVectorsAlongEdges, int nEdges, double[] unitVector) {
             double[] crs = new double[3];
             double[] ai = new double[3];
             double[] aj = new double[3];
-            double[] ak = new double[3];
-
-            double totang = 0.0;
-
-            // Sum angles at vertices of cycle.
-            for (int ke = 0; ke < nedge + 1; ke++) {
+            double sumOfAngles = 0.0;
+            // Sum of angles at vertices of cycle.
+            for (int ke = 0; ke <= nEdges; ke++) {
                 double dt;
-                if (ke < nedge) {
-                    ai[0] = epu[0][ke];
-                    ai[1] = epu[1][ke];
-                    ai[2] = epu[2][ke];
-                    aj[0] = epu[0][ke + 1];
-                    aj[1] = epu[1][ke + 1];
-                    aj[2] = epu[2][ke + 1];
+                if (ke < nEdges) {
+                    getVector(ai, unitVectorsAlongEdges, ke);
+                    getVector(aj, unitVectorsAlongEdges, ke + 1);
                     dt = dot(ai, aj);
-                    cross(ai, ai, crs);
+                    cross(ai, aj, crs);
                 } else {
-                    ak[0] = epu[0][0];
-                    ak[1] = epu[1][0];
-                    ak[2] = epu[2][0];
                     // Closing edge of cycle.
-                    dt = dot(ai, ak);
-                    cross(ai, ak, crs);
+                    getVector(ai, unitVectorsAlongEdges, ke);
+                    getVector(aj, unitVectorsAlongEdges, 0);
+                    dt = dot(ai, aj);
+                    cross(ai, aj, crs);
                 }
-                if (dt < -1.0) {
-                    dt = -1.0;
-                } else if (dt > 1.0) {
-                    dt = 1.0;
-                }
+                dt = check(dt);
                 double ang = acos(dt);
-                if (dot(crs, unvect) > 0.0) {
+                if (dot(crs, unitVector) > 0.0) {
                     ang = -ang;
                 }
                 // Add to total for cycle.
-                totang += ang;
+                sumOfAngles += ang;
             }
-            return totang;
+            return sumOfAngles;
         }
 
-        private void epuclc(double[][] spv, int nedge, double[][] epu) {
+        /**
+         * Calculate unit vectors along edges.
+         *
+         * @param projectedVertsForConvexEdges Projected verts for convex edges.
+         * @param nEdges                       Number of edges.
+         * @param unitVectorsAlongEdges        Unit vectors along edges.
+         */
+        private void unitVectorsAlongEdges(double[][] projectedVertsForConvexEdges, int nEdges, double[][] unitVectorsAlongEdges) {
             double[] ai = new double[3];
             // Calculate unit vectors along edges.
-            for (int ke = 0; ke < nedge; ke++) {
+            for (int ke = 0; ke <= nEdges; ke++) {
                 // Get index of second edge of corner.
                 int ke2;
-                if (ke < nedge) {
+                if (ke < nEdges) {
                     ke2 = ke + 1;
                 } else {
                     ke2 = 0;
                 }
                 // Unit vector along edge of cycle.
                 for (int k = 0; k < 3; k++) {
-                    epu[k][ke] = spv[k][ke2] - spv[k][ke];
+                    unitVectorsAlongEdges[k][ke] = projectedVertsForConvexEdges[k][ke2] - projectedVertsForConvexEdges[k][ke];
                 }
-                getVector(ai, epu, ke);
+                getVector(ai, unitVectorsAlongEdges, ke);
                 double epun = r(ai);
                 if (epun <= 0.0) {
-                    //logger.severe("Null Edge in Cycle");
-                    throw new EnergyException("Null Edge in Cycle", true);
+                    throw new EnergyException(" Null Edge in Cycle", true);
                 }
                 // Normalize.
                 if (epun > 0.0) {
                     for (int k = 0; k < 3; k++) {
-                        epu[k][ke] = epu[k][ke] / epun;
+                        unitVectorsAlongEdges[k][ke] = unitVectorsAlongEdges[k][ke] / epun;
                     }
                 } else {
                     for (int k = 0; k < 3; k++) {
-                        epu[k][ke] = 0.0;
+                        unitVectorsAlongEdges[k][ke] = 0.0;
                     }
                 }
             }
             // Vectors for null edges come from following or preceding edges.
-            for (int ke = 0; ke < nedge; ke++) {
-                getVector(ai, epu, ke);
+            for (int ke = 0; ke <= nEdges; ke++) {
+                getVector(ai, unitVectorsAlongEdges, ke);
                 if (r(ai) <= 0.0) {
                     int le = ke - 1;
-                    if (le <= 0) {
-                        le = nedge;
+                    if (le < 0) {
+                        le = nEdges;
                     }
                     for (int k = 0; k < 3; k++) {
-                        epu[k][ke] = epu[k][le];
+                        unitVectorsAlongEdges[k][ke] = unitVectorsAlongEdges[k][le];
                     }
                 }
             }
@@ -2982,644 +3582,22 @@ public class ConnollyRegion extends ParallelRegion {
             getVector(ai, pav, 0);
             getVector(aj, pav, 1);
             getVector(ak, pav, 2);
-            double simplx = -triple(ai, aj, ak) / 6.0;
+            double simplx = -tripleProduct(ai, aj, ak) / 6.0;
             voln = simplx - arean * probe / 3.0;
             av[0] = arean;
             av[1] = voln;
         }
 
         /**
-         * The vam method takes the analytical molecular surface defined as
-         * a collection of spherical and toroidal polygons and uses it to
-         * compute the volume and surface area
-         */
-        private void vam() {
-            final int maxdot = 1000;
-            final int maxop = 100;
-            final int nscale = 20;
-            int[] ivs = new int[3];
-            int[] ispind = new int[3];
-            int[] ispnd2 = new int[3];
-            int[] ifnop = new int[maxop];
-            int[] enfs = new int[20 * nAtoms];
-            double[][] cenop = new double[3][maxop];
-            double[] sdot = new double[3];
-            double[] dotv = new double[nscale];
-            double[] tau = new double[3];
-            double[] ppm = new double[3];
-            double[] xpnt1 = new double[3];
-            double[] xpnt2 = new double[3];
-            double[] qij = new double[3];
-            double[] qji = new double[3];
-            double[][] vects = new double[3][3];
-            double[] vect1 = new double[3];
-            double[] vect2 = new double[3];
-            double[] vect3 = new double[3];
-            double[] vect4 = new double[3];
-            double[] vect5 = new double[3];
-            double[] vect6 = new double[3];
-            double[] vect7 = new double[3];
-            double[] vect8 = new double[3];
-            double[] upp = new double[3];
-            double[] thetaq = new double[3];
-            double[] sigmaq = new double[3];
-            double[] umq = new double[3];
-            double[] upq = new double[3];
-            double[] uc = new double[3];
-            double[] uq = new double[3];
-            double[] uij = new double[3];
-            double[] ai = new double[3];
-            double[] aj = new double[3];
-            double[] ak = new double[3];
-            double[] al = new double[3];
-            double[][] dots = new double[3][maxdot];
-            double[][] tdots = new double[3][maxdot];
-            double[] atomArea = new double[nAtoms];
-            boolean[] ate = new boolean[maxop];
-            boolean[] vip = new boolean[3];
-            boolean[] cinsp = new boolean[1];
-
-            int[] nlap = null;
-            int[][] fnt = null;
-            int[][] nspt = null;
-            double[] depths = null;
-            double[] cora = null;
-            double[] corv = null;
-            double[][] alts = null;
-            double[][] fncen = null;
-            double[][][] fnvect = null;
-            boolean[] badav = null;
-            boolean[] badt = null;
-            boolean[][] fcins = null;
-            boolean[][] fcint = null;
-            boolean[][] fntrev = null;
-            if (nConcaveFaces >= 0) {
-                nlap = new int[nConcaveFaces + 1];
-                fnt = new int[3][nConcaveFaces + 1];
-                nspt = new int[3][nConcaveFaces + 1];
-                depths = new double[nConcaveFaces + 1];
-                cora = new double[nConcaveFaces + 1];
-                corv = new double[nConcaveFaces + 1];
-                alts = new double[3][nConcaveFaces + 1];
-                fncen = new double[3][nConcaveFaces + 1];
-                fnvect = new double[3][3][nConcaveFaces + 1];
-                badav = new boolean[nConcaveFaces + 1];
-                badt = new boolean[nConcaveFaces + 1];
-                fcins = new boolean[3][nConcaveFaces + 1];
-                fcint = new boolean[3][nConcaveFaces + 1];
-                fntrev = new boolean[3][nConcaveFaces + 1];
-            }
-
-            // Compute the volume of the interior polyhedron.
-            double polyhedronVolume = 0.0;
-            for (int i = 0; i <= nConcaveFaces; i++) {
-                polyhedronVolume += measurePrism(i);
-            }
-
-            // Compute the area and volume due to convex faces as well as
-            // the area partitioned among the atoms.
-            double convexFaceArea = 0.0;
-            double convexFaceVolume = 0.0;
-            fill(atomArea, 0.0);
-            double[] convexFaces = {0.0, 0.0};
-            for (int i = 0; i <= nConvexFaces; i++) {
-                measureConvexFace(i, convexFaces);
-                int ia = convexFaceAtomNumber[i];
-                atomArea[ia] += convexFaces[0];
-                convexFaceArea += convexFaces[0];
-                convexFaceVolume += convexFaces[1];
-            }
-
-            // Compute the area and volume due to saddle faces
-            // as well as the spindle correction value.
-            double saddleFaceArea = 0.0;
-            double saddleFaceVolume = 0.0;
-            double spindleArea = 0.0;
-            double spindleVolume = 0.0;
-            double[] saddle = {0.0, 0.0, 0.0, 0.0};
-            for (int i = 0; i <= nSaddleFaces; i++) {
-                for (int k = 0; k < 2; k++) {
-                    int ien = saddleConcaveEdgeNumbers[k][i];
-                    if (ien > -1) {
-                        enfs[ien] = i;
-                    }
-                }
-                measureSaddleFace(i, saddle);
-                double areas = saddle[0];
-                double vols = saddle[1];
-                double areasp = saddle[2];
-                double volsp = saddle[3];
-                saddleFaceArea += areas;
-                saddleFaceVolume += vols;
-                spindleArea += areasp;
-                spindleVolume += volsp;
-                if (areas - areasp < 0.0) {
-                    throw new EnergyException(" Negative Area for Saddle Face", true);
-                }
-            }
-
-            // Compute the area and volume due to concave faces.
-            double concaveFaceArea = 0.0;
-            double concaveFaceVolume = 0.0;
-            double[] concaveFaces = {0.0, 0.0};
-            for (int i = 0; i <= nConcaveFaces; i++) {
-                measureConcaveFace(i, concaveFaces);
-                double arean = concaveFaces[0];
-                double voln = concaveFaces[1];
-                concaveFaceArea += arean;
-                concaveFaceVolume += voln;
-            }
-
-            // Compute the area and volume lens correction values.
-            double lensArea = 0.0;
-            double lensAreaNumeric = 0.0;
-            double lensVolume = 0.0;
-            double lensVolumeNumeric = 0.0;
-
-            if (probe > 0.0) {
-                int[] ndots = {maxdot};
-                gendot(ndots, dots, probe);
-                double dota = (4.0 * PI * probe * probe) / ndots[0];
-                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
-                    nlap[ifn] = -1;
-                    cora[ifn] = 0.0;
-                    corv[ifn] = 0.0;
-                    badav[ifn] = false;
-                    badt[ifn] = false;
-                    for (int k = 0; k < 3; k++) {
-                        nspt[k][ifn] = -1;
-                    }
-                    int ien = concaveFaceEdgeNumbers[0][ifn];
-                    int iv = concaveEdgeVertexNumbers[0][ien];
-                    int ip = vertexProbeNumber[iv];
-                    getVector(ai, alts, ifn);
-                    depths[ifn] = depth(ip, ai);
-                    for (int k = 0; k < 3; k++) {
-                        fncen[k][ifn] = probeCoords[k][ip];
-                    }
-                    // Get vertices and vectors.
-                    for (int ke = 0; ke < 3; ke++) {
-                        ien = concaveFaceEdgeNumbers[ke][ifn];
-                        ivs[ke] = concaveEdgeVertexNumbers[0][ien];
-                        int ia = vertexAtomNumbers[ivs[ke]];
-                        int ifs = enfs[ien];
-                        int iep = saddleConvexEdgeNumbers[0][ifs];
-                        int ic = convexEdgeCircleNumber[iep];
-                        int it = circleTorusNumber[ic];
-                        fnt[ke][ifn] = it;
-                        fntrev[ke][ifn] = (torusAtomNumber[0][it] != ia);
-                    }
-                    for (int ke = 0; ke < 3; ke++) {
-                        for (int k = 0; k < 3; k++) {
-                            vects[k][ke] = vertexCoords[k][ivs[ke]] - probeCoords[k][ip];
-                        }
-                    }
-                    // Calculate normal vectors for the three planes that
-                    // cut out the geodesic triangle.
-                    getVector(ai, vects, 0);
-                    getVector(aj, vects, 1);
-                    cross(ai, aj, ak);
-                    norm(ak, ak);
-                    putVector(ak, fnvect, 0, ifn);
-                    getVector(ak, vects, 2);
-                    cross(aj, ak, ai);
-                    norm(ai, ai);
-                    putVector(ai, fnvect, 1, ifn);
-                    getVector(ai, vects, 0);
-                    cross(ak, ai, aj);
-                    norm(aj, aj);
-                    putVector(aj, fnvect, 2, ifn);
-                }
-                for (int ifn = 0; ifn <= nConcaveFaces - 1; ifn++) {
-                    for (int jfn = ifn + 1; jfn <= nConcaveFaces; jfn++) {
-                        getVector(ai, fncen, ifn);
-                        getVector(aj, fncen, jfn);
-                        double dij2 = dist2(ai, aj);
-                        if (dij2 > 4.0 * probe * probe) {
-                            continue;
-                        }
-                        if (depths[ifn] > probe && depths[jfn] > probe) {
-                            continue;
-                        }
-                        // These two probes may have intersecting surfaces.
-                        double dpp = dist(ai, aj);
-                        // Compute the midpoint.
-                        for (int k = 0; k < 3; k++) {
-                            ppm[k] = (fncen[k][ifn] + fncen[k][jfn]) / 2.0;
-                            upp[k] = (fncen[k][jfn] - fncen[k][ifn]) / dpp;
-                        }
-                        double rm = probe * probe - (dpp / 2.0) * (dpp / 2.0);
-                        if (rm < 0.0) {
-                            rm = 0.0;
-                        }
-                        rm = sqrt(rm);
-                        double rat = check(dpp / (2.0 * probe));
-                        double rho = asin(rat);
-                        // Use circle-place intersection routine.
-                        boolean alli = true;
-                        boolean anyi = false;
-                        boolean spindl = false;
-                        for (int k = 0; k < 3; k++) {
-                            ispind[k] = -1;
-                            ispnd2[k] = -1;
-                        }
-                        for (int ke = 0; ke < 3; ke++) {
-                            thetaq[ke] = 0.0;
-                            sigmaq[ke] = 0.0;
-                            tau[ke] = 0.0;
-                            getVector(ai, fncen, ifn);
-                            getVector(aj, fnvect, ke, ifn);
-                            boolean cintp = circlePlane(ppm, rm, upp, ai, aj, cinsp, xpnt1, xpnt2);
-                            fcins[ke][ifn] = cinsp[0];
-                            fcint[ke][ifn] = cintp;
-                            if (!cinsp[0]) {
-                                alli = false;
-                            }
-                            if (cintp) {
-                                anyi = true;
-                            }
-                            if (!cintp) {
-                                continue;
-                            }
-                            int it = fnt[ke][ifn];
-                            if (torusRadius[it] > probe) {
-                                continue;
-                            }
-                            for (int ke2 = 0; ke2 < 3; ke2++) {
-                                if (it == fnt[ke2][jfn]) {
-                                    ispind[ke] = it;
-                                    nspt[ke][ifn]++;
-                                    ispnd2[ke2] = it;
-                                    nspt[ke2][jfn]++;
-                                    spindl = true;
-                                }
-                            }
-                            if (ispind[ke] == -1) {
-                                continue;
-                            }
-
-                            // Check that the two ways of calculating intersection points match.
-                            rat = check(torusRadius[it] / probe);
-                            thetaq[ke] = acos(rat);
-                            double stq = sin(thetaq[ke]);
-                            if (fntrev[ke][ifn]) {
-                                for (int k = 0; k < 3; k++) {
-                                    uij[k] = -torusAxis[k][it];
-                                }
-                            } else {
-                                for (int k = 0; k < 3; k++) {
-                                    uij[k] = torusAxis[k][it];
-                                }
-                            }
-                            for (int k = 0; k < 3; k++) {
-                                qij[k] = torusCenter[k][it] - stq * probe * uij[k];
-                                qji[k] = torusCenter[k][it] + stq * probe * uij[k];
-                            }
-                            for (int k = 0; k < 3; k++) {
-                                umq[k] = (qij[k] - ppm[k]) / rm;
-                                upq[k] = (qij[k] - fncen[k][ifn]) / probe;
-                            }
-                            cross(uij, upp, vect1);
-                            double dt = check(dot(umq, vect1));
-                            sigmaq[ke] = acos(dt);
-                            getVector(ai, fnvect, ke, ifn);
-                            cross(upq, ai, vect1);
-                            norm(vect1, uc);
-                            cross(upp, upq, vect1);
-                            norm(vect1, uq);
-                            dt = check(dot(uc, uq));
-                            tau[ke] = PI - acos(dt);
-                        }
-                        boolean allj = true;
-                        boolean anyj = false;
-                        for (int ke = 0; ke < 3; ke++) {
-                            getVector(ai, fncen, jfn);
-                            getVector(aj, fnvect, ke, jfn);
-                            boolean cintp = circlePlane(ppm, rm, upp, ai, aj, cinsp, xpnt1, xpnt2);
-                            fcins[ke][jfn] = cinsp[0];
-                            fcint[ke][jfn] = cintp;
-                            if (!cinsp[0]) {
-                                allj = false;
-                            }
-                            if (cintp) {
-                                anyj = true;
-                            }
-                        }
-                        boolean case1 = (alli && allj && !anyi && !anyj);
-                        boolean case2 = (anyi && anyj && spindl);
-                        if (!case1 && !case2) {
-                            continue;
-                        }
-                        // This kind of overlap can be handled.
-                        nlap[ifn]++;
-                        nlap[jfn]++;
-                        for (int ke = 0; ke < 3; ke++) {
-                            int ien = concaveFaceEdgeNumbers[ke][ifn];
-                            int iv1 = concaveEdgeVertexNumbers[0][ien];
-                            int iv2 = concaveEdgeVertexNumbers[1][ien];
-                            for (int k = 0; k < 3; k++) {
-                                vect3[k] = vertexCoords[k][iv1] - fncen[k][ifn];
-                                vect4[k] = vertexCoords[k][iv2] - fncen[k][ifn];
-                            }
-                            for (int ke2 = 0; ke2 < 3; ke2++) {
-                                if (ispind[ke] == ispnd2[ke2] || ispind[ke] == -1) {
-                                    continue;
-                                }
-                                getVector(ai, fncen, ifn);
-                                getVector(aj, fnvect, ke, ifn);
-                                getVector(ak, fncen, jfn);
-                                getVector(al, fnvect, ke2, jfn);
-                                boolean cintp = circlePlane(ai, probe, aj, ak, al, cinsp, xpnt1, xpnt2);
-                                if (!cintp) {
-                                    continue;
-                                }
-                                ien = concaveFaceEdgeNumbers[ke2][jfn];
-                                iv1 = concaveEdgeVertexNumbers[0][ien];
-                                iv2 = concaveEdgeVertexNumbers[1][ien];
-                                for (int k = 0; k < 3; k++) {
-                                    vect7[k] = vertexCoords[k][iv1] - fncen[k][jfn];
-                                    vect8[k] = vertexCoords[k][iv2] - fncen[k][jfn];
-                                }
-                                // Check whether point lies on spindle arc.
-                                for (int k = 0; k < 3; k++) {
-                                    vect1[k] = xpnt1[k] - fncen[k][ifn];
-                                    vect2[k] = xpnt2[k] - fncen[k][ifn];
-                                    vect5[k] = xpnt1[k] - fncen[k][jfn];
-                                    vect6[k] = xpnt2[k] - fncen[k][jfn];
-                                }
-                                // Continue to next if statement if any of the following are true.
-                                getVector(ai, fnvect, ke, ifn);
-                                getVector(aj, fnvect, ke2, jfn);
-                                if (triple(vect3, vect1, ai) < 0.0
-                                        || triple(vect1, vect4, ai) < 0.0
-                                        || triple(vect7, vect5, aj) < 0.0
-                                        || triple(vect5, vect8, aj) < 0.0) {
-                                    if (!(triple(vect3, vect2, ai) < 0.0
-                                            || triple(vect2, vect4, ai) < 0.0
-                                            || triple(vect7, vect6, aj) < 0.0
-                                            || triple(vect6, vect8, aj) < 0.0)) {
-                                        badav[ifn] = true;
-                                    }
-                                } else {
-                                    badav[ifn] = true;
-                                }
-                            }
-                        }
-                        for (int ke = 0; ke < 3; ke++) {
-                            int ien = concaveFaceEdgeNumbers[ke][ifn];
-                            int iv1 = concaveEdgeVertexNumbers[0][ien];
-                            int iv2 = concaveEdgeVertexNumbers[1][ien];
-                            for (int k = 0; k < 3; k++) {
-                                vect3[k] = vertexCoords[k][iv1] - fncen[k][ifn];
-                                vect4[k] = vertexCoords[k][iv2] - fncen[k][ifn];
-                            }
-                            for (int ke2 = 0; ke2 < 3; ke2++) {
-                                if (ispind[ke] == ispnd2[ke2] || ispnd2[ke2] == -1) {
-                                    continue;
-                                }
-                                getVector(ai, fncen, ifn);
-                                getVector(aj, fnvect, ke, ifn);
-                                getVector(ak, fncen, jfn);
-                                getVector(al, fnvect, ke2, jfn);
-                                boolean cintp = circlePlane(ak, probe, al, ai, aj, cinsp, xpnt1, xpnt2);
-                                if (!cintp) {
-                                    continue;
-                                }
-                                ien = concaveFaceEdgeNumbers[ke2][jfn];
-                                iv1 = concaveEdgeVertexNumbers[0][ien];
-                                iv2 = concaveEdgeVertexNumbers[1][ien];
-                                for (int k = 0; k < 3; k++) {
-                                    vect7[k] = vertexCoords[k][iv1] - fncen[k][jfn];
-                                    vect8[k] = vertexCoords[k][iv2] - fncen[k][jfn];
-                                }
-                                // Check whether point lies on spindle arc.
-                                for (int k = 0; k < 3; k++) {
-                                    vect1[k] = xpnt1[k] - fncen[k][ifn];
-                                    vect2[k] = xpnt2[k] - fncen[k][ifn];
-                                    vect5[k] = xpnt1[k] - fncen[k][jfn];
-                                    vect6[k] = xpnt2[k] - fncen[k][jfn];
-                                }
-                                // Continue to next if statement if any of the following are true.
-                                getVector(ai, fnvect, ke, ifn);
-                                getVector(aj, fnvect, ke2, jfn);
-                                if (triple(vect3, vect1, ai) < 0.0
-                                        || triple(vect1, vect4, ai) < 0.0
-                                        || triple(vect7, vect5, aj) < 0.0
-                                        || triple(vect5, vect8, aj) < 0.0) {
-                                    if (!(triple(vect3, vect2, ai) < 0.0
-                                            || triple(vect2, vect4, ai) < 0.0
-                                            || triple(vect7, vect6, aj) < 0.0
-                                            || triple(vect6, vect8, aj) < 0.0)) {
-                                        badav[jfn] = true;
-                                    }
-                                } else {
-                                    badav[jfn] = true;
-                                }
-                            }
-                        }
-
-                        double sumlam = 0.0;
-                        double sumsig = 0.0;
-                        double sumsc = 0.0;
-                        for (int ke = 0; ke < 3; ke++) {
-                            if (ispind[ke] != -1) {
-                                sumlam += (PI - tau[ke]);
-                                sumsig += (sigmaq[ke] - PI);
-                                sumsc += (sin(sigmaq[ke]) * cos(sigmaq[ke]));
-                            }
-                        }
-                        double alens = 2.0 * probe * probe
-                                * (PI - sumlam - sin(rho) * (PI + sumsig));
-                        double vint = alens * probe / 3.0;
-                        double vcone = probe * rm * rm * sin(rho) * (PI + sumsig) / 3.0;
-                        double vpyr = probe * rm * rm * sin(rho) * sumsc / 3.0;
-                        double vlens = vint - vcone + vpyr;
-                        cora[ifn] += alens;
-                        cora[jfn] += alens;
-                        corv[ifn] += vlens;
-                        corv[jfn] += vlens;
-
-                        // Check for vertex on opposing probe in face.
-                        outerloop:
-                        for (int kv = 0; kv < 3; kv++) {
-                            vip[kv] = false;
-                            int ien = concaveFaceEdgeNumbers[kv][jfn];
-                            int iv = concaveEdgeVertexNumbers[0][ien];
-                            for (int k = 0; k < 3; k++) {
-                                vect1[k] = vertexCoords[k][iv] - fncen[k][ifn];
-                            }
-                            norm(vect1, vect1);
-                            for (int ke = 0; ke < 3; ke++) {
-                                getVector(ai, fnvect, ke, ifn);
-                                getVector(aj, vertexCoords, iv);
-                                double dt = dot(ai, aj);
-                                if (dt > 0.0) {
-                                    continue outerloop;
-                                }
-                                vip[kv] = true;
-                            }
-                        }
-                    }
-                }
-
-                outerLoop:
-                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
-                    for (int ke = 0; ke < 3; ke++) {
-                        if (nspt[ke][ifn] > 0) {
-                            badt[ifn] = true;
-                            break outerLoop;
-                        }
-                    }
-                }
-
-                double fourProbe2 = 4.0 * probe * probe;
-                for (int ifn = 0; ifn <= nConcaveFaces; ifn++) {
-                    if (nlap[ifn] <= -1) {
-                        continue;
-                    }
-                    // Gather all overlapping probes.
-                    int nop = -1;
-                    for (int jfn = 0; jfn <= nConcaveFaces; jfn++) {
-                        if (ifn != jfn) {
-                            getVector(ai, fncen, ifn);
-                            getVector(aj, fncen, jfn);
-                            double dij2 = dist2(ai, aj);
-                            if (dij2 <= fourProbe2 && depths[jfn] <= probe) {
-                                nop++;
-                                if (nop >= maxop) {
-                                    throw new EnergyException("NOP Overflow in VAM", false);
-                                }
-                                ifnop[nop] = jfn;
-                                for (int k = 0; k < 3; k++) {
-                                    cenop[k][nop] = fncen[k][jfn];
-                                }
-                            }
-                        }
-                    }
-
-                    // Numerical calculation of the correction.
-                    double areado = 0.0;
-                    double voldo = 0.0;
-                    double scinc = 1.0 / nscale;
-                    for (int isc = 0; isc < nscale; isc++) {
-                        double rsc = (isc + 1) - 0.5;
-                        dotv[isc] = probe * dota * rsc * rsc * scinc * scinc * scinc;
-                    }
-                    for (int iop = 0; iop <= nop; iop++) {
-                        ate[iop] = false;
-                    }
-                    int neatmx = 0;
-                    dotLoop:
-                    for (int idot = 0; idot < ndots[0]; idot++) {
-                        for (int ke = 0; ke < 3; ke++) {
-                            getVector(ai, fnvect, ke, ifn);
-                            getVector(aj, dots, idot);
-                            double dt = dot(ai, aj);
-                            if (dt > 0.0) {
-                                continue dotLoop;
-                            }
-                        }
-                        for (int k = 0; k < 3; k++) {
-                            tdots[k][idot] = fncen[k][ifn] + dots[k][idot];
-                        }
-                        for (int iop = 0; iop <= nop; iop++) {
-                            int jfn = ifnop[iop];
-                            getVector(ai, tdots, idot);
-                            getVector(aj, fncen, jfn);
-                            double ds2 = dist2(ai, aj);
-                            if (ds2 < probe * probe) {
-                                areado += dota;
-                                break;
-                            }
-                        }
-                        for (int isc = 0; isc < nscale; isc++) {
-                            double rsc = (isc + 1) - 0.5;
-                            for (int k = 0; k < 3; k++) {
-                                sdot[k] = fncen[k][ifn] + rsc * scinc * dots[k][idot];
-                            }
-                            int neat = 0;
-                            optLoop:
-                            for (int iop = 0; iop <= nop; iop++) {
-                                int jfn = ifnop[iop];
-                                getVector(ai, fncen, jfn);
-                                double ds2 = dist2(sdot, ai);
-                                if (ds2 < probe * probe) {
-                                    for (int k = 0; k < 3; k++) {
-                                        vect1[k] = sdot[k] - fncen[k][jfn];
-                                    }
-                                    for (int ke = 0; ke < 3; ke++) {
-                                        getVector(ai, fnvect, ke, jfn);
-                                        double dt = dot(ai, vect1);
-                                        if (dt > 0.0) {
-                                            continue optLoop;
-                                        }
-                                    }
-                                    neat++;
-                                    ate[iop] = true;
-                                }
-                            }
-                            if (neat > neatmx) {
-                                neatmx = neat;
-                            }
-                            if (neat > 0) {
-                                voldo += dotv[isc] * (neat / (1.0 + neat));
-                            }
-                        }
-                    }
-                    double coran = areado;
-                    double corvn = voldo;
-                    int nate = 0;
-                    for (int iop = 0; iop <= nop; iop++) {
-                        if (ate[iop]) {
-                            nate++;
-                        }
-                    }
-
-                    // Use either the analytical or numerical correction.
-                    boolean usenum = (nate > nlap[ifn] + 1 || neatmx > 1 || badt[ifn]);
-                    if (usenum) {
-                        cora[ifn] = coran;
-                        corv[ifn] = corvn;
-                        lensAreaNumeric += cora[ifn];
-                        lensVolumeNumeric += corv[ifn];
-                    } else if (badav[ifn]) {
-                        corv[ifn] = corvn;
-                        lensVolumeNumeric += corv[ifn];
-                    }
-                    lensArea += cora[ifn];
-                    lensVolume += corv[ifn];
-                }
-            }
-
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(format(" Convex Faces:     %6d Area: %12.6f Volume: %12.6f", nConvexFaces + 1, convexFaceArea, convexFaceVolume));
-                logger.fine(format(" Saddle Faces:     %6d Area: %12.6f Volume: %12.6f", nSaddleFaces + 1, saddleFaceArea, saddleFaceVolume));
-                logger.fine(format(" Concave Faces:    %6d Area: %12.6f Volume: %12.6f", nConcaveFaces + 1, concaveFaceArea, concaveFaceVolume));
-                logger.fine(format(" Buried Polyhedron:                          Volume: %12.6f", polyhedronVolume));
-                if (probe > 0.0) {
-                    logger.fine(format("\n Spindle Correction:            Area: %12.6f Volume: %12.6f", -spindleArea, -spindleVolume));
-                    logger.fine(format(" Lens Analytic Correction:      Area: %12.6f Volume: %12.6f",
-                            -lensArea - lensAreaNumeric, lensVolume - lensVolumeNumeric));
-                    logger.fine(format(" Lens Numerical Correction:     Area: %12.6f Volume: %12.6f",
-                            lensAreaNumeric, lensVolumeNumeric));
-                }
-            }
-
-            // Finally, compute the total area and total volume.
-            double area = convexFaceArea + saddleFaceArea + concaveFaceArea - spindleArea - lensArea;
-            double volume = convexFaceVolume + saddleFaceVolume + concaveFaceVolume + polyhedronVolume - spindleVolume + lensVolume;
-
-            localVolume += volume;
-            localSurfaceArea += area;
-        }
-
-        /**
          * The gendot method finds the coordinates of a specified number of
-         * surface points for a sphere with the input radius and coordinate
-         * center.
+         * surface points for a sphere with the input radius.
+         *
+         * @param ndots  Number of dots to generate.
+         * @param dots   Coordinates of generaged dots.
+         * @param radius Sphere radius.
          */
-        private void gendot(int[] ndots, double[][] dots, double radius) {
-            int nequat = (int) sqrt(PI * ((double) ndots[0]));
+        private int genDots(int ndots, double[][] dots, double radius) {
+            int nequat = (int) sqrt(PI * ((double) ndots));
             int nvert = (int) (0.5 * (double) nequat);
             if (nvert < 1) {
                 nvert = 1;
@@ -3642,12 +3620,12 @@ public class ConnollyRegion extends ParallelRegion {
                     dots[0][k] = x * radius;
                     dots[1][k] = y * radius;
                     dots[2][k] = z * radius;
-                    if (k >= ndots[0]) {
+                    if (k >= ndots) {
                         break outerloop;
                     }
                 }
             }
-            ndots[0] = k;
+            return k;
         }
 
         /**
@@ -3718,7 +3696,7 @@ public class ConnollyRegion extends ParallelRegion {
             }
             dt = check(dt);
             double angle = acos(dt);
-            if (hand * triple(v1, v2, axis) < 0.0) {
+            if (hand * tripleProduct(v1, v2, axis) < 0.0) {
                 return 2.0 * PI - angle;
             } else {
                 return angle;
@@ -3765,6 +3743,30 @@ public class ConnollyRegion extends ParallelRegion {
          */
         private int index2(int i, int j, int k) {
             return k + mxcube * (j + mxcube * i);
+        }
+
+        private void getVector(double[] ai, double[][] temp, int index) {
+            ai[0] = temp[0][index];
+            ai[1] = temp[1][index];
+            ai[2] = temp[2][index];
+        }
+
+        private void putVector(double[] ai, double[][] temp, int index) {
+            temp[0][index] = ai[0];
+            temp[1][index] = ai[1];
+            temp[2][index] = ai[2];
+        }
+
+        private void getVector(double[] ai, double[][][] temp, int index1, int index2) {
+            ai[0] = temp[0][index1][index2];
+            ai[1] = temp[1][index1][index2];
+            ai[2] = temp[2][index1][index2];
+        }
+
+        private void putVector(double[] ai, double[][][] temp, int index1, int index2) {
+            temp[0][index1][index2] = ai[0];
+            temp[1][index1][index2] = ai[1];
+            temp[2][index1][index2] = ai[2];
         }
 
         private void computeVolumeGradient() {

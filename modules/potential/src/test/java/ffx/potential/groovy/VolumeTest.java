@@ -20,8 +20,6 @@ public class VolumeTest {
     @Before
     public void before() {
         binding = new Binding();
-        System.clearProperty("platform");
-
         volume = new Volume();
         volume.setBinding(binding);
     }
@@ -166,6 +164,20 @@ public class VolumeTest {
         volume.run();
         assertEquals(518.612603965319, volume.totalVolume, 0.001);
         assertEquals(340.264998320387, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly vdW volume and surface area (probe radius = 0.0).
+     */
+    @Test
+    public void testConnollyVDWCrambin() {
+        String[] args = {"-c", "-p", "0.0", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(4418.303482563956, volume.totalVolume, 0.001);
+        assertEquals(4168.547763834282, volume.totalSurfaceArea, 0.001);
     }
 
     /**
