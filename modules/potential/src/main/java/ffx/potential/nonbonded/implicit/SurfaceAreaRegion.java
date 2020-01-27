@@ -62,11 +62,28 @@ import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 
 /**
- * Initial port of the TINKER surface area code.
+ * SurfaceAreaRegion performs an analytical computation of the weighted
+ * solvent accessible surface area of each atom and the first
+ * derivatives of the area with respect to Cartesian coordinates
+ * <p>
+ * Literature references:
+ * <p>
+ * T. J. Richmond, "Solvent Accessible Surface Area and
+ * Excluded Volume in Proteins", Journal of Molecular Biology,
+ * 178, 63-89 (1984)
+ * <p>
+ * L. Wesson and D. Eisenberg, "Atomic Solvation Parameters
+ * Applied to Molecular Dynamics of Proteins in Solution",
+ * Protein Science, 1, 227-235 (1992)
+ * <p>
+ * This was ported from the TINKER "surface.f" code.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
-public class CavitationRegion extends ParallelRegion {
+public class SurfaceAreaRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(CavitationRegion.class.getName());
+    private static final Logger logger = Logger.getLogger(SurfaceAreaRegion.class.getName());
 
     private final AtomOverlapLoop[] atomOverlapLoop;
     private final CavitationLoop[] cavitationLoop;
@@ -96,8 +113,6 @@ public class CavitationRegion extends ParallelRegion {
     private SharedBooleanArray skip;
     private double[] area;
     private double[] r;
-    private double ecav;
-    private double esurf;
     private AtomicDoubleArray3D grad;
     private double surfaceTension;
 
@@ -117,10 +132,10 @@ public class CavitationRegion extends ParallelRegion {
      * @param probe          Solvent probe radius.
      * @param surfaceTension Surface tension.
      */
-    public CavitationRegion(Atom[] atoms, double[] x, double[] y, double[] z,
-                            boolean[] use, int[][][] neighborLists,
-                            AtomicDoubleArray3D grad,
-                            int nt, double probe, double surfaceTension) {
+    public SurfaceAreaRegion(Atom[] atoms, double[] x, double[] y, double[] z,
+                             boolean[] use, int[][][] neighborLists,
+                             AtomicDoubleArray3D grad,
+                             int nt, double probe, double surfaceTension) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.x = x;
@@ -173,8 +188,6 @@ public class CavitationRegion extends ParallelRegion {
             if (r[i] != 0.0) {
                 r[i] = r[i] + probe;
             }
-        }
-        for (int i = 0; i < nAtoms; i++) {
             skip.set(i, true);
         }
     }
@@ -252,6 +265,8 @@ public class CavitationRegion extends ParallelRegion {
 
         @Override
         public void run(int lb, int ub) throws Exception {
+            // Set the "skip" array to exclude all inactive atoms
+            // that do not overlap any of the current active atoms
             for (int i = lb; i <= ub; i++) {
                 buried[i] = false;
                 area[i] = 0.0;
@@ -369,7 +384,6 @@ public class CavitationRegion extends ParallelRegion {
                 intag1[i][n] = k;
                 count[i]++;
                 if (count[i] >= maxarc) {
-                    //logger.severe(format(" Increase the value of MAXARC to (%d).", count[i]));
                     throw new EnergyException(format(" Increase the value of MAXARC to (%d).", count[i]), false);
                 }
             }
@@ -384,6 +398,7 @@ public class CavitationRegion extends ParallelRegion {
     private class CavitationLoop extends IntegerForLoop {
 
         private double thec = 0;
+        private double localSurfaceEnergy;
         private IndexedDouble[] arci;
         private boolean[] omit;
         private double[] xc;
@@ -456,14 +471,14 @@ public class CavitationRegion extends ParallelRegion {
         public void start() {
             time = -System.nanoTime();
             threadID = getThreadIndex();
-            ecav = 0;
+            localSurfaceEnergy = 0.0;
             fill(ider, 0);
             fill(sign_yder, 0);
         }
 
         @Override
         public void finish() {
-            sharedCavitation.addAndGet(esurf);
+            sharedCavitation.addAndGet(localSurfaceEnergy);
             time += System.nanoTime();
         }
 
@@ -485,7 +500,7 @@ public class CavitationRegion extends ParallelRegion {
                     area[ir] = 0.0;
                 }
                 area[ir] *= rrisq * wght;
-                esurf += area[ir];
+                localSurfaceEnergy += area[ir];
             }
         }
 
@@ -805,15 +820,15 @@ public class CavitationRegion extends ParallelRegion {
                     double gacb = (gk - uzl * gl / b[l]) * sign_yder[l] * rri / wxlsq;
                     sign_yder[l] = 0;
                     if (!moved) {
-//                        double faca = ux[l] * gaca - uy[l] * gacb;
-//                        double facb = uy[l] * gaca + ux[l] * gacb;
-//                        double facc = rcn * (decl - (gk * dtkcl - gl * dtlcl) / rri);
-//                        double dax = axx * faca - ayx * facb + azx * facc;
-//                        double day = axy * faca + ayy * facb + azy * facc;
-//                        double daz = azz * facc - axz * faca;
+                        double faca = ux[l] * gaca - uy[l] * gacb;
+                        double facb = uy[l] * gaca + ux[l] * gacb;
+                        double facc = rcn * (decl - (gk * dtkcl - gl * dtlcl) / rri);
+                        double dax = axx * faca - ayx * facb + azx * facc;
+                        double day = axy * faca + ayy * facb + azy * facc;
+                        double daz = azz * facc - axz * faca;
                         int in = intag[l];
-                        grad.add(threadID, ir, txk * t1 * wght, tyk * t1 * wght, tzk * t1 * wght);
-                        grad.sub(threadID, in, txk * t1 * wght, tyk * t1 * wght, tzk * t1 * wght);
+                        grad.add(threadID, ir, dax * wght, day * wght, daz * wght);
+                        grad.sub(threadID, in, dax * wght, day * wght, daz * wght);
                     }
 
                 }
@@ -854,7 +869,6 @@ public class CavitationRegion extends ParallelRegion {
 
         /**
          * Find number of independent boundaries and check connectivity.
-         * This method may set the "goto160" flag.
          *
          * @param k
          * @param exang

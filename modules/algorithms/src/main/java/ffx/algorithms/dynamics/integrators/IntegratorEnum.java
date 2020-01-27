@@ -44,7 +44,17 @@ package ffx.algorithms.dynamics.integrators;
  */
 public enum IntegratorEnum {
 
-    BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET, VERLET
+    BEEMAN(false, true), RESPA(true, true),
+    STOCHASTIC(false, false), VELOCITYVERLET(true, true),
+    VERLET(true, true);
+
+    public final boolean knownReversible;
+    public final boolean knownDeterministic;
+
+    IntegratorEnum(boolean reversible, boolean deterministic) {
+        knownReversible = reversible;
+        knownDeterministic = deterministic;
+    }
 }
 
 

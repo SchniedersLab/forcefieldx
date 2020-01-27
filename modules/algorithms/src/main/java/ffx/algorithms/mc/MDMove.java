@@ -37,18 +37,19 @@
 //******************************************************************************
 package ffx.algorithms.mc;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.abs;
 import static java.lang.String.format;
 
+import ffx.algorithms.cli.DynamicsOptions;
+import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
-import ffx.algorithms.dynamics.integrators.IntegratorEnum;
-import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 
@@ -68,27 +69,27 @@ public class MDMove implements MCMove {
     /**
      * Number of MD steps per move.
      */
-    private long mdSteps = 50;
+    private final long mdSteps;
     /**
      * Time step in femtoseconds.
      */
-    private double timeStep = 1.0;
+    private final double timeStep;
     /**
      * Print interval in picoseconds.
      */
-    private double printInterval = 0.05;
+    private final double printInterval;
     /**
      * Temperature in Kelvin.
      */
-    private double temperature = 298.15;
+    private final double temperature;
     /**
      * Number of MD moves.
      */
     private int mdMoveCounter = 0;
     /**
-     * MD save interval.
+     * Snapshot appending interval in psec.
      */
-    private final double saveInterval = 10000.0;
+    private final double saveInterval;
     /**
      * The total energy change for the current move.
      */
@@ -118,7 +119,6 @@ public class MDMove implements MCMove {
      */
     private double initialTotal;
 
-
     /**
      * <p>Constructor for MDMove.</p>
      *
@@ -126,66 +126,33 @@ public class MDMove implements MCMove {
      * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
      * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ThermostatEnum} object.
-     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
+     * @param dynamics            CLI object containing key MD information.
+     * @param stepsPerCycle       Number of MD steps per MC cycle.
      */
-    @Deprecated
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
                   CompositeConfiguration properties, AlgorithmListener listener,
-                  ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+                  DynamicsOptions dynamics, long stepsPerCycle) {
         this.potential = potentialEnergy;
-        molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
-                potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        molecularDynamics = MolecularDynamics.dynamicsFactory(assembly, potentialEnergy,
+                properties, listener, dynamics.thermostat, dynamics.integrator);
         molecularDynamics.setAutomaticWriteouts(false);
 
-        // Ensure at least one interval is printed.
-        if (printInterval < mdSteps * timeStep) {
-            printInterval = mdSteps * timeStep;
-        }
+        timeStep = dynamics.getDt();
+        double dtPs = timeStep * Constants.FSEC_TO_PSEC;
+        mdSteps = stepsPerCycle;
 
         molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
         molecularDynamics.setObtainVelAcc(false);
         collectEnergies();
-    }
+        molecularDynamics.setRestartFrequency(dynamics.getCheckpoint());
+        this.saveInterval = dynamics.getSnapshotInterval();
 
-    /**
-     * <p>Constructor for MDMove.</p>
-     *
-     * @param assembly            a {@link ffx.potential.MolecularAssembly} object.
-     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
-     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ThermostatEnum} object.
-     * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum} object.
-     * @param restartInterval     Interval between writing restart files in psec.
-     */
-    public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
-                  CompositeConfiguration properties, AlgorithmListener listener,
-                  ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
-                  double restartInterval) {
-        this(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
-        molecularDynamics.setRestartFrequency(restartInterval);
-    }
+        double requestedPrint = dynamics.getReport();
+        double maxPrintInterval = dtPs * mdSteps;
+        // Log at least once/cycle.
+        printInterval = Math.min(requestedPrint, maxPrintInterval);
 
-    /**
-     * <p>Setter for the field <code>temperature</code>.</p>
-     *
-     * @param temperature a double.
-     */
-    public void setTemperature(double temperature) {
-        this.temperature = temperature;
-    }
-
-    /**
-     * <p>setMDParameters.</p>
-     *
-     * @param mdSteps  a int.
-     * @param timeStep a double.
-     */
-    public void setMDParameters(long mdSteps, double timeStep) {
-        this.mdSteps = mdSteps;
-        this.timeStep = timeStep;
-        printInterval = mdSteps * timeStep / 1000;
+        this.temperature = dynamics.getTemp();
     }
 
     /**
@@ -286,6 +253,13 @@ public class MDMove implements MCMove {
     }
 
     /**
+     * Triggers MD to write out its stored snapshots in case of error.
+     */
+    public void writeErrorFiles() {
+        molecularDynamics.writeStoredSnapshots();
+    }
+
+    /**
      * Get the total energy change for the current move.
      *
      * @return Total energy change.
@@ -299,7 +273,7 @@ public class MDMove implements MCMove {
      *
      * @param mdStep MD step (not MC cycle number) to write files (if any) for.
      */
-    public void writeFilesForStep(long mdStep) {
-        molecularDynamics.writeFilesForStep(mdStep);
+    public EnumSet<MolecularDynamics.WriteActions> writeFilesForStep(long mdStep) {
+        return molecularDynamics.writeFilesForStep(mdStep);
     }
 }

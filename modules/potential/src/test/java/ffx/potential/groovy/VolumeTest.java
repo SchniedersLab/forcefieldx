@@ -20,8 +20,6 @@ public class VolumeTest {
     @Before
     public void before() {
         binding = new Binding();
-        System.clearProperty("platform");
-
         volume = new Volume();
         volume.setBinding(binding);
     }
@@ -61,10 +59,49 @@ public class VolumeTest {
     }
 
     /**
+     * Test Connolly molecular surface area and volume without hydrogen and a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollyMolecularButane() {
+        String[] args = {"-c", "-p", "1.4", "-m", "src/main/java/ffx/potential/structures/butane.xyz"};
+        binding.setVariable("args", args);
+        // Evaluate the script.
+        volume.run();
+        assertEquals(79.85081214917432, volume.totalVolume, 0.01);
+        assertEquals(98.14422780202705, volume.totalSurfaceArea, 0.01);
+    }
+
+    /**
+     * Test Connolly molecular surface area and volume without hydrogen and a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollyMolecularHydrogenButane() {
+        String[] args = {"-c", "-p", "1.4", "-m", "-y", "src/main/java/ffx/potential/structures/butane.xyz"};
+        binding.setVariable("args", args);
+        // Evaluate the script.
+        volume.run();
+        assertEquals(119.0512090546068, volume.totalVolume, 0.01);
+        assertEquals(132.598010667639, volume.totalSurfaceArea, 0.01);
+    }
+
+    /**
+     * Test Connolly SEV & SASA without hydrogen and a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollySEVButane() {
+        String[] args = {"-c", "-p", "1.4", "src/main/java/ffx/potential/structures/butane.xyz"};
+        binding.setVariable("args", args);
+        // Evaluate the script.
+        volume.run();
+        assertEquals(302.0524178356785, volume.totalVolume, 0.01);
+        assertEquals(227.49657650050898, volume.totalSurfaceArea, 0.01);
+    }
+
+    /**
      * Test Connolly SEV & SASA with hydrogen and a 1.4 A exclude radius.
      */
     @Test
-    public void testConnollyButane() {
+    public void testConnollySEVHydrogenButane() {
         String[] args = {"-c", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/butane.xyz"};
         binding.setVariable("args", args);
         // Evaluate the script.
@@ -74,10 +111,52 @@ public class VolumeTest {
     }
 
     /**
+     * Test Connolly molecular surface area and volume without hydrogen and a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollyMolecularEthylbenzene() {
+        String[] args = {"-c", "-p", "1.4", "-m", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(126.96932864947797, volume.totalVolume, 0.001);
+        assertEquals(137.7753894764906, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly molecular surface area and volume with hydrogen and a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollyMolecularHydrogenEthylbenzene() {
+        String[] args = {"-c", "-p", "1.4", "-m", "-y", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(165.83018235892447, volume.totalVolume, 0.001);
+        assertEquals(171.91980284282084, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly SEV & SASA without hydrogen and a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollySEVEthylbenzene() {
+        String[] args = {"-c", "-p", "1.4", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(418.96380636214514, volume.totalVolume, 0.001);
+        assertEquals(287.56961427851286, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
      * Test Connolly SEV & SASA with hydrogen and a 1.4 A exclude radius.
      */
     @Test
-    public void testConnollyEthylbenzene() {
+    public void testConnollySEVHydrogenEthylbenzene() {
         String[] args = {"-c", "-p", "1.4", "-y", "src/main/java/ffx/potential/structures/ethylbenzene.xyz"};
         binding.setVariable("args", args);
 
@@ -85,6 +164,48 @@ public class VolumeTest {
         volume.run();
         assertEquals(518.612603965319, volume.totalVolume, 0.001);
         assertEquals(340.264998320387, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly vdW volume and surface area (probe radius = 0.0).
+     */
+    @Test
+    public void testConnollyVDWCrambin() {
+        String[] args = {"-c", "-p", "0.0", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(4418.303482563956, volume.totalVolume, 0.001);
+        assertEquals(4168.547763834282, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly SEV & SASA with a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollyMolecularCrambin() {
+        String[] args = {"-c", "-m", "-p", "1.4", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(5222.628196815338, volume.totalVolume, 0.001);
+        assertEquals(2326.375086471378, volume.totalSurfaceArea, 0.001);
+    }
+
+    /**
+     * Test Connolly SEV & SASA with a 1.4 A exclude radius.
+     */
+    @Test
+    public void testConnollySEVCrambin() {
+        String[] args = {"-c", "-p", "1.4", "src/main/java/ffx/potential/structures/crambin.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script
+        volume.run();
+        assertEquals(8956.620463626994, volume.totalVolume, 0.001);
+        assertEquals(3015.7687533888334, volume.totalSurfaceArea, 0.001);
     }
 
 }

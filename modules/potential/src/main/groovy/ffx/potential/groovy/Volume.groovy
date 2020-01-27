@@ -50,7 +50,7 @@ import ffx.potential.nonbonded.GaussVol
 import ffx.potential.nonbonded.GeneralizedKirkwood
 
 import edu.rit.pj.ParallelTeam
-import ffx.potential.nonbonded.implicit.VolumeRegion
+import ffx.potential.nonbonded.implicit.ConnollyRegion
 
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -76,13 +76,12 @@ class Volume extends PotentialScript {
             description = "Use the Connolly algorithm to compute solvent excluded volume and solvent accessible surface area.")
     private boolean connolly = false
 
-//   NOT SUPPORTED YET.
-//    /**
-//     * -m or --molecular If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).
-//     */
-//    @CommandLine.Option(names = ['-m', '--molecular'], paramLabel = "false",
-//            description = "If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).")
-//    private boolean molecular = false
+    /**
+     * -m or --molecular If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).
+     */
+    @CommandLine.Option(names = ['-m', '--molecular'], paramLabel = "false",
+            description = "If using the Connolly algorithm, compute molecular volume and surface area (instead of SEV/SASA).")
+    private boolean molecular = false
 
     /**
      * -p or --probe If using the Connolly algorithm, set the exclude radius (SASA) or probe radius (molecular surface).
@@ -251,10 +250,10 @@ class Volume extends PotentialScript {
             double exclude = 0.0
 
             // For SEV/SASA, set exclude to the chosen probe, and zero the probe.
-            // if (!molecular) {
+            if (!molecular) {
                 exclude = probe
                 probe = 0.0
-            // }
+            }
 
             // Connolly Volume and Surface Area.
             double[] radii = new double[nAtoms]
@@ -280,27 +279,23 @@ class Volume extends PotentialScript {
 
             // Note that the VolumeRegion code is currently limited to a single thread.
             ParallelTeam parallelTeam = new ParallelTeam(1)
-            VolumeRegion volumeRegion = new VolumeRegion(atoms, x, y, z, radii, parallelTeam.getThreadCount())
-            volumeRegion.setSolventPressure(solventPressure)
-            volumeRegion.setSurfaceTension(surfaceTension)
-            volumeRegion.setCrossOver(crossOver)
+            ConnollyRegion connollyRegion = new ConnollyRegion(atoms, x, y, z, radii, parallelTeam.getThreadCount())
+            connollyRegion.setSolventPressure(solventPressure)
+            connollyRegion.setSurfaceTension(surfaceTension)
+            connollyRegion.setCrossOver(crossOver)
             // For solvent excluded volume.
-            volumeRegion.setExclude(exclude)
+            connollyRegion.setExclude(exclude)
             // For molecular surface.
-            volumeRegion.setProbe(probe)
-            try {
-                parallelTeam.execute(volumeRegion)
-            } catch (Exception e) {
-                logger.warning(" Exception executing Volume region");
-            }
+            connollyRegion.setProbe(probe)
+            connollyRegion.runVolume();
 
-            // if (!molecular) {
+            if (!molecular) {
                 logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")
                 logger.info(format("  Exclude radius:      %8.4f (Ang)", exclude))
-            // } else {
-            //    logger.info("\n Connolly Molecular Surface Area and Volume")
-            //    logger.info(format("  Probe radius:       %8.4f (Ang)", probe))
-            // }
+            } else {
+                logger.info("\n Connolly Molecular Surface Area and Volume")
+                logger.info(format("  Probe radius:       %8.4f (Ang)", probe))
+            }
 
             if (sigma) {
                 logger.info(format("  Radii:                  Sigma"))
@@ -308,19 +303,19 @@ class Volume extends PotentialScript {
                 logger.info(format("  Radii:                   Rmin"))
             }
             logger.info(format("  Include hydrogen:    %8b", includeHydrogen))
-            logger.info(format("  Volume:              %8.4f (Ang^3)", volumeRegion.getVolume()))
-            logger.info(format("  Solvent Pressure:    %8.4f (kcal/mol/Ang^3)", volumeRegion.getSolventPressure()))
-            logger.info(format("  Volume Energy:       %8.4f (kcal/mol)", volumeRegion.getVolumeEnergy()))
-            logger.info(format("\n  Surface Area:        %8.4f (Ang^2)", volumeRegion.getSurfaceArea()))
-            logger.info(format("  Surface Tension:     %8.4f (kcal/mol/Ang^2)", volumeRegion.getSurfaceTension()))
-            logger.info(format("  Surface Area Energy: %8.4f (kcal/mol)", volumeRegion.getSurfaceAreaEnergy()))
-            logger.info(format("\n  Effective Radius:    %8.4f (Ang)", volumeRegion.getEffectiveRadius()))
-            logger.info(format("  Cross-over Radius:   %8.4f (Ang)", volumeRegion.getCrossOver()))
-            logger.info(format("  Volume + SA Energy:  %8.4f (kcal/mol)", volumeRegion.getEnergy()))
+            logger.info(format("  Volume:              %8.4f (Ang^3)", connollyRegion.getVolume()))
+            logger.info(format("  Solvent Pressure:    %8.4f (kcal/mol/Ang^3)", connollyRegion.getSolventPressure()))
+            logger.info(format("  Volume Energy:       %8.4f (kcal/mol)", connollyRegion.getVolumeEnergy()))
+            logger.info(format("\n  Surface Area:        %8.4f (Ang^2)", connollyRegion.getSurfaceArea()))
+            logger.info(format("  Surface Tension:     %8.4f (kcal/mol/Ang^2)", connollyRegion.getSurfaceTension()))
+            logger.info(format("  Surface Area Energy: %8.4f (kcal/mol)", connollyRegion.getSurfaceAreaEnergy()))
+            logger.info(format("\n  Effective Radius:    %8.4f (Ang)", connollyRegion.getEffectiveRadius()))
+            logger.info(format("  Cross-over Radius:   %8.4f (Ang)", connollyRegion.getCrossOver()))
+            logger.info(format("  Volume + SA Energy:  %8.4f (kcal/mol)", connollyRegion.getEnergy()))
 
             // Set JUnit testing variables based on output volume and surface area
-            totalVolume = volumeRegion.getVolume()
-            totalSurfaceArea = volumeRegion.getSurfaceArea()
+            totalVolume = connollyRegion.getVolume()
+            totalSurfaceArea = connollyRegion.getSurfaceArea()
         }
 
         return this

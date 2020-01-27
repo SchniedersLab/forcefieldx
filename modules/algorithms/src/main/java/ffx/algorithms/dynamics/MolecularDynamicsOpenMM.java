@@ -57,7 +57,6 @@ import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.ThermostatEnum;
-import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
@@ -326,7 +325,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     private void mainLoop(long numSteps) {
         long i = 0;
-        time = -System.nanoTime();
+        time = System.nanoTime();
 
         while (i < numSteps) {
 
@@ -335,6 +334,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             takeOpenMMSteps(intervalSteps);
             takeStepsTime += System.nanoTime();
             logger.fine(String.format("\n Took steps in %6.3f", takeStepsTime * NS2SEC));
+            totalSimTime += intervalSteps * dt;
 
             // Update the total step count.
             i += intervalSteps;
@@ -545,6 +545,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
         double priorPE = currentPotentialEnergy;
 
+        obtainVariables.run();
+
         double defaultDeltaPEThresh = 1.0E6;
         detectAtypicalEnergy(priorPE, defaultDeltaPEThresh);
 
@@ -554,9 +556,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.log(basicLogging, format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
                 logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f",
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
-            } else if (i % logFrequency == 0) {
-                time = logThermodynamics(time);
             }
+            time = logThermoForTime(i, time);
 
             if (automaticWriteouts) {
                 writeFilesForStep(i);
