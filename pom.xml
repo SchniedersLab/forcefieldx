@@ -1139,7 +1139,7 @@
         <guava.version>28.1-jre</guava.version>
         <groovy-all.version>3.0.0-rc-1.1</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
-        <java3d.version>1.7.0</java3d.version>
+        <java3d.version>1.7.0-final</java3d.version>
         <jogamp-fat.version>2.4.0</jogamp-fat.version>
         <jcuda.version>10.1.0</jcuda.version>
         <junit.version>4.13</junit.version>
