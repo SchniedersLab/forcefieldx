@@ -187,7 +187,6 @@ public class VolumeTest {
         System.gc();
     }
 
-
     /**
      * Test GaussVol without hydrogen and a 0.0 A radii offset.
      */
