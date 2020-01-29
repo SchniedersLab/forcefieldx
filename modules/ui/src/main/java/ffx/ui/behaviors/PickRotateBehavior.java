@@ -80,13 +80,8 @@ public class PickRotateBehavior extends PickMouseBehavior implements
         pickCanvas.setMode(pickMode);
     }
 
-    /*
-     * Return the pickMode component of this PickRotateBehavior.
-     */
-
     /**
-     * <p>
-     * getPickMode</p>
+     * Return the pickMode component of this PickRotateBehavior.
      *
      * @return a int.
      */
@@ -94,14 +89,9 @@ public class PickRotateBehavior extends PickMouseBehavior implements
         return pickCanvas.getMode();
     }
 
-    /*
+    /**
      * Sets the pickMode component of this PickRotateBehavior to the value of
      * the passed pickMode. @param pickMode the pickMode to be copied.
-     */
-
-    /**
-     * <p>
-     * setPickMode</p>
      *
      * @param pickMode a int.
      */
@@ -109,14 +99,9 @@ public class PickRotateBehavior extends PickMouseBehavior implements
         pickCanvas.setMode(pickMode);
     }
 
-    /*
-     * Register the class @param callback to be called each time the picked
-     * object moves
-     */
-
     /**
-     * <p>
-     * setupCallback</p>
+     * Register the class @param callback to be called each time the picked
+     * object moves.
      *
      * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
      */
@@ -129,12 +114,9 @@ public class PickRotateBehavior extends PickMouseBehavior implements
         }
     }
 
-    /*
-     * Callback method from MouseRotate This is used when the Picking callback
-     * is enabled
-     */
-
     /**
+     * Callback method from MouseRotate This is used when the Picking callback
+     * is enabled.
      * {@inheritDoc}
      */
     public void transformChanged(int type, Transform3D transform) {
@@ -155,15 +137,13 @@ public class PickRotateBehavior extends PickMouseBehavior implements
         callback.transformDoubleClicked(PickingCallback.ROTATE, currentTG);
     }
 
-    /*
+    /**
      * Update the scene to manipulate any nodes. This is not meant to be called
      * by users. Behavior automatically calls this. You can call this only if
      * you know what you are doing.
-     * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
-     */
-
-    /**
-     * {@inheritDoc}
+     *
+     * @param xpos Current mouse X pos.
+     * @param ypos Current mouse Y pos.
      */
     public void updateScene(int xpos, int ypos) {
         if ((mevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK) {

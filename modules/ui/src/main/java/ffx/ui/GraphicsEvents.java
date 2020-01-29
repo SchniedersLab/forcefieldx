@@ -39,7 +39,7 @@ package ffx.ui;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Bounds;
@@ -280,13 +280,13 @@ public class GraphicsEvents extends Behavior {
      * <p>
      * {@inheritDoc}
      */
-    public void processStimulus(Enumeration criteria) {
+    @Override
+    public void processStimulus(Iterator<WakeupCriterion> criteria) {
         viewOrbitBehavior.setEnable(false);
-        AWTEvent[] awtEvents;
-        while (criteria.hasMoreElements()) {
-            WakeupCriterion wakeup = (WakeupCriterion) criteria.nextElement();
+        while (criteria.hasNext()) {
+            WakeupCriterion wakeup = criteria.next();
             if (wakeup instanceof WakeupOnAWTEvent) {
-                awtEvents = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                AWTEvent[] awtEvents = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
                 if (awtEvents == null) {
                     continue;
                 }

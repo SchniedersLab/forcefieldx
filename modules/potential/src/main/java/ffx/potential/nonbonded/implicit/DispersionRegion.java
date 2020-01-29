@@ -107,10 +107,10 @@ public class DispersionRegion extends ParallelRegion {
     private final SharedDouble sharedDispersion;
     private static final double DISP_OVERLAP_SCALE_FACTOR = 0.81;
     /**
-     * This value was described as 0.36 in the original 2007 model (see Schnieders thesis)
-     * and more recently the value was reduced to 0.26.
+     * This offset is the only "free" parameter in the dispersion integral
+     * model, and was fit to explicit solvent dispersion energy values.
      */
-    public static final double DEFAULT_DISP_OFFSET = 1.4;
+    public static final double DEFAULT_DISP_OFFSET = 0.826;
     private static final double SLEVY = 1.0;
     private static final double AWATER = 0.033428;
     private static final double EPSO = 0.1100;

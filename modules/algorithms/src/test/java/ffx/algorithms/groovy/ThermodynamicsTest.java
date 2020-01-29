@@ -100,9 +100,9 @@ public class ThermodynamicsTest extends PJDependentTest {
                         null, null, null, null, new String[]{}, new String[]{}, new String[]{"-h", "true"}
                 },
                 {
-                        "Acetamide Implicit Solvation Free Energy: -8.5 kcal/mol",
+                        "Acetamide Implicit Solvation Free Energy: -10.5 kcal/mol",
                         new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.FREE, false, -8.97, 1.0, null, null, null, null, null, null,
+                        ThermoTestMode.FREE, false, -10.468, 1.0, null, null, null, null, null, null,
                         new String[]{"-C", "10", "--s1", "1", "--f1", "9", "-d", "1.0",
                                 "-n", "20000", "-w", "5", "--bM", "0.25", "--tp", "2.0"},
                         new String[]{"randomseed", "42"}, new String[]{}

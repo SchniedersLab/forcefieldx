@@ -81,13 +81,8 @@ public class PickTranslateBehavior extends PickMouseBehavior implements
         pickCanvas.setMode(pickMode);
     }
 
-    /*
-     * Return the pickMode component of this PickTranslateBehavior.
-     */
-
     /**
-     * <p>
-     * getPickMode</p>
+     * Return the pickMode component of this PickTranslateBehavior.
      *
      * @return a int.
      */
@@ -95,14 +90,9 @@ public class PickTranslateBehavior extends PickMouseBehavior implements
         return pickCanvas.getMode();
     }
 
-    /*
+    /**
      * Sets the pickMode component of this PickTranslateBehavior to the value of
      * the passed pickMode. @param pickMode the pickMode to be copied.
-     */
-
-    /**
-     * <p>
-     * setPickMode</p>
      *
      * @param pickMode a int.
      */
@@ -110,14 +100,9 @@ public class PickTranslateBehavior extends PickMouseBehavior implements
         pickCanvas.setMode(pickMode);
     }
 
-    /*
+    /**
      * Register the class @param callback to be called each time the picked
      * object moves
-     */
-
-    /**
-     * <p>
-     * setupCallback</p>
      *
      * @param callback a {@link ffx.ui.behaviors.PickingCallback} object.
      */
@@ -151,15 +136,13 @@ public class PickTranslateBehavior extends PickMouseBehavior implements
         callback.transformDoubleClicked(PickingCallback.TRANSLATE, currentTG);
     }
 
-    /*
+    /**
      * Update the scene to manipulate any nodes. This is not meant to be called
      * by users. Behavior automatically calls this. You can call this only if
      * you know what you are doing.
-     * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
-     */
-
-    /**
-     * {@inheritDoc}
+     *
+     * @param xpos Current mouse X pos.
+     * @param ypos Current mouse Y pos.
      */
     public void updateScene(int xpos, int ypos) {
         if ((mevent.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK) {

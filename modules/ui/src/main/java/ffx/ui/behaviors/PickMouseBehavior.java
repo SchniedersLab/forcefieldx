@@ -39,7 +39,7 @@ package ffx.ui.behaviors;
 
 import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
+import java.util.Iterator;
 
 import org.jogamp.java3d.Behavior;
 import org.jogamp.java3d.Bounds;
@@ -68,14 +68,9 @@ public abstract class PickMouseBehavior extends Behavior {
     protected TransformGroup currGrp;
     protected MouseEvent mevent;
 
-    /*
+    /**
      * Creates a PickMouseBehavior given current canvas, root of the tree to
      * operate on, and the bounds.
-     */
-
-    /**
-     * <p>
-     * Constructor for PickMouseBehavior.</p>
      *
      * @param canvas a {@link org.jogamp.java3d.Canvas3D} object.
      * @param root   a {@link org.jogamp.java3d.BranchGroup} object.
@@ -106,38 +101,27 @@ public abstract class PickMouseBehavior extends Behavior {
     }
 
     private void processMouseEvent(MouseEvent evt) {
-        buttonPress = false;
-        if (evt.getID() == MouseEvent.MOUSE_PRESSED
+        buttonPress = evt.getID() == MouseEvent.MOUSE_PRESSED
                 | evt.getID() == MouseEvent.MOUSE_CLICKED
-                | evt.getID() == MouseEvent.MOUSE_RELEASED) {
-            buttonPress = true;
-        }
-        if (evt.isControlDown()) {
-            controlButton = true;
-        } else {
-            controlButton = false;
-        }
-        if (evt.isShiftDown()) {
-            shiftButton = true;
-        } else {
-            shiftButton = false;
-        }
+                | evt.getID() == MouseEvent.MOUSE_RELEASED;
+        controlButton = evt.isControlDown();
+        shiftButton = evt.isShiftDown();
     }
 
     /**
      * {@inheritDoc}
      */
-    public void processStimulus(Enumeration criteria) {
-        WakeupCriterion wakeup;
+    @Override
+    public void processStimulus(Iterator<WakeupCriterion> criteria) {
         AWTEvent[] evt = null;
-        int xpos = 0, ypos = 0;
-        while (criteria.hasMoreElements()) {
-            wakeup = (WakeupCriterion) criteria.nextElement();
+        while (criteria.hasNext()) {
+            WakeupCriterion wakeup = criteria.next();
             if (wakeup instanceof WakeupOnAWTEvent) {
                 evt = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
             }
         }
-        if (evt[0] instanceof MouseEvent) {
+        int xpos = 0, ypos = 0;
+        if (evt != null && evt[0] instanceof MouseEvent) {
             mevent = (MouseEvent) evt[0];
             processMouseEvent((MouseEvent) evt[0]);
             xpos = mevent.getPoint().x;
@@ -161,13 +145,8 @@ public abstract class PickMouseBehavior extends Behavior {
         }
     }
 
-    /*
-     * Subclasses shall implement this update function
-     */
-
     /**
-     * <p>
-     * updateScene</p>
+     * Subclasses shall implement this update function.
      *
      * @param xpos a int.
      * @param ypos a int.

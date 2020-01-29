@@ -41,6 +41,7 @@ import javax.swing.JLabel;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 import org.jogamp.java3d.Behavior;
@@ -177,7 +178,7 @@ public class Renderer extends Behavior {
      * method. 2.) The PostID call is processed by the Java3D Behavior Thread.
      */
     @Override
-    public void processStimulus(Enumeration parm1) {
+    public void processStimulus(Iterator parm1) {
         // Do not perform two operations before the frame has be refreshed.
         if (getView().getFrameNumber() == frameNumber) {
             System.out.print(".");

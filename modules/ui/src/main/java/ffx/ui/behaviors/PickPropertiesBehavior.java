@@ -97,14 +97,8 @@ public class PickPropertiesBehavior extends PickMouseBehavior implements
         pickCanvas.setMode(pickMode);
     }
 
-    /*
-     * Register the class @param callback to be called each time the picked
-     * object moves
-     */
-
     /**
-     * <p>
-     * setupCallback</p>
+     * Register the class @param callback to be called each time the picked object moves.
      *
      * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
      */
@@ -138,31 +132,24 @@ public class PickPropertiesBehavior extends PickMouseBehavior implements
         callback.transformDoubleClicked(PickingCallback.PROPERTIES, currentTG);
     }
 
-    /*
-     * Update the scene to manipulate any nodes.
-     * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
-     */
-
     /**
-     * {@inheritDoc}
+     * Update the scene to manipulate any nodes.
+     *
+     * @param xpos Current mouse X pos.
+     * @param ypos Current mouse Y pos.
      */
     public void updateScene(int xpos, int ypos) {
-        TransformGroup tg = null;
         if (!mevent.isMetaDown() && !mevent.isAltDown()) {
             pickCanvas.setShapeLocation(xpos, ypos);
             PickResult r = pickCanvas.pickClosest();
             if (r != null) {
-                tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
-                if ((tg != null)
-                        && (tg
-                        .getCapability(TransformGroup.ALLOW_TRANSFORM_READ))
-                        && (tg
-                        .getCapability(TransformGroup.ALLOW_TRANSFORM_WRITE))) {
+                TransformGroup tg = (TransformGroup) r.getNode(PickResult.TRANSFORM_GROUP);
+                if ((tg != null) && (tg.getCapability(TransformGroup.ALLOW_TRANSFORM_READ))
+                        && (tg.getCapability(TransformGroup.ALLOW_TRANSFORM_WRITE))) {
                     drag.wakeup();
                     currentTG = tg;
                     if (callback != null && mevent.getClickCount() == 2) {
-                        callback.transformDoubleClicked(
-                                PickingCallback.PROPERTIES, currentTG);
+                        callback.transformDoubleClicked(PickingCallback.PROPERTIES, currentTG);
                     }
                 }
             } else if (callback != null) {

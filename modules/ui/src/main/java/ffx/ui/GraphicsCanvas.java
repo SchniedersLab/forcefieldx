@@ -91,6 +91,9 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
+import static ffx.potential.bonded.RendererCache.pickingColor;
+import static ffx.potential.bonded.RendererCache.selectionColor;
+import static ffx.potential.bonded.RendererCache.userColor;
 
 /**
  * The GraphicsCanvas class provides a Canvas on which to render 3D Graphics.
@@ -415,17 +418,16 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         baseTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         baseTransformGroup.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
         // Set the Background
-        Color3f bgColor = new Color3f(RendererCache.BLACK);
-        background = new Background(bgColor);
+        background = new Background(RendererCache.BLACK);
         background.setCapability(Background.ALLOW_COLOR_READ);
         background.setCapability(Background.ALLOW_COLOR_WRITE);
         bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 2000.0);
         background.setApplicationBounds(bounds);
         // Create lights
-        AmbientLight aLgt = new AmbientLight(new Color3f(Color.darkGray));
+        AmbientLight aLgt = new AmbientLight(new Color3f(Color.darkGray.getRGBColorComponents(new float[3])));
         aLgt.setInfluencingBounds(bounds);
         Vector3f dir = new Vector3f(0.0f, -1.0f, -1.0f);
-        Color3f dLgtColor = new Color3f(Color.lightGray);
+        Color3f dLgtColor = new Color3f(Color.lightGray.getRGBColorComponents(new float[3]));
         DirectionalLight dLgt = new DirectionalLight(dLgtColor, dir);
         dLgt.setInfluencingBounds(bounds);
         dir = new Vector3f(0.0f, 1.0f, -1.0f);
@@ -545,7 +547,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         mainPanel.getMainMenu().setHighlighting(RendererCache.highlightSelections);
         String[] hlColor = prefs.get(c + ".highlightColor", "153 153 255").trim().split(" +");
         Color newColor = new Color(Integer.parseInt(hlColor[0]), Integer.parseInt(hlColor[1]), Integer.parseInt(hlColor[2]));
-        RendererCache.selectionColor = new Color3f(newColor);
+        selectionColor = new Color3f(newColor.getRGBColorComponents(new float[3]));
         RendererCache.labelAtoms = prefs.getBoolean(c + ".labelAtoms", false);
         mainPanel.getMainMenu().setAtomLabels(RendererCache.labelAtoms);
         RendererCache.labelResidues = prefs.getBoolean(c + ".labelResidues", false);
@@ -563,7 +565,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
          */
         String[] pickColor = prefs.get(c + ".pickColor", "102 255 102").trim().split(" +");
         newColor = new Color(Integer.parseInt(pickColor[0]), Integer.parseInt(pickColor[1]), Integer.parseInt(pickColor[2]));
-        RendererCache.pickingColor = new Color3f(newColor);
+        pickingColor = new Color3f(newColor.getRGBColorComponents(new float[3]));
         String pickLevel = prefs.get(c + ".pickLevel", "PickAtom");
         mainPanel.getMainMenu().setPickLevel(pickLevel);
         boolean pickMode = prefs.getBoolean(c + ".picking", false);
@@ -573,7 +575,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         mainPanel.getMainMenu().setPickBehavior(pickMode);
         String[] userColor = prefs.get(c + ".userColor", "255 255 255").trim().split(" +");
         newColor = new Color(Integer.parseInt(userColor[0]), Integer.parseInt(userColor[1]), Integer.parseInt(userColor[2]));
-        RendererCache.userColor = new Color3f(newColor);
+        RendererCache.userColor = new Color3f(newColor.getRGBColorComponents(new float[3]));
         /*
          * String[] bgColor = prefs.get("Graphics_backgroundColor", "0 0 0")
          * .trim().split(" +"); newColor = new
@@ -781,23 +783,19 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         prefs.putDouble(c + ".radius", RendererCache.radius);
         prefs.put(c + ".mouse", mouseMode.name());
         prefs.putBoolean(c + ".highlight", RendererCache.highlightSelections);
-        Color col = RendererCache.selectionColor.get();
-        prefs.put(c + ".highlightColor", "" + col.getRed() + " " + col.getGreen() + " " + col.getBlue());
+        prefs.put(c + ".highlightColor", "" + selectionColor.x + " " + selectionColor.y + " " + selectionColor.z);
         prefs.putBoolean(c + ".labelAtoms", RendererCache.labelAtoms);
         prefs.putBoolean(c + ".labelResidues", RendererCache.labelResidues);
         prefs.putInt(c + ".labelSize", getGraphics2D().getFont().getSize());
         Color fontColor = getGraphics2D().getColor();
         prefs.put(c + ".labelColor", "" + fontColor.getRed() + " " + fontColor.getGreen() + " " + fontColor.getBlue());
-        col = RendererCache.pickingColor.get();
-        prefs.put(c + ".pickColor", "" + col.getRed() + " " + col.getGreen() + " " + col.getBlue());
+        prefs.put(c + ".pickColor", "" + pickingColor.x + " " + pickingColor.y + " " + pickingColor.x);
         prefs.putBoolean(c + ".picking", rendererPicking.getPicking());
         prefs.put(c + ".pickLevel", rendererPicking.getPickLevel());
-        col = RendererCache.userColor.get();
-        prefs.put(c + ".userColor", "" + col.getRed() + " " + col.getGreen() + " " + col.getBlue());
+        prefs.put(c + ".userColor", "" + userColor.x + " " + userColor.y + " " + userColor.z);
         Color3f temp = new Color3f();
         background.getColor(temp);
-        col = temp.get();
-        prefs.put(c + ".backgroundColor", "" + col.getRed() + " " + col.getGreen() + " " + col.getBlue());
+        prefs.put(c + ".backgroundColor", "" + temp.x + " " + temp.y + " " + temp.z);
     }
 
     /**
@@ -830,9 +828,10 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     private void setBackgroundColor() {
         Color3f col = new Color3f();
         background.getColor(col);
-        Color newcolor = JColorChooser.showDialog(this, "Choose Background Color", col.get());
+        Color currentColor = new Color(col.x, col.y, col.z);
+        Color newcolor = JColorChooser.showDialog(this, "Choose Background Color", currentColor);
         if (newcolor != null) {
-            background.setColor(new Color3f(newcolor));
+            background.setColor(new Color3f(newcolor.getRGBColorComponents(new float[3])));
         }
     }
 
@@ -868,7 +867,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         if (!RendererCache.colorModelHash.containsKey(model.toUpperCase())) {
             return;
         }
-        RendererCache.ColorModel colorModel = RendererCache.colorModelHash.get(model.toUpperCase());
+        ColorModel colorModel = RendererCache.colorModelHash.get(model.toUpperCase());
         ArrayList<MSNode> active = mainPanel.getHierarchy().getActiveNodes();
         if (active == null) {
             return;
@@ -889,7 +888,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         if (!RendererCache.colorModelHash.containsKey(model.toUpperCase())) {
             return;
         }
-        RendererCache.ColorModel colorModel = RendererCache.colorModelHash.get(model.toUpperCase());
+        ColorModel colorModel = RendererCache.colorModelHash.get(model.toUpperCase());
         renderer.arm(node, false, false, null, true, colorModel);
     }
 
@@ -898,12 +897,10 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * setGraphicsPickingColor</p>
      */
     private void setGraphicsPickingColor() {
-        Color3f col = new Color3f();
-        RendererCache.pickingColor.get(col);
         Color newcolor = JColorChooser.showDialog(this, "Choose Picking Color",
-                col.get());
+                new Color(pickingColor.x, pickingColor.y, pickingColor.z));
         if (newcolor != null) {
-            RendererCache.pickingColor = new Color3f(newcolor);
+            pickingColor = new Color3f(newcolor.getRGBColorComponents(new float[3]));
         }
     }
 
@@ -1038,11 +1035,10 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * setSelectionColor</p>
      */
     private void setSelectionColor() {
-        Color3f col = new Color3f();
-        RendererCache.selectionColor.get(col);
-        Color newcolor = JColorChooser.showDialog(this, "Choose Selection Color", col.get());
+        Color newcolor = JColorChooser.showDialog(this, "Choose Selection Color",
+                new Color(selectionColor.x, selectionColor.y, selectionColor.z));
         if (newcolor != null) {
-            RendererCache.selectionColor = new Color3f(newcolor);
+            selectionColor = new Color3f(newcolor.getRGBColorComponents(new float[3]));
         }
         if (RendererCache.highlightSelections) {
             this.updateScene(mainPanel.getDataRoot(), false, false, null, true,
@@ -1055,11 +1051,10 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * setUserColor</p>
      */
     private void setUserColor() {
-        Color3f col = new Color3f();
-        RendererCache.selectionColor.get(col);
-        Color newcolor = JColorChooser.showDialog(this, "Choose User Color", col.get());
+        Color newcolor = JColorChooser.showDialog(this, "Choose User Color",
+                new Color(userColor.x, userColor.y, userColor.z));
         if (newcolor != null) {
-            RendererCache.userColor = new Color3f(newcolor);
+            userColor = new Color3f(newcolor.getRGBColorComponents(new float[3]));
         }
     }
 
