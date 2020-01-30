@@ -56,24 +56,23 @@ import java.util.logging.Level
 import java.util.stream.Collectors;
 
 /**
- * The Cluster script clusters structures utilizing RMSD.
+ * Wrapper command for the PACCOM algorithm
  *
  * @author Aaron J. Nessler
- * @author Mallory R. Tollefson
  * @author Michael J. Schnieders
  * <br>
  * Usage:
  * <br>
  * ffxc Cluster [options] &lt;filename&gt;
  */
-@Command(description = " Cluster structures using an RMSD matrix.", name = "ffxc Cluster")
+@Command(description = " Compute RMSD for crystals using PACCOM.", name = "ffxc CallPAC")
 class CallPAC extends PotentialScript {
 
     /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
-            description = 'The RMSD matrix.')
+            description = 'PDB, XYZ, ARC files to be compared.')
     List<String> filenames = null
 
     private File baseDir = null
@@ -259,13 +258,12 @@ class CallPAC extends PotentialScript {
             }
         }
 
-        ProcessBuilder processBuilder = new ProcessBuilder();
+        ProcessBuilder processBuilder = new ProcessBuilder()
 //        Map<String, String> envMap = processBuilder.environment();
 //        Set<String> keys = envMap.keySet();
 //        for(String key:keys){
 //            logger.info(String.format((key+" ==> "+envMap.get(key));
 //        }
-//TODO call from $PATH instead of hard code
         // Run this on Windows, cmd, /c = terminate after this run
         processBuilder.command("comp_rmsd_33_ffx_L");
 
