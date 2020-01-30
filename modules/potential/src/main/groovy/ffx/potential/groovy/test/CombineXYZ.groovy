@@ -126,6 +126,7 @@ class CombineXYZ extends PotentialScript {
             BufferedReader brXYZ2 = new BufferedReader(frXYZ2)
             String line;
             String[] tokens;
+            int maxAtomType=0;
             int atomCount = 0;
             int atomCount2 = 0;
             //find number of atoms in file one
@@ -149,24 +150,28 @@ class CombineXYZ extends PotentialScript {
             }else{
                 line = "    "
             }
-            line+=atomCount+atomCount2
+            line+=atomCount+atomCount2+"\n"
             bwnewXYZ.write(line)
+            //Write crystallographic symmetry
+            line = brXYZ1.readLine();
+            bwnewXYZ.write(line + "\n")
 
             while((line = brXYZ1.readLine()) != null){
+                tokens = line.split("\\s+")
+                if(maxAtomType<tokens[6].toInteger()){
+                    maxAtomType=tokens[6].toInteger();
+                }
                 bwnewXYZ.write(line + "\n")
             }
             //Skip the Crystal information in second xyz
             brXYZ2.readLine()
+
+            maxAtomType-=400;
             while((line = brXYZ2.readLine()) != null){
                 String line2 = "";
                 int num;
 
                 tokens = line.split("\\s+")
-                logger.info("printing tokens:")
-                for(String token in tokens){
-                    logger.info(token);
-                }
-                logger.info("DONE printing tokens:")
                 for(int i = 0; i<tokens.length;i++){
                     switch(i){
                         case 1:
@@ -182,21 +187,25 @@ class CombineXYZ extends PotentialScript {
                             } else {
                                 line2 += "    "
                             }
+                            line2+=tokens[i]
                             break;
                         case 2:
                             line2 += "   "
+                            line2+=tokens[i]
                             break;
                         case 6:
                             //Change the atom type to account for new file.
                             num = tokens[i].toInteger();
-                            num+=atomCount;
+                            num+=maxAtomType;
                             tokens[i]=num.toString()
 
                             line2+="   "
+                            line2+=tokens[i]
                             break;
                         default:
                             if(i==0){
                                 line2+="";
+                                line2+=tokens[i]
                             } else if(i>6) {
                                 num = tokens[i].toInteger();
                                 num += atomCount;
@@ -209,16 +218,19 @@ class CombineXYZ extends PotentialScript {
                                 } else {
                                     line2 += "     "
                                 }
+                                line2+=tokens[i]
                             }else {
-                                if (tokens[i].toDouble() < 0.0) {
+                                if (tokens[i].toDouble() < 0.0 || tokens[i].toDouble() >= 10.00) {
                                     line2 += "   "
                                 } else {
                                     line2 += "    "
                                 }
+                                line2+=String.format("%.8f",tokens[i].toDouble())
+
                             }
                     }
-                    line2+=tokens[i]
                 }
+                logger.info(line2+"\n")
                 bwnewXYZ.write(line2 + "\n")
             }
 

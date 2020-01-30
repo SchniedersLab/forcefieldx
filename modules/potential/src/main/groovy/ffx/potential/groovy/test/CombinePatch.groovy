@@ -134,11 +134,14 @@ class CombinePatch extends PotentialScript {
                     bwNewPatch.write(line + "\n")
                 }
             }
-            while((line = brPatch2.readLine()) != null){
+            while((line = brPatch2.readLine()) != null) {
                 String line2 = "";
-                int num = 0;
+                int num
 
                 String[] tokens = line.split("\\s+")
+                for(String token in tokens){
+                    logger.info(token)
+                }
                 switch(tokens[0]){
                     case "atom":
                         num = tokens[1].toInteger()
@@ -179,6 +182,7 @@ class CombinePatch extends PotentialScript {
                         bwNewPatch.write(line2 + "\n")
                         break;
                     case "angle":
+                    case "anglep":
                         num = tokens[1].toInteger()
                         num+=atomCount;
                         tokens[1]=num.toString()
@@ -231,6 +235,7 @@ class CombinePatch extends PotentialScript {
                         bwNewPatch.write(line2 + "\n")
                         break;
                     case "torsion":
+                    case " torsion":
                         num = tokens[1].toInteger()
                         num+=atomCount;
                         tokens[1]=num.toString()
@@ -317,3 +322,4 @@ class CombinePatch extends PotentialScript {
         return this
     }
 }
+
