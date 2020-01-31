@@ -459,6 +459,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         OpenMM_Integrator_step(integrator, intervalSteps);
     }
 
+    @Override
+    public void revertState() throws Exception {
+        super.revertState();
+        setOpenMMState();
+    }
+
     /**
      * Get OpenMM Energies.
      */
