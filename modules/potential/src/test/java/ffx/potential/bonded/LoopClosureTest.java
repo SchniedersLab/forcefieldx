@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -40,10 +40,8 @@ package ffx.potential.bonded;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -59,22 +57,20 @@ import ffx.potential.utils.PotentialsUtils;
 @RunWith(Parameterized.class)
 public class LoopClosureTest {
 
-    private static final Logger logger = Logger.getLogger(LoopClosureTest.class.getName());
     private final MolecularAssembly molecularAssembly;
     private final Loop loop;
 
     private double[][] xyzNTest;
     private double[][] xyzCTest;
     private double[][] xyzATest;
-    private double[][] xyzOTest;
 
     @Parameters
     public static Collection<Object[]> data() {
 
-        double xyzNTest[][] = new double[3][3];
-        double xyzATest[][] = new double[3][3];
-        double xyzCTest[][] = new double[3][3];
-        double xyzOTest[][] = new double[3][3];
+        double[][] xyzNTest = new double[3][3];
+        double[][] xyzATest = new double[3][3];
+        double[][] xyzCTest = new double[3][3];
+        double[][] xyzOTest = new double[3][3];
 
         // Residue 1
         xyzNTest[0][0] = 7.773;
@@ -118,7 +114,7 @@ public class LoopClosureTest {
 
         return Arrays.asList(
                 new Object[][]{
-                    {xyzNTest, xyzATest, xyzCTest, xyzOTest}, // constructor arguments for test set 1
+                        {xyzNTest, xyzATest, xyzCTest, xyzOTest}, // constructor arguments for test set 1
                 });
     }
 
@@ -134,7 +130,6 @@ public class LoopClosureTest {
         this.xyzNTest = xyzNTest;
         this.xyzATest = xyzATest;
         this.xyzCTest = xyzCTest;
-        this.xyzOTest = xyzOTest;
     }
 
     @After

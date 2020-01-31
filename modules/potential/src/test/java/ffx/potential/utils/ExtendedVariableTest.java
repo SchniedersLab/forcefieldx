@@ -71,8 +71,6 @@ import static ffx.potential.extended.ExtUtils.setProp;
  * match finite difference approximation to appropriate epsilon. (2) End state
  * energies are consistent with manually titrated input files. (3) Lambda paths
  * and gradients are sufficiently smooth.
- *
- * @author slucore
  */
 @RunWith(Parameterized.class)
 public class ExtendedVariableTest extends BaseFFXTest {
