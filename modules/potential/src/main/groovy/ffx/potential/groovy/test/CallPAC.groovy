@@ -141,7 +141,6 @@ class CallPAC extends PotentialScript {
 
                 int fileCount = 0;
                 FileReader frArc = new FileReader(f);
-
                 BufferedReader brArc = new BufferedReader(frArc);
                 while((line = brArc.readLine()) != null){
                     if(line.contains("_opt.xyz_") || line.contains(".arc")){
@@ -149,7 +148,7 @@ class CallPAC extends PotentialScript {
                         if(fileCount>0){
                             xyzFiles.add(newXYZ)
                         }
-                        newXYZ = new File(String.format(FilenameUtils.getBaseName(f.getName())+".xyz_%d", ++fileCount))
+                        newXYZ = new File(String.format(FilenameUtils.getBaseName(f.getName())+"_PAC.xyz_%d", ++fileCount))
                         fwNewXYZ = new FileWriter(newXYZ)
                         bwNewXYZ = new BufferedWriter(fwNewXYZ)
                         bwNewXYZ.write(line + "\n")
@@ -224,8 +223,15 @@ class CallPAC extends PotentialScript {
                     bwStructs1.write(structFile.getName() + "\n")
                 }
                 bwStructs2.write(structFile.getName() + "\n")
+                logger.info(structFile.getName())
                 //TODO Better determination of properties/key file
-                String baseName = structFile.getName().replaceAll("_opt.xyz_.*", "")
+                String baseName
+                if(arc) {
+                    baseName = structFile.getName().replaceAll("_PAC.xyz_.*", "")
+                }
+                if(xyz){
+                    baseName = structFile.getName().replaceAll("_opt.xyz_.*", "")
+                }
                 baseName = baseName.replaceAll(".xyz.*", "")
                 File tempProp1 = new File(baseName + ".properties")
                 File tempProp2 = new File(baseName + ".key")
@@ -265,7 +271,7 @@ class CallPAC extends PotentialScript {
 //            logger.info(String.format((key+" ==> "+envMap.get(key));
 //        }
         // Run this on Windows, cmd, /c = terminate after this run
-        processBuilder.command("comp_rmsd_33_ffx_L");
+        processBuilder.command("/bin/bash", "-c", "/Users/anessler/Research/MTPC/PACCOM/src_bin_analysis_forFFX_33_Aaron_org/comp_rmsd_33_ffx_L");
 
         try {
             logger.info(String.format("Running PACCOM"));
@@ -273,10 +279,11 @@ class CallPAC extends PotentialScript {
             BufferedWriter bwOutput = new BufferedWriter(fwOutput)
 
             Process process = processBuilder.start();
-
+            logger.info("PACCOM has Started.")
             BufferedReader reader =
                     new BufferedReader(new InputStreamReader(process.getInputStream()));
             ArrayList<String> distances = new ArrayList<>();
+            logger.info("Reading input")
             String array = ""
             if(!pdb) {
                 while ((line = reader.readLine()) != null) {
@@ -284,23 +291,36 @@ class CallPAC extends PotentialScript {
                     distances.add(line.substring(2, rmsdEnd)); //two blank spaces before rmsd...
                 }
                 for (int i = 0; i < xyzFiles.size(); i++) {
+                    File cluster = new File(String.format("Cluster_%d", i+1))
+                    FileWriter fwCluster = new FileWriter(cluster);
+                    BufferedWriter bwCluster = new BufferedWriter(fwCluster);
                     String tempLine = ""
                     for (int j = 0; j < Math.pow(xyzFiles.size(), 2); j += xyzFiles.size()) {
                         tempLine += distances.get(i + j)
                         tempLine += "\t"
+
+                        //Threshold?
+                        if(distances.get(i + j).toDouble()<1.0){
+                            bwCluster.write((i+1)+"\t"+((j/xyzFiles.size())+1)+"\n")
+                        }
+                        //?Threshold
                     }
                     array += tempLine
                     array += "\n"
+                    logger.info(tempLine)
+                    bwCluster.close();
                 }
+
             }else{
                 while ((line = reader.readLine()) != null){
+                    logger.info(String.format(line))
                     array += line
                     array += "\n"
                 }
             }
-                bwOutput.write(array)
+            bwOutput.write(array)
             int exitCode = process.waitFor();
-            logger.info(String.format("\nExited with error code : " + exitCode));
+//            logger.info(String.format("\nExited with error code : " + exitCode));
 
             bwOutput.close()
             if(exitCode == 0){
