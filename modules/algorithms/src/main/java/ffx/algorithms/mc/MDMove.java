@@ -167,8 +167,8 @@ public class MDMove implements MCMove {
         initialTotal = molecularDynamics.getInitialTotalEnergy();
         initialKinetic = molecularDynamics.getInitialKineticEnergy();
         initialPotential = molecularDynamics.getInitialPotentialEnergy();
-        // Assert that kinetic + potential = total to within tolerance.
-        assert Math.abs((initialKinetic + initialPotential - initialTotal) / initialTotal) < 1.0E-7;
+        // If total energy is non-tiny, assert that kinetic + potential = total to within tolerance.
+        assert Math.abs(initialTotal) < 1.0E-3 ||  Math.abs((initialKinetic + initialPotential - initialTotal) / initialTotal) < 1.0E-7;
         // If there's ever a need to store run-terminal energies, do it here.
     }
 
