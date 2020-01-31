@@ -67,194 +67,12 @@ import ffx.potential.parameters.ForceField;
  */
 public abstract class SystemFilter {
 
-    /**
-     * This follows the TINKER file versioning scheme.
-     *
-     * @param file File to find a version for.
-     * @return File Versioned File.
-     */
-    private static File versionTinker(File file) {
-        if (file == null) {
-            return null;
-        }
-        if (!file.exists()) {
-            return file;
-        }
-        String fileName = file.getAbsolutePath();
-        int dot = file.getAbsolutePath().lastIndexOf(".");
-        int under = file.getAbsolutePath().lastIndexOf("_");
-        File newFile = file;
-        if (under > dot) {
-            String name = fileName.substring(0, under);
-            newFile = new File(name);
-        }
-        File oldFile = newFile;
-        int i = 1;
-        while (newFile.exists()) {
-            i = i + 1;
-            String newFileString = format("%s_%d", oldFile.getAbsolutePath(), i);
-            newFile = new File(newFileString);
-        }
-        return newFile;
-    }
-
     public enum Versioning {
         TINKER, PREFIX, POSTFIX, PREFIX_ABSOLUTE, POSTFIX_ABSOLUTE, NONE;
     }
 
     private static Versioning vers = Versioning.TINKER;
     private static int absoluteCounter = 0;
-
-    /**
-     * Use setVersioning() to choose between prefix/postfix.
-     *
-     * @param file a {@link java.io.File} object.
-     * @return a {@link java.io.File} object.
-     */
-    public static File version(File file) {
-        if (vers == Versioning.TINKER) {
-            return versionTinker(file);
-        } else {
-            if (vers == Versioning.PREFIX_ABSOLUTE || vers == Versioning.POSTFIX_ABSOLUTE) {
-                return versionAbsolute(file, (vers == Versioning.PREFIX_ABSOLUTE));
-            } else {
-                return version(file, (vers == Versioning.PREFIX_ABSOLUTE));
-            }
-        }
-    }
-
-    /**
-     * Negative: prefix a version number; Positive: postfix; Zero: TINKER-style.
-     *
-     * @param vers a {@link ffx.potential.parsers.SystemFilter.Versioning} object.
-     */
-    public static void setVersioning(Versioning vers) {
-        SystemFilter.vers = vers;
-    }
-
-    private static File version(File file, boolean prefix) {
-        if (file == null || !(file.exists())) {
-            return file;
-        }
-        String fn = file.getAbsolutePath();
-        int dot = fn.lastIndexOf(".");
-        int under = fn.lastIndexOf("_");
-        if (dot < 0) {
-            fn += ".unk";
-            dot = fn.lastIndexOf(".");
-        }
-        if (under < 0) {
-            under = dot;
-        }
-        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
-        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
-        int number = 0;
-        String newFn = (prefix)
-                ? format("%s_%d.%s", name, number, extension)
-                : format("%s.%s_%d", name, extension, number);
-        if (prefix && under < dot) {
-            try {
-                number = Integer.parseInt(fn.substring(under + 1, dot));
-            } catch (NumberFormatException ex) {
-                // Then we have something like "AKA_dyn.pdb"
-                name = fn.substring(0, dot);
-                number++;
-                newFn = format("%s_%d.%s", name, number, extension);
-            }
-        } else if (!prefix && under > dot) {
-            try {
-                number = Integer.parseInt(fn.substring(under + 1));
-                number++;
-            } catch (NumberFormatException ex) {
-                //
-            }
-        }
-        File newFile = new File(newFn);
-        while (newFile.exists()) {
-            ++number;
-            newFn = (prefix)
-                    ? format("%s_%d.%s", name, number, extension)
-                    : format("%s.%s_%d", name, extension, number);
-            newFile = new File(newFn);
-        }
-        return newFile;
-    }
-
-    private synchronized static File versionAbsolute(File file, boolean prefix) {
-        if (file == null || !(file.exists())) {
-            return file;
-        }
-        String fn = file.getAbsolutePath();
-        int dot = fn.lastIndexOf(".");
-        int under = fn.lastIndexOf("_");
-        if (dot < 0) {
-            fn += ".unk";
-            dot = fn.lastIndexOf(".");
-        }
-        if (under < 0) {
-            under = dot;
-        }
-        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
-        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
-        String newFn = (prefix)
-                ? format("%s_%d.%s", name, absoluteCounter, extension)
-                : format("%s.%s_%d", name, extension, absoluteCounter);
-        File newFile = new File(newFn);
-        while (newFile.exists()) {
-            absoluteCounter++;
-            newFn = (prefix)
-                    ? format("%s_%d.%s", name, absoluteCounter, extension)
-                    : format("%s.%s_%d", name, extension, absoluteCounter);
-            newFile = new File(newFn);
-        }
-        return newFile;
-    }
-
-    /**
-     * <p>
-     * previousVersion</p>
-     *
-     * @param file a {@link java.io.File} object.
-     * @return a {@link java.io.File} object.
-     */
-    public static File previousVersion(File file) {
-        if (file == null) {
-            return null;
-        }
-        String fileName = file.getAbsolutePath();
-        int dot = file.getAbsolutePath().lastIndexOf(".");
-        int under = file.getAbsolutePath().lastIndexOf("_");
-        File newFile = file;
-        if (under > dot) {
-            String name = fileName.substring(0, under);
-            newFile = new File(name);
-        }
-        File baseFile = newFile;
-        File previousFile = null;
-        int i = 1;
-        while (newFile.exists()) {
-            i = i + 1;
-            previousFile = newFile;
-            newFile = baseFile;
-            int thousand = i / 1000;
-            int hundred = (i - 1000 * thousand) / 100;
-            int tens = (i - 1000 * thousand - 100 * hundred) / 10;
-            int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
-            StringBuilder newFileString = new StringBuilder(baseFile.getAbsolutePath());
-            if (thousand != 0) {
-                newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
-            } else if (hundred != 0) {
-                newFileString.append('_').append(hundred).append(tens).append(
-                        ones);
-            } else if (tens != 0) {
-                newFileString.append('_').append(tens).append(ones);
-            } else {
-                newFileString.append('_').append(ones);
-            }
-            newFile = new File(newFileString.toString());
-        }
-        return previousFile;
-    }
 
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
 
@@ -400,6 +218,188 @@ public abstract class SystemFilter {
         this.currentFile = file;
         this.systems = new ArrayList<>(molecularAssemblies);
         this.activeMolecularAssembly = systems.get(0);
+    }
+
+    /**
+     * Use setVersioning() to choose between prefix/postfix.
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
+    public static File version(File file) {
+        if (vers == Versioning.TINKER) {
+            return versionTinker(file);
+        } else {
+            if (vers == Versioning.PREFIX_ABSOLUTE || vers == Versioning.POSTFIX_ABSOLUTE) {
+                return versionAbsolute(file, (vers == Versioning.PREFIX_ABSOLUTE));
+            } else {
+                return version(file, (vers == Versioning.PREFIX_ABSOLUTE));
+            }
+        }
+    }
+
+    /**
+     * This follows the TINKER file versioning scheme.
+     *
+     * @param file File to find a version for.
+     * @return File Versioned File.
+     */
+    private static File versionTinker(File file) {
+        if (file == null) {
+            return null;
+        }
+        if (!file.exists()) {
+            return file;
+        }
+        String fileName = file.getAbsolutePath();
+        int dot = file.getAbsolutePath().lastIndexOf(".");
+        int under = file.getAbsolutePath().lastIndexOf("_");
+        File newFile = file;
+        if (under > dot) {
+            String name = fileName.substring(0, under);
+            newFile = new File(name);
+        }
+        File oldFile = newFile;
+        int i = 1;
+        while (newFile.exists()) {
+            i = i + 1;
+            String newFileString = format("%s_%d", oldFile.getAbsolutePath(), i);
+            newFile = new File(newFileString);
+        }
+        return newFile;
+    }
+
+    /**
+     * Negative: prefix a version number; Positive: postfix; Zero: TINKER-style.
+     *
+     * @param vers a {@link ffx.potential.parsers.SystemFilter.Versioning} object.
+     */
+    public static void setVersioning(Versioning vers) {
+        SystemFilter.vers = vers;
+    }
+
+    private static File version(File file, boolean prefix) {
+        if (file == null || !(file.exists())) {
+            return file;
+        }
+        String fn = file.getAbsolutePath();
+        int dot = fn.lastIndexOf(".");
+        int under = fn.lastIndexOf("_");
+        if (dot < 0) {
+            fn += ".unk";
+            dot = fn.lastIndexOf(".");
+        }
+        if (under < 0) {
+            under = dot;
+        }
+        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
+        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
+        int number = 0;
+        String newFn = (prefix)
+                ? format("%s_%d.%s", name, number, extension)
+                : format("%s.%s_%d", name, extension, number);
+        if (prefix && under < dot) {
+            try {
+                number = Integer.parseInt(fn.substring(under + 1, dot));
+            } catch (NumberFormatException ex) {
+                // Then we have something like "AKA_dyn.pdb"
+                name = fn.substring(0, dot);
+                number++;
+                newFn = format("%s_%d.%s", name, number, extension);
+            }
+        } else if (!prefix && under > dot) {
+            try {
+                number = Integer.parseInt(fn.substring(under + 1));
+                number++;
+            } catch (NumberFormatException ex) {
+                //
+            }
+        }
+        File newFile = new File(newFn);
+        while (newFile.exists()) {
+            ++number;
+            newFn = (prefix)
+                    ? format("%s_%d.%s", name, number, extension)
+                    : format("%s.%s_%d", name, extension, number);
+            newFile = new File(newFn);
+        }
+        return newFile;
+    }
+
+    private synchronized static File versionAbsolute(File file, boolean prefix) {
+        if (file == null || !(file.exists())) {
+            return file;
+        }
+        String fn = file.getAbsolutePath();
+        int dot = fn.lastIndexOf(".");
+        int under = fn.lastIndexOf("_");
+        if (dot < 0) {
+            fn += ".unk";
+            dot = fn.lastIndexOf(".");
+        }
+        if (under < 0) {
+            under = dot;
+        }
+        String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
+        String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
+        String newFn = (prefix)
+                ? format("%s_%d.%s", name, absoluteCounter, extension)
+                : format("%s.%s_%d", name, extension, absoluteCounter);
+        File newFile = new File(newFn);
+        while (newFile.exists()) {
+            absoluteCounter++;
+            newFn = (prefix)
+                    ? format("%s_%d.%s", name, absoluteCounter, extension)
+                    : format("%s.%s_%d", name, extension, absoluteCounter);
+            newFile = new File(newFn);
+        }
+        return newFile;
+    }
+
+    /**
+     * <p>
+     * previousVersion</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
+    public static File previousVersion(File file) {
+        if (file == null) {
+            return null;
+        }
+        String fileName = file.getAbsolutePath();
+        int dot = file.getAbsolutePath().lastIndexOf(".");
+        int under = file.getAbsolutePath().lastIndexOf("_");
+        File newFile = file;
+        if (under > dot) {
+            String name = fileName.substring(0, under);
+            newFile = new File(name);
+        }
+        File baseFile = newFile;
+        File previousFile = null;
+        int i = 1;
+        while (newFile.exists()) {
+            i = i + 1;
+            previousFile = newFile;
+            newFile = baseFile;
+            int thousand = i / 1000;
+            int hundred = (i - 1000 * thousand) / 100;
+            int tens = (i - 1000 * thousand - 100 * hundred) / 10;
+            int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
+            StringBuilder newFileString = new StringBuilder(baseFile.getAbsolutePath());
+            if (thousand != 0) {
+                newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
+            } else if (hundred != 0) {
+                newFileString.append('_').append(hundred).append(tens).append(
+                        ones);
+            } else if (tens != 0) {
+                newFileString.append('_').append(tens).append(ones);
+            } else {
+                newFileString.append('_').append(ones);
+            }
+            newFile = new File(newFileString.toString());
+        }
+        return previousFile;
     }
 
     /**

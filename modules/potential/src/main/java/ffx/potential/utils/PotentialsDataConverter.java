@@ -52,7 +52,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.BiojavaFilter;
+import ffx.potential.parsers.BioJavaFilter;
 import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.utilities.Keyword;
@@ -183,7 +183,7 @@ public class PotentialsDataConverter implements FileOpener {
                 ForceField forceField = forceFieldFilter.parse();
                 assembly.setForceField(forceField);
 
-                BiojavaFilter filter = new BiojavaFilter(struct, assembly, forceField, properties);
+                BioJavaFilter filter = new BioJavaFilter(struct, assembly, forceField, properties);
                 if (filter.convert()) {
                     filter.applyAtomProperties();
                     assembly.finalize(true, forceField);

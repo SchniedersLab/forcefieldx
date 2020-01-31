@@ -49,7 +49,7 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
-import ffx.potential.parsers.BiojavaFilter;
+import ffx.potential.parsers.BioJavaFilter;
 import ffx.potential.parsers.ConversionFilter;
 import ffx.potential.parsers.FileOpener;
 
@@ -87,7 +87,7 @@ public class UIDataConverter implements FileOpener {
      * @param mainPanel        The MainPanel instance.
      */
     public UIDataConverter(Object data, File file, ConversionFilter conversionFilter, MainPanel mainPanel) {
-        if (conversionFilter instanceof BiojavaFilter) {
+        if (conversionFilter instanceof BioJavaFilter) {
             this.dataStructure = data;
         } else {
             this.dataStructure = null;
@@ -114,7 +114,7 @@ public class UIDataConverter implements FileOpener {
         // Continue if the file was read in successfully.
         if (conversionFilter.convert()) {
             ffxSystem = (FFXSystem) conversionFilter.getActiveMolecularSystem();
-            if (!(conversionFilter instanceof BiojavaFilter)) {
+            if (!(conversionFilter instanceof BioJavaFilter)) {
                 Utilities.biochemistry(ffxSystem, conversionFilter.getAtomList());
             }
             conversionFilter.applyAtomProperties();
@@ -125,8 +125,8 @@ public class UIDataConverter implements FileOpener {
             mainPanel.getHierarchy().setActive(ffxSystem);
 
             // Check if there are alternate conformers
-            if (conversionFilter instanceof BiojavaFilter) {
-                BiojavaFilter biojFilter = (BiojavaFilter) conversionFilter;
+            if (conversionFilter instanceof BioJavaFilter) {
+                BioJavaFilter biojFilter = (BioJavaFilter) conversionFilter;
                 List<Character> altLocs = biojFilter.getAltLocs();
                 if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
                     StringBuilder altLocString = new StringBuilder("\n Alternate locations found [ ");
