@@ -40,7 +40,6 @@ package ffx.potential.groovy;
 import java.util.Arrays;
 import java.util.Collection;
 
-import ffx.utilities.BaseFFXTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,9 +48,9 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.groovy.Energy;
 import ffx.potential.groovy.test.Gradient;
 import ffx.potential.groovy.test.LambdaGradient;
+import ffx.utilities.BaseFFXTest;
 
 import groovy.lang.Binding;
 
@@ -129,10 +128,27 @@ public class EnergyTest extends BaseFFXTest {
                         0.15162117, 20,
                         0.0, 0,
                         0.0, 0,
-                          -4.31922323, 2290,
-                         -71.00737570, 2485,
-                         0.0, 2485,
+                        -4.31922323, 2290,
+                        -71.00737570, 2485,
+                        0.0, 2485,
                         -161.32855355, 2556, true},
+                {
+                        "AMOEBA Bio 2018 Crambin GK/SA",
+                        "ffx/potential/structures/crambin.xyz",
+                        642,
+                        134.83946761, 652,
+                        133.94053912, 1183,
+                        -4.81704334, 1044,
+                        0.0, 0,
+                        29.92634330, 375,
+                        18.82386314, 1747,
+                        0.0, 0,
+                        12.01761948, 66,
+                        -23.33097186, 4,
+                        312.82576484, 203926,
+                        -1208.54202510, 205761,
+                        -127.41736039, 205761,
+                        -237.20593090, 206403, false},
                 {
                         "AMOEBA Protein 2013 GK Capped DMHD",
                         "ffx/potential/structures/dmhd-amoebapro13.xyz",
@@ -224,7 +240,7 @@ public class EnergyTest extends BaseFFXTest {
                         9737,
                         2856.59378034, 6908,
                         2018.16571190, 5094,
-                         -6.98794687, 1958,
+                        -6.98794687, 1958,
                         -55.63461732, 2835,
                         65.00809012, 651,
                         224.37608631, 3297,
@@ -248,9 +264,9 @@ public class EnergyTest extends BaseFFXTest {
                         27.59366005, 287,
                         0.0, 0,
                         0.0, 0,
-                        4860.41072437,    2279196,
-                        -40036.04804903,  3562034,
-                        0.0,  3562034,
+                        4860.41072437, 2279196,
+                        -40036.04804903, 3562034,
+                        0.0, 3562034,
                         0.0, 0, true},
                 {
                         "Acetanilide Benchmark",

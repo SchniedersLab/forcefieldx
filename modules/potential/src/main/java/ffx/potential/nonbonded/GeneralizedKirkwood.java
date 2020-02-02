@@ -622,6 +622,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             connollyRegion.setSolventPressure(solventPressue);
             connollyRegion.setCrossOver(crossOver);
         }
+        if (surfaceAreaRegion != null) {
+            surfaceAreaRegion.setSurfaceTension(surfaceTension);
+        }
         double dispersionOffset = forceField.getDouble("DISPERSION_OFFSET", DEFAULT_DISP_OFFSET);
         if (dispersionRegion != null) {
             dispersionRegion.setDispersionOffest(dispersionOffset);
