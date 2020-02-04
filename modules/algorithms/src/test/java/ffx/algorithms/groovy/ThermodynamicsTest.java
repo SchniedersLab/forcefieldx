@@ -642,7 +642,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 new double[4][3]},
                         new String[]{"-l", "0.5"},
                         new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
-                                "true", "ttosrw-temperOffset", "6.0", "randomseed", "2020"},
+                                "true", "ost-temperOffset", "6.0", "randomseed", "2020"},
                         new String[0]
                 },
                 {
@@ -653,7 +653,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t", "298.15", "--tp", "6.0",
                                 "--mcMD", "10", "--mcL", "0.10"},
                         new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
-                                "true", "ttosrw-temperOffset", "6.0", "randomseed", "445"},
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
                         new String[]{"--mc", "true"}
                 },
                 {
@@ -664,7 +664,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t", "298.15", "--tp", "6.0",
                                 "--mcMD", "10", "--mcL", "0.10"},
                         new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
-                                "true", "ttosrw-temperOffset", "6.0", "randomseed", "445"},
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
                         new String[]{"--mc", "true", "--ts", "true"}
                 },
                 {
@@ -675,7 +675,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0", "--tp", "6.0",
                                 "--mcMD", "10", "--mcL", "0.10"},
                         new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
-                                "true", "ttosrw-temperOffset", "6.0", "randomseed", "445"},
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
                         new String[]{"--mc", "true"}
                 },
                 {
@@ -686,7 +686,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                                 "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0", "--tp", "6.0",
                                 "--mcMD", "10", "--mcL", "0.10"},
                         new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
-                                "true", "ttosrw-temperOffset", "6.0", "randomseed", "445"},
+                                "true", "ost-temperOffset", "6.0", "randomseed", "445"},
                         new String[]{"--mc", "true", "--ts", "true"}
                 }
         });
