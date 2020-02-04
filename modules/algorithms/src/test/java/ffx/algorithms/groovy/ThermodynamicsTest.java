@@ -666,6 +666,28 @@ public class ThermodynamicsTest extends PJDependentTest {
                         new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
                                 "true", "ttosrw-temperOffset", "6.0", "randomseed", "445"},
                         new String[]{"--mc", "true", "--ts", "true"}
+                },
+                {
+                        "Short 1-Step MC-OST Test",
+                        new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
+                        ThermoTestMode.FREE, false, 0, 2.0, null, null, null, null, null, null,
+                        new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
+                                "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0", "--tp", "6.0",
+                                "--mcMD", "10", "--mcL", "0.10"},
+                        new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
+                                "true", "ttosrw-temperOffset", "6.0", "randomseed", "445"},
+                        new String[]{"--mc", "true"}
+                },
+                {
+                        "Short 2-Step MC-OST Test",
+                        new String[]{"ffx/algorithms/structures/dualWell-cis.xyz", "ffx/algorithms/structures/dualWell-trans.xyz"},
+                        ThermoTestMode.FREE, true, 0, 2.0, null, null, null, null, null, null,
+                        new String[]{"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0", "-k", "1000.0",
+                                "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0", "--tp", "6.0",
+                                "--mcMD", "10", "--mcL", "0.10"},
+                        new String[]{"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20", "disable-neighbor-updates",
+                                "true", "ttosrw-temperOffset", "6.0", "randomseed", "445"},
+                        new String[]{"--mc", "true", "--ts", "true"}
                 }
         });
     }
