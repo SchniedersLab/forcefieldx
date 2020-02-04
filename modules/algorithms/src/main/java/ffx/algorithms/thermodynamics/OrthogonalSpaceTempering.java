@@ -1354,10 +1354,15 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             deltaT = temperingFactor * R * temperature;
 
             double defaultOffset = 20.0 * biasMag;
-            temperOffset = properties.getDouble("ost-temperOffset", defaultOffset);
-            if (temperOffset < 0.0) {
-                temperOffset = 0.0;
+            double val = properties.getDouble("ost-temperOffset", properties.getDouble("ttosrw-temperoffset", defaultOffset));
+            if (properties.containsKey("ttosrw-temperoffset")) {
+                logger.warning(" The property ttosrw-temperoffset has been deprecated; use ost-temperOffset instead!");
             }
+            if (val < 0) {
+                logger.warning(String.format(" ost-temperOffset was set to invalid value of less than zero; reset to %.4f", defaultOffset));
+                val = defaultOffset;
+            }
+            temperOffset = val;
 
             // Require modest sampling of the lambda path.
             if (dL > 0.1) {
@@ -1474,6 +1479,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
          */
         public void setBiasMagnitude(double biasMag) {
+            // TODO: Delete this method and make as much as possible final.
             histogram.biasMag = biasMag;
             logger.info(format("  Gaussian Bias Magnitude:        %6.4f (kcal/mol)", biasMag));
 
@@ -1507,12 +1513,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
          * @param temper a double.
          */
         public void setTemperingParameter(double temper) {
+            // TODO: Delete this method and make as much as possible final.
             temperingFactor = temper;
             if (temperingFactor > 0.0) {
                 deltaT = temperingFactor * R * histogram.temperature;
             } else {
                 deltaT = Double.MAX_VALUE;
             }
+            logger.info(String.format(" Tempering parameter: %.5f kBT, %.5f kcal/mol", temperingFactor, deltaT));
         }
 
         /**
