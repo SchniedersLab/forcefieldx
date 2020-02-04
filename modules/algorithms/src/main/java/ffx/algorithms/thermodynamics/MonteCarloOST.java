@@ -146,10 +146,6 @@ public class MonteCarloOST extends BoltzmannMC {
      * Deposit a bias once every N MC cycles. Defaults to 1.
      */
     private final int biasDepositionFrequency;
-    /**
-     * Only print out logging information every N MC cycles. Defaults to 1.
-     */
-    private final int loggingFrequency;
 
     /**
      * <p>
@@ -206,8 +202,6 @@ public class MonteCarloOST extends BoltzmannMC {
         } else if (biasDepositionFrequency > 1) {
             logger.info(format(" MC-OST will deposit a bias only once per %d MC cycles (mc-ost-biasf).", biasDepositionFrequency));
         }
-
-        loggingFrequency = properties.getInt("mc-ost-logf", 1);
     }
 
     /**
@@ -276,18 +270,6 @@ public class MonteCarloOST extends BoltzmannMC {
     }
 
     /**
-     * Only log stuff every N steps.
-     * @param i       MC step
-     * @param level   Logging level
-     * @param message Message to log
-     */
-    private void logForStep(int i, Level level, String message) {
-        if (i % loggingFrequency == 0) {
-            logger.log(level, message);
-        }
-    }
-
-    /**
      * The goal is to sample lambda and coordinates (X) separately to converge
      * the ensemble average dU/dL for every state (lambda) along the
      * thermodynamic path.
@@ -334,16 +316,16 @@ public class MonteCarloOST extends BoltzmannMC {
             long mdMoveAndEvalTime = -nanoTime();
 
             if (equilibration) {
-                logForStep(imove, Level.INFO, format("\n MD Equilibration Round %d", imove + 1));
+                logger.info(format("\n MD Equilibration Round %d", imove + 1));
             } else {
-                logForStep(imove, Level.INFO, format("\n MC Orthogonal Space Sampling Round %d: Independent Steps", imove + 1));
+                logger.info(format("\n MC Orthogonal Space Sampling Round %d: Independent Steps", imove + 1));
             }
 
             // Run MD in an approximate potential U* (U star) that does not include the OST bias.
             long mdMoveTime = -nanoTime();
             mdMove.move(mdVerbosityLevel);
             mdMoveTime += nanoTime();
-            logForStep(imove, verboseLoggingLevel, format("  Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
+            logger.log(verboseLoggingLevel, format("  Total time for MD move: %6.3f", mdMoveTime * NS2SEC));
 
             // Get the starting and final kinetic energy for the MD move.
             double currentKineticEnergy = mdMove.getInitialKinetic();
@@ -360,12 +342,12 @@ public class MonteCarloOST extends BoltzmannMC {
                 proposedOSTEnergy = orthogonalSpaceTempering.energyAndGradient(proposedCoordinates, gradient);
             } catch (EnergyException e) {
                 mdMove.revertMove();
-                logForStep(imove, Level.INFO, " Unstable MD Move skipped.");
+                logger.log(Level.INFO, " Unstable MD Move skipped.");
                 continue;
             }
             proposedOSTEnergyTime += nanoTime();
 
-            logForStep(imove, Level.FINE, format("  Time to complete MD OST energy method call %6.3f", proposedOSTEnergyTime * NS2SEC));
+            logger.fine(format("  Time to complete MD OST energy method call %6.3f", proposedOSTEnergyTime * NS2SEC));
 
             // Retrieve the proposed dU/dL, Force Field Energy and Bias Energy.
             double proposeddUdL = orthogonalSpaceTempering.getForceFielddEdL();
@@ -376,12 +358,12 @@ public class MonteCarloOST extends BoltzmannMC {
             double currentTotalEnergy = currentOSTEnergy + currentKineticEnergy;
             double proposedTotalEnergy = proposedOSTEnergy + proposedKineticEnergy;
 
-            logForStep(imove, verboseLoggingLevel, format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
-            logForStep(imove, verboseLoggingLevel, format("  Current  %12.4f %12.4f %12.4f %12.4f",
+            logger.log(verboseLoggingLevel, format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
+            logger.log(verboseLoggingLevel, format("  Current  %12.4f %12.4f %12.4f %12.4f",
                     currentKineticEnergy, currentForceFieldEnergy, currentBiasEnergy, currentTotalEnergy));
-            logForStep(imove, verboseLoggingLevel, format("  Proposed %12.4f %12.4f %12.4f %12.4f",
+            logger.log(verboseLoggingLevel, format("  Proposed %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy, proposedForceFieldEnergy, proposedBiasEnergy, proposedTotalEnergy));
-            logForStep(imove, verboseLoggingLevel, format("  Delta    %12.4f %12.4f %12.4f %12.4f",
+            logger.log(verboseLoggingLevel, format("  Delta    %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy - currentKineticEnergy,
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
@@ -399,7 +381,7 @@ public class MonteCarloOST extends BoltzmannMC {
                 // Accept MD move.
                 acceptMD++;
                 double percent = (acceptMD * 100.0) / (imove + 1);
-                logForStep(imove, Level.INFO, format(" Accept [FL=%8.3f, E=%12.4f]  -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
+                logger.info(format(" Accept [FL=%8.3f, E=%12.4f]  -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
                         currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
                 currentOSTEnergy = proposedOSTEnergy;
                 currentdUdL = proposeddUdL;
@@ -408,18 +390,18 @@ public class MonteCarloOST extends BoltzmannMC {
                 arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
             } else {
                 double percent = (acceptMD * 100.0) / (imove + 1);
-                logForStep(imove, Level.INFO, format(" Reject [FL=%8.3f, E=%12.4f]  -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
+                logger.info(format(" Reject [FL=%8.3f, E=%12.4f]  -> [FL=%8.3f,E=%12.4f] (%5.1f%%)",
                         currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
                 mdMove.revertMove();
             }
             mdMoveAndEvalTime += nanoTime();
 
-            logForStep(imove, Level.FINE, format("\n  Total time to run and evaluate MD move: %6.3f", mdMoveAndEvalTime * NS2SEC));
+            logger.fine(format("\n  Total time to run and evaluate MD move: %6.3f", mdMoveAndEvalTime * NS2SEC));
 
             // During equilibration, do not change Lambda or contribute to the OST bias.
             if (!equilibration) {
                 // Update Lambda.
-                logForStep(imove, Level.INFO, " MC Lambda Step");
+                logger.info(" MC Lambda Step");
 
                 long lambdaMoveTime = -nanoTime();
                 double currentLambda = orthogonalSpaceTempering.getLambda();
@@ -431,44 +413,44 @@ public class MonteCarloOST extends BoltzmannMC {
                 proposedOSTEnergy = orthogonalSpaceTempering.energyAndGradient(currentCoordinates, gradient);
                 proposedOSTEnergyTime2 += nanoTime();
 
-                logForStep(imove, verboseLoggingLevel, format("  Time to complete Lambda OST energy method call %6.3f ", proposedOSTEnergyTime2 * NS2SEC));
+                logger.log(verboseLoggingLevel, format("  Time to complete Lambda OST energy method call %6.3f ", proposedOSTEnergyTime2 * NS2SEC));
 
                 // Retrieve the proposed dU/dL, Force Field Energy and Bias Energy.
                 proposedForceFieldEnergy = orthogonalSpaceTempering.getForceFieldEnergy();
                 proposeddUdL = orthogonalSpaceTempering.getForceFielddEdL();
 
-                logForStep(imove, verboseLoggingLevel, format("\n  Current  OST     %12.3f at L=%5.3f.", currentOSTEnergy, currentLambda));
-                logForStep(imove, verboseLoggingLevel, format("  Proposed OST     %12.3f at L=%5.3f.", proposedOSTEnergy, proposedLambda));
-                logForStep(imove, verboseLoggingLevel, format("  MC Energy change: %12.3f (kcal/mol).", proposedOSTEnergy - currentOSTEnergy));
+                logger.log(verboseLoggingLevel, format("\n  Current  OST     %12.3f at L=%5.3f.", currentOSTEnergy, currentLambda));
+                logger.log(verboseLoggingLevel, format("  Proposed OST     %12.3f at L=%5.3f.", proposedOSTEnergy, proposedLambda));
+                logger.log(verboseLoggingLevel, format("  MC Energy change: %12.3f (kcal/mol).", proposedOSTEnergy - currentOSTEnergy));
 
                 if (orthogonalSpaceTempering.insideHardWallConstraint(proposedLambda, proposeddUdL) &&
                         evaluateMove(currentOSTEnergy, proposedOSTEnergy)) {
                     acceptLambda++;
                     double percent = (acceptLambda * 100.0) / (imove + 1);
-                    logForStep(imove, Level.INFO, format("  Accept [ L=%8.3f,E=%12.4f]   -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
+                    logger.info(format("  Accept [ L=%8.3f,E=%12.4f]   -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
                             currentLambda, currentOSTEnergy, proposedLambda, proposedOSTEnergy, percent));
                     currentForceFieldEnergy = proposedForceFieldEnergy;
                     currentdUdL = proposeddUdL;
                     lambda = proposedLambda;
                 } else {
                     double percent = (acceptLambda * 100.0) / (imove + 1);
-                    logForStep(imove, Level.INFO, format("  Reject [ L=%8.3f,E=%12.4f]   -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
+                    logger.info(format("  Reject [ L=%8.3f,E=%12.4f]   -> [ L=%8.3f,E=%12.4f] (%5.1f%%)",
                             currentLambda, currentOSTEnergy, proposedLambda, proposedOSTEnergy, percent));
                     lambdaMove.revertMove();
                     lambda = currentLambda;
                 }
 
                 lambdaMoveTime += nanoTime();
-                logForStep(imove, verboseLoggingLevel, format("  Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
+                logger.log(verboseLoggingLevel, format("  Lambda move completed in %6.3f", lambdaMoveTime * NS2SEC));
 
                 if (imove % biasDepositionFrequency == 0) {
                     histogram.addBias(currentdUdL, currentCoordinates, null);
                 } else {
                     // TODO: Step down to FINE when we know this works.
-                    logForStep(imove, Level.INFO, format(" Cycle %d: skipping bias deposition.", imove));
+                    logger.log(Level.INFO, format(" Cycle %d: skipping bias deposition.", imove));
                 }
 
-                logForStep(imove, verboseLoggingLevel, format("  Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
+                logger.log(verboseLoggingLevel, format("  Added Bias at [L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
                 // Compute the updated OST bias.
                 currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
@@ -483,7 +465,7 @@ public class MonteCarloOST extends BoltzmannMC {
             }
 
             totalMoveTime += nanoTime();
-            logForStep(imove, Level.INFO, format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
+            logger.info(format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
         }
     }
 
@@ -551,13 +533,13 @@ public class MonteCarloOST extends BoltzmannMC {
             boolean lambdaFirst = random.nextBoolean();
 
             if (equilibration) {
-                logForStep(imove, Level.INFO, format("\n Equilibration Round %d", imove + 1));
+                logger.info(format("\n Equilibration Round %d", imove + 1));
             } else {
                 String moveType = lambdaFirst ? "Single-step lambda plus MD move." : " Single-step MD plus lambda move.";
-                logForStep(imove, Level.INFO, format("\n MC-OST Round %d: %s", imove + 1, moveType));
+                logger.info(format("\n MC-OST Round %d: %s", imove + 1, moveType));
             }
 
-            logForStep(imove, Level.FINE, format(" Starting force field energy for move %16.8f", currentForceFieldEnergy));
+            logger.fine(format(" Starting force field energy for move %16.8f", currentForceFieldEnergy));
 
             if (equilibration) {
                 singleStepMD();
@@ -591,12 +573,12 @@ public class MonteCarloOST extends BoltzmannMC {
                     lambdaMove.revertMove();
                     lambda = currentLambda;
                 }
-                logger.log(Level.WARNING, " Unstable MD Move skipped.");
+                logger.log(Level.INFO, " Unstable MD Move skipped.");
                 continue;
             }
 
             proposedOSTEnergyTime += nanoTime();
-            logForStep(imove, Level.FINE, format(" Time to complete MD OST energy method call %6.3f", proposedOSTEnergyTime * NS2SEC));
+            logger.fine(format(" Time to complete MD OST energy method call %6.3f", proposedOSTEnergyTime * NS2SEC));
 
             // Retrieve the proposed dU/dL, Force Field Energy and Bias Energy.
             double proposeddUdL = orthogonalSpaceTempering.getForceFielddEdL();
@@ -607,12 +589,12 @@ public class MonteCarloOST extends BoltzmannMC {
             double currentTotalEnergy = currentOSTEnergy + currentKineticEnergy;
             double proposedTotalEnergy = proposedOSTEnergy + proposedKineticEnergy;
 
-            logForStep(imove, verboseLoggingLevel, format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
-            logForStep(imove, verboseLoggingLevel, format("  Current  %12.4f %12.4f %12.4f %12.4f",
+            logger.log(verboseLoggingLevel, format("\n  %8s %12s %12s %12s %12s", "", "Kinetic", "Potential", "Bias", "Total"));
+            logger.log(verboseLoggingLevel, format("  Current  %12.4f %12.4f %12.4f %12.4f",
                     currentKineticEnergy, currentForceFieldEnergy, currentBiasEnergy, currentTotalEnergy));
-            logForStep(imove, verboseLoggingLevel, format("  Proposed %12.4f %12.4f %12.4f %12.4f",
+            logger.log(verboseLoggingLevel, format("  Proposed %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy, proposedForceFieldEnergy, proposedBiasEnergy, proposedTotalEnergy));
-            logForStep(imove, verboseLoggingLevel, format("  Delta    %12.4f %12.4f %12.4f %12.4f",
+            logger.log(verboseLoggingLevel, format("  Delta    %12.4f %12.4f %12.4f %12.4f",
                     proposedKineticEnergy - currentKineticEnergy,
                     proposedForceFieldEnergy - currentForceFieldEnergy,
                     proposedBiasEnergy - currentBiasEnergy,
@@ -635,7 +617,7 @@ public class MonteCarloOST extends BoltzmannMC {
                     // Accept MD.
                     acceptMD++;
                     double percent = (acceptMD * 100.0) / (imove + 1);
-                    logForStep(imove, Level.INFO, format(" Accept [ FL=%8.3f, E=%12.4f]  -> [ FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(format(" Accept [ FL=%8.3f, E=%12.4f]  -> [ FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
                     currentOSTEnergy = proposedOSTEnergy;
                     currentdUdL = proposeddUdL;
@@ -644,7 +626,7 @@ public class MonteCarloOST extends BoltzmannMC {
                     arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
                 } else {
                     double percent = (acceptMD * 100.0) / (imove + 1);
-                    logForStep(imove, Level.INFO, format(" Reject [ FL=%8.3f, E=%12.4f]  -> [ FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(format(" Reject [ FL=%8.3f, E=%12.4f]  -> [ FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentdUdL, currentOSTEnergy, proposeddUdL, proposedOSTEnergy, percent));
                     mdMove.revertMove();
                 }
@@ -653,7 +635,7 @@ public class MonteCarloOST extends BoltzmannMC {
                         evaluateMove(currentTotalEnergy, proposedTotalEnergy)) {
                     acceptMCOST++;
                     double percent = (acceptMCOST * 100.0) / (imove + 1);
-                    logForStep(imove, Level.INFO, format(" Accept [ L=%5.3f, FL=%8.3f, E=%12.4f]  -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(format(" Accept [ L=%5.3f, FL=%8.3f, E=%12.4f]  -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentLambda, currentdUdL, currentOSTEnergy, proposedLambda, proposeddUdL, proposedOSTEnergy, percent));
                     lambda = proposedLambda;
                     currentdUdL = proposeddUdL;
@@ -661,7 +643,7 @@ public class MonteCarloOST extends BoltzmannMC {
                     arraycopy(proposedCoordinates, 0, currentCoordinates, 0, n);
                 } else {
                     double percent = (acceptMCOST * 100.0) / (imove + 1);
-                    logForStep(imove, Level.INFO, format(" Reject [ L=%5.3f, FL=%8.3f, E=%12.4f]  -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
+                    logger.info(format(" Reject [ L=%5.3f, FL=%8.3f, E=%12.4f]  -> [ L=%5.3f, FL=%8.3f, E=%12.4f] (%5.1f%%)",
                             currentLambda, currentdUdL, currentOSTEnergy, proposedLambda, proposeddUdL, proposedOSTEnergy, percent));
                     lambdaMove.revertMove();
                     lambda = currentLambda;
@@ -671,10 +653,10 @@ public class MonteCarloOST extends BoltzmannMC {
                 if (imove % biasDepositionFrequency == 0) {
                     histogram.addBias(currentdUdL, currentCoordinates, null);
                 } else {
-                    logForStep(imove, Level.FINE, format(" Cycle %d: skipping bias deposition.", imove));
+                    logger.log(Level.FINE, format(" Cycle %d: skipping bias deposition.", imove));
                 }
 
-                logForStep(imove, Level.FINE, format(" Added Bias at [ L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
+                logger.fine(format(" Added Bias at [ L=%5.3f, FL=%9.3f]", lambda, currentdUdL));
 
                 // Compute the updated OST bias.
                 currentBiasEnergy = histogram.computeBiasEnergy(lambda, currentdUdL);
@@ -692,7 +674,7 @@ public class MonteCarloOST extends BoltzmannMC {
             }
 
             totalMoveTime += nanoTime();
-            logForStep(imove, Level.INFO, format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
+            logger.info(format(" Round complete in %6.3f sec.", totalMoveTime * NS2SEC));
         }
     }
 
