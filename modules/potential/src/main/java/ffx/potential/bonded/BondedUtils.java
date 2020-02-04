@@ -38,7 +38,13 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
@@ -50,6 +56,8 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
+import ffx.numerics.math.VectorMath;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
@@ -58,6 +66,7 @@ import static ffx.numerics.math.VectorMath.diff;
 import static ffx.numerics.math.VectorMath.norm;
 import static ffx.numerics.math.VectorMath.r;
 import static ffx.numerics.math.VectorMath.scalar;
+import static ffx.potential.bonded.NamingUtils.nameAcetylCap;
 
 /**
  * Utilities for placing atoms.
@@ -500,6 +509,351 @@ public class BondedUtils {
         atom.setAtomType(atomType);
         buildBond(ia, atom, forceField, bondList);
         return atom;
+    }
+
+    /**
+     * Finds Atoms bonded to a given Atom that match a certain atomic number.
+     *
+     * @param atom    Atom to search from.
+     * @param element Atomic number to search for.
+     * @return Bonded atoms of an element.
+     */
+    public static List<Atom> findBondedAtoms(Atom atom, int element) {
+        return findBondedAtoms(atom, null, element);
+    }
+
+    /**
+     * Finds Atoms bonded to a given Atom that match a certain atomic number that do not match an excluded atom.
+     *
+     * @param atom      Atom to search from.
+     * @param toExclude Atom to exclude from search.
+     * @param element   Atomic number to search for.
+     * @return Bonded atoms of an element.
+     */
+    public static List<Atom> findBondedAtoms(Atom atom, Atom toExclude, int element) {
+        return atom.getBonds().stream().
+                map((Bond b) -> b.get1_2(atom)).
+                filter((Atom a) -> a != toExclude).
+                filter((Atom a) -> a.getAtomType().atomicNumber == element).
+                collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if there is an Atom of a given atomic number bonded to the provided Atom.
+     *
+     * @param atom    Atom to search from.
+     * @param element Atomic number to search for.
+     * @return If bonded atoms of given element exist.
+     */
+    public static boolean hasAttachedAtom(Atom atom, int element) {
+        return atom.getBonds().stream().
+                map((Bond b) -> b.get1_2(atom)).
+                anyMatch((Atom a) -> a.getAtomType().atomicNumber == element);
+    }
+
+    /**
+     * Checks if atom a1 is bonded to atom a2.
+     *
+     * @param a1 An Atom.
+     * @param a2 Another Atom.
+     * @return If a1 is bonded to a2.
+     */
+    public static boolean atomAttachedToAtom(Atom a1, Atom a2) {
+        assert a1 != a2;
+        return a1.getBonds().stream().
+                anyMatch((Bond b) -> b.get1_2(a1) == a2);
+    }
+
+    /**
+     * Finds all Atoms belonging to a Residue of a given atomic number.
+     *
+     * @param residue Residue to search in.
+     * @param element Atomic number to search for.
+     * @return A list of matching Atoms.
+     */
+    public static List<Atom> findAtomsOfElement(Residue residue, int element) {
+        return residue.getAtomList().stream().
+                filter((Atom a) -> a.getAtomType().atomicNumber == element).
+                collect(Collectors.toList());
+    }
+
+    /**
+     * Finds the alpha carbon of a residue, and handles any C-terminal ACE caps while at it.
+     *
+     * @param residue Find the alpha carbon of.
+     * @param N       The residue's backbone nitrogen.
+     * @return The alpha carbon.
+     */
+    public static Atom getAlphaCarbon(Residue residue, Atom N) {
+        List<Atom> resAtoms = residue.getAtomList();
+        List<Atom> caCandidates = findBondedAtoms(N, 6).stream().
+                filter((Atom carbon) -> resAtoms.contains(carbon)).
+                collect(Collectors.toList());
+
+
+        switch (residue.getAminoAcid3()) {
+            case PRO: {
+                Atom CA = null;
+                Atom CD = null;
+                Atom aceC = null;
+                for (Atom caCand : caCandidates) {
+                    if (hasAttachedAtom(caCand, 8)) {
+                        aceC = caCand;
+                    } else {
+                        List<Atom> attachedH = findBondedAtoms(caCand, 1);
+                        if (attachedH.size() == 1) {
+                            CA = caCand;
+                        } else if (attachedH.size() == 2) {
+                            CD = caCand;
+                        } else {
+                            throw new IllegalArgumentException(format(" Error in parsing proline %s", residue));
+                        }
+                    }
+                }
+                assert CA != null && CD != null;
+                if (aceC != null) {
+                    nameAcetylCap(residue, aceC);
+                }
+                return CA;
+            }
+            default: {
+                if (caCandidates.size() == 1) {
+                    return caCandidates.get(0);
+                } else {
+                    Atom CA = null;
+                    Atom aceC = null;
+                    for (Atom caCand : caCandidates) {
+                        if (hasAttachedAtom(caCand, 8)) {
+                            aceC = caCand;
+                        } else {
+                            CA = caCand;
+                        }
+                    }
+                    nameAcetylCap(residue, aceC);
+                    return CA;
+                }
+            }
+        }
+    }
+
+    /**
+     * Finds the backbone nitrogen of a residue.
+     *
+     * @param residue Amino acid residue to search for.
+     * @return backbone nitrogen.
+     */
+    public static Atom findNitrogenAtom(Residue residue) {
+        assert residue.getResidueType() == Residue.ResidueType.AA;
+
+        // Will filter out amide N from NME caps at the end of the method.
+        List<Atom> nitrogenCandidates = new ArrayList<>(2);
+
+        switch (residue.getAminoAcid3()) {
+            case LYS:
+            case LYD: {
+                /**
+                 * For lysine: find the nitrogen bonded to a carbon that does not have two protons.
+                 */
+                List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+                for (Atom nitrogen : nitrogens) {
+                    List<Atom> carbons = findBondedAtoms(nitrogen, 6);
+                    if (carbons.size() == 2) {
+                        nitrogenCandidates.add(nitrogen);
+                    } else if (findBondedAtoms(carbons.get(0), 1).size() < 2) {
+                        nitrogenCandidates.add(nitrogen);
+                    }
+                }
+                if (nitrogenCandidates.isEmpty()) {
+                    throw new IllegalArgumentException(format(" Could not identify N atom of residue %s!", residue));
+                }
+            }
+            break;
+            // Arginine and histidine can be handled very similarly.
+            case ARG:
+            case HIS:
+            case HIE:
+            case HID: {
+                /**
+                 * Easiest to the carbon bonded to all the sidechain nitrogens,
+                 * then find the nitrogen not thus bonded.
+                 */
+                List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+                Atom commonC = findAtomsOfElement(residue, 6).stream().
+                        filter((Atom carbon) -> findBondedAtoms(carbon, 7).size() >= 2).
+                        findAny().get();
+                nitrogenCandidates = nitrogens.stream().
+                        filter((Atom nitr) -> !atomAttachedToAtom(nitr, commonC)).
+                        collect(Collectors.toList());
+            }
+            break;
+            case ASN:
+            case GLN: {
+                /**
+                 * Find a bonded carbon that is not bonded to an oxygen.
+                 * Both N and ND/NE have an attached carbonyl carbon.
+                 * Only N will have CA attached.
+                 */
+                List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+                for (Atom nitrogen : nitrogens) {
+                    List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
+                    for (Atom carbon : bondedCarbs) {
+                        if (!hasAttachedAtom(carbon, 8)) {
+                            nitrogenCandidates.add(nitrogen);
+                        }
+                    }
+                }
+                if (nitrogenCandidates.isEmpty()) {
+                    throw new IllegalArgumentException(format(" Could not identify N atom of residue %s!", residue));
+                }
+            }
+            break;
+            case TRP: {
+                /**
+                 * For tryptophan:
+                 * If at an N-terminus, there will be only one bonded carbon.
+                 * Else, one carbon will be a carbonyl carbon.
+                 */
+                List<Atom> nitrogens = findAtomsOfElement(residue, 7);
+                for (Atom nitrogen : nitrogens) {
+                    List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
+                    if (bondedCarbs.size() == 1) {
+                        nitrogenCandidates.add(nitrogen);
+                    }
+                    for (Atom carbon : bondedCarbs) {
+                        if (hasAttachedAtom(carbon, 8)) {
+                            nitrogenCandidates.add(nitrogen);
+                        }
+                    }
+                }
+                if (nitrogenCandidates.isEmpty()) {
+                    throw new IllegalArgumentException(format(" Could not identify N atom of residue %s!", residue));
+                }
+            }
+            break;
+            case ACE:
+                return null;
+            default:
+                /**
+                 * All others should only have one nitrogen atom.
+                 */
+                nitrogenCandidates = findAtomsOfElement(residue, 7);
+                break;
+        }
+
+        switch (nitrogenCandidates.size()) {
+            case 0:
+                logger.warning(" Did not find any atoms that might be the amide nitrogen for residue " + residue.toString());
+                return null;
+            case 1:
+                return nitrogenCandidates.get(0);
+            case 2:
+                logger.warning(format(" Probable NME C-terminal cap attached to residue %s, some atom names may be duplicated!", residue));
+                Atom N = null;
+                for (Atom nitro : nitrogenCandidates) {
+                    nitro.setName("N");
+                    Optional<Atom> capMethyl = findBondedAtoms(nitro, 6).stream().
+                            filter((Atom carb) -> findBondedAtoms(carb, 1).size() == 3).
+                            findAny();
+                    if (capMethyl.isPresent()) {
+                        findBondedAtoms(nitro, 1).get(0).setName("H");
+                        Atom theCap = capMethyl.get();
+                        theCap.setName("CH3");
+                        List<Atom> capHydrogens = findBondedAtoms(theCap, 1);
+                        for (int i = 0; i < 3; i++) {
+                            capHydrogens.get(i).setName(format("H%d", i + 1));
+                        }
+                    } else {
+                        N = nitro;
+                    }
+                }
+                return N;
+            default:
+                throw new IllegalArgumentException(format(" Could not definitely identify amide nitrogen for residue %s", residue));
+        }
+    }
+
+    /**
+     * Find the O4' of a nucleic acid Residue. This is fairly unique in standard nucleotides,
+     * as O4' is the only ether oxygen (bonded to two carbons).
+     *
+     * @param residue Residue to find O4' of.
+     * @return O4'.
+     */
+    public static Optional<Atom> findNucleotideO4s(Residue residue) {
+        assert residue.getResidueType() == Residue.ResidueType.NA;
+        return findAtomsOfElement(residue, 8).
+                stream().
+                filter(o -> findBondedAtoms(o, 6).size() == 2).
+                findAny();
+    }
+
+    /**
+     * Sorts toCompare by distance to the reference Atom, returning a sorted array.
+     *
+     * @param reference Atom to compare distances to.
+     * @param toCompare Atoms to sort by distance (not modified).
+     * @return Sorted array of atoms in toCompare.
+     */
+    public static Atom[] sortAtomsByDistance(Atom reference, List<Atom> toCompare) {
+        Atom[] theAtoms = toCompare.toArray(new Atom[0]);
+        sortAtomsByDistance(reference, theAtoms);
+        return theAtoms;
+    }
+
+    /**
+     * In-place sorts toCompare by distance to the reference Atom. Modifies toCompare.
+     *
+     * @param reference Atom to compare distances to.
+     * @param toCompare Atoms to sort (in-place) by distance.
+     */
+    public static void sortAtomsByDistance(Atom reference, Atom[] toCompare) {
+        final double[] refXYZ = reference.getXYZ(new double[3]);
+        Arrays.sort(toCompare, Comparator.comparingDouble(a -> {
+            double[] atXYZ = a.getXYZ(new double[3]);
+            return VectorMath.dist2(refXYZ, atXYZ);
+        }));
+    }
+
+    /**
+     * Re-number atoms, especially if missing atoms were created.
+     *
+     * @param molecularAssembly The molecular assembly to renumber atoms for.
+     */
+    public static void numberAtoms(MolecularAssembly molecularAssembly) {
+        int index = 1;
+        for (Atom a : molecularAssembly.getAtomArray()) {
+            a.setXyzIndex(index++);
+        }
+        index--;
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(format(" Total number of atoms: %d\n", index));
+        }
+
+        Polymer[] polymers = molecularAssembly.getChains();
+        if (polymers != null) {
+            for (Polymer p : polymers) {
+                List<Residue> residues = p.getResidues();
+                for (Residue r : residues) {
+                    r.reOrderAtoms();
+                }
+            }
+        }
+        List<MSNode> molecules = molecularAssembly.getMolecules();
+        for (MSNode n : molecules) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
+        }
+        List<MSNode> waters = molecularAssembly.getWaters();
+        for (MSNode n : waters) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
+        }
+        List<MSNode> ions = molecularAssembly.getIons();
+        for (MSNode n : ions) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
+        }
+
     }
 
     /**

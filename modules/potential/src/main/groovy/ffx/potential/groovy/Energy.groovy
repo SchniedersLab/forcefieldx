@@ -115,15 +115,12 @@ class Energy extends PotentialScript {
 
     public double energy = 0.0
     public ForceFieldEnergy forceFieldEnergy = null
-
-
     private File baseDir = null
+    private AssemblyState assemblyState = null
 
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir
     }
-
-    private AssemblyState assemblyState = null
 
     private class StateContainer implements Comparable<StateContainer> {
         private final AssemblyState state
@@ -283,7 +280,6 @@ class Energy extends PotentialScript {
         }
 
         return this
-
     }
 
     @Override

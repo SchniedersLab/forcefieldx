@@ -546,8 +546,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         RendererCache.highlightSelections = prefs.getBoolean(c + ".highlight", false);
         mainPanel.getMainMenu().setHighlighting(RendererCache.highlightSelections);
         String[] hlColor = prefs.get(c + ".highlightColor", "153 153 255").trim().split(" +");
-        Color newColor = new Color(Integer.parseInt(hlColor[0]), Integer.parseInt(hlColor[1]), Integer.parseInt(hlColor[2]));
-        selectionColor = new Color3f(newColor.getRGBColorComponents(new float[3]));
+        selectionColor = new Color3f(Float.parseFloat(hlColor[0]),
+                Float.parseFloat(hlColor[1]), Float.parseFloat(hlColor[2]));
         RendererCache.labelAtoms = prefs.getBoolean(c + ".labelAtoms", false);
         mainPanel.getMainMenu().setAtomLabels(RendererCache.labelAtoms);
         RendererCache.labelResidues = prefs.getBoolean(c + ".labelResidues", false);
@@ -564,8 +564,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
          * j2D.setPaint(newColor);
          */
         String[] pickColor = prefs.get(c + ".pickColor", "102 255 102").trim().split(" +");
-        newColor = new Color(Integer.parseInt(pickColor[0]), Integer.parseInt(pickColor[1]), Integer.parseInt(pickColor[2]));
-        pickingColor = new Color3f(newColor.getRGBColorComponents(new float[3]));
+        pickingColor = new Color3f(Float.parseFloat(pickColor[0]),
+                Float.parseFloat(pickColor[1]), Float.parseFloat(pickColor[2]));
         String pickLevel = prefs.get(c + ".pickLevel", "PickAtom");
         mainPanel.getMainMenu().setPickLevel(pickLevel);
         boolean pickMode = prefs.getBoolean(c + ".picking", false);
@@ -574,8 +574,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         }
         mainPanel.getMainMenu().setPickBehavior(pickMode);
         String[] userColor = prefs.get(c + ".userColor", "255 255 255").trim().split(" +");
-        newColor = new Color(Integer.parseInt(userColor[0]), Integer.parseInt(userColor[1]), Integer.parseInt(userColor[2]));
-        RendererCache.userColor = new Color3f(newColor.getRGBColorComponents(new float[3]));
+        RendererCache.userColor = new Color3f(Float.parseFloat(userColor[0]),
+                Float.parseFloat(userColor[1]), Float.parseFloat(userColor[2]));
         /*
          * String[] bgColor = prefs.get("Graphics_backgroundColor", "0 0 0")
          * .trim().split(" +"); newColor = new

@@ -178,10 +178,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         integratorType = integratorMD;
         integratorToString(integratorType);
 
-        /*
-         * Pseudo-random number generator used to seed the OpenMM velocity generator
-         * method.
-         */
+        // Pseudo-random number generator used to seed the OpenMM velocity generator method.
         Random random = new Random();
         if (properties.containsKey("velRandomSeed")) {
             random.setSeed(properties.getInt("velRandomSeed", 0));
